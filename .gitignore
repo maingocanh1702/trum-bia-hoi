@@ -26,3 +26,6 @@ venv/
 
 # GitNexus index (self-managed)
 .gitnexus/
+
+# Autopilot runtime state (registry/ledger/state) — never commit
+.autopilot/
