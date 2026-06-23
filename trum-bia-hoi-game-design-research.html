@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trum Bia Hoi: Game Design Research From Trumviahe</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --text: #1a1a2e;
+    --heading: #0f0f23;
+    --accent: #2d6a4f;
+    --border: #d4d4d8;
+    --table-header-bg: #f0fdf4;
+    --table-alt-bg: #fafafa;
+    --code-bg: #f4f4f5;
+    --link: #2563eb;
+    --muted: #6b7280;
+    --hr: #e5e7eb;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.7;
+    font-size: 15px;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 48px 32px;
+  }
+
+  h1 {
+    font-size: 2em;
+    color: var(--heading);
+    border-bottom: 3px solid var(--accent);
+    padding-bottom: 12px;
+    margin-bottom: 24px;
+    font-weight: 700;
+  }
+
+  h2 {
+    font-size: 1.45em;
+    color: var(--accent);
+    margin-top: 40px;
+    margin-bottom: 16px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+  }
+
+  h3 {
+    font-size: 1.15em;
+    color: var(--heading);
+    margin-top: 28px;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+
+  p {
+    margin-bottom: 12px;
+  }
+
+  .meta {
+    color: var(--muted);
+    font-size: 0.9em;
+    margin-bottom: 6px;
+  }
+
+  .meta a {
+    color: var(--link);
+    text-decoration: none;
+  }
+
+  .meta a:hover {
+    text-decoration: underline;
+  }
+
+  .note {
+    color: var(--muted);
+    font-style: italic;
+    margin-bottom: 24px;
+    font-size: 0.92em;
+  }
+
+  hr {
+    border: none;
+    border-top: 2px solid var(--hr);
+    margin: 40px 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 24px;
+    font-size: 0.93em;
+  }
+
+  th {
+    background: var(--table-header-bg);
+    font-weight: 600;
+    text-align: left;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+  }
+
+  td {
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+  }
+
+  tr:nth-child(even) td {
+    background: var(--table-alt-bg);
+  }
+
+  ul, ol {
+    margin: 8px 0 16px 24px;
+  }
+
+  li {
+    margin-bottom: 4px;
+  }
+
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+    font-size: 0.88em;
+    line-height: 1.6;
+    margin: 16px 0 24px;
+  }
+
+  strong { font-weight: 600; }
+
+  @media print {
+    body { padding: 20px; font-size: 12px; max-width: 100%; }
+    h2, h3 { page-break-after: avoid; }
+    table { page-break-inside: avoid; }
+    pre { page-break-inside: avoid; }
+  }
+
+  @media (max-width: 640px) {
+    body { padding: 20px 16px; font-size: 14px; }
+    table { font-size: 0.85em; }
+    td, th { padding: 6px 8px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Trum Bia Hoi: Game Design Research From Trumviahe</h1>
+
+<p class="meta">Ngay tong hop: 2026-06-03</p>
+
+<p class="meta">Nguon tham khao:</p>
+<ul style="color: var(--muted); font-size: 0.9em; margin-bottom: 6px;">
+  <li><a href="https://trumviahe.com/">https://trumviahe.com/</a></li>
+  <li>Public client bundle: <a href="https://trumviahe.com/assets/index-BWec7RjV.js">https://trumviahe.com/assets/index-BWec7RjV.js</a></li>
+  <li>Quan sat gameplay/UI, man ket ca, menu nang cap, kho hang, ca/mua giai</li>
+</ul>
+
+<p class="note">Ghi chu: Day la tai lieu nghien cuu de thiet ke game "Trum Bia Hoi", khong phai design doc noi bo cua Trumviahe.</p>
+
+<hr>
+
+<!-- ===== SECTION 1 ===== -->
+<h2>1. Game Concept &amp; Product Experience</h2>
+
+<h3>1.1. The Loai</h3>
+
+<p>Trumviahe la game web casual simulation/time-management ve mo quan tra da via he. Game co chat idle/tycoon, nhung khong phai idle thuan vi nguoi choi phai theo doi va thao tac trong ca.</p>
+
+<p>Nhung dac trung san pham:</p>
+<ul>
+  <li>Choi tren browser, toi uu mobile.</li>
+  <li>Game theo ca, moi ca la mot phien active.</li>
+  <li>Co anti-idle/auto pause khi nguoi choi khong theo doi tab.</li>
+  <li>Co lop meta: league, milestone, social preview, daily mission, AI assistant, shrine/prestige.</li>
+</ul>
+
+<h3>1.2. Core Loop</h3>
+
+<p>Vong lap chinh:</p>
+<ol>
+  <li>Mo ca khi du the luc.</li>
+  <li>Khach den lien tuc, moi khach co order va patience rieng.</li>
+  <li>Nguoi choi quan ly nguyen lieu, pha tra, dung ly sach, rua ly, phuc vu nhanh.</li>
+  <li>Serve tot thi nhan xu, tip va reputation.</li>
+  <li>Serve cham/that bai thi mat khach, bi phat, giam reputation.</li>
+  <li>Ket ca xem so sach: doanh thu, phat, net, khach den, served, lost, tipped, reputation delta.</li>
+  <li>Dung xu/reputation de nhap hang, nang cap, mo tinh nang, thue mat bang.</li>
+  <li>Lap lai ca moi voi throughput cao hon va rui ro moi.</li>
+</ol>
+
+<h3>1.3. Shift &amp; Stamina</h3>
+
+<p>Public constants va quan sat:</p>
+<ul>
+  <li>Max stamina: 12 phut active.</li>
+  <li>Daily shift cap: newbie 8, regular 6, veteran 5.</li>
+  <li>Daily hard cap: 200,000 xu.</li>
+  <li>Well-rested bonus: x1.1 trong khoang dau ca sau khi nghi du.</li>
+  <li>Brief quan sat cho thay ca active co the hien thi tong thoi gian lon hon 12 phut do setup/pause/rest UI.</li>
+</ul>
+
+<p>Vai tro design:</p>
+<ul>
+  <li>Cat game thanh phien ngan, hop mobile.</li>
+  <li>Chong farm lien tuc.</li>
+  <li>Tao retention loop: nghi, quay lai, mo ca moi.</li>
+  <li>Giu economy khong bi pha boi long-session grinding.</li>
+</ul>
+
+<h3>1.4. Ledger Ket Ca</h3>
+
+<p>Game theo doi va phan hoi rat ro sau moi ca:</p>
+<ul>
+  <li>Tong thu.</li>
+  <li>Phat.</li>
+  <li>Thuc thu/net.</li>
+  <li>Khach den.</li>
+  <li>Phuc vu.</li>
+  <li>Bo di.</li>
+  <li>Khach boa.</li>
+  <li>Tip value.</li>
+  <li>Reputation delta.</li>
+  <li>Mission progress.</li>
+  <li>So sanh voi ca truoc.</li>
+</ul>
+
+<p>Mot chi tiet quan trong: reputation co the am trong mot ca neu mat khach/phuc vu kem. Vi vay reputation khong chi la faucet, ma la performance score co the bi burn.</p>
+
+<h3>1.5. Retention &amp; Social Layers</h3>
+
+<p>Nhung lop giu chan dang chu y:</p>
+<ul>
+  <li>Daily missions.</li>
+  <li>Login/gift rewards.</li>
+  <li>Leaderboard theo mua.</li>
+  <li>League tiers.</li>
+  <li>Shrine/prestige: top player duoc luu dau.</li>
+  <li>Social preview: xem quan cua nguoi khac.</li>
+  <li>Phone/message/social actions.</li>
+  <li>AI assistant trong game co the doc context nguoi choi va dua loi khuyen.</li>
+  <li>Rest/Zen mode tao cam giac game song tiep ngay ca khi dong quan.</li>
+</ul>
+
+<hr>
+
+<!-- ===== SECTION 2 ===== -->
+<h2>2. Economy Deep Dive</h2>
+
+<h3>2.1. Unit Economy</h3>
+
+<p>Gia mon va gia von public:</p>
+
+<table>
+  <thead>
+    <tr><th>Mon</th><th style="text-align:right">Gia ban</th><th style="text-align:right">Gia von le</th><th style="text-align:right">Margin le</th><th style="text-align:right">Gia von si</th><th style="text-align:right">Margin si</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Tra da</td><td style="text-align:right">50</td><td style="text-align:right">10</td><td style="text-align:right">80%</td><td style="text-align:right">8</td><td style="text-align:right">84%</td></tr>
+    <tr><td>Keo lac</td><td style="text-align:right">30</td><td style="text-align:right">15</td><td style="text-align:right">50%</td><td style="text-align:right">12</td><td style="text-align:right">60%</td></tr>
+    <tr><td>Hat huong duong</td><td style="text-align:right">20</td><td style="text-align:right">8</td><td style="text-align:right">60%</td><td style="text-align:right">6.5</td><td style="text-align:right">67.5%</td></tr>
+  </tbody>
+</table>
+
+<p>Nhan xet:</p>
+<ul>
+  <li>Margin mon an/uong rat cao.</li>
+  <li>Game khong tao kho bang COGS nang.</li>
+  <li>Burn chinh den tu upgrade, rent, rui ro, lost customers, bottleneck va cap.</li>
+</ul>
+
+<h3>2.2. Throughput Economy</h3>
+
+<p>Tra da loi cao nhung bi khoa boi chuoi van hanh:</p>
+<ul>
+  <li>Can tra + nuoc + da.</li>
+  <li>Can binh pha tra co stored tea.</li>
+  <li>Can ly sach.</li>
+  <li>Can rua ly.</li>
+  <li>Can ghe trong.</li>
+  <li>Khach co patience.</li>
+</ul>
+
+<p>Thong so public:</p>
+<ul>
+  <li>Base spawn interval: 10.5s/khach.</li>
+  <li>Pha tra lv1: 1 ly / 15s.</li>
+  <li>Rua ly lv1: 7s / ly.</li>
+  <li>Prep tra da: 3s.</li>
+  <li>Khach ngoi uong: 5-10s.</li>
+</ul>
+
+<p>Y nghia:</p>
+<ul>
+  <li>Early game khong ngheo vi margin thap.</li>
+  <li>Early game bi nghe do pha tra, ly, rua ly, ghe, patience.</li>
+  <li>Day la core gameplay: tim bottleneck va nang cap dung.</li>
+</ul>
+
+<h3>2.3. Customer Mix</h3>
+
+<p>Public spawn weights:</p>
+
+<table>
+  <thead>
+    <tr><th>Loai khach</th><th style="text-align:right">Weight</th><th>Economy effect</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Normal</td><td style="text-align:right">1.0</td><td>Baseline</td></tr>
+    <tr><td>Rush</td><td style="text-align:right">0.3</td><td>It patience hon, ep speed</td></tr>
+    <tr><td>VIP</td><td style="text-align:right">0.1</td><td>Tip x10, lost penalty x10</td></tr>
+    <tr><td>Chi Pheo</td><td style="text-align:right">0.03</td><td>Khong tra tien, chiem tai nguyen/khong gian</td></tr>
+    <tr><td>Stubborn</td><td style="text-align:right">0.1</td><td>O lau, chiem ghe lau</td></tr>
+  </tbody>
+</table>
+
+<p>Customer mix la mot trong cac truc balance quan trong nhat. Game khong chi tang/giam doanh thu, ma doi loai khach den quan.</p>
+
+<h3>2.4. Tip &amp; Reputation</h3>
+
+<p>Tip:</p>
+<ul>
+  <li>Tip base khoang 30% payment neu phuc vu khi patience con tot.</li>
+  <li>Neu patience qua thap, tip = 0.</li>
+  <li>QR tang tip +20%.</li>
+  <li>VIP nhan tip multiplier x10.</li>
+  <li>Rush/weather co the tang tip multiplier.</li>
+</ul>
+
+<p>Reputation:</p>
+<ul>
+  <li>Serve khong tip: +1 reputation.</li>
+  <li>Serve co tip: +3 reputation.</li>
+  <li>Lost/serve kem co the lam reputation delta am.</li>
+</ul>
+
+<p>Design value:</p>
+<ul>
+  <li>Coin la money currency.</li>
+  <li>Reputation la performance/meta currency.</li>
+  <li>Tach hai tien te giup mo khoa progression ma khong bơm coin qua nhieu.</li>
+</ul>
+
+<h3>2.5. Core Sinks &amp; Upgrades</h3>
+
+<table>
+  <thead>
+    <tr><th>He thong</th><th>Cost progression</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Thung da</td><td>2k -&gt; 8k -&gt; 30k -&gt; 100k</td></tr>
+    <tr><td>Binh pha tra</td><td>3k -&gt; 12k -&gt; 50k -&gt; 200k</td></tr>
+    <tr><td>Khu rua ly</td><td>2.5k -&gt; 10k -&gt; 40k -&gt; 150k</td></tr>
+    <tr><td>Suc chua ly/tai nguyen</td><td>1k -&gt; 5k -&gt; 20k -&gt; 80k</td></tr>
+    <tr><td>Dien thoai</td><td>5k</td></tr>
+    <tr><td>QR</td><td>8k</td></tr>
+    <tr><td>Bang hieu</td><td>20k+</td></tr>
+    <tr><td>Cho</td><td>2k + 20 da; nang tiep bang xu + keo</td></tr>
+  </tbody>
+</table>
+
+<p>Vai tro:</p>
+<ul>
+  <li>Equipment upgrade tang throughput.</li>
+  <li>Phone la gateway unlock.</li>
+  <li>QR tang tip.</li>
+  <li>Bang hieu doi customer mix.</li>
+  <li>Dog giam risk.</li>
+  <li>Rent/location la sink dinh ky.</li>
+</ul>
+
+<h3>2.6. Bang Hieu &amp; Demand-Mix Economy</h3>
+
+<p>Bang hieu la modifier customer mix, khong chi la cosmetic.</p>
+
+<p>Unlock:</p>
+<ul>
+  <li>Gia lap bang hieu: 20,000 xu.</li>
+  <li>Yeu cau stall lv3.</li>
+  <li>Mo khoa sign style va social/showcase utility.</li>
+</ul>
+
+<p>Style effects:</p>
+
+<table>
+  <thead>
+    <tr><th>Style</th><th style="text-align:right">Cost</th><th>Economy effect</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Wood</td><td style="text-align:right">0</td><td>VIP spawn weight x2</td></tr>
+    <tr><td>Neon</td><td style="text-align:right">15,000</td><td>VIP x2, shipper +20%</td></tr>
+    <tr><td>Calligraphy</td><td style="text-align:right">25,000</td><td>VIP x2, stubborn x0.8</td></tr>
+    <tr><td>Vintage</td><td style="text-align:right">20,000</td><td>VIP x2, rush x0.5</td></tr>
+    <tr><td>Golden</td><td style="text-align:right">30,000 + 5,000 reputation gate</td><td>VIP x3</td></tr>
+  </tbody>
+</table>
+
+<p>Uoc tinh VIP probability:</p>
+<ul>
+  <li>Khong bang hieu: 0.1 / 1.53 ~= 6.5%.</li>
+  <li>Wood x2: 0.2 / 1.63 ~= 12.3%.</li>
+  <li>Golden x3: 0.3 / 1.73 ~= 17.3%.</li>
+</ul>
+
+<p>Y nghia:</p>
+<ul>
+  <li>Bang hieu tang expected revenue qua VIP va tip.</li>
+  <li>Nhung VIP lost penalty cung x10, nen day la risk/reward.</li>
+  <li>Style cho phep player chon strategy: tang shipper, giam rush, giam stubborn, day VIP.</li>
+</ul>
+
+<h3>2.7. QR Payment</h3>
+
+<p>QR:</p>
+<ul>
+  <li>Gia: 8,000 xu.</li>
+  <li>Can phone.</li>
+  <li>Can milestone "Quen Tay".</li>
+  <li>Tac dong: tip +20%.</li>
+</ul>
+
+<p>Synergy:</p>
+<ul>
+  <li>QR nhe voi khach thuong.</li>
+  <li>QR manh voi VIP vi tip da duoc nhan x10.</li>
+  <li>QR + bang hieu la combo tang EV nhung yeu cau throughput tot.</li>
+</ul>
+
+<h3>2.8. Flyers</h3>
+
+<p>Flyer:</p>
+<ul>
+  <li>Dung reputation, khong dung coin.</li>
+  <li>Gia/cost public trong UI: khoang 300 reputation.</li>
+  <li>Ton kho cap: 5.</li>
+  <li>Campaign duration: 90s.</li>
+  <li>Khi active, thu hut stream khach va mo/tang queue.</li>
+</ul>
+
+<p>Y nghia:</p>
+<ul>
+  <li>Flyer la reputation -&gt; coin opportunity.</li>
+  <li>Khong bơm coin truc tiep.</li>
+  <li>Neu thieu stock/throughput, flyer bien thanh lost customers va penalty.</li>
+</ul>
+
+<h3>2.9. Location &amp; Rent</h3>
+
+<p>Location la payment multiplier + rent. Chi dang thue khi throughput da du.</p>
+
+<table>
+  <thead>
+    <tr><th>Location</th><th style="text-align:right">Rent/ngay</th><th style="text-align:right">Multiplier</th><th style="text-align:right">Gross can de hoa rent</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Cong Truong</td><td style="text-align:right">770</td><td style="text-align:right">x1.05</td><td style="text-align:right">~15.4k</td></tr>
+    <tr><td>Chung Cu Cu</td><td style="text-align:right">1.68k</td><td style="text-align:right">x1.10</td><td style="text-align:right">~16.8k</td></tr>
+    <tr><td>Cong Truong</td><td style="text-align:right">2.73k</td><td style="text-align:right">x1.15</td><td style="text-align:right">~18.2k</td></tr>
+    <tr><td>Cho Dem</td><td style="text-align:right">3.92k</td><td style="text-align:right">x1.20</td><td style="text-align:right">~19.6k</td></tr>
+    <tr><td>Khu Van Phong</td><td style="text-align:right">6.72k</td><td style="text-align:right">x1.30</td><td style="text-align:right">~22.4k</td></tr>
+    <tr><td>Pho Co</td><td style="text-align:right">11.97k</td><td style="text-align:right">x1.45</td><td style="text-align:right">~26.6k</td></tr>
+    <tr><td>Ga Metro</td><td style="text-align:right">18.48k</td><td style="text-align:right">x1.60</td><td style="text-align:right">~30.8k</td></tr>
+    <tr><td>Khu Pho Tay</td><td style="text-align:right">29.12k</td><td style="text-align:right">x1.80</td><td style="text-align:right">~36.4k</td></tr>
+  </tbody>
+</table>
+
+<p>Ghi chu: Ten location o bang tren da bo dau de dong bo ASCII. "Cong Truong" x1.15 trong source la "Cong Truong/Cong Truong hoc" theo cach go khong dau cua tai lieu cu, nen can verify lai label UI khi dung trong spec.</p>
+
+<h3>2.10. Weather Economy</h3>
+
+<p>Weather tac dong vao demand, cost, patience va bottleneck:</p>
+
+<table>
+  <thead>
+    <tr><th>Weather</th><th>Tac dong chinh</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Sunny</td><td>Baseline</td></tr>
+    <tr><td>Hot</td><td>Spawn +15%, patience -15%, da tan x1.5, snack demand x0.4, tip x1.15, shipper x1.5</td></tr>
+    <tr><td>Humid</td><td>Spawn +5%, patience -25%, da tan x2, snack demand x0.25, tip x1.2, shipper x2, Chi Pheo x1.5</td></tr>
+    <tr><td>Light rain</td><td>Spawn x0.8, patience x1.15, da tan x0.85, shipper x3, stubborn x2</td></tr>
+    <tr><td>Cold</td><td>Spawn x0.9, patience -20%, khong can da, tea per drink x2, snack demand x1.5, brew/wash cham hon</td></tr>
+  </tbody>
+</table>
+
+<p>Design value:</p>
+<ul>
+  <li>Doi optimal strategy theo thoi tiet.</li>
+  <li>Tao ly do stock/nang cap khac nhau.</li>
+  <li>Khong co mot build toi uu duy nhat.</li>
+</ul>
+
+<h3>2.11. Rush Hour</h3>
+
+<p>Rush hour:</p>
+<ul>
+  <li>Tang rush customer density.</li>
+  <li>Tang base payment 5-10%.</li>
+  <li>Tang tip 10-18%.</li>
+  <li>Tang lost customer penalty 1.8-2.5x.</li>
+  <li>Tang rush customer spawn weight.</li>
+</ul>
+
+<p>Ket luan:</p>
+<ul>
+  <li>Rush la faucet neu player du throughput.</li>
+  <li>Rush la penalty sink neu player qua tai.</li>
+</ul>
+
+<h3>2.12. Dog &amp; Risk Insurance</h3>
+
+<p>Dog:</p>
+<ul>
+  <li>Gia mua: 2,000 xu + 20 da.</li>
+  <li>Nang cap bang xu + keo.</li>
+  <li>Giam rui ro theft/bangster.</li>
+  <li>La dieu kien LP1.</li>
+</ul>
+
+<p>Dog khong tang gross revenue. No bao ve net profit.</p>
+
+<h3>2.13. Season, Daily Cap &amp; Anti-Inflation</h3>
+
+<p>Mechanics:</p>
+<ul>
+  <li>Season league thresholds: bronze -&gt; silver -&gt; gold -&gt; titanium -&gt; platinum -&gt; ruby -&gt; diamond -&gt; legend.</li>
+  <li>Score chu yeu dua tren season earned.</li>
+  <li>Mission/login/gift rewards nen duoc xem la side rewards, khong nen day thang vao competitive score neu muon cong bang.</li>
+  <li>Daily hard cap: 200,000 xu.</li>
+  <li>Shift cap theo progression tier.</li>
+</ul>
+
+<p>Y nghia:</p>
+<ul>
+  <li>Ngan nguoi choi farm vo han.</li>
+  <li>Giu leaderboard bot phu thuoc thoi gian online hon.</li>
+  <li>Giam lam phat coin/score.</li>
+</ul>
+
+<h3>2.14. Life Path &amp; Meta Progression</h3>
+
+<p>Milestones:</p>
+
+<table>
+  <thead>
+    <tr><th>Milestone</th><th>Dieu kien chinh</th><th>Reward</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>LP1</td><td>50k lifetime earned + 4 ghe + dog</td><td>5k + small crate</td></tr>
+    <tr><td>LP2</td><td>150k + stall 3 + phone</td><td>10k + badge shard</td></tr>
+    <tr><td>LP3</td><td>500k + equipment lv3 + QR</td><td>20k + medium crate</td></tr>
+    <tr><td>LP4</td><td>1.5M + flyer + platinum league</td><td>50k + cosmetic token</td></tr>
+    <tr><td>LP5</td><td>5M + shop sign + ruby league</td><td>100k + crate/cosmetic</td></tr>
+    <tr><td>LP6</td><td>15M + all equipment/stall lv5 + diamond</td><td>250k</td></tr>
+    <tr><td>LP7</td><td>50M + 9 ghe + legend</td><td>500k</td></tr>
+  </tbody>
+</table>
+
+<p>Reward coin nho hon threshold rat nhieu, nen milestone chu yeu la unlock/status, khong phai coin faucet lon.</p>
+
+<h3>2.15. Economy Formula</h3>
+
+<pre>Expected Net / minute =
+customer_rate
+* E[order_value * payment_multipliers + tip]
+- COGS
+- expected_penalty
+- rent
+- maintenance/risk_cost</pre>
+
+<p>Trong do:</p>
+<ul>
+  <li>customer_rate: spawn, ghe, queue, flyer, weather, rush.</li>
+  <li>order_value: tra/snack/don shipper/don 2 mon.</li>
+  <li>payment_multipliers: location, rush, weather, well-rested.</li>
+  <li>tip: patience, VIP, QR, weather, rush.</li>
+  <li>expected_penalty: lost customer, VIP lost, queue overflow, gangster, shipper fail.</li>
+  <li>COGS: nguyen lieu, da tan, snack.</li>
+  <li>sinks: upgrade, sign, QR, dog, rent, cosmetics.</li>
+</ul>
+
+<hr>
+
+<!-- ===== SECTION 3 ===== -->
+<h2>3. Implications For Trum Bia Hoi</h2>
+
+<h3>3.1. Theme Mapping</h3>
+
+<table>
+  <thead>
+    <tr><th>Trumviahe</th><th>Trum Bia Hoi</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Tra da</td><td>Bia hoi</td></tr>
+    <tr><td>Keo lac/hat huong duong</td><td>Lac rang, nem chua, banh da, dau phu, do nhau</td></tr>
+    <tr><td>Da tan</td><td>Bia mat hoi/nhat, da tan, bia am</td></tr>
+    <tr><td>Ly tra</td><td>Coc/vai bia</td></tr>
+    <tr><td>Binh pha tra</td><td>Voi bia/keg/tank bia</td></tr>
+    <tr><td>Rua ly</td><td>Rua coc/vai</td></tr>
+    <tr><td>Ghe via he</td><td>Ban ghe nhua/bia hoi</td></tr>
+    <tr><td>Bang hieu</td><td>Bien quan, man chieu bong da, brand bia</td></tr>
+    <tr><td>VIP</td><td>Khach sanh nhau, reviewer, khach cong ty, khach dat ban</td></tr>
+    <tr><td>Rush customer</td><td>Khach voi, khach tan lam, khach xem bong da toi muon</td></tr>
+    <tr><td>Stubborn</td><td>Ban nhau ngoi lau</td></tr>
+    <tr><td>Chi Pheo</td><td>Khach say/pha roi/khong tra tien</td></tr>
+    <tr><td>Dog</td><td>Bao ve/cho giu quan</td></tr>
+    <tr><td>Shipper</td><td>Don ship do nhau/do an kem</td></tr>
+    <tr><td>Weather hot</td><td>Troi nong, tran bong da, cuoi tuan</td></tr>
+  </tbody>
+</table>
+
+<h3>3.2. Core Loop Cho Bia Hoi</h3>
+
+<ol>
+  <li>Nhap bia, da, do nhau, coc sach.</li>
+  <li>Khach vao ban, goi bia va do nhau.</li>
+  <li>Rot bia, phuc vu mon an kem, rua coc.</li>
+  <li>Ban ngoi trong mot khoang thoi gian, co the goi them.</li>
+  <li>Tinh tien, nhan tip/reputation.</li>
+  <li>Doi pho khach say, vo coc, het bia, kiem tra phuong, bao ke.</li>
+  <li>Nang cap voi bia, tu lanh, so ban, nhan vien, bien hieu, giay phep, mat bang.</li>
+</ol>
+
+<h3>3.3. Economy Layers Nen Giu</h3>
+
+<ol>
+  <li><strong>Unit economy</strong>
+    <ul>
+      <li>Bia hoi margin kha cao.</li>
+      <li>Do nhau margin thap hon nhung upsell tot.</li>
+      <li>Combo bia + moi tang average order value.</li>
+    </ul>
+  </li>
+  <li><strong>Throughput economy</strong>
+    <ul>
+      <li>Bottleneck: voi bia, keg, coc sach, ban trong, nhan vien.</li>
+      <li>Bia/co do nhau nen co prep time khac nhau.</li>
+      <li>Ban nhau ngoi lau hon khach tra da, can balance table turnover.</li>
+    </ul>
+  </li>
+  <li><strong>Demand-mix economy</strong>
+    <ul>
+      <li>Bien hieu/brand bia tang khach VIP.</li>
+      <li>Man chieu bong da tang rush/cuoi tuan.</li>
+      <li>Nhac song tang khach o lau va tip, nhung giam turnover.</li>
+      <li>Combo happy hour tang demand nhung co risk say/vo coc.</li>
+    </ul>
+  </li>
+  <li><strong>Risk economy</strong>
+    <ul>
+      <li>Khach say khong tra tien/pha roi.</li>
+      <li>Vo coc/ban ghe hong.</li>
+      <li>Cong an/phuong kiem tra.</li>
+      <li>Bao ke.</li>
+      <li>Mua lon lam giam khach, nhung khach o lau hon.</li>
+      <li>Bao ve/giay phep la insurance sink.</li>
+    </ul>
+  </li>
+  <li><strong>Meta economy</strong>
+    <ul>
+      <li>Reputation = danh tieng quan.</li>
+      <li>League = "quan bia hot nhat khu".</li>
+      <li>Milestones = tu via he nho den quan co mat bang tot.</li>
+      <li>Social/prestige = bang vang, review quan, street view cac quan.</li>
+    </ul>
+  </li>
+</ol>
+
+<h3>3.4. Modifier Ideas For Bia Hoi</h3>
+
+<p>Bang hieu/man hinh/su kien nen doi customer mix, khong chi +income:</p>
+
+<table>
+  <thead>
+    <tr><th>Modifier</th><th>Possible effect</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Bien go</td><td>Khach quen/VIP nhe</td></tr>
+    <tr><td>Bien neon</td><td>Tang khach tre, tang order dem, tang risk on ao</td></tr>
+    <tr><td>Man chieu bong da</td><td>Tang rush theo tran dau, tang ban ngoi lau</td></tr>
+    <tr><td>Bien "Bia tuoi moi ngay"</td><td>Tang khach VIP/reviewer</td></tr>
+    <tr><td>Nhac song</td><td>Tang tip, tang thoi gian ngoi</td></tr>
+    <tr><td>Bao ve</td><td>Giam khach say pha roi, giam bao ke</td></tr>
+    <tr><td>Giay phep day du</td><td>Giam rui ro bi phat khi kiem tra</td></tr>
+    <tr><td>Combo lac + bia</td><td>Tang AOV, tang prep/stock pressure</td></tr>
+  </tbody>
+</table>
+
+<h3>3.5. Balance Recommendations</h3>
+
+<p>Khuyen nghi economy:</p>
+<ul>
+  <li>Cho unit margin kha cao de nguoi choi thay "ban la co lai".</li>
+  <li>Dung throughput lam challenge chinh, khong dung gia von thap de ep grind.</li>
+  <li>Dung modifier de doi demand mix va risk profile.</li>
+  <li>QR/vi dien tu ban bia co the tang tip/thanh toan nhanh, nhung nen synergy voi VIP.</li>
+  <li>Flyer/marketing nen dung reputation de doi lay demand spike.</li>
+  <li>Rent/location chi nen loi khi player da co throughput du.</li>
+  <li>Daily cap/stamina can co de tranh farm inflation.</li>
+  <li>Late-game sink nen la cosmetic, prestige, mat bang premium, giay phep, nhan vien, decor, social showcase.</li>
+</ul>
+
+<h3>3.6. MVP Scope</h3>
+
+<p>MVP nen bat dau nho:</p>
+<ul>
+  <li>3 menu items: bia hoi, lac rang, nem chua.</li>
+  <li>4 customer types: normal, rush, VIP, drunk/stubborn.</li>
+  <li>4 resources: bia, da, do nhau, coc sach.</li>
+  <li>4 upgrades: voi bia, rua coc, ban ghe, tu lanh/keg.</li>
+  <li>3 business modifiers: bien hieu, QR, marketing flyer.</li>
+  <li>2 events: gio cao diem bong da, kiem tra/phat.</li>
+  <li>1 meta currency: reputation.</li>
+  <li>1 daily/shift cap.</li>
+</ul>
+
+<p>Muc tieu cua MVP la chung minh core loop va economy bottleneck, chua can day du social/shrine/AI assistant.</p>
+
+<h3>3.7. Metrics Can Track</h3>
+
+<p>Can log cac chi so sau de dieu phoi economy:</p>
+<ul>
+  <li>coins earned per minute.</li>
+  <li>coins spent per minute.</li>
+  <li>net profit per shift.</li>
+  <li>COGS ratio.</li>
+  <li>rent burden ratio.</li>
+  <li>time to next upgrade.</li>
+  <li>lost customer rate.</li>
+  <li>VIP served/lost rate.</li>
+  <li>tip customer rate.</li>
+  <li>stockout rate.</li>
+  <li>glass/cup bottleneck rate.</li>
+  <li>table occupancy/turnover.</li>
+  <li>flyer campaign ROI.</li>
+  <li>sign style selection and ROI.</li>
+  <li>daily cap hit rate.</li>
+  <li>churn after bottleneck.</li>
+</ul>
+
+<p>Canh bao lam phat:</p>
+<ul>
+  <li>p90 coin balance tang nhanh hon next meaningful upgrade cost.</li>
+  <li>players dat daily cap qua som.</li>
+  <li>upgrade purchase rate giam vi player da du tien nhung khong co sink hap dan.</li>
+  <li>location premium bi thue dai tra ma van loi qua cao.</li>
+</ul>
+
+</body>
+</html>

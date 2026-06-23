@@ -1,0 +1,45 @@
+{
+  "blockers": [],
+  "docs": [
+    {
+      "name": "02-GDD-trum-bia-hoi.md",
+      "stale_days": 0,
+      "updated": null,
+      "version": null
+    },
+    {
+      "name": "06-ROADMAP-trum-bia-hoi.md",
+      "stale_days": 0,
+      "updated": null,
+      "version": null
+    },
+    {
+      "name": "03-SPEC-he-ban.md",
+      "stale_days": 0,
+      "updated": null,
+      "version": null
+    },
+    {
+      "name": "04-SPEC-prototype-phase0.md",
+      "stale_days": 0,
+      "updated": null,
+      "version": null
+    },
+    {
+      "name": "05-SPEC-design-uiux.md",
+      "stale_days": 0,
+      "updated": null,
+      "version": null
+    }
+  ],
+  "features": [],
+  "generated_at": "2026-06-11T11:33:03+00:00",
+  "overall": {
+    "mvp_merged": 0,
+    "mvp_percent": 0,
+    "mvp_total": 26,
+    "overall_progress": 0
+  },
+  "phases": [],
+  "risks": []
+}

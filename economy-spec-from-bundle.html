@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Economy Spec — trích trực tiếp từ client bundle trumviahe.com">
+  <title>Economy Spec — Trùm Via Hè</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+  <style>
+    /* ── Design Tokens ── */
+    :root {
+      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+      --bg: #faf8f5;
+      --bg-sidebar: #faf8f5;
+      --bg-card: #fff;
+      --bg-code: #f3f0ec;
+      --bg-code-inline: #f3f0ec;
+      --bg-table-header: #f5f2ee;
+      --bg-table-row-alt: #faf8f5;
+      --bg-callout: #fdf8f3;
+      --bg-callout-border: #e8572a;
+
+      --text-primary: #1a1a1a;
+      --text-secondary: #444;
+      --text-muted: #888;
+      --text-sidebar: #555;
+      --text-sidebar-active: #e8572a;
+
+      --accent: #e8572a;
+      --accent-light: rgba(232, 87, 42, 0.08);
+      --accent-tag-bg: rgba(232, 87, 42, 0.08);
+      --accent-tag-text: #e8572a;
+
+      --border: #e8e4df;
+      --border-light: #f0ece7;
+
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+
+      --radius-sm: 4px;
+      --radius-md: 8px;
+
+      --sidebar-width: 240px;
+      --header-height: 48px;
+    }
+
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      font-size: 15px;
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text-primary);
+      line-height: 1.75;
+    }
+
+    /* ── Top Bar ── */
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--header-height);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 100;
+    }
+    .topbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+    }
+    .topbar-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: inline-block;
+    }
+    .topbar-actions button {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      transition: all 0.2s;
+    }
+    .topbar-actions button:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── Layout ── */
+    .layout {
+      display: flex;
+      margin-top: var(--header-height);
+    }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      position: fixed;
+      top: var(--header-height);
+      left: 0;
+      bottom: 0;
+      width: var(--sidebar-width);
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 24px 0 24px 0;
+      z-index: 50;
+    }
+    .toc-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      padding: 0 20px;
+      margin-bottom: 12px;
+    }
+    .toc-list {
+      list-style: none;
+    }
+    .toc-list li a {
+      display: block;
+      padding: 5px 20px 5px 20px;
+      font-size: 0.82rem;
+      color: var(--text-sidebar);
+      text-decoration: none;
+      border-left: 3px solid transparent;
+      transition: all 0.15s;
+      line-height: 1.5;
+    }
+    .toc-list li a:hover {
+      color: var(--text-primary);
+      background: var(--accent-light);
+    }
+    .toc-list li a.active {
+      color: var(--text-sidebar-active);
+      border-left-color: var(--accent);
+      font-weight: 500;
+      background: var(--accent-light);
+    }
+
+    /* ── Main Content ── */
+    .main {
+      margin-left: var(--sidebar-width);
+      max-width: 760px;
+      padding: 48px 48px 80px 56px;
+      min-height: 100vh;
+    }
+
+    /* ── Article Header ── */
+    .tag {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--accent-tag-text);
+      background: var(--accent-tag-bg);
+      border: 1px solid rgba(232, 87, 42, 0.2);
+      border-radius: 999px;
+      padding: 3px 12px;
+      margin-bottom: 20px;
+    }
+    .article-title {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+    }
+    .article-desc {
+      font-size: 1.05rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    .article-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+    }
+    .article-meta span {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* ── Typography ── */
+    h2 {
+      font-size: 1.55rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-top: 56px;
+      margin-bottom: 16px;
+      letter-spacing: -0.02em;
+      line-height: 1.3;
+    }
+
+    h3 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-top: 36px;
+      margin-bottom: 12px;
+    }
+
+    p {
+      margin-bottom: 16px;
+      color: var(--text-secondary);
+    }
+
+    strong { color: var(--text-primary); font-weight: 600; }
+    em { font-style: italic; }
+
+    /* ── Callout (Ý CHÍNH) ── */
+    .callout {
+      background: var(--bg-callout);
+      border-left: 3px solid var(--bg-callout-border);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      padding: 16px 20px;
+      margin: 16px 0 20px;
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+    }
+    .callout-label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+    .callout.warning {
+      background: #fff8f0;
+      border-left-color: #d97706;
+    }
+    .callout.warning .callout-label { color: #d97706; }
+    .callout.info {
+      background: #f0f6ff;
+      border-left-color: #3b82f6;
+    }
+    .callout.info .callout-label { color: #3b82f6; }
+
+    /* ── Code ── */
+    code {
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      background: var(--bg-code-inline);
+      color: var(--text-primary);
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+    pre {
+      background: var(--bg-code);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      overflow-x: auto;
+      margin: 12px 0 20px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+    pre code {
+      background: none;
+      padding: 0;
+      font-size: 0.88rem;
+    }
+
+    /* ── Tables ── */
+    .table-wrapper {
+      overflow-x: auto;
+      margin: 12px 0 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.87rem;
+    }
+    thead { background: var(--bg-table-header); }
+    th {
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-primary);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.82rem;
+      white-space: nowrap;
+    }
+    td {
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border-light);
+      color: var(--text-secondary);
+    }
+    tr:nth-child(even) { background: var(--bg-table-row-alt); }
+    tr:last-child td { border-bottom: none; }
+    td:first-child { font-weight: 500; color: var(--text-primary); }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+    /* ── Lists ── */
+    ul, ol {
+      padding-left: 22px;
+      margin-bottom: 16px;
+    }
+    li {
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+    li strong { color: var(--text-primary); }
+
+    /* ── HR ── */
+    hr {
+      border: none;
+      height: 1px;
+      background: var(--border);
+      margin: 40px 0;
+    }
+
+    /* ── Scroll spy active ── */
+    section { scroll-margin-top: 60px; }
+
+    /* ── Responsive ── */
+    @media (max-width: 1024px) {
+      #sidebar { width: 64px; }
+      #sidebar .toc-label,
+      #sidebar .toc-list li a span { display: none; }
+      .main { margin-left: 64px; }
+    }
+    @media (max-width: 768px) {
+      #sidebar { display: none; }
+      .main {
+        margin-left: 0;
+        padding: 32px 20px 60px;
+      }
+      .article-title { font-size: 1.6rem; }
+      h2 { font-size: 1.3rem; }
+    }
+
+    /* ── Print ── */
+    @media print {
+      .topbar, #sidebar { display: none; }
+      .main { margin-left: 0; padding: 0; max-width: 100%; }
+      body { font-size: 11pt; background: #fff; }
+      h2 { break-after: avoid; }
+      .table-wrapper { box-shadow: none; border: 1px solid #ddd; }
+      table { font-size: 9pt; }
+      pre { font-size: 9pt; }
+      .callout { break-inside: avoid; }
+    }
+  </style>
+  <style>
+    h1:not(.article-title) {
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.25;
+      margin: 40px 0 16px;
+    }
+    .main { max-width: 920px; }
+    .markdown-body section:first-child > h2,
+    .markdown-body > h2:first-child { margin-top: 0; }
+    blockquote {
+      background: var(--bg-callout);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      padding: 14px 18px;
+      margin: 16px 0 20px;
+      color: var(--text-secondary);
+    }
+    blockquote p:last-child { margin-bottom: 0; }
+    .source-note {
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      margin-bottom: 28px;
+    }
+    .toc-list li a.depth-3 { padding-left: 32px; font-size: 0.78rem; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-brand"><span class="topbar-dot"></span>Ghi chú</div>
+    <div class="topbar-actions"><button onclick="window.print()" title="In / Xuất PDF">In/PDF</button></div>
+  </header>
+  <div class="layout">
+    <nav id="sidebar">
+      <div class="toc-label">MỤC LỤC</div>
+      <ul class="toc-list" id="toc-list"></ul>
+    </nav>
+    <main class="main">
+      <div class="tag">GAME ECONOMY</div>
+      <h1 class="article-title">Economy Spec — trích trực tiếp từ client bundle</h1>
+      <p class="article-desc">Phân tích độc lập hệ thống kinh tế game Trùm Via Hè. Nội dung được render lại từ markdown nguồn hiện tại.</p>
+      <div class="article-meta">
+        <span>economy-spec-from-bundle.md</span>
+        <span>Source: 2026-06-03, cập nhật export 2026-06-09</span>
+      </div>
+      <article class="markdown-body">
+<section id="economy-spec--trích-trực-tiếp-từ-client-bundle-phân-tích-độc-lập" class="level1">
+<p>Nguồn: <code>https://trumviahe.com/assets/index-BWec7RjV.js</code> (447 KB, đọc trực tiếp trong page context, tự grep). Đây là <strong>hằng số gốc trong code</strong>, không qua trung gian. Mọi số dưới đây là <em>directly extracted</em> trừ khi ghi rõ "suy đoán".</p>
+<p>Ngày trích: 2026-06-03. Bundle hash khớp với bản research cũ → game chưa cập nhật.</p>
+<hr />
+<section id="1-món-bán-wa" class="level2">
+<h2>1. Món bán (<code>Wa</code>)</h2>
+<table>
+<thead>
+<tr>
+<th>Món</th>
+<th>id</th>
+<th style="text-align: right;">Giá bán</th>
+<th>Công thức</th>
+<th style="text-align: right;">Prep</th>
+<th style="text-align: center;">Cần ly</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Trà đá</td>
+<td>tea</td>
+<td style="text-align: right;"><strong>50</strong></td>
+<td>tea×1 + water×1 + ice×1</td>
+<td style="text-align: right;">3.000ms</td>
+<td style="text-align: center;">✅</td>
+</tr>
+<tr>
+<td>Kẹo lạc</td>
+<td>peanutCandy</td>
+<td style="text-align: right;"><strong>30</strong></td>
+<td>peanutCandy×1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: center;">❌</td>
+</tr>
+<tr>
+<td>Hạt hướng dương</td>
+<td>sunflowerSeeds</td>
+<td style="text-align: right;"><strong>20</strong></td>
+<td>sunflowerSeeds×1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: center;">❌</td>
+</tr>
+</tbody>
+</table>
+<p>→ Chỉ <strong>3 món</strong>. Trà đá là món duy nhất cần chế biến (3s) và cần ly (phải rửa). Ăn vặt phục vụ tức thì.</p>
+</section>
+<section id="2-giá-nhập-nguyên-liệu-mc--margin-tự-tính" class="level2">
+<h2>2. Giá nhập nguyên liệu (<code>mc</code>) &amp; margin (tự tính)</h2>
+<table>
+<thead>
+<tr>
+<th>Nguyên liệu</th>
+<th style="text-align: right;">Giá lẻ</th>
+<th style="text-align: right;">Lô (×10)</th>
+<th style="text-align: right;">Giá/đv khi mua sỉ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Trà</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">4.0</td>
+</tr>
+<tr>
+<td>Nước pha trà</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">1.5</td>
+</tr>
+<tr>
+<td>Đá</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">2.5</td>
+</tr>
+<tr>
+<td>Kẹo lạc</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">120</td>
+<td style="text-align: right;">12.0</td>
+</tr>
+<tr>
+<td>Hạt hướng dương</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">65</td>
+<td style="text-align: right;">6.5</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Margin (tôi tính):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Món</th>
+<th style="text-align: right;">Giá vốn lẻ</th>
+<th style="text-align: right;">Margin lẻ</th>
+<th style="text-align: right;">Giá vốn sỉ</th>
+<th style="text-align: right;">Margin sỉ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Trà đá</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;"><strong>80%</strong></td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;"><strong>84%</strong></td>
+</tr>
+<tr>
+<td>Kẹo lạc</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">50%</td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">60%</td>
+</tr>
+<tr>
+<td>Hạt hướng dương</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">60%</td>
+<td style="text-align: right;">6.5</td>
+<td style="text-align: right;">67.5%</td>
+</tr>
+</tbody>
+</table>
+<p>→ Margin rất cao; <strong>giá vốn không phải burn chính</strong>. Burn nằm ở upgrade/rent/penalty.</p>
+</section>
+<section id="3-spawn--phục-vụ-pr-vr-el" class="level2">
+<h2>3. Spawn &amp; phục vụ (<code>pr</code>, <code>Vr</code>, <code>El</code>)</h2>
+<ul>
+<li><p>Spawn base interval: <strong>10.500ms/khách</strong> (<code>pr.baseInterval</code>). Lần spawn đầu ca chậm hơn (warmup): <code>baseInterval × mr</code> với <strong><code>mr</code>=1.6</strong> → ~16.800ms.</p></li>
+<li><p><strong>Base patience (kiên nhẫn chờ phục vụ) ≈ 18.000ms (18s)</strong> cho khách thường (sunny); ×weather (Oi bức 0,75 → 13,5s; mưa phùn 1,15 → ~20,7s) ×type (rush/vip 0,611; stubborn 10; chi_pheo 5).</p></li>
+<li><p>Thời gian khách ngồi uống (enjoyTime, giữ ghế sau khi phục vụ): <strong>5.000–10.000ms</strong> (random, ×enjoyMultiplier theo loại khách &amp; rush; stubborn ×10 → tới ~111s).</p></li>
+<li><p>Hệ số mặc định: payment ×1, tip ×1, leavePenalty ×1.</p></li>
+<li><p><strong>Sức chứa (lõi throughput) — <code>El</code>:</strong></p>
+<ul>
+<li><strong>Ghế ngồi = số ghế</strong> (tới 10): mỗi ghế chứa 1 khách đang phục vụ/uống.</li>
+<li><strong>Hàng đợi (queue "Đợi")</strong>: mở khoá từ <strong>3 ghế</strong>; sức chứa = <strong><code>baseMaxSize(2) + ⌊số_ghế / 3⌋ × slotsPerChairTier(1)</code></strong> → vd 9 ghế = 2 + 3 = <strong>5 chỗ đợi</strong>.</li>
+<li>Tổng khách "trong quán" cùng lúc = ghế + queue. Vượt queue → khách bỏ đi ngay (<code>queueOverflow</code>).</li>
+</ul></li>
+<li><p>State khởi đầu: <strong>300 xu</strong>; kho tea 10/15, water 10/15, ice 10/20, peanutCandy 5/15, sunflowerSeeds 5/15.</p></li>
+<li><p><strong>Data model mỗi khách</strong> (15 field): <code>id, type, state, chairIndex</code> (ghế ngồi), <code>order</code> (+<code>secondaryOrder</code>), <code>patience/maxPatience</code>, <code>enjoyTime/maxEnjoyTime</code>, <code>payment, receivedTip, waitingSince, pendingServe</code>, và bộ <strong>reserve tài nguyên</strong>: <code>reservedGlassId</code> (ly có id riêng), <code>reservedIce</code>, <code>reservedBrewedTea</code>. → Khi phục vụ, game <strong>giữ chỗ 1 ly + đá + ấm trà</strong> cho khách đó; ly mang id, khi khách rời → trả về dạng <strong>bẩn</strong> vào chu kỳ rửa (Bộ rửa ly). Đây là cốt lõi của "throughput economy" (ly là tài nguyên quay vòng có định danh).</p></li>
+<li><p><strong>2 pipeline tự động (refill):</strong></p>
+<ul>
+<li><strong>Pha trà (ấm tích)</strong>: tự brew bù khi <code>storedTea &lt; max</code>; brew 1 batch (Lv4: tới 6 ly, brewTime 8s) → <code>storedTea</code> tăng dần (vd 17/18); <code>isBrewing</code>+<code>currentBrewTime</code> cho thanh tiến độ. Phục vụ trà = −1 storedTea.</li>
+<li><strong>Rửa ly (bộ rửa)</strong>: vòng đời ly <code>clean → in_use (reservedGlassId) → dirty → queue → washing → clean</code>. Lv4: <strong>3 slot song song, 2,5s/ly</strong>. Rack count (vd 11/12) = ly sạch sẵn (mẫu số "12" = TỔNG ly hiện có lúc đó = 10 mua + 2 Chủ tịch tặng, KHÔNG phải cap hệ thống; xem đính chính mục 9). → "refill ly" = rack tăng + thanh washer fill.</li>
+<li>Cả 2 là pipeline auto + progress bar (render canvas), không keyframe CSS riêng.</li>
+</ul></li>
+<li><p><strong>Giá nhập hàng (config <code>mc</code>) — ✅ chốt từ bundle + 2 snapshot, CÓ chiết khấu sỉ ~17–25%:</strong> mỗi nguyên liệu có <code>unitPrice</code> (lẻ) và <code>bulkPrice</code> (gói <code>bulkSize</code>=10). <strong>Nút "+10" = <code>bulkPrice</code> cố định</strong> (đã rẻ hơn lẻ). <strong>Nút "Đầy" = <code>floor(thiếu/10)×bulkPrice + (thiếu%10)×unitPrice</code></strong> — tối đa gói 10, phần đuôi lẻ (0–9 đv) tính giá lẻ đắt hơn.</p>
+<table>
+<thead>
+<tr>
+<th>NL</th>
+<th style="text-align: right;">unitPrice (lẻ)</th>
+<th style="text-align: right;">bulkPrice (+10)</th>
+<th style="text-align: right;">bulk/đv</th>
+<th style="text-align: right;">CK sỉ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>trà</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">4,0</td>
+<td style="text-align: right;">−20%</td>
+</tr>
+<tr>
+<td>nước pha trà</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">1,5</td>
+<td style="text-align: right;">−25%</td>
+</tr>
+<tr>
+<td>đá</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">2,5</td>
+<td style="text-align: right;">−17%</td>
+</tr>
+<tr>
+<td>kẹo lạc</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">120</td>
+<td style="text-align: right;">12,0</td>
+<td style="text-align: right;">−20%</td>
+</tr>
+<tr>
+<td>hạt hướng dương</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">65</td>
+<td style="text-align: right;">6,5</td>
+<td style="text-align: right;">−19%</td>
+</tr>
+</tbody>
+</table>
+<p>Khớp tuyệt đối 5 món × 2 snapshot (vd trà thiếu 61 = 6×40+1×5 = 245; kẹo thiếu 38 = 3×120+8×15 = 480; đá thiếu 63 = 6×25+3×3 = 159). → <strong>Chiến thuật: luôn bấm +10 (giá sỉ); "Đầy" chỉ lỗ thêm ở đuôi lẻ.</strong> ⚠️ <em>Đính chính: ghi chú cũ "không có chiết khấu sỉ / Đầy đắt hơn theo % kho" là SAI — phần "premium" thực chất là đuôi lẻ tính unitPrice.</em></p></li>
+<li><p><strong>Món bán (config <code>Wa</code>) — biên lời gốc (trước tip/sự kiện/thời tiết):</strong> <strong>Trà đá</strong> sellPrice <strong>50</strong>, cần trà+nước+đá (1 mỗi loại) + <strong>ly</strong> (rửa tái dùng), prepTime 3s → COGS sỉ ~8 → <strong>lời ~42 (84%)</strong>. <strong>Kẹo lạc</strong> sellPrice <strong>30</strong>, 1 kẹo, prep 0s, <strong>không ly</strong> → lời 18 (60%). <strong>Hạt</strong> sellPrice <strong>20</strong>, 1 hạt, prep 0s, <strong>không ly</strong> → lời 13,5 (67%). → Trà đá lời cao nhất nhưng nghẽn ly+pha; đồ nhắm lời thấp hơn nhưng <strong>tức thì, không chiếm ly</strong> → bán kèm lấp công suất thừa.</p></li>
+</ul>
+</section>
+<section id="4-loại-khách-ni--spawn-weight--modifier" class="level2">
+<h2>4. Loại khách (<code>ni</code>) — spawn weight &amp; modifier</h2>
+<table>
+<thead>
+<tr>
+<th>Loại</th>
+<th style="text-align: right;">Weight</th>
+<th style="text-align: right;">Patience</th>
+<th>Khác</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>normal</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">×1</td>
+<td>baseline</td>
+</tr>
+<tr>
+<td>rush (khách vội)</td>
+<td style="text-align: right;">0.3</td>
+<td style="text-align: right;">×0.611</td>
+<td>ép phục vụ nhanh</td>
+</tr>
+<tr>
+<td><strong>vip</strong></td>
+<td style="text-align: right;">0.1</td>
+<td style="text-align: right;">×0.611</td>
+<td><strong>tip ×10, phạt mất khách ×10</strong>. ⚠️ <strong>NGHI VẤN (live): VIP có premium GIÁ ĐƠN ~×1.5 server-side</strong> (quan sát: cùng 1 trà pre-tip, thường 74 vs VIP 110 = ×1.486; config client KHÔNG có paymentMultiplier cho vip → nếu đúng là hệ số server. Cần bắt 1 VIP pre-serve để chốt.)</td>
+</tr>
+<tr>
+<td><strong>chi_pheo (Chí Phèo)</strong></td>
+<td style="text-align: right;">0.03</td>
+<td style="text-align: right;">×5</td>
+<td><strong>payment 0, tip 0</strong> — không trả tiền, chiếm chỗ lâu</td>
+</tr>
+<tr>
+<td><strong>stubborn (khó tính/ngồi lỳ)</strong></td>
+<td style="text-align: right;">0.1</td>
+<td style="text-align: right;">×10</td>
+<td><strong>enjoyTime ×10 → ngồi giữ ghế 50–100s</strong> (random 5-10s ×10); trả tiền + tip <strong>BÌNH THƯỜNG</strong>, uy tín +3/+1 như mọi khách. "Chi phí" = chiếm ghế lâu (giảm vòng quay), KHÔNG phải trả ít</td>
+</tr>
+</tbody>
+</table>
+<p>→ Xác suất VIP gốc (không biển hiệu) = 0.1 / (1+0.3+0.1+0.03+0.1) = <strong>6.5%</strong>. VIP là faucet mạnh nhưng phạt cũng ×10 → chỉ đáng đẩy VIP khi throughput đã tốt.</p>
+<p><strong>Bảng so sánh đầy đủ (bundle + live) — chiến thuật "ai phục vụ trước":</strong></p>
+<table>
+<thead>
+<tr>
+<th>Loại</th>
+<th style="text-align: right;">Weight</th>
+<th>Trả tiền</th>
+<th>Tip</th>
+<th>Cơ chế &amp; chiến thuật</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Thường</td>
+<td style="text-align: right;">1.0</td>
+<td>~87–94/trà</td>
+<td>có (+3 rep)</td>
+<td>nền tảng, không gấp</td>
+</tr>
+<tr>
+<td>Vội</td>
+<td style="text-align: right;">0.3</td>
+<td>bình thường</td>
+<td>có nếu kịp</td>
+<td>patience ×0,611 ngắn → xử nhanh; đông trong rush</td>
+</tr>
+<tr>
+<td><strong>VIP</strong></td>
+<td style="text-align: right;">0.1</td>
+<td><strong>~60–400+</strong></td>
+<td><strong>×10</strong></td>
+<td>jackpot, patience ×0,611 ngắn → <strong>ưu tiên #1, phục vụ ngay + trong cửa sổ boost</strong>; lỡ = phạt ×10</td>
+</tr>
+<tr>
+<td>Chí Phèo</td>
+<td style="text-align: right;">0.03</td>
+<td><strong>0</strong></td>
+<td>0</td>
+<td>không trả + chiếm ghế (patience ×5); nhưng tích đủ <strong>lộ Chủ tịch → quà</strong> (xu 350-390 / nguyên liệu ~15); humid ×1,5</td>
+</tr>
+<tr>
+<td>Ngồi lỳ</td>
+<td style="text-align: right;">0.1</td>
+<td>bình thường</td>
+<td>có (+3)</td>
+<td>trả+tip bình thường nhưng <strong>giữ ghế 50–100s</strong> (enjoy ×10) → bẫy throughput; đuổi bằng uy tín (cost ∝ giây ngồi)</td>
+</tr>
+<tr>
+<td>Shipper</td>
+<td style="text-align: right;">timer ~220s</td>
+<td>bundle −25%</td>
+<td>không tip (+1)</td>
+<td>làn riêng, <strong>không tốn ly</strong>, đơn to, lỡ phạt 50% gross; quý khi ly/đá là bottleneck</td>
+</tr>
+</tbody>
+</table>
+<p>→ Mỗi loại ép một quyết định khác: VIP/vội = tốc độ, ngồi lỳ = quản ghế, Chí Phèo = đánh đổi rủi ro lấy quà, shipper = tận dụng năng lực thừa. Đây là lõi tạo chiều sâu của "throughput + ưu tiên".</p>
+</section>
+<section id="5-thời-tiết-ei--phân-bố-mp" class="level2">
+<h2>5. Thời tiết (<code>ei</code>) + phân bố (<code>Mp</code>)</h2>
+<p>Phân bố spawn thời tiết (weight): <strong>sunny 35, hot 20, humid 10, light_rain 20, cold 15</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>Thời tiết</th>
+<th style="text-align: right;">spawn</th>
+<th style="text-align: right;">patience</th>
+<th style="text-align: right;">đá tan</th>
+<th style="text-align: right;">snack</th>
+<th style="text-align: right;">tip</th>
+<th style="text-align: right;">shipper</th>
+<th>khác</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>sunny</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td>baseline</td>
+</tr>
+<tr>
+<td>hot (Nóng)</td>
+<td style="text-align: right;">1.15</td>
+<td style="text-align: right;">0.85</td>
+<td style="text-align: right;"><strong>1.5</strong></td>
+<td style="text-align: right;">0.4</td>
+<td style="text-align: right;">1.15</td>
+<td style="text-align: right;">1.5</td>
+<td>—</td>
+</tr>
+<tr>
+<td>humid (Oi bức)</td>
+<td style="text-align: right;">1.05</td>
+<td style="text-align: right;">0.75</td>
+<td style="text-align: right;"><strong>2.0</strong></td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: right;"><strong>1.2</strong></td>
+<td style="text-align: right;">2.0</td>
+<td>chi_pheo ×1.5</td>
+</tr>
+<tr>
+<td>light_rain</td>
+<td style="text-align: right;">0.8</td>
+<td style="text-align: right;">1.15</td>
+<td style="text-align: right;">0.85</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"><strong>3.0</strong></td>
+<td>stubborn ×2</td>
+</tr>
+<tr>
+<td>cold (Lạnh)</td>
+<td style="text-align: right;">0.9</td>
+<td style="text-align: right;">0.8</td>
+<td style="text-align: right;">0.4</td>
+<td style="text-align: right;">1.5</td>
+<td style="text-align: right;">1.15</td>
+<td style="text-align: right;">2.0</td>
+<td><strong>icePerDrink 0, teaPerDrink 2, brew ×2.5, wash ×2</strong></td>
+</tr>
+</tbody>
+</table>
+<p>→ Mỗi thời tiết đổi chiến thuật tối ưu: nóng/ẩm = đá tan nhanh + tip cao (đua phục vụ trà); lạnh = không cần đá nhưng tốn gấp đôi trà &amp; pha/rửa chậm; mưa = ít khách nhưng nhiều shipper.</p>
+</section>
+<section id="6-giờ-cao-điểm-cp" class="level2">
+<h2>6. Giờ cao điểm (<code>Cp</code>)</h2>
+<table>
+<thead>
+<tr>
+<th>Mức</th>
+<th style="text-align: right;">Đếm ngược</th>
+<th style="text-align: right;">Kéo dài</th>
+<th style="text-align: right;">payment</th>
+<th style="text-align: right;">tip</th>
+<th style="text-align: right;">phạt mất khách</th>
+<th style="text-align: right;">rush weight</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>light</td>
+<td style="text-align: right;">45s</td>
+<td style="text-align: right;">90s</td>
+<td style="text-align: right;">×1.05</td>
+<td style="text-align: right;">×1.1</td>
+<td style="text-align: right;">×1.8</td>
+<td style="text-align: right;">×2</td>
+</tr>
+<tr>
+<td>heavy</td>
+<td style="text-align: right;">60s</td>
+<td style="text-align: right;">150s</td>
+<td style="text-align: right;">×1.1</td>
+<td style="text-align: right;">×1.18</td>
+<td style="text-align: right;">×2.5</td>
+<td style="text-align: right;">×3 (+enjoy ×1.15)</td>
+</tr>
+<tr>
+<td>lunchLight</td>
+<td style="text-align: right;">60s</td>
+<td style="text-align: right;">120s</td>
+<td style="text-align: right;">×1.05</td>
+<td style="text-align: right;">×1.1</td>
+<td style="text-align: right;">×1.8</td>
+<td style="text-align: right;">×2.5</td>
+</tr>
+</tbody>
+</table>
+<p>(Thêm từ config <code>Cp</code>: <strong>spawnInterval ×0.35 (nhẹ) / ×0.2 (nặng)</strong> với <strong>sàn <code>rushMinIntervalMs</code> = 1.000ms (nhẹ) / 700ms (nặng)</strong> → trần đầu vào ~1,43 khách/giây ở nặng = nguồn gốc throughput-cap. lunchLight: spawn ×0.35, sàn 1.000ms.)</p>
+<p>→ Faucet có rủi ro: throughput tốt = hốt bạc; kém = ăn phạt.</p>
+<ul>
+<li><strong>Ô HUD "Cao điểm tới: {Nhẹ/Nặng} mm:ss" = đếm ngược tới đợt rush kế</strong> (✅ live). Lịch <strong>pre-roll có seed</strong> (<code>sessionSchedule.seed</code> + <code>slots:[{type,countdownStartOffsetMs}]</code>) → <strong>2 đợt/ca định sẵn từ đầu</strong> (vd ca này: nhẹ @~2:33, nặng @~6:31; ca khác thứ tự/offset khác). <strong>Telegraph</strong>: lộ <strong>loại (cường độ)</strong> + <strong>ETA</strong> trước 45–60s → người chơi kịp <strong>nhập đá/ly, tiễn ngồi lỳ, dồn sức</strong>; biến surge từ "bất ngờ" thành "có kế hoạch". Seed → công bằng &amp; học được nhịp, không phải RNG bất chợt.</li>
+</ul>
+</section>
+<section id="7-biển-hiệu-fc--đổi-customer-mix" class="level2">
+<h2>7. Biển hiệu (<code>fc</code>) — đổi customer mix</h2>
+<p>Phí lắp lần đầu: <strong>20.000 xu</strong> (<code>Lh</code>), yêu cầu quầy lv3 (<code>fr</code>=3, observed/UI-backed — khớp cả ảnh UI lẫn bundle).</p>
+<table>
+<thead>
+<tr>
+<th>Style</th>
+<th style="text-align: right;">Giá</th>
+<th>Hiệu ứng</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>wood (Gỗ)</td>
+<td style="text-align: right;">0</td>
+<td>VIP ×2</td>
+</tr>
+<tr>
+<td>neon</td>
+<td style="text-align: right;">15.000</td>
+<td>VIP ×2, shipper ×1.2</td>
+</tr>
+<tr>
+<td>vintage</td>
+<td style="text-align: right;">20.000</td>
+<td>VIP ×2, rush ×0.5</td>
+</tr>
+<tr>
+<td>calligraphy (Thư pháp)</td>
+<td style="text-align: right;">25.000</td>
+<td>VIP ×2, stubborn ×0.8</td>
+</tr>
+<tr>
+<td><strong>golden (Hoàng kim)</strong></td>
+<td style="text-align: right;">30.000 + <strong>gate 5.000 uy tín</strong></td>
+<td><strong>VIP ×3</strong></td>
+</tr>
+</tbody>
+</table>
+<p>→ Không phải cosmetic — là modifier risk/reward (đẩy VIP = tăng EV nhưng tăng exposure phạt ×10).</p>
+</section>
+<section id="8-mặt-bằng-rp--multiplier--rent" class="level2">
+<h2>8. Mặt bằng (<code>Rp</code>) — multiplier + rent</h2>
+<p>Rent/ngày = <code>Dn(e) = round(700 · (e/5) · (1 + e/50))</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Mặt bằng</th>
+<th style="text-align: right;">Rent/ngày</th>
+<th style="text-align: right;">Multiplier</th>
+<th>Mở khoá</th>
+<th style="text-align: right;">Doanh thu hoà rent (tự tính)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hẻm Nhỏ</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">×1.00</td>
+<td>mặc định</td>
+<td style="text-align: right;">—</td>
+</tr>
+<tr>
+<td>Công Trường</td>
+<td style="text-align: right;">770</td>
+<td style="text-align: right;">×1.05</td>
+<td>LP1</td>
+<td style="text-align: right;">~15.400</td>
+</tr>
+<tr>
+<td>Chung Cư Cũ</td>
+<td style="text-align: right;">1.680</td>
+<td style="text-align: right;">×1.10</td>
+<td>LP1</td>
+<td style="text-align: right;">~16.800</td>
+</tr>
+<tr>
+<td>Cổng Trường</td>
+<td style="text-align: right;">2.730</td>
+<td style="text-align: right;">×1.15</td>
+<td>LP2</td>
+<td style="text-align: right;">~18.200</td>
+</tr>
+<tr>
+<td>Chợ Đêm</td>
+<td style="text-align: right;">3.920</td>
+<td style="text-align: right;">×1.20</td>
+<td>LP2</td>
+<td style="text-align: right;">~19.600</td>
+</tr>
+<tr>
+<td>Khu Văn Phòng</td>
+<td style="text-align: right;">6.720</td>
+<td style="text-align: right;">×1.30</td>
+<td>LP3</td>
+<td style="text-align: right;">~22.400</td>
+</tr>
+<tr>
+<td>Phố Cổ</td>
+<td style="text-align: right;">11.970</td>
+<td style="text-align: right;">×1.45</td>
+<td>LP4</td>
+<td style="text-align: right;">~26.600</td>
+</tr>
+<tr>
+<td>Ga Metro</td>
+<td style="text-align: right;">18.480</td>
+<td style="text-align: right;">×1.60</td>
+<td>LP5</td>
+<td style="text-align: right;">~30.800</td>
+</tr>
+<tr>
+<td>Khu Phố Tây (expat_quarter)</td>
+<td style="text-align: right;">29.120</td>
+<td style="text-align: right;">×1.80</td>
+<td>LP6</td>
+<td style="text-align: right;">~36.400</td>
+</tr>
+</tbody>
+</table>
+<p>(Rent = <code>Dn(80)</code> = round(700·16·(1+1.6)) = 29.120; cột hoà rent = rent/(mult−1).)</p>
+<p><strong>Cơ chế thuê (xác nhận live từ màn Thuê Mặt Bằng):</strong></p>
+<ul>
+<li><strong>Kỳ thuê = 7 ngày</strong>, trả trước cả kỳ: <strong>tiền kỳ = rent/ngày × 7</strong> (vd Chợ Đêm 3.920×7 = 27.440; Cổng Trường 19.110; Khu Văn Phòng 47.040; Phố Cổ 83.790; Ga Metro 129.360; Khu Phố Tây 203.840).</li>
+<li><strong>Cọc = 25% tiền kỳ</strong> (= rent/ngày × 1,75), <strong>hoàn lại</strong> khi hết hạn bình thường; vd Chợ Đêm cọc 6.860, Cổng Trường 4.778, Phố Cổ 20.948 (đều = kỳ × 0,25).</li>
+<li><strong>Rời đi sớm → MẤT cọc</strong> và <strong>tự quay về Hẻm Nhỏ</strong> (free, ×1.0).</li>
+<li><strong>Cổng mở khoá = bậc Life Path</strong>: Công Trường/Chung Cư Cũ = LP1; Cổng Trường/Chợ Đêm = LP2; Khu Văn Phòng = LP3; <strong>Phố Cổ = LP4 (Rành Nghề)</strong>; <strong>Ga Metro = LP5 (Sáng Tạo)</strong>; <strong>Khu Phố Tây = LP6 (Bậc Thầy)</strong>.</li>
+<li><strong>✅ ĐÍNH CHÍNH: chip HUD "Chợ Đêm ×1.20" = <code>paymentMultiplier</code> của MẶT BẰNG đang thuê (KHÔNG phải event tạm thời)</strong>; số "Xd Yh" cạnh nó = <strong>đồng hồ hết hạn thuê</strong> (<code>expiresAt</code>). Config <code>mc</code>/location: <code>{id, name, dailyRate:Dn(e), paymentMultiplier, requiredLP, indicator}</code>. Dn(e)=<code>round(700·(e/5)·(1+e/50))</code>. State <code>stallRental:{location, deposit, rentPaid, expiresAt, paidAt, depositRefundedAt, rentalExpired}</code>. ✅ live: night_market rentPaid 27.440 (3.920×7), deposit 6.860 (25%). <strong>✅ Endpoint (bắt live trọn flow): <code>POST /api/v1/rental/move {targetLocation}</code></strong> — dùng chung cho cả trả (move về <code>alley</code>) lẫn thuê mới; thuê office_district trừ <strong>đúng 58.800 = 47.040 (Dn(30)×7) + 11.760 (cọc 25%)</strong>, <code>expiresAt = paidAt + đúng 604.800.000ms (7 ngày tròn)</code>; <code>GET /rental/locations</code> = danh sách.</li>
+</ul>
+<p>→ Sink định kỳ (trả trước 7 ngày + cọc) chống lạm phát mid/late game; thuê sớm hoặc nhảy mặt bằng liên tục là lỗ (mất cọc).</p>
+</section>
+<section id="9-nâng-cấp-thiết-bị" class="level2">
+<h2>9. Nâng cấp thiết bị</h2>
+<p><strong>Thùng đá <code>Cc</code></strong> (sức chứa ĐÁ / chu kỳ tan) — <em>kho riêng chỉ cho đá</em>: 0→cap20/30s · 2k→30/50s · 8k→50/90s · 30k→120/240s · 100k→250/<strong>không tan</strong>. ⚠️ <strong>Đá có kho riêng (Thùng đá), tách khỏi Quầy</strong> → đó là lý do đá thường có cap khác (vd L3=50) trong khi trà/nước/kẹo/hạt theo Quầy (vd 80). Vì đá là tài nguyên duy nhất <strong>bị tan theo thời gian</strong> nên cần thùng chuyên dụng quản cả cap lẫn tốc độ tan. Muốn tăng cap đá phải nâng Thùng đá, không phải Quầy.</p>
+<p><strong>Ấm tích <code>za</code></strong> (storage/batch/brewTime): 0→3/1/15s · 3k→5/2/13s · 12k→8/3/11s · 50k→18/6/8s · 200k→40/12/6s.</p>
+<p><strong>Bộ rửa ly <code>Ir</code></strong> (washTime/slots): 0→7s/1 · 2.5k→5s/1 · 10k→4s/2 · 40k→2.5s/3 · 150k→1.5s/5.</p>
+<p><strong>Quầy (counter) = mảng <code>Al</code></strong> — sức chứa kho nguyên liệu (<code>/upgrade/stall</code>): 0→cap15 · 1k→25 · 5k→45 · 20k→80 · 80k→150 (UI: "Quầy Lv3→20k, Lv4→80k" khớp Al L4/L5). <strong>Level Quầy = "stall level"</strong>; biển hiệu yêu cầu Quầy Lv3 (<code>fr</code>=3). Phân biệt rõ: kho (Al/Quầy) ≠ <strong>số ly</strong> (<code>glasses[]</code>, mua qua <code>/buy/cup</code>) ≠ <strong>ghế nhựa</strong> (<code>jl</code>). ⚠️ <strong>Đính chính (xác nhận từ người chơi + quan sát top1):</strong> ly có <strong>buy-cap = 10</strong> (mua tối đa 10) nhưng <strong>storage-cap = 20</strong> (kho chứa tới 20); phần dôi 10→20 chỉ lấp bằng <strong>quà "Chủ tịch giả nghèo"</strong> (+1 ly/lần). Số "12" quan sát trước = 10 mua + 2 ly Chủ tịch tặng (KHÔNG phải cap hệ thống); top1 = 17 ly (10 + 7 tặng).</p>
+<p><strong>Ghế nhựa <code>jl</code></strong> (mua thêm, giá theo số ghế): 4→200 · 5→500 · 6→1.000 · 7→1.500 · 8→2.500 · 9→5.000 · 10→10.000.</p>
+<p><strong>Ghế tựa (backrest, <code>/upgrade/chair</code>)</strong> — nâng từng ghế nhựa lên ghế tựa, <strong>mở cho ghế đó khách gọi 2 món</strong> (<code>secondaryOrder</code>), đổi lại <strong>phí sửa khi côn đồ phá ×3</strong>. Tối đa 9 (mỗi ghế 1 lần). Nâng cấp thứ <code>t</code> (t=0..8): <strong>coin = 100.000 + t×50.000</strong> (100k→500k); <strong>uy tín = [3.000, 4.500, 6.500, 9.000, 12.000, 16.000, 22.000, 30.000, 40.000]</strong>. Điều kiện: đủ 9 ghế nhựa + <strong>huy hiệu "Kết Nối"</strong>. Tổng nâng cả 9: ~<strong>2,7 triệu xu + ~143.000 uy tín</strong> (sink late-game lớn). ✅ <strong>Endpoint live: <code>POST /upgrade/chair {chairIndex}</code></strong> — body chọn GHẾ vật lý (0–8) để gắn tựa; <strong>giá theo SỐ LẦN nâng <code>t</code> (không theo chairIndex)</strong>. Đo live ghế #2: trừ đúng 150.000 xu. → <strong>2-món KHÔNG phải mặc định</strong> mà mở dần qua ghế tựa. ✅ <strong>Đối chiếu live</strong>: ghế 1 (t=0)=100k+3.000⭐, ghế 2 (t=1)=150k+4.500⭐ — khớp công thức (<code>coinCost=1e5+t·5e4</code>, <code>repCost=[3e3,4500,6500,9e3,12e3,16e3,22e3,3e4,4e4][t]</code>, gate <code>badges.includes(Kết Nối)</code>). <strong>Thiết kế: xu tăng TUYẾN TÍNH (+50k đều) nhưng uy tín tăng LỒI (3k→40k, ×13) → uy tín mới là cổng thật cuối game</strong> (faucet uy tín nhỏ giọt: +3/khách boa, nhiệm vụ, điểm danh). Dual-gate (xu + uy tín) ép chơi cân bằng cả volume lẫn chất lượng phục vụ.</p>
+<p><strong>Chó <code>un</code>/<code>iv</code></strong>: mua 2.000 xu + 20 đá; nâng cấp lv2 (8.000 xu + 20 kẹo), lv3 (25.000 xu + 40 kẹo). Vai trò: bảo hiểm rủi ro/trộm.</p>
+</section>
+<section id="10-thể-lực-ca--trần-ngày-de" class="level2">
+<h2>10. Thể lực, ca &amp; trần ngày (<code>De</code>)</h2>
+<ul>
+<li>Thể lực tối đa: <strong>720.000ms = 12 phút</strong> chơi.</li>
+<li>Hồi: tốc độ 1/2.5 = <strong>0.4×thời-gian-thực</strong> → hồi đầy ~<strong>30 phút thực</strong>.</li>
+<li>Cảnh báo khi còn 60s; <strong>phải đầy 100% mới mở ca mới</strong>.</li>
+<li>Trần ca/ngày: newbie <strong>8</strong>, regular <strong>6</strong>, veteran <strong>5</strong> (<code>dailyShiftsCompleted</code> vs <code>dailyProgressionTier</code>). <strong>Nghịch lý có chủ đích: veteran bị siết ÍT ca nhất → anti-grind + catch-up</strong> (người mới chơi nhiều hơn để đuổi kịp).</li>
+<li><strong>Trần tiền cứng/ngày: 200.000 xu</strong> (<code>dailyEarningCapReached</code>).</li>
+<li><strong>✅ Rollover ngày (bắt live, vắt qua nửa đêm):</strong> day-key = <strong>ngày lịch giờ VN</strong> (<code>Asia/Ho_Chi_Minh</code>), hàm <code>Fn()</code>=<code>Intl.DateTimeFormat('en-CA',tz)</code>→<code>"YYYY-MM-DD"</code>. <strong>Reset/so sánh = SERVER-SIDE</strong> (client chỉ mirror <code>dailyEarningCapDateKey</code>/<code>dailyShiftsCompleted</code>/<code>dailyGameplayEarned</code> — chống chỉnh đồng hồ máy). Reset theo <strong>mốc nửa đêm thực</strong>, KHÔNG theo lúc mở ca. → <strong>Ca vắt qua 00:00 (✅ bắt live ca bridge Jun04→05):</strong> <strong>tiền tính theo TỪNG LƯỢT EARN, gán bucket theo giờ VN tại thời điểm earn</strong> → lượt trước nửa đêm vào cap ngày cũ, lượt sau vào cap ngày mới (chia đúng tại 00:00). <strong>Cap 200k là PER-DAY-BUCKET độc lập</strong> → một ca liên tục vắt nửa đêm có thể góp <strong>cả 2 cap</strong> (tối đa lý thuyết 200k+200k). <strong>Số ca credit lúc FINALIZE → vào ngày đóng ca</strong> → ca đóng sau 00:00 = <strong>ca #1 ngày mới</strong> (bridge "hoàn" 1 suất ca: hết 5 ca ngày cũ vẫn mở ca rồi để đóng sang ngày mới = fresh 5 ca + cap mới). <strong>Nhiệm vụ ngày + điểm danh + login reset tại nửa đêm VN</strong> (target mới); ca bridge có thể hoàn thành luôn vài nhiệm vụ ngày mới. <code>dailyEarningStats[]</code> lưu lịch sử từng ngày (<code>{day, totalEarned, onlineMs, firstEarnAt, hardCapHitAt}</code>). (Lưu ý: <code>dailyGameplayEarned</code> (metric tính-vào-cap) lệch nhẹ so "Tổng thu" hiển thị — định nghĩa khác, không do chia ngày.) <strong>✅ Mirror-case (bắt live lần 2):</strong> ca <strong>finalize TRƯỚC 00:00</strong> rồi mới qua nửa đêm → toàn bộ (tiền + số ca) tính <strong>ngày cũ</strong>; ngày mới mở ra "nguyên vẹn" (0/5 ca, 0 cap, <strong>well-rested chưa dùng</strong> vì keyed theo open-day). → Gộp 2 case: <strong>mọi attribution theo thời điểm earn/finalize</strong>; well-rested theo open-day — quy luật đã khép kín.</li>
+<li><strong>✅ Hai trần ngày TÁCH BIỆT — xác nhận live ("Hết giới hạn ngày"):</strong> màn đóng cửa báo "Hết giới hạn ngày" khi <code>dailyShiftsCompleted=5</code> (veteran) <strong>dù <code>currentStaminaMs=720000</code> (100%, đã hồi đủ) VÀ <code>dailyEarningCapReached=false</code> (mới 121.472/200k, dư ~78k)</strong>. → <strong>Ràng buộc thực tế với đa số là SỐ CA, không phải tiền hay stamina.</strong> Trần tiền 200k chỉ chặn top-player throughput cao (cần ~40k/ca × 5). <strong>Không có nút mua thêm ca</strong> (chỉ disable) → anti-P2W. Hết ca <strong>vẫn TIÊU xu được</strong> (Nâng cấp/Nhập hàng/Xếp hạng/Nhiệm vụ/Nhận quà mở), chỉ <strong>khoá KIẾM từ ca mới</strong> → tách "earn" khỏi "spend &amp; vận hành". Màn này còn <strong>preview thời tiết ca kế</strong> để lên kế hoạch nhập hàng trước.</li>
+<li><strong>Well-rested ("Nghỉ ngơi tốt") — ✅ dive sâu (config <code>De</code> + ảnh live):</strong> <code>wellRestedBonusMultiplier:1.1</code> (<strong>+10% thu nhập</strong>), <code>wellRestedDurationMs:600.000</code> (<strong>10 phút</strong>). Áp <strong>×1.1 lên (payment + tip) sau cùng</strong> (cả khách thường lẫn đơn shipper — xem mục 12). <strong>1 lần/ngày</strong> (<code>wellRestedUsedDateKey</code>), cấp khi mở ca lúc đã nghỉ đủ (full stamina). <strong>✅ Bất đối xứng mốc ngày (bắt live — ca bridge KHÔNG có ×1.1):</strong> well-rested keyed theo <strong>lúc MỞ ca (open-day)</strong>, còn số-ca/doanh-thu keyed theo <strong>lúc FINALIZE (finalize-day)</strong>. Ca vắt nửa đêm <strong>mở</strong> ở ngày cũ (well-rested ngày cũ đã dùng → từ chối) nhưng <strong>đóng</strong> ở ngày mới (tính là ca #1 ngày mới) → rơi vào kẽ hở: "ca đầu ngày mới" lại chịu sổ well-rested ngày cũ → <strong>không được ×1.1</strong>. (Buff ngày mới chưa mất: <code>wellRestedUsedDateKey</code> vẫn là ngày cũ → ca sau mở trong ngày mới + nghỉ đủ vẫn được cấp.) → <strong>Bài học bia hơi: keyed well-rested + shift-count CÙNG một mốc (open hoặc finalize) để tránh bất nhất.</strong> Đếm ngược qua <strong><code>wellRestedRemainingMs</code></strong> → hiện trên <strong>HUD pill TÍM <code>×1.10</code></strong> (đồng hồ mm:ss; class <code>well-rested--ending</code> <strong>nhấp nháy 10s cuối</strong>). Floater lúc nhận: "☀️ Welcome back! +10% for 10 min". Vì buff 10 phút ≈ trùng độ dài 1 ca (12 phút) → gần như phủ trọn <strong>ca đầu tiên trong ngày</strong> → nên dồn VIP/rush vào ca này.</li>
+<li>Hồi thể lực theo phiên (<code>jv</code>): phiên 1 hồi nhanh (denom 0.5), phiên 2 (1.0), phiên 3 (1.5) → càng về sau hồi càng chậm.</li>
+<li><strong>Đóng ca = trạng thái "closing" có grace (quan sát live):</strong> hết thể lực → <code>stallOperatingMode:"closing"</code>, <code>closeReason:"exhausted"</code>; <strong>ngừng spawn khách mới</strong> nhưng khách đang <code>enjoying</code> (đã phục vụ) được uống nốt. <strong>✅ Nuance nhiệm vụ (bắt live):</strong> ca chỉ tính <strong>HOÀN THÀNH khi đóng HẲN</strong> (<code>closing→closed</code>, màn tổng kết hiện), KHÔNG phải lúc đồng hồ/thể lực về 0 → nhiệm vụ "Hoàn thành 3 ca" + mở ca kế <strong>chỉ tick sau khi finalize</strong>. Khách <strong>ngồi lỳ</strong> (enjoy ×10, vd 97s) kẹt ở <code>closing</code> → <strong>trì hoãn cả credit nhiệm vụ lẫn mở ca kế</strong> → "Mời về" để đóng ngay. <strong>Khách stubborn (enjoyTime ×10, ~135s) kéo dài thời gian đóng</strong> rõ rệt → có thể dùng <code>/api/v1/customer/kick-all</code> để đuổi hết &amp; đóng ngay. Không thể đóng khi đang có đơn shipper chạy.</li>
+<li><strong>Mốc bắt đầu hồi thể lực (quan sát live):</strong> cooldown <strong>KHÔNG tính từ lúc hết giờ ca</strong>, mà từ khi <strong>khách về hết &amp; quán vào <code>"resting"</code></strong>. Bằng chứng: <code>lastSessionEndedAt</code> cách 358s nhưng <code>currentStaminaMs</code> mới ~2.445ms (≈ 6s thực × 0,4) → đồng hồ vừa mới chạy. Ngoài ra regen <strong>chỉ đếm khi game active</strong> — lúc pause/mất focus (<code>fairness_paused</code>) thì <strong>dừng đếm</strong> (chống lách bằng cách mở nền). → Hồi đủ 100% cần ~30 phút <em>active</em> sau khi quán đóng thật.</li>
+</ul>
+</section>
+<section id="11-hai-hệ-tiến-trình-tách-biệt" class="level2">
+<h2>11. Hai hệ tiến trình tách biệt</h2>
+<section id="league-theo-mùa-fr--xếp-theo-doanh-thu-mùa" class="level3">
+<h3>League theo mùa (<code>Fr</code>) — xếp theo doanh thu mùa</h3>
+<p><strong>8 bậc theo <code>minSeasonEarned</code> (id EN ✅):</strong> bronze/Đồng 0 · silver/Bạc 20k · gold/Vàng 60k · titanium/Titan 120k · platinum/Bạch Kim 180k · ruby/Hồng Ngọc 300k · diamond/Kim Cương 500k · legend/Huyền Thoại 1.000.000. (Điểm mùa = doanh thu phục vụ + shipper; loại trừ thưởng nhiệm vụ/điểm danh.) <strong>✅ HAI bảng tách biệt (đính chính):</strong></p>
+<ul>
+<li><strong>Bảng "Xếp hạng" chính (<code>GET /api/v1/leaderboard</code>)</strong> = gom theo <strong>BẬC LEAGUE, XUYÊN mặt bằng</strong> (sort <code>seasonEarned</code> giảm dần). Resp: <code>{entries:[{rank, username, seasonEarned, currentMilestone, league, seasonReputationScore, location, firstReachedCurrentSeasonEarnedAt, lastSeen, cosmetic...}], league, seasonId:"S005", myLeague, seasonChampionUsername, seasonEndMs}</code>. Tab ‹ › chuyển bậc; bậc trống hiện "Chưa có ai". <strong>Tie-break = <code>firstReachedCurrentSeasonEarnedAt</code></strong> (đạt mốc trước xếp trên). ⭐ dưới tên = <code>seasonReputationScore</code> (chỉ hiển thị, KHÔNG xếp hạng).</li>
+<li><strong>"Dạo Phố" (<code>/social/street</code>, mục 15)</strong> = gom theo <strong>location × league</strong> (hàng xóm) — bản KHÁC.</li>
+<li><code>peakLeague</code> lưu bậc cao nhất từng đạt (gate Life Path/badge). ✅ <strong>Mẫu live (S005):</strong> maingocanh seasonEarned 312.507 → <strong>Ruby/Hồng Ngọc rank #2</strong> (vừa lên từ Platinum khi vượt 300k); #1 tranngocdinh1 429.804; <strong>Diamond/Kim Cương trống</strong> (chưa ai ≥500k).</li>
+</ul>
+<p><strong>HAI mùa giải SONG SONG (<code>mv</code>):</strong></p>
+<ul>
+<li><strong>Mùa Phân Hạng (Placement)</strong> — chu kỳ <strong>7 ngày</strong> (<code>dv</code>=7). Thưởng đậm + huy chương top 10 + khắc <strong>Đền Thiêng</strong> (ảnh: "Mùa Thu Hoạch").</li>
+<li><strong>Mùa Tranh Bá (Conquest)</strong> — chu kỳ <strong>14 ngày</strong> (<code>hv</code>=14). Thưởng nhẹ hơn (ảnh: +10 đá ở Hồng Ngọc).</li>
+<li>Neo thời gian: epoch <strong>2026-04-11 10:00 UTC</strong> (<code>Np</code>), tz <strong>Asia/Ho_Chi_Minh</strong> → reset đều đặn 7/14 ngày. → 2 ladder kết thúc gần nhau nên nhận 2 quà cùng lúc.</li>
+</ul>
+<p><strong>Thưởng cuối mùa (✅ bắt được live, msg <code>season_end_S004</code>):</strong> mùa <strong>đánh số</strong> (S004). Phần thưởng giao qua <strong>hòm thư</strong> (<code>/inbox/claim-reward</code>), nhận từng phần nếu kho đầy (<code>partialClaimed</code> → "phần còn lại ở dưới"). Ví dụ hạng <strong>Hồng Ngọc/Ruby #7 (top 10)</strong> mùa Phân Hạng:</p>
+<ul>
+<li><strong>Thưởng = BÓ NGUYÊN LIỆU</strong>, KHÔNG phải xu/uy tín: <code>{tea:234, water:237, ice:231, peanutCandy:155, sunflowerSeeds:92}</code> (lượng nhiều khả năng scale theo hạng).</li>
+<li><strong>Top 10 → huy chương 🌟 + khắc tên vào ⛩️ Đền Thiêng</strong> (prestige/social).</li>
+<li>→ Thiết kế hay: thưởng top bằng <strong>"vốn restock" mùa sau + danh hiệu</strong>, <strong>không bơm xu</strong> → tránh lạm phát &amp; không distort xếp hạng mùa kế.</li>
+</ul>
+</section>
+<section id="life-path-ya--milestone-tích-luỹ-cả-đời" class="level3">
+<h3>Life Path (<code>Ya</code>) — milestone tích luỹ cả đời</h3>
+<table>
+<thead>
+<tr>
+<th>Mốc</th>
+<th>Tên</th>
+<th>Điều kiện</th>
+<th>Thưởng</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LP0</td>
+<td>Tập Tành</td>
+<td>0</td>
+<td>—</td>
+</tr>
+<tr>
+<td>LP1</td>
+<td>Vào Nghề</td>
+<td>50k lifetime + 4 ghế + chó</td>
+<td>5k + crate nhỏ</td>
+</tr>
+<tr>
+<td>LP2</td>
+<td>Quen Tay</td>
+<td>150k + quầy lv3 + điện thoại</td>
+<td>10k + badge shard</td>
+</tr>
+<tr>
+<td>LP3</td>
+<td>Thạo Việc</td>
+<td>500k + đồ lv3 + QR</td>
+<td>20k + crate vừa</td>
+</tr>
+<tr>
+<td>LP4</td>
+<td>Rành Nghề</td>
+<td>1.5M + tờ rơi + peak Bạch Kim</td>
+<td>50k + shard + cosmetic</td>
+</tr>
+<tr>
+<td>LP5</td>
+<td>Sáng Tạo</td>
+<td>5M + biển hiệu + peak Hồng Ngọc</td>
+<td>100k + crate vừa + cosmetic</td>
+</tr>
+<tr>
+<td>LP6</td>
+<td>Bậc Thầy</td>
+<td>15M + đồ &amp; quầy lv5 + peak Kim Cương</td>
+<td>250k + crate lớn + 2 badge shard</td>
+</tr>
+<tr>
+<td>LP7</td>
+<td>Huyền Thoại</td>
+<td>50M + 9 ghế + peak Huyền Thoại</td>
+<td>500k + crate</td>
+</tr>
+</tbody>
+</table>
+<p>→ Reward coin nhỏ hơn nhiều so với ngưỡng → milestone chủ yếu để <strong>gate tính năng &amp; status</strong>, chống lạm phát.</p>
+</section>
+</section>
+<section id="12-công-thức-tip--uy-tín-đã-xác-nhận-từ-code--hàm-hbubgp" class="level2">
+<h2>12. Công thức TIP &amp; UY TÍN (đã xác nhận từ code — hàm <code>hb</code>/<code>ub</code>/<code>Gp</code>)</h2>
+<p><strong>Tip — hàm <code>ub(payment, customer)</code>:</strong></p>
+<pre><code>patienceRatio = clamp(patience / maxPatience, 0..1)
+if patienceRatio &lt; 0.6  →  tip = 0           // ev = 0.6
+else                    →  tipBase = round(payment × 0.3)   // tv = 0.3</code></pre>
+<p>→ <strong>Tip gốc = 30% giá trị đơn, NHƯNG chỉ khi phục vụ lúc khách còn ≥60% kiên nhẫn</strong>; trễ quá thì mất sạch tip.</p>
+<p><strong>Chuỗi nhân tip (hàm <code>hb</code>), áp lần lượt lên tip gốc:</strong></p>
+<pre><code>tip ×= rushHour.tipMultiplier     (1.0 / 1.1 / 1.18)
+tip ×= weather.tipMultiplier      (1.0 / 1.15 / 1.2 ...)
+tip ×= customerType.tipMultiplier (VIP = 10, chi_pheo = 0)
+if hasQR và tip&gt;0:  tip = ceil(tip × 1.2)      // Tv = 1.2  → +20%
+payment += tip
+if well-rested:     payment = round(payment × 1.1)   // De.wellRestedBonus</code></pre>
+<p>Lưu ý thứ tự: giá đơn đã được nhân <code>weather.paymentMultiplier</code>(=1) và <code>location.paymentMultiplier</code> TRƯỚC khi tính tip; well-rested ×1.1 áp cuối cùng lên cả (giá + tip).</p>
+<p><strong>⚠️ "Vách đá 60%" — vì sao tiền VIP biến thiên cực mạnh theo thời điểm:</strong> tip là <strong>nhị phân</strong> (0 hoặc 30%), không scale mượt. Nhưng:</p>
+<ul>
+<li>Phục vụ <strong>≥60% patience</strong> → full tip; <strong>&lt;60%</strong> → <strong>tip = 0</strong>. Với khách thường chênh nhỏ (94 vs 60); <strong>với VIP chênh ~5,5×</strong> do tip ×10: VIP phục vụ sớm ≈ <strong>345–364 xu</strong>, phục vụ trễ ≈ <strong>60–66 xu</strong> (chỉ còn tiền gốc).</li>
+<li>Cộng thêm tầng nhân đổi theo timeline ca (rush 1/1,1/1,18 × wellrested 1,1 × weather) cũng bị VIP ×10 khuếch đại → một VIP đáng <strong>~60 đến ~400+ xu</strong> tùy thời điểm.</li>
+<li>→ <strong>Chiến thuật đòn bẩy cao nhất: phục vụ VIP NGAY (giữ &gt;60%) + ưu tiên VIP trong cửa sổ rush/well-rested.</strong> Lỡ/trễ 1 VIP = mất nguyên "jackpot ×10".</li>
+</ul>
+<p><strong>Uy tín mỗi lượt — <code>Ph = {serveWithTip: 3, serveNoTip: 1}</code> + phạt khi mất khách (~−5):</strong></p>
+<ul>
+<li><strong>+3</strong> nếu khách có boa, <strong>+1</strong> nếu không.</li>
+<li><strong>~−5 mỗi khách bỏ đi</strong> (suy ra từ sổ ca live: gained 212×3 + 100×1 = 736, net +530, 40 bỏ đi → ~5,1/khách).</li>
+<li>→ Uy tín ca = <code>Σ(+3/+1 phục vụ) − ~5×(số bỏ đi)</code>. Vì vậy ca phục vụ tốt ra <strong>+530</strong>, còn heavy rush mất nhiều khách ra <strong>−2.421</strong> (phần −5× áp đảo). Uy tín = <strong>thước đo chất lượng phục vụ ca</strong>; cộng vào cả điểm uy tín mùa lẫn stat tổng.</li>
+</ul>
+<p><strong>Trần doanh thu ngày (<code>Gp</code> + <code>Bp</code> + <code>Ws</code>):</strong> mỗi lượt phục vụ trả về <code>tier: "full" | "capped"</code>. Hết "full" khi <strong>đạt cap ca ngày (<code>dailyShiftsCompleted ≥ 8/6/5</code>)</strong> HOẶC <strong><code>dailyGameplayEarned ≥ 200.000 xu</code></strong>; sau đó đơn vẫn phục vụ nhưng <strong>không cộng tiền/điểm</strong> nữa (appliedCoin=0). Đây là cơ chế chống cày. (Code dùng so sánh <code>&gt;=</code>, không phải <code>&gt;</code>.)</p>
+</section>
+<section id="13-mở-khoá--sink-một-lần-hằng-số-rời" class="level2">
+<h2>13. Mở khoá &amp; sink một lần (hằng số rời)</h2>
+<table>
+<thead>
+<tr>
+<th>Mục</th>
+<th>Chi phí</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Điện thoại (<code>Sv</code>)</td>
+<td>5.000 xu (mở shipper/đơn)</td>
+</tr>
+<tr>
+<td>QR Payment (<code>gr</code>)</td>
+<td>8.000 xu (+ cần điện thoại, milestone "Quen Tay")</td>
+</tr>
+<tr>
+<td>Biển hiệu — phí lắp đầu (<code>Lh</code>)</td>
+<td>20.000 xu</td>
+</tr>
+<tr>
+<td>Chó (<code>un</code>)</td>
+<td>2.000 xu + 20 đá; nâng lv2 (8.000 + 20 kẹo), lv3 (25.000 + 40 kẹo)</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="14-tờ-rơi-flyer" class="level2">
+<h2>14. Tờ rơi (flyer)</h2>
+<ul>
+<li><strong>Campaign kéo dài 90s</strong> (<code>Lr</code> = 90.000ms); hàm <code>sb()</code> chỉ kiểm tra active (Date.now() − startedAt &lt; 90.000).</li>
+<li><strong>Độ mạnh hiệu ứng = server-side</strong> nhưng ✅ <strong>đo được EMPIRICAL khi chơi</strong> (1 chiến dịch 90s, humid, không rush):
+<ul>
+<li><strong>Khách đến 58 trong 90s</strong> (vs baseline humid ~16 nếu spawn 5.578ms) → <strong>tăng lượng khách ~3,6×</strong>.</li>
+<li>spawnInterval tụt <strong>5.578 → ~3.596ms</strong> <em>và</em> flyer <strong>bơm khách giữ quán luôn đầy</strong> (demand saturation), không chỉ hạ interval.</li>
+<li><strong>Phục vụ 58/58 = 100%</strong>, thu <strong>7.299 + boa 3.891</strong> trong 90s (≈124 xu/giây — gấp nhiều lần nhịp thường).</li>
+<li><strong>Điểm mấu chốt: khách tờ rơi KHÔNG phải loại "vội" patience thấp</strong> → phục vụ kịp 100% → <strong>tip vẫn cao (~35–53%)</strong>, khác hẳn rush nặng (mất 28%, tip 15%). → <strong>Tờ rơi = lượng khách của rush nhưng KHÔNG kèm phạt patience</strong>; nếu throughput đủ thì gần như lời thuần.</li>
+</ul></li>
+<li>Kiếm tờ rơi miễn phí: "<strong>chơi 3 ca + hoàn thành hết nhiệm vụ ngày</strong>". Tồn kho tối đa ~5 (<code>YC</code>=5).</li>
+<li>State: <code>flyerUnlocked</code>, <code>flyers</code> (số lượng), <code>flyerUsedThisShift</code>.</li>
+<li><strong>✅ Endpoint + summary (bắt live):</strong> <code>POST /api/v1/shop/activate-flyer</code> (body rỗng). Chiến dịch <strong>90.000ms cố định</strong>. State <code>flyerCampaign</code> lưu <strong>baseline lúc bắt đầu</strong> (<code>baselineServed/Earned/TipsEarned/Lost</code>); kết thúc tính <strong>hiệu</strong> → <code>pendingFlyerSummary = {served, earned, tipsEarned, lost, durationMs:90000}</code> (đo đúng phần tờ rơi tạo, không lẫn ca thường). <strong>Mẫu #2 bắt live (không rush):</strong> served 25, earned 2.232, tip <strong>912 (=41%!)</strong>, <strong>lost 0</strong> → khẳng định lại: tip cao + 0 bỏ đi = lời thuần (khác mẫu humid bão hoà 58 khách/90s). Giá trị tờ rơi <strong>tỉ lệ throughput kịp phục vụ</strong>. <strong>✅ Mẫu #3 (humid, người chơi bận test UI suốt 90s): served 2, earned 206 — tờ rơi GẦN NHƯ LÃNG PHÍ</strong> → chứng minh sống: <strong>tờ rơi = hệ số nhân HOẠT ĐỘNG của người chơi, không phải tiền miễn phí</strong> (demand bơm vào mà không bưng thì không thành tiền). Mẫu #3 cũng <strong>xác nhận 100% cơ chế summary = lifetime stats − baseline</strong> (delta tự tính khớp từng xu với <code>pendingFlyerSummary</code>).</li>
+</ul>
+</section>
+<section id="15-nhiệm-vụ-ngày-rs--điểm-danh-ct" class="level2">
+<h2>15. Nhiệm vụ ngày (<code>rS</code>) &amp; điểm danh (<code>cT</code>)</h2>
+<p><strong>Cấu trúc nhiệm vụ ngày — ✅ chốt từ bundle (<code>wc</code>/<code>hm</code>/<code>rS</code>) + ảnh live:</strong> Mỗi ngày <strong>5 nhiệm vụ</strong> (UI "✓ 0/5"):</p>
+<p><strong>(A) 3 nhiệm vụ lõi ngẫu nhiên</strong> — bốc 1 cái từ mỗi <strong>bucket</strong> (<code>wc</code>), reward CỐ ĐỊNH theo bucket (<code>hm</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Bucket</th>
+<th>Loại có thể bốc</th>
+<th>Reward</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>serve_customers / serve_tea / serve_snacks</td>
+<td><strong>120 xu + 5 ⭐</strong></td>
+</tr>
+<tr>
+<td>2</td>
+<td>perfect_tip / earn_coins</td>
+<td><strong>220 xu + 5 ⭐</strong></td>
+</tr>
+<tr>
+<td>3</td>
+<td>zero_loss_window</td>
+<td><strong>320 xu + 5 ⭐</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Target co giãn base→max theo tier tiến trình</strong> (<code>rS</code>): serve_customers 21→102 · serve_tea 10→53 · serve_snacks 8→51 · perfect_tip 9→41 (phục vụ khi patience&gt;60%) · earn_coins 1.100→9.200 · zero_loss_window 1→1. <code>zero_loss_window</code> = <strong>không mất khách trong 4 phút</strong> (<code>lT</code>=240.000ms). → Càng lên cao <strong>mục tiêu càng nặng nhưng reward giữ nguyên</strong> (siết theo tiến trình).</p>
+<ul>
+<li><strong>✅ Cơ chế gán (vì sao nhiệm vụ "trông giống mỗi ngày"):</strong> <strong>loại</strong> bốc bằng seed <code>oS()</code> (FNV-1a hash) + PRNG <code>lS()</code> theo day-key → re-roll mỗi ngày nhưng <strong>pool nhỏ</strong> (bucket 3 luôn <code>zero_loss</code>; bucket 2 chỉ 2 loại; bucket 1 chỉ 3 loại) → hay lặp. <strong>Target tính theo TIER, KHÔNG theo ngày:</strong> <code>pm(type,tier)= base + (max−base)×((clamp(tier,1,9)−1)/8)^1.5</code> → veteran (tier cao) ghim target gần <strong>MAX</strong> (serve_tea 53, earn_coins 9.200) → con số không đổi ngày này qua ngày khác chừng nào chưa lên tier. → "giống nhau" là do target-ghim-theo-tier + pool random bé, KHÔNG phải bug.</li>
+</ul>
+<p><strong>(B) 2 nhiệm vụ cố định thêm:</strong> "<strong>Hoàn thành 3 ca</strong>" (<code>shiftMission</code>, target 3) → <strong>1.000 xu + 100 ⭐</strong>; "<strong>Gửi quà</strong>" (<code>giftMission</code>, <code>{target:3, uniqueRecipients:[], reward jp}</code>) → <strong>300 xu + 15 ⭐</strong>. ⚠️ <strong>Gửi quà đếm <code>uniqueRecipients</code> = 3 NGƯỜI KHÁC NHAU</strong> (gửi lại cùng người không tính).</p>
+<p><strong>Cơ chế Quà + Nhắn tin (<code>/api/v1/social/send-message</code>) — ✅ bắt live qua fetch hook:</strong> quà <strong>đính kèm tin nhắn</strong> (1 action chung), body <code>{recipientUsername, reward:{inventory:{tea,water,ice,peanutCandy,sunflowerSeeds}} hoặc {coins}}</code> — slider UI cho <strong>tối đa 5 mỗi nguyên liệu</strong> + xu. <strong>Quà = transfer nguyên liệu P2P</strong> (người gửi mất tài nguyên thật — ✅ đo live: gửi <code>{tea:1}</code> → kho trà 80→79; resp 200 trả full state đã trừ). <strong>4 tầng chống farm/spam</strong> (bảng mã lỗi server): <code>RECIPIENT_HAS_PENDING</code> ("Recipient has not read your previous message" — mỗi người nhận chỉ 1 tin <strong>chưa đọc</strong> từ bạn, phải đợi đọc mới gửi tiếp) · <code>DAILY_SEND_LIMIT</code> (trần gửi/ngày) · <code>DAILY_RECEIVE_LIMIT</code> (trần nhận/ngày — chống 1 acc làm thùng farm) · <code>CONTENT_REJECTED</code> (kiểm duyệt nội dung). Counters: <code>socialGiftSentToday/ReceivedToday/MessagesSentToday</code>. → Ép phát tán thật tới nhiều người, không thành kênh RMT/chuyển tài sản giữa acc.</p>
+<p><strong>(C) Bonus 5/5:</strong> hoàn thành cả 5 → <strong>+1 Tờ rơi + 1 🧩 mảnh huy hiệu</strong> (<code>badgeShards</code>) — KHÔNG phải xu, mà là item dùng (marketing) + tiến trình sưu tập.</p>
+<p>→ <strong>Tổng/ngày nếu 5/5:</strong> ~<strong>1.960 xu + 130 ⭐ + 1 tờ rơi + 1 mảnh huy hiệu.</strong> Config gắn nhãn experiment <code>tea-game-retention-v2</code>.</p>
+<p><strong>Điểm danh / streak (<code>cT</code>, thưởng UY TÍN, nhân đôi):</strong> ngày 1→+2, 2→+4, 3→+8, 4→+16, 5→+32, 6→+64, 7→+128. <strong>Tổng 1 chu kỳ = 254 uy tín.</strong> State <code>loginTrack={cycleDay, lastClaimDateKey, lastActiveDateKey}</code>. (Uy tín điểm danh KHÔNG tính vào xếp hạng mùa.) <strong>✅ xác nhận live + bundle.</strong> Sắc thái thiết kế: (a) <strong>lỡ 1 ngày → <code>cycleDay</code> reset về 1</strong> (retention hook gắt); (b) <strong>Ngày 7 (128) = ½ giá trị cả tuần</strong> → dồn thưởng vào cuối chuỗi, lỡ càng muộn càng tiếc; (c) config keyed 1–7 → <strong>hết Ngày 7 lặp lại Ngày 1</strong>, không phình vô hạn; (d) thưởng = <strong>uy tín, không phải xu</strong> → bơm meta-currency, không lạm phát tiền mặt.</p>
+<p><strong>Thử thách dài hạn — Mời bạn bè (Referral, <code>Pp()</code>) — ✅ UI live + bundle:</strong> tab "Thử thách" (KHÔNG reset ngày), hiện chỉ 1 thử thách = referral. <strong>3 mốc</strong> (⭐ = uy tín): Mốc 1 (mời <strong>1</strong> bạn chơi thật) → <strong>⭐250 + 👋</strong>; Mốc 2 (<strong>3</strong> bạn) → <strong>⭐1.000 + 🪃</strong>; Mốc 3 → <strong>⭐3.000 + 🤝</strong>. Phần thưởng cụ thể do <strong>server cấp</strong> (client chỉ lưu <code>tier1/2/3InjectedAt</code>).</p>
+<ul>
+<li><strong>Chống gian lận:</strong> bạn được mời phải <strong>"qualified" = chơi thật</strong> (đăng ký + mở quán + vài phiên); <strong>self-invite không tính</strong>. Hai mức: <code>totalQualifiedCount</code> (chơi thật) &amp; <code>totalLp2ReachedCount</code> (<strong>đạt Life Path 2</strong> — chống mời acc rồi bỏ). <code>appliedQualifiedReferees[]</code>/<code>appliedLp2Referees[]</code> tránh double-claim; mỗi tier nhận 1 lần. <strong>Server-authoritative.</strong></li>
+<li><strong>Two-sided:</strong> người được mời cũng nhận thưởng chào mừng 2 giai đoạn (<code>welcomeStage1/2InjectedAt</code>); <code>referrerUsername</code>/<code>referrerAttributedAt</code> lưu ai mời mình. Phát tán: "Chép link mời" (deep link) + "Chia sẻ" (native share) + "Mở mục Bạn bè".</li>
+<li><strong>Lớp xã hội quanh BXH:</strong> emote <code>XC=[👋 😂 🔥 💪 👀 🍵 ❤️ 💔]</code> + câu soạn sẵn <code>Nv=["Mời ly trà 🍵","Đua không bạn hiền 🏁","Oops vượt bạn mất rồi 🤭"...]</code>; đếm ngày <code>socialGiftSentToday/ReceivedToday/MessagesSentToday</code>; <code>blockedUsers</code>, <code>hasPhone</code>. → có hệ bạn bè + nhắn tin + chặn.</li>
+<li><strong>✅ Trợ lý AI "Trà Đấm" (chunk <code>SupportOverlay</code>) — server-side LLM thật:</strong> 3 endpoint <code>POST /api/v1/ai-chat</code> (đa lượt, trả <code>{conversationId, quotaRemaining, message, followups}</code>, reply Markdown), <code>GET /ai-chat/initial-suggestions</code> (gợi ý mở đầu lấy động từ server → bám changelog), <code>POST /ai-chat/bridge</code> (cầu nối → ticket hỗ trợ người thật <code>/support/tickets</code>). <strong>Định tuyến 4 intent:</strong> Hỏi cách chơi / Báo lỗi / Góp ý / Yêu cầu của tôi. <strong>Rate-limit:</strong> <code>errorBurst</code> (gửi nhanh quá, có <code>retryAfterMs</code>) + <code>errorDaily</code> (quota <strong>20 tin/ngày</strong>, hiện "1/20", <code>Pn=20</code>) + <code>errorUnavailable</code> (fallback). Lịch sử <strong>phù du</strong> (xoá khi đóng). <strong>✅ test live:</strong> trả lời <strong>CÁ NHÂN HOÁ theo state thật</strong> — biết league (Platinum), số ghế (9), cấp ấm (Lv4, 6 ly/mẻ), số dư xu (~100k) → khuyên đúng nút thắt ("nâng ấm Lv5"). Sau trả lời gợi ý <strong>follow-up động</strong> (2 chip sinh từ nội dung). Lời khuyên <strong>khớp 100% chiến thuật reverse-engineer</strong> (prep trước rush, ưu tiên VIP+shipper, phá bottleneck ấm) → AI được context-inject game state + grounded mechanics, không generic. → AI help+support agent (RAG bám tài liệu/changelog) có quota + escalate sang người. Khác hệ <code>/support/tickets</code> (ticket người thật: create/reply/mark-read/claim-reward).</li>
+<li><strong>✅ Hệ Hỗ trợ / ticket 2 chiều (chunk <code>SupportOverlay</code>):</strong> <strong>8 loại</strong> (<code>categories</code>): bug (Báo lỗi), feedback (Góp ý), confusing_mechanic (Khó hiểu), <strong>balance (Cân bằng)</strong>, other, <strong>anticheat-appeal (Khiếu nại)</strong>, <strong>pardon_dispute (Phản đối vi phạm)</strong>, donation (🍵 Mời trà đá). Trạng thái: mở → <code>waiting_user</code> ("Admin đã trả lời") → <code>resolved</code>. <strong>Đính kèm ảnh</strong> (<code>/support/attachments/</code>); lọc <strong>"Has gift"</strong> + <code>claim-reward</code> → <strong>admin đính QUÀ (xu/item) vào ticket khi xử lý</strong> (kiêm kênh đền bù/goodwill). <strong>Đáng chú ý: <code>anticheat-appeal</code> + <code>pardon_dispute</code> → có hệ chống gian lận + xử phạt/ban thật + kênh khiếu nại có quy trình</strong> (khớp <code>status:"flagged"</code> ở code ghế + server-authoritative + CAPTCHA). → Game đua hạng nghiêm túc cần enforcement + appeal flow, không chỉ chặn kỹ thuật.</li>
+<li><strong>✅ "Dạo phố" (<code>/api/v1/social/street</code>) — bắt live:</strong> = <strong>BXH theo KHU + HẠNG</strong> (không phải toàn server). Response: <code>{entries:[...], myUsername, league:"platinum", location:"night_market"}</code> → người chơi gom nhóm theo <strong>mặt bằng đang thuê (location) × hạng league</strong>. Mỗi quán = thẻ public: <code>{username, seasonEarned (thước đo rank), rank, stallLevel, shopSign.style, lanternStyle, plantStyle, reputationScore, chairs, currentMilestone, profileViews, topBadge:{emoji,count}}</code>. <strong>Hệ quả thiết kế quan trọng:</strong> (a) <strong>cosmetic HIỂN THỊ CÔNG KHAI</strong> trên thẻ (golden sign, lantern, plant) → đây mới là lý do cosmetic có giá trị = <strong>flex với hàng xóm</strong> → vòng lặp donate→cosmetic→khoe→<code>profileViews</code>→ghé lại; (b) <strong>chọn thuê mặt bằng = chọn "khu phố"</strong> (ý nghĩa xã hội, không chỉ rent/spawn); (c) <code>profileViews</code> = chỉ số phù phiếm nuôi tương tác. Vào thẻ → <code>getSocialPreviewState</code> (xem quán) → react/gift/message/block. <strong>✅ "Xem lén quán" TẠM DỪNG ca của bạn</strong> (tip xác nhận: "Ca bán của bạn sẽ tạm dừng trong lúc ghé xem") → pause hợp lệ (khác <code>fairness_pause</code>), chống vừa xem vừa bán.</li>
+</ul>
+</section>
+<section id="16-supply-crate-ut" class="level2">
+<h2>16. Supply crate (<code>uT</code>)</h2>
+<table>
+<thead>
+<tr>
+<th>Crate</th>
+<th style="text-align: right;">tea</th>
+<th style="text-align: right;">water</th>
+<th style="text-align: right;">ice</th>
+<th style="text-align: right;">kẹo lạc</th>
+<th style="text-align: right;">hạt</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>small</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr>
+<td>medium</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr>
+<td>large</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">8</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="17-công-thức-đơn-hàng--phạt-mất-khách-hàm-dpab" class="level2">
+<h2>17. Công thức đơn hàng &amp; phạt mất khách (hàm <code>Dp</code>/<code>ab</code>)</h2>
+<p><strong>Mỗi khách đặt 1–2 món</strong> (<code>order</code> + tuỳ chọn <code>secondaryOrder</code>).</p>
+<p><strong>Doanh thu gốc đơn — <code>Dp</code>:</strong></p>
+<pre><code>gross = (sellPrice[order] + sellPrice[secondaryOrder]) × customerType.paymentMultiplier</code></pre>
+<p>(chi_pheo paymentMultiplier=0 → 0 đồng.)</p>
+<p><strong>Phạt mất khách — <code>ab</code> (<code>nv</code> = 0.1):</strong></p>
+<pre><code>penalty = round(gross × 0.1 × customerType.leavePenaltyMultiplier)</code></pre>
+<p>→ Khách thường: phạt = <strong>10% giá đơn</strong>. <strong>VIP (×10): phạt = 100% giá đơn</strong>. <strong>Khi đang rush, NHÂN THÊM</strong> <code>lostCustomerPenaltyMultiplier</code> (light ×1,8 / heavy ×2,5) → mất khách lúc heavy rush đắt nhất.</p>
+<p><strong>3 tầng thiệt hại khi 1 khách bỏ đi (chưa kịp phục vụ):</strong> (1) mất doanh thu đơn đó; (2) phạt xu như trên; (3) <strong>mất uy tín</strong> ("Giảm: khách bỏ đi" → kéo uy tín ca xuống, có thể âm). Số liệu cumulative live: khách thường <strong>82 lượt mất → 1.762 xu phạt</strong> (~21,5/lượt); <strong>VIP 10 lượt → 1.025 xu</strong> (~102/lượt, ~5× vì ×10). Phạt trừ vào doanh thu ca ("Phạt" ở màn kết ca).</p>
+<p>Phục vụ trễ (khách đã chuyển <code>grace_leaving</code>): patience tụt còn ~10% → gần như mất sạch tip (vì &lt;0.6 ngưỡng <code>ev</code>).</p>
+</section>
+<section id="18-shipper-giao-hàng--cơ-chế-phục-vụ-hàm-ob" class="level2">
+<h2>18. Shipper (giao hàng) — cơ chế phục vụ (hàm <code>ob</code>)</h2>
+<ul>
+<li><p>Đơn shipper là <strong>bundle nhiều dòng</strong> <code>lines{itemId, quantity, remaining}</code>; phải có <strong>đủ 100% nguyên liệu</strong> mới giao được (thiếu → <code>INSUFFICIENT_RESOURCE</code>).</p></li>
+<li><p><strong>Shipper tự mang ly</strong> → không tốn/đợi rửa ly; <strong>đỗ vào làn riêng</strong>, không chiếm ghế.</p></li>
+<li><p>Thưởng = <code>discountedPayment</code> (đơn có sẵn <code>grossPayment</code> + <code>discountRate</code> → giá ưu đãi theo lô), ×1.1 nếu well-rested, <strong>không có tip</strong>, <strong>uy tín +1</strong>, vẫn chịu trần tiền ngày.</p></li>
+<li><p>Spawn tăng theo thời tiết: <strong>mưa ×3, ẩm/lạnh ×2, nóng ×1.5</strong>; biển <strong>Neon shipper ×1.2</strong>. Cần <strong>điện thoại</strong>.</p></li>
+<li><p><strong>Không thể đóng ca khi đang có đơn shipper</strong> đang chạy.</p></li>
+<li><p>✅ <strong>Số liệu thật quan sát khi chơi (đọc state runtime, 2 mẫu):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Đơn</th>
+<th>lines</th>
+<th style="text-align: right;">grossPayment</th>
+<th style="text-align: right;">discountRate</th>
+<th style="text-align: right;">discountedPayment</th>
+<th style="text-align: right;">maxPatience</th>
+<th style="text-align: right;">leavePenalty</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>shipper-14594</td>
+<td>tea×3 + peanutCandy×1</td>
+<td style="text-align: right;">180</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: right;">135</td>
+<td style="text-align: right;">45.000ms</td>
+<td style="text-align: right;">90</td>
+</tr>
+<tr>
+<td>shipper-14630</td>
+<td>tea×4</td>
+<td style="text-align: right;">200</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: right;">150</td>
+<td style="text-align: right;">45.000ms</td>
+<td style="text-align: right;">100</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Quy luật chốt được (2 mẫu đồng nhất):</strong></p>
+<ul>
+<li><code>discountedPayment = grossPayment × (1 − 0.25)</code> → shipper trả <strong>75% giá gross</strong> (chiết khấu <strong>25% cố định</strong>); bù lại <strong>không tốn ly, không cần tip</strong>.</li>
+<li><code>grossPayment</code> = Σ sellPrice các món trong đơn (tea 50 / kẹo 30 / hạt 20).</li>
+<li><strong>patience = 45.000ms (45 giây) cố định</strong> để giao xong.</li>
+<li><strong>leavePenalty = 50% gross cố định</strong> (90 cho gross 180; 100 cho gross 200) — phạt nặng hơn khách ngồi (vốn 10% gross).</li>
+<li><strong>Chỉ nội dung đơn biến thiên</strong> (mix món + số lượng). Quan sát mở rộng (5 mẫu): <strong>4–7 món, gross 180–290</strong> (vd tea×3+kẹo×1=180; tea×4=200; tea×4+kẹo×3=290; tea×5+hạt×2=290) — đơn to dần, có thể theo level/tiến trình; net luôn = gross×0,75. Spawn interval ≈ 220 giây/đơn (mục 21).</li>
+</ul></li>
+</ul>
+</section>
+<section id="19-gangster--bảo-kê--trộm-hệ-rủi-ro" class="level2">
+<h2>19. Gangster / bảo kê &amp; trộm (hệ rủi ro)</h2>
+<ul>
+<li><strong>Sự kiện gangster</strong> ngẫu nhiên trong ca; có thể <strong>trả tiền</strong> (<code>/gangster/pay</code>) hoặc <strong>kháng cự</strong> (<code>/gangster/resist</code>) → <strong>chó đánh nhau</strong> với gangster.
+<ul>
+<li>Chó <strong>thắng → thưởng lớn</strong>; <strong>thua → đập phá thiết bị</strong>, <strong>sửa ghế tốn gấp 3×</strong> (<code>tip_chair_upgrade_cost</code>).</li>
+<li>Chó có chỉ số <code>hp</code>/<code>atk</code> theo level (<code>UC(e)={hp:e,atk:e}</code>); cho ăn <strong>kẹo</strong> để tăng sức trước khi đánh.</li>
+</ul></li>
+<li><strong>Trộm vặt khi nghỉ/offline</strong>: có <code>offlineTheftReport</code>; <strong>nuôi chó giúp chặn trộm vặt</strong> lúc đang nghỉ.</li>
+<li>Có cả <strong>boss gangster</strong> (endpoint dev <code>spawn-boss-gangster</code>).</li>
+<li><strong>Chi phí sửa ghế (trích được):</strong> base <code>repairCost = 50 × chairIndex</code> (<code>Vv</code>=50); <strong>sau khi bị gangster đập → ×3</strong> (hàm <code>Ip(e,t)= Vv·max(1,⌊e⌋), ×3 nếu broken</code>).</li>
+<li><strong>Trộm offline</strong>: report có <code>stolenType</code> (coins hoặc nguyên liệu), <code>stolenAmount</code>, <code>dogProtected</code> (bool) — <strong>lượng trộm do server tính</strong>, gửi trong <code>offlineTheftReport</code>.</li>
+<li><strong>Combat gangster (thắng/thua/thưởng) do server xử</strong> qua <code>/gangster/pay</code> &amp; <code>/gangster/resist</code>; client render <code>gangsterCount</code>, <code>isBoss</code>, kết quả. <strong>✅ endpoint xác nhận: <code>payGangster()</code>/<code>resistGangster()</code> = POST KHÔNG body</strong> (server tự resolve, chống chỉnh client).</li>
+<li><strong>UX modal "Côn đồ đòi bảo kê" (✅ ảnh live):</strong> số tên hiển thị <strong>ẩn dạng "?" (1~3 tên)</strong> — người chơi <strong>không biết chính xác mấy tên khi quyết định</strong> (bất định rủi ro). Hiện sẵn "Chó giữ quán: Có • Level 3". Nút <strong>"Cống nạp (đếm ngược ~14s)"</strong> vs <strong>"Phản kháng"</strong>. Modal <code>gangster_demanding</code> <strong>KHÔNG pause game</strong> (đồng hồ ca vẫn chạy → ép quyết nhanh); chỉ <code>gangster_outcome</code>/<code>gangster_battle</code> mới pause.</li>
+<li><strong>Phản kháng → <code>battleReplay = {id, gangsterCount, turns, phases, phaseIndex, phaseStep, countdown}</code></strong> = <strong>trận đánh theo lượt (turn-based)</strong>, client phát lại từng phase/turn (animation chiến trường). Chó tham chiến. (Lưu ý: pay/resist resolve có thể đẩy kết quả qua WebSocket → fetch hook thụ động không phải lúc nào cũng bắt được; lần thử này modal hết giờ tự đóng, coins không đổi do không cống nạp.)</li>
+<li>✅ <strong>Số liệu thật bắt được khi gặp event</strong> (<code>gang-...</code>, state <code>demanding</code>):
+<ul>
+<li><code>gangsters: [{hp:1, atk:1, alive:true}]</code> — số lượng &amp; chỉ số tên côn đồ (boss/nhiều tên sẽ cao hơn).</li>
+<li><strong><code>protectionFee: 90</code></strong> xu (trả bảo kê để chúng đi).</li>
+<li><strong><code>winReward: 225</code></strong> xu (kháng cự + chó thắng → nhận).</li>
+<li><strong><code>expiresAt</code> = +20.000ms</strong> → <strong>20 giây</strong> để quyết định.</li>
+<li><code>chairCountAtDemand: 9</code> → phí/thưởng <strong>scale theo quy mô quán</strong> (số ghế).</li>
+<li>Chó lv3 (hp3/atk3, <code>UC(e)={hp:e,atk:e}</code>) &gt; gangster hp1 → thắng chắc → <strong>kháng cự lời hơn trả phí</strong> (nhận +225 thay vì mất 90). Đây là lý do nuôi/cho chó ăn kẹo để mạnh. Thua → đập đồ + sửa ×3.</li>
+<li>✅ <strong>Kết quả thật (đã kháng cự):</strong> màn "Chiến trường" → <strong>THẮNG, +225 xu</strong> (đúng <code>winReward</code>); chó <strong>3/3 máu nguyên</strong> (gangster atk1 &lt; chó hp3 → thắng không mất máu).</li>
+<li>✅ <strong>Quy luật SCALE theo số tên côn đồ</strong> (mẫu 1 tên vs 2 tên):
+<ul>
+<li><strong><code>protectionFee</code> = 90 × số tên</strong> (1→90, 2→180).</li>
+<li><strong><code>winReward</code> = 225 × số tên</strong> (1→225, 2→450, <strong>✅ 3→675 bắt live</strong>).</li>
+<li><strong>HP côn đồ scale theo thứ tự index: tên #1 hp1, #2 hp2, #3 hp3</strong> (atk cũng tăng dần) → nhiều tên = tên sau càng trâu; boss cao hơn nữa.</li>
+</ul></li>
+<li>✅ <strong><code>gangsterBattleReport</code> ĐẦY ĐỦ (3 tên, resist, chó Lv3) — bắt live qua <code>/api/v1/gangster/resist</code> (POST body rỗng):</strong> <code>{id, gangsterCount:3, won:true, winReward:675, feePenalty:0, brokenChairCount:0, dogCaptured:false, turns:[...]}</code>. Turn-based: R1 chó→#1 (dmg1, gục), chó→#2 (dmg2, gục), #?→chó (dmg2, chó còn 1/3), R2 chó→#3 (dmg3, gục). <strong>Chó Lv3 atk3 one-shot từng tên</strong> (atk≥hp mỗi tên), chỉ ăn 1 đòn → <strong>thắng sạch: phạt 0, ghế vỡ 0, không mất chó</strong>. → Field <strong><code>dogCaptured</code></strong> xác nhận: <strong>THUA → chó BỊ BẮT</strong> (khớp <code>dog.capturedRemainingMs</code>) + <code>brokenChairCount</code>&gt;0 (sửa ×3) + <code>feePenalty</code>&gt;0. → Nuôi chó Lv3 = gần <strong>miễn nhiễm côn đồ thường</strong>, resist luôn lời (675 ≫ cống nạp 270 cho 3 tên).</li>
+<li>⚠️ <strong>KHÔNG action trong 20s → game TỰ ĐỘNG cống nạp (trả phí, mất tiền, không đánh)</strong> = kết cục tệ nhất (mất 180 thay vì +450 nếu thắng). → ép người chơi chủ động quyết.</li>
+<li>Vòng lặp: demand (20s) → [pay phí / resist combat hp-atk / để hết giờ = auto-pay] → win nhận winReward / lose bị đập đồ (repair ×3).</li>
+<li>(Phụ: "mời 1 khách về để đóng cửa" tốn ~5 xu — kick-to-close.)</li>
+</ul></li>
+<li>State liên quan: <code>gangsterEvent</code>, <code>offlineTheftReport</code>, <code>gangsterDeferUsedMs</code>, <code>blockedByGangster</code>.</li>
+<li><strong>✅ Event MỚI "🚔 Đội Trật Tự" (Urban Patrol — minigame dẹp hàng, bắt live):</strong> cảnh báo flavor <em>"Ông xe ôm báo đội trật tự đang ở đầu phố!"</em> → bấm "Thu dọn ngay!" → <strong>minigame match-3</strong> (gom <strong>3 món cùng loại</strong>), có <strong>Score + Clears + thanh mana + hint</strong> (hintBounce/hintPulse). <strong>3 kết cục theo điểm:</strong> ✅ pass "Tẩu tán thành công!" (không sao) · ⚠️ warning "Lần sau sẽ phạt!" (doạ) · 🚔 <strong>fail "Tịch thu!" → thu N ghế (mặc định 1) trong PHẦN CÒN LẠI CA NÀY + CA TIẾP THEO</strong> — state: <code>chair.confiscated=true, confiscatedUntilShift=X</code> (✅ live: ghế index 8, until shift 35). <strong>⚠️ Hình phạt hiệu lực MỘT NỬA (✅ kiểm chứng live 3 lần):</strong> cờ <code>confiscated</code> (a) <strong>KHÔNG chặn khách ngồi</strong> (khách vẫn seated tại ghế 8 khi cờ true — logic xếp chỗ không lọc), (b) <strong>CÓ co hàng đợi</strong> (✅ quan sát: queue 5→<strong>4</strong> slot, vì <code>iT()=filter(!broken&amp;&amp;!confiscated)</code> nuôi công thức <code>queue=2+⌊ghế_hợp_lệ/3⌋</code>) → sức chứa 14→<strong>13</strong>, (c) KHÔNG dấu hiệu thị giác trên ghế. → Phạt thật = <strong>mất 1 slot xếp hàng</strong> (dễ overflow lúc rush), không phải mất ghế — cờ được nối vào hàm đếm nhưng quên nối vào xếp chỗ + render (bug nửa vời của event mới). <strong>✅ Vòng đời kiểm chứng trọn:</strong> thu ở ca N → hiệu lực ca N + N+1 → <strong>tự trả ở ca N+2</strong> (<code>confiscated</code> về false, queue về 5) — đúng văn bản "ca này và ca tiếp theo". → Đây là nguồn của flag <code>confiscated</code> trong code ghế. <strong>✅ Minigame cũng NO-PAUSE (quán vẫn bán trong lúc chơi — quan sát live)</strong> → cùng "họ dual-attention" với quiz kiểm tra + côn đồ đòi tiền (3 sự kiện no-pause, không bao giờ chồng nhau). Theme "dẹp hàng khi trật tự tới" cực hợp vỉa hè — đáng bê nguyên sang bia hơi.</li>
+<li><strong>Event "Tổ kiểm tra liên ngành" (inspection — quiz ~15s):</strong> đoàn kiểm tra ghé, người chơi <strong>đọc thông báo + chọn đáp án để gia hạn chứng chỉ hành nghề</strong>. <strong>✅ Quan sát live: quiz là overlay KHÔNG-PAUSE — trong 15s trả lời, quán VẪN bán bình thường</strong> (khách vào, patience tụt) → sự kiện "chia đôi sự chú ý" cùng họ <code>gangster_demanding</code>: dừng tay trả lời = rủi ro mất khách; vừa bán vừa đọc = rủi ro trượt → đình chỉ ca. (Nhưng 2 sự kiện này không bao giờ trùng giờ — luật scheduling.) Cơ chế (✅ trích từ bundle):
+<ul>
+<li><strong>2 lần thử</strong> (<code>attempt 2</code> = <code>isStricterCombo</code>, khắt khe hơn); variant <code>pass</code> / <code>fail</code> / <code>timeout</code>.</li>
+<li><strong>Đáp đúng → gia hạn chứng chỉ, chơi tiếp.</strong></li>
+<li><strong>Trượt (cả 2 lần / hết giờ) → "Chứng chỉ bị thu hồi. Ca làm việc bị ĐÌNH CHỈ"</strong> = <strong>đóng ca ngay lập tức, mất toàn bộ thu nhập còn lại của ca</strong> → penalty rất nặng, buộc người chơi chú ý.</li>
+<li>Xảy ra <strong>tối đa 1 lần/ca</strong>, không trùng event khác. Câu hỏi + đáp án đúng <strong>do server gửi</strong> (giống chat/captcha). KHÁC với CAPTCHA anti-bot (<code>/captcha</code>).</li>
+<li>⚠️ Còn server-only: <strong>boss gangster</strong> (hp/atk/thưởng — chỉ có asset+dev endpoint ở client; côn đồ thường đã biết 90×n/225×n) và <strong>lượng trộm offline</strong> (<code>stolenAmount</code>, type coins/nguyên liệu, <code>dogProtected</code>) — cần gặp event thật mới có số.</li>
+</ul></li>
+</ul>
+</section>
+<section id="20-kiến-trúc-economy-server-authoritative" class="level2">
+<h2>20. Kiến trúc economy (server-authoritative)</h2>
+<p>Đây là điểm quan trọng cho việc clone: <strong>gần như toàn bộ economy do server quyết định</strong>, client chỉ là mirror/UI.</p>
+<ul>
+<li>API base: <strong><code>https://api.trumviahe.com/api/v1/...</code></strong> + <strong>websocket</strong> <code>/api/v1/ws</code> (realtime ca/khách).</li>
+<li>Giá &amp; catalog: <strong><code>/shop/catalog</code></strong> (server giữ giá → các hằng số <code>Wa/mc/...</code> trong bundle là bản mirror/fallback).</li>
+<li>Hành động được server xác thực: <code>/serve/{}</code>, <code>/shop/buy</code>, <code>/upgrade/{equipment,stall,dog,chair}</code>, <code>/buy/{chair,cup,dog}</code>, <code>/shop/{buy-phone,buy-qr-payment,unlock-flyer,buy-flyer,activate-flyer}</code>, <code>/stall/sign/{unlock,buy-style,set-style,rename}</code>, <code>/stamina/reopen</code>, <code>/repair/chair/{}</code>, <code>/gangster/{pay,resist}</code>.</li>
+<li>Thu thưởng: <code>/claim/{daily-mission,daily-all,login-track,gift-mission,shift-mission,sign-in-mission,life-path}</code>, <code>/inbox/claim-reward</code>, <code>/claim/emergency-pack</code>.</li>
+<li>Xã hội/đua hạng: <code>/leaderboard</code>, <code>/shrine/summary</code>, <code>/social/{street,send-message,quick-react,block,report}</code>, <code>/referral/{attribute,status}</code> (referral thưởng ~<code>{coins:3000, reputation:250}</code>).</li>
+<li><strong>Anti-cheat/anti-bot</strong>: <code>/captcha/{start,answer}</code> → game có CAPTCHA, và serve được validate server-side ⇒ không thể cày bằng sửa client.</li>
+<li>Lazy-load chunks: LeaderboardDialog, ChangelogOverlay, AuthOverlay, ReportBugOverlay…</li>
+</ul>
+<p>→ <strong>Hệ quả khi clone</strong>: muốn chống gian lận &amp; giữ xếp hạng công bằng thì logic kinh tế (serve, reward, cap, gangster, shipper) nên đặt <strong>server-side</strong>, client chỉ render.</p>
+<hr />
+</section>
+<section id="21-dữ-liệu-xác-thực-từ-state-live-đọc-từ-store-trong-bộ-nhớ-trang" class="level2">
+<h2>21. Dữ liệu xác thực từ STATE LIVE (đọc từ store trong bộ nhớ trang)</h2>
+<p>Đọc trực tiếp object state runtime của game (Zustand) → xác nhận client mirror đúng server và bổ sung số chỉ lộ lúc chạy:</p>
+<ul>
+<li><p><strong>Catalog server == hằng số bundle</strong>: <code>shop.items</code> (giá nhập) và <code>shop.upgrades</code> (cost iceBox 30k, teaBrewer 200k, washer 150k...) khớp 100% với mục 2 &amp; 9 → các hằng số đã trích là chính xác.</p></li>
+<li><p><strong>Shipper spawn interval (live): ≈ 220 giây/đơn</strong> (giá trị thô <code>219768</code> ms ≈ 3,66 phút); <code>activeShipperOrder</code> chỉ có khi đang chạy (lúc đọc = null). Spawn khách (live, sau nâng cấp): ≈ 3,8 giây (giá trị thô <code>3776</code> ms).</p></li>
+<li><p><strong>Rush theo lịch session</strong>: <code>runtime.rushHour.sessionSchedule.slots</code> = vài đợt định sẵn mỗi ca, ví dụ <code>[{heavy, offset 207599ms},{light, offset 537480ms}]</code>.</p></li>
+<li><p><strong>Bộ đếm phạt trong session</strong>: <code>queueOverflowCount</code>, <code>queueLostCount</code>, <code>queueLostPenalty</code>, <code>queueVipPenalty</code>, <code>queueVipLostCount</code> → game tách riêng phạt VIP.</p></li>
+<li><p><strong>Stamina live</strong>: <code>currentStaminaMs</code> 720.000 (đầy), <code>dailyGameplayEarned</code> chạy theo ngày, <code>dailyEarningCapReached</code> bool (trần 200k), <code>dailyEarningStats</code> lưu lịch sử thu/ngày.</p></li>
+<li><p><strong>Thuê mặt bằng = ĐẶT CỌC + trả trước</strong>: <code>stallRental</code> có <code>deposit</code> (vd 6.860, <strong>hoàn lại</strong> — <code>depositRefundedAt</code>), <code>rentPaid</code> (vd 27.440 ≈ 7×rent/ngày), <code>expiresAt</code> → thuê theo kỳ ~7 ngày, cọc hoàn khi rời.</p></li>
+<li><p><strong>Nhiệm vụ ngày (instance thật)</strong>: 3 nhiệm vụ/ngày theo slot, reward thật ví dụ serve_tea (target 10 → 120 xu+5 uy tín), perfect_tip (9 → 220+5), zero_loss_window (1 → 320+5) + bonus hoàn thành cả 3. <strong>Shift mission</strong>: 3 ca → <strong>1.000 xu + 100 uy tín</strong>. <strong>loginTrack</strong>: chu kỳ 7 ngày.</p></li>
+<li><p><strong>Meta-currency phụ</strong>: <code>badgeShards</code>, <code>cosmeticTokens</code> (thưởng từ Life Path). <strong>8 huy hiệu</strong> (<code>badge-config</code>): 4 theo hạng mùa (🏆 Quán quân, 🥈 Á quân, 🥉 Hạng 3, 🌟 Top 10) + 4 xã hội/referral (🌱 Khai Phá, 🫱 <strong>Kết Nối/Networker</strong> — gate ghế tựa, 💫 Giao Lưu, 🤝 Đại sứ). Badge shard dồn để mở badge; cosmeticToken mua trang trí (lồng đèn/cây/biển — giá ở chunk cosmetic, chưa chốt).</p></li>
+<li><p><strong>chairmanDisguise</strong> (cơ chế pity gắn Chí Phèo) — ✅ <strong>quan sát live</strong>: một số ông <strong>Chí Phèo</strong> thật ra là <strong>"Chủ tịch giả nghèo"</strong>, sau khi tích pity/ngẫu nhiên sẽ <strong>lộ diện và tặng hộp quà bí ẩn</strong>. Mẫu bắt được (5 lần) → <strong>3 loại quà</strong> (<code>category</code>): <strong>coins</strong> (349, 355, 387, 476 xu → ~<strong>350–480</strong>, dải rộng hơn dự kiến) · <strong>ingredient</strong> (15 nước / <strong>37 trà</strong> — item &amp; lượng biến thiên) · <strong>reputation</strong> (<strong>✅ 51–92 uy tín</strong> — 2 mẫu live, khoản uy tín đáng kể). Server roll: cục xu nhỏ hoặc một xấp nguyên liệu; <code>pityCounter</code> reset về 0 sau reveal; <code>totalReveals</code> tích luỹ (đang 16); <code>id</code> dạng <code>chairman_&lt;timestamp&gt;</code>. <strong>✅ OVERFLOW kho → đổi xu (luật mới, bắt live lần 3):</strong> server roll <code>rolledAmount:37 trà</code>, kho chỉ nhận <code>amount:14</code>, <strong>23 thừa tự đổi <code>overflowCoins:115</code> = 23×5 (×<code>unitPrice</code> trà)</strong> ("Kho đầy, nhận 14 trà + 23 đổi 115 xu"). → <strong>Nguyên liệu thưởng vượt sức chứa TỰ ĐỘNG quy ra xu theo <code>unitPrice</code></strong> — luật chung cho mọi quà NL (chairman, mùa <code>partialClaimed</code>, nhiệm vụ, crate); roll có thể lớn (≥37). <strong>✅ Có thể lộ NHIỀU LẦN/ca (KHÔNG phải 1/ca) — bắt live 3 lần trong 1 ca:</strong> tần suất <strong>tỉ lệ với lượng Chí Phèo gặp</strong> (pity đầy từ Chí Phèo) → ca Oi bức/Nắng nóng (chi_pheo ×1.5) → pity đầy nhanh gấp đôi → nhiều chairman hơn. <strong>Ngưỡng pity + xác suất + giá trị = server-side</strong> (chống đoán/farm). → Chí Phèo là <strong>canh bạc</strong>: chịu mất ghế đổi cơ hội nhận quà; thiết kế khéo biến khách "lỗ" thành phần thưởng tích luỹ, người chơi bớt ghét Chí Phèo.</p></li>
+<li><p><strong>Slot trang trí</strong>: ngoài <code>shopSign</code> còn <code>lantern</code> (lồng đèn) &amp; <code>plant</code> (cây cảnh) — cosmetic có unlockedStyles. ✅ <strong>Style xác nhận từ asset:</strong> đèn lồng = {đỏ, vintage, Nhật}; cây cảnh = {trúc phát tài (bamboo), bonsai, hoa lan (orchid), sen đá (succulent)}. State: <code>stall.lantern.{style,unlockedStyles}</code> + <code>stall.plant.{style,unlockedStyles}</code>. <strong>Cây cảnh hiếm hơn đèn lồng</strong> (tip "Bạn có biết" xác nhận có bậc độ hiếm); lấy qua donation/thưởng (asset <code>secret-box-closed</code> gợi ý hộp ngẫu nhiên).</p></li>
+<li><p><strong>✅ Luật scheduling sự kiện (tip "Bạn có biết"):</strong> một sự kiện xảy ra <strong>tối đa 1 lần/ca</strong> và <strong>KHÔNG bao giờ trùng giờ với Tổ kiểm tra liên ngành</strong> → game <strong>cố ý không cho 2 sự kiện phạt nặng chồng nhau</strong> (tránh trừng phạt kép). Màn đóng cửa còn xoay vòng <strong>tip "Bạn có biết..."</strong> (<code>tips_widget</code>) — vừa flavor vừa hé lộ cơ chế.</p></li>
+<li><p><strong>Khách LIVE (đọc lúc chơi) — patience &amp; giá trị đơn thật:</strong></p>
+<ul>
+<li><strong>Base patience khách thường ≈ 18.000ms (18s)</strong> [đính chính: số 13.500 đo trước đó là lúc <strong>Oi bức ×0,75</strong> → 13.500 = 18.000×0,75]. Patience hiển thị = base × weather × type. Vd <strong>mưa phùn ×1,15</strong>: normal ~20.700, VIP ~12.650 (×0,611), <strong>stubborn ~207.000</strong> (×10). Khớp các hệ số mục 4/5.</li>
+<li><strong>Thời gian "ngồi uống" (enjoyTime) giữ ghế sau khi phục vụ</strong>: base 5–10s; VIP ~6,5s; <strong>stubborn tới ~111s</strong> (enjoyMultiplier ×10) → ngồi lỳ chiếm ghế rất lâu, hiệu quả như mất 1 ghế suốt rush.</li>
+<li><strong>Sức chứa</strong>: 9 ghế + hàng đợi 5 (=2+⌊9/3⌋) = <strong>14 khách đồng thời</strong>. Rush nặng đến ~1 khách/giây (141–145/150s) &gt; throughput đỉnh → ~27–29% bỏ đi + tip sụp.</li>
+<li><strong>2 loại "bỏ đi" tách biệt:</strong> (a) <strong>queueOverflow</strong> — đến lúc 14 slot đầy → <strong>từ chối ngay tại cửa</strong> (không vào, gần như không phạt; cum đếm rất lớn ~1.787); (b) <strong>queueLost</strong> — đã vào ghế/đợi nhưng <strong>hết kiên nhẫn trước khi phục vụ</strong> → <strong>bị phạt</strong> (cum 83 lượt → 1.775 xu). "Khách bỏ ở hàng đợi vì chờ lâu" = loại (b).</li>
+<li><strong>Combo tệ nhất = humid + heavy rush → tip chỉ ~9%</strong> (3 heavy rush quan sát: tip 14% / 15% / <strong>9%</strong>): humid patience ×0,75 (ngắn sẵn) + rush dồn → phục vụ trễ qua ngưỡng 60% → mất sạch tip. Nút thắt thường là <strong>ly sạch + đá</strong> (vd rack 2/12), không phải ghế → heavy+humid cần rửa ly nhanh + nhiều ly + đá đầy.</li>
+<li>Giá trị đơn thật (đã gồm Chợ Đêm ×1.20 + thời tiết Oi bức + well-rested): khách thường 1 trà ≈ <strong>94</strong>; <strong>VIP 1 trà ≈ 364 (≈ 3,9× khách thường)</strong> — VIP là faucet trội hẳn do tip ×10 chi phối; rush đặt <strong>2 món</strong> (hạt+trà) ≈ 133 → xác nhận cơ chế <code>order</code> + <code>secondaryOrder</code>.</li>
+</ul></li>
+<li><p><strong>Heavy rush (Cao điểm NẶNG) — quan sát live:</strong></p>
+<ul>
+<li><code>spawnInterval</code> tụt còn <strong>~719ms</strong> (so với ~3.776ms thường) → khách vào **~5× nhanh** (khớp <code>rushMultiplier 0.2</code>); rush kéo <strong>~150 giây</strong>.</li>
+<li>Cơ cấu dồn về cao giá trị: rush weight ×3 + thường có <strong>nhiều VIP cùng lúc</strong> (quan sát 2 VIP) → cửa sổ "in tiền".</li>
+<li>Rủi ro: phạt mất khách <strong>×2.5</strong>; mất VIP = mất nguyên gross → vừa cơ hội vừa dễ "chảy máu" nếu throughput không kịp.</li>
+<li><code>shipperSpawnInterval</code> rút theo thời tiết (live): base ~220s → <strong>humid ~152s</strong> (shipper×2) → <strong>mưa phùn ~140s</strong> (shipper×3, ngắn nhất = nhiều đơn shipper nhất).</li>
+</ul></li>
+<li><p><strong>Cross-check tip ở cấp tổng:</strong> snapshot tích luỹ <code>earned 839.459</code> vs <code>tipsEarned 258.251</code> → <strong>tip ≈ 31% doanh thu</strong>, khớp thiết kế tip gốc <strong>30%</strong> (mục 12).</p></li>
+<li><p><strong>Tip% TỈ LỆ NGHỊCH với độ nặng rush (quan sát 3 mức, insight design quan trọng):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Loại tải</th>
+<th style="text-align: right;">Khách đến</th>
+<th style="text-align: right;">Phục vụ</th>
+<th style="text-align: right;">Bỏ đi</th>
+<th style="text-align: right;">Tip%</th>
+<th style="text-align: right;">Phạt</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ca thường</td>
+<td style="text-align: right;">307</td>
+<td style="text-align: right;">89%</td>
+<td style="text-align: right;">11%</td>
+<td style="text-align: right;">72%</td>
+<td style="text-align: right;">nhỏ</td>
+</tr>
+<tr>
+<td><strong>Rush nhẹ</strong></td>
+<td style="text-align: right;">45–46</td>
+<td style="text-align: right;"><strong>100%</strong></td>
+<td style="text-align: right;"><strong>0%</strong></td>
+<td style="text-align: right;"><strong>47–56%</strong></td>
+<td style="text-align: right;"><strong>0</strong></td>
+</tr>
+<tr>
+<td>Rush nặng</td>
+<td style="text-align: right;">142–145</td>
+<td style="text-align: right;">72–<strong>77%</strong></td>
+<td style="text-align: right;">23–28%</td>
+<td style="text-align: right;"><strong>9–19%</strong></td>
+<td style="text-align: right;">có</td>
+</tr>
+</tbody>
+</table>
+<p>Cơ chế: rush nặng dồn khách + patience ×0,611 → phục vụ trễ, <strong>qua ngưỡng 60% (<code>ev</code>) → tip = 0</strong>.</p>
+<ul>
+<li><strong>Rush NHẸ = "điểm ngọt"</strong>: ~0,5 khách/giây nằm trong sức 9 ghế → phục vụ 100%, <strong>96% boa, tip ~47–56% doanh thu</strong>, net ~5.5k/90s (~62 xu/s), <strong>0 phạt</strong> → lợi nhuận sạch &amp; ổn định.</li>
+<li><strong>Rush NẶNG = canh bạc throughput</strong>: volume gấp 3 nhưng vượt sức → mất 23–28% + tip sụp 9–19% + phạt (gross 7.3–9.2k, net 6.3–8.9k). Đủ throughput thì hốt đậm, thiếu thì volume cao mà tip sụp.</li>
+<li><strong>✅ A/B well-rested trên heavy rush (cùng ~142–143 khách, ~78% phục vụ):</strong> CÓ buff ×1.1 → net <strong>8.920</strong>; HẾT buff → net <strong>7.375</strong> (chênh ~1.545 ≈ <strong>+21%</strong>) → cô lập được giá trị thực well-rested trên 1 rush nặng. Trần phục vụ **~0,74 ly/giây ổn định** qua nhiều rush, không đổi theo thời tiết (143/150s vào 0,95/s − phục vụ 0,74/s = 32 bỏ).</li>
+<li><strong>✅ Bài toán throughput (heavy rush #4, well-rested ×1.1):</strong> 142 khách/150s = <strong>0,95/giây vào</strong> vs phục vụ <strong>0,73/giây</strong> (109 ly, ~1 ly/1,37s) → <strong>chênh 0,22/s × 150 = 33 bỏ đi (23%)</strong> — khớp tuyệt đối. → <strong>Trần tay người chơi ~0,73 ly/giây</strong>; mọi thứ vượt mức đó ở heavy rush đều rơi. Hàng đợi (panel "ĐỢI") <strong>đầy 5</strong> suốt peak. Phạt chỉ <strong>−239</strong> cho 33 khách bỏ → xác nhận phần lớn là <strong>queueOverflow (từ chối ở cửa, KHÔNG phạt)</strong>, chỉ số ít <strong>queueLost</strong> bị phạt. Net +2.570 so lần trước nhờ well-rested ×1.1 + xử lý nhanh hơn (serve 77% vs ~72%). → Hai mức rush tạo 2 trải nghiệm kinh tế khác hẳn: nhẹ thưởng sự ổn định, nặng thưởng người đã đầu tư ghế/pha/rửa/đá.</li>
+</ul></li>
+</ul>
+<section id="vẫn-nằm-hoàn-toàn-ở-server-không-lấy-được-nếu-không-kích-hoạt-sự-kiện" class="level3">
+<h3>Vẫn nằm hoàn toàn ở server (không lấy được nếu không kích hoạt sự kiện)</h3>
+<ul>
+<li>Nội dung đơn shipper (số món/đơn, <code>discountRate</code>, hạn giao, mức phạt) — chỉ hiện khi <code>activeShipperOrder</code> ≠ null.</li>
+<li>Gangster: xác suất gặp, phần thưởng thắng, thiệt hại khi thua, số tiền "trả bảo kê", lượng trộm offline — chỉ hiện khi có sự kiện.</li>
+<li>Bảng thưởng <code>chairmanDisguise</code>. → Muốn lấy nốt phải <strong>chơi thật</strong> qua các sự kiện đó để đọc giá trị runtime; không có trong bất kỳ config tĩnh nào.</li>
+</ul>
+</section>
+</section>
+<section id="22-quét-chunk-lazy-load--các-hệ-phụ-đã-xác-minh-hết-phía-client" class="level2">
+<h2>22. Quét chunk lazy-load &amp; các hệ phụ (đã xác minh hết phía client)</h2>
+<p>Đã fetch &amp; soi các chunk tách rời — <strong>toàn bộ là UI, mọi hằng số economy đều nằm ở main bundle</strong> (đã trích). Chunk: ChangelogOverlay, LeaderboardDialog, ShrineDrawer, ShrinePlayerArchiveDialog, RentalScreen, MissionDialog, DonateTeaOverlay, StreetView, SocialPreviewOverlay, badge-config, sign-text-styles, GameCanvas/pixi (render), Auth/Support/ReportBug…</p>
+<p>Phát hiện/làm rõ thêm:</p>
+<ul>
+<li><strong>"Mời Trà Đá" (DonateTea) = MÔ HÌNH MONETIZATION</strong> (✅ xác nhận): quyên góp tự nguyện cho tác giả qua <strong>chuyển khoản</strong> (<code>/api/v1/donate/{config,submit,cancel}</code>), 2 mức <strong>20.000đ / 50.000đ</strong>, ĐỔI <strong>1 "quà cảm ơn" cosmetic</strong>:
+<ul>
+<li>🫱 Huy hiệu <strong>Kết Nối</strong> (Networker — badge gate ghế tựa) · 🏮 Đèn lồng (4 style) · 🌿 Cây cảnh (4 style) · 🪧 Biển hiệu (4 style: Neon/Vintage/Thư pháp/Vàng) · hoặc "không cần quà".</li>
+<li>Một số quà có <strong><code>repGate</code> "Cần ⭐ X"</strong> (vd biển Vàng cần 5.000⭐) → tiền KHÔNG mua tắt được; vẫn cần uy tín. <code>owned</code>="Đã có". Có ô lời nhắn cho tác giả (chú thích "không phải nội dung CK").</li>
+<li><strong>KHÔNG pay-to-win</strong>: chỉ bán <strong>cosmetic + huy hiệu tiện ích</strong> (Networker cũng kiếm free qua referral), KHÔNG bán xu/power/thứ hạng. → Đây cũng là <strong>con đường chính lấy cosmetic</strong> (không grind/không cosmeticToken như suy đoán trước). Mô hình donation lành mạnh, đáng học cho bản bia hơi.</li>
+</ul></li>
+<li><strong>giftMission</strong> (xã hội): tặng trà cho <strong>3 người chơi khác nhau</strong> (<code>Ep</code>=3) → thưởng <code>jp</code> = <strong>300 xu + 15 uy tín</strong>.</li>
+<li><strong>emergencyPack</strong> ("Gói cứu trợ"): khi <strong>hết nguyên liệu/kẹt</strong> thì claim gói miễn phí để chơi tiếp — <strong>lưới an toàn chống softlock</strong>, không phải faucet thường.</li>
+<li><strong>shiftMission</strong>: target 3 ca → reward <code>gc</code> = <strong>1.000 xu + 100 uy tín</strong> (xác nhận trùng live state).</li>
+<li><strong>WC = {3.000 xu, 250 uy tín}</strong>: một reward lớn (nhiều khả năng <strong>referral/mời bạn</strong>; chưa chốt 100% trigger).</li>
+<li><strong>Không tồn tại trong client</strong>: reputation decay, prestige/rebirth, lãi suất/thuế, thu nhập idle khi offline (ngoài welcome-back + trộm offline). → game <strong>không</strong> có passive income kiểu idle-away.</li>
+<li>Một số hằng số minify còn lại <strong>không phải economy</strong>: <code>_v</code>=13.000ms &amp; <code>kv</code> (timer nhấp nháy UI), <code>zC</code>/<code>QC</code>/<code>XC</code>/<code>Nv</code> (const export cho UI social: emoji, câu chúc, react).</li>
+<li><strong>Trợ lý AI in-game ("Trà Đấm") — feature đáng học:</strong> chatbot tư vấn <strong>dùng số liệu realtime của người chơi</strong> (kho hiện có, số ghế, cấp thiết bị, thời tiết ca tới, hạng, uy tín) để khuyên cá nhân hoá rất sát — vd "thùng đá mới cấp 3, đang cảnh báo thiếu đá → treo biển Vintage giảm 50% khách vội". Giới hạn ~20 tin/phiên (<code>x/20</code>), lịch sử xoá khi đóng. Đây là lớp onboarding/retention thông minh: biến tooltip tĩnh thành tư vấn động theo trạng thái thật.</li>
+</ul>
+<section id="trần-cuối-cùng-không-thể-lấy-thêm-nếu-không-có-quyền-server--không-kích-hoạt-sự-kiện" class="level3">
+<h3>Trần cuối cùng (không thể lấy thêm nếu không có quyền server / không kích hoạt sự kiện)</h3>
+<ol type="1">
+<li>Nội dung đơn <strong>shipper</strong> (số món, <code>discountRate</code>, hạn giao, phạt) — chỉ có khi <code>activeShipperOrder</code>≠null.</li>
+<li>Số liệu <strong>gangster/bảo kê</strong> (xác suất, thưởng thắng, thiệt hại thua, tiền chuộc, lượng trộm offline) — chỉ có khi <code>gangsterEvent</code>≠null.</li>
+<li>Bảng thưởng <strong>chairmanDisguise</strong> (pity reveal Chí Phèo).</li>
+<li><del>Phần thưởng cuối mùa giải / Đền Thiêng / độ dài &amp; reset mùa</del> — ✅ <strong>đã gỡ hết</strong> (mục 11): 2 mùa song song <strong>Phân Hạng 7 ngày</strong> + <strong>Tranh Bá 14 ngày</strong>, neo epoch 2026-04-11 (tz VN); thưởng = bó nguyên liệu theo hạng + huy chương top10 + Đền Thiêng, giao qua hòm thư.</li>
+<li>Định nghĩa <strong>catalog server</strong> đầy đủ (đã xác nhận phần giá/upgrade khớp client; phần còn lại chỉ server giữ).</li>
+</ol>
+<p>→ Cả 5 mục trên đều <strong>server-authoritative</strong>. Cách duy nhất lấy: (a) <strong>chơi thật</strong> qua từng sự kiện rồi đọc state runtime, hoặc (b) có quyền truy cập backend/API. Ngoài hai cách đó, <strong>đã khai thác hết</strong> dữ liệu economy mà client lộ ra.</p>
+</section>
+</section>
+<section id="23-hệ-thống-nhiệm-vụ-tổng-hợp--bundle--chơi-thật" class="level2">
+<h2>23. HỆ THỐNG NHIỆM VỤ (tổng hợp — bundle + chơi thật)</h2>
+<p>Game có <strong>7 nhánh nhiệm vụ/tiến trình</strong> tách biệt:</p>
+<section id="a-nhiệm-vụ-ngày--3-slotngày-mc3-pool-wc-reward-hm-target-rs" class="level3">
+<h3>A. Nhiệm vụ ngày — 3 slot/ngày (<code>Mc</code>=3; pool <code>wc</code>; reward <code>hm</code>; target <code>rS</code>)</h3>
+<ul>
+<li><p>Mỗi ngày bốc 3 nhiệm vụ, mỗi slot 1 cái từ pool riêng:</p>
+<ul>
+<li><strong>Slot 0</strong> (dễ): <code>serve_customers</code> | <code>serve_tea</code> | <code>serve_snacks</code></li>
+<li><strong>Slot 1</strong> (vừa): <code>perfect_tip</code> | <code>earn_coins</code></li>
+<li><strong>Slot 2</strong> (khó): <code>zero_loss_window</code></li>
+</ul></li>
+<li><p><strong>Reward theo SLOT</strong> (cố định, không theo loại nhiệm vụ) — <code>hm</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Slot</th>
+<th>Reward</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>120 xu + 5 uy tín</td>
+</tr>
+<tr>
+<td>1</td>
+<td>220 xu + 5 uy tín</td>
+</tr>
+<tr>
+<td>2</td>
+<td>320 xu + 5 uy tín</td>
+</tr>
+</tbody>
+</table></li>
+<li><p><strong>Target scale theo tiến trình</strong> (<code>rS</code>, base→max): serve_customers 21→102 · serve_tea 10→53 · serve_snacks 8→51 · perfect_tip 9→41 · earn_coins 1.100→9.200 · zero_loss_window 1.</p>
+<ul>
+<li><code>perfect_tip</code> đếm lượt phục vụ khi patience &gt; 60% (ngưỡng <code>ev</code>); <code>zero_loss_window</code> = không mất khách trong 1 khoảng.</li>
+</ul></li>
+<li><p><strong>Hoàn thành cả 3 → bonus <code>Tp</code> = 1 tờ rơi + 1 badge shard.</strong></p></li>
+<li><p>Lịch sử xoay vòng lưu ở <code>recentMissionHistory</code> (tránh lặp).</p></li>
+</ul>
+</section>
+<section id="b-shift-mission" class="level3">
+<h3>B. Shift mission</h3>
+<p>3 ca/ngày → <strong>1.000 xu + 100 uy tín</strong> (<code>gc</code>).</p>
+</section>
+<section id="c-gift-mission-xã-hội" class="level3">
+<h3>C. Gift mission (xã hội)</h3>
+<p>Tặng trà cho <strong>3 người chơi khác nhau</strong> (<code>Ep</code>=3) → <strong>300 xu + 15 uy tín</strong> (<code>jp</code>).</p>
+</section>
+<section id="d-login-track-điểm-danh-ct" class="level3">
+<h3>D. Login track (điểm danh, <code>cT</code>)</h3>
+<p>Chu kỳ 7 ngày, thưởng UY TÍN nhân đôi: ngày 1→+2, 2→+4, 3→+8, 4→+16, 5→+32, 6→+64, 7→+128.</p>
+</section>
+<section id="e-sign-in-mission" class="level3">
+<h3>E. Sign-in mission</h3>
+<p>Nhiệm vụ gắn tài khoản/đăng nhập (state <code>signInMission</code>, hiện null).</p>
+</section>
+<section id="f-referral-mời-bạn" class="level3">
+<h3>F. Referral (mời bạn)</h3>
+<p>~<strong>3.000 xu + 250 uy tín</strong> (<code>WC</code>), qua <code>/referral/attribute</code>.</p>
+</section>
+<section id="g-life-path-lp1lp7" class="level3">
+<h3>G. Life Path (LP1–LP7)</h3>
+<p>Mốc tích luỹ cả đời (xem mục 11) — thưởng lớn (xu + crate + badge shard + cosmetic token).</p>
+<p><strong>Nguyên tắc cân bằng (đáng học cho bản bia hơi):</strong> thưởng nhiệm vụ chủ yếu là <strong>uy tín + xu nhỏ + vật phẩm</strong> (tờ rơi, badge shard), và <strong>KHÔNG tính vào điểm xếp hạng mùa</strong> → nhiệm vụ là đường tiến trình/retention phụ, không phá cân bằng đua hạng (vốn chỉ tính doanh thu phục vụ + shipper).</p>
+</section>
+</section>
+<section id="24-đối-chiếu-với-bản-research-cũ-file-upload" class="level2">
+<h2>24. Đối chiếu với bản research cũ (file upload)</h2>
+<p><strong>Khớp 100%</strong> ở: giá món, giá vốn/margin, spawn 10.5s, ngồi 5–10s, weight khách (1/0.3/0.1/0.03/0.1), VIP tip×10/phạt×10, toàn bộ bảng thời tiết, rush hour, biển hiệu, cost progression thiết bị, dog 2k+20 đá, stamina 12 phút, daily cap 8/6/5, hard cap 200k, well-rested ×1.1.</p>
+<p><strong>Bản trích của tôi bổ sung/chuẩn hơn:</strong></p>
+<ul>
+<li><strong>Phân tách rõ 2 hệ</strong>: League theo mùa (8 bậc, có ngưỡng &amp; tên VN) vs Life Path (LP0–LP7) — bản cũ gộp lẫn league vào LP.</li>
+<li><strong>Tên + công thức rent</strong> mặt bằng chính xác (<code>Dn(e)</code>), thay vì chỉ bảng số.</li>
+<li><strong>Stats từng cấp thiết bị</strong> đầy đủ (melt interval, batch size, brew/wash time, slots, capacity).</li>
+<li><strong>Phân bố thời tiết</strong> (35/20/10/20/15) và <strong>hồi thể lực giảm dần theo phiên</strong> (<code>jv</code>).</li>
+<li><strong>State khởi đầu</strong> (300 xu, kho ban đầu) và <strong>bảng reward nhiệm vụ</strong> (<code>rS</code>).</li>
+</ul>
+<p><strong>Khác biệt nhỏ:</strong> bản cũ liệt kê "Cổng Trường" trùng dòng và nhãn multiplier hơi lệch ở mục cuối — bản trích trực tiếp ở trên là chuẩn.</p>
+<p><em>Phương pháp: nạp bundle vào biến page, regex-grep từng config object (Wa, mc, ni, ei, Cp, fc, Rp, Cc/za/Ir/Al, De, Fr, Ya, rS). Không dùng nội dung file research cũ.</em></p>
+</section>
+<section id="25-mô-hình-2-tiền-tệ-xu--uy-tín--tổng-hợp" class="level2">
+<h2>25. Mô hình 2 tiền tệ (xu &amp; uy tín) — tổng hợp</h2>
+<p><strong>XU có 3 chỉ số tách biệt</strong> (quan trọng — đừng gộp làm một khi implement):</p>
+<ul>
+<li><strong>Số dư</strong> (<code>coins</code>): tiền tiêu được, <strong>trừ khi mua/nâng cấp/thuê</strong>.</li>
+<li><strong>Thu mùa này</strong> (<code>seasonEarned</code>): tổng doanh thu trong mùa → <strong>điểm xếp hạng league</strong>; cộng dồn, <strong>KHÔNG giảm khi tiêu</strong>; reset mỗi mùa.</li>
+<li><strong>Thu liên mùa / trọn đời</strong> (<code>lifetimeEarned</code>): cộng dồn vĩnh viễn → <strong>drive mốc Life Path</strong>. → Tiêu tiền không làm tụt hạng; chỉ doanh-thu-kiếm-được mới tính hạng &amp; milestone.</li>
+</ul>
+<p><strong>UY TÍN (<code>reputation</code>):</strong></p>
+<ul>
+<li><strong>Kiếm</strong>: phục vụ sớm (+3 có boa / +1 không boa, mục 12), hoàn thành nhiệm vụ, điểm danh, thưởng mốc.</li>
+<li><strong>Mất</strong>: khách bỏ đi, bỏ lỡ nhiệm vụ. (Lưu ý: uy tín <strong>có thể âm trong 1 ca</strong> — xem sổ kết ca.)</li>
+<li><strong>Tiêu vào 4 việc</strong> (<code>repUsage*</code>):
+<ol type="1">
+<li><strong>Tiễn ngồi lỳ giữa ca</strong> — đuổi khách stubborn đang ngồi; <strong>cost = hàm số theo số giây đã ngồi</strong> (<code>tip_kick_cost</code>; ngồi càng lâu càng đắt; server tính). ⚠️ Khác hẳn <strong>"Mời về để đóng cửa"</strong> (tốn XU, hàm <code>ab</code>, xem mục 12b).</li>
+<li><strong>Nâng cấp ghế tựa</strong> — uy tín <code>[3.000…40.000]</code> mỗi cấp (mục 9).</li>
+<li><strong>Phát tờ rơi</strong> — phát động chiến dịch (mục 14).</li>
+<li><strong>Mở quầy bánh mì</strong> — ⚠️ <strong>feature SẮP CÓ, chưa implement</strong> (chỉ là label <code>repUsageBread</code> + flavor text; chưa có logic <code>banhMi/breadCounter</code>). → Roadmap: dòng sản phẩm thứ 2 mở bằng uy tín.</li>
+</ol></li>
+<li>Ngoài ra uy tín còn làm <strong>gate</strong> (golden sign 5.000⭐; ghế tựa cần huy hiệu Kết Nối).</li>
+</ul>
+<p>→ Uy tín = "meta-currency" tách khỏi xu: vừa là điểm hạng (mục 11), vừa là tiền mua các thứ "mềm" (đuổi khách, marketing, mở rộng) — giảm áp lực lạm phát xu.</p>
+</section>
+<section id="12b-phạt-bỏ-đi-ab--mời-về-để-đóng-cửa--white_check_mark-đọc-thẳng-bundle" class="level2">
+<h2>12b. Phạt bỏ đi (<code>ab</code>) &amp; "Mời về để đóng cửa" — ✅ đọc thẳng bundle</h2>
+<p>Một hàm <code>ab(c)</code> dùng chung cho <strong>cả 2 tình huống</strong>: khách tự bỏ đi VÀ chủ động mời về lúc đóng ca.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ab</span>(c)  <span class="op">=</span> <span class="fu">max</span>(<span class="dv">0</span><span class="op">,</span> <span class="fu">round</span>( <span class="fu">Dp</span>(c) × nv × leavePenaltyMultiplier[type] ))   <span class="co">// nv = 0.1</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">Dp</span>(c)  <span class="op">=</span> <span class="fu">round</span>( (<span class="fu">basePrice</span>(order) <span class="op">+</span> <span class="fu">basePrice</span>(secondaryOrder)) × paymentMultiplier[type] )  <span class="co">// GIÁ GỐC, KHÔNG gồm tip / nhân sự kiện-thời tiết</span></span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Loại</th>
+<th style="text-align: right;">paymentMult</th>
+<th style="text-align: right;"><strong>leavePenaltyMult</strong></th>
+<th>Phí mời về / phạt bỏ đi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Thường / Vội</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"><strong>1</strong></td>
+<td>10% giá gốc đơn</td>
+</tr>
+<tr>
+<td>Ngồi lỳ (stubborn)</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"><strong>1</strong></td>
+<td>10% giá gốc đơn (rẻ — dù chiếm ghế lâu nhất)</td>
+</tr>
+<tr>
+<td><strong>VIP</strong></td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"><strong>10</strong></td>
+<td><strong>= 100% giá gốc đơn</strong> (đắt nhất)</td>
+</tr>
+<tr>
+<td><strong>Chí Phèo</strong></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"><strong>0</strong></td>
+<td><strong>0 — miễn phí</strong> (vốn không trả tiền)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>"Mời về để đóng cửa"</strong> (chế độ <code>stallOperatingMode==="closing"</code>): chi phí hiển thị <code>kd = Σ ab(c)</code> trên mọi khách đang <code>waiting/ordering/enjoying/grace_leaving</code> + queue (trừ <code>angry_leaving/leaving</code>). Nhãn <code>~-{kd}</code> ("~" = <strong>ước lượng client</strong>, server chốt số thật). <strong>✅ đối chiếu live:</strong> 3 khách (VIP+2 ngồi lỳ) = ~-57 (VIP ≈ 50, 2 ngồi lỳ ≈ 7); VIP rời ghế → 2 ngồi lỳ = ~-7. → Chi phí <strong>cố định/khách, KHÔNG co giãn theo giây ngồi</strong>; con số tụt là do VIP rời danh sách.</p>
+<p><strong>Bài học:</strong> (1) tái dùng 1 công thức cho "bỏ đi" + "mời về" — gọn; (2) đuổi ngồi lỳ <strong>rẻ</strong> (van xả ghế hợp lý), đuổi VIP <strong>đắt ngang giá đơn</strong>, đuổi Chí Phèo <strong>free</strong>; (3) khách <code>enjoying</code> (đã trả tiền) vẫn bị tính phí mời về — đã thu tiền+tip rồi, mời sớm chỉ mất thêm 10% giá gốc.</p>
+</section>
+
+      </article>
+    </main>
+  </div>
+  <script>
+    document.querySelectorAll('.markdown-body table').forEach((table) => {
+      if (table.parentElement && table.parentElement.classList.contains('table-wrapper')) return;
+      const wrapper = document.createElement('div');
+      wrapper.className = 'table-wrapper';
+      table.parentNode.insertBefore(wrapper, table);
+      wrapper.appendChild(table);
+    });
+
+    const toc = document.getElementById('toc-list');
+    document.querySelectorAll('.markdown-body h2, .markdown-body h3').forEach((heading, index) => {
+      if (!heading.id) heading.id = 'section-' + index;
+      const item = document.createElement('li');
+      const link = document.createElement('a');
+      link.href = '#' + heading.id;
+      link.className = heading.tagName === 'H3' ? 'depth-3' : 'depth-2';
+      const span = document.createElement('span');
+      span.textContent = heading.textContent;
+      link.appendChild(span);
+      item.appendChild(link);
+      toc.appendChild(item);
+    });
+
+    const links = [...document.querySelectorAll('#toc-list a')];
+    const headings = links.map((link) => document.getElementById(link.getAttribute('href').slice(1))).filter(Boolean);
+    const activate = () => {
+      const current = headings.filter((h) => h.getBoundingClientRect().top < 90).pop() || headings[0];
+      links.forEach((link) => link.classList.toggle('active', current && link.hash === '#' + current.id));
+    };
+    document.addEventListener('scroll', activate, { passive: true });
+    activate();
+  </script>
+</body>
+</html>
