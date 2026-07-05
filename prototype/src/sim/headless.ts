@@ -8,7 +8,10 @@ import { computeStats, formatStats } from '../engine/metrics'
 
 const TARGET_SERVES = 500
 const TICK_MS = 100
-const SEED = 20260611
+// SIM_SEED=<n> env override — re-measure k robustness on other seeds (default unchanged).
+// Ambient declare: file runs under tsx (node) only, never bundled by vite; keeps DOM tsconfig dep-free.
+declare const process: { env: Record<string, string | undefined> }
+const SEED = Number.isFinite(Number(process.env.SIM_SEED)) ? Number(process.env.SIM_SEED) : 20260611
 
 const engine = new Engine(SEED)
 let shiftIndex = 0

@@ -35,7 +35,7 @@ export const FRESHNESS_MS = 12_000
 export const FRESHNESS_WARN_MS = 9_000 // cờ vàng ~75%
 
 // ── Tip (GDD §8, tối giản Phase 0) ──
-export const TIP_PATIENCE_THRESHOLD = 0.6 // patience/max < 0.6 → tip 0
+export const TIP_PATIENCE_THRESHOLD = 0.5 // patience/max < 0.5 → tip 0
 export const TIP_RATE = 0.3
 export const TIP_VIP_MULT = 10
 
@@ -49,8 +49,8 @@ export const QUEUE_SLOTS = 2 + Math.floor((TABLE_COUNT * SEATS_PER_TABLE) / 3) /
 export const SHIFT_DURATION_MS = 120_000 // 🟡 chưa neo GDD, đủ dài để cảm nhịp
 
 // ── Demand mix 🟡 (KHÔNG có trong spec — giả định để đo, chỉnh thoải mái) ──
-export const P_MOI = 0.6 // xác suất 1 khách gọi kèm 1 mồi
-export const P_NEM_GIVEN_MOI = 0.4 // trong số gọi mồi: 40% nem, 60% lạc
+export const P_MOI = 0.85 // xác suất 1 khách gọi kèm 1 mồi
+export const P_NEM_GIVEN_MOI = 0.65 // trong số gọi mồi: 65% nem, 35% lạc
 export const P_SECOND_ROUND = 0.35 // nhóm thường gọi đợt 2 (vội: luôn 1 đợt)
 export const GROUP_SIZE_MIN = 1
 export const GROUP_SIZE_MAX = 2
