@@ -35,7 +35,7 @@ export const FRESHNESS_MS = 12_000
 export const FRESHNESS_WARN_MS = 9_000 // cờ vàng ~75%
 
 // ── Tip (GDD §8, tối giản Phase 0) ──
-export const TIP_PATIENCE_THRESHOLD = 0.5 // patience/max < 0.5 → tip 0
+export const TIP_PATIENCE_THRESHOLD = 0.6 // patience/max < 0.6 → tip 0
 export const TIP_RATE = 0.3
 export const TIP_VIP_MULT = 10
 
