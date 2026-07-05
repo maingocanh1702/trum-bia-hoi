@@ -96,6 +96,8 @@ export interface ServeEvent {
   dishes: Dish[]
   payment: number // chưa gồm tip
   tip: number
+  /** xu THỰC cộng ví lượt này (≤ payment+tip khi chạm trần ngày F01) — payment/tip giữ GROSS cho phép đo k */
+  credited: number
   hadMoi: boolean
   /** thêm để đo %: cốc bia hết hơi lúc giao? */
   stale: boolean
@@ -109,12 +111,17 @@ export interface ShiftStats {
   pctStale: number // trên các lượt có bia
   lostCustomers: number
   rejectedAtDoor: number
+  /** Σ(payment+tip) GROSS từ log = doanh thu TẠO RA; ví thực cộng = Σ credited (trần ngày F01) */
   coinsEarned: number
 }
 
 export interface World {
   now: number
   coins: number
+  /** doanh thu phục vụ ĐÃ CỘNG VÍ trong ngày — bất biến 0 ≤ dayEarned ≤ DAILY_EARN_CAP (trần ngày F01).
+   *  Phase 0 chưa có save/đồng hồ thật → "ngày" = vòng đời world (reload = ngày mới, như coins);
+   *  rollover thật (ngày VN) đến cùng save/server — F23/F26. */
+  dayEarned: number
   glasses: Glass[] // 10 (buy-cap, Phase 0 cố định)
   tables: Table[] // 3 bàn
   queue: QueuedGroup[]

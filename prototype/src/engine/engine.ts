@@ -2,7 +2,7 @@
 // Loop & số: 04-SPEC-prototype-phase0.md §3/§4 · serve theo Order cấp bàn: 03-SPEC-he-ban.md §4/§10
 
 import {
-  CUSTOMER_WEIGHTS, ENJOY_MAX_MS, ENJOY_MIN_MS, FRESHNESS_MS, GLASS_COUNT,
+  CUSTOMER_WEIGHTS, DAILY_EARN_CAP, ENJOY_MAX_MS, ENJOY_MIN_MS, FRESHNESS_MS, GLASS_COUNT,
   GROUP_SIZE_MAX, GROUP_SIZE_MIN, MENU, PATIENCE_RUSH_MULT, PATIENCE_THUONG_MS,
   PEAK_SPAWN_MULT, POUR_MS, P_MOI, P_NEM_GIVEN_MOI, P_SECOND_ROUND, QUEUE_SLOTS,
   SEATS_PER_TABLE, SHIFT_DURATION_MS, SPAWN_BASE_MS, SPAWN_WARMUP_MULT, TABLE_COUNT,
@@ -32,6 +32,7 @@ export class Engine {
     return {
       now: 0,
       coins: 0,
+      dayEarned: 0,
       glasses: Array.from({ length: GLASS_COUNT }, () => ({ id: uid('g'), state: 'clean' } as Glass)),
       tables: Array.from({ length: TABLE_COUNT }, () => ({
         id: uid('t'), seats: Array(SEATS_PER_TABLE).fill(null),
@@ -62,7 +63,7 @@ export class Engine {
   startShift() {
     const w = this.world
     if (w.shift.running) return
-    // reset trạng thái quán nhưng giữ coins + allEvents
+    // reset trạng thái quán nhưng giữ coins + dayEarned (trần ngày) + allEvents
     for (const t of w.tables) { t.seats = Array(SEATS_PER_TABLE).fill(null); t.currentOrder = null; t.state = 'empty'; t.roundsDone = 0 }
     for (const g of w.glasses) { g.state = 'clean'; g.pouredAt = undefined; g.washStartedAt = undefined }
     w.queue = []
@@ -75,13 +76,21 @@ export class Engine {
     w.shift.elapsedMs = 0
     w.shift.firstSpawnDone = false
     w.shift.nextSpawnAt = w.now + SPAWN_BASE_MS * SPAWN_WARMUP_MULT // warmup ×1.6
-    this.say('🔔 Mở ca!')
+    this.say('🔔 Mở ca! Thể lực 100%.')
   }
 
   endShift() {
     this.world.shift.running = false
     this.say('🌙 Đóng ca.')
   }
+
+  /** Thể lực % (F01) — SUY RA từ tiến độ ca (một nguồn: shift.elapsed/duration), không có state riêng.
+   *  Mở ca = 100%, cạn tuyến tính trong 12'; hết thể lực = hết ca. Tab ẩn không tick → không hao (anti-idle). */
+  staminaPct(): number {
+    const s = this.world.shift
+    return Math.max(0, 1 - s.elapsedMs / s.durationMs)
+  }
+
 
   toggleRush() {
     const w = this.world
@@ -154,6 +163,20 @@ export class Engine {
     return n
   }
 
+  /** Chốt cộng ví DUY NHẤT cho doanh thu phục vụ — chặn tại trần ngày (F01, GDD §3).
+   *  Log ServeEvent KHÔNG bị trần đụng tới (04 §5: k đo giá trị/lượt từ log, không đo ví). */
+  private creditServeEarnings(value: number): number {
+    const w = this.world
+    if (value <= 0) return 0
+    const remaining = DAILY_EARN_CAP - w.dayEarned
+    if (remaining <= 0) return 0
+    const credited = Math.min(value, remaining)
+    w.coins += credited
+    w.dayEarned += credited
+    if (credited < value) this.say(`🧱 CHẠM TRẦN NGÀY ${DAILY_EARN_CAP / 1000}k xu — xu vượt trần không cộng.`)
+    return credited
+  }
+
   /** Phục vụ cả Order của bàn (1 chạm giao cả đợt — 03 §4). Chỉ hợp lệ khi đủ món ready. */
   serve(tableId: string): boolean {
     const w = this.world
@@ -177,15 +200,16 @@ export class Engine {
       let tip = ratio < TIP_PATIENCE_THRESHOLD ? 0 : Math.round(payment * TIP_RATE)
       if (stale) tip = 0
       if (seat.type === 'vip') tip *= TIP_VIP_MULT
-      w.coins += payment + tip
+      const credited = this.creditServeEarnings(payment + tip)
       const ev: ServeEvent = {
         t: w.now, customerType: seat.type,
         dishes: mine.map((i) => i.dish as Dish),
-        payment, tip, hadMoi, stale,
+        payment, tip, credited, hadMoi, stale,
       }
       w.log.push(ev)
       this.allEvents.push(ev)
-      if (stale) this.say(`⚠️ Cốc hết hơi! ${seat.type} tip ×0 (+${payment})`)
+      if (stale) this.say(`⚠️ Cốc hết hơi! ${seat.type} tip ×0 (+${credited})`)
+      else if (credited < payment + tip) this.say(`💰 +${credited} xu (trần ngày)`)
       else this.say(`💰 +${payment}${tip ? ` +tip ${tip}` : ''}${seat.type === 'vip' ? ' (VIP ×10)' : ''}`)
       seat.state = 'enjoying'
       seat.enjoyUntil = w.now + randInt(this.rng, ENJOY_MIN_MS, ENJOY_MAX_MS)
@@ -206,7 +230,7 @@ export class Engine {
       w.shift.elapsedMs += dtMs
       if (w.shift.elapsedMs >= w.shift.durationMs) {
         w.shift.running = false
-        this.say('🌙 Hết giờ — khách đang ngồi vẫn phục vụ nốt.')
+        this.say('😮‍💨 Hết thể lực — đóng ca. Khách đang ngồi vẫn phục vụ nốt.')
       } else if (w.now >= w.shift.nextSpawnAt) {
         this.spawnGroup()
         const interval = SPAWN_BASE_MS * (w.rush === 'peak' ? PEAK_SPAWN_MULT : 1)

@@ -46,7 +46,12 @@ export const CUSTOMER_WEIGHTS = { thuong: 1.0, voi: 0.3, vip: 0.1 } as const
 export const TABLE_COUNT = 3
 export const SEATS_PER_TABLE = 2
 export const QUEUE_SLOTS = 2 + Math.floor((TABLE_COUNT * SEATS_PER_TABLE) / 3) // = 4 (03 §1)
-export const SHIFT_DURATION_MS = 120_000 // 🟡 chưa neo GDD, đủ dài để cảm nhịp
+export const SHIFT_DURATION_MS = 720_000 // 🟢 F01 — ca 12 phút (GDD §1: khách đổ vào theo bàn ~ca 12')
+
+// ── Trần ngày (F01, GDD §3: 200k gốc × k2.5) 🟢 ──
+/** Trần doanh thu phục vụ CỘNG VÍ mỗi ngày — chạm trần: serve vẫn chạy, xu không cộng thêm.
+ *  Phase 0: "ngày" = vòng đời world (chưa có save/đồng hồ) — rollover thật đến cùng F23/F26. */
+export const DAILY_EARN_CAP = 500_000
 
 // ── Demand mix 🟡 (KHÔNG có trong spec — giả định để đo, chỉnh thoải mái) ──
 export const P_MOI = 0.85 // xác suất 1 khách gọi kèm 1 mồi
