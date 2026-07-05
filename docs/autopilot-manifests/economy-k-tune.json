@@ -1,0 +1,17 @@
+{
+  "feature": "economy-k-tune",
+  "branch": "feat/economy-k-tune",
+  "base_ref": "master",
+  "risk": "P1",
+  "change_class": "economy-tune",
+  "merge_policy": "manual_only",
+  "auto_merge": false,
+  "codex_review": "2x_clean",
+  "depends_on": [],
+  "invariants": ["economy-balance", "sim-harness"],
+  "scope": [
+    "prototype/src/engine/constants.ts",
+    "prototype/src/sim/headless.ts",
+    "scripts/measure_k.py"
+  ]
+}

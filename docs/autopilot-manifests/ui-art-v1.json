@@ -1,0 +1,20 @@
+{
+  "feature": "ui-art-v1",
+  "branch": "feat/ui-art-v1",
+  "base_ref": "master",
+  "risk": "P2",
+  "change_class": "assets-production",
+  "merge_policy": "manual_only",
+  "auto_merge": false,
+  "codex_review": "1x_clean",
+  "depends_on": [],
+  "invariants": ["assets-binding", "game-ui"],
+  "scope": [
+    "assets/",
+    "prototype/public/assets/",
+    "prototype/src/ui/pixiAssets.ts",
+    "prototype/src/ui/icons.tsx",
+    "prototype/src/ui/tokens.ts",
+    "docs/asset-list-designer.md"
+  ]
+}

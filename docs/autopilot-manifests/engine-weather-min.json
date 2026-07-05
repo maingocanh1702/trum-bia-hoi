@@ -1,0 +1,16 @@
+{
+  "feature": "engine-weather-min",
+  "branch": "feat/engine-weather-min",
+  "base_ref": "master",
+  "risk": "P2",
+  "change_class": "engine-weather",
+  "merge_policy": "manual_only",
+  "auto_merge": false,
+  "codex_review": "1x_clean",
+  "depends_on": [],
+  "invariants": ["engine-core"],
+  "scope": [
+    "prototype/src/engine/engine.ts",
+    "prototype/src/engine/constants.ts"
+  ]
+}

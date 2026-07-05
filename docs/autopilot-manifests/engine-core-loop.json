@@ -1,0 +1,17 @@
+{
+  "feature": "engine-core-loop",
+  "branch": "feat/engine-core-loop",
+  "base_ref": "master",
+  "risk": "P1",
+  "change_class": "engine-loop",
+  "merge_policy": "manual_only",
+  "auto_merge": false,
+  "codex_review": "2x_clean",
+  "depends_on": [],
+  "invariants": ["engine-core", "economy-balance"],
+  "scope": [
+    "prototype/src/engine/engine.ts",
+    "prototype/src/engine/constants.ts",
+    "prototype/src/engine/types.ts"
+  ]
+}

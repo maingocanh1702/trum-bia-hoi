@@ -1,0 +1,19 @@
+{
+  "feature": "account-locale-login",
+  "branch": "feat/account-locale-login",
+  "base_ref": "master",
+  "risk": "P1",
+  "change_class": "account-locale",
+  "merge_policy": "manual_only",
+  "auto_merge": false,
+  "codex_review": "2x_clean",
+  "depends_on": [],
+  "invariants": ["build-config", "game-ui"],
+  "scope": [
+    "prototype/src/ui/App.tsx",
+    "prototype/src/ui/components.tsx",
+    "prototype/src/main.tsx",
+    "prototype/src/ui/tokens.ts",
+    "prototype/package.json"
+  ]
+}

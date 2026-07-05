@@ -1,0 +1,16 @@
+{
+  "feature": "economy-tip-penalty",
+  "branch": "feat/economy-tip-penalty",
+  "base_ref": "master",
+  "risk": "P1",
+  "change_class": "economy-tip",
+  "merge_policy": "manual_only",
+  "auto_merge": false,
+  "codex_review": "2x_clean",
+  "depends_on": [],
+  "invariants": ["economy-balance"],
+  "scope": [
+    "prototype/src/engine/metrics.ts",
+    "prototype/src/engine/constants.ts"
+  ]
+}

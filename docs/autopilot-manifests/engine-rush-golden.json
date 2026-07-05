@@ -1,0 +1,16 @@
+{
+  "feature": "engine-rush-golden",
+  "branch": "feat/engine-rush-golden",
+  "base_ref": "master",
+  "risk": "P1",
+  "change_class": "engine-rush",
+  "merge_policy": "manual_only",
+  "auto_merge": false,
+  "codex_review": "2x_clean",
+  "depends_on": [],
+  "invariants": ["engine-core"],
+  "scope": [
+    "prototype/src/engine/engine.ts",
+    "prototype/src/engine/constants.ts"
+  ]
+}
