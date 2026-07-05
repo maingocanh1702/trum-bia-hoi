@@ -1,20 +1,20 @@
-# 🗺️ ROADMAP — Trùm Bia Hơi v2.4
+# 🗺️ ROADMAP — Trùm Bia Hơi v2.5
 
 > **Roadmap sản phẩm.** Đây là **công cụ truyền đạt định hướng**, không phải project plan chi tiết — tasks cụ thể nằm ở các SPEC.
 > **Nguồn sự thật về quyết định/số = GDD** (`02-GDD-trum-bia-hoi.md`); roadmap mâu thuẫn GDD thì GDD thắng.
-> **Ngày:** 2026-06-09. **Nhãn:** 🟢 CORE · 🟡 PROTOTYPE · 🔵 POST-MVP.
+> **Ngày:** 2026-06-23. **Nhãn:** 🟢 CORE · 🟡 PROTOTYPE · 🔵 POST-MVP.
 
 ---
 
 ## 📊 Overall Progress
 
-> 🚀 **Tổng tiến độ: ~15%** — ███░░░░░░░░░░░░░░░░░ (Spec xong, chưa code)
+> 🚀 **Tổng tiến độ: ~22%** — ████░░░░░░░░░░░░░░░░ (Spec xong · prototype Phase 0 đã code, đang chờ đo k)
 >
 > ℹ️ **Lưu ý KPI:** mọi target KPI dưới đây (retention, conversion, EV…) là **benchmark provisional theo chuẩn ngành**, KHÔNG rút từ GDD — chốt lại khi có data playtest thật.
 
 | | Phase | Trạng thái | Outcome cần đạt |
 |---|---|---|---|
-| **NOW** | Phase 0 — Prototype | 🟡 **Spec xong, chưa code** | Biết core có *feel* đúng + `k_value` thật |
+| **NOW** | Phase 0 — Prototype | 🟡 **Prototype đã code (engine+UI+sim) — chờ đo k + feel** | Biết core có *feel* đúng + `k_value` thật |
 | **NOW** | Design Track (song song P0) | 🟡 **Khung spec xong** | Tokens + wireframe + quyết định art pipeline |
 | **NEXT** | Phase 1 — MVP + Art v1 | ⚪ Not started | Vòng lặp ca vui & economy cân, có art thật |
 | **LATER** | Phase 2 — Mở rộng core | ⚪ Not started | Đủ chiều sâu gameplay (6 món, khách đặc biệt) |
@@ -55,18 +55,18 @@ Phase 2+: Tất cả tracks song song, cadence 2 tuần review.
 
 ## 📦 Feature Modules
 
-> **Feature progress: ~15%** — ███░░░░░░░░░░░░░░░░░ (Spec 100%, Code 0%)
+> **Feature progress: ~22%** — ████░░░░░░░░░░░░░░░░ (Spec 100% · Code: lõi Phase 0 đã chạy, các phase sau 0%)
 
 | # | Feature | Mô tả ngắn | Phase | Spec | Code | Art | Balance |
 |---|---------|-------------|:-----:|:----:|:----:|:---:|:-------:|
-| F01 | **Core Loop** | Ca 12 phút, thể lực, trần ngày 500k xu | 0–1 | ✅ | ⬜ | — | ⬜ |
-| F02 | **Menu & Economy** | 6 món, giá/vốn/margin, k-value rescale | 0–1 | ✅ | ⬜ | ⬜ | 🟡 |
-| F03 | **Table System** | 4 cấp bàn, nhóm, serve theo Order, mua/nâng cấp | 0–1 | ✅ | ⬜ | ⬜ | ⬜ |
-| F04 | **Glass Lifecycle** | Bottleneck cốc: clean→in_use→dirty→washing→clean | 0 | ✅ | ⬜ | ⬜ | ⬜ |
-| F05 | **Beer Freshness** | Mất hơi 12s, cờ vàng, hậu quả MVP mềm | 0 | ✅ | ⬜ | ⬜ | ⬜ |
-| F06 | **Tip / Uy tín / Phạt** | Công thức tip, VIP ×10, phạt cụm, grace window | 0–1 | ✅ | ⬜ | — | ⬜ |
-| F07 | **Customer Types** | 6 loại khách (thường/vội/VIP/Chí Phèo/ngồi lỳ/shipper) | 1–2 | ✅ | ⬜ | ⬜ | ⬜ |
-| F08 | **Rush System** | P0: normal/peak toggle; P1: rush đơn giản; P2: lịch/full 90s/150s | 0–2 | ✅ | ⬜ | ⬜ | ⬜ |
+| F01 | **Core Loop** | Ca 12 phút, thể lực, trần ngày 500k xu | 0–1 | ✅ | 🟡 | — | ⬜ |
+| F02 | **Menu & Economy** | 6 món, giá/vốn/margin, k-value rescale | 0–1 | ✅ | 🟡 | ⬜ | 🟡 |
+| F03 | **Table System** | 4 cấp bàn, nhóm, serve theo Order, mua/nâng cấp | 0–1 | ✅ | 🟡 | ⬜ | ⬜ |
+| F04 | **Glass Lifecycle** | Bottleneck cốc: clean→in_use→dirty→washing→clean | 0 | ✅ | ✅ | ⬜ | ⬜ |
+| F05 | **Beer Freshness** | Mất hơi 12s, cờ vàng, hậu quả MVP mềm | 0 | ✅ | ✅ | ⬜ | ⬜ |
+| F06 | **Tip / Uy tín / Phạt** | Công thức tip, VIP ×10, phạt cụm, grace window | 0–1 | ✅ | 🟡 | — | ⬜ |
+| F07 | **Customer Types** | 6 loại khách (thường/vội/VIP/Chí Phèo/ngồi lỳ/shipper) | 1–2 | ✅ | 🟡 | ⬜ | ⬜ |
+| F08 | **Rush System** | P0: normal/peak toggle; P1: rush đơn giản; P2: lịch/full 90s/150s | 0–2 | ✅ | 🟡 | ⬜ | ⬜ |
 | F09 | **Weather** | 5 loại thời tiết, hệ số ảnh hưởng freshness/tip/spawn | 1–2 | ✅ | ⬜ | ⬜ | ⬜ |
 | F10 | **Upgrades** | Bom/rửa/hầm/quầy/bếp × 5 cấp, đường cong giá ×k | 1–2 | ✅ | ⬜ | ⬜ | ⬜ |
 | F11 | **Kitchen & Hot Dishes** | Bếp 2 cấp, 3 mồi nóng (đậu/tóp mỡ/lòng), prep time | 2 | ✅ | ⬜ | ⬜ | ⬜ |
@@ -87,6 +87,8 @@ Phase 2+: Tất cả tracks song song, cadence 2 tuần review.
 | F26 | **Daily Session Pass / Payments** | Free 1 session/ngày; paid unlock toàn bộ daily sessions theo cap | 3+ | ✅ | ⬜ | ⬜ | 🟡 |
 
 > **Đọc cột "Spec":** ✅ = **đã thiết kế trong GDD** (đủ để hiểu/ưu tiên), KHÔNG có nghĩa "đã code". Spec triển khai hiện có: F03 (`03-SPEC-he-ban.md`); F01/F02/F04/F05/F06/F08 P0 (`04-SPEC-prototype-phase0.md`); F07-F26 (`docs/features/Fxx-*.md`, riêng F19 có thêm `07-SPEC-shop-mua-giai-worldcup.md`). Các feature sau Phase 0 vẫn phải chờ đúng phase/playtest gate trước khi code. F21 vẫn cần legal review; F26 cần payment/provider review.
+
+> **Đọc cột "Code":** ✅ = đã code đủ phạm vi feature · 🟡 = **đã code phần lõi Phase 0**, còn phần phase sau (vd F02 mới 3/6 món · F03 chưa có 4 cấp bàn/mua-nâng cấp · F06 mới có tip, chưa uy tín/phạt cụm · F07 mới 3/6 loại khách · F08 mới toggle normal/peak) · ⬜ = chưa code. Lõi prototype thực tế nằm ở `prototype/src/{engine,sim,ui}` — `tsc` pass, chạy được; còn thiếu **đo `k_value`** trước khi qua exit-gate.
 
 ---
 
@@ -204,10 +206,10 @@ graph TD
 | Hạng mục | Track | Trạng thái | Ghi chú |
 |---|---|---|---|
 | Spec Phase 0 | — | ✅ Done | `04-SPEC` v0.2 |
-| Chốt stack thực thi | Code | ⬜ ← *việc kế ngay* | Pixi+React (đích GDD) vs canvas thuần (lặp nhanh) |
-| Scaffold loop (spawn · serve · vòng đời cốc · log) | Code | ⬜ | Theo §3 state model |
-| Chạy ca + thu log + tính k | Economy | ⬜ | `k = DT_bia_mỗi_lượt / 82.5` |
-| Design tokens + wireframe (khung) | Design | ⬜ | `05-SPEC-design-uiux.md` — không block Code |
+| Chốt stack thực thi | Code | ✅ Done | **Pixi + React + Vite + TS** (đích GDD) |
+| Scaffold loop (spawn · serve · vòng đời cốc · log) | Code | ✅ Done | `prototype/src/engine` — state machine đủ; `tsc` pass |
+| Chạy ca + thu log + tính k | Economy | 🟡 In-progress | Harness `sim/headless.ts` có; **chưa chạy ≥500 lượt lấy k thật** |
+| Design tokens + wireframe (khung) | Design | 🟡 In-progress | `tokens.ts` + placeholder Pixi assets; wireframe thật chờ |
 
 ### Phase 0 KPI
 
@@ -234,9 +236,9 @@ graph TD
 
 | Track | Scope | Status |
 |---|---|---|
-| 🎮 Code | Scaffold + state machine + log | ⬜ Not started |
-| 🎨 Design | Tokens + wireframe (khung, không block code) | ⬜ Not started |
-| ⚖️ Economy | Đo k, playtest feel | ⬜ Not started |
+| 🎮 Code | Scaffold + state machine + log | ✅ Done (engine+UI+sim, `tsc` pass) |
+| 🎨 Design | Tokens + wireframe (khung, không block code) | 🟡 Tokens + placeholder; wireframe thật chờ |
+| ⚖️ Economy | Đo k, playtest feel | 🟡 Harness sẵn, chưa chạy lấy k |
 
 ---
 
@@ -468,5 +470,6 @@ League/Life Path tạo mục tiêu dài hạn rõ; server-auth chặn gian lận
 | v2.2 | Đồng bộ GDD v1.4: F19 thêm **shop mùa giải** (TV gate / lịch booster / **theme đội cosmetic mua bằng xu**, GDD §14.0); Monetization thêm nguyên tắc **cosmetic-mua-bằng-xu = currency-sink** (tách bạch donation, không P2W). |
 | v2.3 | Thêm bộ spec triển khai `docs/features/F07-F24` cho các feature còn thiếu; roadmap giờ phân biệt rõ "đã có spec triển khai" với "đã code". |
 | v2.4 | Thêm F25 Localization/Account Login và F26 Daily Session Pass/Payments; free user 1 session/ngày, paid unlock normal daily cap; cập nhật monetization từ donation-only sang free-to-start + access pass + cosmetic donation. |
+| v2.5 | **Đồng bộ với code thực tế (2026-06-23).** Prototype Phase 0 đã được code (`prototype/src/{engine,sim,ui}`, ~2.100 dòng TS, `tsc` pass): F04/F05 ✅ đủ, F08 toggle normal/peak, F01/F02(3 món)/F03/F06(tip)/F07(3 loại) ở mức lõi Phase 0. Tổng tiến độ 15%→**22%**; cột Code F01–F08 ⬜→✅/🟡; bảng NOW + Phase 0 Summary chuyển sang Done/In-progress; thêm chú thích cột "Code"; còn thiếu **đo k_value** trước exit-gate. |
 
 *Nguồn: `02-GDD-trum-bia-hoi.md` §19, `03-SPEC-he-ban.md`, `04-SPEC-prototype-phase0.md`, `05-SPEC-design-uiux.md`.*

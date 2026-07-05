@@ -9,7 +9,7 @@
 
 **Là gì:** Game idle/tycoon **phục vụ khách theo ca** ở quán bia hơi vỉa hè VN, mobile-first web. Mô phỏng & re-skin từ `trumviahe.com` (game gốc trà đá), giữ 5 lớp economy + thêm 2 cơ chế đặc thù (**hệ bàn**, **bia mất hơi**).
 
-**Giai đoạn:** Thiết kế/nghiên cứu **đã xong** (GDD v1.5 ổn). Chưa viết code. Bước kế là **Phase 0 — Prototype**.
+**Giai đoạn:** Thiết kế/nghiên cứu **đã xong** (GDD v1.5 ổn). **Prototype Phase 0 đã được code** (`prototype/` — engine + UI Pixi + sim headless, `tsc` pass). Bước kế: **đo `k_value` thật** rồi qua exit-gate sang Phase 1.
 
 **Tài liệu chính (theo thứ tự đọc):**
 
@@ -48,6 +48,12 @@ Mục tiêu: validate **"feel"** + **đo lại k_value** thực tế. Phạm vi 
 ---
 
 ## 🗒️ Nhật ký phiên
+
+### Session 2026-06-23 (19) — Đồng bộ docs ↔ code: prototype Phase 0 đã chạy
+- **Check tiến độ thực tế:** docs (roadmap/log đề 06-09) vẫn ghi *"Spec xong, chưa code / Code 0%"* nhưng `prototype/` đã có code thật (~2.100 dòng TS: `engine/{engine,types,constants,rng,metrics}` + `sim/headless.ts` + `ui/{App,GameView,components,pixiAssets,tokens,icons}`). `tsc --noEmit` **pass** (sim headless lỗi chạy trên sandbox Linux do esbuild build cho macOS — không phải lỗi code).
+- **Map code→feature:** F04 vòng đời cốc + F05 freshness (tip×0 khi hết hơi, cờ vàng) **đủ**; F08 toggle normal/peak (P0 scope) đủ; F01 loop ca/spawn/serve (chưa thể lực/trần ngày), F02 menu 3/6 món, F03 3 bàn + serve-theo-Order + queue (chưa 4 cấp/mua-nâng cấp), F06 tip (chưa uy tín/phạt cụm), F07 3/6 loại khách (thường/vội/VIP) — đều ở **mức lõi Phase 0**.
+- **Cập nhật `06-ROADMAP` → v2.5:** tổng tiến độ 15%→**22%**; cột Code F01–F08 ⬜→✅/🟡; bảng NOW + Phase 0 Summary chuyển Done/In-progress; thêm chú thích cột "Code" + changelog. Cập nhật snapshot log.
+- **Việc kế (exit-gate Phase 0):** **chạy sim đo `k_value` thật ≥500 lượt** (cần `npm rebuild`/cài lại esbuild trên máy đích hoặc chạy trong môi trường khớp) → đối chiếu 2.0–3.0; rồi playtest feel. Sau đó mới mở Phase 1. (Lưu ý: bộ "autopilot" parallel-dev mới commit là tooling, entry `t-ok/t-bad` chỉ là fixture test.)
 
 ### Session 2026-06-11 (18) — Thêm lớp "nhóm/dịp" (biên chế) + khách một mình
 - **User:** thêm hội bạn thân/chiến hữu, đồng nghiệp, đám cưới, khách 1 mình…
