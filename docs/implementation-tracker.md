@@ -40,7 +40,7 @@
 | PR | Wave | Feature | Status | Branch | Gates | Notes |
 |----|------|---------|:------:|--------|:-----:|-------|
 | F04 | 🎮 Code | Vòng Đời Cốc — bottleneck cốc clean→in_use→dirty→washing→clean | ✅ | `prototype/` | 🔒S | Lõi đủ (`engine/engine.ts`). Bottleneck build trước. |
-| F01 | 🎮 Code | Vòng Lặp Mở Ca — ca 12 phút, thể lực, trần ngày 500k | 🟡 | `prototype/` | 🔒S | Lõi loop/spawn/serve xong; chưa thể lực/trần ngày. |
+| F01 | 🎮 Code | Vòng Lặp Mở Ca — ca 12 phút, thể lực, trần ngày 500k | 🟡 | `prototype/` | 🔒S | ca 12' + trần ngày 500k xong; thể lực persist deferred → Phase 1 (`stamina-day-budget`). |
 | F02 | ⚖️ Economy | Menu & Kinh Tế Quán — 3 món P0 (bia+2 mồi), đo k | 🟡 | `prototype/` | 🔒S 🔒B | 3/6 món. **Sim đo k=1.63** (2026-07-02, 506 lượt) — DƯỚI dải 2.0–3.0, cần tune. |
 | F03 | 🎮 Code | Hệ Bàn — 3 bàn, serve theo Order | 🟡 | `prototype/` | 🔒S | 3 bàn + serve-theo-Order + queue; chưa 4 cấp/mua-nâng cấp. |
 | F05 | 🎮 Code | Độ Hơi Bia — mất hơi 12s, cờ vàng, MVP mềm | ✅ | `prototype/` | 🔒S 🔒P | Lõi đủ (tip×0 khi hết hơi, cờ vàng). Chờ playtest feel. |

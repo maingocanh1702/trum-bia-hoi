@@ -39,6 +39,13 @@
 | `engine-customer-types-3` | F07 3 loại khách đầu | P1 | `engine-core` | sau table-order |
 | `ui-art-v1` | F24 tokens→wireframe→sprite thật | P2 | `game-ui`,`assets-binding` | song song track engine |
 | `account-locale-login` | F25 vi/en + guest + Google login | P1 | `build-config`,`game-ui` | cần design save-migration |
+| `stamina-day-budget` | F01 thể lực = ngân sách 12'/ngày (persist qua đóng/mở ca) | P1 | `engine-core`,`sim-harness`,`game-ui` | deferred từ engine-core-loop (founder 2026-07-05) — xem note ↓ |
+
+> **`stamina-day-budget` (F01, deferred từ engine-core-loop, founder 2026-07-05):**
+> stamina = 12' ACTIVE-play budget mỗi NGÀY, persist qua đóng/mở ca (đóng sớm giữ phần dư; mở lại KHÔNG refill);
+> refill khi day rollover thật theo F23 (server clock/save) / F26 (session pass cấp thêm ca full-stamina).
+> scope: engine.ts/types.ts/constants.ts + sim/headless.ts (day reset giữa các run) + UI HUD stamina pill.
+> depends_on: F23/F26. merged_probe: `prototype/src/engine/types.ts :: staminaBudgetMs`.
 
 ---
 
