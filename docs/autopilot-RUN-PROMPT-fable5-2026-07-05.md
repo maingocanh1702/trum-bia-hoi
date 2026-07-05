@@ -79,9 +79,31 @@ missing — say so plainly. Do NOT merge (manual_only).
 
 ---
 
-## Sau khi merge một slice
+## Commit + clean sau mỗi slice (kiểu payment bot, adapted — repo NO remote)
+
+Sau khi một slice ở `STOP_AT_READY` và anh đã xem diff + codex clean, chạy block này (per-file stage,
+KHÔNG `git add -A`; merge local, không push; dọn bằng `scripts/ap-finish.sh` — y hệt payment bot):
+
 ```
-/ap-cleanup <slug>     # release reservation + remove worktree (GENERIC §C2)
+Project: /Users/maingocanh/Projects/Trum Bia Hoi
+
+cd into the project. Slice `<SLUG>` is at STOP_AT_READY (branch feat/<SLUG>, codex clean). Finish it —
+this repo has NO git remote (all local), so MERGE locally then CLEAN. Per-file staging, never `git add -A`.
+
+1. Sanity: `git status`; ensure no other writer (`test -f .git/index.lock` → if stale and you're sure, rm it).
+   `git log --oneline -3 feat/<SLUG>`; confirm it sits on master.
+2. Merge (prefer fast-forward to keep the slice's commits):
+   `git checkout master`
+   `git merge --ff-only feat/<SLUG>` || `git merge --no-ff feat/<SLUG> -m "merge(<SLUG>): <one-line>"`
+3. Verify on master (fail-closed): `cd prototype && npm run build` (+ `npm run sim`, k in 2.0–3.0, for
+   economy/sim slices). Red → `git reset --hard ORIG_HEAD` and STOP.
+4. Commit bookkeeping the slice left outside its scope, PER-FILE only (skip if none modified):
+   `git add -- docs/implementation-tracker.md SESSION-TRACK-LOG.md`
+   `git commit -m "docs(<SLUG>): tracker + session-log after merge"`
+5. Clean (worktree + branch -d + scope-gate cleanup — refuses a dirty worktree, won't force-delete unmerged):
+   `bash scripts/ap-finish.sh <SLUG>`
+6. Report: master HEAD, build/sim result, confirm `.autopilot/INFLIGHT.md` no longer lists `<SLUG>`, branch removed.
 ```
-Toàn bộ slice là **P1 manual_only / auto_merge:false** (trừ F09/F24 = P2) — **con người merge**, không
-auto-merge. P0 (F21 xổ số, F26 payment) KHÔNG autopilot.
+
+> Toàn bộ slice là **P1 manual_only / auto_merge:false** (trừ F09/F24 = P2) — **con người merge**, không
+> auto-merge. P0 (F21 xổ số, F26 payment) KHÔNG autopilot. Rollback: `git reset --hard pre-fable5-20260705`.
