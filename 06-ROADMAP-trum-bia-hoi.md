@@ -396,6 +396,7 @@ League/Life Path tạo mục tiêu dài hạn rõ; server-auth chặn gian lận
 ## 🧪 Playtest & Validation Plan
 
 > Học từ WorkState (pilot interviews) + game dev best practices. Game cần **playtest milestones** rõ ràng.
+> Phiếu bằng chứng Phase 0: [`docs/phase0-alpha-playtest.md`](docs/phase0-alpha-playtest.md).
 
 | Milestone | Phase | Ai test | Cỡ mẫu | Format | Mục tiêu |
 |---|---|---|---|---|---|
