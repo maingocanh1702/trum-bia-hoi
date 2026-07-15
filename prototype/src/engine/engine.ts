@@ -22,6 +22,8 @@ export class Engine {
   rng: Rng
   /** log dồn qua nhiều ca — để tính k aggregate (mục tiêu ≥500 lượt) */
   allEvents: ServeEvent[] = []
+  /** số khách đã spawn qua nhiều ca — mẫu số canonical cho loss rate theo người */
+  allArrivedCustomers = 0
 
   constructor(seed = Date.now() & 0xffffffff) {
     this.rng = mulberry32(seed)
@@ -385,6 +387,7 @@ export class Engine {
   private spawnGroup(): number {
     const w = this.world
     const size = randInt(this.rng, GROUP_SIZE_MIN, GROUP_SIZE_MAX)
+    this.allArrivedCustomers += size
     const customers = Array.from({ length: size }, () => this.makeCustomer())
     const emptyTable = w.tables.find((t) => t.state === 'empty')
     if (emptyTable) { this.seatGroup(emptyTable, customers); return size }

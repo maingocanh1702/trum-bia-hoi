@@ -16,13 +16,19 @@ const NORMAL_LOSS_MAX = 0.1
 // Regression ceiling from the measured pre-fix range, not a final feel threshold.
 const PEAK_PRE_FIX_BASELINE_MIN = 0.576
 
-type ModeTotals = { events: ServeEvent[]; lostCustomers: number; rejectedAtDoor: number }
+type ModeTotals = {
+  events: ServeEvent[]
+  arrivedCustomers: number
+  lostCustomers: number
+  rejectedAtDoor: number
+}
+type ModeStats = ShiftStats & { arrivedCustomers: number }
 type SeedResult = {
   seed: number
   perShift: string[]
-  normal: ShiftStats
-  peak: ShiftStats
-  aggregate: ShiftStats
+  normal: ModeStats
+  peak: ModeStats
+  aggregate: ModeStats
 }
 
 // SIM_SEED=<n> runs one forensic seed; otherwise run the fixed regression set.
@@ -49,12 +55,20 @@ function botAct(engine: Engine) {
 }
 
 function emptyModeTotals(): ModeTotals {
-  return { events: [], lostCustomers: 0, rejectedAtDoor: 0 }
+  return { events: [], arrivedCustomers: 0, lostCustomers: 0, rejectedAtDoor: 0 }
 }
 
-function customerLossRate(stats: ShiftStats): number {
-  const arrivals = stats.serves + stats.lostCustomers + stats.rejectedAtDoor
-  return arrivals === 0 ? 0 : (stats.lostCustomers + stats.rejectedAtDoor) / arrivals
+function computeModeStats(totals: ModeTotals): ModeStats {
+  return {
+    ...computeStats(totals.events, totals.lostCustomers, totals.rejectedAtDoor),
+    arrivedCustomers: totals.arrivedCustomers,
+  }
+}
+
+function customerLossRate(stats: ModeStats): number {
+  return stats.arrivedCustomers === 0
+    ? 0
+    : (stats.lostCustomers + stats.rejectedAtDoor) / stats.arrivedCustomers
 }
 
 function runSeed(seed: number): SeedResult {
@@ -71,6 +85,7 @@ function runSeed(seed: number): SeedResult {
     // xen kẽ rush để cảm cả 2 nhịp
     if ((shiftIndex % 2 === 0) !== (engine.world.rush === 'peak')) engine.toggleRush()
     const mode = engine.world.rush
+    const arrivedBefore = engine.allArrivedCustomers
     engine.startShift()
     // chạy tới khi ca đóng VÀ quán sạch khách
     let guard = 0
@@ -84,34 +99,29 @@ function runSeed(seed: number): SeedResult {
     if (guard > 100_000) throw new Error(`Seed ${seed}, shift ${shiftIndex} exceeded the drain guard`)
 
     const events = engine.world.log
+    const arrivedCustomers = engine.allArrivedCustomers - arrivedBefore
     const lostCustomers = engine.world.lostCustomers
     const rejectedAtDoor = engine.world.rejectedAtDoor
     const bucket = totals[mode]
     bucket.events.push(...events)
+    bucket.arrivedCustomers += arrivedCustomers
     bucket.lostCustomers += lostCustomers
     bucket.rejectedAtDoor += rejectedAtDoor
 
-    const stats = computeStats(events, lostCustomers, rejectedAtDoor)
+    const stats = computeModeStats({ events, arrivedCustomers, lostCustomers, rejectedAtDoor })
     perShift.push(
       `Ca ${shiftIndex} (${mode}): ${events.length} lượt · mean ${stats.meanValue.toFixed(1)} · k ${stats.k.toFixed(2)} · mồi ${(stats.pctMoi * 100).toFixed(0)}% · stale ${(stats.pctStale * 100).toFixed(0)}% · mất ${stats.lostCustomers} · từ chối ${stats.rejectedAtDoor}`,
     )
   }
 
-  const normal = computeStats(
-    totals.normal.events,
-    totals.normal.lostCustomers,
-    totals.normal.rejectedAtDoor,
-  )
-  const peak = computeStats(
-    totals.peak.events,
-    totals.peak.lostCustomers,
-    totals.peak.rejectedAtDoor,
-  )
-  const aggregate = computeStats(
-    engine.allEvents,
-    normal.lostCustomers + peak.lostCustomers,
-    normal.rejectedAtDoor + peak.rejectedAtDoor,
-  )
+  const normal = computeModeStats(totals.normal)
+  const peak = computeModeStats(totals.peak)
+  const aggregate = computeModeStats({
+    events: engine.allEvents,
+    arrivedCustomers: normal.arrivedCustomers + peak.arrivedCustomers,
+    lostCustomers: normal.lostCustomers + peak.lostCustomers,
+    rejectedAtDoor: normal.rejectedAtDoor + peak.rejectedAtDoor,
+  })
   return { seed, perShift, normal, peak, aggregate }
 }
 
@@ -132,6 +142,7 @@ function verify(result: SeedResult): string[] {
   if (aggregate.serves !== normal.serves + peak.serves) failures.push('aggregate served total does not match mode buckets')
   if (aggregate.lostCustomers !== normal.lostCustomers + peak.lostCustomers) failures.push('aggregate lost total does not match mode buckets')
   if (aggregate.rejectedAtDoor !== normal.rejectedAtDoor + peak.rejectedAtDoor) failures.push('aggregate rejected total does not match mode buckets')
+  if (aggregate.arrivedCustomers !== normal.arrivedCustomers + peak.arrivedCustomers) failures.push('aggregate arrival total does not match mode buckets')
   return failures
 }
 
@@ -144,8 +155,8 @@ console.log('═'.repeat(72))
 for (const result of results) {
   for (const line of result.perShift) console.log(`[seed ${result.seed}] ${line}`)
   console.log('─'.repeat(72))
-  console.log(`SEED ${result.seed} · NORMAL: ${result.normal.serves} served · ${result.normal.lostCustomers} mất · ${result.normal.rejectedAtDoor} từ chối · loss ${(customerLossRate(result.normal) * 100).toFixed(1)}%`)
-  console.log(`SEED ${result.seed} · PEAK:   ${result.peak.serves} served · ${result.peak.lostCustomers} mất · ${result.peak.rejectedAtDoor} từ chối · loss ${(customerLossRate(result.peak) * 100).toFixed(1)}%`)
+  console.log(`SEED ${result.seed} · NORMAL: ${result.normal.arrivedCustomers} khách đến · ${result.normal.serves} lượt served · ${result.normal.lostCustomers} mất · ${result.normal.rejectedAtDoor} từ chối · loss ${(customerLossRate(result.normal) * 100).toFixed(1)}%`)
+  console.log(`SEED ${result.seed} · PEAK:   ${result.peak.arrivedCustomers} khách đến · ${result.peak.serves} lượt served · ${result.peak.lostCustomers} mất · ${result.peak.rejectedAtDoor} từ chối · loss ${(customerLossRate(result.peak) * 100).toFixed(1)}%`)
   console.log(`AGGREGATE (${result.aggregate.serves} lượt, seed ${result.seed}):`)
   console.log(formatStats(result.aggregate))
   const failures = verify(result)
