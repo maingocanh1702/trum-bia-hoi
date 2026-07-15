@@ -1,20 +1,20 @@
-# 🗺️ ROADMAP — Trùm Bia Hơi v2.5
+# 🗺️ ROADMAP — Trùm Bia Hơi v2.6
 
 > **Roadmap sản phẩm.** Đây là **công cụ truyền đạt định hướng**, không phải project plan chi tiết — tasks cụ thể nằm ở các SPEC.
 > **Nguồn sự thật về quyết định/số = GDD** (`02-GDD-trum-bia-hoi.md`); roadmap mâu thuẫn GDD thì GDD thắng.
-> **Ngày:** 2026-06-23. **Nhãn:** 🟢 CORE · 🟡 PROTOTYPE · 🔵 POST-MVP.
+> **Ngày:** 2026-07-15. **Nhãn:** 🟢 CORE · 🟡 PROTOTYPE · 🔵 POST-MVP.
 
 ---
 
 ## 📊 Overall Progress
 
-> 🚀 **Tổng tiến độ: ~22%** — ████░░░░░░░░░░░░░░░░ (Spec xong · prototype Phase 0 đã code, đang chờ đo k)
+> 🚀 **Tổng tiến độ: ~22%** — ████░░░░░░░░░░░░░░░░ (Spec + prototype code xong · automated k/loss gate pass · chờ Alpha feel)
 >
 > ℹ️ **Lưu ý KPI:** mọi target KPI dưới đây (retention, conversion, EV…) là **benchmark provisional theo chuẩn ngành**, KHÔNG rút từ GDD — chốt lại khi có data playtest thật.
 
 | | Phase | Trạng thái | Outcome cần đạt |
 |---|---|---|---|
-| **NOW** | Phase 0 — Prototype | 🟡 **Prototype đã code (engine+UI+sim) — chờ đo k + feel** | Biết core có *feel* đúng + `k_value` thật |
+| **NOW** | Phase 0 — Prototype | 🟡 **Automated gate pass — chờ Alpha playtest feel** | Biết core có *feel* đúng + `k_value` thật |
 | **NOW** | Design Track (song song P0) | 🟡 **Khung spec xong** | Tokens + wireframe + quyết định art pipeline |
 | **NEXT** | Phase 1 — MVP + Art v1 | ⚪ Not started | Vòng lặp ca vui & economy cân, có art thật |
 | **LATER** | Phase 2 — Mở rộng core | ⚪ Not started | Đủ chiều sâu gameplay (6 món, khách đặc biệt) |
@@ -88,7 +88,7 @@ Phase 2+: Tất cả tracks song song, cadence 2 tuần review.
 
 > **Đọc cột "Spec":** ✅ = **đã thiết kế trong GDD** (đủ để hiểu/ưu tiên), KHÔNG có nghĩa "đã code". Spec triển khai hiện có: F03 (`03-SPEC-he-ban.md`); F01/F02/F04/F05/F06/F08 P0 (`04-SPEC-prototype-phase0.md`); F07-F26 (`docs/features/Fxx-*.md`, riêng F19 có thêm `07-SPEC-shop-mua-giai-worldcup.md`). Các feature sau Phase 0 vẫn phải chờ đúng phase/playtest gate trước khi code. F21 vẫn cần legal review; F26 cần payment/provider review.
 
-> **Đọc cột "Code":** ✅ = đã code đủ phạm vi feature · 🟡 = **đã code phần lõi Phase 0**, còn phần phase sau (vd F02 mới 3/6 món · F03 chưa có 4 cấp bàn/mua-nâng cấp · F06 mới có tip, chưa uy tín/phạt cụm · F07 mới 3/6 loại khách · F08 mới toggle normal/peak) · ⬜ = chưa code. Lõi prototype thực tế nằm ở `prototype/src/{engine,sim,ui}` — `tsc` pass, chạy được; còn thiếu **đo `k_value`** trước khi qua exit-gate.
+> **Đọc cột "Code":** ✅ = đã code đủ phạm vi feature · 🟡 = **đã code phần lõi Phase 0**, còn phần phase sau (vd F02 mới 3/6 món · F03 chưa có 4 cấp bàn/mua-nâng cấp · F06 mới có tip, chưa uy tín/phạt cụm · F07 mới 3/6 loại khách · F08 mới toggle normal/peak) · ⬜ = chưa code. Lõi prototype nằm ở `prototype/src/{engine,sim,ui}`; build và 5-seed `k_value` gate đã pass, còn Alpha playtest feel trước khi qua exit-gate.
 
 ---
 
@@ -208,16 +208,16 @@ graph TD
 | Spec Phase 0 | — | ✅ Done | `04-SPEC` v0.2 |
 | Chốt stack thực thi | Code | ✅ Done | **Pixi + React + Vite + TS** (đích GDD) |
 | Scaffold loop (spawn · serve · vòng đời cốc · log) | Code | ✅ Done | `prototype/src/engine` — state machine đủ; `tsc` pass |
-| Chạy ca + thu log + tính k | Economy | 🟡 In-progress | Harness `sim/headless.ts` có; **chưa chạy ≥500 lượt lấy k thật** |
+| Chạy ca + thu log + tính k | Economy | ✅ Automated pass | 5 seed, mỗi seed ≥503 lượt; k=2.24–2.34; aggregate loss fail-closed. |
 | Design tokens + wireframe (khung) | Design | 🟡 In-progress | `tokens.ts` + placeholder Pixi assets; wireframe thật chờ |
 
 ### Phase 0 KPI
 
 | Metric | Target | Hiện tại | Ghi chú |
 |---|---|---|---|
-| k_value | 2.0–3.0 (ổn định) | Giả định 2.5 | Đo từ ≥500 lượt serve |
+| k_value | 2.0–3.0 (ổn định) | **2.24–2.34** qua 5 seed | Automated pass; hand-play vẫn phải xác nhận |
 | % cốc hết hơi (playtest) | 5–15% | N/A | Quá thấp → giảm base; quá cao → tăng |
-| % khách bỏ đi (normal rush) | <10% | N/A | >20% → economy quá gắt |
+| % khách bỏ đi (normal rush) | <10% | **0% bot / 5 seed** | Peak diagnostic 26.1–40.8%; ngưỡng feel cuối do Alpha quyết định |
 | Thời gian playtest mỗi ca | ~12 phút | N/A | Đúng thiết kế |
 | Cảm nhận bottleneck cốc | "Rõ ràng là nghẽn" | N/A | Nâng rửa → đỡ ngay |
 
@@ -238,7 +238,7 @@ graph TD
 |---|---|---|
 | 🎮 Code | Scaffold + state machine + log | ✅ Done (engine+UI+sim, `tsc` pass) |
 | 🎨 Design | Tokens + wireframe (khung, không block code) | 🟡 Tokens + placeholder; wireframe thật chờ |
-| ⚖️ Economy | Đo k, playtest feel | 🟡 Harness sẵn, chưa chạy lấy k |
+| ⚖️ Economy | Đo k, playtest feel | 🟡 Automated k/loss pass; Alpha feel pending |
 
 ---
 
@@ -471,5 +471,6 @@ League/Life Path tạo mục tiêu dài hạn rõ; server-auth chặn gian lận
 | v2.3 | Thêm bộ spec triển khai `docs/features/F07-F24` cho các feature còn thiếu; roadmap giờ phân biệt rõ "đã có spec triển khai" với "đã code". |
 | v2.4 | Thêm F25 Localization/Account Login và F26 Daily Session Pass/Payments; free user 1 session/ngày, paid unlock normal daily cap; cập nhật monetization từ donation-only sang free-to-start + access pass + cosmetic donation. |
 | v2.5 | **Đồng bộ với code thực tế (2026-06-23).** Prototype Phase 0 đã được code (`prototype/src/{engine,sim,ui}`, ~2.100 dòng TS, `tsc` pass): F04/F05 ✅ đủ, F08 toggle normal/peak, F01/F02(3 món)/F03/F06(tip)/F07(3 loại) ở mức lõi Phase 0. Tổng tiến độ 15%→**22%**; cột Code F01–F08 ⬜→✅/🟡; bảng NOW + Phase 0 Summary chuyển sang Done/In-progress; thêm chú thích cột "Code"; còn thiếu **đo k_value** trước exit-gate. |
+| v2.6 | **Đồng bộ Phase 0 automated gate (2026-07-15).** Cadence spawn sửa về nhịp mỗi khách; sim aggregate loss fail-closed; 5 seed k=2.24–2.34, normal loss 0%, peak loss 26.1–40.8%. Automated gate pass; không mở Phase 1 trước Alpha playtest feel. |
 
 *Nguồn: `02-GDD-trum-bia-hoi.md` §19, `03-SPEC-he-ban.md`, `04-SPEC-prototype-phase0.md`, `05-SPEC-design-uiux.md`.*

@@ -49,6 +49,12 @@ Mục tiêu: validate **"feel"** + **đo lại k_value** thực tế. Phạm vi 
 
 ## 🗒️ Nhật ký phiên
 
+### Session 2026-07-15 (20) — Phase 0 automated gate pass, chờ Alpha feel
+- **Merged cadence fix:** `SPAWN_BASE_MS` tiếp tục là nhịp mỗi khách; nhóm N người tiêu thụ N nhịp. Sim đếm arrival theo người và aggregate lost/rejected từ bucket thật, không hard-code 0.
+- **Verify trên merged `master`:** build pass; 5 seed (mỗi seed ≥503 lượt) cho k=2.24–2.34, normal loss 0%, peak loss 26.1–40.8%; forensic seed 20260611 tái lập đúng.
+- **Gate còn lại:** Alpha 3–5 người × ≥3 ca/người để chốt freshness, bàn nhóm, bottleneck cốc và peak feel. Không mở Phase 1 chỉ từ bot metrics.
+- **Việc kế:** chạy Alpha protocol; nếu pass, chốt Phase 0 và mở `ui-art-v1` song song một engine slice Phase 1.
+
 ### Session 2026-06-23 (19) — Đồng bộ docs ↔ code: prototype Phase 0 đã chạy
 - **Check tiến độ thực tế:** docs (roadmap/log đề 06-09) vẫn ghi *"Spec xong, chưa code / Code 0%"* nhưng `prototype/` đã có code thật (~2.100 dòng TS: `engine/{engine,types,constants,rng,metrics}` + `sim/headless.ts` + `ui/{App,GameView,components,pixiAssets,tokens,icons}`). `tsc --noEmit` **pass** (sim headless lỗi chạy trên sandbox Linux do esbuild build cho macOS — không phải lỗi code).
 - **Map code→feature:** F04 vòng đời cốc + F05 freshness (tip×0 khi hết hơi, cờ vàng) **đủ**; F08 toggle normal/peak (P0 scope) đủ; F01 loop ca/spawn/serve (chưa thể lực/trần ngày), F02 menu 3/6 món, F03 3 bàn + serve-theo-Order + queue (chưa 4 cấp/mua-nâng cấp), F06 tip (chưa uy tín/phạt cụm), F07 3/6 loại khách (thường/vội/VIP) — đều ở **mức lõi Phase 0**.
