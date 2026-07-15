@@ -22,6 +22,8 @@ export class Engine {
   rng: Rng
   /** log dồn qua nhiều ca — để tính k aggregate (mục tiêu ≥500 lượt) */
   allEvents: ServeEvent[] = []
+  /** số khách đã spawn qua nhiều ca — mẫu số canonical cho loss rate theo người */
+  allArrivedCustomers = 0
 
   constructor(seed = Date.now() & 0xffffffff) {
     this.rng = mulberry32(seed)
@@ -232,8 +234,9 @@ export class Engine {
         w.shift.running = false
         this.say('😮‍💨 Hết thể lực — đóng ca. Khách đang ngồi vẫn phục vụ nốt.')
       } else if (w.now >= w.shift.nextSpawnAt) {
-        this.spawnGroup()
-        const interval = SPAWN_BASE_MS * (w.rush === 'peak' ? PEAK_SPAWN_MULT : 1)
+        const spawnedCustomerCount = this.spawnGroup()
+        // SPAWN_BASE_MS là nhịp mỗi khách; nhóm N người phải tiêu thụ N nhịp đến khách kế tiếp.
+        const interval = SPAWN_BASE_MS * spawnedCustomerCount * (w.rush === 'peak' ? PEAK_SPAWN_MULT : 1)
         w.shift.nextSpawnAt = w.now + interval
         w.shift.firstSpawnDone = true
       }
@@ -381,17 +384,19 @@ export class Engine {
     }
   }
 
-  private spawnGroup() {
+  private spawnGroup(): number {
     const w = this.world
     const size = randInt(this.rng, GROUP_SIZE_MIN, GROUP_SIZE_MAX)
+    this.allArrivedCustomers += size
     const customers = Array.from({ length: size }, () => this.makeCustomer())
     const emptyTable = w.tables.find((t) => t.state === 'empty')
-    if (emptyTable) { this.seatGroup(emptyTable, customers); return }
+    if (emptyTable) { this.seatGroup(emptyTable, customers); return size }
     if (w.queue.length < QUEUE_SLOTS) {
       w.queue.push({ id: uid('q'), customers, queuedAt: w.now })
-      return
+      return size
     }
     w.rejectedAtDoor += size // overflow — từ chối tại cửa, không phạt (03 §1)
+    return size
   }
 
   private seatGroup(t: Table, customers: Customer[]) {
