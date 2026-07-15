@@ -1,0 +1,24 @@
+{
+  "feature": "dashboard-phase-table-boundary",
+  "branch": "feat/dashboard-phase-table-boundary",
+  "base_ref": "master",
+  "risk": "P2",
+  "change_class": "dashboard-parser-correctness",
+  "merge_policy": "manual_only",
+  "auto_merge": false,
+  "codex_review": "1x_clean",
+  "depends_on": [],
+  "dep_checks": [
+    {
+      "file": "tools/dashboard-engine/build_dashboard.py",
+      "symbol": "parse_prs"
+    }
+  ],
+  "invariants": [
+    "dashboard-engine"
+  ],
+  "scope": [
+    "tools/dashboard-engine/build_dashboard.py",
+    "tools/dashboard-engine/test_build_dashboard.py"
+  ]
+}

@@ -39,6 +39,15 @@ invariants: `engine-core`, `economy-balance`, `rng-determinism`, `sim-harness`
 merged_probe: prototype/src/engine/engine.ts :: spawnedCustomerCount
 note: Phase 0 exit-gate blocker found 2026-07-15. The base cadence is per customer but current code schedules it per 1–2 customer group; aggregate sim also masks loss with hard-coded zeroes.
 
+## task: dashboard-phase-table-boundary
+status: ready
+risk: P2
+depends_on: none
+scope: `tools/dashboard-engine/build_dashboard.py`, `tools/dashboard-engine/test_build_dashboard.py`
+invariants: `dashboard-engine`
+merged_probe: tools/dashboard-engine/build_dashboard.py :: FEATURE_ID_RE
+note: Dashboard rebuild parses the Phase 4 progress-summary header as a 27th feature; bound phase tables and require deterministic Fxx ids.
+
 ---
 
 ## 🟢 Phase 1 — MVP (NEXT, sau khi P0 chốt k & feel)
