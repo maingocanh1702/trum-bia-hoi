@@ -1,0 +1,31 @@
+{
+  "feature": "engine-group-spawn-cadence",
+  "branch": "feat/engine-group-spawn-cadence",
+  "base_ref": "master",
+  "risk": "P1",
+  "change_class": "engine-core-balance",
+  "merge_policy": "manual_only",
+  "auto_merge": false,
+  "codex_review": "2x_clean",
+  "depends_on": [],
+  "dep_checks": [
+    {
+      "file": "prototype/src/engine/engine.ts",
+      "symbol": "SHIFT_DURATION_MS"
+    },
+    {
+      "file": "prototype/src/engine/constants.ts",
+      "symbol": "QUEUE_SLOTS"
+    }
+  ],
+  "invariants": [
+    "engine-core",
+    "economy-balance",
+    "rng-determinism",
+    "sim-harness"
+  ],
+  "scope": [
+    "prototype/src/engine/engine.ts",
+    "prototype/src/sim/headless.ts"
+  ]
+}

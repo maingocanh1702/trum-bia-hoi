@@ -24,9 +24,19 @@
 | `engine-beer-freshness` | F05 mất hơi 12s, cờ vàng | P1 | engine/engine.ts·constants.ts | `engine-core` | glass-lifecycle |
 | `economy-tip-penalty` | F06 tip/uy tín/phạt cụm | P1 | engine/metrics.ts·constants.ts | `economy-balance` | table-order |
 | `economy-k-measure` | đo k ≥500 lượt, pipeline log | P2 | prototype/src/sim/headless.ts, scripts/measure_k.py | `sim-harness`,`economy-balance` | core-loop |
+| `engine-group-spawn-cadence` | giữ nhịp 10.5s/khách khi spawn nhóm + aggregate loss fail-closed | P1 | engine/engine.ts·sim/headless.ts | `engine-core`,`economy-balance`,`rng-determinism`,`sim-harness` | core-loop |
 | `ui-game-view` | render GameView Pixi + HUD | P2 | prototype/src/ui/GameView.ts·components.tsx | `game-ui`,`assets-binding` | — (API engine ổn) |
 
 **Chạy song song an toàn ngay (disjoint token):** `ui-game-view` (game-ui/assets) ∥ một slice engine (engine-core) ∥ `economy-k-measure` chỉ khi KHÔNG cùng lúc với slice đang sửa `engine-core` (vì k-measure share `economy-balance` với tip-penalty/core-loop → serialize nhóm economy).
+
+## task: engine-group-spawn-cadence
+status: ready
+risk: P1
+depends_on: engine-core-loop (merged on `master`)
+scope: `prototype/src/engine/engine.ts`, `prototype/src/sim/headless.ts`
+invariants: `engine-core`, `economy-balance`, `rng-determinism`, `sim-harness`
+merged_probe: prototype/src/engine/engine.ts :: spawnedCustomerCount
+note: Phase 0 exit-gate blocker found 2026-07-15. The base cadence is per customer but current code schedules it per 1–2 customer group; aggregate sim also masks loss with hard-coded zeroes.
 
 ---
 
