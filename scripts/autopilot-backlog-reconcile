@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# KIT_VERSION: 2
 # autopilot-backlog-reconcile — derive backlog merged-status from CODE (ground truth), not the hand-typed field.
 #
 # WHY: backlog `status:` is hand-maintained; merges update INFLIGHT + code but the markdown field rots
@@ -22,9 +23,12 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BL="$REPO/docs/autopilot-backlog.md"
 [ -f "$BL" ] || { echo "HALT: backlog not found at $BL" >&2; exit 2; }
 MODE="${1:-report}"
+TODAY="$(date +%F)"
 
 # Parse blocks → emit "slug<TAB>status<TAB>probe_file<TAB>probe_regex" for status in planned|ready|blocked.
-mapfile -t ROWS < <(awk '
+# NOTE: macOS default /bin/bash is 3.2 — no `mapfile`. Use a portable read loop instead.
+ROWS=()
+while IFS= read -r __row; do ROWS+=("$__row"); done < <(awk '
   function flush(){ if (slug!="" && (st=="planned"||st=="ready"||st=="blocked")) printf "%s\t%s\t%s\t%s\n", slug, st, pf, pr; slug="" }
   /^## task:/ { flush(); slug=$3; gsub(/[()]/,"",slug); st=""; pf=""; pr="" }
   /^status:/  { st=$2 }
@@ -36,7 +40,8 @@ mapfile -t ROWS < <(awk '
 ' "$BL")
 
 stale=()
-for row in "${ROWS[@]}"; do
+# ${ROWS[@]+...} guards empty-array expansion under `set -u` on bash 3.2.
+for row in ${ROWS[@]+"${ROWS[@]}"}; do
   IFS=$'\t' read -r slug st pf pr <<< "$row"
   if [ -z "$pf" ] || [ -z "$pr" ]; then
     echo "  ?  $slug ($st) — no merged_probe (can't auto-verify; add: merged_probe: <file> :: <regex>)"
@@ -57,12 +62,18 @@ if [ "$MODE" = "--check" ]; then
 fi
 if [ "$MODE" = "--fix" ]; then
   for slug in "${stale[@]}"; do
-    awk -v s="$slug" '
+    if awk -v s="$slug" -v today="$TODAY" '
       $0 ~ "^## task: "s"([ (]|$)" { inblk=1 }
-      inblk && /^status:/ && !done { print "status: merged"; print "note_merged: auto-reconciled — merged_probe matched on disk (" strftime("%Y-%m-%d") "). Was: " $2; done=1; next }
+      inblk && /^status:/ && !done { print "status: merged"; print "note_merged: auto-reconciled — merged_probe matched on disk (" today "). Was: " $2; done=1; next }
       /^## task:/ && inblk && $3!~s { inblk=0 }
       { print }
-    ' "$BL" > "$BL.tmp" && mv "$BL.tmp" "$BL"
+    ' "$BL" > "$BL.tmp"; then
+      mv "$BL.tmp" "$BL"
+    else
+      rm -f "$BL.tmp"
+      echo "HALT: failed to update $slug" >&2
+      exit 1
+    fi
     echo "  → flipped $slug → merged"
     # reset done flag handled per-invocation (one awk per slug keeps it simple/correct)
   done

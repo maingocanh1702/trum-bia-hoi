@@ -30,7 +30,8 @@
 **Chạy song song an toàn ngay (disjoint token):** `ui-game-view` (game-ui/assets) ∥ một slice engine (engine-core) ∥ `economy-k-measure` chỉ khi KHÔNG cùng lúc với slice đang sửa `engine-core` (vì k-measure share `economy-balance` với tip-penalty/core-loop → serialize nhóm economy).
 
 ## task: engine-group-spawn-cadence
-status: ready
+status: merged
+note_merged: auto-reconciled — merged_probe matched on disk (2026-07-15). Was: ready
 risk: P1
 depends_on: engine-core-loop (merged on `master`)
 scope: `prototype/src/engine/engine.ts`, `prototype/src/sim/headless.ts`
