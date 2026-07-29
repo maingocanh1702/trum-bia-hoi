@@ -19,6 +19,14 @@
 ## Canonical tokens
 
 <!-- catalog:start -->
+workflow-authority - task contract and Level 3 operating-policy changes
+kit-integrity - shared scripts, templates, versions and consumer rollout
+risk-policy - action/surface risk derivation and autonomy lane
+terminal-lifecycle - READY/AWAIT/HALT, recovery and cleanup
+review-integrity - independent review, breaker and readiness evidence
+delegation-safety - worktree, writer ownership and child-agent boundaries
+audit-integrity - task evidence, provenance and learning history
+merge-authority - landing and optional separately-authorized automation
 engine-core - prototype/src/engine engine.ts+types.ts: state machine ca/bàn/order, serve/pour/wash (choke-point chính)
 economy-balance - engine/constants.ts + engine/metrics.ts + economy-spec: số cân bằng, demand-mix, chỉ số k (đụng = lệch balance)
 rng-determinism - engine/rng.ts + SEED: random tất định cho sim/reproducibility (đổi = vỡ kết quả đo)

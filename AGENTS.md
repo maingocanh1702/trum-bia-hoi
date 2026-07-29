@@ -1,24 +1,25 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **Trum Bia Hoi** (2364 symbols, 3030 relationships, 50 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **Trum Bia Hoi** (1946 symbols, 2880 relationships, 96 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
-> If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
+> Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
 
 ## Always Do
 
-- **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `gitnexus_impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
-- **MUST run `gitnexus_detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows.
+- **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
+- **MUST run `detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows. For regression review, compare against the default branch: `detect_changes({scope: "compare", base_ref: "master"})`.
 - **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
-- When exploring unfamiliar code, use `gitnexus_query({query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
-- When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `gitnexus_context({name: "symbolName"})`.
+- When exploring unfamiliar code, use `query({search_query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
+- When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `context({name: "symbolName"})`.
+- For security review, `explain({target: "fileOrSymbol"})` lists taint findings (source→sink flows; needs `analyze --pdg`).
 
 ## Never Do
 
-- NEVER edit a function, class, or method without first running `gitnexus_impact` on it.
+- NEVER edit a function, class, or method without first running `impact` on it.
 - NEVER ignore HIGH or CRITICAL risk warnings from impact analysis.
-- NEVER rename symbols with find-and-replace — use `gitnexus_rename` which understands the call graph.
-- NEVER commit changes without running `gitnexus_detect_changes()` to check affected scope.
+- NEVER rename symbols with find-and-replace — use `rename` which understands the call graph.
+- NEVER commit changes without running `detect_changes()` to check affected scope.
 
 ## Resources
 
@@ -43,41 +44,48 @@ This project is indexed by GitNexus as **Trum Bia Hoi** (2364 symbols, 3030 rela
 <!-- gitnexus:end -->
 
 <!-- autopilot:start -->
-# Autopilot — parallel slice flow (always-on)
+# Level 3 supervised workflow — future tasks
 
-Any feature/slice work in this repo MUST follow `docs/autopilot-prompt-GENERIC.md`. This is the single
-flow for every session — do not invent a per-slice process. Manifests in
-`docs/autopilot-manifests/<slug>.json` are the source of truth; the catalog and gate are authoritative.
+Every task/session/feature opened after the Level 3 v11 kit is published follows the canonical
+`$HOME/Projects/Claude template/autopilot/level3-workflow.md` plus the globally loaded invariants.
+No activation watermark or certification ceremony is required. This is forward-only: never migrate,
+resume or reclassify an older READY/AWAIT/HALT lifecycle in place.
 
 ## Always Do
-- **Gate BEFORE any branch/worktree mutation** (GENERIC §A.3.1):
-  `scripts/autopilot-scope-gate register --manifest docs/autopilot-manifests/<slug>.json`.
-- **Edit only files in the manifest `scope`.** A changed file ∉ scope is SCOPE_ESCAPE → HALT. Need a
-  shared-domain file → add its invariant token + file to the manifest and re-gate.
-- **Verify fail-closed before review**: `cd prototype && npm run build` (+ `npm run sim` / re-measure k
-  for sim/economy slices). Red build or k outside the spec band = HALT.
-- **STOP_AT_READY** (§B.5): `scripts/autopilot-scope-gate ready --manifest <manifest>`, then stop and
-  report (branch, files, verify + codex verdict). Run codex per manifest `codex_review` (2x_clean P1 / 1x_clean P2).
-- New domain concept → add the **canonical token to `docs/autopilot-invariant-catalog.md` first**, then use it.
+- Build the compact task contract before implementation: outcome, exact context/base, scope and
+  negative scope, risk, autonomy mode, slice graph, permissions, verification, reviews and stops.
+- `/ap-init` must report the complete v11 pack on the fetched `origin/master` used as `BASE_SHA`.
+  Missing remote/origin publication is a hard preparation blocker.
+- One writing slice = one explicit-base branch/worktree + one writer. Create the worktree from the
+  pinned `origin/master` SHA, write the task contract/runtime manifest inside it, then register from
+  that worktree before implementation.
+- Parallelize only file-, invariant-, dependency- and mutable-state-disjoint slices. Serialize shared
+  engine/economy/schema/generated state.
+- Verify fail-closed: `cd prototype && npm run build`; also run `npm run sim` and re-measure `k` for
+  simulation/economy changes.
+- P1/P2 READY only comes from the v11 scope/readiness gate, which reruns declared verification and
+  the pinned independent Codex review before writing `READY.txt`.
 
 ## Never Do
-- NEVER auto-merge. P1 is `manual_only` / `auto_merge:false` — the human owns the merge (§C). P0
-  (legal/payment/auth, e.g. F21/F26) is NOT autopilot at all.
-- NEVER hand-edit `.autopilot/INFLIGHT.md` — the gate script owns it.
-- NEVER push through a breaker (§D): SCOPE_COLLISION / DEP_MISSING / INVARIANT_UNKNOWN / BUILD_RED /
-  SCOPE_ESCAPE / REVIEW_FAIL / METRIC_DRIFT. Stop and report.
-- NEVER run two slices that share a `scope` file or an invariant token in parallel — serialize them.
+- Never auto-merge by default. P0 is prepare-only; P1 is supervised/manual-merge; P2 is supervised
+  unless a narrow routine has earned proactive authority; P3 is report-only.
+- Never edit `.autopilot/INFLIGHT.md`, share a writing worktree, use an implicit base, bypass a
+  breaker, trust an empty-diff review, or raw-remove a lifecycle.
+- Cleanup only through `scripts/ap-finish.sh <FEATURE_ID>` after origin-verified merge or an
+  explicitly authorized close. `scripts/ap-housekeep.sh` is inventory-only.
 
 ## Resources
 | File | Use for |
 |------|---------|
-| `docs/autopilot-prompt-GENERIC.md` | The master flow (§A–§E). Read before any slice. |
-| `docs/autopilot-RUN-PROMPT.md` | Copy-paste run prompts (scaffold / run / cleanup). |
-| `docs/autopilot-backlog.md` | Slice list, risk, scope, invariants, depends_on. |
-| `docs/autopilot-invariant-catalog.md` | Canonical domain tokens (gate validates against this). |
-| `docs/autopilot-parallel-scope-gate.md` | Why the gate exists (script is source of truth). |
-| `.claude/commands/ap-new.md` · `ap-ready.md` · `ap-cleanup.md` | `/ap-*` slash commands. |
-
-> Stale lock recovery: if a gate hangs ~30s then HALTs on lock timeout, remove `.autopilot/INFLIGHT.lock`
-> (and `.git/index.lock` if git is blocked) — they are leftover, not active state.
+| `$HOME/Projects/Claude template/autopilot/level3-workflow.md` | Canonical operational workflow. |
+| `SESSION-TRACK-LOG.md` | Project handoff/context index; read before planning a new task. |
+| `docs/autopilot-invariant-catalog.md` | Global plus Trum Bia Hoi serialization tokens. |
+| `docs/autopilot-parallel-scope-gate.md` | Repository v11 gate contract. |
+| `docs/autopilot-manifests/_TEMPLATE.json` | Slice manifest template. |
+| `docs/autopilot-manifests/_READINESS_EVIDENCE_TEMPLATE.json` | Readiness evidence template. |
+| `docs/autopilot-backlog.md` | Project task/dependency context; status is not runtime proof. |
 <!-- autopilot:end -->
+
+## Imported Claude Cowork project instructions
+
+Game inspired by trumviahe.com
