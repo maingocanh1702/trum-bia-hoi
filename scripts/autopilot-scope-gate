@@ -1,5 +1,19 @@
 #!/usr/bin/env bash
-# KIT_VERSION: 11
+# KIT_VERSION: 13
+# v13 (2026-07-30) — pack content change, no behaviour change in THIS file. `manifests/_TEMPLATE.json` gains a
+# leading `_role` field stating that it is the RUNTIME manifest shape for
+# `.autopilot/state/<FEATURE_ID>/manifest.json`, not the schema of the tracked authored contract under
+# `docs/autopilot-manifests/`. That distinction was guessed wrong in practice: the template ships with
+# `manifest_schema_version: level3-operational-v2` while living in the authored-contract directory, which
+# reads as "your tracked manifests are an old version" when in fact adding that string to a tracked contract
+# makes `register` HALT CONTRACT_INVALID (autopilot-review-readiness.mjs pins the path). See
+# level3-workflow.md section 11.
+# v12 (2026-07-29) — pack content change, no behaviour change in THIS file. Bumped because
+# `autopilot-update.sh` derives the whole pack's canonical version from this line, and v12 adds
+# `autopilot-backlog-reconcile` to the pack (it was shipped in the kit but never synced, so consumer
+# fixes to it were invisible and permanent) plus an explicit `node:process` import in
+# `autopilot-review-readiness.mjs` (bare `process` made `pnpm lint` red in any consumer that lints
+# scripts/). Consumers at v11 auto-upgrade; do not hand-edit pack files to match.
 # autopilot-scope-gate — parallel autopilot coordination (SCOPE_COLLISION gate).
 # REPO-AGNOSTIC template. Copy to <repo>/scripts/autopilot-scope-gate, chmod +x, commit.
 #
