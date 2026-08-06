@@ -389,10 +389,44 @@ if (currentBranch !== branch) {
   halt("BRANCH_MISMATCH", `current=${currentBranch || "detached"} expected=${branch}`);
 }
 run("git", ["cat-file", "-e", `${baseSha}^{commit}`], repo);
-const baseRefSha = run("git", ["rev-parse", `${baseRef}^{commit}`], repo);
-if (baseRefSha !== baseSha) {
-  halt("BASE_STALE", `${baseRef}=${baseRefSha} manifest=${baseSha}`);
+// ONE definition of "the pinned base is still usable", called from every site that needs it. There used
+// to be two copies of this rule: a pre-flight check here and a second inside liveDiffState(), which is
+// the one `ready` actually passes through. v21 fixed only this copy, so `ready` kept halting under the
+// old exact-equality rule while the new rule sat unused a hundred lines above it — and the halt message
+// was the only clue the two were different. Two copies of a rule are one rule and one future bug.
+function assertBaseUsable(currentBaseRefSha) {
+  if (currentBaseRefSha === baseSha) return;
+  // base_sha does NOT have to equal the tip of baseRef. It must stay an ANCESTOR of it, and nothing in
+  // this slice's declared scope may have changed on baseRef since. Exact equality made every concurrent
+  // registration terminal the instant anything landed — an unrelated docs commit was enough — so the
+  // parallel model this kit documents could never complete: the first slice to merge killed the rest.
+  //
+  // Division of labour: this gate certifies the DIFF the reviewer read, which stays valid as long as
+  // history was not rewritten under it and nobody else touched the files in question. `ap-merge.sh`
+  // certifies the MERGE — it performs a real merge, stops on conflict, and verifies the probe on the
+  // resulting tree. Exact equality had this gate doing ap-merge's job badly while breaking its own.
+  const ancestry = tryRun("git", ["merge-base", "--is-ancestor", baseSha, currentBaseRefSha], repo);
+  if (ancestry.status !== 0) {
+    halt(
+      "BASE_STALE",
+      `${baseSha} is no longer an ancestor of ${baseRef}=${currentBaseRefSha}; history was rewritten under this registration`,
+    );
+  }
+  const touched = run(
+    "git",
+    ["diff", "--name-only", `${baseSha}..${currentBaseRefSha}`, "--", ...scope],
+    repo,
+  );
+  if (touched) {
+    halt(
+      "BASE_STALE",
+      `files in this slice's declared scope changed on ${baseRef} since ${baseSha}: ${touched.split("\n").join(", ")}`,
+    );
+  }
 }
+
+const baseRefSha = run("git", ["rev-parse", `${baseRef}^{commit}`], repo);
+assertBaseUsable(baseRefSha);
 
 const dependencies = requireStringArray(manifest.depends_on, "depends_on", { allowEmpty: true });
 if (!Array.isArray(manifest.dep_checks)) {
@@ -459,17 +493,31 @@ if (!existsSync(registeredHashPath) || readFileSync(registeredHashPath, "utf8").
 function liveDiffState() {
   const liveHead = run("git", ["rev-parse", "HEAD"], repo);
   const liveBaseRefSha = run("git", ["rev-parse", `${baseRef}^{commit}`], repo);
-  if (liveBaseRefSha !== baseSha) {
-    halt("BASE_STALE", `${baseRef} advanced from ${baseSha} to ${liveBaseRefSha}`);
-  }
+  // Same rule as pre-flight, same function — this is the call site `ready` actually passes through.
+  assertBaseUsable(liveBaseRefSha);
   if (run("git", ["merge-base", baseSha, liveHead], repo) !== baseSha) {
     halt("BASE_DRIFT", "pinned base is not an ancestor of HEAD");
   }
-  const commitCount = Number(run("git", ["rev-list", "--count", `${baseSha}..${liveHead}`], repo));
+  // THE DIFF WINDOW IS MEASURED FROM THE LIVE BASE REF, NOT FROM THE PINNED base_sha.
+  //
+  // base_sha was doing two jobs. One is proving the review rests on a legitimate base — that is what
+  // assertBaseUsable() above now checks, via ancestry plus untouched scope. The other is marking where
+  // this slice's own work begins, and for that the pinned SHA is simply wrong once anything lands on the
+  // base branch: a slice that rebases to pick up a fix finds every intervening commit inside
+  // `base_sha...HEAD`, and SCOPE_DRIFT then reports files it never touched. Measured 2026-07-31: a slice
+  // rebased through three sanctioned kit syncs and halted on four kit files, with no legal way out —
+  // re-registering is refused while in-flight (FEATURE_ALREADY_ACTIVE) and editing the runtime manifest
+  // breaks its hash lock (MANIFEST_DRIFT). The registration was correct; the measurement was not.
+  //
+  // Using the live tip is right in both states. Rebased: merge-base(baseRef, HEAD) is the tip, so the
+  // window is exactly this slice's commits. Not rebased: merge-base is the old divergence point, which
+  // is also exactly this slice's commits. The pinned SHA is right in neither case once the branch moves.
+  const diffBase = liveBaseRefSha;
+  const commitCount = Number(run("git", ["rev-list", "--count", `${diffBase}..${liveHead}`], repo));
   if (!Number.isInteger(commitCount) || commitCount < 1) {
     halt("EMPTY_DIFF", "HEAD has no commit beyond the pinned base");
   }
-  const files = run("git", ["diff", "--name-only", "--no-renames", `${baseSha}...${liveHead}`], repo)
+  const files = run("git", ["diff", "--name-only", "--no-renames", `${diffBase}...${liveHead}`], repo)
     .split("\n")
     .filter(Boolean);
   if (files.length === 0) {
@@ -492,8 +540,8 @@ function liveDiffState() {
   if (dirty.length) {
     halt("WORKTREE_DIRTY", dirty.join(" | "));
   }
-  const diff = runRaw("git", ["diff", "--binary", `${baseSha}...${liveHead}`], repo);
-  return { headSha: liveHead, files, diffHash: sha256(diff) };
+  const diff = runRaw("git", ["diff", "--binary", `${diffBase}...${liveHead}`], repo);
+  return { headSha: liveHead, diffBase, files, diffHash: sha256(diff) };
 }
 
 const initialState = liveDiffState();
@@ -646,7 +694,7 @@ function runReview(kind, round, cleanMarker, findingsMarker, prompt) {
       stateDir,
       `gate-attempt-${attemptLabel}-${kind}-round-${String(round).padStart(2, "0")}${retrySuffix}.txt`,
     );
-    const result = spawnSync(reviewerPath, ["review", "--base", baseSha, prompt], {
+    const result = spawnSync(reviewerPath, ["review", "--base", initialState.diffBase, prompt], {
       cwd: repo,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
@@ -726,7 +774,7 @@ runVerificationGroup("canonical", verification.canonical);
 runVerificationGroup("e2e", verification.e2e);
 
 const codePrompt = [
-  `Review the exact non-empty diff against base ${baseSha} for correctness, regressions, tests and scope.`,
+  `Review the exact non-empty diff against base ${initialState.diffBase} for correctness, regressions, tests and scope.`,
   "Report every actionable finding before the verdict.",
   "The LAST non-empty line must be exactly one of:",
   "AUTOPILOT_CODE_VERDICT: CLEAN",
@@ -745,7 +793,7 @@ for (let round = 1; round <= codeReview.clean_rounds; round += 1) {
 
 if (securityReview.required) {
   const securityPrompt = [
-    `Security-review the exact non-empty diff against base ${baseSha}.`,
+    `Security-review the exact non-empty diff against base ${initialState.diffBase}.`,
     "Check trust boundaries, auth, secrets, permissions, external input, money and deployment effects.",
     "Report every actionable finding before the verdict.",
     "The LAST non-empty line must be exactly one of:",
@@ -783,6 +831,7 @@ writeFileSync(
     feature,
     base_ref: baseRef,
     base_sha: baseSha,
+    diff_base_sha: finalState.diffBase,
     head_sha: finalState.headSha,
     diff_sha256: finalState.diffHash,
     diff_files: finalState.files,

@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
-# ap-finish.sh <feature-id> [--squash-verified <origin-commit>|--authorized-close --reason <text>]
+# ap-finish.sh <feature-id> [--squash-verified <origin-commit>|--authorized-close --reason <text>] [--no-archive]
 # Remove a Level 3 worktree/reservation only after landing or an explicit durable disposition.
 set -euo pipefail
 
-SLUG="${1:?usage: ap-finish.sh <feature-id> [--squash-verified <origin-commit>|--authorized-close --reason <text>]}"
+SLUG="${1:?usage: ap-finish.sh <feature-id> [--squash-verified <origin-commit>|--authorized-close --reason <text>] [--no-archive]}"
 shift
 MODE="ancestor"
 MODE_FLAGS=0
 PROOF_SHA=""
 REASON=""
+NO_ARCHIVE=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --squash-verified)
@@ -27,6 +28,10 @@ while [ $# -gt 0 ]; do
       [ $# -ge 2 ] || { echo "HALT: --reason needs non-empty text" >&2; exit 2; }
       REASON="$2"
       shift 2
+      ;;
+    --no-archive)
+      NO_ARCHIVE=1
+      shift
       ;;
     *)
       echo "HALT: unknown argument: $1" >&2
@@ -61,8 +66,14 @@ SCOPE_GATE="$ROOT/scripts/autopilot-scope-gate"
 
 registry_status() {
   [ -f "$INFLIGHT" ] || return 0
+  # No reset on the header line: this accumulates ONE named feature and prints at END, so clearing on
+  # every later header erases the answer unless me is the LAST block in the registry. With the reset,
+  # `ap-finish.sh --squash-verified` refused every feature that was not last — the registry plainly read
+  # `ready` while this function returned empty, so the failure claimed the status was wrong rather than
+  # that the lookup was. Same defect fixed in autopilot-scope-gate at v20; it lived in four copies across
+  # three files, and v20 only reached the two inside that one file.
   awk -v me="$SLUG" '
-    /^## feature:/{cur=$3;st=""}
+    /^## feature:/{cur=$3}
     /^status:/{if(cur==me)st=$2}
     END{print st}
   ' "$INFLIGHT"
@@ -82,6 +93,7 @@ fi
 
 HEAD_SHA=""
 BASE_SHA=""
+DIFF_BASE_SHA=""
 DIFF_SHA256=""
 if [ "$MODE" != "close" ]; then
   [ "$(registry_status)" = "ready" ] \
@@ -109,25 +121,35 @@ if (
   || value.result !== "pass"
   || value.feature !== feature
   || !isRealCommitSha(value.base_sha)
+  || !isRealCommitSha(value.diff_base_sha)
   || !isRealCommitSha(value.head_sha)
   || !/^[0-9a-f]{64}$/i.test(value.diff_sha256 || "")
   || !Number.isInteger(value.attempt)
   || value.attempt < 1
 ) process.exit(1);
-process.stdout.write([value.base_sha, value.head_sha, value.diff_sha256, value.attempt].join("\n"));
+process.stdout.write(
+  [value.base_sha, value.diff_base_sha, value.head_sha, value.diff_sha256, value.attempt].join("\n"),
+);
 NODE
 )" || { echo "HALT: gate-result.json is invalid or stale-schema" >&2; exit 1; }
   BASE_SHA="$(printf '%s\n' "$gate_values" | sed -n '1p')"
-  HEAD_SHA="$(printf '%s\n' "$gate_values" | sed -n '2p')"
-  DIFF_SHA256="$(printf '%s\n' "$gate_values" | sed -n '3p')"
-  GATE_ATTEMPT="$(printf '%s\n' "$gate_values" | sed -n '4p')"
+  DIFF_BASE_SHA="$(printf '%s\n' "$gate_values" | sed -n '2p')"
+  HEAD_SHA="$(printf '%s\n' "$gate_values" | sed -n '3p')"
+  DIFF_SHA256="$(printf '%s\n' "$gate_values" | sed -n '4p')"
+  GATE_ATTEMPT="$(printf '%s\n' "$gate_values" | sed -n '5p')"
   [ -s "$STATE/gate-attempt-count.txt" ] \
     || { echo "HALT: gate attempt counter is missing" >&2; exit 1; }
   [ "$(tr -d '[:space:]' < "$STATE/gate-attempt-count.txt")" = "$GATE_ATTEMPT" ] \
     || { echo "HALT: gate result is not from the latest readiness attempt" >&2; exit 1; }
   [ "$(git -C "$ROOT" rev-parse "$BR^{commit}")" = "$HEAD_SHA" ] \
     || { echo "HALT: branch tip advanced after READY; rerun the readiness gate" >&2; exit 1; }
-  live_diff_hash="$(git -C "$ROOT" diff --binary "$BASE_SHA...$HEAD_SHA" | shasum -a 256 | awk '{print $1}')"
+  # base_sha is the pinned LEGITIMACY base, not the diff window — it is right that it is still an
+  # ancestor of HEAD, but the window this diff is measured from is diff_base_sha, the live base_ref
+  # tip the gate actually used (autopilot-review-readiness.mjs liveDiffState()). Recomputing from
+  # base_sha instead reproduces the exact bug this field exists to fix: once anything lands on
+  # base_ref, base_sha...HEAD spans commits the gate never reviewed. No fallback to base_sha — a
+  # fallback is a second source of truth, which is the defect.
+  live_diff_hash="$(git -C "$ROOT" diff --binary "$DIFF_BASE_SHA...$HEAD_SHA" | shasum -a 256 | awk '{print $1}')"
   [ "$live_diff_hash" = "$DIFF_SHA256" ] \
     || { echo "HALT: feature diff no longer matches the gate result" >&2; exit 1; }
 
@@ -163,7 +185,10 @@ NODE
     [ "$parent_count" = "1" ] \
       || { echo "HALT: squash proof must be a one-parent commit" >&2; exit 1; }
     PROOF_PARENT="$(printf '%s\n' "$parent_line" | awk '{print $2}')"
-    feature_files="$(git -C "$ROOT" diff --name-only --no-renames "$BASE_SHA" "$HEAD_SHA" | sort)"
+    # Three-dot, from DIFF_BASE_SHA — same window the gate computed diff_files from, and the same
+    # reasoning as the live_diff_hash recompute above: BASE_SHA is the pinned legitimacy base, not the
+    # diff window.
+    feature_files="$(git -C "$ROOT" diff --name-only --no-renames "$DIFF_BASE_SHA...$HEAD_SHA" | sort)"
     proof_files="$(git -C "$ROOT" diff --name-only --no-renames "$PROOF_PARENT" "$PROOF_SHA" | sort)"
     [ -n "$feature_files" ] && [ "$feature_files" = "$proof_files" ] \
       || { echo "HALT: squash proof file set does not equal the READY feature file set" >&2; exit 1; }
@@ -210,6 +235,27 @@ fs.writeFileSync(file, `${JSON.stringify({
 NODE
 
 if [ -d "$WT" ]; then
+  # STATE lives nested inside the worktree (.autopilot/worktrees/<slug>/.autopilot/state/<slug>/),
+  # gitignored, uncommitted -- design-probe.md, HALT/AWAIT history, every gate-attempt/codex-review
+  # artifact. `git worktree remove` deletes it unconditionally along with everything else. Archive it
+  # OUTSIDE the worktree first, by default, so the design reasoning and review evidence survive
+  # disposal the same way the code already does via git. See docs/autopilot-LESSONS.md L67 for the
+  # same byte/mtime-identical quality bar applied to the narrower single-HALT-file case this generalizes.
+  if [ "$NO_ARCHIVE" -eq 1 ]; then
+    echo "SKIPPED archive: --no-archive requested for $SLUG."
+  elif [ -d "$STATE" ]; then
+    archive_timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+    archive_dir="$ROOT/.autopilot/state-archive/${SLUG}-${archive_timestamp}"
+    if [ -e "$archive_dir" ]; then
+      echo "HALT: archive destination already exists: $archive_dir" >&2
+      exit 1
+    fi
+    mkdir -p "$archive_dir"
+    cp -Rp "$STATE" "$archive_dir/state"
+    echo "archived: $STATE -> $archive_dir/state"
+  else
+    echo "no state directory to archive for $SLUG (nothing under $STATE)."
+  fi
   git -C "$ROOT" worktree remove "$WT"
   echo "worktree removed: $SLUG"
 else
