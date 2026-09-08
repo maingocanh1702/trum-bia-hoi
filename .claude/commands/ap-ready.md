@@ -1,16 +1,19 @@
 ---
-description: Flip an autopilot slice's reservation to ready (keeps the scope reservation; does not merge)
-argument-hint: <slug>
+description: "Run the v11 fail-closed readiness gate for an admitted Level 3 slice."
+argument-hint: <feature-id>
 allowed-tools: Bash, Read
 ---
 
-Mark slice `$ARGUMENTS` as **ready** in the shared registry — used when a build+review finished
-outside a full `/ap-<slug>` run. This keeps the scope reservation (so no other session grabs the same
-files) and does NOT merge. Per `docs/autopilot-prompt-GENERIC.md` §B.5.
+For `$ARGUMENTS`, operate only inside its writing worktree.
 
-1. Confirm `docs/autopilot-manifests/$ARGUMENTS.json` exists and that `prototype` build is green for
-   this branch. If the build is red, refuse — a red slice is not `ready`.
-2. ```bash
-   scripts/autopilot-scope-gate ready --manifest docs/autopilot-manifests/$ARGUMENTS.json
-   ```
-3. Report: the slice is `ready`, reservation held, awaiting human merge (§C). Do not merge.
+1. Read the canonical Level 3 workflow and the worktree's task contract/runtime manifest.
+2. Require the minimal `readiness.json` from
+   `docs/autopilot-manifests/_READINESS_EVIDENCE_TEMPLATE.json`.
+3. Call `scripts/autopilot-scope-gate ready --manifest <runtime-manifest>`.
+4. Trust READY only if the v11 gate itself reruns the declared verification and pinned Codex
+   review, binds base/HEAD/diff/scope, writes `gate-result.json`, and creates `READY.txt`.
+5. Stop at READY. Do not merge, deploy, reopen a writer, hand-edit the registry, or accept an
+   empty-diff review.
+
+If the slice was never admitted through the Level 3 task contract and v11 gate, do not use this
+command to promote it retroactively.

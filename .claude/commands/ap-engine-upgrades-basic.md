@@ -3,6 +3,9 @@ description: Run autopilot for slice engine-upgrades-basic — gate → worktree
 allowed-tools: Bash, Read, Write, Edit
 ---
 
+**HALT LEGACY_LAUNCHER.** This pre-v11 task was never admitted by the current Level 3 workflow.
+Start a fresh task through `/ap-new engine-upgrades-basic <outcome>`; do not execute the steps below.
+
 Run the autopilot flow for slice **engine-upgrades-basic** (F10 — nâng cấp cơ bản: bom/rửa/hầm/bàn ×k)
 following `docs/autopilot-prompt-GENERIC.md` end to end. Manifest
 `docs/autopilot-manifests/engine-upgrades-basic.json` is the single source of truth. HALT on the first breaker (§D).

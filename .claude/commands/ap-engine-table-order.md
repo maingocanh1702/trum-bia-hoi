@@ -3,6 +3,9 @@ description: Run autopilot for slice engine-table-order — gate → worktree �
 allowed-tools: Bash, Read, Write, Edit
 ---
 
+**HALT LEGACY_LAUNCHER.** This pre-v11 task was never admitted by the current Level 3 workflow.
+Start a fresh task through `/ap-new engine-table-order <outcome>`; do not execute the steps below.
+
 Run the autopilot flow for slice **engine-table-order** (F03 — bàn/nhóm/serve theo Order, 4 cấp bàn)
 following `docs/autopilot-prompt-GENERIC.md` end to end. Manifest
 `docs/autopilot-manifests/engine-table-order.json` is the single source of truth. HALT on the first breaker (§D).

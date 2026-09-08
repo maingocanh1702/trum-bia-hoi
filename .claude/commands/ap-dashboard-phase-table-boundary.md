@@ -3,6 +3,9 @@ description: Fix the dashboard Phase 4 table boundary parser, verify 26 features
 allowed-tools: Bash, Read, Write, Edit
 ---
 
+**HALT LEGACY_LAUNCHER.** This slice is already a stopped legacy READY lifecycle. Do not reopen its
+writer or execute the steps below; only origin-verified landing/disposition is allowed.
+
 Run `docs/autopilot-dashboard-phase-table-boundary.md` exactly, using
 `docs/autopilot-manifests/dashboard-phase-table-boundary.json` as the scope-gate source of truth.
 

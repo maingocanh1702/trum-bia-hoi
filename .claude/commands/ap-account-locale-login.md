@@ -3,6 +3,9 @@ description: Run autopilot for slice account-locale-login — gate → worktree 
 allowed-tools: Bash, Read, Write, Edit
 ---
 
+**HALT LEGACY_LAUNCHER.** This pre-v11 task was never admitted by the current Level 3 workflow.
+Start a fresh task through `/ap-new account-locale-login <outcome>`; do not execute the steps below.
+
 Run the autopilot flow for slice **account-locale-login** (F25 — vi/en locale + guest play + Google
 login) following `docs/autopilot-prompt-GENERIC.md` end to end. The manifest at
 `docs/autopilot-manifests/account-locale-login.json` is the single source of truth.

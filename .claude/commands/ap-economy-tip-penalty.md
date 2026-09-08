@@ -3,6 +3,9 @@ description: Run autopilot for slice economy-tip-penalty — gate → worktree �
 allowed-tools: Bash, Read, Write, Edit
 ---
 
+**HALT LEGACY_LAUNCHER.** This pre-v11 task was never admitted by the current Level 3 workflow.
+Start a fresh task through `/ap-new economy-tip-penalty <outcome>`; do not execute the steps below.
+
 Run the autopilot flow for slice **economy-tip-penalty** (F06 — tip / uy tín / phạt cụm) following
 `docs/autopilot-prompt-GENERIC.md` end to end. Manifest
 `docs/autopilot-manifests/economy-tip-penalty.json` is the single source of truth. Do NOT change the

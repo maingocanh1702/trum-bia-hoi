@@ -3,6 +3,9 @@ description: Run autopilot for slice engine-customer-types-3 — gate → worktr
 allowed-tools: Bash, Read, Write, Edit
 ---
 
+**HALT LEGACY_LAUNCHER.** This pre-v11 task was never admitted by the current Level 3 workflow.
+Start a fresh task through `/ap-new engine-customer-types-3 <outcome>`; do not execute the steps below.
+
 Run the autopilot flow for slice **engine-customer-types-3** (F07 — 3 loại khách đầu: thường/vội/VIP)
 following `docs/autopilot-prompt-GENERIC.md` end to end. Manifest
 `docs/autopilot-manifests/engine-customer-types-3.json` is the single source of truth. HALT on the first breaker (§D).

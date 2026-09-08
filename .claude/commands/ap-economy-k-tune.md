@@ -3,6 +3,9 @@ description: Run autopilot for slice economy-k-tune — gate → worktree → bu
 allowed-tools: Bash, Read, Write, Edit
 ---
 
+**HALT LEGACY_LAUNCHER.** This pre-v11 task was never admitted by the current Level 3 workflow.
+Start a fresh task through `/ap-new economy-k-tune <outcome>`; do not execute the steps below.
+
 Run the autopilot flow for slice **economy-k-tune** following `docs/autopilot-prompt-GENERIC.md` end to
 end. Manifest `docs/autopilot-manifests/economy-k-tune.json` is the single source of truth. Goal: tune
 the 🟡 demand-mix/tip constants so measured `k` moves from ~1.63 into **2.0–3.0**. Do NOT change the

@@ -3,6 +3,9 @@ description: Run autopilot for slice engine-core-loop — gate → worktree → 
 allowed-tools: Bash, Read, Write, Edit
 ---
 
+**HALT LEGACY_LAUNCHER.** This pre-v11 task was never admitted by the current Level 3 workflow.
+Start a fresh task through `/ap-new engine-core-loop <outcome>`; do not execute the steps below.
+
 Run the autopilot flow for slice **engine-core-loop** (F01 — ca 12', thể lực, trần ngày 500k) following
 `docs/autopilot-prompt-GENERIC.md` end to end. Manifest
 `docs/autopilot-manifests/engine-core-loop.json` is the single source of truth. HALT on the first breaker (§D).

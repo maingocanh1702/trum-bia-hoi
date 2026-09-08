@@ -3,6 +3,9 @@ description: Run autopilot for slice engine-weather-min — gate → worktree �
 allowed-tools: Bash, Read, Write, Edit
 ---
 
+**HALT LEGACY_LAUNCHER.** This pre-v11 task was never admitted by the current Level 3 workflow.
+Start a fresh task through `/ap-new engine-weather-min <outcome>`; do not execute the steps below.
+
 Run the autopilot flow for slice **engine-weather-min** (F09 — thời tiết tối giản: hệ số độ hơi/tip/spawn)
 following `docs/autopilot-prompt-GENERIC.md` end to end. Manifest
 `docs/autopilot-manifests/engine-weather-min.json` is the single source of truth. HALT on the first breaker (§D).

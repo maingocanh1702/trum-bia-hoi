@@ -3,6 +3,9 @@ description: Run autopilot for slice ui-art-v1 — gate → worktree → build �
 allowed-tools: Bash, Read, Write, Edit
 ---
 
+**HALT LEGACY_LAUNCHER.** This pre-v11 task was never admitted by the current Level 3 workflow.
+Start a fresh task through `/ap-new ui-art-v1 <outcome>`; do not execute the steps below.
+
 Run the autopilot flow for slice **ui-art-v1** following `docs/autopilot-prompt-GENERIC.md` end to end.
 The manifest at `docs/autopilot-manifests/ui-art-v1.json` is the single source of truth. This slice is
 the PNG pixel-art asset production (F24); see Prompt A in
