@@ -131,3 +131,5 @@ type Customer = {
 | Date | Change |
 |---|---|
 | 2026-09-09 | Local shipper rules v7, closing/stock/ledger/replay contract and reference-style phone/sheet/toast UI; no new tuning values. Full F07 remains in progress. |
+
+| 2026-09-09 review correction | Configuration must retain exactly the phone prerequisite; another unlock cannot replace it even if that unlock has a valid customized gate. Added rejection regression for QR substitution. |

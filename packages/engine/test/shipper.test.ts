@@ -40,6 +40,13 @@ test('configured bundles respect final menu prices, all kitchen unlocks, count a
   ]) { const raw = structuredClone(config.raw); patch(raw); assert.throws(() => loadConfig(raw), /config:/); }
 });
 
+test('a retargeted QR gate cannot replace the required phone for shipper access', () => {
+  const raw = structuredClone(config.raw); raw.unlocks.qr.gate = ['LP1', 'LP2'];
+  assert.doesNotThrow(() => loadConfig(raw));
+  raw.customerTypes.shipper.requires = 'qr';
+  assert.throws(() => loadConfig(raw), /^Error: config:shipper$/);
+});
+
 test('actual v6 phone-owned history stays inert until a current command arms a future delivery', () => {
   const saved = readFileSync(new URL('./fixtures/legacy-shipper-v6.json', import.meta.url), 'utf8');
   const expected = JSON.parse(readFileSync(new URL('./fixtures/legacy-shipper-v6-expected.json', import.meta.url), 'utf8'));

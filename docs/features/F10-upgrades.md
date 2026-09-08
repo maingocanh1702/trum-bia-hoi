@@ -82,10 +82,12 @@ uses the existing spend ledger. A repeated purchase cannot debit again. A locked
 attempt emits life_path_gate_blocked with feature and configured required level.
 The UI lists unmet conditions, shows owned status and uses original draft sprites;
 QR feeds the existing customerValue tip path immediately. Reward claims are not an
-unlock prerequisite. Shipper/social behavior still needs its own producer wiring.
+unlock prerequisite. Shipper now uses the phone prop and its own rules-v7 delivery timer/sheet (F07 §9). Social behavior still needs its own producer wiring.
 
 ## Changelog (append-only)
 
 | Date | Change |
 |---|---|
 | 2026-09-09 | Added config-driven phone/QR purchases, active ownership props and the shared progression gate; preserved whole-table service and added real QR tip/replay verification. |
+
+| 2026-09-09 | Phone consumer now opens local shipper orders with whole-stock handoff and a live deadline; purchase gate/price remain shared, social producer unfinished. |

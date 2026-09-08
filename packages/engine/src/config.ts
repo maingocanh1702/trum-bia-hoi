@@ -194,7 +194,7 @@ function validate(c: Economy): void {
   }
   const shipper = c.customerTypes.shipper, grossRange = shipper.grossBase.map(n => Math.round(n * c.k.value));
   for (const n of [...shipper.orderLines, ...shipper.grossBase, ...grossRange, shipper.spawnIntervalMs, shipper.deadlineMs]) whole(n, 'shipper.range', 1);
-  if (shipper.orderLines[0] > shipper.orderLines[1] || grossRange[0] > grossRange[1] || !BUSINESS_UNLOCKS.includes(shipper.requires as BusinessUnlock)) throw Error('config:shipper');
+  if (shipper.orderLines[0] > shipper.orderLines[1] || grossRange[0] > grossRange[1] || shipper.requires !== 'phone') throw Error('config:shipper');
   for (const rate of [shipper.netRate, shipper.missPenaltyRate]) if (rate < 0 || rate > 1) throw Error('config:shipperRate');
   whole(Math.round(Math.round(grossRange[1] * shipper.netRate) * rested.mult), 'shipper.maximumCredit');
   for (const weather of WEATHER) {

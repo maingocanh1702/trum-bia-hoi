@@ -565,3 +565,21 @@ pending; full M0–M9 remains active and no root merge/push occurred.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Implemented local shipper v7 and original courier art, documented weather-frequency clarification and delivery closing contract; independent review pending. |
+
+
+## 2026-09-09 — Shipper review correction
+
+Independent full-diff review `ef0c053..32a23df` found one P2: an accepted config could
+retarget shipper.requires to QR and then remove phone from QR's configurable gates.
+That bypassed the binding phone prerequisite. Config validation now requires exactly
+`phone`; a regression starts with an otherwise valid retargeted QR gate, proves it
+loads, then proves changing only shipper.requires to QR is rejected. Canonical JSON,
+accepted delivery arithmetic, UI and old fixtures remain unchanged. The reviewer
+independently passed76 tests/typecheck; author final config/build/77 tests/normal sim
+pass in `.qa/shipper-verify-round2.txt`. The prior33 browser tests and20 shipper sim
+rows remain applicable because this correction only rejects the invalid prerequisite.
+Full original-base review of the corrected product is pending.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Closed the review's phone-prerequisite bypass at config validation, added a valid-QR-gate regression; full-diff re-review pending. |
