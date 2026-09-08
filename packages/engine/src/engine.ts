@@ -16,6 +16,7 @@ export class Game {
     this.world = {
       now: createdAt, rng: seed >>> 0, nextId: 0, playerId, phase: 'resting', coins: c.shift.startingCoinsBase,
       reputation: 0, seasonEarned: 0, lifetimeEarned: 0, staminaMs: c.shift.durationMs,
+      staminaAnchorMs: c.shift.durationMs, staminaAnchorAt: createdAt,
       completedShifts: 0, active: true, lastServedAt: null, dayEarned: {}, dayShifts: {},
       inventory: Object.fromEntries(DISHES.map(d => [d, (c.inventory.startingStock as Record<string, number[]>)[d]?.[0] ?? 0])) as World['inventory'],
       equipment: Object.fromEntries(EQUIPMENT.map(k => [k, k === 'kitchen' ? c.runtime.initialKitchenLevel : c.runtime.initialEquipmentLevel])) as World['equipment'],
@@ -61,9 +62,8 @@ export class Game {
     if (!Number.isSafeInteger(now) || now < w.now) throw Error('clock:non-monotonic');
     while (w.now < now) {
       const next = Math.min(now, this.nextDue());
-      const elapsed = next - w.now;
-      if (w.phase === 'open') w.staminaMs = Math.max(0, w.staminaMs - elapsed);
-      else if (w.phase === 'resting' && w.active) w.staminaMs = Math.min(c.shift.durationMs, w.staminaMs + elapsed * c.shift.regenRate);
+      if (w.phase === 'open' && w.shift) w.staminaMs = Math.max(0, w.shift.endsAt - next);
+      else if (w.phase === 'resting' && w.active) w.staminaMs = Math.min(c.shift.durationMs, w.staminaAnchorMs + (next - w.staminaAnchorAt) * c.shift.regenRate);
       w.now = next;
       this.processDue();
     }
@@ -130,6 +130,7 @@ export class Game {
     this.wash();
     if (w.phase === 'closing' && w.queue.length === 0 && w.tables.every(t => ['empty', 'cleaning', 'broken'].includes(t.state))) {
       w.phase = 'resting'; w.completedShifts++;
+      w.staminaAnchorMs = w.staminaMs; w.staminaAnchorAt = w.now;
       const key = dayKey(w.now, this.config);
       w.dayShifts[key] = (w.dayShifts[key] ?? 0) + 1;
       if (s) s.closedAt = w.now;
@@ -294,7 +295,9 @@ export class Game {
     const w = this.world, c = this.config.values, s = w.shift;
     const fail = (reason: string): Result => ({ ok: false, reason });
     switch (cmd.type) {
-      case 'activity': w.active = cmd.active; return { ok: true };
+      case 'activity':
+        w.staminaAnchorAt = w.now; w.staminaAnchorMs = w.staminaMs; w.active = cmd.active;
+        return { ok: true };
       case 'startShift': {
         if (w.phase !== 'resting') return fail('shiftRunning');
         if (c.shift.openRequiresFullStamina && w.staminaMs < c.shift.durationMs) return fail('restFirst');
@@ -313,7 +316,7 @@ export class Game {
           }
         }
         w.shift = { id: this.id('shift'), startedAt: w.now, endsAt: w.now + c.shift.durationMs, closedAt: null, configVersion: this.config.version, weather, rush: 'none', rushes, nextSpawnAt: w.now + Math.round(onboarding ? c.onboarding.firstShift.guaranteedFirstGroupWithinMs - c.runtime.tableSeatingMs : c.spawn.baseMs * c.spawn.warmupMult), firstGroup: true, onboarding, stats: emptyStats() };
-        w.phase = 'open'; w.lastServedAt = null;
+        w.phase = 'open'; w.lastServedAt = null; w.lostStreak = 0;
         this.emit('shift_opened', { shiftId: w.shift.id }); this.emit('weather_rolled', { weather });
         return { ok: true };
       }

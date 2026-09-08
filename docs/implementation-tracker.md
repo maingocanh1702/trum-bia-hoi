@@ -1,8 +1,8 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.7.1
-> **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-08 (reset theo ROADMAP v3.0)
-> **Trạng thái:** Active — **Game mới viết từ đầu: 0 %, chưa bắt đầu M0.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.0** (1 phase, mốc M0–M9).
+> **Version:** v0.8.0
+> **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-08 (build engine/web mới)
+> **Trạng thái:** Active — **M0 đã có và kiểm chứng; M1–M3 đang triển khai.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.0** (1 phase, mốc M0–M9).
 > **Owner:** Team
 > **Mục đích:** Master status board cho mọi feature F01–F28. Nhãn `Phase N` chỉ là **khoá parser** của dashboard-engine; mốc thật: P0 → M0 (nền) · P1 → M1–M2 · P2 → M3 · P3 → M4–M6 · P4 → M7–M8 · QA/release → M9. Là **input cho dashboard-engine** (`tools/dashboard-engine/build_dashboard.py`). Nguồn quyết định/scope = `02-GDD-trum-bia-hoi.md` + `06-ROADMAP-trum-bia-hoi.md`; tracker chỉ theo dõi **trạng thái build**.
 > **Cập nhật:** đổi status mỗi khi 1 feature chuyển trạng thái (bắt đầu code / review / merge).
@@ -41,30 +41,30 @@
 
 | PR | Wave | Feature | Status | Branch | Gates | Notes |
 |----|------|---------|:------:|--------|:-----:|-------|
-| F04 | 🎮 Code | Vòng Đời Cốc — bottleneck cốc clean→in_use→dirty→washing→clean | ⬜ | `—` | 🔒S | Lõi đủ (`engine/engine.ts`). Bottleneck build trước. |
-| F01 | 🎮 Code | Vòng Lặp Mở Ca — ca 12 phút, thể lực, trần ngày 500k | ⬜ | `—` | 🔒S | ca 12' + trần ngày 500k xong; thể lực persist deferred → Phase 1 (`stamina-day-budget`). |
-| F02 | ⚖️ Economy | Menu & Kinh Tế Quán — 3 món P0 (bia+2 mồi), đo k | ⬜ | `—` | 🔒S 🔒B | 3/6 món. **5-seed sim k=2.24–2.34** (2026-07-15, mỗi seed ≥503 lượt) — PASS dải 2.0–3.0; **tái lập độc lập 2026-08-24**, khớp từng số. Chờ hand-play xác nhận. |
-| F03 | 🎮 Code | Hệ Bàn — 3 bàn, serve theo Order | ⬜ | `—` | 🔒S | 3 bàn + serve-theo-Order + queue; chưa 4 cấp/mua-nâng cấp. |
-| F05 | 🎮 Code | Độ Hơi Bia — mất hơi 12s, cờ vàng, MVP mềm | ⬜ | `—` | 🔒S 🔒P | Lõi đủ (tip×0 khi hết hơi, cờ vàng). Chờ playtest feel. |
-| F06 | 🎮 Code | Tip / Uy tín / Phạt — VIP ×10, grace window | ⬜ | `—` | 🔒S | Có tip; chưa uy tín/phạt cụm. |
-| F08 | 🎮 Code | Giờ Vàng — 2 mức (nhẹ 90s/nặng 150s), spawn floor | ⬜ | `—` | 🔒S 🔒P | P0: toggle normal/peak xong; P1/P2 (lịch/full) chưa. |
+| F04 | 🎮 Code | Vòng Đời Cốc — bottleneck cốc clean→in_use→dirty→washing→clean | 🟡 | `codex/game-build-isolated` | 🔒S | Engine mới: cốc định danh, auto-rót/rửa, huỷ đơn trả cốc bẩn; regression + replay pass. Đang tích hợp UI/art. |
+| F01 | 🎮 Code | Vòng Lặp Mở Ca — ca 12 phút, thể lực, trần ngày 500k | 🟡 | `codex/game-build-isolated` | 🔒S | Ca 12 phút + closing, stamina hồi active, cap ngày; local save. Tỉnh Táo/segment và server time chưa hoàn tất. |
+| F02 | ⚖️ Economy | Menu & Kinh Tế Quán — 3 món P0 (bia+2 mồi), đo k | 🟡 | `codex/game-build-isolated` | 🔒S 🔒B | Config 6 món; cold-menu bot 5 seed ≥500 lượt: k 2.2702–2.5072. Chưa đủ balance suite cho bếp mở hết. |
+| F03 | 🎮 Code | Hệ Bàn — 3 bàn, serve theo Order | 🟡 | `codex/game-build-isolated` | 🔒S | Order cấp bàn, 1 chạm, grace, mua/nâng bàn. Giá ghế vượt mốc 10 và edge cases còn cần hoàn tất. |
+| F05 | 🎮 Code | Độ Hơi Bia — mất hơi 12s, cờ vàng, MVP mềm | 🟡 | `codex/game-build-isolated` | 🔒S 🔒P | Timer cốc riêng, stale giữ payment/mất boa, hầm lạnh và 5 thời tiết. Unit/replay pass; art/feel QA còn thiếu. |
+| F06 | 🎮 Code | Tip / Uy tín / Phạt — VIP ×10, grace window | 🟡 | `codex/game-build-isolated` | 🔒S | Per-customer tip, VIP, phạt, cap và ba ledger đã có; Tỉnh Táo/kick-all/queue cần rà tiếp. |
+| F08 | 🎮 Code | Giờ Vàng — 2 mức (nhẹ 90s/nặng 150s), spawn floor | 🟡 | `codex/game-build-isolated` | 🔒S 🔒P | Lịch light/heavy cơ bản, modifiers chạy engine; chưa full seeded schedule/football/telegraph QA. |
 
 ### Phase 1: Vòng phục vụ lõi + onboarding (M1–M2 — lưu localStorage)
 
 | PR | Wave | Feature | Status | Branch | Gates | Notes |
 |----|------|---------|:------:|--------|:-----:|-------|
-| F24 | 🎨 Design | Thiết Kế UI/UX Quán Bia — tokens, wireframe, sprite, animation | ⬜ | `—` | 🔒S | Spec `05` + `docs/features/F24-design-uiux-production.md`. Thay placeholder bằng art thật. |
-| F07 | 🎮 Code | Các Kiểu Khách — 3 loại P1 (thường/vội/VIP) | ⬜ | `—` | 🔒S 🔒B | 3/6 loại (thường/vội/VIP) đã code ở mức lõi Phase 0; đủ ở P2. |
-| F09 | ⚖️ Economy | Thời Tiết Quán — tối giản (hệ số độ hơi/tip/spawn) | ⬜ | `—` | 🔒S | Spec `docs/features/F09-weather.md`. Đầy đủ ở P2. |
-| F10 | 🎮 Code | Nâng Cấp Quán — bom/rửa/hầm/bàn cơ bản (×k) | ⬜ | `—` | 🔒S 🔒B | Spec `docs/features/F10-upgrades.md`. Đầy đủ ở P2. |
-| F25 | 🎮 Code | Ngôn Ngữ / Tài Khoản — chọn vi/en, guest play, Google login (kể cả giữa ca) | ⬜ | `—` | 🔒S | Spec `docs/features/F25-localization-account.md`. |
-| F27 | 🎮 Code | Onboarding — ca 1 = 1 khách 1 bia, thông báo mất khách, step guide (lần đầu + sau 3 lần mất khách) | ⬜ | `—` | 🔒S | Spec `docs/features/F27-onboarding.md` 🟢; config `onboarding` tier C. Mốc M2. |
+| F24 | 🎨 Design | Thiết Kế UI/UX Quán Bia — tokens, wireframe, sprite, animation | 🟡 | `codex/game-build-isolated` | 🔒S | React/CSS sân quán, HUD/sheets/popover native. 3 viewport không tràn ngang; 41 sprite placeholders. Art thật chưa đủ. |
+| F07 | 🎮 Code | Các Kiểu Khách — 3 loại P1 (thường/vội/VIP) | 🟡 | `codex/game-build-isolated` | 🔒S 🔒B | 5 kiểu khách ngồi có trong engine. Shipper + football chưa nối đủ; occupied/rounds cần kiểm thử sâu. |
+| F09 | ⚖️ Economy | Thời Tiết Quán — tối giản (hệ số độ hơi/tip/spawn) | 🟡 | `codex/game-build-isolated` | 🔒S | 5 thời tiết từ config; áp freshness/patience/spawn/tip. Còn sprite/ambient và statistical QA. |
+| F10 | 🎮 Code | Nâng Cấp Quán — bom/rửa/hầm/bàn cơ bản (×k) | 🟡 | `codex/game-build-isolated` | 🔒S 🔒B | Bom/rửa/hầm/quầy/bếp + mua/nâng bàn có command/UI; business unlocks và cốc mua còn thiếu. |
+| F25 | 🎮 Code | Ngôn Ngữ / Tài Khoản — chọn vi/en, guest play, Google login (kể cả giữa ca) | 🟡 | `codex/game-build-isolated` | 🔒S | Guest local + vi/en + backup/replay đã có; Google/claim/cloud ở M4 chưa có. |
+| F27 | 🎮 Code | Onboarding — ca 1 = 1 khách 1 bia, thông báo mất khách, step guide (lần đầu + sau 3 lần mất khách) | 🟡 | `codex/game-build-isolated` | 🔒S | Guide theo events/config, skip/persist + giới hạn chạy lại. Browser/unit pass; Google giữa ca + playtest 5 người chưa có. |
 
 ### Phase 2: Đủ demand-mix (M3)
 
 | PR | Wave | Feature | Status | Branch | Gates | Notes |
 |----|------|---------|:------:|--------|:-----:|-------|
-| F11 | 🎮 Code | Bếp & Mồi Nóng — bếp 4 cấp, 3 mồi nóng | ⬜ | `—` | 🔒S 🔒B | Spec `docs/features/F11-kitchen-hot-dishes.md`. Đủ 6 món. |
+| F11 | 🎮 Code | Bếp & Mồi Nóng — bếp 4 cấp, 3 mồi nóng | 🟡 | `codex/game-build-isolated` | 🔒S 🔒B | Cấu hình 3 mồi nóng + prep/slot bếp đã có. Chưa đủ acceptance test bếp nâng hết và cân bằng menu. |
 | F17 | 🎮 Code | Nhiệm Vụ Quán Nhậu — 7 nhánh (ngày/ca/gift/điểm danh/referral/ĐLT) | ⬜ | `—` | 🔒S | Spec `docs/features/F17-quest-system.md`. Pool lớn hơn gốc. |
 
 ### Phase 3: Server + meta + risk (M4–M6 — server-authoritative từ M4)
@@ -96,12 +96,12 @@
 
 | Phase | Total | Done (✅) | In progress (🟡) | Blocked | Deferred | % |
 |-------|:-----:|:--------:|:----------------:|:-------:|:--------:|:-:|
-| 0 — Nền (M0) | 7 | 0 | 0 | 0 | 0 | 0% |
-| 1 — Lõi + onboarding (M1–M2) | 6 | 0 | 0 | 0 | 0 | 0% |
-| 2 — Demand-mix (M3) | 2 | 0 | 0 | 0 | 0 | 0% |
+| 0 — Nền (M0) | 7 | 0 | 7 | 0 | 0 | 0% |
+| 1 — Lõi + onboarding (M1–M2) | 6 | 0 | 6 | 0 | 0 | 0% |
+| 2 — Demand-mix (M3) | 2 | 0 | 1 | 0 | 0 | 0% |
 | 3 — Server + meta + risk (M4–M6) | 10 | 0 | 0 | 0 | 1 | 0% |
 | 4 — Vé Mở Ca + sự kiện (M7–M8) | 3 | 0 | 0 | 0 | 0 | 0% |
-| **MVP total** | **28** | **0** | **0** | **0** | **1** | **0%** |
+| **MVP total** | **28** | **0** | **14** | **0** | **1** | **0%** |
 
 > **Reset 2026-09-08 theo `06-ROADMAP` v3.0:** game viết lại từ đầu, chưa mở M0 → mọi feature ⬜. Prototype (`prototype/`) là lưu trữ, không tính. Thêm F27 (onboarding, M2) và F28 (bảng xếp hạng, M5) → 28 feature. Cột "Phase" giữ tên để dashboard-engine parse; mốc thật xem ROADMAP.
 
@@ -119,3 +119,5 @@
 | v0.6.0 | Đồng bộ sau audit repo (2026-09-08). **Không đổi status feature nào** — đúng thực tế: không có tiến triển gameplay từ 15/07. Sửa phạm vi header F01–F24 → **F01–F26** (F25/F26 đã có từ v0.3.0); ghi nhận sim gate được **tái lập độc lập 24/08**; đánh dấu rõ Alpha playtest là gate treo ~8 tuần và là điều kiện DUY NHẤT để các ô 🟡 Phase 0 chuyển ✅; trỏ `06-ROADMAP` v2.7. |
 | v0.7.0 | **Reset theo ROADMAP v3.0 (2026-09-08):** game mới 0 %, mọi feature ⬜, branch `—`; prototype thành ghi chú lưu trữ ở Phase 0; heading Phase N ánh xạ mốc M0–M9 (giữ khoá parser); thêm F27 + F28 → 28 feature; ghi chú F11 bếp 4 cấp, F15 kiểm tra pending, F23 localStorage→server M4. |
 | v0.7.1 | Chủ dự án 08/09: chơi free hết → F26 ⏸ (bỏ, không build); F20 = monetization duy nhất (M7). |
+
+| v0.8.0 | Build mới: M0 có evidence; 14 feature đang triển khai, chưa gắn ✅ cho full feature/release. Cập nhật ghi chú engine/web thật và giới hạn còn lại; chi tiết `docs/build-progress.md`. |

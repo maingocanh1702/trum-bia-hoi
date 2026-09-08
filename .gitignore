@@ -39,5 +39,10 @@ venv/
 # Local Netlify folder
 .netlify
 
+# Local verification artifacts
+.qa/
+test-results/
+playwright-report/
+
 # Thùng rác tạm (Claude không có quyền xoá file) — xoá cả thư mục này
 _to_delete/

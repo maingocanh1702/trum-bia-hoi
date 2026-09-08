@@ -1,0 +1,1941 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "glass-clean",
+      "type": "sprite",
+      "path": "assets/glass-clean.png",
+      "source": "existing_project_anchor",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "glass"
+      ],
+      "status": "approved",
+      "review_notes": "Existing approved style anchor, retained unchanged."
+    },
+    {
+      "id": "glass-dirty",
+      "type": "sprite",
+      "path": "assets/glass-dirty.png",
+      "source": "existing_project_anchor",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "glass"
+      ],
+      "status": "approved",
+      "review_notes": "Existing approved style anchor, retained unchanged."
+    },
+    {
+      "id": "glass-flat",
+      "type": "sprite",
+      "path": "assets/glass-flat.png",
+      "source": "existing_project_anchor",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "glass"
+      ],
+      "status": "approved",
+      "review_notes": "Existing approved style anchor, retained unchanged."
+    },
+    {
+      "id": "glass-full",
+      "type": "sprite",
+      "path": "assets/glass-full.png",
+      "source": "existing_project_anchor",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "glass"
+      ],
+      "status": "approved",
+      "review_notes": "Existing approved style anchor, retained unchanged."
+    },
+    {
+      "id": "glass-half",
+      "type": "sprite",
+      "path": "assets/glass-half.png",
+      "source": "existing_project_anchor",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "glass"
+      ],
+      "status": "approved",
+      "review_notes": "Existing approved style anchor, retained unchanged."
+    },
+    {
+      "id": "glass-stale",
+      "type": "sprite",
+      "path": "assets/glass-stale.png",
+      "source": "existing_project_anchor",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "glass"
+      ],
+      "status": "approved",
+      "review_notes": "Existing approved style anchor, retained unchanged."
+    },
+    {
+      "id": "glass-washing",
+      "type": "sprite",
+      "path": "assets/glass-washing.png",
+      "source": "existing_project_anchor",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "glass"
+      ],
+      "status": "approved",
+      "review_notes": "Existing approved style anchor, retained unchanged."
+    },
+    {
+      "id": "menu-beer",
+      "type": "sprite",
+      "path": "assets/menu-beer.png",
+      "source": "existing_project_anchor",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "menu:bia"
+      ],
+      "status": "approved",
+      "review_notes": "Existing approved style anchor, retained unchanged."
+    },
+    {
+      "id": "table-lv1-empty",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "table-lv2-empty",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "table-lv3-empty",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "table-lv4-empty",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "chair-plastic-red",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "stall-owner-normal",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "menu-peanut",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "menu-nemchua",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "menu-friedbean",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "menu-crackle",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "menu-intestine",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "keg-lv1",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "keg-lv2",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "keg-lv3",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "keg-lv4",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "keg-lv5",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "washer-lv1",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "washer-lv2",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "washer-lv3",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "washer-lv4",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "washer-lv5",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "cooler-lv1",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "cooler-lv2",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "cooler-lv3",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "cooler-lv4",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "cooler-lv5",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "stall-lv1",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "stall-lv2",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "stall-lv3",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "stall-lv4",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "stall-lv5",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "kitchen-lv1",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "kitchen-lv2",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "kitchen-lv3",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "kitchen-lv4",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "customer-thuong",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "customer-voi",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "customer-vip",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "customer-chipheo",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "customer-ngoily",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "customer-football-fan",
+      "type": "sprite",
+      "path": null,
+      "source": "placeholder",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "usage": [
+        "gameplay"
+      ],
+      "status": "placeholder",
+      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+    },
+    {
+      "id": "audio:ui-tap:ogg",
+      "audioId": "ui-tap",
+      "type": "audio",
+      "path": "assets/audio/ui/ui-tap.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "ui",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "ui:tap"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:ui-tap:m4a",
+      "audioId": "ui-tap",
+      "type": "audio",
+      "path": "assets/audio/ui/ui-tap.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "ui",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "ui:tap"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:ui-sheet-open:ogg",
+      "audioId": "ui-sheet-open",
+      "type": "audio",
+      "path": "assets/audio/ui/ui-sheet-open.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "ui",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "ui:sheet_open"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:ui-sheet-open:m4a",
+      "audioId": "ui-sheet-open",
+      "type": "audio",
+      "path": "assets/audio/ui/ui-sheet-open.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "ui",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "ui:sheet_open"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:ui-sheet-close:ogg",
+      "audioId": "ui-sheet-close",
+      "type": "audio",
+      "path": "assets/audio/ui/ui-sheet-close.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "ui",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "ui:sheet_close"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:ui-sheet-close:m4a",
+      "audioId": "ui-sheet-close",
+      "type": "audio",
+      "path": "assets/audio/ui/ui-sheet-close.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "ui",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "ui:sheet_close"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:ui-toggle:ogg",
+      "audioId": "ui-toggle",
+      "type": "audio",
+      "path": "assets/audio/ui/ui-toggle.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "ui",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "ui:toggle"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:ui-toggle:m4a",
+      "audioId": "ui-toggle",
+      "type": "audio",
+      "path": "assets/audio/ui/ui-toggle.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "ui",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "ui:toggle"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:ui-denied:ogg",
+      "audioId": "ui-denied",
+      "type": "audio",
+      "path": "assets/audio/ui/ui-denied.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "ui",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "ui:denied"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:ui-denied:m4a",
+      "audioId": "ui-denied",
+      "type": "audio",
+      "path": "assets/audio/ui/ui-denied.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "ui",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "ui:denied"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:ui-coachmark:ogg",
+      "audioId": "ui-coachmark",
+      "type": "audio",
+      "path": "assets/audio/ui/ui-coachmark.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "ui",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "ui:coachmark"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:ui-coachmark:m4a",
+      "audioId": "ui-coachmark",
+      "type": "audio",
+      "path": "assets/audio/ui/ui-coachmark.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "ui",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "ui:coachmark"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:shift-open:ogg",
+      "audioId": "shift-open",
+      "type": "audio",
+      "path": "assets/audio/shift/shift-open.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "shift",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "shift_opened"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:shift-open:m4a",
+      "audioId": "shift-open",
+      "type": "audio",
+      "path": "assets/audio/shift/shift-open.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "shift",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "shift_opened"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:shift-close:ogg",
+      "audioId": "shift-close",
+      "type": "audio",
+      "path": "assets/audio/shift/shift-close.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "shift",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "shift_closed"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:shift-close:m4a",
+      "audioId": "shift-close",
+      "type": "audio",
+      "path": "assets/audio/shift/shift-close.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "shift",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "shift_closed"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:customer-arrive:ogg",
+      "audioId": "customer-arrive",
+      "type": "audio",
+      "path": "assets/audio/customer/customer-arrive.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "customer",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "customer_spawned"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:customer-arrive:m4a",
+      "audioId": "customer-arrive",
+      "type": "audio",
+      "path": "assets/audio/customer/customer-arrive.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "customer",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "customer_spawned"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:customer-order:ogg",
+      "audioId": "customer-order",
+      "type": "audio",
+      "path": "assets/audio/customer/customer-order.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "customer",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "order_placed"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:customer-order:m4a",
+      "audioId": "customer-order",
+      "type": "audio",
+      "path": "assets/audio/customer/customer-order.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "customer",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "order_placed"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:customer-leave-angry:ogg",
+      "audioId": "customer-leave-angry",
+      "type": "audio",
+      "path": "assets/audio/customer/customer-leave-angry.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "customer",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "customer_left"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:customer-leave-angry:m4a",
+      "audioId": "customer-leave-angry",
+      "type": "audio",
+      "path": "assets/audio/customer/customer-leave-angry.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "customer",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "customer_left"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:customer-finish:ogg",
+      "audioId": "customer-finish",
+      "type": "audio",
+      "path": "assets/audio/customer/customer-finish.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "customer",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "table_cleaning"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:customer-finish:m4a",
+      "audioId": "customer-finish",
+      "type": "audio",
+      "path": "assets/audio/customer/customer-finish.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "customer",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "table_cleaning"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:customer-chipheo:ogg",
+      "audioId": "customer-chipheo",
+      "type": "audio",
+      "path": "assets/audio/customer/customer-chipheo.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "customer",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "table_occupied"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:customer-chipheo:m4a",
+      "audioId": "customer-chipheo",
+      "type": "audio",
+      "path": "assets/audio/customer/customer-chipheo.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "customer",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "table_occupied"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:order-ready:ogg",
+      "audioId": "order-ready",
+      "type": "audio",
+      "path": "assets/audio/serve/order-ready.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "serve",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "order_ready"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:order-ready:m4a",
+      "audioId": "order-ready",
+      "type": "audio",
+      "path": "assets/audio/serve/order-ready.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "serve",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "order_ready"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:serve-success:ogg",
+      "audioId": "serve-success",
+      "type": "audio",
+      "path": "assets/audio/serve/serve-success.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "serve",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "order_served:early"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:serve-success:m4a",
+      "audioId": "serve-success",
+      "type": "audio",
+      "path": "assets/audio/serve/serve-success.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "serve",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "order_served:early"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:serve-grace:ogg",
+      "audioId": "serve-grace",
+      "type": "audio",
+      "path": "assets/audio/serve/serve-grace.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "serve",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "order_served:grace"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:serve-grace:m4a",
+      "audioId": "serve-grace",
+      "type": "audio",
+      "path": "assets/audio/serve/serve-grace.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "serve",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "order_served:grace"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:serve-fail:ogg",
+      "audioId": "serve-fail",
+      "type": "audio",
+      "path": "assets/audio/serve/serve-fail.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "serve",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "order_expired"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:serve-fail:m4a",
+      "audioId": "serve-fail",
+      "type": "audio",
+      "path": "assets/audio/serve/serve-fail.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "serve",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "order_expired"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:serve-tip:ogg",
+      "audioId": "serve-tip",
+      "type": "audio",
+      "path": "assets/audio/serve/serve-tip.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "serve",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "serve_tip"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:serve-tip:m4a",
+      "audioId": "serve-tip",
+      "type": "audio",
+      "path": "assets/audio/serve/serve-tip.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "serve",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "serve_tip"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:pour-beer:ogg",
+      "audioId": "pour-beer",
+      "type": "audio",
+      "path": "assets/audio/beer/pour-beer.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "beer",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "beer_pouring"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:pour-beer:m4a",
+      "audioId": "pour-beer",
+      "type": "audio",
+      "path": "assets/audio/beer/pour-beer.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "beer",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "beer_pouring"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:glass-stale:ogg",
+      "audioId": "glass-stale",
+      "type": "audio",
+      "path": "assets/audio/beer/glass-stale.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "beer",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "glass_stale"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:glass-stale:m4a",
+      "audioId": "glass-stale",
+      "type": "audio",
+      "path": "assets/audio/beer/glass-stale.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "beer",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "glass_stale"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:glass-clink:ogg",
+      "audioId": "glass-clink",
+      "type": "audio",
+      "path": "assets/audio/beer/glass-clink.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "beer",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "beer_poured"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:glass-clink:m4a",
+      "audioId": "glass-clink",
+      "type": "audio",
+      "path": "assets/audio/beer/glass-clink.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "beer",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "beer_poured"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:wash:ogg",
+      "audioId": "wash",
+      "type": "audio",
+      "path": "assets/audio/beer/wash.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "beer",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "glass_washing"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:wash:m4a",
+      "audioId": "wash",
+      "type": "audio",
+      "path": "assets/audio/beer/wash.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "beer",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "glass_washing"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:kitchen-start:ogg",
+      "audioId": "kitchen-start",
+      "type": "audio",
+      "path": "assets/audio/kitchen/kitchen-start.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "kitchen",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "dish_preparing"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:kitchen-start:m4a",
+      "audioId": "kitchen-start",
+      "type": "audio",
+      "path": "assets/audio/kitchen/kitchen-start.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "kitchen",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "dish_preparing"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:kitchen-ready:ogg",
+      "audioId": "kitchen-ready",
+      "type": "audio",
+      "path": "assets/audio/kitchen/kitchen-ready.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "kitchen",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "dish_ready"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:kitchen-ready:m4a",
+      "audioId": "kitchen-ready",
+      "type": "audio",
+      "path": "assets/audio/kitchen/kitchen-ready.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "kitchen",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "dish_ready"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:restock:ogg",
+      "audioId": "restock",
+      "type": "audio",
+      "path": "assets/audio/kitchen/restock.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "kitchen",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "restocked"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:restock:m4a",
+      "audioId": "restock",
+      "type": "audio",
+      "path": "assets/audio/kitchen/restock.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "kitchen",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "restocked"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:coin-gain:ogg",
+      "audioId": "coin-gain",
+      "type": "audio",
+      "path": "assets/audio/economy/coin-gain.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "economy",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "coin_gain"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:coin-gain:m4a",
+      "audioId": "coin-gain",
+      "type": "audio",
+      "path": "assets/audio/economy/coin-gain.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "economy",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "coin_gain"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:upgrade:ogg",
+      "audioId": "upgrade",
+      "type": "audio",
+      "path": "assets/audio/economy/upgrade.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "economy",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "upgrade_bought"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:upgrade:m4a",
+      "audioId": "upgrade",
+      "type": "audio",
+      "path": "assets/audio/economy/upgrade.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "economy",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "upgrade_bought"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:unlock:ogg",
+      "audioId": "unlock",
+      "type": "audio",
+      "path": "assets/audio/economy/unlock.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "economy",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "table_bought"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:unlock:m4a",
+      "audioId": "unlock",
+      "type": "audio",
+      "path": "assets/audio/economy/unlock.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "economy",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "table_bought"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:crate-open:ogg",
+      "audioId": "crate-open",
+      "type": "audio",
+      "path": "assets/audio/economy/crate-open.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "economy",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "emergency_pack_claimed"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:crate-open:m4a",
+      "audioId": "crate-open",
+      "type": "audio",
+      "path": "assets/audio/economy/crate-open.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "economy",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "emergency_pack_claimed"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:rush-start:ogg",
+      "audioId": "rush-start",
+      "type": "audio",
+      "path": "assets/audio/events/rush-start.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "events",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "rush_started"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:rush-start:m4a",
+      "audioId": "rush-start",
+      "type": "audio",
+      "path": "assets/audio/events/rush-start.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "events",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "rush_started"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:rush-end:ogg",
+      "audioId": "rush-end",
+      "type": "audio",
+      "path": "assets/audio/events/rush-end.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "events",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "rush_ended"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:rush-end:m4a",
+      "audioId": "rush-end",
+      "type": "audio",
+      "path": "assets/audio/events/rush-end.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "events",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "rush_ended"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:weather-change:ogg",
+      "audioId": "weather-change",
+      "type": "audio",
+      "path": "assets/audio/events/weather-change.ogg",
+      "format": "ogg",
+      "source": "original_procedural_synthesis",
+      "group": "events",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "weather_rolled"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "audio:weather-change:m4a",
+      "audioId": "weather-change",
+      "type": "audio",
+      "path": "assets/audio/events/weather-change.m4a",
+      "format": "m4a",
+      "source": "original_procedural_synthesis",
+      "group": "events",
+      "dimensions": null,
+      "transparent": false,
+      "usage": [
+        "weather_rolled"
+      ],
+      "loop": false,
+      "status": "draft",
+      "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
+      "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    }
+  ]
+}

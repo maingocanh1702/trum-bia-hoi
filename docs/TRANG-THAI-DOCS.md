@@ -5,7 +5,7 @@
 
 ## 1. Kết luận
 
-**Đủ để bắt đầu M0.** Prompt dán vào Claude Code: **`12-PROMPT-claude-build.md` Phần 1** (gói `11-PROMPT-PACK` Phần B + vòng lặp Codex review); Codex chạy bằng `codex exec review --base master - < docs/prompts/codex-review.md` (codex-cli 0.152 có sẵn trên máy). Ràng buộc rõ, số tập trung ở JSON, layout có ảnh tham khảo, onboarding đã thành luật, gate `npm run check:config` chạy được ở gốc repo và đang xanh (37/37 + coverage). Không còn mục 🔴.
+**Đủ để build; M0 đã qua kiểm tra tự động, M1–M3 có bản local đang hoàn thiện.** Tiến độ code và giới hạn hiện tại: `docs/build-progress.md` (14 feature đang triển khai, 0 hoàn tất; review độc lập đang chờ). Prompt dán vào Claude Code: **`12-PROMPT-claude-build.md` Phần 1** (gói `11-PROMPT-PACK` Phần B + vòng lặp Codex review); Codex chạy bằng `codex exec review --base master - < docs/prompts/codex-review.md` (codex-cli 0.152 có sẵn trên máy). Ràng buộc rõ, số tập trung ở JSON, layout có ảnh tham khảo, onboarding đã thành luật, gate `npm run check:config` chạy được ở gốc repo và đang xanh trên `packages/engine` (40 section, 39 section phân loại). Không còn mục 🔴.
 
 Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **2 việc nhỏ trước khi giao** (mục 4b). Quy trình build **do dev tự quyết** — Level 3 không còn bắt buộc.
 
@@ -15,7 +15,7 @@ Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **2 việc nh�
 |---|---|---|
 | Gameplay lõi (ca, hệ bàn, Order, freshness, rót/rửa tự động) | ✅ | GDD §1–§10, 03-SPEC §1–§9 |
 | Gameplay lớp 3–5 (khách, thời tiết, rush, meta, risk) | ✅ | GDD §7–§16, F07–F22 |
-| Economy | ✅ | 08-SPEC v1.2.7 + `economy.tbh.json` 1.6.0 (`_meta.governance` tier A/B/C) |
+| Economy | ✅ | 08-SPEC v1.2.7 + `economy.tbh.json` 1.7.0 (`_meta.governance` tier A/B/C) |
 | Asset | ✅ | 11-PROMPT-PACK Phần A v1.11, checklist v1.4 (**~550** = ~475 sprite/icon + 75 audio id; 8 đã có), naming §11, design-tokens |
 | Âm thanh | ✅ | Checklist §B7: **75 id** (mỗi id `.ogg` + `.m4a`), thư mục theo nhóm, phát theo event id → manifest |
 | UI / component / motion | ✅ | UI invariants HANDOFF §6 + brief B binding 10; 09-SPEC/05-SPEC/F24 = tham khảo |
@@ -24,11 +24,11 @@ Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **2 việc nh�
 | Tech (engine, config, lưu trữ, server) | ✅ | 10-SPEC v1.7 §1/§5/§7/§9/§10/§13, F23 §8 — **localStorage trước, server ở M4** |
 | Admin / Config Registry | ✅ | BRD §5.2 + §11; 08-SPEC §22 |
 | Bảng xếp hạng | ✅ | **F28 v1.0** + JSON `leaderboard` (tier A) |
-| Lộ trình & tracker | ✅ | 06-ROADMAP **v3.1** — 1 phase, mốc M0–M9 (M7 = Donate + pháp lý); `implementation-tracker` **v0.7.1** 0 % (28 feature, F26 ⏸ bỏ), `dashboard.*` rebuild 0/28 |
-| Hướng dẫn agent (đọc trước HANDOFF) | ✅ | `CLAUDE.md`/`AGENTS.md` dòng verify → `check:config` ở root + build/test/sim của game mới (prototype chỉ khi đụng `prototype/`); `SESSION-TRACK-LOG` snapshot + "Việc tiếp theo = bắt đầu M0"; 11-PROMPT-PACK §0.2 thứ tự = config → engine + local save → server M4 |
+| Lộ trình & tracker | ✅ | 06-ROADMAP **v3.1** — 1 phase, mốc M0–M9 (M7 = Donate + pháp lý); `implementation-tracker` **v0.8.0** (14 đang triển khai, 0/28 hoàn tất; F26 ⏸ bỏ), `dashboard.*` rebuild |
+| Hướng dẫn agent (đọc trước HANDOFF) | ✅ | `CLAUDE.md`/`AGENTS.md` dòng verify → `check:config` ở root + build/test/sim của game mới (prototype chỉ khi đụng `prototype/`); `SESSION-TRACK-LOG` block build mới nhất + checkpoint hiện tại; 11-PROMPT-PACK §0.2 thứ tự = config → engine + local save → server M4 |
 | Content bank | ⏸ pending | `docs/content/` mới là đề xuất schema + 5 ví dụ |
 | Tính năng kiểm tra (policy check) | ⏸ pending | F15 §4; ship `risk.inspection.enabled=false` |
-| Monetization | ✅ | **Chơi FREE hoàn toàn; nguồn thu duy nhất = donate cho admin** (F20 Mời Bia Hơi, cosmetic thank-you, không P2W, không paywall). F26 ⛔ bỏ. JSON 1.6.0 `entitlements.mode=free` + `donation` (tier A); BRD v0.5 §7 Donation |
+| Monetization | ✅ | **Chơi FREE hoàn toàn; nguồn thu duy nhất = donate cho admin** (F20 Mời Bia Hơi, cosmetic thank-you, không P2W, không paywall). F26 ⛔ bỏ. JSON 1.7.0 `entitlements.mode=free` + `donation` (tier A); BRD v0.5 §7 Donation |
 
 ## 3. Quyết định chủ dự án đang có hiệu lực (08/09)
 
@@ -38,7 +38,7 @@ Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **2 việc nh�
 4. **Layout tham khảo = `docs/reference/`** (ảnh game gốc, kiểu sân quán không gian) — không phải card-list ở 09-SPEC §3.1.
 5. **Content bank + tính năng kiểm tra: pending**, chưa dùng làm ràng buộc, không tính vào acceptance M6.
 6. **Mặt bằng: 9** (theo `locations.list` / F14 / 08 §16).
-7. **Quy trình build do dev/agent tự quyết** — Level 3/autopilot (worktree, scope gate, Codex review, `/ap-*`) **không còn bắt buộc**; `.autopilot/` + `docs/autopilot-*.md` là lưu trữ. Ràng buộc chỉ còn là kết quả: `check:config` xanh, build/test xanh, k trong band, changelog khi lệch doc, tracker/dashboard cập nhật (CLAUDE.md/AGENTS.md block "Build workflow").
+7. **Quy trình build do dev/agent tự quyết** — Level 3/autopilot (worktree, scope gate, `/ap-*`) **không còn bắt buộc**; `.autopilot/` + `docs/autopilot-*.md` là lưu trữ. Review độc lập theo HANDOFF v1.15/12-PROMPT vẫn áp dụng. Ràng buộc kết quả: `check:config` xanh, build/test xanh, k trong band, changelog khi lệch doc, tracker/dashboard cập nhật (CLAUDE.md/AGENTS.md block "Build workflow").
 8. **Chơi FREE hoàn toàn — monetization duy nhất = donate cho admin.** Không Vé Mở Ca, không bán quyền chơi/xu/sức mạnh, không paywall; donate tự nguyện (F20), quà cảm ơn cosmetic-only; cổng nhận tiền = adapter, mặc định QR chuyển khoản + admin xác nhận tay.
 9. Việc còn lại: làm theo đề xuất, không hỏi lại.
 
@@ -71,4 +71,10 @@ Ba mục item-list (hành phi, đá lạnh, giá cosmetic) đã **chốt theo đ
 
 ## 6. Bản đồ nhanh — đọc gì trước
 
-`00-HANDOFF` v1.15 (điểm vào, §4 scope + §6 quy ước) → **`12-PROMPT-claude-build.md`** (dev kickoff + Codex review) · `11-PROMPT-PACK` v1.14 Phần A (designer) / Phần B (chi tiết dev) → `02-GDD` v1.12 + `03-SPEC` (luật chơi) → `08-SPEC` v1.2.7 + `economy.tbh.json` 1.6.0 (số) → `06-ROADMAP` v3.1 (mốc M0–M9) + `implementation-tracker` v0.7.1 (0/28) → `docs/features/F07–F28` → `docs/reference/` (layout) → `trum-bia-hoi-brd-admin.md` §5.2 (config admin).
+`00-HANDOFF` v1.15 (điểm vào, §4 scope + §6 quy ước) → **`12-PROMPT-claude-build.md`** (dev kickoff + Codex review) · `11-PROMPT-PACK` v1.14 Phần A (designer) / Phần B (chi tiết dev) → `02-GDD` v1.12 + `03-SPEC` (luật chơi) → `08-SPEC` v1.2.7 + `economy.tbh.json` 1.7.0 (số) → `06-ROADMAP` v3.1 (mốc M0–M9) + `implementation-tracker` v0.8.0 (14 đang triển khai, 0/28 hoàn tất) → `docs/features/F07–F28` → `docs/reference/` (layout) → `trum-bia-hoi-brd-admin.md` §5.2 (config admin).
+
+## Changelog
+
+| Ngày | Thay đổi |
+|---|---|
+| 2026-09-08 | Cập nhật snapshot game mới, config 1.7.0, kiểm tra runtime và trạng thái review; giữ riêng evidence prototype. |

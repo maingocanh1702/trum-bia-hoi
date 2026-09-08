@@ -257,3 +257,5 @@ CI: `lint → typecheck → test → probe → sim → check:config (economy + c
 | v1.0 | Bản đầu 2026-09-08: kiến trúc client-only → server-authoritative, module map, domain model mở rộng từ prototype, state machine, tick/command/event, config, thời gian/cap, lưu trữ, API/WS, asset pipeline trong code, test/CI, DoD, lộ trình slice. |
 | v1.6 | Theo audit 08/09: §9 lưu trữ viết lại — server event store là nguồn sự thật **từ đầu**, localStorage chỉ cache/settings (bỏ giai đoạn P1–P2 save local); sơ đồ §1 sửa dòng save; §8 bỏ "server P3 / client P1"; §10 thêm ràng buộc mất mạng/reconnect (buffer + idempotencyKey + resync, `reconnectGraceMs` config). |
 | v1.7 | Chủ dự án 08/09: **localStorage trước, server sau** — §9 viết lại thành 2 bước (local save versioned + eventLog append-only → server event store), bất biến server-ready; §1/§8 sửa theo; mất mạng §10 áp khi có server. |
+
+| 2026-09-08 build | New implementation uses packages/engine (explicit-time event scheduler and replayable command log) + React DOM/CSS spatial web UI. Config coverage targets the new engine; seed-schema validation replaces zod for this initial runtime. |

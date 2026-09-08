@@ -9,14 +9,14 @@
 
 ## 📊 Lộ trình 1 phase — mốc M0–M9 (v3.0)
 
-> Tiến độ game mới: **0 %** (bộ docs xong 08/09; `prototype/` là lưu trữ, không tính). Không gán ngày — team chốt ước lượng khi có capacity; mỗi mốc có **exit criteria** đo được, không có mốc nào là cổng scope. Ba track chạy song song: **Game** (dev), **Art** (Blender MCP, checklist A/B), **Audio** (checklist B7), **Admin** (BRD §11).
+> Game mới có bản local chạy được: **14/28 feature đang triển khai, 0/28 hoàn tất**; M0 qua kiểm tra tự động, đang chờ review độc lập. Bằng chứng và phần còn lại: `docs/build-progress.md`. `prototype/` là lưu trữ, không tính. Không gán ngày — team chốt ước lượng khi có capacity; mỗi mốc có **exit criteria** đo được, không có mốc nào là cổng scope. Ba track chạy song song: **Game** (dev), **Art** (Blender MCP, checklist A/B), **Audio** (checklist B7), **Admin** (BRD §11).
 
 | Mốc | Nội dung | Exit criteria (đo được) | Trạng thái |
 |---|---|---|---|
-| **M0 · Nền** | Workspaces `packages/engine` + `apps/web` trong repo này (HANDOFF §4.4); config loader từ `economy.tbh.json` + schema; engine thuần + shift loop; sim headless đo k; port `check:config`; skeleton `analytics-events.md`, `vi.json/en.json`, `assets/manifest.json`; placeholder convention | `npm run check:config` xanh trên repo mới; sim 5 seed k ∈ 2.0–3.0; build + test xanh | ⚪ |
-| **M1 · Vòng phục vụ lõi** | Bàn/Order/serve 1 chạm + 4 kết cục + grace; cốc/freshness; rót & rửa tự động; kho + nâng cấp thiết bị; **UI do dev thiết kế** theo `docs/reference/`; **lưu localStorage** versioned + `eventLog`; audio nhóm ui/shift/serve/beer | Chơi trọn ca 12 phút trên 3 viewport; 09 §11 mục P1; k giữ band; reload không mất tiến độ | ⚪ |
-| **M2 · Onboarding + guest** | F27 (1 khách 1 bia, thông báo mất khách, step guide lần đầu + sau 3 lần mất khách); F25 ngôn ngữ + guest local; nút khuyến khích đăng nhập (chưa cần server) | 5 người mới: ≥ 4/5 phục vụ khách đầu ≤ 30 s, ≥ 4/5 đóng ca 1; F27 §6 | ⚪ |
-| **M3 · Đủ demand-mix** | 6 món + bếp; 7 loại khách; 5 thời tiết; Giờ Vàng đủ mức + lịch; đợt gọi 2+; tip/uy tín/phạt đầy đủ; biển hiệu, mở khoá một lần | Sim: k band + loss theo 04 §5/§6; 09 §11 mục P2; asset batch thiết bị/khách/món đã thay placeholder | ⚪ |
+| **M0 · Nền** | Workspaces `packages/engine` + `apps/web` trong repo này (HANDOFF §4.4); config loader từ `economy.tbh.json` + schema; engine thuần + shift loop; sim headless đo k; port `check:config`; skeleton `analytics-events.md`, `vi.json/en.json`, `assets/manifest.json`; placeholder convention | `npm run check:config` xanh trên repo mới; sim 5 seed k ∈ 2.0–3.0; build + test xanh | 🟡 |
+| **M1 · Vòng phục vụ lõi** | Bàn/Order/serve 1 chạm + 4 kết cục + grace; cốc/freshness; rót & rửa tự động; kho + nâng cấp thiết bị; **UI do dev thiết kế** theo `docs/reference/`; **lưu localStorage** versioned + `eventLog`; audio nhóm ui/shift/serve/beer | Chơi trọn ca 12 phút trên 3 viewport; 09 §11 mục P1; k giữ band; reload không mất tiến độ | 🟡 |
+| **M2 · Onboarding + guest** | F27 (1 khách 1 bia, thông báo mất khách, step guide lần đầu + sau 3 lần mất khách); F25 ngôn ngữ + guest local; nút khuyến khích đăng nhập (chưa cần server) | 5 người mới: ≥ 4/5 phục vụ khách đầu ≤ 30 s, ≥ 4/5 đóng ca 1; F27 §6 | 🟡 |
+| **M3 · Đủ demand-mix** | 6 món + bếp; 7 loại khách; 5 thời tiết; Giờ Vàng đủ mức + lịch; đợt gọi 2+; tip/uy tín/phạt đầy đủ; biển hiệu, mở khoá một lần | Sim: k band + loss theo 04 §5/§6; 09 §11 mục P2; asset batch thiết bị/khách/món đã thay placeholder | 🟡 |
 | **M4 · Server + tài khoản + admin** | Server event store (đổi adapter `SaveStore`), Google login + guest claim (kể cả giữa ca), config service + pin `configVersion`, admin B1–B3, reconnect/resync, anti-cheat, rollover ngày VN | F23 §8 + F25 §10 acceptance; đổi 1 key ở admin → hiệu lực đúng `effectiveAt`; replay event log = state | ⚪ |
 | **M5 · Meta** | Giải Nhậu/Vụ Bia, **F28 bảng xếp hạng + Bàn Thờ**, Đường Lên Trùm, 9 mặt bằng, nhiệm vụ/điểm danh, referral + huy hiệu, Két Bia Bí Ẩn, cosmetic | Kết Vụ tự động + snapshot bất biến; F12/F13/F14/F16/F17/F28 acceptance | ⚪ |
 | **M6 · Risk** | Côn đồ/bảo kê, kiểm tra (câu hỏi từ `docs/content/`), trật tự đô thị, đánh nhau, trộm offline, chó, Thùng Cấp Cứu | F15/F18 acceptance; dialog no-pause; sim k không lệch band khi bật risk | ⚪ |
@@ -62,7 +62,9 @@ Phase 2+: Tất cả tracks song song, cadence 2 tuần review.
 
 ## 📦 Feature Modules
 
-> **Feature progress: ~22%** — ████░░░░░░░░░░░░░░░░ (Spec 100% · Code: lõi Phase 0 đã chạy, các phase sau 0%)
+> **Bảng dưới là snapshot prototype lịch sử; tiến độ game mới dùng `docs/implementation-tracker.md`.**
+
+> **Feature progress lịch sử: ~22%** — ████░░░░░░░░░░░░░░░░ (Spec 100% · Code: lõi Phase 0 đã chạy, các phase sau 0%)
 
 | # | Feature | Mô tả ngắn | Phase | Spec | Code | Art | Balance |
 |---|---------|-------------|:-----:|:----:|:----:|:---:|:-------:|
@@ -505,3 +507,5 @@ League/Life Path tạo mục tiêu dài hạn rõ; server-auth chặn gian lận
 | v3.1 | Chủ dự án 08/09: chơi free hết — M7 đổi thành "Donate + pháp lý", Mời Bia Hơi (F20) là monetization duy nhất, F26 bỏ; §Monetization Reference sửa. |
 
 *Nguồn: `02-GDD-trum-bia-hoi.md` §19, `03-SPEC-he-ban.md`, `04-SPEC-prototype-phase0.md`, `05-SPEC-design-uiux.md`.*
+
+| v3.2 | 2026-09-08: cập nhật M0–M3 đang triển khai trong worktree game mới; snapshot prototype không còn là tiến độ hiện hành. |

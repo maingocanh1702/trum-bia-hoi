@@ -30,6 +30,13 @@
 
 ## 🗒️ Nhật ký phiên
 
+### Session 2026-09-08 — Game mới: M0 verified, playable M1/M2, initial M3
+- Worktree hiện hành: `/Users/maingocanh/.codex/worktrees/trum-bia-hoi-game`, branch `codex/game-build-isolated` từ `bc79af5`; tách sau khi phiên Claude commit chung root. Root được giữ nguyên.
+- Engine thuần + config loader, replay/local save, sim k, React sân quán + nhập/nâng/sổ ca/vi-en/guide; 15 test và build/config pass. 5-seed k=2.2702–2.5072 (≥500 lượt/seed).
+- 3 viewport đã thử serve/reload/sheet/locale; đóng ca 12 phút tự động. 8 sprite anchor giữ nguyên, 41 placeholder, 32 SFX mới (Ogg+AAC) còn nghe/QA.
+- **Chưa xong full game.** Tiếp theo hoàn tất core edge cases/art, M4 server/admin/accounts, rồi đủ meta/risk/events. Tiến độ/commands/giới hạn: `docs/build-progress.md` (nguồn mới hơn snapshot đầu file).
+
+
 ### Session 2026-09-08 (22) — Audit HANDOFF → chốt quyết định → đồng bộ toàn bộ docs, reset tracker
 - **Audit `00-HANDOFF` v1.5** đối chiếu từng file: 4 lỗ hổng (onboarding không ràng buộc; nhãn POST-MVP/phase sót; `check:config` trỏ prototype; layout card-list ≠ ý chủ dự án). Cả 4 đã xử lý cùng ngày.
 - **Chủ dự án chốt:** localStorage trước → server M4 · onboarding 5 luật (F27 🟢) · layout = ảnh game gốc (`docs/reference/` 8 ảnh) · 9 mặt bằng · content bank + kiểm tra pending · doc giao việc không cầm tay · "follow recommend" cho phần còn lại.

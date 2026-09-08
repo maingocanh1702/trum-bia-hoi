@@ -39,7 +39,8 @@ export interface Shift {
 export interface World {
   now: number; rng: number; nextId: number; phase: 'resting' | 'open' | 'closing';
   playerId: string; coins: number; reputation: number; seasonEarned: number; lifetimeEarned: number;
-  staminaMs: number; completedShifts: number; active: boolean; lastServedAt: number | null;
+  staminaMs: number; staminaAnchorMs: number; staminaAnchorAt: number;
+  completedShifts: number; active: boolean; lastServedAt: number | null;
   dayEarned: Record<string, number>; dayShifts: Record<string, number>;
   inventory: Record<Dish, number>; equipment: Record<Equipment, number>; tables: Table[];
   glasses: Glass[]; queue: Group[]; shift: Shift | null; serves: ServeRecord[];

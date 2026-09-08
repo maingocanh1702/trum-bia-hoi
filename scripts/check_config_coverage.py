@@ -7,15 +7,15 @@ Kiểm 5 điều:
      _meta.governance.tiers (A/B/C) hoặc nằm trong excludedFromRegistry.
   2. Mọi đường dẫn nhắc trong governance (sections có dấu chấm, featureFlags)
      phải resolve được trong JSON — chống typo khi thêm key.
-  3. Mọi `config.get('<path>')` trong prototype/src trỏ tới key có thật trong JSON.
+  3. Mọi `config.get('<path>')` trong packages/engine/src trỏ tới key có thật trong JSON.
   4. Bảng registry ở 08-SPEC-economy-constants.md §22 nhắc đủ mọi section
      (thêm key vào JSON mà quên đăng ký ở doc = fail).
-  5. (advisory) Đếm literal số trong prototype/src/engine ngoài constants.ts —
+  5. (advisory) Đếm literal số trong packages/engine/src ngoài constants.ts —
      in cảnh báo, KHÔNG fail; bật --strict để fail khi có.
 
 Dùng:
   python3 scripts/check_config_coverage.py
-  npm run check:config-coverage            (trong prototype/)
+  npm run check:config-coverage            (repo root)
 
 Bỏ qua 1 dòng khỏi kiểm (5): thêm `// config-exempt: <lý do>` ở cuối dòng đó.
 Exit 1 nếu có lỗi (1–4).
@@ -27,8 +27,8 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 CFG_PATH = REPO / "docs/config/economy.tbh.json"
 SPEC_PATH = REPO / "08-SPEC-economy-constants.md"
-SRC_DIR = REPO / "prototype/src"
-ENGINE_DIR = SRC_DIR / "engine"
+SRC_DIR = REPO / "packages/engine/src"
+ENGINE_DIR = SRC_DIR
 STRICT = "--strict" in sys.argv
 
 CFG = json.loads(CFG_PATH.read_text(encoding="utf-8"))

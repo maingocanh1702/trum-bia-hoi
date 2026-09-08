@@ -117,6 +117,17 @@ test('small ticks and a large time jump produce identical autonomous events/stat
   a.advance(60000); b.advance(60000);
   assert.deepEqual(a.world, b.world);
 });
+test('active rest recovery is independent of frame rate and never counts hidden time', () => {
+  const a = create(), b = create();
+  for (const g of [a, b]) { const { command } = firstOrder(g); send(g, command); send(g, { type: 'endShift' }); }
+  for (let t = 11037; t < 35007; t += 37) a.advance(t);
+  a.advance(35007); b.advance(35007);
+  assert.deepEqual(a.world, b.world);
+  send(a, { type: 'activity', active: false }); const stamina = a.world.staminaMs;
+  a.advance(100000); assert.equal(a.world.staminaMs, stamina);
+  send(a, { type: 'activity', active: true }); a.advance(100100);
+  assert.equal(a.world.staminaMs, Math.min(a.config.values.shift.durationMs, stamina + 40));
+});
 test('local save reload exactly replays the running order, finances and glass ownership', () => {
   const g = create(); const { command } = firstOrder(g);
   send(g, command); g.advance(17777);

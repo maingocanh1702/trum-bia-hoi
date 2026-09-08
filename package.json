@@ -15,7 +15,9 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test packages/engine/test/*.test.ts",
     "sim": "tsx packages/engine/sim/headless.ts",
-    "verify": "npm run check:config && npm run build && npm test && npm run sim"
+    "verify": "npm run check:config && npm run build && npm test && npm run sim",
+    "test:e2e": "playwright test",
+    "check:assets": "python3 scripts/check_assets.py"
   },
   "type": "module",
   "engines": {

@@ -790,3 +790,5 @@ Cập nhật lại bằng: `ls assets/*.png`
 | v1.3 | Đóng 8 gap §P2 (9 mặt bằng theo JSON, badge id, rare glass 2 file, glass-washing 128, bỏ table-plastic legacy, bếp 4 cấp); §A13/§A7/§A8 viết lại; nhãn Phase → mốc M. |
 | v1.4 | B1: 14 → 12 icon — bỏ `mat-onion`, `mat-ice` theo chốt item-list v1.7 (08/09). |
 | v1.5 | Chơi free hết (08/09): bỏ `icon-session-pass`; nhóm B3 "Thanh toán & session" → "Donate" 3 icon. |
+
+| 2026-09-08 build | Initial core audio: 32 original procedural clips in assets/audio, Ogg + AAC with sources/presets; manifest status draft, listening QA pending. No production checklist boxes marked done. |

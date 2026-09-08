@@ -1,0 +1,39 @@
+/* Generated from docs/design-tokens.md core palette. */
+:root {
+  --beerAmber: #eaa31a;
+  --beerAmberDeep: #c07a12;
+  --beerAmberLight: #ffc24d;
+  --beerFoam: #fff3d2;
+  --stoolRed: #de4126;
+  --stoolRedDeep: #b32f1a;
+  --inox: #c4cecb;
+  --inoxMid: #97a3a0;
+  --inoxDark: #69736f;
+  --streetBg: #f1d585;
+  --streetBgShade: #e0bd6c;
+  --panel: #3a2a1c;
+  --panelDeep: #241810;
+  --panelRaised: #4c3826;
+  --panelBorder: #5d452f;
+  --ink: #2a1d12;
+  --cream: #fbeedc;
+  --creamMuted: #cab39b;
+  --success: #3fa564;
+  --reputation: #5bbf74;
+  --coinGold: #ffd15a;
+  --warning: #f4c23f;
+  --danger: #d23a2a;
+  --info: #3f7fcf;
+  --glassClean: #c2e6f1;
+  --glassBeer: #eaa31a;
+  --glassWarn: #f4c23f;
+  --glassStale: #8f8579;
+  --glassDirty: #8a6b55;
+  --glassWashing: #7ec8e3;
+  --wxSunny: #fff0c2;
+  --wxHot: #ff8a2c;
+  --wxHumid: #a6bda9;
+  --wxRain: #54678a;
+  --wxCold: #bcd2e0;
+  --wxEvening: #e6712a;
+}
