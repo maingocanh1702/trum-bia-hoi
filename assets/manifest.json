@@ -132,18 +132,18 @@
     {
       "id": "table-lv1-empty",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/table-lv1-illustrated-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        1254,
+        1254
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "status": "draft",
+      "review_notes": "Owner board direction: blue molded-plastic low table, no chairs, original generated alpha retained. Runtime visual QA; final pixel/crop/size polish pending. Prompt and provenance in docs/reference/assets-owner-2026-09-08/generated-art.md."
     },
     {
       "id": "table-lv2-empty",
@@ -159,7 +159,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "table-lv3-empty",
@@ -175,7 +175,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "table-lv4-empty",
@@ -191,7 +191,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "chair-plastic-red",
@@ -207,7 +207,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "stall-owner-normal",
@@ -223,39 +223,39 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "menu-peanut",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/menu-peanut-illustrated-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        1254,
+        1254
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "status": "draft",
+      "review_notes": "Original generated alpha retained; owner illustrated style direction. Runtime visual QA; final size polish pending. Prompt in docs/reference/assets-owner-2026-09-08/generated-customers-menu.md."
     },
     {
       "id": "menu-nemchua",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/menu-nemchua-illustrated-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        1374,
+        1145
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "status": "draft",
+      "review_notes": "Original generated alpha retained; owner illustrated style direction. Runtime visual QA; final size polish pending. Prompt in docs/reference/assets-owner-2026-09-08/generated-customers-menu.md."
     },
     {
       "id": "menu-friedbean",
@@ -271,7 +271,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "menu-crackle",
@@ -287,7 +287,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "menu-intestine",
@@ -303,23 +303,23 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "keg-lv1",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/keg-lv1-illustrated-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        1254,
+        1254
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "status": "draft",
+      "review_notes": "Original generated alpha preserved. Hanoi starter equipment; single readable silhouette. Source exec-4c09916d-fa8d-42d1-8100-bb6c1e6afb53.png; prompt in generated-art.md. Final export/series approval pending."
     },
     {
       "id": "keg-lv2",
@@ -335,7 +335,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "keg-lv3",
@@ -351,7 +351,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "keg-lv4",
@@ -367,7 +367,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "keg-lv5",
@@ -383,23 +383,23 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "washer-lv1",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/washer-lv1-illustrated-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        1254,
+        1254
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "status": "draft",
+      "review_notes": "Original generated alpha preserved. Hanoi starter equipment; single readable silhouette. Source exec-88e186e8-c955-4e2d-b90c-eeaa8e9631dc.png; prompt in generated-art.md. Final export/series approval pending."
     },
     {
       "id": "washer-lv2",
@@ -415,7 +415,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "washer-lv3",
@@ -431,7 +431,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "washer-lv4",
@@ -447,7 +447,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "washer-lv5",
@@ -463,23 +463,23 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "cooler-lv1",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/cooler-lv1-illustrated-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        1254,
+        1254
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "status": "draft",
+      "review_notes": "Original generated alpha preserved. Hanoi starter equipment; single readable silhouette. Source exec-8c10e436-3cb1-4fd4-907e-74925e898004.png; prompt in generated-art.md. Final export/series approval pending."
     },
     {
       "id": "cooler-lv2",
@@ -495,7 +495,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "cooler-lv3",
@@ -511,7 +511,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "cooler-lv4",
@@ -527,7 +527,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "cooler-lv5",
@@ -543,7 +543,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "stall-lv1",
@@ -559,7 +559,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "stall-lv2",
@@ -575,7 +575,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "stall-lv3",
@@ -591,7 +591,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "stall-lv4",
@@ -607,7 +607,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "stall-lv5",
@@ -623,7 +623,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "kitchen-lv1",
@@ -639,7 +639,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "kitchen-lv2",
@@ -655,7 +655,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "kitchen-lv3",
@@ -671,7 +671,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "kitchen-lv4",
@@ -687,23 +687,23 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "customer-thuong",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/customer-thuong-illustrated-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        1145,
+        1374
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "status": "draft",
+      "review_notes": "Original generated alpha retained; owner illustrated style direction. Runtime visual QA; final size polish pending. Prompt in docs/reference/assets-owner-2026-09-08/generated-customers-menu.md."
     },
     {
       "id": "customer-voi",
@@ -719,7 +719,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "customer-vip",
@@ -735,7 +735,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "customer-chipheo",
@@ -751,7 +751,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "customer-ngoily",
@@ -767,7 +767,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "customer-football-fan",
@@ -783,7 +783,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Token block + 8px id; replace through manifest after art QA."
+      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
     },
     {
       "id": "audio:ui-tap:ogg",
@@ -1936,6 +1936,54 @@
       "status": "draft",
       "license_note": "Original project synthesis; no external samples. Reproduce with scripts/generate_core_audio.py.",
       "review_notes": "44.1 kHz mono; loudnorm -14 LUFS / -1 dBTP. Listening QA pending."
+    },
+    {
+      "id": "chair-plastic",
+      "type": "sprite",
+      "path": "assets/chair-plastic-illustrated-v1.png",
+      "source": "imagegen_builtin",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "transparent": true,
+      "usage": [
+        "table-chairs"
+      ],
+      "status": "draft",
+      "review_notes": "Generated matching red low plastic stool. Original alpha preserved; downscaled runtime checked; final export optimization/family approval pending."
+    },
+    {
+      "id": "owner-idle",
+      "type": "sprite",
+      "usage": [
+        "scene"
+      ],
+      "path": "assets/owner-idle-illustrated-v1.png",
+      "source": "imagegen_builtin",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "transparent": true,
+      "status": "draft",
+      "review_notes": "Generated original for owner screenshot layout. Source exec-15c52a7c-74c7-4734-8f37-4ced191f355a.png; original image retained. Final export/family approval pending."
+    },
+    {
+      "id": "bg-street",
+      "type": "sprite",
+      "usage": [
+        "scene"
+      ],
+      "path": "assets/bg-street-illustrated-v1.png",
+      "source": "imagegen_builtin",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "transparent": false,
+      "status": "draft",
+      "review_notes": "Generated original for owner screenshot layout. Source exec-4f1a30cc-d35d-415f-8d4a-e1a74b53a960.png; original image retained. Final export/family approval pending."
     }
   ]
 }

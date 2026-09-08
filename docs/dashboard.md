@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-08 23:50 · **Branch hiện tại:** `codex/game-build-isolated`
+> **Cập nhật:** 2026-09-09 00:33 · **Branch hiện tại:** `codex/game-build-isolated`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -155,7 +155,7 @@
 - **Wave:** 🎨 Design
 - **Gates:** 🔒S
 - **Phase:** Phase 1
-- **Notes:** React/CSS sân quán, HUD/sheets/popover native. 3 viewport không tràn ngang; 41 sprite placeholders. Art thật chưa đủ.
+- **Notes:** Sân xanh/cảnh phố, HUD gọn, quầy trên, kho dọc, thẻ mâm khi chạm bàn. 4 viewport và focus/Escape/expiry pass; 10 art draft mới, 34 sprite placeholders còn lại. Chưa đủ art/release.
 
 ### F07 — Các Kiểu Khách — 3 loại P1 (thường/vội/VIP)
 

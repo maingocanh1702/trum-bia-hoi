@@ -846,3 +846,5 @@ Ví dụ:
 *Nguồn: `02-GDD-trum-bia-hoi.md` v1.5, `design-component-catalog-trumviahe.md`, `05-SPEC-design-uiux.md`.*
 
 | 2026-09-08 owner reference | Added the owner-supplied illustrated asset boards and preserved the no-handle glass anchor; references guide progressive replacement of placeholders. |
+
+| 2026-09-09 owner layout/style | New screenshot retained as `docs/reference/assets-owner-2026-09-08/layout-owner.png`. Runtime now uses ten original built-in imagegen draft sprites/backgrounds with warm illustrated outlines; source PNG alpha retained and CSS-scaled, without forcing 128px nearest-neighbor export at this draft stage. Existing glass anchors stay unchanged/pixel-rendered. Blue plastic table, green panels and blue tiled ground follow the newer owner direction. Release size/complete-set QA remains pending; 34 sprite placeholders remain. Full prompts are alongside the reference. |

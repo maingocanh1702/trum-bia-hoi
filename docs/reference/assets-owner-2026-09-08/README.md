@@ -20,3 +20,22 @@ The supplied file ending `11_05_09 PM (1).png` contains a JSON download error, n
 | board-06.png | 11_05_11 PM (6).png |
 | board-07.png | 11_05_11 PM (7).png |
 | board-08.png | 11_05_11 PM (8).png |
+
+## Layout reference added 2026-09-09
+
+`layout-owner.png` is the owner's full screenshot, copied unchanged from Desktop.
+Use the game area as a composition reference: centered tall blue tiled yard, Hanoi
+street illustration on both sides, compact top HUD, owner/counter/equipment above
+the tables, inventory rail on the right, four bottom actions, and a dark green
+selected-order panel. Browser chrome and surrounding desktop apps are not game UI.
+
+The implementation keeps whole-table orders and actual configured chair counts.
+It opens the order panel on table tap, restores focus on Escape, and auto-closes it
+on order expiry so departure feedback remains only numeric coin/reputation loss.
+The ten generated draft assets and their prompts are recorded in the adjacent
+`generated-*.md` files. Original green glass PNGs remain unchanged. Illustrated
+sprites use smooth display sampling; glass anchors keep their original pixel look.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Applied the owner's newer layout/style reference. Blue ground and green panels supersede the previous warm-ground/brown-panel suggestion for this screen. Internal placeholder IDs remain in the manifest, not visible in play. No economy/content rules changed. |

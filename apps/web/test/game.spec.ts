@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
-for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1280, height: 720 }]) {
-  test(`guest serves, reloads, opens live sheets and switches locale at ${viewport.width}`, async ({ page }) => {
+for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1280, height: 720 }, { width: 1280, height: 400 }]) {
+  test(`guest serves, reloads, opens live sheets and switches locale at ${viewport.width}×${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
@@ -11,9 +11,16 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
     await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
     await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
     await page.clock.runFor(11100);
+    await page.getByRole('button', { name: 'Xem mâm · bàn 1', exact: true }).first().click();
     await expect(page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true })).toHaveCount(1);
     await expect(page.locator('.guide')).toContainText('Chạm Phục vụ');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    const tables = await page.locator('.table-object').all();
+    const boxes = await Promise.all(tables.map(table => table.boundingBox()));
+    for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
+      const a = boxes[i]!, b = boxes[j]!;
+      expect(a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y).toBe(true);
+    }
     await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
     await expect(page.locator('.toast')).toContainText('có boa');
     const coins = await page.locator('.money strong').textContent();
@@ -60,6 +67,31 @@ test('a neglected first shift closes cleanly after twelve minutes and shows only
   expect(saved.version).toBe(2); expect(saved.log[0].command.type).toBe('startShift');
 });
 
+test('tapped order stays live, returns keyboard focus, and closes on customer expiry', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-09-08T10:00:00Z') });
+  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
+  await page.clock.runFor(8100);
+  const trigger = page.getByRole('button', { name: 'Xem mâm · bàn 1', exact: true }).first();
+  await trigger.click();
+  const panel = page.getByRole('dialog', { name: 'Bàn 1', exact: true });
+  await expect(panel).toBeVisible();
+  await expect(panel.getByRole('button', { name: 'Phục vụ cả mâm', exact: true })).toBeDisabled();
+  await expect(panel.getByRole('button', { name: 'Đóng', exact: true })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(panel).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+  await trigger.press('Enter');
+  const timeBefore = await page.locator('.energy strong').textContent();
+  await page.clock.runFor(3000);
+  await expect(panel.getByRole('button', { name: 'Phục vụ cả mâm', exact: true })).toBeEnabled();
+  expect(await page.locator('.energy strong').textContent()).not.toBe(timeBefore);
+  await page.clock.runFor(17900);
+  await expect(panel).toHaveCount(0);
+  await expect(page.locator('.toast-loss')).toHaveText(/^[−\d\s.,]+$/);
+  await expect(page.locator('.lost-bubble')).toHaveCount(0);
+});
+
 test('corrupt saves are preserved and the app offers the original for recovery', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('tbh.save.v1', '{broken-save'));
   await page.goto('/');
@@ -98,6 +130,7 @@ test('hidden and offline time preserves the current order and remaining shift', 
   await page.goto('/');
   await expect(page.locator('.energy strong')).toHaveText(timeBefore!);
   await expect(page.locator('.money strong')).toHaveText(coinsBefore!);
+  await page.getByRole('button', { name: 'Xem mâm · bàn 1', exact: true }).first().click();
   await expect(page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true })).toHaveCount(1);
   await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
   await expect(page.locator('.toast')).toContainText('có boa');

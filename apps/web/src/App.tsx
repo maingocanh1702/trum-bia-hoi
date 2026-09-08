@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { DISHES, EQUIPMENT, encodeSave, freshnessMs, restockQuote, stockCap, upgradeQuote, type Command, type Equipment, type Table } from '../../../packages/engine/src';
-import { Sprite, menuAsset } from './assets';
+import { Sprite, TableChairs, menuAsset } from './assets';
 import { translate } from './i18n';
 import { advanceGuide, boot, dispatch, download, persist, readSettings, writeSettings, replaceSave } from './local';
 import { createSound } from './audio';
@@ -47,6 +47,7 @@ export function App() {
   const [confirmReset, setConfirmReset] = useState(false);
   const [toast, setToast] = useState<{ text: string; kind: string; loss?: { coins: number; reputation: number } } | null>(null);
   const cursor = useRef(w.events.length);
+  const orderPanelRef = useRef<HTMLElement>(null);
   const locale = settings.locale;
   const t = (key: string, params: Record<string, string | number> = {}) => translate(locale, key, params);
   const num = (n: number) => new Intl.NumberFormat(locale === 'vi' ? 'vi-VN' : 'en-US').format(Math.round(n));
@@ -57,12 +58,13 @@ export function App() {
     let loss: { coins: number; reputation: number } | undefined;
     for (const e of events) {
       sound.event(e);
+      if (e.type === 'order_expired') setSelectedTable(current => current === e.data.tableId ? null : current);
       if (e.type === 'order_expired' || (e.type === 'customer_left' && e.data.reason === 'queue')) {
         loss ??= { coins: 0, reputation: 0 };
         loss.coins += Number(e.data.penalty); loss.reputation += Number(e.data.reputation);
       }
       if (e.type === 'order_served') setToast({ text: translate(prefs.current.locale, `outcome.${e.data.outcome === 'early' && e.data.tipped === false ? 'earlyNoTip' : e.data.outcome}`, { n: Number(e.data.amount) }), kind: String(e.data.outcome) });
-      if (e.type === 'shift_closed') { setSheet('book'); setToast({ text: translate(prefs.current.locale, 'book.closed'), kind: 'early' }); }
+      if (e.type === 'shift_closed') { setSelectedTable(null); setSheet('book'); setToast({ text: translate(prefs.current.locale, 'book.closed'), kind: 'early' }); }
     }
     if (loss) setToast({ text: '', kind: 'loss', loss });
   };
@@ -81,12 +83,18 @@ export function App() {
     setSettingsVersion(x => x + 1);
   };
   const open = (value: Sheet) => {
-    setSheet(value);
+    setSelectedTable(null); setSheet(value);
     if (value === 'upgrades') { advanceGuide(prefs.current, game, [], 'ui_sheet_open:upgrade'); save(); }
   };
   useEffect(() => {
     sound.play(sheet || selectedEquipment || selectedTable || welcome ? 'ui:sheet_open' : 'ui:sheet_close');
   }, [sheet, selectedEquipment, selectedTable, welcome]);
+  useEffect(() => {
+    if (!selectedTable) return;
+    const trigger = document.activeElement;
+    orderPanelRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+    return () => { if (trigger instanceof HTMLElement && trigger.isConnected) trigger.focus(); };
+  }, [selectedTable]);
   useEffect(() => {
     document.documentElement.lang = locale;
     document.title = t('brand');
@@ -98,9 +106,11 @@ export function App() {
     const visibility = () => { run({ type: 'activity', active: !document.hidden }); };
     const pagehide = () => { dispatch(game, { type: 'activity', active: false }); save(); };
     const click = (e: MouseEvent) => { if ((e.target as Element).closest('button,select')) sound.play('ui:tap'); };
+    const escape = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelectedTable(null); };
+    document.addEventListener('keydown', escape);
     document.addEventListener('click', click, true);
     document.addEventListener('visibilitychange', visibility); window.addEventListener('pagehide', pagehide);
-    return () => { clearInterval(tick); clearInterval(checkpoint); document.removeEventListener('visibilitychange', visibility); document.removeEventListener('click', click, true); window.removeEventListener('pagehide', pagehide); sound.mute(true); };
+    return () => { clearInterval(tick); clearInterval(checkpoint); document.removeEventListener('keydown', escape); document.removeEventListener('visibilitychange', visibility); document.removeEventListener('click', click, true); window.removeEventListener('pagehide', pagehide); sound.mute(true); };
   }, []);
   useEffect(() => {
     if (!toast) return;
@@ -129,20 +139,13 @@ export function App() {
     const ready = activeOrder && o.items.every(i => i.state === 'ready');
     const patience = activeOrder ? Math.max(0, (o.placedAt + o.patienceMs - w.now) / o.patienceMs) : 0;
     const stale = activeOrder && o.items.some(i => i.glassId && i.readyAt !== null && w.now >= i.readyAt + freshnessMs(w, game.config));
-    const type = table.group?.customers.find(x => x.type === 'vip')?.type ?? table.group?.customers.find(x => x.type !== 'thuong')?.type ?? 'thuong';
-    const counts = activeOrder ? DISHES.map(d => ({ dish: d, n: o.items.filter(i => i.dish === d).length })).filter(x => x.n) : [];
     return <section className={`table-space table-${index} state-${table.state}`} key={table.id} aria-label={t('table', { n: index + 1 })}>
-      {activeOrder && <div className={`order-bubble ${o.state === 'grace' ? 'grace' : ''} ${stale ? 'stale' : ''}`}>
-        <div className="order-top"><span>{t(`customer.${type}`)}</span><strong>{t('order.time', { s: Math.ceil(Math.max(0, o.placedAt + o.patienceMs + (o.state === 'grace' ? c.patience.graceMs : 0) - w.now) / 1000) })}</strong></div>
-        <div className="order-items">{counts.map(x => <span key={x.dish}><Sprite id={menuAsset[x.dish]} /><b>{x.n}</b><span className="sr-only">{t(`dish.${x.dish}`)}</span></span>)}</div>
-        <div className="patience-track"><i style={{ width: `${patience * 100}%` }} /></div>
-        <button className={ready ? 'serve-button' : 'prep-button'} onClick={() => ready ? run({ type: 'serve', tableId: table.id, orderId: o.id }) : setSelectedTable(table.id)}>
-          {ready ? <><Icon name="check" />{t('order.serve')}</> : t('order.preparing', { ready: o.items.filter(i => i.state === 'ready').length, total: o.items.length })}
-        </button>
-        {(o.state === 'grace' || stale) && <small>{t(stale ? 'order.stale' : 'order.grace')}</small>}
-      </div>}
-      <button className="table-object" onClick={() => setSelectedTable(table.id)} aria-label={t('order.details', { n: index + 1 })}>
-        <div className="stools" aria-hidden="true"><i /><i /><i /><i /></div>
+      {activeOrder && <button className={`table-order-hint ${ready ? 'is-ready' : ''} ${o.state === 'grace' ? 'is-urgent' : ''}`} onClick={() => setSelectedTable(table.id)} aria-label={t('order.details', { n: index + 1 })}>
+        <Sprite id={stale ? 'glass-stale' : 'glass-full'} /><span>{ready ? t('order.ready') : t('order.time', { s: Math.ceil(Math.max(0, o.placedAt + o.patienceMs - w.now) / 1000) })}</span>
+        <span className="patience-track"><i style={{ width: `${patience * 100}%` }} /></span>
+      </button>}
+      <button className="table-object" aria-haspopup="dialog" aria-controls={selectedTable === table.id ? 'active-table-order' : undefined} onClick={() => setSelectedTable(table.id)} aria-label={t('order.details', { n: index + 1 })}>
+        <TableChairs capacity={table.capacity} />
         <Sprite id={`table-lv${table.level}-empty`} />
         {table.group?.customers.map((customer, i) => <span className={`seated seated-${i}`} key={customer.id}><Sprite id={`customer-${customer.type.replace('_', '-')}`} /></span>)}
         <span className="table-number">{index + 1}</span>
@@ -151,7 +154,7 @@ export function App() {
     </section>;
   }
   function equipmentButton(kind: Equipment) {
-    return <button className={`equipment-object ${kind}`} key={kind} onClick={() => setSelectedEquipment(kind)} aria-label={t(`equipment.${kind}`)}>
+    return <button className={`equipment-object ${kind}`} key={kind} onClick={() => { setSelectedTable(null); setSelectedEquipment(kind); }} aria-label={t(`equipment.${kind}`)}>
       <Sprite id={`${kind}-lv${Math.max(1, w.equipment[kind])}`} /><span>{t(`equipment.${kind}`)}</span><b>{t('level', { n: w.equipment[kind] })}</b>
     </button>;
   }
@@ -162,7 +165,7 @@ export function App() {
 
   return <div className="game-shell" data-frame={frame}>
     {!w.active && <div className="paused-overlay" role="status">{t('pause.hidden')}</div>}
-    <aside className="side-story"><div className="vertical-sign">{t('brand')}</div><p>{t('tagline')}</p><div className="wall-window" /><div className="bicycle" /></aside>
+    <div className="street-backdrop" aria-hidden="true"><Sprite id="bg-street" /></div>
     <main className={`game weather-${shift?.weather ?? 'sunny'}`}>
       <header className="hud">
         <div className="money"><Icon name="coin" /><div><span>{t('coins')}</span><strong>{num(w.coins)}</strong></div></div>
@@ -171,9 +174,8 @@ export function App() {
       </header>
       <div className="weather-row"><span className="weather-chip"><span aria-hidden="true">{shift?.weather === 'rain' ? '☂' : '☀'}</span>{t(`weather.${shift?.weather ?? 'sunny'}`)}</span><span className="rush-label">{inShift && nextRush ? t('rush.next', { time: time(nextRush.start - w.now) }) : t(`rush.${shift?.rush ?? 'none'}`)}</span></div>
       <section className="stall-scene" aria-label={t('brand')}>
-        <div className="shop-sign"><small>{t('location.hem_nho')}</small><h1>{t('brand')}</h1><span>{t('location.subtitle')}</span></div>
-        <div className="awning" aria-hidden="true" />
-        <div className="equipment-row">{['cooler', 'keg', 'washer', 'kitchen'].map(k => equipmentButton(k as Equipment))}</div>
+        <div className="owner-station"><Sprite id="owner-idle" /><div className="serving-counter"><div className="counter-canopy" /><div className="counter-front"><h1>{t('brand')}</h1><div className="counter-bottles" aria-hidden="true"><i /><i /><i /><i /><i /></div></div></div></div>
+        <div className="equipment-row">{['cooler', 'keg', 'washer'].map(k => equipmentButton(k as Equipment))}</div>
         <div className="glass-counter"><Sprite id="glass-clean" /><span>{cleanGlasses}<small>/{w.glasses.length}</small></span><span>{t('glass.clean')}</span></div>
       </section>
       <section className="yard" aria-label={t('location.hem_nho')}>
@@ -197,7 +199,7 @@ export function App() {
       </div> : toast && <button className={`toast toast-${toast.kind}`} role="status" onClick={() => setToast(null)}>{toast.text}<span aria-hidden="true">×</span></button>}
       {saveError && <button className="save-error" role="alert" onClick={() => download(encodeSave(game), 'tbh-backup.json')}>{t('save.error')}</button>}
     </main>
-    <aside className="side-story right"><div className="small-poster"><Sprite id="menu-beer" /><strong>{t('dish.bia')}</strong><p>{t('rest.free')}</p></div><p>{t('tagline')}</p></aside>
+
 
     {welcome && <SheetDialog title={t('welcome.title')} close={() => { setWelcome(false); setPrefs({ welcomed: true }); }}><div className="welcome-content"><Sprite id="glass-full" /><p>{t('welcome.copy')}</p><button className="primary" onClick={() => { setWelcome(false); setPrefs({ welcomed: true }); }}>{t('continue')}</button><small>{t('rest.free')}</small></div></SheetDialog>}
 
@@ -210,6 +212,21 @@ export function App() {
       {sheet === 'config' && <><p>{t('config.pinned', { version: game.config.version })}</p><pre className="config-json">{JSON.stringify(game.config.raw, null, 2)}</pre></>}
     </SheetDialog>}
     {selectedEquipment && <SheetDialog title={t(`equipment.${selectedEquipment}`)} close={() => setSelectedEquipment(null)}><div className="equipment-detail">{upgradeCard(selectedEquipment)}{inShift && <p>{t('upgrade.outside')}</p>}</div></SheetDialog>}
-    {selectedTable && (() => { const table = w.tables.find(x => x.id === selectedTable)!; const o = table.order; return <SheetDialog title={t('table', { n: w.tables.indexOf(table) + 1 })} close={() => setSelectedTable(null)}><p>{t(`table.${table.state}`)}</p>{o && <div className="order-detail">{o.items.map(item => <div key={item.id}><Sprite id={menuAsset[item.dish]} /><strong>{t(`dish.${item.dish}`)}</strong><span>{item.state === 'ready' ? t('order.ready') : item.state === 'served' ? <Icon name="check" /> : t('order.preparing', { ready: 0, total: 1 })}</span></div>)}{['pending', 'grace'].includes(o.state) && <button className="primary full" onClick={() => { if (run({ type: 'serve', tableId: table.id, orderId: o.id }).ok) setSelectedTable(null); }}><Icon name="check" />{t('order.serve')}</button>}</div>}</SheetDialog>; })()}
+    {selectedTable && (() => {
+      const table = w.tables.find(x => x.id === selectedTable)!; const o = table.order;
+      const active = o && ['pending', 'grace'].includes(o.state);
+      const ready = active && o.items.every(i => i.state === 'ready');
+      const stale = active && o.items.some(i => i.glassId && i.readyAt !== null && w.now >= i.readyAt + freshnessMs(w, game.config));
+      const type = table.group?.customers.find(x => x.type === 'vip')?.type ?? table.group?.customers[0]?.type ?? 'thuong';
+      return <section ref={orderPanelRef} id="active-table-order" className={`order-panel ${o?.state === 'grace' ? 'is-urgent' : ''}`} role="dialog" aria-label={t('table', { n: w.tables.indexOf(table) + 1 })}>
+        <header><span className={`customer-tag type-${type}`}>{table.group ? t(`customer.${type}`) : t('table.empty')}</span><span>{t('table', { n: w.tables.indexOf(table) + 1 })}</span><button className="icon-button" aria-label={t('close')} onClick={() => setSelectedTable(null)}><Icon name="close" /></button></header>
+        {active ? <><div className="order-heading"><strong>{t(ready ? 'order.ready' : 'table.waiting')}</strong><b>{t('order.time', { s: Math.ceil(Math.max(0, o.placedAt + o.patienceMs + (o.state === 'grace' ? c.patience.graceMs : 0) - w.now) / 1000) })}</b></div>
+          <div className="order-dishes">{DISHES.map(dish => ({ dish, items: o.items.filter(i => i.dish === dish) })).filter(x => x.items.length).map(({ dish, items }) => <div key={dish}><Sprite id={menuAsset[dish]} /><strong>{t(`dish.${dish}`)}</strong><span>{items.filter(i => i.state === 'ready').length}/{items.length}</span></div>)}</div>
+          {(stale || o.state === 'grace') && <p className="order-warning">{t(stale ? 'order.stale' : 'order.grace')}</p>}
+          <button className="primary full" disabled={!ready} onClick={() => { if (run({ type: 'serve', tableId: table.id, orderId: o.id }).ok) setSelectedTable(null); }}><Icon name="check" />{t('order.serve')}</button>
+        </> : <p className="idle-table-info">{t(`table.${table.state}`)} · {t('table.seats', { n: table.capacity })}</p>}
+      </section>;
+    })()}
+
   </div>;
 }

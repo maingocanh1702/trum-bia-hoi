@@ -1,0 +1,13 @@
+.sprite.illustrated { image-rendering: auto; }
+.table-object > .sprite.illustrated { width: 84px; height: 76px; left: 24px; top: 1px; border-radius: 0; box-shadow: none; }
+.chair { position: absolute; width: 33px; height: 33px; transform: translate(-50%, -50%); }
+.chair .sprite { width: 100%; height: 100%; }
+.seated .sprite.illustrated { width: 44px; height: 59px; background: transparent; border: 0; }
+.seated:has(.illustrated) { top: -11px; left: -9px; }
+.seated-1:has(.illustrated) { left: auto; right: -9px; }
+.seated-2:has(.illustrated) { left: 44px; top: -31px; }
+.seated-3:has(.illustrated) { left: 44px; top: 27px; }
+.seated-4:has(.illustrated) { left: 0; top: 30px; }
+.seated-5:has(.illustrated) { left: auto; right: 0; top: 30px; }
+.seated-6:has(.illustrated) { left: 20px; top: -35px; }
+.seated-7:has(.illustrated) { left: auto; right: 20px; top: -35px; }

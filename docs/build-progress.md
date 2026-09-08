@@ -6,7 +6,7 @@ complete-game goal; milestones below are implementation order, not scope cuts.
 
 | Milestone | Status | Evidence / remaining |
 |---|---|---|
-| M0 — config, pure engine, deterministic replay, k sim, workspaces | Verification passed; review findings open | Config/schema + workspaces + pure engine + replay + actual 5-seed k sim; build/unit checks pass |
+| M0 — config, pure engine, deterministic replay, k sim, workspaces | Verification passed; correction review CLEAN | Config/schema + workspaces + pure engine + replay + actual 5-seed k sim; 27 unit checks pass; review evidence below |
 | M1 — serve loop, glasses, stock, upgrades, local save, spatial UI, core audio | In progress | Playable loop, local save/replay, stock/equipment/table UI, core SFX wired; final sprites and listening QA pending |
 | M2 — guest, vi/en, onboarding | In progress | Local guest + matching vi/en keys + event-driven guide with skip/repeat cap; Google account linking and 5-person evidence pending |
 | M3 — full menu, customer mix, weather, rush, business unlocks | In progress | 6 menu entries and hot prep, 5 seated types, 5 weather states, basic scheduled rush. Shipper/football, business unlocks and exhaustive balance/edge QA remain |
@@ -125,3 +125,17 @@ Verification: `npm run verify` passes (26 unit tests). `npm run test:e2e` passes
 ### Independent correction review follow-up — 2026-09-09
 
 Codex reviewed `681538a..12afb011cb7c4f68b3bfa7ea866578b24f852985` and returned two findings: missing mixed-group/nonconstant-hurried round regressions, and an accidentally rewritten tracker v0.8.0 history label. The history label is restored; deterministic seed 8/9 mixed groups now prove ngồi-lỳ > vội > VIP > thường and both outcomes of a nonconstant hurried range. Unit suite: 27 pass. Focused re-review pending. The newer owner-directed layout/art work is a separate ongoing change, outside that immutable review.
+
+Focused follow-up completed: **VERDICT: CLEAN** for `12afb011cb7c4f68b3bfa7ea866578b24f852985..830787c9633e149867053d1b915fb12d0b692bf7`. Both findings resolved. Evidence: `.qa/review-rounds-followup.txt`. This closes the recorded correction findings; it does not certify later uncommitted UI/art or unfinished milestones.
+
+## Owner layout and illustrated art — 2026-09-09
+
+- Applied the latest screenshot as a composition reference: tall blue hex-tiled playfield, illustrated Hanoi sides, compact HUD, owner/counter/equipment above the tables, right inventory rail and bottom actions.
+- Orders open on table tap; their clocks keep running. Escape returns focus, switching to a sheet closes the panel, and order expiry closes it automatically. Customer departure still produces only the actual numeric/icon deductions. Whole-table service rules are unchanged.
+- Ten original imagegen PNGs now cover the street, owner, ordinary customer, low blue table, red stool, three starter equipment objects, peanuts and nem chua. Full prompts/provenance live under `docs/reference/assets-owner-2026-09-08/`. Source alpha is retained; final image size/export optimization is pending. The original green glass set is unchanged. Neutral placeholders remain for the other 34 sprite entries, with IDs retained in the manifest.
+- `npm run verify` passes: config, build, 27 unit tests, all ten sim rows within **k 2.3249–2.7020**. Final UI build and **11 E2E** pass, including 360×740, 390×844, 1280×720 and 1280×400; table hitboxes do not overlap. Popup keyboard/liveness/expiry, hidden/offline save recovery and numeric losses are covered.
+- Visual screenshots at 390×844 and 1280×900 load all displayed images without horizontal overflow. `check:assets`: **116 entries, 34 sprite placeholders, 74 draft files**. Art remains draft; no release claim. Independent review of this UI/art diff follows its commit.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Closed the two correction-review findings at `830787c`. Applied owner layout/art steering, preserved gameplay economics and numeric loss feedback, added order-panel/short-window checks. Full game remains in progress. |

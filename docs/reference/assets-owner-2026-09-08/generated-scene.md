@@ -1,0 +1,13 @@
+# Owner and street — built-in imagegen prompts
+
+## Owner
+`assets/owner-idle-illustrated-v1.png` — original generated transparent sprite, draft.
+```text
+Use case: stylized-concept. Asset type: transparent isolated owner character sprite for Trum Bia Hoi, a Vietnamese casual street-stall management game. A friendly Vietnamese male bia-hoi stall owner in his forties with short neatly parted black hair, a small cheerful black moustache, expressive warm face, stylized compact chibi proportions: large head, short adult body. White short-sleeve shirt, worn navy blue work apron, dark trousers, brown sandals, a white wiping towel over one shoulder. Standing relaxed facing almost forward turned slightly to the viewer's left, both arms visible, one hand holding a small folded cloth at his waist, other hand relaxed, warm welcoming smile. Full body including feet. Richly hand-painted casual game sprite, bold dark brown outlines, simplified small forms, warm upper-left light, shaded skin and fabric, same family as illustrated Hanoi beer-stall furniture. Readable when displayed only 95px tall. Entire figure centered on square canvas with generous safe transparent margins. Genuine transparent alpha background, no background scene, no table or counter, no beer mug or glass, no text, lettering, logo, other characters, UI, watermark, photo realism or anime styling. Setting Hanoi early 2000s.
+```
+
+## Street
+`assets/bg-street-illustrated-v1.png` — original opaque scene background, draft.
+```text
+Use case: stylized-concept. Asset type: wide decorative environment background behind the centered vertical playfield of the game Trum Bia Hoi. Original nostalgic Hanoi side-street illustration, early 2000s, warm ochre plaster houses, faded teal wooden shutters, clay roof tiles, overhead utility wires, leafy trees, a parked old bicycle and tiny sidewalk tea stalls. At far left one adult Vietnamese woman in a simple beige jacket walks along the pavement; at far right an adult Vietnamese man in a blue shirt sits on a low stool beside a tiny tea table. These two edge vignettes remain visible when a tall game panel covers the middle half of the image. Midground houses continue across the image; no important central subjects. Wide landscape composition, richly colored comic/pixel-game-inspired hand-painted illustration, strong dark outlines and chunky shapes, nostalgic warm afternoon light, burnt amber walls, deep desaturated teal shadows, quietly lived-in atmosphere, restrained detail readable as a backdrop. No readable signage, logos, UI, overlays, browser chrome, text, modern cars, smartphones, neon, branding, photorealism or excessive depth of field. Produce a landscape 1536 by 1024 image, opaque background.
+```

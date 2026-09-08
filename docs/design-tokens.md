@@ -184,3 +184,5 @@ Khi gen asset bằng AI, dùng **đúng hex §2** trong prompt. Ngoài ra:
 | v1.0 | Bản đầu — nguồn sự thật token. Reconcile 3 nguồn lệch (05 §2.1 · asset-list §0.1 · F24 §1). Chốt vibe 2000s bia hơi: nền nắng gắt + panel nâu ấm (đổi từ navy); thêm bộ overlay thời tiết/tan tầm §4; tokens.ts + palette AI-gen + bảng mapping cũ→mới. |
 
 *Nguồn: GDD v1.5 §17; reconcile từ `05-SPEC-design-uiux.md`, `docs/asset-list-designer.md`, `docs/features/F24-design-uiux-production.md`.*
+
+| 2026-09-09 owner layout | Áp dụng ảnh tham khảo mới `docs/reference/assets-owner-2026-09-08/layout-owner.png`: sân `#aed0d8`, bóng sân `#90b6c2`, panel `#173c30`, panel sâu `#10291f`, nút `#456760`, viền `#748273`. Override tại `apps/web/src/reference-layout.css`; màu cốc/bia, semantic feedback và luật chơi giữ nguyên. |

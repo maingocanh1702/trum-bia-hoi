@@ -190,3 +190,5 @@ Giao việc: `11-PROMPT-PACK` Phần A (designer) và Phần B (dev) — cả ha
 | v1.15 | Thêm `12-PROMPT-claude-build.md` (kickoff Claude Code + Codex review qua `codex exec review`) — §2.2 mục 1 trỏ sang; 11-PP Phần B giữ làm chi tiết. |
 
 | v1.16 | Owner 2026-09-08: cập nhật phản hồi khách bỏ đi thành toast số xu/uy tín; bổ sung bộ ảnh tham khảo art do owner gửi. |
+
+| v1.17 | Owner layout/style 2026-09-09: ảnh `docs/reference/assets-owner-2026-09-08/layout-owner.png` dẫn hướng sân xanh dạng ô lục giác, cảnh phố hai bên, quầy phía trên, kho dọc và thẻ mâm mở khi chạm bàn. Asset minh hoạ mới ở trạng thái draft, giữ cốc gốc; chưa ép export pixel 128px. Placeholder không in ID kỹ thuật trong gameplay; trạng thái/ID vẫn có trong manifest. Luật bàn/mâm và số kinh tế không thay đổi. |
