@@ -710,3 +710,22 @@ VIP-only round-range fixture now declares a cap covering all table levels, so th
 fixture remains safe after upgrades while preserving its single-guest round check.
 Previously passed37 E2E and110 style sim rows remain applicable: the correction only
 rejects unsafe imported configurations; accepted canonical gameplay/UI is unchanged.
+
+
+### Signboard second-review corrections
+
+Full-base round2 atf861417 found two further P2 boundaries. Registry intake now
+requires upgrades.stall.signboardGateLevel to equal canonical signboard.gate.stallLevel;
+a synchronized override is tested through actual install. signboardQuote now checks
+spent+cost only in open/closing shifts, exactly matching the existing spend handler.
+A real command sequence with large valid prices buys Neon during a shift, serves to
+reach LP1, claims its configured reward, refuses active-spend overflow, closes the
+shift, then buys Vintage without changing historical stats; the full log replays.
+These are import/purchase-boundary repairs, not canonical economy-number changes.
+Original-base independent re-review remains required before closing this slice.
+
+
+Round3 author verification passed: config/build/95 unit/10 normal k rows/15 pressure
+windows (.qa/signboard-r3-verify.txt) and all37 E2E again in31.7s
+(.qa/signboard-r3-e2e.txt). The earlier110 sign sim rows still cover unchanged
+canonical formulas/styles. No product mutation during prior independent reviews.

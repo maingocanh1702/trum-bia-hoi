@@ -124,3 +124,40 @@ test('vintage cannot remove the last eligible customer type after a group reache
   raw.customerTypes.vip.maxPerGroupPhase2 = Math.max(...raw.upgrades.table.levels.map(t => t.capacity));
   assert.doesNotThrow(() => loadConfig(raw));
 });
+
+test('both registry signboard gate names must agree, and a synchronized override reaches installation', () => {
+  for (const mirror of [true, false]) {
+    const raw = structuredClone(config.raw);
+    if (mirror) raw.upgrades.stall.signboardGateLevel++;
+    else raw.signboard.gate.stallLevel++;
+    assert.throws(() => loadConfig(raw), /config:signboardGateAlias/);
+  }
+  const g = setup(raw => { raw.upgrades.stall.signboardGateLevel = raw.signboard.gate.stallLevel = 4; });
+  assert.equal(signboardQuote(g.world, g.config).requiredStall, 4);
+  assert.equal(send(g, { type: 'installSignboard' }).reason, 'signboardGate');
+  upgrade(g); assert.ok(send(g, { type: 'installSignboard' }).ok);
+});
+
+test('a real closed shift does not block an affordable sign purchase near the safe-integer limit', () => {
+  const g = setup(raw => {
+    raw.shift.startingCoinsBase = 3200000000000000;
+    raw.signboard.styles.neon.priceBase = raw.signboard.styles.vintage.priceBase = 2000000000000000;
+    raw.lifePath[1].lifetimeBase = 1; raw.lifePath[1].rewardCoinBase = 1000000000000000;
+  });
+  upgrade(g); assert.ok(send(g, { type: 'installSignboard' }).ok);
+  assert.ok(send(g, { type: 'restock', dish: 'lac', mode: 'full' }).ok); assert.ok(send(g, { type: 'upgradeDog', level: 1 }).ok);
+  assert.ok(send(g, { type: 'startShift' }).ok);
+  assert.ok(send(g, { type: 'setSignboard', style: 'neon' }).ok);
+  g.advance(g.world.shift!.nextSpawnAt + g.config.values.runtime.tableSeatingMs + g.config.values.upgrades.keg.pourMs[0] * g.world.tables[0].capacity);
+  const t = g.world.tables.find(t => t.order && t.order.items.every(i => i.state === 'ready'))!;
+  assert.ok(send(g, { type: 'serve', tableId: t.id, orderId: t.order!.id }).ok);
+  assert.ok(send(g, { type: 'claimLifePath', level: 1 }).ok);
+  const cost = g.config.values.signboard.styles.vintage.priceBase;
+  assert.ok(g.world.coins >= cost); assert.ok(!Number.isSafeInteger(g.world.shift!.stats.spent + cost));
+  assert.equal(send(g, { type: 'setSignboard', style: 'vintage' }).reason, 'notEnoughCoins');
+  assert.ok(send(g, { type: 'endShift' }).ok); g.advance(g.world.now + g.config.values.shift.durationMs);
+  assert.equal(g.world.phase, 'resting'); const stats = structuredClone(g.world.shift!.stats), coins = g.world.coins;
+  assert.deepEqual(send(g, { type: 'setSignboard', style: 'vintage' }), { ok: true, amount: cost });
+  assert.equal(g.world.coins, coins - cost); assert.deepEqual(g.world.shift!.stats, stats);
+  assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
+});

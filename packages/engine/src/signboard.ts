@@ -11,7 +11,7 @@ export function signboardQuote(w: World, c: Config, style: SignStyle | null = nu
   const cost = style === null ? c.values.signboard.installFeeBase + definition.priceBase : owned ? 0 : definition.priceBase;
   const requiredRep = !owned && 'repBase' in definition ? definition.repBase : 0;
   const requiredStall = c.values.signboard.gate.stallLevel, selected = w.signStyle === target;
-  const safe = [cost, w.coins, (w.shift?.stats.spent ?? 0) + cost].every(n => Number.isSafeInteger(n) && n >= 0);
+  const safe = [cost, w.coins, ...(w.shift && w.phase !== 'resting' ? [w.shift.stats.spent + cost] : [])].every(n => Number.isSafeInteger(n) && n >= 0);
   const reason = style === null && installed ? 'signboardInstalled' : style !== null && !installed ? 'signboardRequired' : style === null && w.equipment.stall < requiredStall ? 'signboardGate' : selected ? 'signboardSelected' : w.reputation < requiredRep ? 'reputationRequired' : !safe || w.coins < cost ? 'notEnoughCoins' : null;
   return { installed, target, owned, selected, cost, requiredRep, requiredStall, reason, ok: reason === null };
 }

@@ -201,6 +201,7 @@ function validate(c: Economy): void {
   }
   whole(c.signboard.gate.stallLevel, 'signboard.stallLevel', 1);
   if (c.signboard.gate.stallLevel > c.upgrades.stall.priceBase.length) throw Error('config:signboardGate');
+  if (c.upgrades.stall.signboardGateLevel !== c.signboard.gate.stallLevel) throw Error('config:signboardGateAlias');
   whole(c.signboard.installFeeBase, 'signboard.installFee');
   whole(Math.round(c.signboard.installFeeBase * c.k.value) + Math.round(c.signboard.styles.wood.priceBase * c.k.value), 'signboard.installCost');
   for (const style of SIGN_STYLES) {
