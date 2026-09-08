@@ -20,6 +20,10 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
     await expect(page.locator('.money strong')).toHaveText(coins!);
     await expect(page.locator('.table-space.state-consuming')).toHaveCount(1);
     await page.getByRole('button', { name: 'Nhập hàng', exact: true }).click();
+    const stockRow = page.locator('.stock-row').first();
+    const stockBefore = Number((await stockRow.locator('.stock-info span').textContent())!.split('/')[0]);
+    await stockRow.getByRole('button', { name: '+1 · 12 xu', exact: true }).click();
+    await expect(stockRow.locator('.stock-info span')).toHaveText(`${stockBefore + 1} / 15`);
     const before = await page.locator('.energy strong').textContent();
     await page.clock.runFor(2000);
     expect(await page.locator('.energy strong').textContent()).not.toBe(before);

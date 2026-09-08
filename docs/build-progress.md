@@ -6,7 +6,7 @@ complete-game goal; milestones below are implementation order, not scope cuts.
 
 | Milestone | Status | Evidence / remaining |
 |---|---|---|
-| M0 — config, pure engine, deterministic replay, k sim, workspaces | Verification passed; review pending | Config/schema + workspaces + pure engine + replay + actual 5-seed k sim; build/unit checks pass |
+| M0 — config, pure engine, deterministic replay, k sim, workspaces | Verification passed; review findings open | Config/schema + workspaces + pure engine + replay + actual 5-seed k sim; build/unit checks pass |
 | M1 — serve loop, glasses, stock, upgrades, local save, spatial UI, core audio | In progress | Playable loop, local save/replay, stock/equipment/table UI, core SFX wired; final sprites and listening QA pending |
 | M2 — guest, vi/en, onboarding | In progress | Local guest + matching vi/en keys + event-driven guide with skip/repeat cap; Google account linking and 5-person evidence pending |
 | M3 — full menu, customer mix, weather, rush, business unlocks | In progress | 6 menu entries and hot prep, 5 seated types, 5 weather states, basic scheduled rush. Shipper/football, business unlocks and exhaustive balance/edge QA remain |
@@ -84,3 +84,22 @@ No complete-game or release-ready claim. Further implementation stays in this wo
 - Reference art boards archived in `docs/reference/assets-owner-2026-09-08/`; use with the existing no-handle green glass anchor. One supplied PNG was an error JSON; seven valid boards retained.
 - Lost customers now show only a short numeric/icon coin + reputation toast, using actual clamped deductions and no explanatory/dismissal popover. Relevant docs are updated.
 - Foundation review at `041cdc5` predates this steering; re-review the final diff before a clean/completed claim.
+
+## Foundation review and next corrections
+
+The independent CLI review of `30c0285..041cdc5` completed 2026-09-08 with findings, not CLEAN. Evidence: `.qa/review-foundation.txt` (local diagnostic); it predates owner steering at `5940ef2` and does not certify later commits. CLI 0.152 rejected the current model; CLI 0.153.4 with the repo wrapper's gpt-5.6-sol model completed. Native `exec review` rejects `--base` plus custom prompt, so the immutable range was specified in its custom prompt. Its returned format differs from the requested rubric; no clean gate claim is made.
+
+| Finding | Disposition |
+|---|---|
+| Save drops domain events / command configVersion | Accept. Add a versioned shared history and actual v1 migration before changing rule semantics. |
+| Tip should use minimum order patience | Reject with authority: 03-SPEC section 4 explicitly computes tip/payment per customer; the order timeout is the minimum. Add a mixed-table regression to preserve this distinction. |
+| New shifts after earnings cap | Resolve against GDD section 10: existing service must credit zero at cap. Add explicit coverage of exhausted earnings vs remaining shift allowance. |
+| Rounds must read all relevant config ranges | Accept; pin mixed-group precedence and preserve old replay semantics. |
+| Hidden local game must pause | Accept local behavior described in 10-SPEC section 8 and GDD anti-idle. Keep real VN-day timestamps; do not implement pause by drifting the calendar. Server reconnect policy remains a separate M4 responsibility. |
+| Queue gets order grace | Accept; grace belongs to placed orders. Version the timing change for old saved logs. |
+| Early zero-tip customer classified late | Accept; classify by timing, and localize truthful no-tip feedback. |
+| Corrupt-save recovery is a dead end | Accept; add validated import and a deliberate restart with preserved backup. |
+| Grouped queue loss counts only one guest | Accept; use emitted customer count, with existing successful-serve reset. |
+| No midnight cap regression | Accept; test earnings on each VN day and shift attribution on finalize. |
+
+Additional checks completed: startup config rejects invalid levels, fractional stock/costs, zero-weight populations and invalid audio gain; UI exposes existing retail `one` restock; canonical sim now covers five seeds each for cold/full menu. Current verification: 17 unit tests + 6 browser tests; cold k 2.2702–2.5072, full-menu k 2.4662–2.6965. These corrections are not a completed-M3 claim.

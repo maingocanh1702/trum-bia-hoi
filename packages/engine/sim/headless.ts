@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict';
-import { Game, config, DISHES, dayKey, restockQuote, type Command } from '../src/index';
+import { Game, config as seedConfig, loadConfig, DISHES, dayKey, restockQuote, type Command } from '../src/index';
 
 // config-exempt: measurement protocol and bot sampling, never production economy.
 const SEEDS = [20260611, 42, 20260908, 7, 99], MIN_SERVED = 500, STEP_MS = 100, MAX_STEPS = 500000;
 const rows = [];
+for (const kitchenLevel of [seedConfig.raw.runtime.initialKitchenLevel, seedConfig.raw.upgrades.kitchen.priceBase.length - 1]) {
+  const raw = structuredClone(seedConfig.raw);
+  raw.runtime.initialKitchenLevel = kitchenLevel;
+  const config = loadConfig(raw);
 for (const seed of SEEDS) {
   const game = new Game(config, seed, 0);
   const w = game.world;
@@ -21,7 +25,7 @@ for (const seed of SEEDS) {
     for (const dish of DISHES) {
       const quote = restockQuote(w, config, dish, 'bulk');
       if (quote.ok) send({ type: 'restock', dish, mode: 'bulk' });
-      else if (w.inventory[dish] === 0 && restockQuote(w, config, dish, 'full').ok) send({ type: 'restock', dish, mode: 'full' });
+      else if (w.inventory[dish] === 0 && restockQuote(w, config, dish, 'one').ok) send({ type: 'restock', dish, mode: 'one' });
     }
     if (DISHES.every(d => w.inventory[d] === 0)) send({ type: 'emergencyPack' });
     const ready = w.tables.filter(t => t.order && ['pending', 'grace'].includes(t.order.state) && t.order.items.every(i => i.state === 'ready'));
@@ -32,8 +36,9 @@ for (const seed of SEEDS) {
   assert.ok(w.serves.length >= MIN_SERVED, `seed ${seed}: insufficient serves`);
   const mean = w.serves.reduce((sum, e) => sum + e.payment + e.tip, 0) / w.serves.length;
   const k = mean / config.values.k.anchorValuePerServe;
-  rows.push({ seed, serves: w.serves.length, mean: +mean.toFixed(2), k: +k.toFixed(4), stale: w.serves.filter(e => e.stale).length, days: Object.keys(w.dayShifts).length, configVersion: config.version, day: dayKey(w.now, config) });
+  rows.push({ profile: kitchenLevel ? 'full-menu' : 'cold-menu', seed, serves: w.serves.length, mean: +mean.toFixed(2), k: +k.toFixed(4), stale: w.serves.filter(e => e.stale).length, days: Object.keys(w.dayShifts).length, configVersion: config.version, day: dayKey(w.now, config) });
+}
 }
 console.table(rows);
-for (const row of rows) assert.ok(row.k >= config.values.k.band[0] && row.k <= config.values.k.band[1], `seed ${row.seed}: k=${row.k} outside band`);
-console.log('PASS: actual customer payment + tip / anchor; no throughput term, >=500 serves per seed.');
+for (const row of rows) assert.ok(row.k >= seedConfig.values.k.band[0] && row.k <= seedConfig.values.k.band[1], `seed ${row.seed}: k=${row.k} outside band`);
+console.log('PASS: actual customer payment + tip / anchor; no throughput term, >=500 serves per seed in cold and fully unlocked menu profiles.');

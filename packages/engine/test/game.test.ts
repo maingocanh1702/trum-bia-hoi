@@ -155,3 +155,18 @@ test('loss feedback reports actual clamped coins and reputation once per expired
   assert.equal(losses[0].data.reputation, 3);
   assert.equal(g.world.coins, 0); assert.equal(g.world.reputation, 0);
 });
+
+test('startup rejects configurations that create fractional stock, unusable equipment or silent audio crashes', () => {
+  const cases: [string, (c: Economy) => void][] = [
+    ['equipment below first level', c => { c.runtime.initialEquipmentLevel = 0; }],
+    ['equipment above last level', c => { c.runtime.initialEquipmentLevel = 99; }],
+    ['kitchen above last level', c => { c.runtime.initialKitchenLevel = 99; }],
+    ['fractional stock', c => { c.inventory.startingStock.bia[0] = 0.5; }],
+    ['no arriving customer types', c => { Object.values(c.customerTypes).forEach(t => { t.weight = 0; }); }],
+    ['no possible weather', c => { for (const w of ['sunny', 'hot', 'humid', 'rain', 'cold'] as const) c.weather[w].weight = 0; }],
+    ['invalid browser audio gain', c => { c.audio.masterGainDefault = 2; }],
+    ['first customer can never fit', c => { c.onboarding.firstShift.firstGroupSize = 99; }],
+    ['fractional menu cost', c => { c.menu.bia.unitCost = 1.5; }],
+  ];
+  for (const [name, patch] of cases) { const raw = structuredClone(config.raw); patch(raw); assert.throws(() => loadConfig(raw), name); }
+});

@@ -30,6 +30,7 @@ function shape(value: unknown, expected: unknown, path: string): void {
 
 function validate(c: Economy): void {
   const positive = (n: number, path: string) => { if (!(n > 0)) throw Error(`config:${path}:positive`); };
+  const whole = (n: number, path: string, min = 0) => { if (!Number.isSafeInteger(n) || n < min) throw Error(`config:${path}:integer`); };
   const scan = (v: unknown, path: string) => {
     if (Array.isArray(v)) return v.forEach((x, i) => scan(x, `${path}.${i}`));
     if (v && typeof v === 'object') return Object.entries(v).forEach(([k, x]) => scan(x, `${path}.${k}`));
@@ -47,6 +48,35 @@ function validate(c: Economy): void {
   positive(c.runtime.queueSeatsPerSlot, 'queueSeatsPerSlot');
   positive(c.runtime.tableSeatingMs, 'seating');
   positive(c.runtime.tableCleaningMs, 'cleaning');
+  whole(c.runtime.initialEquipmentLevel, 'initialEquipmentLevel', 1);
+  whole(c.runtime.initialKitchenLevel, 'initialKitchenLevel');
+  whole(c.runtime.initialTableLevel, 'initialTableLevel', 1);
+  for (const kind of EQUIPMENT) {
+    const level = kind === 'kitchen' ? c.runtime.initialKitchenLevel : c.runtime.initialEquipmentLevel;
+    if (level >= c.upgrades[kind].priceBase.length + (kind === 'kitchen' ? 0 : 1)) throw Error(`config:${kind}:initialLevel`);
+    c.upgrades[kind].priceBase.forEach((price, index) => { if (kind !== 'kitchen' || index !== 0) whole(price as number, `${kind}.priceBase`); });
+  }
+  const initialTable = c.upgrades.table.levels[c.runtime.initialTableLevel - 1];
+  if (!initialTable) throw Error('config:initialTableLevel');
+  whole(c.upgrades.table.startingTables, 'startingTables', 1);
+  whole(c.upgrades.table.maxTables, 'maxTables', c.upgrades.table.startingTables);
+  c.upgrades.table.levels.forEach((table, index) => {
+    if (table.level !== index + 1) throw Error('config:tableLevelOrder');
+    whole(table.capacity, 'table.capacity', 1); whole(table.priceBase, 'table.priceBase');
+    if (index > 0 && table.capacity <= c.upgrades.table.levels[index - 1].capacity) throw Error('config:tableCapacityOrder');
+  });
+  for (const [dish, stock] of Object.entries(c.inventory.startingStock)) {
+    stock.forEach(n => whole(n, `startingStock.${dish}`));
+    if (stock[0] > c.upgrades.stall.stockCap[c.runtime.initialEquipmentLevel - 1]) throw Error('config:initialStockCap');
+  }
+  for (const [name, n] of Object.entries({ start: c.glasses.start, buyCap: c.glasses.buyCap, storageCap: c.glasses.storageCap, priceBase: c.glasses.priceBase })) whole(n, `glasses.${name}`);
+  whole(c.shift.startingCoinsBase, 'startingCoinsBase'); whole(c.shift.dailyEarnCapBase, 'dailyEarnCapBase');
+  whole(c.inventory.bulkSize, 'bulkSize', 1);
+  if (c.audio.masterGainDefault > 1) throw Error('config:audioGain');
+  if (!WEATHER.some(w => c.weather[w].weight > 0) || !Object.values(c.customerTypes).some(t => t.usesTable && t.weight > 0)) throw Error('config:spawnWeights');
+  whole(c.onboarding.firstShift.firstGroupSize, 'firstGroupSize', 1);
+  if (c.onboarding.firstShift.firstGroupSize > initialTable.capacity || c.onboarding.firstShift.guaranteedFirstGroupWithinMs < c.runtime.tableSeatingMs) throw Error('config:firstGroup');
+  if (!DISHES.every(d => c.menu[d].unlock.kitchenLevel < c.upgrades.kitchen.priceBase.length)) throw Error('config:menuKitchenLevel');
   for (const p of [c.tip.patienceThreshold, c.demandMix.pMoi, c.demandMix.pNemGivenMoi, c.demandMix.pSecondRound]) {
     if (p < 0 || p > 1) throw Error('config:probability');
   }
@@ -56,6 +86,7 @@ function validate(c: Economy): void {
   }
   for (const d of DISHES) {
     positive(c.menu[d].price, `menu.${d}.price`);
+    for (const k of ['price', 'unitCost', 'bulkCost'] as const) whole(c.menu[d][k], `menu.${d}.${k}`);
     if (c.menu[d].bulkCost > c.menu[d].unitCost || c.menu[d].unitCost > c.menu[d].price) throw Error(`config:menu.${d}:costs`);
   }
   if (c.glasses.start > c.glasses.storageCap || c.glasses.buyCap > c.glasses.storageCap) throw Error('config:glasses');
