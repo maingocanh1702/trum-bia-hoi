@@ -58,7 +58,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
   });
 }
 
-test('a neglected first shift closes cleanly after twelve minutes and shows only numeric loss feedback', async ({ page }) => {
+test('a neglected first shift closes after remaining guests expire and shows only numeric loss feedback', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.clock.install({ time: new Date('2026-09-08T10:00:00Z') });
   await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
@@ -72,6 +72,10 @@ test('a neglected first shift closes cleanly after twelve minutes and shows only
   await expect(page.getByText('Khách chờ lâu quá', { exact: false })).toHaveCount(0);
   await page.getByRole('button', { name: 'Bỏ qua', exact: true }).click();
   await page.clock.fastForward(720000);
+  // A late Chi Pheo may still be waiting after exhaustion; drain the configured deadline.
+  const c = JSON.parse(readFileSync('docs/config/economy.tbh.json', 'utf8')) as typeof import('../../../docs/config/economy.tbh.json');
+  const maxPatience = c.patience.thuongMs * Math.max(...Object.values(c.customerTypes).flatMap(t => t.usesTable && 'patienceMult' in t ? [t.patienceMult] : [])) * Math.max(...(['sunny', 'hot', 'humid', 'rain', 'cold'] as const).map(w => c.weather[w].patienceMult));
+  await page.clock.fastForward(maxPatience + c.patience.graceMs + c.runtime.tableSeatingMs + c.runtime.tableCleaningMs);
   await expect(page.getByRole('heading', { name: 'Sổ ca hôm nay' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Ngừng đón khách' })).toHaveCount(0);
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));
@@ -501,6 +505,8 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 
     await page.getByRole('button', { name: 'Cài đặt', exact: true }).click(); await page.getByLabel('Ngôn ngữ').selectOption('en'); await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Your journey', exact: true }).click();
     await expect(lp1).toContainText('Claimed'); await expect(lp2).toContainText('Claimed'); await expect(page.locator('.milestone-list > li[data-level="3"]')).toContainText('Core equipment');
+    await expect(lp1.getByRole('heading')).toHaveText('Stall helper'); await expect(page.locator('.journey-summary h3')).toHaveText('Newcomer');
+    await expect(page.locator('.milestone-list > li[data-level="4"]')).toContainText('Previously reached Silver keg');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const state = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));
     expect(state.events.filter((e: { type: string }) => e.type === 'life_path_reward_claimed').map((e: { data: { level: string } }) => e.data.level)).toEqual(['LP2', 'LP1']);

@@ -99,5 +99,21 @@
   "error.rewardUnavailable": "Mốc này chưa có thưởng để nhận.",
   "error.rewardOverflow": "Chưa thể nhận: số dư vượt giới hạn lưu trữ.",
   "error.unlockOwned": "Quán đã có món nâng cấp này.",
-  "error.featureLocked": "Chưa đủ điều kiện mở tính năng."
+  "error.featureLocked": "Chưa đủ điều kiện mở tính năng.",
+  "lifePath.LP0": "Bưng Bê",
+  "lifePath.LP1": "Phụ Quán",
+  "lifePath.LP2": "Tay Ngang",
+  "lifePath.LP3": "Chủ Sạp",
+  "lifePath.LP4": "Chủ Quán",
+  "lifePath.LP5": "Ông Chủ",
+  "lifePath.LP6": "Đại Gia Bia",
+  "lifePath.LP7": "Trùm Bia Hơi",
+  "league.dong": "Cốc Nhựa",
+  "league.bac": "Cốc Thủy Tinh",
+  "league.vang": "Vại Sành",
+  "league.titan": "Vại Đồng",
+  "league.bach_kim": "Bom Bạc",
+  "league.hong_ngoc": "Bom Vàng",
+  "league.kim_cuong": "Vua Bia",
+  "league.huyen_thoai": "Trùm Bia Hơi"
 }

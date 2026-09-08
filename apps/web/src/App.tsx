@@ -186,9 +186,9 @@ export function App() {
       <Sprite id={`${kind}-lv${Math.max(1, w.equipment[kind])}`} /><span>{t(`equipment.${kind}`)}</span><b>{t('level', { n: w.equipment[kind] })}</b>
     </button>;
   }
-  const levelName = (level: number) => locale === 'vi' ? c.lifePath[level].name : c.lifePath[level].id;
+  const levelName = (level: number) => t(`lifePath.${c.lifePath[level].id}`);
   function requirementCopy(r: RequirementStatus) {
-    const name = r.kind === 'peak' ? c.league.tiers.find(tier => tier.id === r.target)?.name ?? '' : r.kind === 'level' ? levelName(r.need!) : r.target ? t(`requirement.${r.target}`) : '';
+    const name = r.kind === 'peak' ? t(`league.${r.target}`) : r.kind === 'level' ? levelName(r.need!) : r.target ? t(`requirement.${r.target}`) : '';
     return t(`requirement.${r.kind}`, { have: num(r.have ?? 0), need: num(r.need ?? 0), name });
   }
   function requirementList(requirements: RequirementStatus[]) {

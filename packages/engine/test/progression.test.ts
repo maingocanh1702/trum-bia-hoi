@@ -108,3 +108,15 @@ test('config rejects unknown gates/rewards, cycles, non-integral payouts and pro
     (c: Economy) => { c.league.tiers[1].id = c.league.tiers[0].id; },
   ]) { const raw = structuredClone(config.raw); patch(raw); assert.throws(() => loadConfig(raw), /config:/); }
 });
+
+test('phone and QR cannot require milestones that need them, including through earlier levels or another unlock', () => {
+  for (const patch of [
+    (c: Economy) => { c.unlocks.phone.gate = 'LP2'; },
+    (c: Economy) => { c.unlocks.phone.gate = 'LP7'; },
+    (c: Economy) => { c.unlocks.qr.gate[1] = 'LP3'; },
+    (c: Economy) => { c.unlocks.phone.gate = 'qr'; },
+    (c: Economy) => { c.lifePath[1].requires![1] = 'phone'; },
+  ]) { const raw = structuredClone(config.raw); patch(raw); assert.throws(() => loadConfig(raw), /config:progressionCycle/); }
+  const earlier = structuredClone(config.raw); earlier.unlocks.phone.gate = 'LP0'; earlier.unlocks.qr.gate[1] = 'LP1';
+  assert.doesNotThrow(() => loadConfig(earlier));
+});

@@ -119,6 +119,20 @@ function validate(c: Economy): void {
     whole(c.unlocks[item].priceBase, `unlocks.${item}`); whole(Math.round(c.unlocks[item].priceBase * c.k.value), `unlocks.scaled${item}`);
     for (const token of [c.unlocks[item].gate].flat()) parseProgressRequirement(token, c);
   }
+  // Levels also require their predecessor: an unlock cannot depend on a level that needs it.
+  const dependencies = new Map<string, string[]>(c.lifePath.map((row, index) => [row.id, [
+    ...(index ? [c.lifePath[index - 1].id] : []), ...(row.requires ?? []),
+  ]]));
+  for (const item of BUSINESS_UNLOCKS) dependencies.set(item, [c.unlocks[item].gate].flat());
+  const visiting = new Set<string>(), visited = new Set<string>();
+  const visit = (key: string) => {
+    if (visited.has(key) || !dependencies.has(key)) return;
+    if (visiting.has(key)) throw Error('config:progressionCycle');
+    visiting.add(key);
+    for (const dependency of dependencies.get(key)!) visit(dependency);
+    visiting.delete(key); visited.add(key);
+  };
+  for (const key of dependencies.keys()) visit(key);
   for (const crate of Object.values(c.crates)) for (const amount of Object.values(crate)) whole(amount, 'crate');
   if (c.ledgers.countedSources.some(source => !seed.ledgers.countedSources.includes(source))) throw Error('config:countedSources');
   const initialTable = c.upgrades.table.levels[c.runtime.initialTableLevel - 1];

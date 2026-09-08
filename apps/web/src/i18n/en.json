@@ -99,5 +99,21 @@
   "error.rewardUnavailable": "No reward is available for this milestone.",
   "error.rewardOverflow": "Cannot claim: the balance would exceed storage limits.",
   "error.unlockOwned": "Your stall already owns this upgrade.",
-  "error.featureLocked": "Meet the listed requirements first."
+  "error.featureLocked": "Meet the listed requirements first.",
+  "lifePath.LP0": "Table runner",
+  "lifePath.LP1": "Stall helper",
+  "lifePath.LP2": "Newcomer",
+  "lifePath.LP3": "Stall owner",
+  "lifePath.LP4": "Pub owner",
+  "lifePath.LP5": "Business owner",
+  "lifePath.LP6": "Beer magnate",
+  "lifePath.LP7": "Beer tycoon",
+  "league.dong": "Plastic cup",
+  "league.bac": "Glass tumbler",
+  "league.vang": "Earthenware mug",
+  "league.titan": "Bronze mug",
+  "league.bach_kim": "Silver keg",
+  "league.hong_ngoc": "Golden keg",
+  "league.kim_cuong": "Beer king",
+  "league.huyen_thoai": "Beer tycoon"
 }

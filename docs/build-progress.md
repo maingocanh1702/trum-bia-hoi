@@ -480,3 +480,26 @@ current play. Full M0–M9 goal remains active; shipper is the next phone consum
 | Date | Change |
 |---|---|
 | 2026-09-09 | Implemented v6 progression/claims and phone/QR producer with full config semantics and legacy replay proof; independent review pending. |
+
+## 2026-09-09 — Progression review fixes (re-review pending)
+
+Independent review of d2918e9..0e6d222 found two actionable issues: phone/QR gates
+could depend on the milestone that requires that unlock, and English headings/peak
+labels still showed IDs or Vietnamese names. Config now checks the dependency graph
+including implicit previous-level edges and exact unlock references; earlier valid
+gates remain accepted. All milestone/tier labels use VI/EN entries keyed by IDs.
+Regression covers phone->LP2/LP7, QR->LP3, phone->QR cycles and English named labels.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Fixed both independent progression findings; full base-to-head re-review follows. |
+
+Fix verification: config/build/all67 unit tests and normal10-row sim passed;
+full30 browser tests passed after correcting a pre-existing nondeterministic test
+assumption. The old first-shift test assumed all customers finish29s after closing;
+a randomly arriving Chi Pheo can legitimately wait longer. It now drains the maximum
+configured guest patience/grace/seating interval before asserting natural closure,
+retaining every numeric-only loss assertion. No gameplay closing behavior changed.
+Final typecheck and diff check pass. Previous rested/QR/QR+rested results remain
+applicable: these fixes change invalid-config rejection and labels, not accepted
+configuration economics.
