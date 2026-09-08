@@ -15,9 +15,10 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test packages/engine/test/*.test.ts",
     "sim": "tsx packages/engine/sim/headless.ts",
-    "verify": "npm run check:config && npm run build && npm test && npm run sim",
+    "verify": "npm run check:config && npm run build && npm test && npm run sim && npm run sim:rush",
     "test:e2e": "playwright test",
-    "check:assets": "python3 scripts/check_assets.py"
+    "check:assets": "python3 scripts/check_assets.py",
+    "sim:rush": "tsx packages/engine/sim/rush-pressure.ts"
   },
   "type": "module",
   "engines": {

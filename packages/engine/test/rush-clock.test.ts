@@ -7,7 +7,8 @@ function create(patch?: (c: Economy) => void) {
   const raw = structuredClone(config.raw); raw.onboarding.enabled = false; raw.patience.thuongMs = 1000000;
   patch?.(raw);
   const g = new Game(loadConfig(raw), 42, Date.parse('2026-09-08T10:00:00Z'));
-  assert.deepEqual(send(g, { type: 'startShift' }), { ok: true });
+  // These clock regressions retain legacy layouts, including historically accepted overlapping slots.
+  assert.deepEqual(g.replay({ idempotencyKey: 'legacy-rush-open', at: g.world.now, command: { type: 'startShift' }, rulesVersion: 7, configVersion: g.config.version, result: { ok: true } }), { ok: true });
   return g;
 }
 
@@ -84,7 +85,7 @@ test('real v4 closing rush replay preserves old earnings, then a same-timestamp 
   assert.ok(g.log.every(e => e.rulesVersion === 4));
   send(g, { type: 'activity', active: true });
   assert.equal(g.world.coins, expected.coins); assert.equal(g.world.shift!.rush, 'none');
-  assert.equal(g.world.events.at(-1)!.type, 'rush_ended'); assert.equal(g.log.at(-1)!.rulesVersion, 7);
+  assert.equal(g.world.events.at(-1)!.type, 'rush_ended'); assert.equal(g.log.at(-1)!.rulesVersion, 8);
   assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
 });
 

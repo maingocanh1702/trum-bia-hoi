@@ -338,8 +338,8 @@ test('a mixed occupied table renders only the remaining Chi Pheo and closes with
   await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(fixture.coins));
 });
 
-for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 }]) {
-  test(`rush warning stays live in sheets, active timer wins, and closing ends it at ${viewport.width}px`, async ({ page }) => {
+for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 }, { width: 1280, height: 400 }]) {
+  test(`rush warning stays live in sheets, active timer wins, and closing ends it at ${viewport.width}×${viewport.height}`, async ({ page }) => {
     const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/rush.ts'], { encoding: 'utf8' }));
     await page.setViewportSize(viewport);
     await page.clock.install({ time: new Date(fixture.now) }); await page.clock.pauseAt(new Date(fixture.now));
@@ -367,8 +367,16 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 
     await expect(hud).toHaveText('Nhịp quán bình thường');
     await page.clock.fastForward(fixture.second.start - fixture.first.end + 1);
     await expect(hud).toHaveText('Nhịp quán bình thường');
+    const report = page.getByRole('table', { name: 'Giờ Vàng trong ca' }); await report.scrollIntoViewIfNeeded(); await expect(report).toBeVisible();
+    const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));
+    const ended = stored.events.find((e: { type: string }) => e.type === 'rush_ended').data;
+    await expect(report.locator('tbody td').nth(0)).toHaveText(new Intl.NumberFormat('vi-VN').format(ended.served));
+    await expect(report.locator('tbody td').nth(1)).toHaveText(new Intl.NumberFormat('vi-VN').format(ended.lost));
+    await expect(report.locator('tbody td').nth(2)).toHaveText(new Intl.NumberFormat('vi-VN').format(ended.revenue));
     await page.keyboard.press('Escape'); await page.reload();
     await expect(hud).toHaveText('Nhịp quán bình thường');
+    await page.getByRole('button', { name: 'Cài đặt', exact: true }).click(); await page.getByLabel('Ngôn ngữ').selectOption('en'); await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Shift book', exact: true }).click(); await expect(page.getByRole('table', { name: 'Rush results this shift' })).toBeVisible();
     const save = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));
     expect(save.events.filter((e: { type: string }) => e.type === 'rush_warning')).toHaveLength(1);
     expect(save.events.filter((e: { type: string }) => e.type === 'rush_started')).toHaveLength(1);

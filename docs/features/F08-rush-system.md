@@ -97,3 +97,39 @@ effectiveInterval = max(
 | 2026-09-09 | Rules v5 nối warning theo config, ưu tiên active timer, đóng đúng slot khi closing/finalize; hidden dời deadline, mỗi slot warning một lần. Replay v1–v4 giữ lịch sử, private slot tracking tái dựng qua replay. Lịch hiện vẫn light/heavy chia đều; seeded slot planning, lunch/football/priority và analytics tổng hợp vẫn đang triển khai. |
 
 | 2026-09-09 review fix | Đồng bộ cảnh báo screen reader với HUD khi slot chồng nhau: chỉ announce upcoming khi không có đợt active. Thêm browser regression với lịch cấu hình chồng giờ. |
+
+## Local implementation — rules v8 (2026-09-09)
+
+- New shift openings plan the configured number of ordinary light/heavy slots from
+  the exact locationId/shiftId/Vietnam day tuple. A separate seeded RNG balances
+  and shuffles the kinds, then distributes available gaps; customer RNG is untouched.
+  Every slot keeps its full configured duration and warning window. An impossible
+  layout refuses opening before consuming the shift id, weather roll or money.
+- Actual v1–v7 saves retain their original slots, including historically accepted
+  overlapping layouts. A current command never replans an active legacy shift or
+  fabricates historical reports. Save container stays v2.
+- Heavy arrivals now retain the configured heavy enjoy multiplier in their sampled
+  enjoyMs. Guests already present keep their sampled duration and subsequent rounds.
+- Each new slot emits rush_scheduled, rush_started and one rush_ended report. Hidden
+  time shifts deadlines; startedAt/endedAt are actual event wall timestamps, activeMs
+  excludes pauses. Closing/finalization retains the existing rules v5 clock contract.
+- Reports count events during the half-open active interval [start,end), not a cohort
+  of guests who arrived during that interval: arrived includes queue rejection; served
+  counts customer_served; lost counts expired orders and queue departures once.
+  Payment/tips are nominal customer amounts, revenue is actual order credit including
+  Tỉnh Táo and daily-cap truncation. StaleRate is stale/served, or zero without serves.
+  Shipper, gifts and other coin_gain events do not enter the seated report or k.
+- Sổ ca renders completed slot served/lost/revenue directly from these end events,
+  in VI/EN. Departure feedback remains numeric/icon-only.
+
+Verification:85 unit/34 browser tests;500 deterministic layout cases and genuine
+v7 replay fixtures;50 seated economy rows (>=500 serves each), k2.2622–2.7625.
+The separate sim:rush experiment measures five sunny seeds at initial devices: loss
+0% normal,5.3–37.0% light,50.0–70.2% heavy. These are per-window event outcomes with
+a restocking/service bot, not final balance or hosted playtest evidence. All spawn
+floors/service ceilings hold. Canonical config values are unchanged. Independent
+review pending; lunch/football/event priority and full F08 acceptance remain in scope.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 rules v8 | Implemented seeded ordinary slots, full warning/fit preflight, heavy enjoy and canonical end reports; preserved actual v7 schedules/replay, added pressure sim and VI/EN book rows. No config-number changes; review pending. |

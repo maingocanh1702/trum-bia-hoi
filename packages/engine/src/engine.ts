@@ -2,11 +2,13 @@ import { config as defaultConfig, BUSINESS_UNLOCKS, DISHES, EQUIPMENT, WEATHER, 
 import { integer, random, weighted } from './rng';
 import { addStock, credit, currentGuests, customerValue, dayKey, deliveryInterval, deliveryQuote, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
 import { lifePathStatus, lifePathRewardQuote, unlockQuote } from './progression';
+import { planRushes, summarizeRush } from './rush';
 import type { Command, Customer, Envelope, Group, Item, LoggedCommand, Order, Result, RulesVersion, Stats, Table, World } from './types';
 
 const RUSH_CLOCK_RULES: RulesVersion = 5; // config-exempt: fixed replay protocol revision
 const PROGRESSION_RULES: RulesVersion = 6; // config-exempt: fixed replay protocol revision
 const DELIVERY_RULES: RulesVersion = 7; // config-exempt: fixed replay protocol revision
+const RUSH_SCHEDULE_RULES: RulesVersion = 8; // config-exempt: fixed replay protocol revision
 const emptyStats = (): Stats => ({ arrived: 0, served: 0, lost: 0, rejected: 0, orders: 0, payment: 0, tip: 0, credited: 0, penalty: 0, spent: 0, rep: 0, wellRestedBonus: 0 });
 
 /** No wall clock, IO or renderer: only config, seed, explicit time and commands. */
@@ -16,7 +18,7 @@ export class Game {
   private readonly results = new Map<string, LoggedCommand>();
   private commandKey: string | null = null;
   private activeRushIndex: number | null = null;
-  private rulesVersion: RulesVersion = DELIVERY_RULES;
+  private rulesVersion: RulesVersion = RUSH_SCHEDULE_RULES;
   constructor(readonly config: Config = defaultConfig, readonly seed = 1, readonly createdAt = 0, readonly playerId = 'guest') {
     if (!Number.isSafeInteger(seed) || !Number.isSafeInteger(createdAt) || createdAt < 0) throw Error('game:invalid-origin');
     const c = config.values;
@@ -35,7 +37,7 @@ export class Game {
     for (let i = 0; i < c.upgrades.table.startingTables; i++) this.world.tables.push(this.newTable());
     for (let i = 0; i < c.glasses.start; i++) this.world.glasses.push({ id: this.id('glass'), state: 'clean', itemId: null, readyAt: null, staleEmitted: false });
   }
-  private id(kind: string) { return `${kind}-${++this.world.nextId}`; }
+  private id(kind: string, consume = true) { const next = this.world.nextId + 1; if (consume) this.world.nextId = next; return `${kind}-${next}`; }
   private emit(type: string, data: World['events'][number]['data'] = {}) {
     const id = this.id('event');
     this.world.events.push({ id, type, at: this.world.now, configVersion: this.config.version, idempotencyKey: this.commandKey ?? `tick:${id}`, data });
@@ -128,9 +130,16 @@ export class Game {
     const index = slot ? candidate : null, kind = slot?.kind ?? 'none';
     s.rushUntil = slot?.end ?? null;
     if (kind !== s.rush || index !== this.activeRushIndex) {
-      const previous = s.rush; s.rush = kind; this.activeRushIndex = index;
-      if (previous !== 'none') this.emit('rush_ended', { kind: previous });
-      if (kind !== 'none') this.emit('rush_started', { kind, until: slot!.end, weather: s.weather, location: w.location });
+      const previous = s.rush, previousIndex = this.activeRushIndex;
+      s.rush = kind; this.activeRushIndex = index;
+      if (previous !== 'none') {
+        const ended = previousIndex == null ? undefined : s.rushes[previousIndex];
+        this.emit('rush_ended', { kind: previous, ...(ended?.eventStart === undefined ? {} : { shiftId: s.id, slot: previousIndex!, startedAt: w.events[ended.eventStart].at, endedAt: w.now, activeMs: Math.max(0, w.now - ended.start), ...summarizeRush(w.events, ended.eventStart) }) });
+      }
+      if (kind !== 'none') {
+        if (s.rushScheduleSeed !== undefined) slot!.eventStart = w.events.length;
+        this.emit('rush_started', { kind, until: slot!.end, weather: s.weather, location: w.location, ...(s.rushScheduleSeed === undefined ? {} : { shiftId: s.id, slot: index! }) });
+      }
     }
     if (w.phase === 'open') for (const [index, r] of s.rushes.entries()) {
       if (!r.warned && w.now >= r.start - this.config.values.rush.schedule.warningMs && w.now < r.start) {
@@ -311,8 +320,9 @@ export class Game {
         return [key, allowed ? value.weight * weatherMult * rushMult : 0];
       }));
       if (type === 'vip') vipCount++;
-      const profile = c.customerTypes[type];
-      return { id: this.id('customer'), type, patienceMs: Math.round(c.patience.thuongMs * profile.patienceMult * c.weather[s.weather].patienceMult), enjoyMs: integer(w, c.enjoy.minMs, c.enjoy.maxMs) * profile.enjoyMult };
+      const profile = c.customerTypes[type], rush = rushConfig(this.config, s.rush);
+      const enjoyMult = this.rulesVersion >= RUSH_SCHEDULE_RULES && 'enjoyMult' in rush ? rush.enjoyMult : 1;
+      return { id: this.id('customer'), type, patienceMs: Math.round(c.patience.thuongMs * profile.patienceMult * c.weather[s.weather].patienceMult), enjoyMs: integer(w, c.enjoy.minMs, c.enjoy.maxMs) * profile.enjoyMult * enjoyMult };
     });
     const leisurely = customers.some(x => x.type === 'ngoily'), hurried = customers.some(x => x.type === 'voi');
     const range = leisurely ? c.rounds.ngoily : hurried ? c.rounds.voi : customers.some(x => x.type === 'vip') ? c.rounds.vip : c.rounds.thuong;
@@ -389,7 +399,7 @@ export class Game {
       this.emit('glass_washing', { glassId: glass.id });
     }
   }
-  command(envelope: Envelope): Result { return this.applyCommand(envelope, DELIVERY_RULES); }
+  command(envelope: Envelope): Result { return this.applyCommand(envelope, RUSH_SCHEDULE_RULES); }
   /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
   replay(entry: LoggedCommand): Result { return this.applyCommand(entry, entry.rulesVersion); }
   private applyCommand(envelope: Envelope, rulesVersion: RulesVersion): Result {
@@ -433,9 +443,12 @@ export class Game {
         if ((w.dayShifts[day] ?? 0) >= c.shift.dailyShiftCap.newbie) return fail('dailyShiftCap');
         if (this.rulesVersion === 1 && (w.dayEarned[day] ?? 0) >= c.shift.dailyEarnCapBase) return fail('dailyEarnCap');
         const onboarding = c.onboarding.enabled && w.completedShifts === 0;
+        const scheduled = !(onboarding && c.onboarding.firstShift.rushDisabled);
+        const plan = this.rulesVersion >= RUSH_SCHEDULE_RULES && scheduled ? planRushes(this.config, w.location, this.id('shift', false), day, w.now) : null;
+        if (this.rulesVersion >= RUSH_SCHEDULE_RULES && scheduled && !plan) return fail('rushScheduleUnavailable');
         const weather = weighted(w, WEATHER.map(k => [k, c.weather[k].weight]));
-        const rushes: NonNullable<World['shift']>['rushes'] = [];
-        if (!(onboarding && c.onboarding.firstShift.rushDisabled)) {
+        const rushes: NonNullable<World['shift']>['rushes'] = plan?.rushes ?? [];
+        if (this.rulesVersion < RUSH_SCHEDULE_RULES && scheduled) {
           const spacing = (c.shift.durationMs - c.rush.schedule.noRushFirstMs) / (c.rush.schedule.perShift + 1);
           for (let i = 0; i < c.rush.schedule.perShift; i++) {
             const kind: Rush = i % 2 ? 'heavy' : 'light';
@@ -446,8 +459,10 @@ export class Game {
         const rested = c.shift.wellRested;
         const wellRested = this.rulesVersion >= 3 && w.now - w.restStartedAt > rested.requiresRestHours * 3600000 && (!rested.oncePerDay || !w.wellRestedDays[day]); // config-exempt: hours to milliseconds
         w.shift = { id: this.id('shift'), startedAt: w.now, pausedMs: 0, endsAt: w.now + c.shift.durationMs, closedAt: null, configVersion: this.config.version, weather, rush: 'none', rushes, nextSpawnAt: w.now + Math.round(onboarding ? c.onboarding.firstShift.guaranteedFirstGroupWithinMs - c.runtime.tableSeatingMs : c.spawn.baseMs * c.spawn.warmupMult), firstGroup: true, onboarding, stats: emptyStats(), wellRestedUntil: wellRested ? w.now + rested.durationMs : null };
+        if (plan) w.shift.rushScheduleSeed = plan.seed;
         w.phase = 'open'; w.lastServedAt = null; w.lostStreak = 0;
         this.emit('shift_opened', { shiftId: w.shift.id }); this.emit('weather_rolled', { weather });
+        if (plan) for (const [slot, r] of rushes.entries()) this.emit('rush_scheduled', { shiftId: w.shift.id, slot, seed: plan.seed, kind: r.kind, startsAt: r.start, duration: r.end - r.start });
         if (wellRested) { w.wellRestedDays[day] = true; this.emit('well_rested_started', { shiftId: w.shift.id, day, until: w.shift.wellRestedUntil, mult: rested.mult }); }
         return { ok: true };
       }

@@ -609,3 +609,31 @@ from this product at `.qa/legacy-delivery-v7*.json` for future replay regression
 | Date | Change |
 |---|---|
 | 2026-09-09 | Recorded full-diff shipper CLEAN review ef0c053..307a3b0 and final verification; continuing full-game roadmap. |
+
+## 2026-09-09 — Seeded ordinary rush schedule and reports v8
+
+Immutable base653548438d67decde8ee9fbbcc471591cd0eb7f7. New openings balance/shuffle
+ordinary light/heavy slots with a separate location/shift/VN-day seeded RNG, reserve
+full durations/warnings, and refuse impossible layouts before opening mutations.
+Heavy arrivals apply existing enjoyMult. End reports derive once from actual event
+intervals; Sổ ca renders served/lost/actual credited coins, with nominal pay/tips
+kept separate. Genuine pre-edit v7 captures preserve old overlapping slots/history.
+No canonical JSON values changed and no contextual lunch/football window invented.
+
+Author verification: npm run verify green (config/build/85 unit/normal k + pressure),
+34 browser tests green. Test evidence: .qa/rush-schedule-verify.txt and
+.qa/rush-schedule-e2e.txt. Normal/QR/rested/shipper/combined headless runs total50 rows,
+each>=500 seated serves; k2.2622–2.7625. Separate sim:rush has15 controlled sunny
+windows at initial devices: normal0% loss, light5.3–37.0%, heavy50.0–70.2%, with spawn
+floor/service ceiling/report parity assertions. Those window outcomes are not full
+arrival cohorts or final playtest acceptance. Hosted Alpha evidence remains separate.
+
+Actual warning/active/book/EN screenshots inspected at360/390/1280 widths, including
+1280×400 short window; completed report rows fit the native scrolling sheet. Assets
+check passes122 entries/32 paired SFX,30 sprite placeholders/84 drafts unchanged.
+Independent full-diff review pending. Tracker v0.12.0 keeps16 features in progress,
+zero complete; full M0–M9 goal remains active, root preserved, no merge/push.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Implemented seeded ordinary rush planning/report UI, legacy replay, pressure experiment and verification; independent review pending. |

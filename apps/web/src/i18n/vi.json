@@ -135,5 +135,11 @@
   "error.deliveryStock": "Cần đủ tất cả nguyên liệu để giao đơn.",
   "book.deliveryCompleted": "Đơn đã giao",
   "book.deliveryNet": "Tiền đơn sau chiết khấu",
-  "book.deliveryMissed": "Đơn giao quá hạn"
+  "book.deliveryMissed": "Đơn giao quá hạn",
+  "error.rushScheduleUnavailable": "Lịch Giờ Vàng không vừa ca. Kiểm tra cấu hình thời gian và số đợt.",
+  "book.rushes": "Giờ Vàng trong ca",
+  "book.rushKind": "Đợt",
+  "book.rushServed": "Phục vụ",
+  "book.rushLost": "Bỏ đi",
+  "book.rushRevenue": "Xu nhận"
 }

@@ -126,6 +126,8 @@ Phân bố weight 35/20/10/20/15 (roll 1 lần khi mở ca; server-side từ Pha
 
 Runtime rules v5: `rush.schedule.warningMs` điều khiển báo trước, không hardcode 20s. Closing chỉ giữ đợt đang chạy đến deadline; không mở đợt kế. Hệ số về `none` trước khi tính tiền/phí ở đúng deadline; finalize sớm cũng kết thúc rush.
 
+Runtime rules v8: lịch thường light/heavy cân bằng và xáo bằng seed location/shift/day, giữ đủ duration và khoảng warning, không chồng nhau. Không xếp đủ thì từ chối mở ca trước RNG/id/chi phí; ca lịch sử vẫn replay nguyên trạng. Heavy enjoyMult được chụp khi khách tới, không đổi thời gian đã chụp của khách cũ. Sổ ca dùng revenue thực credit (cap/Tỉnh Táo), payment/tips danh nghĩa tách riêng cho k. Lunch/football và ưu tiên event còn tiếp tục; không tự gán khung giờ trưa.
+
 | id | Tên | Kéo dài | spawnInterval× | Sàn (`floorMs`) | pay× | tip× | phạt× | weight `voi`× | Phase |
 |---|---|--:|--:|--:|--:|--:|--:|--:|:--:|
 | `none` | Nhịp thường | — | 1.00 | 10.500 | 1.00 | 1.00 | 1.0 | 1 | P0 |
@@ -558,3 +560,5 @@ Mọi section của `docs/config/economy.tbh.json` đều nằm trong registry. 
 | v1.3.3 | Rules v5 sửa vòng đời rush/telegraph theo F08, dùng số JSON hiện hành. Thêm kiểm tra integer cho warning/count/timing; không đổi config version hoặc các hệ số kinh tế. Replay v1–v4 giữ số/event IDs cũ. |
 
 | v1.3.4 | Rules v7: làm rõ shipperMult là tần suất theo GDD §9/F09/original §18, sửa dấu nhân interval ở §4 thành chia. Đơn lấy tổng giá món cuối trong grossBase ×k, đủ toàn bộ nguyên liệu mới giao; net và Tỉnh Táo qua cùng credit/cap. Không đổi JSON hoặc số cân bằng. Ngừng đón khách được phép, ca chỉ finalize sau khi đơn đang chạy được giao/hết hạn; kick-all từ chối trước debit. |
+
+| v1.3.5 | Rules v8 nối seeded ordinary rush planning, fit preflight, heavy enjoyMult và báo cáo cuối slot. Dùng nguyên JSON 1.7.0; không thêm số cân bằng, không đổi k denominator. Lịch v1–v7 và config lịch sử giữ replay được; chỉ mở ca mới từ chối lịch không vừa. |

@@ -30,7 +30,7 @@ guide. Onboarding state is currently local; its remote analytics funnel is pendi
 ## Remaining feature catalog
 
 Canonical payloads remain in each feature's Analytics section until implemented:
-F07 shipper/chairman; F08 rush scheduling; F10 business unlocks; F11 kitchen details;
+F07 chairman and remaining customer behaviors; F08 lunch/football/event arbitration; F10 business unlocks; F11 kitchen details;
 F12 season/rank; F13 life path; F14 leases; F15 risks; F16 referral; F17 quests;
 F18 dog; F19 football; F20 donation; F21 lottery (legal hold); F22 assistant;
 F23 reconnect/security; F25 identity; F27 onboarding funnel; F28 leaderboard/shrine.
@@ -43,3 +43,27 @@ F26 was removed and must not create paid-session events.
 | 2026-09-08 | New-engine event catalog and distinction between implemented local events and pending feature analytics. |
 
 | 2026-09-08 | Expired-order and queue-left events carry actual coin/reputation deductions for numeric-only loss toasts. No new event id is allocated, preserving existing replay entity IDs. |
+
+## Local rush payloads — rules v8
+
+All times are injected engine milliseconds. Fields below supplement the common
+event envelope. These are local deterministic events, not uploaded analytics.
+
+| Event | Payload |
+|---|---|
+| rush_scheduled | shiftId, slot (zero-based), seed (exact location/shift/day tuple), kind, startsAt, duration |
+| rush_started | kind, until, weather, location; new v8 schedule adds shiftId/slot |
+| rush_ended | kind; new v8 schedule adds shiftId/slot, startedAt, endedAt, activeMs, arrived, rejected, served, lost, payment, tips, revenue, stale, staleRate |
+
+End reports cover [start,end) event outcomes; they are not arrival-cohort retention.
+Arrived includes rejection; lost counts order_expired plus queue customer_left,
+ignoring duplicate per-customer expiration mirrors. Revenue sums actual order_served
+credits, including Tỉnh Táo/cap. Payment/tips sum nominal customer_served amounts.
+StaleRate is zero without serves. Delivery/gift/coin_gain events are excluded.
+startedAt/endedAt are wall event timestamps; activeMs excludes hidden pauses. Original
+rush_scheduled timestamps remain historical after a pause; current Shift owns live
+deadlines. Legacy shifts retain their original payloads, with no invented summaries.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Documented actual rules v8 rush lifecycle/report payloads and event-window semantics; lunch/football arbitration remains pending. |

@@ -219,3 +219,10 @@
 .delivery-panel > .primary { background: var(--stoolRedDeep); min-height: 50px; }
 .delivery-panel > .secondary { margin-top: 10px; }
 @media (prefers-reduced-motion: reduce) { .has-delivery .sprite { animation: none; } }
+
+.rush-report { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 12px; }
+.rush-report caption { text-align: left; font-size: 16px; font-weight: 700; color: var(--cream); padding-bottom: 12px; }
+.rush-report th, .rush-report td { padding: 11px 5px; border-bottom: 1px solid var(--panelBorder); text-align: right; }
+.rush-report th:first-child { text-align: left; max-width: 110px; }
+.rush-report thead { color: var(--creamMuted); }
+.rush-report td:last-child { color: var(--coinGold); font-variant-numeric: tabular-nums; }

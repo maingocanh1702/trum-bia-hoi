@@ -135,5 +135,11 @@
   "error.deliveryStock": "All ingredients are required to deliver this order.",
   "book.deliveryCompleted": "Deliveries completed",
   "book.deliveryNet": "Delivery payment after discount",
-  "book.deliveryMissed": "Missed deliveries"
+  "book.deliveryMissed": "Missed deliveries",
+  "error.rushScheduleUnavailable": "The rush schedule does not fit this shift. Check its timing and slot count.",
+  "book.rushes": "Rush results this shift",
+  "book.rushKind": "Rush",
+  "book.rushServed": "Served",
+  "book.rushLost": "Lost",
+  "book.rushRevenue": "Coins earned"
 }
