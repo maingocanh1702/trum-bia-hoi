@@ -216,3 +216,22 @@ reload without replaying gain, reduced motion, existing four viewports and numer
 losses. Visual before/panel/after captures cover 390×844, 1280×720 and 1280×400.
 A final visual refinement keeps the two dish icons on one bubble row; the final
 build/check and independent review follow. Full M0–M9 goal is still active.
+
+### Mobile service review closed — 2026-09-09
+
+Independent Codex review of the immutable range
+`fa792326b2d8563795c8c5c00492fc62cb8647a7..1e30b7816563b014e6a994433768de43ac03fc7b`
+returned **VERDICT: CLEAN** with no introduced correctness, accessibility,
+responsiveness or security findings. Evidence: `.qa/review-service.txt` and
+`.qa/review-service.log`. The final two-icon row refinement and disappearing
+customer regression are included in that reviewed commit.
+
+Final config/build, **27 unit + 16 E2E** checks pass; no engine/economy/sim source
+changed. Stable screenshots at the three recorded viewports confirm the before,
+order-panel and after-service sequence. Existing art remains draft and the full
+M0–M9 game remains in progress. Next mechanism: Tỉnh Táo credit/lifecycle with
+legacy replay preservation; owner service UI is now verified and reviewed.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Closed owner mobile-service UI review at `1e30b78`; final 27 unit/16 E2E/config/build green, numeric departure feedback preserved. No merge/deploy/full-game completion claim. |
