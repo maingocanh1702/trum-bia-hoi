@@ -133,3 +133,5 @@ type Customer = {
 | 2026-09-09 | Local shipper rules v7, closing/stock/ledger/replay contract and reference-style phone/sheet/toast UI; no new tuning values. Full F07 remains in progress. |
 
 | 2026-09-09 review correction | Configuration must retain exactly the phone prerequisite; another unlock cannot replace it even if that unlock has a valid customized gate. Added rejection regression for QR substitution. |
+
+| 2026-09-09 review receipt | Local delivery full-diff review ef0c053..307a3b0 CLEAN,77 unit/33 E2E/config/build/assets and30 sim rows green. Full customer mix/football/server acceptance remains in progress. |

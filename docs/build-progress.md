@@ -9,7 +9,7 @@ complete-game goal; milestones below are implementation order, not scope cuts.
 | M0 — config, pure engine, deterministic replay, k sim, workspaces | Verification passed; correction review CLEAN | Config/schema + workspaces + pure engine + replay + actual 5-seed k sim; 27 unit checks pass; review evidence below |
 | M1 — serve loop, glasses, stock, upgrades, local save, spatial UI, core audio | In progress | Playable loop, local save/replay, stock/equipment/table UI, core SFX wired; final sprites and listening QA pending |
 | M2 — guest, vi/en, onboarding | In progress | Local guest + matching vi/en keys + event-driven guide with skip/repeat cap; Google account linking and 5-person evidence pending |
-| M3 — full menu, customer mix, weather, rush, business unlocks | In progress | 6 menu entries and hot prep, 5 seated types, 5 weather states, basic scheduled rush. Local phone/QR progression reviewed; shipper local implemented with review pending. Football, remaining business upgrades and exhaustive balance/edge QA remain |
+| M3 — full menu, customer mix, weather, rush, business unlocks | In progress | 6 menu entries and hot prep, 5 seated types, 5 weather states, basic scheduled rush. Local phone/QR progression reviewed; shipper local reviewed CLEAN at307a3b0. Football, remaining business upgrades and exhaustive balance/edge QA remain |
 | M4 — server authority, accounts, reconnect, config registry/admin | Pending | |
 | M5 — seasons, leaderboard/shrine, life path, leases, quests/referrals | Pending | |
 | M6 — risks, dog, emergency supplies | Pending | |
@@ -583,3 +583,29 @@ Full original-base review of the corrected product is pending.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Closed the review's phone-prerequisite bypass at config validation, added a valid-QR-gate regression; full-diff re-review pending. |
+
+
+## 2026-09-09 — Shipper independent review receipt
+
+Product tip `307a3b0cc13ce21d13beda32f461ba973597c620`; original immutable base
+`ef0c0532bd0af0e9b5c8ca9775e9d41e5a2ab0c4`. Independent full-diff round2 output at
+`.qa/review-shipper-round2.txt` says **Rubric CLEAN: the full immutable diff introduces
+no actionable defect**. It independently passed the build and77 engine tests, using
+node --import tsx after the sandbox CLI IPC restriction. The sole first-round finding
+(phone prerequisite substitution) is fixed at config intake and regression-covered.
+
+Author checks: config/build/77 unit/33 browser tests green;30 normal/shipper/boosted
+shipper sim rows with k2.3191–2.8154 and>=500 seated serves each. Every shipper variant
+also completed17–39 deliveries. The final fix rejects only an invalid configuration;
+previous33-browser and20-shipper-sim results remain valid. Asset manifest122 entries,
+32 paired SFX,30 sprite placeholders and84 draft files; complete release art/audio
+approval remains unfinished. Actual360/390/1280 captures and native focus checked.
+
+The full M0–M9 goal stays active. Local shipper is verified, not all of F07/M3 or the
+server/metagame. Root checkout was preserved; no merge or push. Read-only next-M3
+intake is `.qa/next-m3.md`; genuine active v7 delivery save/expected fields captured
+from this product at `.qa/legacy-delivery-v7*.json` for future replay regressions.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Recorded full-diff shipper CLEAN review ef0c053..307a3b0 and final verification; continuing full-game roadmap. |
