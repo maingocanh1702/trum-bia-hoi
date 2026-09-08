@@ -272,3 +272,29 @@ GDD/08/10 now reconcile the outdated tip-only multiplier and finalize-day langua
 with authoritative JSON/08 formula, with append-only changelog rows. Independent
 review follows the pinned commit. M3 still needs ejection accounting, segment
 caps, shipper/football, full rush logic; M4–M9 remain part of the full goal.
+
+### Tỉnh Táo review closed — 2026-09-09
+
+Independent review of immutable range
+`fe5e9dcb0a64bf747a115c615c3688d8d74afe90..c984541872a0879f2aba6682191824b23a2cbc55`
+reported **no introduced correctness, replay/data-integrity, UI/accessibility or
+security defects**, and independently ran all 38 unit tests and TypeScript
+checking. Exact response is retained in `.qa/review-rested.txt` and its process
+log. This was a no-findings review, with no follow-up product correction required.
+
+Pinned-commit verification also passed `npm run verify`,
+`npm run sim -- --well-rested`, and all **18 E2E** tests. The 20 normal/rested sim
+rows stay within k **2.3249–2.7020**. Bonus HUD and book screenshots at 360/390px
+have no horizontal overflow. Tỉnh Táo lifecycle/credit is now verified and
+reviewed; F06/M3 and the full M0–M9 game remain in progress.
+
+Next diagnosis is recorded in `.qa/next-m3-kick-close.md`: voluntary close fees
+must include still-seated served guests without replaying automatic expiry
+penalties. A real pre-change rules-v3 save at `c984541` proves the current free
+close behavior (815→815, rep3, served1/lost0); its fixture will preserve historical
+replay when the new close-fee rules are implemented. Single-table reputation
+kicks, shipper and other remaining M3 mechanics are separate remaining work.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Closed independent Tỉnh Táo review at `c984541`; 38 unit/18 browser tests and normal/boosted simulations green. Continue manual close accounting and remaining full-game scope. |
