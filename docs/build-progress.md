@@ -51,12 +51,13 @@ No complete-game or release-ready claim. Further implementation stays in this wo
 
 ## Immediate next work
 
-1. Complete M1/M3 rule edge cases: well-rested bonus, segment/day caps, queue loss,
-   kick-all accounting/analytics, larger-table price rows beyond the existing 10-seat
-   curve, per-customer round/patience behavior and fully unlocked-menu balance tests.
-2. Replace the spatial scene's labelled placeholders with reviewed pixel-art assets;
-   complete the 75-event audio set and listening QA. The current 32 clips are original
-   synthesis drafts, not claimed as final mastered assets.
+1. Complete M1/M3 rule gaps: well-rested bonus, segment/day caps, manual ejection
+   accounting/analytics, larger-table price rows beyond the existing 10-seat curve,
+   full rush schedule, shipper/football demand and business unlocks. Version new
+   replay semantics; preserve the current mixed-round/patience/midnight regressions.
+2. Finish the 14 illustrated drafts, replace 30 remaining sprite placeholders and
+   complete the 75-event audio set with listening QA. The current 32 clips are
+   original synthesis drafts; final export/performance/family polish remains.
 3. Add server SaveStore/authority + Google linking/reconnect and Config Registry with
    real role/approval/schedule/override handling. Keep the existing log/config pinning.
 4. Continue all meta, risk, event and release rows above; preserve legal/content holds.
@@ -172,3 +173,23 @@ manifest: **116 entries, 14 generated sprite drafts, 30 sprite placeholders and
 `generated-customer-types.md`. Full-size image optimization/family review and all
 remaining M9 work are still pending. This corrected UI/art snapshot awaits its
 independent follow-up review; no complete-game or release claim.
+
+### Layout/art review closed — 2026-09-09
+
+The independent follow-up reviewed the entire immutable range
+`830787c9633e149867053d1b915fb12d0b692bf7..2d80437b493ee1628f851e9e57aeed6d68369706`
+and returned **VERDICT: CLEAN**, confirming all six prior findings are corrected
+and finding no remaining introduced correctness, accessibility, responsiveness
+or security defects. Evidence: `.qa/review-layout-followup.txt` and its log.
+
+Final verification remains green: config/build, **27 engine tests, 12 browser
+tests**, ten sim rows at **k 2.3249–2.7020**, and asset-manifest validation. Latest
+390×844 and 1280×900 screenshots load every displayed image, with six seat
+sprites for six configured seats and no horizontal overflow. The subsequent
+documentation receipt only records this verdict and removes an extra EOF blank
+line from provenance; it changes no gameplay/rendering code.
+
+Next: implement the well-rested credit lifecycle with historical replay preserved.
+Read-only diagnosis and a real pre-bonus v2 save/expected result from `2d80437`
+are prepared under `.qa/next-m3-well-rested.md` and
+`.qa/well-rested-legacy-v2-{save,expected}.json`. Full M0–M9 goal remains active.
