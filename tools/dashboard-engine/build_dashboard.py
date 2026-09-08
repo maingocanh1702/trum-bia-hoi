@@ -161,12 +161,14 @@ IN_FLIGHT_STATUSES = {"in-review", "in-progress", "ready"}
 ACTIVE_STATUSES = IN_FLIGHT_STATUSES | {"blocked"}
 
 # Approx phase windows for Mermaid Gantt (mirror roadmap §3 timeline)
+# Baseline theo 06-ROADMAP v2.7 (re-baseline 2026-09-08; moc cu giu trong comment de doi chieu).
+# Neo vao gia dinh Alpha playtest chay trong T9/2026 — Alpha truot bao lau thi chuoi sau doi bay nhieu.
 PHASE_DATES = {
-    "Phase 0": ("2026-06-09", "2026-07-01"),
-    "Phase 1": ("2026-07-01", "2026-09-15"),
-    "Phase 2": ("2026-09-15", "2026-10-31"),
-    "Phase 3": ("2026-10-31", "2026-12-15"),
-    "Phase 4": ("2026-12-15", "2027-01-31"),
+    "Phase 0": ("2026-06-09", "2026-09-30"),  # cu: -> 2026-07-01
+    "Phase 1": ("2026-09-30", "2026-12-15"),  # cu: 2026-07-01 -> 2026-09-15
+    "Phase 2": ("2026-12-15", "2027-01-31"),  # cu: 2026-09-15 -> 2026-10-31
+    "Phase 3": ("2027-01-31", "2027-03-31"),  # cu: 2026-10-31 -> 2026-12-15
+    "Phase 4": ("2027-03-31", "2027-05-15"),  # cu: 2026-12-15 -> 2027-01-31
 }
 
 FEATURE_ID_RE = re.compile(r"^F\d{2}$")
@@ -1366,7 +1368,7 @@ def render_md(prs, stats, mvp, active, in_flight, upcoming, branch, state_map=No
         lines += [
             f"- **MVP progress:** **{mvp['percent']}%** ({mvp['merged']}/{mvp['total']} PR merged)",
             f"- **In flight:** {len(in_flight)} PR · **Blocked:** {mvp['blocked']} · **Deferred:** {mvp['deferred']}",
-            "- **Target (estimate):** Phase 0 xong ~cuối T6/2026 · MVP ~T9/2026 (xem 06-ROADMAP)",
+            "- **Target (estimate, baseline 06-ROADMAP v2.7):** Phase 0 xong ~T9/2026 (chặn bởi Alpha playtest) · Phase 1/MVP ~15/12/2026",
             "",
         ]
 
@@ -1492,7 +1494,7 @@ def render_md(prs, stats, mvp, active, in_flight, upcoming, branch, state_map=No
     lines += [
         "---",
         "",
-        "**Rebuild:** chạy `python tools/dashboard-engine/build_dashboard.py` sau mỗi PR merge (theo Step 10 của [development-workflow.md](operations/development-workflow.md) §2.7 Post-merge updates).",
+        "**Rebuild:** chạy `python3 tools/dashboard-engine/build_dashboard.py` sau mỗi lần đổi status trong [`implementation-tracker.md`](implementation-tracker.md).",
         "",
     ]
     return "\n".join(lines)

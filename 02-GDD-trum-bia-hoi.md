@@ -1,4 +1,4 @@
-# 🍺 GAME DESIGN DOCUMENT — Trùm Bia Hơi (v1.5)
+# 🍺 GAME DESIGN DOCUMENT — Trùm Bia Hơi (v1.6)
 
 > Tài liệu thiết kế game hoàn chỉnh. Tổng hợp từ nghiên cứu game tham chiếu `trumviahe.com` (`00-TONG-HOP`, `economy-spec-from-bundle`) + các quyết định chuyển hóa trong `01-MAP-tra-da-to-bia-hoi.md` (v0.9). Ngày: 2026-06. Người chơi mục tiêu: người Việt, mobile-first.
 >

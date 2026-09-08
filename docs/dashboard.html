@@ -333,7 +333,7 @@ h1 { font-size: 18px; font-weight: 500; margin: 0; }
   <h1>Trùm Bia Hơi — progress dashboard</h1>
   <div class="head-meta">
     <span id="live-indicator" class="live-indicator init">⚪ initializing…</span>
-    <p class="meta">Updated 2026-06-11 18:33 · auto-refresh 60s</p>
+    <p class="meta">Updated 2026-09-08 10:56 · <code>master</code> · auto-refresh 60s</p>
   </div>
 </div>
 
@@ -341,46 +341,46 @@ h1 { font-size: 18px; font-weight: 500; margin: 0; }
 
 <nav class="tab-bar" role="tablist"><button type="button" class="tab-btn" data-tab="overview">Overview</button><button type="button" class="tab-btn" data-tab="features">Features</button><button type="button" class="tab-btn" data-tab="prs">PRs</button><button type="button" class="tab-btn" data-tab="risks">Risks</button><button type="button" class="tab-btn" data-tab="docs">Docs</button></nav>
 
-<section id="tab-overview" class="tab-panel" role="tabpanel"><div class="overview-summary"><div class="kpi"><div class="kpi-label">Overall</div><div class="kpi-value">0%</div></div><div class="kpi"><div class="kpi-label">MVP</div><div class="kpi-value">0%</div></div></div><div class="phase-bars"></div><div class="hero">
-<div class="hero-current empty">
-  <span class="dot not-started"></span>
+<section id="tab-overview" class="tab-panel" role="tabpanel"><div class="overview-summary"><div class="kpi"><div class="kpi-label">Overall</div><div class="kpi-value">0%</div></div><div class="kpi"><div class="kpi-label">MVP</div><div class="kpi-value">22%</div></div></div><div class="phase-bars"></div><div class="hero">
+<div class="hero-current">
+  <span class="dot in-progress"></span>
   <div class="hero-text">
     <p class="hero-label">Đang làm</p>
-    <p class="hero-title">Không có PR active</p>
-    <p class="hero-sub">Pick task từ Next strip phía dưới</p>
+    <p class="hero-title">F01 · Vòng Lặp Mở Ca — ca 12 phút, thể lực, trần ngày 500k</p>
+    <p class="hero-sub">In progress · prototype/</p>
   </div>
 </div>
 <div class="hero-kpis">
-  <div class="kpi"><p class="kpi-val">0%</p><p class="kpi-lbl">MVP</p><p class="kpi-sub">0/26</p></div>
-  <div class="kpi"><p class="kpi-val">0%</p><p class="kpi-lbl">Phase 1</p><p class="kpi-sub">0/5</p></div>
-  <div class="kpi"><p class="kpi-val">0</p><p class="kpi-lbl">In flight</p></div>
+  <div class="kpi"><p class="kpi-val">22%</p><p class="kpi-lbl">MVP</p><p class="kpi-sub">2/26</p></div>
+  <div class="kpi"><p class="kpi-val">5%</p><p class="kpi-lbl">Phase 1</p><p class="kpi-sub">0/5</p></div>
+  <div class="kpi"><p class="kpi-val">6</p><p class="kpi-lbl">In flight</p></div>
   <div class="kpi"><p class="kpi-val">0</p><p class="kpi-lbl">Blocked</p></div>
   <div class="kpi"><p class="kpi-val">↑0</p><p class="kpi-lbl">Unpushed</p><p class="kpi-sub">0 PR</p></div>
   <div class="kpi"><p class="kpi-val">↓0</p><p class="kpi-lbl">Unpulled</p><p class="kpi-sub">0 PR</p></div>
 </div>
 </div>
 <div class="chart-section">
-  <p class="chart-title">MVP progress vs target (37/133 days elapsed · launch T9/2026)</p>
+  <p class="chart-title">MVP progress vs target (126/133 days elapsed · launch T9/2026)</p>
   <canvas id="burndown" role="img" aria-label="Line chart comparing actual MVP completion to target trajectory"></canvas>
 </div>
 <div class="next-strip">
   <span class="next-label">Next</span>
   <span class="next-chip">
   <span class="dot not-started"></span>
-  <span class="pr-id">F04</span>
-  Vòng Đời Cốc — bottleneck cốc clean…
+  <span class="pr-id">F24</span>
+  Thiết Kế UI/UX Quán Bia — tokens, wire…
 </span><span class="next-chip">
   <span class="dot not-started"></span>
-  <span class="pr-id">F01</span>
-  Vòng Lặp Mở Ca — ca 12 phút, thể lực, trần …
+  <span class="pr-id">F09</span>
+  Thời Tiết Quán — tối giản (hệ số độ hơ…
 </span><span class="next-chip">
   <span class="dot not-started"></span>
-  <span class="pr-id">F02</span>
-  Menu &amp; Economy — 3 món P0 (bia+2 mồi),…
+  <span class="pr-id">F10</span>
+  Nâng Cấp Quán — bom/rửa/hầm/bàn cơ bản…
 </span><span class="next-chip">
   <span class="dot not-started"></span>
-  <span class="pr-id">F03</span>
-  Hệ Bàn — 3 bàn, serve theo Order
+  <span class="pr-id">F25</span>
+  Ngôn Ngữ / Tài Khoản — chọn vi/en, gue…
 </span>
 </div>
 <h3 class="section-h">Timeline (Gantt)</h3>
@@ -414,51 +414,51 @@ h1 { font-size: 18px; font-weight: 500; margin: 0; }
   <button class="filter-btn" data-filter="not-started">Not started</button>
 </div>
 <div class="board">
-<div class="phase-card">
+<div class="phase-card active">
   <div class="phase-card-head">
     <p class="phase-card-name">Phase 0</p>
-    <span class="phase-card-meta">0/7 · 0%</span>
+    <span class="phase-card-meta">2/7 · 30%</span>
   </div>
-  <div class="phase-card-bar"><div class="zero" style="width:0%;"></div></div>
-  <div class="phase-prs"><div class="pr-row not-started" title="Not started · —">
-  <span class="dot not-started"></span>
+  <div class="phase-card-bar"><div class="" style="width:30%;"></div></div>
+  <div class="phase-prs"><div class="pr-row in-progress" title="In progress · prototype/">
+  <span class="dot in-progress"></span>
   <span class="pr-id">F01</span>
-  <span class="pr-name"><span class="pr-name-text">Vòng Lặp Mở Ca — ca 12 phút, thể lực, trần ngày 500k</span></span>
-</div><div class="pr-row not-started" title="Not started · —">
-  <span class="dot not-started"></span>
+  <span class="pr-name"><span class="pr-name-text">Vòng Lặp Mở Ca — ca 12 phút, thể lực, trần ngày 500k</span><span class="state-badge" title="Engine: BACKLOG · normal">BACKLOG ✓</span></span>
+</div><div class="pr-row in-progress" title="In progress · prototype/">
+  <span class="dot in-progress"></span>
   <span class="pr-id">F02</span>
-  <span class="pr-name"><span class="pr-name-text">Menu &amp; Kinh Tế Quán — 3 món P0 (bia+2 mồi), đo k</span></span>
-</div><div class="pr-row not-started" title="Not started · —">
-  <span class="dot not-started"></span>
+  <span class="pr-name"><span class="pr-name-text">Menu &amp; Kinh Tế Quán — 3 món P0 (bia+2 mồi), đo k</span><span class="state-badge" title="Engine: IN_PROGRESS · normal">IN_PROGRESS ✓</span></span>
+</div><div class="pr-row in-progress" title="In progress · prototype/">
+  <span class="dot in-progress"></span>
   <span class="pr-id">F03</span>
-  <span class="pr-name"><span class="pr-name-text">Hệ Bàn — 3 bàn, serve theo Order</span></span>
-</div><div class="pr-row not-started" title="Not started · —">
-  <span class="dot not-started"></span>
-  <span class="pr-id">F04</span>
-  <span class="pr-name"><span class="pr-name-text">Vòng Đời Cốc — bottleneck cốc clean→in_use→dirty→washing→clean</span></span>
-</div><div class="pr-row not-started" title="Not started · —">
-  <span class="dot not-started"></span>
-  <span class="pr-id">F05</span>
-  <span class="pr-name"><span class="pr-name-text">Độ Hơi Bia — mất hơi 12s, cờ vàng, MVP mềm</span></span>
-</div><div class="pr-row not-started" title="Not started · —">
-  <span class="dot not-started"></span>
+  <span class="pr-name"><span class="pr-name-text">Hệ Bàn — 3 bàn, serve theo Order</span><span class="state-badge" title="Engine: BACKLOG · normal">BACKLOG ✓</span></span>
+</div><div class="pr-row in-progress" title="In progress · prototype/">
+  <span class="dot in-progress"></span>
   <span class="pr-id">F06</span>
-  <span class="pr-name"><span class="pr-name-text">Tip / Uy tín / Phạt — VIP ×10, grace window</span></span>
-</div><div class="pr-row not-started" title="Not started · —">
-  <span class="dot not-started"></span>
+  <span class="pr-name"><span class="pr-name-text">Tip / Uy tín / Phạt — VIP ×10, grace window</span><span class="state-badge" title="Engine: BACKLOG · normal">BACKLOG ✓</span></span>
+</div><div class="pr-row in-progress" title="In progress · prototype/">
+  <span class="dot in-progress"></span>
   <span class="pr-id">F08</span>
-  <span class="pr-name"><span class="pr-name-text">Giờ Vàng — 2 mức (nhẹ 90s/nặng 150s), spawn floor</span></span>
+  <span class="pr-name"><span class="pr-name-text">Giờ Vàng — 2 mức (nhẹ 90s/nặng 150s), spawn floor</span><span class="state-badge" title="Engine: IN_PROGRESS · normal">IN_PROGRESS ✓</span></span>
+</div><div class="pr-row merged" title="Merged · prototype/">
+  <span class="dot merged"></span>
+  <span class="pr-id">F04</span>
+  <span class="pr-name"><span class="pr-name-text">Vòng Đời Cốc — bottleneck cốc clean→in_use→dirty→washing→clean</span><span class="state-badge" title="Engine: BACKLOG · normal">BACKLOG ✓</span></span>
+</div><div class="pr-row merged" title="Merged · prototype/">
+  <span class="dot merged"></span>
+  <span class="pr-id">F05</span>
+  <span class="pr-name"><span class="pr-name-text">Độ Hơi Bia — mất hơi 12s, cờ vàng, MVP mềm</span><span class="state-badge" title="Engine: BACKLOG · normal">BACKLOG ✓</span></span>
 </div></div>
-</div><div class="phase-card">
+</div><div class="phase-card active">
   <div class="phase-card-head">
     <p class="phase-card-name">Phase 1</p>
-    <span class="phase-card-meta">0/5 · 0%</span>
+    <span class="phase-card-meta">0/5 · 5%</span>
   </div>
-  <div class="phase-card-bar"><div class="zero" style="width:0%;"></div></div>
-  <div class="phase-prs"><div class="pr-row not-started" title="Not started · —">
-  <span class="dot not-started"></span>
+  <div class="phase-card-bar"><div class="" style="width:5%;"></div></div>
+  <div class="phase-prs"><div class="pr-row in-progress" title="In progress · prototype/">
+  <span class="dot in-progress"></span>
   <span class="pr-id">F07</span>
-  <span class="pr-name"><span class="pr-name-text">Các Kiểu Khách — 3 loại P1 (thường/vội/VIP)</span></span>
+  <span class="pr-name"><span class="pr-name-text">Các Kiểu Khách — 3 loại P1 (thường/vội/VIP)</span><span class="state-badge" title="Engine: ABANDONED · normal">ABANDONED ✓</span></span>
 </div><div class="pr-row not-started" title="Not started · —">
   <span class="dot not-started"></span>
   <span class="pr-id">F09</span>
@@ -516,7 +516,7 @@ h1 { font-size: 18px; font-weight: 500; margin: 0; }
 </div><div class="pr-row not-started" title="Not started · —">
   <span class="dot not-started"></span>
   <span class="pr-id">F16</span>
-  <span class="pr-name"><span class="pr-name-text">Referral &amp; Badges — 3 mốc, huy hiệu Kết Nối</span></span>
+  <span class="pr-name"><span class="pr-name-text">Rủ Bạn &amp; Huy Hiệu — 3 mốc, huy hiệu Kết Nối</span></span>
 </div><div class="pr-row not-started" title="Not started · —">
   <span class="dot not-started"></span>
   <span class="pr-id">F18</span>
@@ -801,7 +801,7 @@ if (ctx && window.Chart) {
       datasets: [
         {
           label: "Actual",
-          data: [0, 0, null],
+          data: [0, 22, null],
           borderColor: "#185fa5",
           backgroundColor: "rgba(24,95,165,0.1)",
           tension: 0.3,
@@ -810,7 +810,7 @@ if (ctx && window.Chart) {
         },
         {
           label: "Target",
-          data: [0, 27.8, 100],
+          data: [0, 94.7, 100],
           borderColor: "#888780",
           borderDash: [5, 5],
           tension: 0,

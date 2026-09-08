@@ -1,10 +1,10 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.5.0
-> **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-07-15
-> **Trạng thái:** Active — **Phase 0 automated gate đã pass** (build + 5-seed sim). Đồng bộ theo `06-ROADMAP` v2.6 (~22%). Chờ exit-gate còn lại: Alpha playtest feel.
+> **Version:** v0.6.0
+> **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-08
+> **Trạng thái:** Active — **Phase 0 automated gate đã pass** (build + 5-seed sim, tái lập độc lập 2026-08-24). Đồng bộ theo `06-ROADMAP` v2.7 (~22%). 🔴 **Exit-gate còn lại — Alpha playtest feel — treo từ 2026-07-15 (~8 tuần).**
 > **Owner:** Team
-> **Mục đích:** Master status board cho mọi feature F01–F24 (Phase 0 → 4). Là **input cho dashboard-engine** (`tools/dashboard-engine/build_dashboard.py`). Nguồn quyết định/scope = `02-GDD-trum-bia-hoi.md` + `06-ROADMAP-trum-bia-hoi.md`; tracker chỉ theo dõi **trạng thái build**.
+> **Mục đích:** Master status board cho mọi feature F01–F26 (Phase 0 → 4). Là **input cho dashboard-engine** (`tools/dashboard-engine/build_dashboard.py`). Nguồn quyết định/scope = `02-GDD-trum-bia-hoi.md` + `06-ROADMAP-trum-bia-hoi.md`; tracker chỉ theo dõi **trạng thái build**.
 > **Cập nhật:** đổi status mỗi khi 1 feature chuyển trạng thái (bắt đầu code / review / merge).
 
 ---
@@ -29,7 +29,7 @@
 - `🔒P` Qua playtest milestone
 - `🔒B` Economy/balance pass (k trong 2.0–3.0)
 
-**PR ID** = mã feature F01–F24 (khớp `06-ROADMAP`). Branch để trống tới khi có git repo.
+**PR ID** = mã feature F01–F26 (khớp `06-ROADMAP`). Branch để trống tới khi có git repo.
 
 ---
 
@@ -41,7 +41,7 @@
 |----|------|---------|:------:|--------|:-----:|-------|
 | F04 | 🎮 Code | Vòng Đời Cốc — bottleneck cốc clean→in_use→dirty→washing→clean | ✅ | `prototype/` | 🔒S | Lõi đủ (`engine/engine.ts`). Bottleneck build trước. |
 | F01 | 🎮 Code | Vòng Lặp Mở Ca — ca 12 phút, thể lực, trần ngày 500k | 🟡 | `prototype/` | 🔒S | ca 12' + trần ngày 500k xong; thể lực persist deferred → Phase 1 (`stamina-day-budget`). |
-| F02 | ⚖️ Economy | Menu & Kinh Tế Quán — 3 món P0 (bia+2 mồi), đo k | 🟡 | `prototype/` | 🔒S 🔒B | 3/6 món. **5-seed sim k=2.24–2.34** (2026-07-15, mỗi seed ≥503 lượt) — PASS dải 2.0–3.0; chờ hand-play xác nhận. |
+| F02 | ⚖️ Economy | Menu & Kinh Tế Quán — 3 món P0 (bia+2 mồi), đo k | 🟡 | `prototype/` | 🔒S 🔒B | 3/6 món. **5-seed sim k=2.24–2.34** (2026-07-15, mỗi seed ≥503 lượt) — PASS dải 2.0–3.0; **tái lập độc lập 2026-08-24**, khớp từng số. Chờ hand-play xác nhận. |
 | F03 | 🎮 Code | Hệ Bàn — 3 bàn, serve theo Order | 🟡 | `prototype/` | 🔒S | 3 bàn + serve-theo-Order + queue; chưa 4 cấp/mua-nâng cấp. |
 | F05 | 🎮 Code | Độ Hơi Bia — mất hơi 12s, cờ vàng, MVP mềm | ✅ | `prototype/` | 🔒S 🔒P | Lõi đủ (tip×0 khi hết hơi, cờ vàng). Chờ playtest feel. |
 | F06 | 🎮 Code | Tip / Uy tín / Phạt — VIP ×10, grace window | 🟡 | `prototype/` | 🔒S | Có tip; chưa uy tín/phạt cụm. |
@@ -99,7 +99,9 @@
 | 4 — Event & sink | 3 | 0 | 0 | 0 | 0 | 0% |
 | **MVP total** | **26** | **2** | **6** | **0** | **0** | **~22%** |
 
-> Tổng ~22% khớp `06-ROADMAP` v2.6. Lõi Phase 0 đã chạy: F04+F05 ✅ đủ phạm vi phase; F01/F02/F03/F06/F08 (+F07 ở P1) 🟡 mới phần lõi Phase 0. **Automated exit gate PASS:** build xanh; 5 seed cho `k=2.24–2.34`, normal loss 0%, peak loss 26.1–40.8%. **Exit-gate còn lại là Alpha playtest feel** (freshness, bàn nhóm, bottleneck cốc, nhịp 2 rush); bot không thay thế hand-play.
+> Tổng ~22% khớp `06-ROADMAP` v2.7. Lõi Phase 0 đã chạy: F04+F05 ✅ đủ phạm vi phase; F01/F02/F03/F06/F08 (+F07 ở P1) 🟡 mới phần lõi Phase 0. **Automated exit gate PASS:** build xanh; 5 seed cho `k=2.24–2.34`, normal loss 0%, peak loss 26.1–40.8% — **audit 2026-08-24 chạy lại sim độc lập và tái lập đúng từng con số**, nên số liệu bảng này là đo được, không phải tự khai.
+>
+> 🔴 **Không feature nào đổi status từ 2026-07-15.** Exit-gate còn lại là **Alpha playtest feel** (freshness, bàn nhóm, bottleneck cốc, nhịp 2 rush) — treo ~8 tuần; bot không thay thế hand-play. Phiếu bằng chứng: [`phase0-alpha-playtest.md`](phase0-alpha-playtest.md). Mọi ô 🟡 của Phase 0 chỉ chuyển ✅ sau khi gate này đóng.
 
 ---
 
@@ -112,3 +114,4 @@
 | v0.3.0 | Thêm F25 Ngôn Ngữ/Tài Khoản và F26 Vé Mở Ca/Thanh Toán; tổng feature 26, không đổi trạng thái code. |
 | v0.4.0 | Đồng bộ với `06-ROADMAP` v2.5: prototype Phase 0 đã code → F04/F05 ✅, F01/F02/F03/F06/F07/F08 🟡; tổng ~22%. Ghi kết quả sim đo k=1.63 (506 lượt, 2026-07-02, dưới dải 2.0–3.0). Bỏ nhãn "pre-code 0%". |
 | v0.5.0 | Đồng bộ merged cadence + sim fail-closed (2026-07-15): 5 seed k=2.24–2.34, normal loss 0%, peak loss 26.1–40.8%; automated gate pass, Phase 0 vẫn chờ Alpha playtest feel. |
+| v0.6.0 | Đồng bộ sau audit repo (2026-09-08). **Không đổi status feature nào** — đúng thực tế: không có tiến triển gameplay từ 15/07. Sửa phạm vi header F01–F24 → **F01–F26** (F25/F26 đã có từ v0.3.0); ghi nhận sim gate được **tái lập độc lập 24/08**; đánh dấu rõ Alpha playtest là gate treo ~8 tuần và là điều kiện DUY NHẤT để các ô 🟡 Phase 0 chuyển ✅; trỏ `06-ROADMAP` v2.7. |

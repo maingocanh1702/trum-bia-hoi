@@ -12,22 +12,25 @@
 
 ---
 
-## 🎯 Phase 0 — Prototype (NOW, code được ngay)
+## 🎯 Phase 0 — Prototype (✅ code xong — chỉ còn Alpha playtest)
 
-> Hầu hết đụng `engine-core` → **phần lớn TUẦN TỰ**. Track chạy SONG SONG được: engine ∥ ui ∥ economy-measure ∥ docs.
+> ⚠️ **Cập nhật 2026-09-08:** phần lõi Phase 0 **đã code và merge hết** vào `master`. Bảng dưới giữ lại làm
+> lịch sử slice + tham chiếu scope/invariant, **KHÔNG phải việc còn tồn**. Phase 0 hiện chỉ chờ
+> **Alpha playtest feel** (việc của người, không phải slice code) — xem `docs/phase0-alpha-playtest.md`.
 
-| slug | Feature | risk | scope (file chính) | invariants | depends_on |
+| slug | Feature | risk | trạng thái | invariants | depends_on |
 |---|---|---|---|---|---|
-| `engine-glass-lifecycle` | F04 vòng đời cốc clean→…→washing | P1 | prototype/src/engine/engine.ts·types.ts | `engine-core` | — |
-| `engine-core-loop` | F01 ca 12', thể lực, trần ngày | P1 | engine/engine.ts·constants.ts | `engine-core`,`economy-balance` | glass-lifecycle |
-| `engine-table-order` | F03 bàn/nhóm/serve theo Order | P1 | engine/engine.ts·types.ts | `engine-core` | core-loop |
-| `engine-beer-freshness` | F05 mất hơi 12s, cờ vàng | P1 | engine/engine.ts·constants.ts | `engine-core` | glass-lifecycle |
-| `economy-tip-penalty` | F06 tip/uy tín/phạt cụm | P1 | engine/metrics.ts·constants.ts | `economy-balance` | table-order |
-| `economy-k-measure` | đo k ≥500 lượt, pipeline log | P2 | prototype/src/sim/headless.ts, scripts/measure_k.py | `sim-harness`,`economy-balance` | core-loop |
-| `engine-group-spawn-cadence` | giữ nhịp 10.5s/khách khi spawn nhóm + aggregate loss fail-closed | P1 | engine/engine.ts·sim/headless.ts | `engine-core`,`economy-balance`,`rng-determinism`,`sim-harness` | core-loop |
-| `ui-game-view` | render GameView Pixi + HUD | P2 | prototype/src/ui/GameView.ts·components.tsx | `game-ui`,`assets-binding` | — (API engine ổn) |
+| `engine-glass-lifecycle` | F04 vòng đời cốc clean→…→washing | P1 | ✅ merged | `engine-core` | — |
+| `engine-core-loop` | F01 ca 12', thể lực, trần ngày | P1 | ✅ merged (thể lực persist → dời Phase 1) | `engine-core`,`economy-balance` | glass-lifecycle |
+| `engine-table-order` | F03 bàn/nhóm/serve theo Order | P1 | ✅ merged (chưa 4 cấp bàn — Phase 1) | `engine-core` | core-loop |
+| `engine-beer-freshness` | F05 mất hơi 12s, cờ vàng | P1 | ✅ merged | `engine-core` | glass-lifecycle |
+| `economy-tip-penalty` | F06 tip/uy tín/phạt cụm | P1 | ✅ merged phần tip (uy tín/phạt cụm → Phase 1) | `economy-balance` | table-order |
+| `economy-k-measure` | đo k ≥500 lượt, pipeline log | P2 | ✅ merged — gate 5 seed PASS | `sim-harness`,`economy-balance` | core-loop |
+| `engine-group-spawn-cadence` | giữ nhịp 10.5s/khách khi spawn nhóm + aggregate loss fail-closed | P1 | ✅ merged 2026-07-15 | `engine-core`,`economy-balance`,`rng-determinism`,`sim-harness` | core-loop |
+| `ui-game-view` | render GameView Pixi + HUD | P2 | ✅ merged | `game-ui`,`assets-binding` | — (API engine ổn) |
 
-**Chạy song song an toàn ngay (disjoint token):** `ui-game-view` (game-ui/assets) ∥ một slice engine (engine-core) ∥ `economy-k-measure` chỉ khi KHÔNG cùng lúc với slice đang sửa `engine-core` (vì k-measure share `economy-balance` với tip-penalty/core-loop → serialize nhóm economy).
+**Việc còn lại của Phase 0 = 0 slice code.** Blocker duy nhất là Alpha playtest 3–5 người.
+Slice code kế tiếp chỉ mở **sau khi** Alpha PASS → chuyển sang bảng Phase 1 §dưới.
 
 ## task: engine-group-spawn-cadence
 status: merged
@@ -40,7 +43,9 @@ merged_probe: prototype/src/engine/engine.ts :: spawnedCustomerCount
 note: Phase 0 exit-gate blocker found 2026-07-15. The base cadence is per customer but current code schedules it per 1–2 customer group; aggregate sim also masks loss with hard-coded zeroes.
 
 ## task: dashboard-phase-table-boundary
-status: ready
+status: merged
+note_merged: merged vào `master` 2026-09-08 (P2, supervised manual merge). Verify: `parse_prs` trên
+  `docs/implementation-tracker.md` trả 26 feature (trước fix: 27). Was: ready từ 2026-07-15.
 risk: P2
 depends_on: none
 scope: `tools/dashboard-engine/build_dashboard.py`, `tools/dashboard-engine/test_build_dashboard.py`

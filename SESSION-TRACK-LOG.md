@@ -5,22 +5,24 @@
 
 ---
 
-## 🧭 Trạng thái dự án (snapshot 2026-06-09)
+## 🧭 Trạng thái dự án (snapshot 2026-09-08)
 
 **Là gì:** Game idle/tycoon **phục vụ khách theo ca** ở quán bia hơi vỉa hè VN, mobile-first web. Mô phỏng & re-skin từ `trumviahe.com` (game gốc trà đá), giữ 5 lớp economy + thêm 2 cơ chế đặc thù (**hệ bàn**, **bia mất hơi**).
 
-**Giai đoạn:** Thiết kế/nghiên cứu **đã xong** (GDD v1.5 ổn). **Prototype Phase 0 đã được code** (`prototype/` — engine + UI Pixi + sim headless, `tsc` pass). Bước kế: **đo `k_value` thật** rồi qua exit-gate sang Phase 1.
+**Giai đoạn:** Thiết kế/nghiên cứu **đã xong** (GDD v1.6 ổn). **Prototype Phase 0 đã code xong** (`prototype/` — engine + UI Pixi + sim headless, build pass). **`k_value` đã đo: 2.24–2.34** qua 5 seed (trong band 2.0–3.0), tái lập độc lập 24/08.
+
+> 🔴 **BLOCKER HIỆN TẠI — đọc trước khi làm bất cứ việc gì khác.** Phase 0 chỉ còn thiếu **Alpha playtest feel**: 3–5 người thật × ≥3 ca/người, điền [`docs/phase0-alpha-playtest.md`](docs/phase0-alpha-playtest.md). Hạng mục này treo từ **2026-07-15 (~8 tuần)**; commit gameplay cuối cùng cũng là 15/07. **Không mở Phase 1 trước khi gate này đóng** — bot metrics không thay thế hand-play. Đây là việc tổ chức, không phải việc kỹ thuật: build chạy được (`cd prototype && npm run dev`).
 
 **Tài liệu chính (theo thứ tự đọc):**
 
 | File | Vai trò | Trạng thái |
 |---|---|---|
-| `02-GDD-trum-bia-hoi.md` | **GDD v1.5 — tài liệu nguồn chính** | ✅ ổn định |
+| `02-GDD-trum-bia-hoi.md` | **GDD v1.6 — tài liệu nguồn chính** | ✅ ổn định |
 | `economy-spec-from-bundle.md` | Hằng số economy trích trực tiếp từ bundle game gốc | ✅ tham chiếu |
 | `03-SPEC-he-ban.md` | Spec hệ bàn (đơn vị gameplay chính) | ✅ |
 | `04-SPEC-prototype-phase0.md` | Spec prototype Phase 0 (state model + số khởi điểm + cách đo k) | ✅ |
 | `05-SPEC-design-uiux.md` | Khung design/UIUX/asset (tokens + wireframe + icon list); sản xuất từ Phase 1 | 🔧 khung |
-| `06-ROADMAP-trum-bia-hoi.md` | Roadmap Now/Next/Later (Phase 0–4) + exit gate + phụ thuộc/rủi ro | ✅ |
+| `06-ROADMAP-trum-bia-hoi.md` | Roadmap v2.7 Now/Next/Later (Phase 0–4) + exit gate + timeline re-baseline 08/09 | ✅ |
 | `07-SPEC-shop-mua-giai-worldcup.md` | Spec shop mùa giải WC (TV/lịch/theme đội) — Phase 4 | ✅ |
 | `01-MAP-tra-da-to-bia-hoi.md` | Mapping trà đá → bia hơi (v0.9) | ✅ tham chiếu |
 | `00-TONG-HOP-trumviahe.md` | Tổng hợp nghiên cứu game gốc | ✅ tham chiếu |
@@ -35,19 +37,29 @@
 
 ---
 
-## ⏭️ Việc tiếp theo (Phase 0 — Prototype, client-only)
+## ⏭️ Việc tiếp theo — CHẠY ALPHA PLAYTEST
 
-Mục tiêu: validate **"feel"** + **đo lại k_value** thực tế. Phạm vi tối thiểu:
+Phạm vi Phase 0 (3 bàn · bia + 2 mồi tức thì · 2 mức rush · freshness · vòng đời cốc · tip/patience) **đã code xong và merge**. Phần đo tự động **đã PASS**. Việc còn lại **duy nhất**:
 
-- 1 màn quán, **3 bàn**, **bia + 2 mồi tức thì**, **2 mức rush** (thường / cao điểm).
-- Cơ chế lõi cần cảm nhận: **freshness cốc** (bia mất hơi), **vòng đời cốc + rửa** (bottleneck), **tip/patience**.
-- Đo: k_value thật (xuất phát 2.5), feel mất hơi, feel bàn nhóm, nhịp tay 2 mức rush.
+1. **Hẹn 3–5 người**, mỗi người chơi **≥3 ca** (`cd prototype && npm run dev`), phải có cả nhịp thường lẫn cao điểm.
+2. **Không coach** sau khi giới thiệu thao tác — người chơi bối rối chỗ nào chính là bằng chứng cần thu.
+3. Điền phiếu [`docs/phase0-alpha-playtest.md`](docs/phase0-alpha-playtest.md): bảng log mỗi ca + 5 câu hỏi gate + bảng quyết định.
+4. Lưu ý khi ghi số: đọc **mất khách theo từng ca**, không đọc dòng "Dồn cả phiên" (luôn hiện 0 — engine không giữ lost xuyên ca); `% cốc hết hơi` chỉ hand-play mới đo được (bot ra 0%).
+5. **PASS** → đóng Phase 0, mở Phase 1 (`ui-art-v1` ∥ 1 engine slice). **FAIL** mục nào → tạo corrective slice bounded đúng mục đó, không mở Phase 1.
 
 > Chưa nhồi meta/event. Core feel (bàn + mất hơi + economy) phải đúng TRƯỚC.
 
 ---
 
 ## 🗒️ Nhật ký phiên
+
+### Session 2026-09-08 (21) — Audit toàn repo + đồng bộ docs theo tiến độ thật
+- **Audit toàn bộ repo** (docs + codebase + tooling + git state) → `AUDIT-REPO-2026-08-24.md`. Xác minh độc lập: chạy lại `npm run sim` từ source, **tái lập đúng từng con số** của gate 15/07 (k 2.27/2.34/2.27/2.28/2.24; normal loss 0%; peak 26.1–40.8%); typecheck strict engine+sim sạch; probe riêng (chạy 2.000s không thao tác, trần ngày, glass invariant) không lộ bug. → **số liệu trong tracker/roadmap là đo được, không phải tự khai.**
+- **Phát hiện chính:** blocker của dự án **không phải kỹ thuật** mà là **Alpha playtest chưa chạy, treo ~8 tuần**. Từ 15/07 không có commit gameplay nào; baseline timeline cũ (P1 chạy T7–T9) đã vô hiệu.
+- **Đồng bộ docs theo thực tế:** ROADMAP → **v2.7** (re-baseline timeline dời ~2,5 tháng: P0→30/09, P1→15/12, P2→31/01/2027, P3→31/03, P4→15/05; thêm bảng đối chiếu baseline cũ/mới + cảnh báo nhịp độ; NOW 🟡→🔴 + thêm dòng Alpha là hạng mục chặn duy nhất). Tracker → **v0.6.0** (không đổi status feature nào — đúng thực tế; sửa phạm vi F01–F24→**F01–F26**; ghi nhận tái lập độc lập). GDD title **v1.5→v1.6** (changelog đã có v1.6 từ trước → file tự mâu thuẫn). `prototype/README.md`: sửa **"1 ca = 120s"→12 phút**, thay số **k=1.63 lỗi thời** bằng bảng 5 seed hiện hành, làm rõ nhịp spawn 10.5s/**khách**, thêm mục gate + 2 cảnh báo khi đo (nút UI shell, dòng aggregate luôn 0). Backlog: đánh dấu 8 slice Phase 0 **đã merged** (bảng cũ đọc như còn nguyên việc).
+- **Dọn tồn:** merge slice `dashboard-phase-table-boundary` (READY từ 15/07, P2) → dashboard hết parse header Phase 4 thành feature thứ 27 (27→26); rebuild `docs/dashboard.*` vốn còn kẹt số **0%** từ 11/06.
+- **Còn tồn, chưa đụng (cố ý):** 27 file modified của đợt sync autopilot kit v31 — chờ chủ dự án tự quyết commit/revert; worktree mồ côi `.autopilot/worktrees/economy-k-tune/`; GitNexus index stale từ 15/07 (chạy `node .gitnexus/run.cjs analyze` trước đợt code kế).
+- **Việc kế:** **CHẠY ALPHA PLAYTEST** (xem §Việc tiếp theo ở trên). Mọi thứ khác là phụ.
 
 ### Session 2026-07-15 (20) — Phase 0 automated gate pass, chờ Alpha feel
 - **Merged cadence fix:** `SPAWN_BASE_MS` tiếp tục là nhịp mỗi khách; nhóm N người tiêu thụ N nhịp. Sim đếm arrival theo người và aggregate lost/rejected từ bucket thật, không hard-code 0.

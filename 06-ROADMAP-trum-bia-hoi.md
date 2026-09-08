@@ -1,27 +1,29 @@
-# 🗺️ ROADMAP — Trùm Bia Hơi v2.6
+# 🗺️ ROADMAP — Trùm Bia Hơi v2.7
 
 > **Roadmap sản phẩm.** Đây là **công cụ truyền đạt định hướng**, không phải project plan chi tiết — tasks cụ thể nằm ở các SPEC.
 > **Nguồn sự thật về quyết định/số = GDD** (`02-GDD-trum-bia-hoi.md`); roadmap mâu thuẫn GDD thì GDD thắng.
-> **Ngày:** 2026-07-15. **Nhãn:** 🟢 CORE · 🟡 PROTOTYPE · 🔵 POST-MVP.
+> **Ngày:** 2026-09-08. **Nhãn:** 🟢 CORE · 🟡 PROTOTYPE · 🔵 POST-MVP.
 
 ---
 
 ## 📊 Overall Progress
 
-> 🚀 **Tổng tiến độ: ~22%** — ████░░░░░░░░░░░░░░░░ (Spec + prototype code xong · automated k/loss gate pass · chờ Alpha feel)
+> 🚀 **Tổng tiến độ: ~22%** — ████░░░░░░░░░░░░░░░░ (Spec + prototype code xong · automated k/loss gate pass · **chờ Alpha feel từ 2026-07-15**)
+>
+> ⏳ **Cảnh báo nhịp độ (2026-09-08):** Phase 0 chỉ còn thiếu **Alpha playtest feel** — hạng mục này đã treo **~8 tuần** kể từ khi automated gate pass (15/07). Commit gameplay cuối cùng cũng là 15/07; từ đó tới nay repo chỉ có commit tooling. Timeline §dưới đã **re-baseline theo thực tế**. Blocker không phải kỹ thuật — build chạy được, gate tự động PASS và tái lập được — mà là **tổ chức buổi playtest 3–5 người**.
 >
 > ℹ️ **Lưu ý KPI:** mọi target KPI dưới đây (retention, conversion, EV…) là **benchmark provisional theo chuẩn ngành**, KHÔNG rút từ GDD — chốt lại khi có data playtest thật.
 
 | | Phase | Trạng thái | Outcome cần đạt |
 |---|---|---|---|
-| **NOW** | Phase 0 — Prototype | 🟡 **Automated gate pass — chờ Alpha playtest feel** | Biết core có *feel* đúng + `k_value` thật |
+| **NOW** | Phase 0 — Prototype | 🔴 **Blocked ~8 tuần — chỉ còn Alpha playtest feel** | Biết core có *feel* đúng + `k_value` thật |
 | **NOW** | Design Track (song song P0) | 🟡 **Khung spec xong** | Tokens + wireframe + quyết định art pipeline |
 | **NEXT** | Phase 1 — MVP + Art v1 | ⚪ Not started | Vòng lặp ca vui & economy cân, có art thật |
 | **LATER** | Phase 2 — Mở rộng core | ⚪ Not started | Đủ chiều sâu gameplay (6 món, khách đặc biệt) |
 | **LATER** | Phase 3 — Meta & social | 🔵 Not started | Giữ chân + đua hạng (league, Life Path, cosmetic) |
 | **LATER** | Phase 4 — Event & sink | 🔵 Cần review | World Cup / donation / xổ số (legal) |
 
-Thiết kế & nghiên cứu (GDD v1.5, MAP v0.9, 3 SPEC triển khai/khung: `03`/`04`/`05`) **đã xong**. Ranh giới NOW = chuyển từ thiết kế sang code + design khung; art thật bắt đầu Phase 1.
+Thiết kế & nghiên cứu (GDD v1.6, MAP v0.9, 3 SPEC triển khai/khung: `03`/`04`/`05`) **đã xong**. Ranh giới NOW = chuyển từ thiết kế sang code + design khung; art thật bắt đầu Phase 1.
 
 ---
 
@@ -94,28 +96,43 @@ Phase 2+: Tất cả tracks song song, cadence 2 tuần review.
 
 ## 📅 Timeline
 
-```
-2026
- Jun            Jul            Aug            Sep            Oct            Nov
-  |──── P0 ────|─────── Phase 1: MVP + Art v1 ──────|─── Phase 2 ───|
-  |  Prototype |  Code: core loop + economy          |  6 món + bếp  |
-  |  (validate |  Art: tokens → wireframe → assets   |  khách đặc biệt|
-  |   feel+k)  |  Audio: SFX đầu tiên                |  rush đầy đủ  |
-  |            |  Economy: balance liên tục           |  nâng cấp full |
-  |            |                                      |               |
-  |  Design:   |                    Playtest ──────────────────────── |
-  |  tokens +  |                    Sprint 1   Sprint 2              |
-  |  wireframe |                                                     |
+**Baseline hiện hành (re-baseline 2026-09-08).** Baseline cũ (v2.0–v2.6) ước Phase 1 chạy T7–T9/2026; thực tế Phase 0 chưa đóng gate nên mọi mốc dời **~2,5 tháng**.
 
-                                                       Nov      Dec+
-                                                        |──── Phase 3 ────|── Phase 4 ──|
-                                                        | League + Life   | World Cup   |
-                                                        | Path + locations| Donation    |
-                                                        | Risk events     | Lottery     |
-                                                        | Server-auth     | (legal!)    |
 ```
+        2026                                             │  2027
+        Jun   Jul   Aug   Sep   Oct   Nov   Dec          │  Jan   Feb   Mar   Apr   May
+        ─────────────────────────────────────────────────┼──────────────────────────────
+P0      ███████████·····························         │
+        code+gate   trượt ~8 tuần (chờ Alpha playtest)   │
+        ✅ 15/07    ◄── blocker duy nhất                  │
+                                                         │
+P1                        ██████████████████████████████████████
+                          MVP + Art v1: core loop · economy · wireframe→asset · SFX
+                                                         │
+P2                                                       │      ████████████
+                                                         │      6 món + bếp · khách đặc biệt
+                                                         │      rush + nâng cấp đầy đủ
+                                                         │
+P3                                                       │              ██████████████
+                                                         │              League · Đường Lên Trùm
+                                                         │              mặt bằng · risk · server-auth
+                                                         │
+P4                                                       │                        ████████
+                                                         │                        World Cup
+                                                         │                        Donation
+                                                         │                        Lottery (legal!)
+```
+
+| Phase | Baseline cũ (v2.6) | **Baseline mới (v2.7)** | Điều kiện mở |
+|---|---|---|---|
+| Phase 0 | 09/06 → 01/07/2026 | 09/06 → **30/09/2026** | — (đang chạy, chỉ chờ Alpha) |
+| Phase 1 | 01/07 → 15/09/2026 | **30/09 → 15/12/2026** | Alpha playtest PASS |
+| Phase 2 | 15/09 → 31/10/2026 | **15/12/2026 → 31/01/2027** | Closed playtest P1 PASS |
+| Phase 3 | 31/10 → 15/12/2026 | **31/01 → 31/03/2027** | Balance playtest P2 PASS |
+| Phase 4 | 15/12/2026 → 31/01/2027 | **31/03 → 15/05/2027** | Meta playtest P3 + legal review |
 
 > ⚠️ Timeline là **estimate**, không phải cam kết cứng. Thực tế phụ thuộc exit gate mỗi phase.
+> 📌 Mốc mới neo vào giả định **Alpha playtest chạy trong T9/2026**. Alpha trượt thêm bao lâu thì toàn bộ chuỗi sau dời bấy nhiêu — Phase 1 KHÔNG mở trước khi Phase 0 đóng gate.
 
 ---
 
@@ -208,7 +225,8 @@ graph TD
 | Spec Phase 0 | — | ✅ Done | `04-SPEC` v0.2 |
 | Chốt stack thực thi | Code | ✅ Done | **Pixi + React + Vite + TS** (đích GDD) |
 | Scaffold loop (spawn · serve · vòng đời cốc · log) | Code | ✅ Done | `prototype/src/engine` — state machine đủ; `tsc` pass |
-| Chạy ca + thu log + tính k | Economy | ✅ Automated pass | 5 seed, mỗi seed ≥503 lượt; k=2.24–2.34; aggregate loss fail-closed. |
+| Chạy ca + thu log + tính k | Economy | ✅ Automated pass | 5 seed, mỗi seed ≥503 lượt; k=2.24–2.34; aggregate loss fail-closed. **Tái lập độc lập 24/08** (audit chạy lại sim, khớp từng số). |
+| **Alpha playtest feel (3–5 người × ≥3 ca)** | Economy | 🔴 **Chưa chạy — treo từ 15/07** | Phiếu bằng chứng `docs/phase0-alpha-playtest.md` còn trống. **Đây là hạng mục DUY NHẤT chặn Phase 1.** |
 | Design tokens + wireframe (khung) | Design | 🟡 In-progress | `tokens.ts` + placeholder Pixi assets; wireframe thật chờ |
 
 ### Phase 0 KPI
@@ -216,10 +234,10 @@ graph TD
 | Metric | Target | Hiện tại | Ghi chú |
 |---|---|---|---|
 | k_value | 2.0–3.0 (ổn định) | **2.24–2.34** qua 5 seed | Automated pass; hand-play vẫn phải xác nhận |
-| % cốc hết hơi (playtest) | 5–15% | N/A | Quá thấp → giảm base; quá cao → tăng |
+| % cốc hết hơi (playtest) | 5–15% | N/A — chờ Alpha | Bot chơi tối ưu ra 0% (không tích cốc) → **chỉ hand-play mới đo được** |
 | % khách bỏ đi (normal rush) | <10% | **0% bot / 5 seed** | Peak diagnostic 26.1–40.8%; ngưỡng feel cuối do Alpha quyết định |
-| Thời gian playtest mỗi ca | ~12 phút | N/A | Đúng thiết kế |
-| Cảm nhận bottleneck cốc | "Rõ ràng là nghẽn" | N/A | Nâng rửa → đỡ ngay |
+| Thời gian playtest mỗi ca | ~12 phút | N/A — chờ Alpha | Đúng thiết kế (`SHIFT_DURATION_MS = 720_000`) |
+| Cảm nhận bottleneck cốc | "Rõ ràng là nghẽn" | N/A — chờ Alpha | Nâng rửa → đỡ ngay |
 
 ### Exit Gate → Phase 1
 
@@ -238,7 +256,7 @@ graph TD
 |---|---|---|
 | 🎮 Code | Scaffold + state machine + log | ✅ Done (engine+UI+sim, `tsc` pass) |
 | 🎨 Design | Tokens + wireframe (khung, không block code) | 🟡 Tokens + placeholder; wireframe thật chờ |
-| ⚖️ Economy | Đo k, playtest feel | 🟡 Automated k/loss pass; Alpha feel pending |
+| ⚖️ Economy | Đo k, playtest feel | 🔴 Automated k/loss PASS (tái lập 24/08); **Alpha feel chưa chạy — treo từ 15/07** |
 
 ---
 
@@ -473,5 +491,6 @@ League/Life Path tạo mục tiêu dài hạn rõ; server-auth chặn gian lận
 | v2.4 | Thêm F25 Localization/Account Login và F26 Daily Session Pass/Payments; free user 1 session/ngày, paid unlock normal daily cap; cập nhật monetization từ donation-only sang free-to-start + access pass + cosmetic donation. |
 | v2.5 | **Đồng bộ với code thực tế (2026-06-23).** Prototype Phase 0 đã được code (`prototype/src/{engine,sim,ui}`, ~2.100 dòng TS, `tsc` pass): F04/F05 ✅ đủ, F08 toggle normal/peak, F01/F02(3 món)/F03/F06(tip)/F07(3 loại) ở mức lõi Phase 0. Tổng tiến độ 15%→**22%**; cột Code F01–F08 ⬜→✅/🟡; bảng NOW + Phase 0 Summary chuyển sang Done/In-progress; thêm chú thích cột "Code"; còn thiếu **đo k_value** trước exit-gate. |
 | v2.6 | **Đồng bộ Phase 0 automated gate (2026-07-15).** Cadence spawn sửa về nhịp mỗi khách; sim aggregate loss fail-closed; 5 seed k=2.24–2.34, normal loss 0%, peak loss 26.1–40.8%. Automated gate pass; không mở Phase 1 trước Alpha playtest feel. |
+| v2.7 | **Re-baseline timeline + đồng bộ trạng thái thật (2026-09-08, sau audit repo).** Không có feature nào đổi status — tiến độ vẫn ~22%; thay đổi là **thừa nhận trượt lịch**: Phase 0 treo ~8 tuần ở Alpha playtest, baseline cũ (P1 chạy T7–T9) đã vô hiệu. Timeline dời ~2,5 tháng (P0→30/09/2026, P1→15/12/2026, P2→31/01/2027, P3→31/03/2027, P4→15/05/2027) + bảng đối chiếu baseline cũ/mới; thêm cảnh báo nhịp độ ở Overall Progress; NOW đổi 🟡→🔴 và thêm dòng Alpha playtest như hạng mục chặn duy nhất; KPI Phase 0 ghi rõ chỉ hand-play mới đo được stale-rate; ghi nhận automated gate đã **tái lập độc lập 24/08**. |
 
 *Nguồn: `02-GDD-trum-bia-hoi.md` §19, `03-SPEC-he-ban.md`, `04-SPEC-prototype-phase0.md`, `05-SPEC-design-uiux.md`.*
