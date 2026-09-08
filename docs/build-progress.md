@@ -121,3 +121,7 @@ Verification: `npm run verify` passes (26 unit tests). `npm run test:e2e` passes
 | Date | Change |
 |---|---|
 | 2026-09-08 | Addressed accepted foundation findings with versioned historical replay, local pause/recovery and targeted rule regressions; recorded false-positive tip disposition against 03-SPEC. Re-review pending. |
+
+### Independent correction review follow-up — 2026-09-09
+
+Codex reviewed `681538a..12afb011cb7c4f68b3bfa7ea866578b24f852985` and returned two findings: missing mixed-group/nonconstant-hurried round regressions, and an accidentally rewritten tracker v0.8.0 history label. The history label is restored; deterministic seed 8/9 mixed groups now prove ngồi-lỳ > vội > VIP > thường and both outcomes of a nonconstant hurried range. Unit suite: 27 pass. Focused re-review pending. The newer owner-directed layout/art work is a separate ongoing change, outside that immutable review.

@@ -298,3 +298,21 @@ test('Vietnam midnight resets each earn bucket while shift count belongs to its 
     assert.equal(g.world.seasonEarned, beforeDay === currentDay ? 50 : 100);
   }
 });
+
+
+test('mixed-group round precedence survives hurried nonconstant sampling', () => {
+  for (const [types, seed, expected] of [
+    [['ngoily', 'voi'], 8, 7], [['voi', 'vip'], 8, 5],
+    [['voi', 'vip'], 9, 3], [['vip', 'thuong'], 8, 6],
+  ] as const) {
+    const raw = structuredClone(config.raw);
+    raw.onboarding.enabled = false;
+    Object.entries(raw.customerTypes).forEach(([key, profile]) => { profile.weight = types.some(type => type === key) ? 1 : 0; });
+    raw.rounds.ngoily = [7, 7]; raw.rounds.voi = [3, 5]; raw.rounds.vip = [6, 6]; raw.rounds.thuong = [2, 2]; raw.demandMix.pSecondRound = 1;
+    const g = new Game(loadConfig(raw), seed, 0);
+    send(g, { type: 'startShift' }); g.advance(g.world.shift!.nextSpawnAt);
+    const group = g.world.tables.find(t => t.group)!.group!;
+    assert.deepEqual(group.customers.map(c => c.type).sort(), [...types].sort());
+    assert.equal(group.rounds, expected);
+  }
+});
