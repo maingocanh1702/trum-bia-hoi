@@ -1,7 +1,7 @@
-# 🍺 HANDOFF — Trùm Bia Hơi — điểm vào cho Designer & Dev (v1.14)
+# 🍺 HANDOFF — Trùm Bia Hơi — điểm vào cho Designer & Dev (v1.15)
 
 > **Tương ứng với `00-TONG-HOP-trumviahe.md`** (bản nghiên cứu game gốc) — nhưng đây là bản **của Trùm Bia Hơi**: đọc file này trước mọi file khác. Mục tiêu: một designer (có Blender MCP) và một dev cầm bộ docs này là **tạo asset và code được game**, không cần hỏi lại lịch sử.
-> Ngày: 2026-09-08 (v1.14). **Cách đọc bộ docs (chốt founder 09/09):** ràng buộc là **luật chơi** (`02-GDD` + `03-SPEC`), **số** (`08-SPEC` + `docs/config/economy.tbh.json`), **không-hardcode/config admin** (`trum-bia-hoi-brd-admin.md` §5.2), **bất biến đo k** (`04-SPEC` §5), **server-authoritative + engine thuần** (`10-SPEC` §7/§1; thứ tự code: lưu localStorage trước, server sau — §4.2). Mọi thứ còn lại — kiến trúc, module, thư viện, **layout, màn hình, design** — do dev/designer **tự quyết**. `prototype/` là bản thử nghiệm lưu trữ, KHÔNG phải điểm xuất phát.
+> Ngày: 2026-09-08 (v1.15). **Cách đọc bộ docs (chốt founder 09/09):** ràng buộc là **luật chơi** (`02-GDD` + `03-SPEC`), **số** (`08-SPEC` + `docs/config/economy.tbh.json`), **không-hardcode/config admin** (`trum-bia-hoi-brd-admin.md` §5.2), **bất biến đo k** (`04-SPEC` §5), **server-authoritative + engine thuần** (`10-SPEC` §7/§1; thứ tự code: lưu localStorage trước, server sau — §4.2). Mọi thứ còn lại — kiến trúc, module, thư viện, **layout, màn hình, design** — do dev/designer **tự quyết**. `prototype/` là bản thử nghiệm lưu trữ, KHÔNG phải điểm xuất phát.
 >
 > Trạng thái dự án: prototype Phase 0 đã hoàn thành nhiệm vụ của nó — chứng minh "feel" và **đo được k = 2.24–2.34** (trong band 2.0–3.0), bản Alpha đã host và chủ dự án đã chơi, phản hồi đã đưa vào GDD/03-SPEC (rót & rửa tự động, phục vụ theo Order). Từ 09/09 `prototype/` chuyển sang **lưu trữ**; game viết mới từ đầu. Slice `feat/p0-ui-serve-popover--r2` và gate "Alpha playtest 3–5 người" chỉ còn liên quan tới prototype — merge hay bỏ tuỳ chủ dự án, **không chặn** việc bắt đầu game (xem `SESSION-TRACK-LOG.md`).
 
@@ -37,7 +37,7 @@ Kinh tế một câu: **bia = workhorse quay vòng cốc (rẻ, volume); mồi c
 
 **Bắt buộc theo (ràng buộc):**
 
-1. **`11-PROMPT-PACK-designer-blender-dev.md` Phần B** — bản giao việc (tiếng Anh, dán thẳng vào Claude Code/Codex): cái gì bắt buộc, cái gì tự do, đầu vào/đầu ra, DoD. **Đọc trước tiên.**
+1. **`12-PROMPT-claude-build.md` Phần 1** — **prompt kickoff dán vào Claude Code** (Level 3 bỏ, dev tự quyết; sau mỗi slice tự gọi `codex exec review` với `docs/prompts/codex-review.md`). Nó gói lại `11-PROMPT-PACK` Phần B (ràng buộc/đầu vào/đầu ra/DoD) — đọc Phần B khi cần chi tiết.
 2. `02-GDD-trum-bia-hoi.md` — quyết định gameplay (🟢/🟡/🔵) · `03-SPEC-he-ban.md` — state machine bàn/khách/Order, grace.
 3. **`08-SPEC-economy-constants.md` + `docs/config/economy.tbh.json`** — MỌI hằng số/công thức. **Không hardcode:** mọi số là config trong Config Registry admin (08-SPEC §0.7/§22, 10-SPEC §7); JSON chỉ là seed. Kiểm bằng **`npm run check:config` chạy từ gốc repo** (`package.json` gốc, 08/09). Lưu ý: 2 script python còn đối chiếu với `prototype/src` (lưu trữ); khi engine mới có `config.get`, trỏ `SRC_DIR`/`constants` của script sang code mới — gate giữ nguyên tên lệnh.
 4. **`trum-bia-hoi-brd-admin.md` §5.2** — Config Registry: tier A/B/C, RBAC, override, `effectiveAt`, audit (dựng cùng game, không để sau).
@@ -73,7 +73,8 @@ Kinh tế một câu: **bia = workhorse quay vòng cốc (rẻ, volume); mồi c
 | **`docs/asset-blender-pipeline.md`** | pipeline Blender MCP → pixel-art | `design-component-catalog` §1, §4 | ✅ v1.0 |
 | `07-SPEC-shop-mua-giai-worldcup.md` | shop Vụ Bia | — | ✅ 🔵 P4 |
 | **`08-SPEC-economy-constants.md`** + `docs/config/economy.tbh.json` | mọi hằng số/công thức; §22 key → tier admin | `economy-spec-from-bundle.md` | ✅ v1.2.2 (8 mâu thuẫn đã chốt §21) |
-| **`11-PROMPT-PACK-designer-blender-dev.md`** | 2 bản giao việc (EN): Phần A asset (+ 75 audio id), Phần B dev — tự do cách làm/kiến trúc/layout | — | ✅ v1.11 |
+| **`12-PROMPT-claude-build.md`** + `docs/prompts/codex-review.md` | **Kickoff prompt cho Claude Code** (M0→M9, ràng buộc kết quả, vòng lặp slice → Codex review CLEAN) + instruction cho Codex | — | ✅ v1.0 |
+| **`11-PROMPT-PACK-designer-blender-dev.md`** | 2 bản giao việc (EN): Phần A asset (+ 75 audio id), Phần B dev — tự do cách làm/kiến trúc/layout | — | ✅ v1.14 |
 | `docs/features/F07–F28` | spec feature (F27 = onboarding 🟢, F28 = bảng xếp hạng) | — | ✅ (F01–F06 nằm trong 03/04) |
 | `docs/reference/` (8 ảnh + README) | layout tham khảo game gốc: HUD, sheet, popover nâng cấp, Bàn Thờ | — | 🖼️ tham khảo |
 | **`docs/content/`** (3 JSON + README) | content bank tier C — đề xuất schema + 5 ví dụ | — | ⏸ pending (chưa chốt) |
@@ -184,3 +185,4 @@ Giao việc: `11-PROMPT-PACK` Phần A (designer) và Phần B (dev) — cả ha
 | v1.12 | Chủ dự án 08/09: **chơi free hoàn toàn, monetization = donate cho admin** (F20). F26 ⛔ bỏ; §4.2 hàng Monetization; §4.5 cổng donate; glossary; JSON 1.6.0 `donation` (A) + `entitlements.mode=free`. |
 | v1.13 | Audit cuối trước handoff: chốt vị trí code game mới (`packages/engine` · `apps/web` · `apps/server`, npm workspaces, không đụng `prototype/`); §6 phân biệt P0–P3 rủi ro autopilot vs phase game; README features F01–F06 trỏ GDD/08/03 thay 04-SPEC lưu trữ. |
 | v1.14 | Chủ dự án 08/09: **bỏ ràng buộc Level 3** — dev tự quyết quy trình build; CLAUDE.md/AGENTS.md block autopilot thay bằng "outcomes still bind"; GitNexus MUST → khuyến nghị; §6 + bản đồ docs cập nhật. |
+| v1.15 | Thêm `12-PROMPT-claude-build.md` (kickoff Claude Code + Codex review qua `codex exec review`) — §2.2 mục 1 trỏ sang; 11-PP Phần B giữ làm chi tiết. |

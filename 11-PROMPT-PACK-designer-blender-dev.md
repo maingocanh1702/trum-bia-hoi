@@ -125,6 +125,8 @@ on disk. Checklist ticked. One failure = redo that batch.
 
 ## PHẦN B — DEV BRIEF (paste to a Claude Code / Codex agent in the repo)
 
+> **Từ 08/09 dùng `12-PROMPT-claude-build.md` Phần 1 làm prompt dán vào Claude Code** (đã gói Phần B + vòng lặp Codex review). Phần B dưới đây là bản chi tiết/tra cứu.
+
 ```text
 ROLE
 You are building "Trùm Bia Hơi", a mobile-first web game (idle/tycoon, serve customers in

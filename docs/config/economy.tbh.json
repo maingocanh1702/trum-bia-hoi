@@ -1,7 +1,7 @@
 {
   "_meta": {
     "name": "Trùm Bia Hơi — economy config",
-    "version": "1.6.0",
+    "version": "1.7.0",
     "date": "2026-09-08",
     "spec": "08-SPEC-economy-constants.md (cùng số, cùng tên trường)",
     "rules": [
@@ -94,7 +94,8 @@
             "risk",
             "locations",
             "cosmetics",
-            "network"
+            "network",
+            "runtime"
           ]
         },
         "C": {
@@ -1560,7 +1561,7 @@
   },
   "lottery": {
     "label": "postmvp",
-    "legalGate": true,
+    "legalGate": false,
     "ticketBase": 200,
     "dailyLimit": 5,
     "suffixPayouts": {
@@ -1649,5 +1650,14 @@
       "freshness",
       "vip"
     ]
+  },
+  "runtime": {
+    "tableSeatingMs": 800,
+    "tableCleaningMs": 1000,
+    "queueBaseSlots": 2,
+    "queueSeatsPerSlot": 3,
+    "initialEquipmentLevel": 1,
+    "initialKitchenLevel": 0,
+    "initialTableLevel": 1
   }
 }

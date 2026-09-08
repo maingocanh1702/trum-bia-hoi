@@ -527,6 +527,11 @@ Mọi section của `docs/config/economy.tbh.json` đều nằm trong registry. 
 
 ---
 
+### New game runtime keys (2026-09-08)
+
+`runtime` — tier B: `tableSeatingMs=800`, `tableCleaningMs=1000`, queue `2 + floor(seats/3)` encoded as `queueBaseSlots`/`queueSeatsPerSlot`, initial equipment/table level 1 and kitchen 0. These are tuneable seed defaults for the fresh implementation.
+
+
 ## Changelog (append-only)
 
 | Ver | Thay đổi |
@@ -541,3 +546,5 @@ Mọi section của `docs/config/economy.tbh.json` đều nằm trong registry. 
 | v1.2.5 | JSON 1.4.0: `onboarding` theo F27 v1.1 (1 khách 1 bia, lostStreakToGuide, stepGuide.steps, loginPrompt). |
 | v1.2.6 | JSON 1.5.0: `risk.inspection` thêm `status:"pending"` + `enabled:false` (chủ dự án 08/09 — tính năng kiểm tra & ngân hàng câu hỏi chưa chốt). |
 | v1.2.7 | Chủ dự án 08/09: chơi free hết — §13 quyền chơi = normal cap, `entitlements.mode="free"`, `sessionPass.enabled=false`; JSON 1.6.0 thêm section `donation` (A) = monetization duy nhất; §22 sửa 2 dòng. |
+
+| v1.3.0 | New engine seed 1.7.0: added registry-owned `runtime` timing/initial-level keys; reconciled `lottery.legalGate=false` with HANDOFF legal hold. `check:config` will target the new engine and actual loader rather than archived constants. |
