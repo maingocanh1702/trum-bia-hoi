@@ -148,3 +148,27 @@ focus records the actual opener and a stable table-button fallback: keyboard
 switching between tables returns to the latest opener, while expiry returns to
 the surviving table button after its order hint disappears. Build and all 11
 E2E tests pass. These refinements follow `999dc57` and require review with it.
+
+### Independent layout review and corrections
+
+Review of `830787c..999dc57` returned six findings (`.qa/review-reference-layout.txt`):
+hidden HUD labels, focus restoration, omitted grace time in the hint, hidden
+special-customer identity in mixed groups, duplicate stools, and a missing chair
+prompt. All are accepted and corrected: visually hidden accessible labels;
+captured opener + stable fallback; one shared countdown formatter; VIP then
+non-ordinary label priority; one sprite per actual seat; restored original prompt.
+
+The browser suite now has **12 passing tests**. A production-engine-generated
+save reproduces `[thuong, voi]` with no beer during grace, checking the urgent
+label, matching live timers and disabled serving. Accessibility snapshots retain
+coin/glass labels; actual seat counts and focus behavior are covered. The fixture
+uses the same tsx loader as the unit/sim suite for Node JSON-import compatibility.
+
+Four more customer drafts now replace the vội/VIP/ngồi-lỳ/Chí Phèo placeholders.
+Opaque checkerboard edits were rejected before import. Accepted files retain
+actual alpha; the VIP draft's soft halo still needs final art cleanup. Current
+manifest: **116 entries, 14 generated sprite drafts, 30 sprite placeholders and
+78 draft files including audio**. Prompts and provenance are in
+`generated-customer-types.md`. Full-size image optimization/family review and all
+remaining M9 work are still pending. This corrected UI/art snapshot awaits its
+independent follow-up review; no complete-game or release claim.

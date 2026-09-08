@@ -708,66 +708,66 @@
     {
       "id": "customer-voi",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/customer-voi-illustrated-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        1145,
+        1374
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "status": "draft",
+      "review_notes": "Original generated alpha retained; isolated adult customer with its own stool. Draft family/size QA remains. Prompt in docs/reference/assets-owner-2026-09-08/generated-customer-types.md."
     },
     {
       "id": "customer-vip",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/customer-vip-illustrated-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        1024,
+        1536
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "status": "draft",
+      "review_notes": "Original generated alpha retained; isolated adult customer with its own stool. Draft family/size QA remains. Prompt in docs/reference/assets-owner-2026-09-08/generated-customer-types.md. Soft halo remains in this draft; cleanup required before final art approval."
     },
     {
       "id": "customer-chipheo",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/customer-chipheo-illustrated-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        1128,
+        1394
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "status": "draft",
+      "review_notes": "Original generated alpha retained; isolated adult customer with its own stool. Draft family/size QA remains. Prompt in docs/reference/assets-owner-2026-09-08/generated-customer-types.md."
     },
     {
       "id": "customer-ngoily",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/customer-ngoily-illustrated-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        1145,
+        1374
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "status": "draft",
+      "review_notes": "Original generated alpha retained; isolated adult customer with its own stool. Draft family/size QA remains. Prompt in docs/reference/assets-owner-2026-09-08/generated-customer-types.md."
     },
     {
       "id": "customer-football-fan",

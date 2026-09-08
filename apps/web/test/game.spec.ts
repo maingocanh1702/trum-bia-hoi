@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 
 for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1280, height: 720 }, { width: 1280, height: 400 }]) {
   test(`guest serves, reloads, opens live sheets and switches locale at ${viewport.width}×${viewport.height}`, async ({ page }) => {
@@ -28,6 +29,11 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
     await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
     await expect(page.locator('.toast')).toContainText('có boa');
     const coins = await page.locator('.money strong').textContent();
+    expect(await page.locator('.money').ariaSnapshot()).toContain('Xu');
+    expect(await page.locator('.glass-counter').ariaSnapshot()).toContain('Cốc sạch');
+    await expect(page.locator('.seat')).toHaveCount(6);
+    await expect(page.locator('.seat-customer')).toHaveCount(1);
+    await expect(page.locator('.seat-empty')).toHaveCount(5);
     await page.reload();
     await expect(page.locator('.money strong')).toHaveText(coins!);
     await expect(page.locator('.table-space.state-consuming')).toHaveCount(1);
@@ -101,6 +107,23 @@ test('tapped order stays live, returns keyboard focus, and closes on customer ex
   await expect(page.locator('.toast-loss')).toHaveText(/^[−\d\s.,]+$/);
   await expect(page.locator('.table-object').first()).toBeFocused();
   await expect(page.locator('.lost-bubble')).toHaveCount(0);
+});
+
+test('mixed customers retain their urgent identity and a live grace countdown when beer is out', async ({ page }) => {
+  // The engine's JSON imports use the same tsx loader as the unit suite and simulator.
+  const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/mixed-grace.ts'], { encoding: 'utf8' }));
+  expect(fixture.customers).toEqual(['thuong', 'voi']); expect(fixture.state).toBe('grace');
+  await page.clock.install({ time: new Date(fixture.now) });
+  await page.clock.pauseAt(new Date(fixture.now + 1000));
+  await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), fixture.save);
+  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  const hint = page.locator('.table-space').first().locator('.table-order-hint');
+  const countdown = await hint.locator('span').first().textContent();
+  expect(countdown).toMatch(/^Còn [1-3]s$/);
+  await hint.click();
+  await expect(page.locator('.customer-tag')).toHaveText('Khách vội');
+  await expect(page.locator('.order-heading b')).toHaveText(countdown!);
+  await expect(page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true })).toBeDisabled();
 });
 
 test('corrupt saves are preserved and the app offers the original for recovery', async ({ page }) => {

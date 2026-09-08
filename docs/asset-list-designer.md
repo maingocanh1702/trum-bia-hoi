@@ -848,3 +848,5 @@ Ví dụ:
 | 2026-09-08 owner reference | Added the owner-supplied illustrated asset boards and preserved the no-handle glass anchor; references guide progressive replacement of placeholders. |
 
 | 2026-09-09 owner layout/style | New screenshot retained as `docs/reference/assets-owner-2026-09-08/layout-owner.png`. Runtime now uses ten original built-in imagegen draft sprites/backgrounds with warm illustrated outlines; source PNG alpha retained and CSS-scaled, without forcing 128px nearest-neighbor export at this draft stage. Existing glass anchors stay unchanged/pixel-rendered. Blue plastic table, green panels and blue tiled ground follow the newer owner direction. Release size/complete-set QA remains pending; 34 sprite placeholders remain. Full prompts are alongside the reference. |
+
+| 2026-09-09 seated types | Four additional adult customer drafts, for 14 generated sprites total and 30 remaining placeholders. Each seated sprite includes one stool; the renderer replaces that occupied seat's empty stool. Opaque checkerboard variants rejected. VIP still has a soft halo, explicitly pending cleanup/final approval in the manifest. |

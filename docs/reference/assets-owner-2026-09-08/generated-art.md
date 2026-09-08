@@ -24,5 +24,9 @@ Use case: stylized-concept. Asset type: one individual transparent PNG sprite fo
 Prompt submitted via built-in imagegen:
 
 ```text
-undefined
+Use case: stylized-concept. Asset type: one transparent individual furniture sprite for Trum Bia Hoi, a casual Vietnamese bia hoi tycoon game. Create one small low red plastic sidewalk stool without a backrest, Hanoi early 2000s, slightly sun-faded vermilion molded plastic, simple square seat with a small round center hole, four short sturdy outward-slanting legs and practical leg cutouts. Same friendly illustrated game-asset style as hand-painted three-quarter view Vietnamese street-stall reference boards: thick dark outlines, warm simple shading, subtly scuffed material, crisp readable silhouette at 32 pixels. Orthographic view from above revealing front and right sides, upper-left warm light, complete feet inside canvas, centered with 15 percent margin. Genuine transparent alpha background, no backdrop, no drawn checkerboard, no floor except a tiny soft contact shadow directly below legs. No table, chair back, people, glass, text, logo, labels, UI, shiny photoreal render or extra objects.
 ```
+
+| Date | Correction |
+|---|---|
+| 2026-09-09 | Restored the exact submitted chair prompt from the retained generation-session value; the previous provenance export incorrectly wrote `undefined`. No image changed. |

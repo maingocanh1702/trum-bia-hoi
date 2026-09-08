@@ -32,10 +32,12 @@ selected-order panel. Browser chrome and surrounding desktop apps are not game U
 The implementation keeps whole-table orders and actual configured chair counts.
 It opens the order panel on table tap, restores focus on Escape, and auto-closes it
 on order expiry so departure feedback remains only numeric coin/reputation loss.
-The ten generated draft assets and their prompts are recorded in the adjacent
+The fourteen generated draft assets and their prompts are recorded in the adjacent
 `generated-*.md` files. Original green glass PNGs remain unchanged. Illustrated
 sprites use smooth display sampling; glass anchors keep their original pixel look.
 
 | Date | Change |
 |---|---|
 | 2026-09-09 | Applied the owner's newer layout/style reference. Blue ground and green panels supersede the previous warm-ground/brown-panel suggestion for this screen. Internal placeholder IDs remain in the manifest, not visible in play. No economy/content rules changed. |
+
+| 2026-09-09 customer set | Added four adult customer draft types after rejecting opaque checkerboard variants. Seat rendering uses either a customer-with-stool or an empty stool, never both. VIP soft halo and final image-size/family QA remain pending. |

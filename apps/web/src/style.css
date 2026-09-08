@@ -18,7 +18,6 @@ h3 { font-size: 14px; }
 small { font-size: 11px; }
 .sprite { width: 64px; height: 64px; object-fit: contain; image-rendering: pixelated; flex-shrink: 0; user-select: none; pointer-events: none; }
 .placeholder { display: inline-flex; align-items: center; justify-content: center; background: var(--inox); border: 2px solid var(--inoxDark); border-radius: 4px; color: var(--ink); }
-.placeholder span { font-family: monospace; font-size: 8px; line-height: 1.2; overflow-wrap: anywhere; }
 .icon-button { width: 44px; height: 44px; padding: 10px; display: flex; align-items: center; justify-content: center; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
@@ -81,15 +80,6 @@ small { font-size: 11px; }
 .table-number { position: absolute; left: 57px; top: 34px; background: var(--panel); color: var(--cream); border: 1px solid var(--creamMuted); border-radius: 100%; width: 19px; height: 19px; font-size: 11px; line-height: 17px; }
 .table-caption { text-align: center; font-size: 10px; font-weight: 650; margin-top: 7px; }
 .table-caption small { display: block; font-size: 9px; font-weight: 400; opacity: .7; margin-top: 2px; }
-.seated { position: absolute; top: -5px; left: 0; }
-.seated .sprite { width: 28px; height: 38px; background: var(--cream); border-color: var(--panelBorder); }
-.seated-1 { left: auto; right: 0; }
-.seated-2 { left: 52px; top: -16px; }
-.seated-3 { left: 52px; top: 40px; }
-.seated-4 { left: 8px; top: 43px; }
-.seated-5 { left: auto; right: 8px; top: 43px; }
-.seated-6 { left: 28px; top: -20px; }
-.seated-7 { left: auto; right: 28px; top: -20px; }
 .patience-track { background: var(--streetBgShade); height: 4px; margin: 4px 0 5px; border-radius: 2px; overflow: hidden; }
 .patience-track i { display: block; background: var(--success); height: 100%; }
 .queue-badge { position: absolute; left: 2px; bottom: 8px; font-size: 10px; padding: 4px 8px; border-radius: 6px; background: var(--panel); color: var(--cream); }

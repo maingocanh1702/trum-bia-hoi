@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { DISHES, EQUIPMENT, encodeSave, freshnessMs, restockQuote, stockCap, upgradeQuote, type Command, type Equipment, type Table } from '../../../packages/engine/src';
-import { Sprite, TableChairs, menuAsset } from './assets';
+import { DISHES, EQUIPMENT, encodeSave, freshnessMs, restockQuote, stockCap, upgradeQuote, type Command, type Equipment, type Order, type Table } from '../../../packages/engine/src';
+import { Sprite, TableSeats, menuAsset } from './assets';
 import { translate } from './i18n';
 import { advanceGuide, boot, dispatch, download, persist, readSettings, writeSettings, replaceSave } from './local';
 import { createSound } from './audio';
@@ -52,6 +52,7 @@ export function App() {
   const locale = settings.locale;
   const t = (key: string, params: Record<string, string | number> = {}) => translate(locale, key, params);
   const num = (n: number) => new Intl.NumberFormat(locale === 'vi' ? 'vi-VN' : 'en-US').format(Math.round(n));
+  const orderTime = (o: Order) => t('order.time', { s: Math.ceil(Math.max(0, o.placedAt + o.patienceMs + (o.state === 'grace' ? c.patience.graceMs : 0) - w.now) / 1000) });
   const save = () => { try { persist(game); writeSettings(prefs.current); setSaveError(false); } catch { setSaveError(true); } };
   const processEvents = () => {
     const events = w.events.slice(cursor.current); cursor.current = w.events.length;
@@ -148,13 +149,12 @@ export function App() {
     const stale = activeOrder && o.items.some(i => i.glassId && i.readyAt !== null && w.now >= i.readyAt + freshnessMs(w, game.config));
     return <section className={`table-space table-${index} state-${table.state}`} key={table.id} aria-label={t('table', { n: index + 1 })}>
       {activeOrder && <button className={`table-order-hint ${ready ? 'is-ready' : ''} ${o.state === 'grace' ? 'is-urgent' : ''}`} onClick={e => showTable(table.id, e.currentTarget)} aria-label={t('order.details', { n: index + 1 })}>
-        <Sprite id={stale ? 'glass-stale' : 'glass-full'} /><span>{ready ? t('order.ready') : t('order.time', { s: Math.ceil(Math.max(0, o.placedAt + o.patienceMs - w.now) / 1000) })}</span>
+        <Sprite id={stale ? 'glass-stale' : 'glass-full'} /><span>{ready ? t('order.ready') : orderTime(o)}</span>
         <span className="patience-track"><i style={{ width: `${patience * 100}%` }} /></span>
       </button>}
       <button className="table-object" aria-haspopup="dialog" aria-controls={selectedTable === table.id ? 'active-table-order' : undefined} onClick={e => showTable(table.id, e.currentTarget)} aria-label={t('order.details', { n: index + 1 })}>
-        <TableChairs capacity={table.capacity} />
+        <TableSeats capacity={table.capacity} customers={table.group?.customers} />
         <Sprite id={`table-lv${table.level}-empty`} />
-        {table.group?.customers.map((customer, i) => <span className={`seated seated-${i}`} key={customer.id}><Sprite id={`customer-${customer.type.replace('_', '-')}`} /></span>)}
         <span className="table-number">{index + 1}</span>
       </button>
       <div className="table-caption">{t(`table.${table.state}`)}{!table.group && <small>{t('table.seats', { n: table.capacity })}</small>}</div>
@@ -175,7 +175,7 @@ export function App() {
     <div className="street-backdrop" aria-hidden="true"><Sprite id="bg-street" /></div>
     <main className={`game weather-${shift?.weather ?? 'sunny'}`}>
       <header className="hud">
-        <div className="money"><Icon name="coin" /><div><span>{t('coins')}</span><strong>{num(w.coins)}</strong></div></div>
+        <div className="money"><Icon name="coin" /><div><span className="sr-only">{t('coins')}</span><strong>{num(w.coins)}</strong></div></div>
         <div className="energy"><div><Icon name="bolt" /><strong>{inShift && shift ? time(shift.endsAt - w.now) : `${Math.floor(w.staminaMs / c.shift.durationMs * 100)}%`}</strong></div><span className="energy-track"><i style={{ width: `${w.staminaMs / c.shift.durationMs * 100}%` }} /></span></div>
         <button className="icon-button settings-button" onClick={() => open('settings')} aria-label={t('nav.settings')}><Icon name="settings" /></button>
       </header>
@@ -183,7 +183,7 @@ export function App() {
       <section className="stall-scene" aria-label={t('brand')}>
         <div className="owner-station"><Sprite id="owner-idle" /><div className="serving-counter"><div className="counter-canopy" /><div className="counter-front"><h1>{t('brand')}</h1><div className="counter-bottles" aria-hidden="true"><i /><i /><i /><i /><i /></div></div></div></div>
         <div className="equipment-row">{['cooler', 'keg', 'washer'].map(k => equipmentButton(k as Equipment))}</div>
-        <div className="glass-counter"><Sprite id="glass-clean" /><span>{cleanGlasses}<small>/{w.glasses.length}</small></span><span>{t('glass.clean')}</span></div>
+        <div className="glass-counter"><Sprite id="glass-clean" /><span>{cleanGlasses}<small>/{w.glasses.length}</small></span><span className="sr-only">{t('glass.clean')}</span></div>
       </section>
       <section className="yard" aria-label={t('location.hem_nho')}>
         {w.tables.map(renderTable)}
@@ -224,10 +224,10 @@ export function App() {
       const active = o && ['pending', 'grace'].includes(o.state);
       const ready = active && o.items.every(i => i.state === 'ready');
       const stale = active && o.items.some(i => i.glassId && i.readyAt !== null && w.now >= i.readyAt + freshnessMs(w, game.config));
-      const type = table.group?.customers.find(x => x.type === 'vip')?.type ?? table.group?.customers[0]?.type ?? 'thuong';
+      const type = table.group?.customers.find(x => x.type === 'vip')?.type ?? table.group?.customers.find(x => x.type !== 'thuong')?.type ?? 'thuong';
       return <section ref={orderPanelRef} id="active-table-order" className={`order-panel ${o?.state === 'grace' ? 'is-urgent' : ''}`} role="dialog" aria-label={t('table', { n: w.tables.indexOf(table) + 1 })}>
         <header><span className={`customer-tag type-${type}`}>{table.group ? t(`customer.${type}`) : t('table.empty')}</span><span>{t('table', { n: w.tables.indexOf(table) + 1 })}</span><button className="icon-button" aria-label={t('close')} onClick={() => setSelectedTable(null)}><Icon name="close" /></button></header>
-        {active ? <><div className="order-heading"><strong>{t(ready ? 'order.ready' : 'table.waiting')}</strong><b>{t('order.time', { s: Math.ceil(Math.max(0, o.placedAt + o.patienceMs + (o.state === 'grace' ? c.patience.graceMs : 0) - w.now) / 1000) })}</b></div>
+        {active ? <><div className="order-heading"><strong>{t(ready ? 'order.ready' : 'table.waiting')}</strong><b>{orderTime(o)}</b></div>
           <div className="order-dishes">{DISHES.map(dish => ({ dish, items: o.items.filter(i => i.dish === dish) })).filter(x => x.items.length).map(({ dish, items }) => <div key={dish}><Sprite id={menuAsset[dish]} /><strong>{t(`dish.${dish}`)}</strong><span>{items.filter(i => i.state === 'ready').length}/{items.length}</span></div>)}</div>
           {(stale || o.state === 'grace') && <p className="order-warning">{t(stale ? 'order.stale' : 'order.grace')}</p>}
           <button className="primary full" disabled={!ready} onClick={() => { if (run({ type: 'serve', tableId: table.id, orderId: o.id }).ok) setSelectedTable(null); }}><Icon name="check" />{t('order.serve')}</button>
