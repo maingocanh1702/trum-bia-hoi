@@ -51,8 +51,8 @@ No complete-game or release-ready claim. Further implementation stays in this wo
 
 ## Immediate next work
 
-1. Complete M1/M3 rule gaps: well-rested bonus, segment/day caps, manual ejection
-   accounting/analytics, larger-table price rows beyond the existing 10-seat curve,
+1. Complete M1/M3 rule gaps: segment/day caps, individual reputation ejection,
+   business-unlock prerequisites, larger-table price rows beyond the existing 10-seat curve,
    full rush schedule, shipper/football demand and business unlocks. Version new
    replay semantics; preserve the current mixed-round/patience/midnight regressions.
 2. Finish the 14 illustrated drafts, replace 30 remaining sprite placeholders and
@@ -299,7 +299,7 @@ kicks, shipper and other remaining M3 mechanics are separate remaining work.
 |---|---|
 | 2026-09-09 | Closed independent Tỉnh Táo review at `c984541`; 38 unit/18 browser tests and normal/boosted simulations green. Continue manual close accounting and remaining full-game scope. |
 
-## 2026-09-09 — Manual close fee and confirmation (review pending)
+## 2026-09-09 — Manual close fee and confirmation
 
 Rules v4 quotes voluntary close via existing `customerValue().penalty`, including
 served guests still consuming. `currentGuests()` excludes departed members of
@@ -319,3 +319,29 @@ review follow; the full M0–M9 goal and single-table reputation ejection remain
 | Date | Change |
 |---|---|
 | 2026-09-09 | Implemented v4 manual-close quote/confirmation and real v3 replay compatibility; full feature remains in progress pending independent review and remaining M3 mechanics. |
+
+## 2026-09-09 — Manual-close independent review receipt
+
+Product commit: `5bce63c5d4e9028ba05d4177a851d8f3122b7dec`; review base:
+`858615e`. Independent Codex review `.qa/review-close.txt` returned **VERDICT:
+CLEAN**, confirming scoped fees, ledger/replay/lifecycle and UI behavior. Reviewer
+ran all **46 engine tests** and TypeScript checking. Its browser launch was blocked
+by the review sandbox's server-port restriction; author-side full **22 E2E** passed
+in the local runtime, including live/cancelled confirmation, insufficient funds,
+natural expiry and remaining mixed-table guests.
+
+`npm run verify` at the final product tree passed config/build/46 unit/normal sim;
+boosted sim also passed. All 20 rows remain k **2.3249–2.7020**, with at least 500
+serves each. Visual captures at 360×740,390×844 and1280×400 verified the confirmation;
+its text/price use existing cream/gold tokens on the green sheet.
+
+The tracked worktree is clean after this receipt (ignored QA and untracked dashboard
+telemetry remain local). No merge or push to the original master checkout. The
+manual-close mechanism is verified; F06, M3 and full M0–M9 remain in progress.
+Read-only dependency diagnosis for the next mechanisms is `.qa/next-m3-mechanics.md`:
+reputation ejection is separate; phone/shipper need LP conditions/dog progression;
+closing-rush expiry and telegraph are a bounded clock correction still required.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Recorded independent CLEAN for 858615e..5bce63c and final 46-unit/22-browser verification. Full-game goal remains active. |
