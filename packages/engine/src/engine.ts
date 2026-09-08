@@ -119,9 +119,9 @@ export class Game {
       if (w.now >= group.arrivedAt + Math.min(...group.customers.map(x => x.patienceMs)) + c.patience.graceMs) {
         w.queue = w.queue.filter(x => x.id !== group.id);
         if (s) s.stats.lost += group.customers.length;
-        this.changeRep(c.reputation.customerLeft * group.customers.length);
+        const loss = this.penalize(0, group.customers.length);
         w.lostStreak += 1;
-        this.emit('customer_left', { groupId: group.id, reason: 'queue', count: group.customers.length, penalty: 0 });
+        this.emit('customer_left', { groupId: group.id, reason: 'queue', count: group.customers.length, penalty: loss.coins, reputation: loss.reputation });
       }
     }
     this.seatQueue();
@@ -148,6 +148,13 @@ export class Game {
     this.world.coins -= amount;
     if (this.world.phase !== 'resting' && this.world.shift) this.world.shift.stats.spent += amount;
   }
+  private penalize(amount: number, customers: number) {
+    const w = this.world, charged = Math.min(w.coins, amount), previousRep = w.reputation;
+    w.coins -= charged;
+    if (w.shift) w.shift.stats.penalty += charged;
+    this.changeRep(this.config.values.reputation.customerLeft * customers);
+    return { coins: charged, reputation: previousRep - w.reputation };
+  }
   private releaseGlasses(t: Table) {
     for (const item of t.order?.items ?? []) {
       if (!item.glassId) continue;
@@ -171,12 +178,11 @@ export class Game {
       this.emit('customer_left', { customerId: customer.id, tableId: t.id, reason: 'expired', penalty: value.penalty });
     }
     const charged = Math.min(w.coins, penalty);
-    w.coins -= charged; s.stats.penalty += charged; s.stats.lost += t.group.customers.length;
-    this.changeRep(this.config.values.reputation.customerLeft * t.group.customers.length);
+    const loss = this.penalize(penalty, t.group.customers.length); s.stats.lost += t.group.customers.length;
     order.state = 'expired';
     order.items.forEach(i => { if (i.state !== 'pending') i.state = 'wasted'; });
     w.lostStreak++;
-    this.emit('order_expired', { tableId: t.id, orderId: order.id, penalty: charged, count: t.group.customers.length });
+    this.emit('order_expired', { tableId: t.id, orderId: order.id, penalty: charged, reputation: loss.reputation, count: t.group.customers.length });
     this.clean(t);
   }
   private seatQueue(): void {

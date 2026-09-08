@@ -8,6 +8,8 @@
 
 ## 0. Phong cách tổng quan
 
+**Owner reference update (2026-09-08):** use the boards in `docs/reference/assets-owner-2026-09-08/README.md` for furniture, equipment, food and character direction. `assets/glass-clean.png` remains the exact glass anchor. Boards are style references, not a source of new ingredients, logos or gameplay rules.
+
 | Yếu tố | Chốt |
 |---------|------|
 | **Art style** | Pixel-art ấm, vỉa hè Việt Nam — bàn inox, ghế nhựa đỏ, bom bia, mồi nhậu Bắc Bộ |
@@ -842,3 +844,5 @@ Ví dụ:
 | v0.1 | Danh sách đầu: ~228 asset (143 sprites + 42 icons + 13 illustrations + 30 animation frames), phân phase P0-P4, naming convention, ưu tiên vẽ. Gom từ GDD v1.5 §2/§4/§5/§6/§7/§13/§14/§17, `design-component-catalog-trumviahe.md`, `05-SPEC-design-uiux.md`. |
 
 *Nguồn: `02-GDD-trum-bia-hoi.md` v1.5, `design-component-catalog-trumviahe.md`, `05-SPEC-design-uiux.md`.*
+
+| 2026-09-08 owner reference | Added the owner-supplied illustrated asset boards and preserved the no-handle glass anchor; references guide progressive replacement of placeholders. |

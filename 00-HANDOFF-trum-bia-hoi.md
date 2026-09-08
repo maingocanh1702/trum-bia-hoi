@@ -154,6 +154,8 @@ Giao việc: `11-PROMPT-PACK` Phần A (designer) và Phần B (dev) — cả ha
 
 ## 6. Quy ước
 
+**Owner update 2026-09-08:** khách bỏ đi chỉ hiện toast icon + số xu/uy tín thực trừ; không text giải thích và không nút Đóng. Asset tham khảo bộ `docs/reference/assets-owner-2026-09-08/`; cốc chuẩn = `assets/glass-clean.png`.
+
 - **Tự do thiết kế (founder 09/09):** dev/designer tự quyết kiến trúc, thư viện, layout, màn hình, thao tác, hình ảnh. Doc UI/UX (09-SPEC, 05-SPEC, F24) và kiến trúc (10-SPEC §1–§6, §8–§11) là **tham khảo**; đừng coi là hợp đồng.
 - **Quy trình build do dev/agent tự quyết (chủ dự án 08/09):** Level 3/autopilot (worktree, scope gate, Codex review, `/ap-*`) **không còn bắt buộc**; `.autopilot/` + `docs/autopilot-*.md` là lưu trữ. Ràng buộc chỉ còn là **kết quả**: `check:config` xanh, build/test xanh, k trong band, changelog khi lệch doc, tracker/dashboard cập nhật. Nhãn P0–P4/Phase N trong docs game = thứ tự code (mốc M0–M9).
 - Nhãn: 🟢 CORE · 🟡 TUNE (đổi số trong JSON, không sửa spec) · 🔵 **vẫn trong scope 1 phase, làm sau cùng** (trước đây ghi "POST-MVP") · 🔧 cần chốt khi vào sản xuất · 📐 cần wireframe. Mọi chữ "P0–P4 / Phase N" còn sót trong docs = **thứ tự code**, không phải cổng scope.
@@ -186,3 +188,5 @@ Giao việc: `11-PROMPT-PACK` Phần A (designer) và Phần B (dev) — cả ha
 | v1.13 | Audit cuối trước handoff: chốt vị trí code game mới (`packages/engine` · `apps/web` · `apps/server`, npm workspaces, không đụng `prototype/`); §6 phân biệt P0–P3 rủi ro autopilot vs phase game; README features F01–F06 trỏ GDD/08/03 thay 04-SPEC lưu trữ. |
 | v1.14 | Chủ dự án 08/09: **bỏ ràng buộc Level 3** — dev tự quyết quy trình build; CLAUDE.md/AGENTS.md block autopilot thay bằng "outcomes still bind"; GitNexus MUST → khuyến nghị; §6 + bản đồ docs cập nhật. |
 | v1.15 | Thêm `12-PROMPT-claude-build.md` (kickoff Claude Code + Codex review qua `codex exec review`) — §2.2 mục 1 trỏ sang; 11-PP Phần B giữ làm chi tiết. |
+
+| v1.16 | Owner 2026-09-08: cập nhật phản hồi khách bỏ đi thành toast số xu/uy tín; bổ sung bộ ảnh tham khảo art do owner gửi. |

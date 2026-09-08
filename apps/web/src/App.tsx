@@ -43,8 +43,7 @@ export function App() {
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [welcome, setWelcome] = useState(!settings.welcomed);
   const [saveError, setSaveError] = useState(false);
-  const [toast, setToast] = useState<{ text: string; kind: string } | null>(null);
-  const [lost, setLost] = useState<Record<string, number>>({});
+  const [toast, setToast] = useState<{ text: string; kind: string; loss?: { coins: number; reputation: number } } | null>(null);
   const cursor = useRef(w.events.length);
   const locale = settings.locale;
   const t = (key: string, params: Record<string, string | number> = {}) => translate(locale, key, params);
@@ -53,12 +52,17 @@ export function App() {
   const processEvents = () => {
     const events = w.events.slice(cursor.current); cursor.current = w.events.length;
     advanceGuide(prefs.current, game, events);
+    let loss: { coins: number; reputation: number } | undefined;
     for (const e of events) {
       sound.event(e);
-      if (e.type === 'order_expired') setLost(old => ({ ...old, [String(e.data.tableId)]: Number(e.data.penalty) }));
+      if (e.type === 'order_expired' || (e.type === 'customer_left' && e.data.reason === 'queue')) {
+        loss ??= { coins: 0, reputation: 0 };
+        loss.coins += Number(e.data.penalty); loss.reputation += Number(e.data.reputation);
+      }
       if (e.type === 'order_served') setToast({ text: translate(prefs.current.locale, `outcome.${e.data.outcome}`, { n: Number(e.data.amount) }), kind: String(e.data.outcome) });
       if (e.type === 'shift_closed') { setSheet('book'); setToast({ text: translate(prefs.current.locale, 'book.closed'), kind: 'early' }); }
     }
+    if (loss) setToast({ text: '', kind: 'loss', loss });
   };
   const run = (cmd: Command) => {
     const result = dispatch(game, cmd);
@@ -127,7 +131,6 @@ export function App() {
         </button>
         {(o.state === 'grace' || stale) && <small>{t(stale ? 'order.stale' : 'order.grace')}</small>}
       </div>}
-      {!activeOrder && lost[table.id] !== undefined && <button className="lost-bubble" onClick={() => setLost(old => { const next = { ...old }; delete next[table.id]; return next; })}>{t('outcome.expired', { n: lost[table.id] })}<small>{t('close')} ×</small></button>}
       <button className="table-object" onClick={() => setSelectedTable(table.id)} aria-label={t('order.details', { n: index + 1 })}>
         <div className="stools" aria-hidden="true"><i /><i /><i /><i /></div>
         <Sprite id={`table-lv${table.level}-empty`} />
@@ -177,7 +180,10 @@ export function App() {
         <button onClick={() => open('upgrades')}><Icon name="upgrade" /><span>{t('nav.upgrades')}</span></button>
         <button onClick={() => open('journey')}><Icon name="star" /><span>{t('nav.journey')}</span></button>
       </nav>
-      {toast && <button className={`toast toast-${toast.kind}`} role="status" onClick={() => setToast(null)}>{toast.text}<span aria-hidden="true">×</span></button>}
+      {toast?.loss ? <div className="toast toast-loss" role="status" aria-label={t('loss.aria', { coins: num(toast.loss.coins), reputation: num(toast.loss.reputation) })}>
+        <span className="loss-value" aria-hidden="true"><Icon name="coin" /><strong>{toast.loss.coins ? '−' : ''}{num(toast.loss.coins)}</strong></span>
+        <span className="loss-value" aria-hidden="true"><Icon name="star" /><strong>{toast.loss.reputation ? '−' : ''}{num(toast.loss.reputation)}</strong></span>
+      </div> : toast && <button className={`toast toast-${toast.kind}`} role="status" onClick={() => setToast(null)}>{toast.text}<span aria-hidden="true">×</span></button>}
       {saveError && <button className="save-error" role="alert" onClick={() => download(encodeSave(game), 'tbh-backup.json')}>{t('save.error')}</button>}
     </main>
     <aside className="side-story right"><div className="small-poster"><Sprite id="menu-beer" /><strong>{t('dish.bia')}</strong><p>{t('rest.free')}</p></div><p>{t('tagline')}</p></aside>

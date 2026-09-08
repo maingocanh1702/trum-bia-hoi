@@ -11,7 +11,7 @@ Google tokens, bank details, or other PII to gameplay analytics.
 |---|---|---|
 | Shift | `shift_opened`, `shift_closing`, `shift_closed`, `weather_rolled`, `rush_started`, `rush_ended` | Shift id, earnings, weather/rush type; funnel and shift book |
 | Arrivals | `customer_spawned`, `group_seated`, `queue_overflow` | Group id/size, weather/rush, table id; throughput counters |
-| Orders | `order_placed`, `order_ready`, `order_grace`, `order_served`, `order_expired` | Table/order id, item count, outcome, credited amount/penalty |
+| Orders | `order_placed`, `order_ready`, `order_grace`, `order_served`, `order_expired` | Table/order id, item count, outcome, credited amount/penalty; expired includes actual reputation deduction |
 | Customers | `customer_served`, `customer_left` | Customer id/type, payment/tip/stale, reason/penalty; k, loss and onboarding |
 | Preparation | `beer_pouring`, `beer_poured`, `dish_preparing`, `dish_ready`, `glass_stale` | Item/dish/glass id; station and freshness feedback |
 | Cleanup | `glass_washing`, `glass_washed`, `table_cleaning`, `table_cleaned`, `table_occupied` | Glass/table id; bottleneck and lifecycle diagnostics |
@@ -41,3 +41,5 @@ F26 was removed and must not create paid-session events.
 | Date | Change |
 |---|---|
 | 2026-09-08 | New-engine event catalog and distinction between implemented local events and pending feature analytics. |
+
+| 2026-09-08 | Expired-order and queue-left events carry actual coin/reputation deductions for numeric-only loss toasts. No new event id is allocated, preserving existing replay entity IDs. |

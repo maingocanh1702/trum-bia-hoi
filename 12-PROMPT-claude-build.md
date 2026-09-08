@@ -47,7 +47,7 @@ BINDING (outcomes — everything not listed here is your call)
    monetization is voluntary donation to the admin (F20), cosmetic thank-you only, soft prompts.
 7. Onboarding per F27: guests play without signing up; Google sign-in is encouraged and signing
    in mid-shift attaches the running shift without interrupting it; first shift opens with ONE
-   customer ordering ONE beer; not served in time → customer leaves and the player is told why;
+   customer ordering ONE beer; not served in time → customer leaves; show only a brief toast with actual coin/reputation deductions, no explanatory text or dismissal dialog;
    three consecutive lost customers → step-by-step guide; first-ever play also runs the guide
    (skippable). Guide steps and thresholds are tier-C config, listeners on the event bus.
 8. Locale vi + en (100% i18n keys, en falls back to vi + log). Admin Config Registry (BRD §5.2)
@@ -176,3 +176,5 @@ SUMMARY: <one line: what this slice does and the biggest risk left>
 | Ver | Thay đổi |
 |---|---|
 | v1.0 | Bản đầu 2026-09-08: kickoff prompt cho Claude Code (Level 3 bỏ, dev tự quyết) + instruction Codex review qua `codex exec review`. |
+
+| 2026-09-08 owner UI update | Lost-customer feedback is a numeric coin/reputation toast only; removed the earlier explanation/dialog requirement. Owner asset references: docs/reference/assets-owner-2026-09-08/. |

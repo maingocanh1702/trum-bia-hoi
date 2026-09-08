@@ -35,13 +35,18 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
   });
 }
 
-test('a neglected first shift closes cleanly after twelve minutes and explains lost guests', async ({ page }) => {
+test('a neglected first shift closes cleanly after twelve minutes and shows only numeric loss feedback', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.clock.install({ time: new Date('2026-09-08T10:00:00Z') });
   await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
   await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
   await page.clock.runFor(29000);
-  await expect(page.locator('.lost-bubble').first()).toContainText('Khách chờ lâu quá');
+  await expect(page.locator('.toast-loss')).toBeVisible();
+  await expect(page.locator('.toast-loss')).toHaveAccessibleName(/Trừ \d+ xu và \d+ uy tín/);
+  await expect(page.locator('.toast-loss')).toHaveText(/^[−\d\s.,]+$/);
+  for (const icon of await page.locator('.toast-loss svg').all()) expect((await icon.boundingBox())!.width).toBeGreaterThan(0);
+  await expect(page.locator('.lost-bubble')).toHaveCount(0);
+  await expect(page.getByText('Khách chờ lâu quá', { exact: false })).toHaveCount(0);
   await page.getByRole('button', { name: 'Bỏ qua', exact: true }).click();
   await page.clock.runFor(720000);
   await expect(page.getByRole('heading', { name: 'Sổ ca hôm nay' })).toBeVisible();

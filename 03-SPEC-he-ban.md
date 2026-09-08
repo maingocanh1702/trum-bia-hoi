@@ -235,18 +235,18 @@ Khi chạm phục vụ một Order vừa trễ patience vừa có cốc hết h�
 
 ### 9.5 UI/UX
 - **Cảnh báo ở MỨC BÀN, không phải mỗi khách 1 vòng** (bàn 6 người = 6 vòng → vỡ màn). Dùng **viền bàn đổi màu + 1 timer/bàn** (timer của Order gấp nhất). Khách lẻ chỉ đổi nét mặt.
-- **Popover 2 trạng thái:**
+- **Phản hồi tại bàn:**
   - *Còn cứu:* badge loại (VIP vàng / ngồi lỳ xanh / Chí Phèo nâu) + subtitle dạy người chơi + countdown giây + nút đỏ to **✅ Phục vụ**.
-  - *Đã bỏ:* popover đỏ — dòng **"😤 Khách bỏ đi"** + nút **"Đóng"** (xác nhận thất bại tường minh, **1 chạm bỏ qua**).
+  - *Đã bỏ (owner 2026-09-08):* chỉ hiện toast/noti ngắn gồm icon xu + số xu trừ và icon uy tín + điểm trừ thực tế. Không text giải thích, không popover thất bại, không nút xác nhận/Đóng. Toast tự hết và không pause ca; screen reader vẫn có mô tả mức trừ.
 - **Hit area ≥ sprite bàn** (cao điểm dễ miss-tap = ức chế nhất).
-- **Floating indicator theo CỤM** (1 pill tổng "+/−" cho cả Order, không phun N pill) → giữ màn sạch lúc heavy rush. Mất cụm có VIP → pill riêng "🚨 Mất khách sộp!".
+- **Floating indicator theo CỤM** (1 pill tổng "+/−" cho cả Order, không phun N pill) → giữ màn sạch lúc heavy rush. Mất cụm có VIP cũng dùng cùng toast số xu/uy tín, không thêm thông báo chữ.
 
 ### 9.6 Animation timeline
 ```
 t-3s   viền bàn VÀNG, 1-2 mặt khách nhăn, timer bàn 00:03 nhấp nháy
 t-0    Order hết patience → bàn vào GRACE: viền ĐỎ pulse, cả nhóm "đẩy ghế đứng dậy" (chưa rời hẳn)
  ├─ [chạm kịp]  → ngồi lại + uống; floating "+tiền gốc" (xanh) NHƯNG KHÔNG có pill tip → dạy "cứu được, mất tip"
- └─ [không kịp] → hết grace: nhóm đi khỏi khung, ghế trống; floating "−xu" (đỏ) + "🚨" nếu có VIP;
+ └─ [không kịp] → hết grace: nhóm đi khỏi khung, ghế trống; toast icon + "−xu / −uy tín";
                   uy tín HUD giảm; bàn → CLEANING → EMPTY
 ```
 - Phân biệt thị giác **fail mềm** (viền vàng, +tiền, không tip) vs **fail cứng** (viền đỏ, −xu) để người chơi học "phục vụ sớm = tiền tip".
@@ -275,3 +275,5 @@ t-0    Order hết patience → bàn vào GRACE: viền ĐỎ pulse, cả nhóm 
 | v1.2 | Thêm §9 "Serve race & grace window" (chạm phục vụ trễ → khách bỏ đi: 2 đồng hồ patience/freshness, grace 2 tầng, quy tắc gộp chống double-count, UI/animation mức bàn). Prototype dời §10. |
 
 *Liên kết: `02-GDD-trum-bia-hoi.md` §5/§6.*
+
+| v1.3 | Owner 2026-09-08: khách bỏ đi chỉ hiện toast xu/uy tín thực trừ; bỏ text giải thích, popover thất bại và thao tác xác nhận. Giữ số ledger, grace và luật phạt. |

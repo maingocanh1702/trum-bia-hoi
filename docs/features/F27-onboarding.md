@@ -7,8 +7,8 @@
 
 1. **Chơi không cần đăng ký.** Guest vào chơi ngay. Game **khuyến khích** đăng ký (Google) để: lưu tiến độ, lưu thành tích, đua top bảng xếp hạng (F28). Khuyến khích ≠ ép: không chặn gameplay lõi, không dark pattern (09 §11).
 2. **Đăng nhập giữa lúc đang chơi → thành tích đang chơi được lưu realtime.** Ca đang chạy không bị ngắt; từ thời điểm đăng nhập, mọi mutation (serve, xu, uy tín, sổ ca) gắn vào tài khoản ngay; tiến độ guest trước đó merge vào tài khoản (F25 §4, 1 chiều).
-3. **Bắt đầu game: 1 khách vào, gọi 1 cốc bia.** Người chơi phục vụ như bình thường (1 chạm ✅). Không kịp trong thời gian quy định → khách rời đi + **thông báo** cho người chơi (vì sao, mất gì).
-4. **Khách rời đi 3 lần liên tiếp → thông báo + hướng dẫn step-by-step.**
+3. **Bắt đầu game: 1 khách vào, gọi 1 cốc bia.** Người chơi phục vụ như bình thường (1 chạm ✅). Không kịp trong thời gian quy định → khách rời đi + **toast icon/số xu và uy tín thực trừ** (owner cập nhật 08/09; không text giải thích hoặc nút Đóng).
+4. **Khách rời đi 3 lần liên tiếp → toast số trừ + hướng dẫn step-by-step theo config.**
 5. **Lần đầu chơi game cũng có hướng dẫn step-by-step.**
 
 ## 2. Product rules (suy ra để dev không phải hỏi)
@@ -17,7 +17,7 @@
 - **Guide lần đầu** chạy ngay ca 1 (`stepGuide.onFirstPlay`). Người chơi **được bỏ qua** (`stepGuide.skippable`, mặc định true) — bỏ qua thì luật #4 vẫn bắt lại nếu mất 3 khách liên tiếp.
 - **Guide do mất khách** (`lostStreakToGuide` = 3, đếm *liên tiếp* trong cùng ca, reset khi serve thành công): chạy lại từ bước "chờ đủ bia → chạm ✅"; sau khi chạy, đếm lại từ 0; tối đa `stepGuide.maxAutoRepeatsPerDay` lần/ngày để không làm phiền người đã biết chơi.
 - **Ca 1 engine thật, chỉ khác qua cờ** `firstShift.*`: nhóm đầu = 1 khách `thuong`, gọi đúng 1 `bia`, xuất hiện ≤ `guaranteedFirstGroupWithinMs`; tắt Giờ Vàng + rủi ro trong ca 1; các nhóm sau spawn bình thường. Thời gian "quy định" = patience của khách theo config chung (03-SPEC), **không** có timer riêng.
-- **Thông báo mất khách** (luật #3): 1 dòng, không pause, nói rõ *chờ lâu quá → khách đi, mất xu/uy tín*; là sự kiện `customer_left` → listener onboarding, engine không biết.
+- **Phản hồi mất khách** (luật #3, owner cập nhật 08/09): toast ngắn chỉ có icon xu/uy tín và số thực trừ, không pause, không thông báo giải thích hoặc bước xác nhận. Engine xuất số trừ đã clamp; UI không tự tính lại luật phạt.
 - **Khuyến khích đăng nhập** (luật #1): điểm chạm = cuối ca 1, khi mở Xếp hạng/Bàn Thờ, khi sắp đóng tab với tiến độ đáng kể; lời mời nêu đúng 3 lợi ích (lưu tiến độ · thành tích · đua top); tần suất theo `loginPrompt.cooldownShifts`.
 - **Đăng nhập giữa ca** (luật #2): không reload, không mất tick; `eventLog` local từ đầu ca upload kèm; sau đó ghi tiếp realtime (khi có server) — trước khi có server: lưu local như cũ nhưng gắn `accountId`.
 - Mở dần tính năng theo `featureReveal.*`; người quay lại ≥ `returningPlayerResetAfterDays` chỉ được nhắc lại 1 bước lõi, không chạy full guide.
@@ -28,7 +28,7 @@
 | Đầu vào | Đầu ra mong muốn | Đo bằng |
 |---|---|---|
 | Guest mới, state khởi đầu từ config | Phục vụ được khách đầu (1 bia) không đọc hướng dẫn | `order_served` đầu ≤ `targets.firstServeWithinMs` |
-| Không phục vụ kịp | Khách đi + thông báo rõ; không pause | `customer_left` + `onboarding_notice_shown{reason}` |
+| Không phục vụ kịp | Toast số xu/uy tín thực trừ; không text giải thích, không pause | `order_expired` / queue `customer_left` + mức trừ thực tế |
 | Mất 3 khách liên tiếp | Step guide tự chạy | `onboarding_guide_started{trigger:'lost_streak'}` |
 | Lần đầu chơi | Step guide chạy, bỏ qua được | `onboarding_guide_started{trigger:'first_play'}`, `onboarding_guide_skipped` |
 | Đăng nhập Google giữa ca | Ca tiếp tục, tiến độ gắn tài khoản ngay | `guest_claimed` (F25) + `onboarding_login_mid_shift{shiftElapsedMs}` |
@@ -61,3 +61,5 @@ Funnel dashboard admin (BRD §3): mở ca 1 → serve đầu → đóng ca 1 →
 |---|---|
 | v1.0 | Bản đầu 2026-09-08 (draft). |
 | v1.1 | **Lên ràng buộc** theo 5 luật chủ dự án 08/09: guest chơi không đăng ký + khuyến khích đăng nhập Google, đăng nhập giữa ca lưu realtime, ca 1 = 1 khách 1 bia, không kịp → khách đi + thông báo, 3 lần liên tiếp → step guide, lần đầu chơi có step guide. JSON `onboarding` cập nhật. |
+
+| 2026-09-08 | Owner overrides lost-customer explanation: numeric loss toast only, without changing configured coachmark triggers. |

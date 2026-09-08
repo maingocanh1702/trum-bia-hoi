@@ -32,7 +32,7 @@ Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **2 việc nh�
 
 ## 3. Quyết định chủ dự án đang có hiệu lực (08/09)
 
-1. **Onboarding (F27 🟢):** guest chơi không cần đăng ký; khuyến khích đăng nhập Google (lưu tiến độ · thành tích · đua top); **đăng nhập giữa ca lưu realtime, không ngắt ca**; ca 1 = **1 khách gọi 1 cốc bia**; không phục vụ kịp → khách rời đi + thông báo; **3 lần liên tiếp → hướng dẫn step-by-step**; lần đầu chơi cũng có step guide (bỏ qua được).
+1. **Onboarding (F27 🟢):** guest chơi không cần đăng ký; khuyến khích đăng nhập Google (lưu tiến độ · thành tích · đua top); **đăng nhập giữa ca lưu realtime, không ngắt ca**; ca 1 = **1 khách gọi 1 cốc bia**; không phục vụ kịp → khách rời đi + toast số xu/uy tín thực trừ; **3 lần liên tiếp → hướng dẫn step-by-step**; lần đầu chơi cũng có step guide (bỏ qua được).
 2. **Lưu trữ: localStorage trước, server sau (M4)** — thiết kế server-ready qua `eventLog` append-only; đổi adapter `SaveStore` khi lên server.
 3. **`npm run check:config` chạy từ gốc repo** (`package.json` gốc).
 4. **Layout tham khảo = `docs/reference/`** (ảnh game gốc, kiểu sân quán không gian) — không phải card-list ở 09-SPEC §3.1.
@@ -78,3 +78,5 @@ Ba mục item-list (hành phi, đá lạnh, giá cosmetic) đã **chốt theo đ
 | Ngày | Thay đổi |
 |---|---|
 | 2026-09-08 | Cập nhật snapshot game mới, config 1.7.0, kiểm tra runtime và trạng thái review; giữ riêng evidence prototype. |
+
+| 2026-09-08 owner UI/art | Tham khảo 7 asset boards mới, cốc xanh không quai là anchor; khách bỏ đi chỉ hiện toast số xu/uy tín thực trừ. |

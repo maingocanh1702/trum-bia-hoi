@@ -143,3 +143,15 @@ test('invalid commands cannot write arbitrary inventory fields or regress the cl
   g.advance(1000); assert.equal(send(g, { type: 'startShift' }, 0).reason, 'staleCommand');
   assert.throws(() => g.advance(1));
 });
+
+test('loss feedback reports actual clamped coins and reputation once per expired table', () => {
+  const g = create(); const { table } = firstOrder(g);
+  // A player can have less money/reputation left than the nominal penalty.
+  g.world.coins = 2; g.world.reputation = 3;
+  g.advance(table.order!.placedAt + table.order!.patienceMs + g.config.values.patience.graceMs);
+  const losses = g.world.events.filter(e => e.type === 'order_expired');
+  assert.equal(losses.length, 1);
+  assert.equal(losses[0].data.penalty, 2);
+  assert.equal(losses[0].data.reputation, 3);
+  assert.equal(g.world.coins, 0); assert.equal(g.world.reputation, 0);
+});

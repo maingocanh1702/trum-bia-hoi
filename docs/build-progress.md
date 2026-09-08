@@ -78,3 +78,9 @@ No complete-game or release-ready claim. Further implementation stays in this wo
 |---|---|
 | 2026-09-08 | Started complete-game build and recorded authority, order and boundaries. |
 | 2026-09-08 | M0 verified; playable M1/M2 and initial M3 code in isolated worktree. Added explicit remaining work and evidence instead of treating the local slice as the full game. |
+
+## Owner steering — 2026-09-08
+
+- Reference art boards archived in `docs/reference/assets-owner-2026-09-08/`; use with the existing no-handle green glass anchor. One supplied PNG was an error JSON; seven valid boards retained.
+- Lost customers now show only a short numeric/icon coin + reputation toast, using actual clamped deductions and no explanatory/dismissal popover. Relevant docs are updated.
+- Foundation review at `041cdc5` predates this steering; re-review the final diff before a clean/completed claim.

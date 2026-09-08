@@ -185,7 +185,7 @@ WHAT IS BINDING
     guests play without signing up; Google sign-in is encouraged (save · achievements ·
     leaderboard) and signing in mid-shift attaches the running shift in real time without
     interrupting it; the first shift starts with ONE customer ordering ONE beer, served the
-    normal way; not served in time -> the customer leaves and the player is told why; three
+    normal way; not served in time -> the customer leaves; show only a brief toast with actual coin/reputation deductions, no explanatory text or dismissal dialog; three
     consecutive lost customers -> a step-by-step guide runs; first-ever play also runs the
     step guide (skippable). Presentation is yours; guide steps and every threshold are
     tier-C config (`onboarding.*`); hints/guide are event-bus listeners, never engine rules.
@@ -274,3 +274,5 @@ referral) -> risk + dog -> events (World Cup, donation) -> QA, perf, release.
 | v1.0 | Bản đầu 2026-09-08: A0–A9 designer (Blender MCP → pixelate theo anchor) + B0–B7 dev (config → asset → engine/UI P1 → P2 → P3 server/meta → P4 event → QA) + Phụ lục T (tech skeleton) + U (screen spec). Thay cho ý định viết 09/10-SPEC riêng. |
 
 *Nguồn: `00-HANDOFF-trum-bia-hoi.md` v1.5, `02-GDD-trum-bia-hoi.md` v1.9, `08-SPEC-economy-constants.md` v1.2.2, `10-SPEC-tech-implementation.md` v1.4, `trum-bia-hoi-brd-admin.md` v0.4, `docs/asset-production-checklist.md`, `game-extended-workflow-cl.md`.*
+
+| 2026-09-08 owner UI update | Lost-customer feedback is a numeric coin/reputation toast only; removed the earlier explanation/dialog requirement. Owner asset references: docs/reference/assets-owner-2026-09-08/. |
