@@ -259,3 +259,5 @@ CI: `lint → typecheck → test → probe → sim → check:config (economy + c
 | v1.7 | Chủ dự án 08/09: **localStorage trước, server sau** — §9 viết lại thành 2 bước (local save versioned + eventLog append-only → server event store), bất biến server-ready; §1/§8 sửa theo; mất mạng §10 áp khi có server. |
 
 | 2026-09-08 build | New implementation uses packages/engine (explicit-time event scheduler and replayable command log) + React DOM/CSS spatial web UI. Config coverage targets the new engine; seed-schema validation replaces zod for this initial runtime. |
+
+| 2026-09-08 local replay v2 | Save v2 lưu command + event với configVersion/idempotencyKey, rulesVersion giữ replay v1; schema envelope hiện tại là local contract, server adapter ở M4 chưa xây. Hidden/offline dời gameplay deadlines, giữ wall clock VN, trừ pausedMs trong sổ ca. Nhập save có validate; tạo mới cần xác nhận trong UI và giữ bản cũ riêng. |

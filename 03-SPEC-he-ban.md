@@ -277,3 +277,5 @@ t-0    Order hết patience → bàn vào GRACE: viền ĐỎ pulse, cả nhóm 
 *Liên kết: `02-GDD-trum-bia-hoi.md` §5/§6.*
 
 | v1.3 | Owner 2026-09-08: khách bỏ đi chỉ hiện toast xu/uy tín thực trừ; bỏ text giải thích, popover thất bại và thao tác xác nhận. Giữ số ledger, grace và luật phạt. |
+
+| v1.4 | Runtime rules v2: số đợt lấy đủ bounds trong config; nhóm trộn ưu tiên ngồi-lỳ → vội → VIP → thường. Patience hàng đợi không cộng grace của Order. Boa vẫn theo patience từng khách (§4); dọn bàn đã phục vụ không phạt lại. Lịch sử v1 giữ luật cũ khi replay. |

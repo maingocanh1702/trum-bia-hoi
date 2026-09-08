@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { DISHES, EQUIPMENT, encodeSave, freshnessMs, restockQuote, stockCap, upgradeQuote, type Command, type Equipment, type Table } from '../../../packages/engine/src';
 import { Sprite, menuAsset } from './assets';
 import { translate } from './i18n';
-import { advanceGuide, boot, dispatch, download, persist, readSettings, writeSettings } from './local';
+import { advanceGuide, boot, dispatch, download, persist, readSettings, writeSettings, replaceSave } from './local';
 import { createSound } from './audio';
 
 type Sheet = 'stock' | 'upgrades' | 'book' | 'journey' | 'settings' | 'config' | null;
@@ -43,6 +43,8 @@ export function App() {
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [welcome, setWelcome] = useState(!settings.welcomed);
   const [saveError, setSaveError] = useState(false);
+  const [recoveryError, setRecoveryError] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
   const [toast, setToast] = useState<{ text: string; kind: string; loss?: { coins: number; reputation: number } } | null>(null);
   const cursor = useRef(w.events.length);
   const locale = settings.locale;
@@ -59,7 +61,7 @@ export function App() {
         loss ??= { coins: 0, reputation: 0 };
         loss.coins += Number(e.data.penalty); loss.reputation += Number(e.data.reputation);
       }
-      if (e.type === 'order_served') setToast({ text: translate(prefs.current.locale, `outcome.${e.data.outcome}`, { n: Number(e.data.amount) }), kind: String(e.data.outcome) });
+      if (e.type === 'order_served') setToast({ text: translate(prefs.current.locale, `outcome.${e.data.outcome === 'early' && e.data.tipped === false ? 'earlyNoTip' : e.data.outcome}`, { n: Number(e.data.amount) }), kind: String(e.data.outcome) });
       if (e.type === 'shift_closed') { setSheet('book'); setToast({ text: translate(prefs.current.locale, 'book.closed'), kind: 'early' }); }
     }
     if (loss) setToast({ text: '', kind: 'loss', loss });
@@ -106,7 +108,15 @@ export function App() {
     return () => clearTimeout(handle);
   }, [toast]);
 
-  if (session.error) return <main className="recovery"><h1>{t('brand')}</h1><p role="alert">{t('save.corrupt')}</p><button onClick={() => download(session.original ?? '', 'tbh-original-save.json')}>{t('save.downloadOriginal')}</button><button onClick={() => location.reload()}>{t('save.retry')}</button></main>;
+  if (session.error) return <main className="recovery"><h1>{t('brand')}</h1><p role="alert">{t('save.corrupt')}</p>
+    <button onClick={() => download(session.original ?? '', 'tbh-original-save.json')}>{t('save.downloadOriginal')}</button>
+    <label>{t('save.import')}<input type="file" accept="application/json,.json" onChange={async e => {
+      const file = e.currentTarget.files?.[0]; if (!file) return;
+      try { replaceSave(await file.text()); location.reload(); } catch { setRecoveryError(true); }
+    }} /></label>
+    {recoveryError && <p role="alert">{t('save.importError')}</p>}
+    {confirmReset ? <><p>{t('save.resetConfirm')}</p><button onClick={() => { try { replaceSave(null); location.reload(); } catch { setRecoveryError(true); } }}>{t('save.resetYes')}</button><button onClick={() => setConfirmReset(false)}>{t('save.cancel')}</button></> : <button onClick={() => setConfirmReset(true)}>{t('save.reset')}</button>}
+    <button onClick={() => location.reload()}>{t('save.retry')}</button></main>;
 
   const shift = w.shift, inShift = w.phase !== 'resting';
   const nextRush = shift?.rushes.find(r => r.start > w.now);
@@ -151,6 +161,7 @@ export function App() {
   }
 
   return <div className="game-shell" data-frame={frame}>
+    {!w.active && <div className="paused-overlay" role="status">{t('pause.hidden')}</div>}
     <aside className="side-story"><div className="vertical-sign">{t('brand')}</div><p>{t('tagline')}</p><div className="wall-window" /><div className="bicycle" /></aside>
     <main className={`game weather-${shift?.weather ?? 'sunny'}`}>
       <header className="hud">
@@ -193,7 +204,7 @@ export function App() {
     {sheet && <SheetDialog title={t(sheet === 'book' ? 'book.title' : sheet === 'journey' ? 'journey.title' : sheet === 'settings' ? 'settings.title' : sheet === 'config' ? 'config.title' : `nav.${sheet}`)} close={() => setSheet(null)}>
       {sheet === 'stock' && <><p className="sheet-intro">{t('stock.copy')} <b>{num(w.coins)} {t('coins')}</b></p><div className="stock-list">{DISHES.map(dish => <div className="stock-row" key={dish}><Sprite id={menuAsset[dish]} /><div className="stock-info"><strong>{t(`dish.${dish}`)}</strong><span>{w.inventory[dish]} / {stockCap(w, game.config)}</span><progress value={w.inventory[dish]} max={stockCap(w, game.config)} /></div>{c.menu[dish].unlock.kitchenLevel > w.equipment.kitchen ? <small>{t('stock.locked', { n: c.menu[dish].unlock.kitchenLevel })}</small> : <div className="stock-actions">{(['one', 'bulk', 'full'] as const).map(mode => { const q = restockQuote(w, game.config, dish, mode); return <button key={mode} disabled={!q.ok} onClick={() => run({ type: 'restock', dish, mode })}>{t('stock.buy', { action: mode === 'one' ? t('stock.one') : mode === 'bulk' ? t('stock.bulk', { n: c.inventory.bulkSize }) : t('stock.full'), cost: num(q.cost) })}</button>; })}</div>}</div>)}</div><button className="secondary full" onClick={() => run({ type: 'emergencyPack' })}>{t('stock.emergency')}</button></>}
       {sheet === 'upgrades' && <><p className="sheet-intro">{t(inShift ? 'upgrade.outside' : 'upgrade.copy')}</p><div className="upgrade-grid">{EQUIPMENT.map(upgradeCard)}</div><h3>{t('upgrade.tables')}</h3><div className="upgrade-grid">{w.tables.map((table, i) => { const next = c.upgrades.table.levels[table.level]; return <div className="upgrade-card" key={table.id}><Sprite id={`table-lv${table.level}-empty`} /><h3>{t('table', { n: i + 1 })}</h3><p>{t('table.seats', { n: table.capacity })}</p><button disabled={!next || inShift} onClick={() => run({ type: 'upgradeTable', tableId: table.id })}>{next ? t('upgrade.buy', { cost: num(next.priceBase) }) : t('upgrade.max')}</button></div>; })}</div><button className="secondary full" onClick={() => run({ type: 'buyTable' })}>{t('upgrade.addTable')}</button></>}
-      {sheet === 'book' && (shift ? <><p className="sheet-intro">{t('shift')} · {time(Math.min(w.now, shift.endsAt) - shift.startedAt)}<b>{t(`weather.${shift.weather}`)}</b></p><dl className="ledger">{(['served', 'lost', 'payment', 'tip', 'penalty', 'spent'] as const).map(key => <div key={key}><dt>{t(`book.${key}`)}</dt><dd>{num(shift.stats[key])}</dd></div>)}<div className="ledger-total"><dt>{t('book.net')}</dt><dd>{num(shift.stats.credited - shift.stats.penalty - shift.stats.spent)}</dd></div></dl>{inShift && <div className="button-stack"><button className="primary" onClick={() => run({ type: 'endShift' })}>{t('book.end')}</button><button className="secondary" onClick={() => run({ type: 'kickAll' })}>{t('book.kick')}</button></div>}</> : <p>{t('book.none')}</p>)}
+      {sheet === 'book' && (shift ? <><p className="sheet-intro">{t('shift')} · {time(Math.min(shift.closedAt ?? w.now, shift.endsAt) - shift.startedAt - shift.pausedMs)}<b>{t(`weather.${shift.weather}`)}</b></p><dl className="ledger">{(['served', 'lost', 'payment', 'tip', 'penalty', 'spent'] as const).map(key => <div key={key}><dt>{t(`book.${key}`)}</dt><dd>{num(shift.stats[key])}</dd></div>)}<div className="ledger-total"><dt>{t('book.net')}</dt><dd>{num(shift.stats.credited - shift.stats.penalty - shift.stats.spent)}</dd></div></dl>{inShift && <div className="button-stack"><button className="primary" onClick={() => run({ type: 'endShift' })}>{t('book.end')}</button><button className="secondary" onClick={() => run({ type: 'kickAll' })}>{t('book.kick')}</button></div>}</> : <p>{t('book.none')}</p>)}
       {sheet === 'journey' && <><p className="sheet-intro">{t('journey.copy')}</p><dl className="ledger"><div><dt>{t('journey.lifetime')}</dt><dd>{num(w.lifetimeEarned)}</dd></div><div><dt>{t('journey.season')}</dt><dd>{num(w.seasonEarned)}</dd></div></dl><ol className="journey-list">{c.lifePath.map((level, i) => <li key={level.id} className={i === w.lifePath ? 'current' : ''}><span>{i}</span><div><h3>{locale === 'vi' ? level.name : `LP${i}`}</h3><p>{t(i === w.lifePath ? 'journey.current' : 'journey.unlock', { n: num(level.lifetimeBase) })}</p></div><Icon name={i === w.lifePath ? 'check' : 'star'} /></li>)}</ol></>}
       {sheet === 'settings' && <div className="settings-list"><label>{t('settings.language')}<select value={locale} onChange={e => setPrefs({ locale: e.target.value as 'vi' | 'en' })}><option value="vi">Tiếng Việt</option><option value="en">English</option></select></label><button className="setting-row" onClick={() => setPrefs({ muted: !settings.muted })}><span>{t('settings.sound')}</span><b>{t(settings.muted ? 'settings.soundOff' : 'settings.soundOn')}</b></button><p>{t('settings.saved')}</p><button onClick={() => download(encodeSave(game), 'tbh-backup.json')}>{t('settings.export')}</button><button onClick={() => { setPrefs({ guideDone: false, guideIndex: 0 }); setSheet(null); }}>{t('settings.guide')}</button><button onClick={() => open('config')}>{t('settings.config')}</button></div>}
       {sheet === 'config' && <><p>{t('config.pinned', { version: game.config.version })}</p><pre className="config-json">{JSON.stringify(game.config.raw, null, 2)}</pre></>}

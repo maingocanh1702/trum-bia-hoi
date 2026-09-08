@@ -15,7 +15,7 @@ test('both locales have the same nonempty keys and interpolation parameters', ()
 test('the event-driven guide resets after serving and obeys the daily repeat cap', () => {
   const g = new Game();
   const prefs: Settings = { locale: 'vi', muted: true, welcomed: true, guideDone: true, guideIndex: null, guideRuns: 0, guideDay: '', lostStreak: 0 };
-  const e = (type: string): DomainEvent => ({ id: type, type, at: 0, configVersion: config.version, data: {} });
+  const e = (type: string): DomainEvent => ({ id: type, type, at: 0, configVersion: config.version, idempotencyKey: `test:${type}`,  data: {} });
   advanceGuide(prefs, g, [e('customer_left'), e('customer_left'), e('customer_served'), e('customer_left')]);
   assert.equal(prefs.guideRuns, 0);
   advanceGuide(prefs, g, [e('customer_left'), e('customer_left')]);
@@ -23,4 +23,12 @@ test('the event-driven guide resets after serving and obeys the daily repeat cap
   assert.equal(prefs.guideIndex, config.values.onboarding.stepGuide.steps.findIndex(s => s.waitFor === 'order_ready'));
   for (let i = 0; i < 20; i++) advanceGuide(prefs, g, [e('customer_left')]);
   assert.equal(prefs.guideRuns, config.values.onboarding.stepGuide.maxAutoRepeatsPerDay);
+});
+
+
+test('a three-customer queue loss triggers the three-customer guide immediately', () => {
+  const g = new Game();
+  const prefs: Settings = { locale: 'vi', muted: true, welcomed: true, guideDone: true, guideIndex: null, guideRuns: 0, guideDay: '', lostStreak: 0 };
+  advanceGuide(prefs, g, [{ id: 'queue-loss', type: 'customer_left', at: 0, configVersion: config.version, idempotencyKey: 'queue-loss', data: { count: 3, reason: 'queue' } }]);
+  assert.equal(prefs.guideRuns, 1);
 });

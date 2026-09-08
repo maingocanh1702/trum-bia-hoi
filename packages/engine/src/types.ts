@@ -24,7 +24,7 @@ export interface ServeRecord {
   payment: number; tip: number; credited: number; hadMoi: boolean; stale: boolean; patienceRatio: number;
 }
 export interface DomainEvent {
-  id: string; type: string; at: number; configVersion: string;
+  id: string; type: string; at: number; configVersion: string; idempotencyKey: string;
   data: Record<string, string | number | boolean | null>;
 }
 export interface Stats {
@@ -32,7 +32,7 @@ export interface Stats {
   payment: number; tip: number; credited: number; penalty: number; spent: number; rep: number;
 }
 export interface Shift {
-  id: string; startedAt: number; endsAt: number; closedAt: number | null; configVersion: string;
+  id: string; startedAt: number; pausedMs: number; endsAt: number; closedAt: number | null; configVersion: string;
   weather: Weather; rush: Rush; rushes: { kind: Rush; start: number; end: number }[];
   nextSpawnAt: number; firstGroup: boolean; onboarding: boolean; stats: Stats;
 }
@@ -60,4 +60,5 @@ export type Command =
   | { type: 'emergencyPack' };
 export interface Envelope { idempotencyKey: string; at: number; command: Command }
 export interface Result { ok: boolean; reason?: string; outcome?: 'early' | 'late' | 'grace' | 'expired' | 'stale'; amount?: number }
-export interface LoggedCommand extends Envelope { result: Result }
+export type RulesVersion = 1 | 2; // config-exempt: persisted replay protocol revisions, not economy tuning
+export interface LoggedCommand extends Envelope { result: Result; configVersion: string; rulesVersion: RulesVersion }

@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-08 23:32 · **Branch hiện tại:** `codex/game-build-isolated`
+> **Cập nhật:** 2026-09-08 23:50 · **Branch hiện tại:** `codex/game-build-isolated`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -101,7 +101,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 0
-- **Notes:** Ca 12 phút + closing, stamina hồi active, cap ngày; local save. Tỉnh Táo/segment và server time chưa hoàn tất.
+- **Notes:** Ca 12 phút + closing, hidden/offline pause, cap qua nửa đêm VN; save v2 đọc v1. Tỉnh Táo/segment và server time chưa hoàn tất.
 
 ### F02 — Menu & Kinh Tế Quán — 3 món P0 (bia+2 mồi), đo k
 
@@ -110,7 +110,7 @@
 - **Wave:** ⚖️ Economy
 - **Gates:** 🔒S 🔒B
 - **Phase:** Phase 0
-- **Notes:** Config 6 món; cold-menu bot 5 seed ≥500 lượt: k 2.2702–2.5072. Chưa đủ balance suite cho bếp mở hết.
+- **Notes:** Config 6 món; Mỗi profile 5 seed ≥500 lượt: cold k 2.3249–2.4498, full-menu 2.4766–2.7020; chưa đủ full M3 acceptance.
 
 ### F03 — Hệ Bàn — 3 bàn, serve theo Order
 
@@ -137,7 +137,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 0
-- **Notes:** Per-customer tip, VIP, phạt, cap và ba ledger đã có; Tỉnh Táo/kick-all/queue cần rà tiếp.
+- **Notes:** Per-customer tip, VIP, phạt, cap và ba ledger đã có; Queue patience + không phạt lại bàn đã phục vụ đã có regression; Tỉnh Táo/tiễn bàn còn tiếp tục.
 
 ### F08 — Giờ Vàng — 2 mức (nhẹ 90s/nặng 150s), spawn floor
 
@@ -191,7 +191,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 1
-- **Notes:** Guest local + vi/en + backup/replay đã có; Google/claim/cloud ở M4 chưa có.
+- **Notes:** Guest local + vi/en + backup/replay v1→v2 + import/reset giữ bản cũ đã có; Google/claim/cloud ở M4 chưa có.
 
 ### F27 — Onboarding — ca 1 = 1 khách 1 bia, thông báo mất khách, step guide (lần đầu + sau 3 lần mất khách)
 

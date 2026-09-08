@@ -268,3 +268,7 @@ progress::-webkit-progress-value { background: var(--beerAmber); border-radius: 
 .toast-loss > .loss-value { display: flex; align-items: center; gap: 7px; margin: 0; font-size: 16px; }
 
 .loss-value svg { width: 22px; height: 22px; flex-shrink: 0; color: var(--coinGold); }
+
+.paused-overlay { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: #182a26e8; color: var(--cream); font-size: 1.4rem; }
+.recovery label { display: grid; gap: 12px; margin: 24px 0; }
+.recovery input { max-width: 100%; }

@@ -1,0 +1,198 @@
+{
+  "coins": 1063,
+  "reputation": 2,
+  "dayShifts": {
+    "2026-09-08": 1
+  },
+  "shift": {
+    "id": "shift-37",
+    "startedAt": 1788888211000,
+    "endsAt": 1788888931000,
+    "closedAt": null,
+    "configVersion": "1.7.0",
+    "weather": "cold",
+    "rush": "none",
+    "rushes": [
+      {
+        "kind": "light",
+        "start": 1788888471000,
+        "end": 1788888561000
+      },
+      {
+        "kind": "heavy",
+        "start": 1788888701000,
+        "end": 1788888851000
+      }
+    ],
+    "nextSpawnAt": 1788888253000,
+    "firstGroup": false,
+    "onboarding": false,
+    "stats": {
+      "arrived": 2,
+      "served": 2,
+      "lost": 0,
+      "rejected": 0,
+      "orders": 1,
+      "payment": 250,
+      "tip": 0,
+      "credited": 250,
+      "penalty": 0,
+      "spent": 0,
+      "rep": 2
+    }
+  },
+  "tables": [
+    {
+      "id": "table-1",
+      "level": 1,
+      "capacity": 2,
+      "state": "consuming",
+      "group": {
+        "id": "group-42",
+        "customers": [
+          {
+            "id": "customer-40",
+            "type": "thuong",
+            "patienceMs": 18000,
+            "enjoyMs": 7633
+          },
+          {
+            "id": "customer-41",
+            "type": "thuong",
+            "patienceMs": 18000,
+            "enjoyMs": 8124
+          }
+        ],
+        "rounds": 1,
+        "arrivedAt": 1788888227800
+      },
+      "order": {
+        "id": "order-48",
+        "placedAt": 1788888228600,
+        "patienceMs": 18000,
+        "items": [
+          {
+            "id": "item-45",
+            "customerId": "customer-40",
+            "dish": "bia",
+            "state": "served",
+            "readyAt": 1788888231600,
+            "glassId": "glass-4"
+          },
+          {
+            "id": "item-46",
+            "customerId": "customer-40",
+            "dish": "nem",
+            "state": "served",
+            "readyAt": 1788888228600,
+            "glassId": null
+          },
+          {
+            "id": "item-47",
+            "customerId": "customer-41",
+            "dish": "bia",
+            "state": "served",
+            "readyAt": 1788888234600,
+            "glassId": "glass-5"
+          }
+        ],
+        "state": "served",
+        "readyEmitted": true
+      },
+      "until": 1788888244124,
+      "roundsServed": 1
+    },
+    {
+      "id": "table-2",
+      "level": 1,
+      "capacity": 2,
+      "state": "empty",
+      "group": null,
+      "order": null,
+      "until": null,
+      "roundsServed": 0
+    },
+    {
+      "id": "table-3",
+      "level": 1,
+      "capacity": 2,
+      "state": "empty",
+      "group": null,
+      "order": null,
+      "until": null,
+      "roundsServed": 0
+    }
+  ],
+  "glasses": [
+    {
+      "id": "glass-4",
+      "state": "in_use",
+      "itemId": "item-45",
+      "readyAt": 1788888231600,
+      "staleEmitted": false
+    },
+    {
+      "id": "glass-5",
+      "state": "in_use",
+      "itemId": "item-47",
+      "readyAt": 1788888234600,
+      "staleEmitted": false
+    },
+    {
+      "id": "glass-6",
+      "state": "clean",
+      "itemId": null,
+      "readyAt": null,
+      "staleEmitted": false
+    },
+    {
+      "id": "glass-7",
+      "state": "clean",
+      "itemId": null,
+      "readyAt": null,
+      "staleEmitted": false
+    },
+    {
+      "id": "glass-8",
+      "state": "clean",
+      "itemId": null,
+      "readyAt": null,
+      "staleEmitted": false
+    },
+    {
+      "id": "glass-9",
+      "state": "clean",
+      "itemId": null,
+      "readyAt": null,
+      "staleEmitted": false
+    },
+    {
+      "id": "glass-10",
+      "state": "clean",
+      "itemId": null,
+      "readyAt": null,
+      "staleEmitted": false
+    },
+    {
+      "id": "glass-11",
+      "state": "clean",
+      "itemId": null,
+      "readyAt": null,
+      "staleEmitted": false
+    },
+    {
+      "id": "glass-12",
+      "state": "clean",
+      "itemId": null,
+      "readyAt": null,
+      "staleEmitted": false
+    },
+    {
+      "id": "glass-13",
+      "state": "clean",
+      "itemId": null,
+      "readyAt": null,
+      "staleEmitted": false
+    }
+  ]
+}

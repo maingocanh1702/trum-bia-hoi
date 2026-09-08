@@ -17,7 +17,7 @@ export function boot(): { game: Game; original: string | null; error: boolean } 
     original = localStorage.getItem(SAVE_KEY);
     if (original !== null) {
       const game = decodeSave(original);
-      // Offline time may advance the shift, but must never grant active-rest recovery.
+      // Offline time pauses gameplay and never grants active-rest recovery.
       game.command({ idempotencyKey: crypto.randomUUID(), at: game.world.now, command: { type: 'activity', active: false } });
       game.advance(Math.max(Date.now(), game.world.now));
       game.command({ idempotencyKey: crypto.randomUUID(), at: game.world.now, command: { type: 'activity', active: !document.hidden } });
@@ -28,6 +28,13 @@ export function boot(): { game: Game; original: string | null; error: boolean } 
   return { game: new Game(undefined, seed, Date.now(), `guest-${crypto.randomUUID()}`), original, error: false };
 }
 export function persist(game: Game): void { localStorage.setItem(SAVE_KEY, encodeSave(game)); }
+/** Validate before replacing; keep the original under a separate key even if import/reset fails. */
+export function replaceSave(text: string | null): void {
+  const game = text === null ? new Game(undefined, crypto.getRandomValues(new Uint32Array(1))[0], Date.now(), `guest-${crypto.randomUUID()}`) : decodeSave(text);
+  const original = localStorage.getItem(SAVE_KEY);
+  if (original !== null) localStorage.setItem(`tbh.backup.${crypto.randomUUID()}`, original);
+  persist(game);
+}
 export function dispatch(game: Game, command: Command): Result {
   return game.command({ idempotencyKey: crypto.randomUUID(), at: Math.max(Date.now(), game.world.now), command });
 }
@@ -48,7 +55,7 @@ export function advanceGuide(settings: Settings, game: Game, events: DomainEvent
     }
     if (e.type === 'customer_served') settings.lostStreak = 0;
     if (e.type === 'customer_left') {
-      settings.lostStreak++;
+      settings.lostStreak += Number(('count' in e.data ? e.data.count : 1) ?? 1);
       if (settings.lostStreak >= c.lostStreakToGuide && settings.guideRuns < c.stepGuide.maxAutoRepeatsPerDay) {
         settings.guideIndex = c.stepGuide.steps.findIndex(s => s.waitFor === 'order_ready');
         settings.guideRuns++; settings.lostStreak = 0;

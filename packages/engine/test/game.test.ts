@@ -1,6 +1,7 @@
 import { test } from 'node:test';
+import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { Game, config, loadConfig, encodeSave, decodeSave, credit, restockQuote, type Command, type Economy } from '../src/index';
+import { Game, config, loadConfig, encodeSave, decodeSave, credit, customerValue, dayKey, restockQuote, type Command, type Economy } from '../src/index';
 
 function create(patch?: (c: Economy) => void) {
   const raw = structuredClone(config.raw);
@@ -169,4 +170,131 @@ test('startup rejects configurations that create fractional stock, unusable equi
     ['fractional menu cost', c => { c.menu.bia.unitCost = 1.5; }],
   ];
   for (const [name, patch] of cases) { const raw = structuredClone(config.raw); patch(raw); assert.throws(() => loadConfig(raw), name); }
+});
+
+test('v1 save migrates without changing prior fines, identifiers or an in-progress second shift', () => {
+  const text = readFileSync(new URL('./fixtures/legacy-save-v1.json', import.meta.url), 'utf8');
+  const expected = JSON.parse(readFileSync(new URL('./fixtures/legacy-save-v1-expected.json', import.meta.url), 'utf8'));
+  const g = decodeSave(text);
+  for (const key of ['coins', 'reputation', 'dayShifts', 'tables', 'glasses'] as const) assert.deepEqual(g.world[key], expected[key]);
+  assert.equal(g.world.shift!.id, expected.shift.id);
+  assert.equal(g.world.shift!.startedAt, expected.shift.startedAt);
+  assert.ok(g.log.every(e => e.rulesVersion === 1 && e.configVersion === g.config.version));
+  const migrated = encodeSave(g); const data = JSON.parse(migrated);
+  assert.equal(data.version, 2);
+  assert.ok(data.events.length > 0);
+  assert.ok(data.events.every((e: { idempotencyKey: string; configVersion: string }) => e.idempotencyKey && e.configVersion === g.config.version));
+  assert.deepEqual(decodeSave(migrated).world, g.world);
+  assert.equal(send(g, { type: 'activity', active: true }).ok, true);
+  assert.equal(g.log.at(-1)!.rulesVersion, 2);
+  assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
+  data.events[0].configVersion = 'tampered';
+  assert.throws(() => decodeSave(JSON.stringify(data)), /event-mismatch/);
+});
+
+
+test('a patient guest beside a hurried guest keeps their own tip clock (03-SPEC section 4)', () => {
+  const g = create(); const { table } = firstOrder(g);
+  const normal = table.group!.customers[0];
+  const hurried = { ...normal, id: 'hurried', type: 'voi' as const, patienceMs: normal.patienceMs / 2 };
+  table.order!.patienceMs = hurried.patienceMs;
+  table.order!.items.push({ ...table.order!.items[0], id: 'hurried-beer', customerId: hurried.id, glassId: null });
+  g.world.now = table.order!.placedAt + Math.round(hurried.patienceMs * .5);
+  assert.ok(customerValue(g.world, g.config, table.order!, normal).tip > 0);
+  assert.equal(customerValue(g.world, g.config, table.order!, hurried).tip, 0);
+});
+
+test('daily cap permits another available shift, with zero credited earnings', () => {
+  const g = create(c => { c.shift.dailyEarnCapBase = 20; });
+  const { command } = firstOrder(g); send(g, command); send(g, { type: 'kickAll' });
+  g.advance(12000 + g.config.values.shift.durationMs / g.config.values.shift.regenRate);
+  const coins = g.world.coins;
+  assert.ok(send(g, { type: 'startShift' }).ok);
+  assert.equal(credit(g.world, g.config, 100, 'servePayment'), 0);
+  assert.equal(g.world.coins, coins);
+});
+
+test('custom normal, VIP, hurried and leisurely round ranges reach spawned groups', () => {
+  for (const [type, range, probability, expected] of [
+    ['thuong', [2, 4], 0, 2], ['thuong', [2, 4], 1, 4],
+    ['vip', [3, 5], 0, 3], ['vip', [3, 5], 1, 5],
+    ['voi', [2, 2], 0, 2], ['ngoily', [4, 4], 0, 4],
+  ] as const) {
+    const g = create(c => {
+      c.onboarding.enabled = false; c.upgrades.table.levels[0].capacity = 1;
+      Object.entries(c.customerTypes).forEach(([key, profile]) => { profile.weight = key === type ? 1 : 0; });
+      c.rounds[type] = [...range]; c.demandMix.pSecondRound = probability;
+    });
+    send(g, { type: 'startShift' }); g.advance(g.world.shift!.nextSpawnAt);
+    const group = g.world.tables.find(t => t.group)!.group!;
+    assert.equal(group.customers[0].type, type); assert.equal(group.rounds, expected);
+  }
+});
+
+test('queued groups leave exactly at patience, without the seated-order grace', () => {
+  const g = create(); firstOrder(g);
+  // Both tables are occupied; a complete queued group must remain unseated up to its own deadline.
+  g.world.tables.forEach(t => { t.state = 'broken'; t.order = null; t.group = null; t.until = null; });
+  const customer = { id: 'queued-1', type: 'thuong' as const, patienceMs: 1000, enjoyMs: 1000 };
+  g.world.queue.push({ id: 'queued', customers: [customer, { ...customer, id: 'queued-2' }], rounds: 1, arrivedAt: g.world.now });
+  g.world.reputation = 20;
+  const expiry = g.world.now + customer.patienceMs;
+  g.advance(expiry - 1); assert.equal(g.world.queue.length, 1);
+  g.advance(expiry); assert.equal(g.world.queue.length, 0);
+  const event = g.world.events.find(e => e.type === 'customer_left' && e.data.groupId === 'queued')!;
+  assert.equal(event.at, expiry); assert.equal(event.data.count, 2); assert.equal(event.data.penalty, 0);
+  assert.equal(event.data.reputation, -g.config.values.reputation.customerLeft * 2);
+});
+
+test('an early zero-tip guest is early, and clearing a served table never fines them', () => {
+  const g = create(c => { c.customerTypes.thuong.tipMult = 0; });
+  const { command } = firstOrder(g);
+  assert.deepEqual(send(g, command), { ok: true, outcome: 'early', amount: 50 });
+  assert.equal(g.world.events.find(e => e.type === 'order_served')!.data.tipped, false);
+  const coins = g.world.coins, rep = g.world.reputation;
+  send(g, { type: 'kickAll' }); send(g, { type: 'kickAll' });
+  assert.equal(g.world.coins, coins); assert.equal(g.world.reputation, rep);
+  assert.equal(g.world.shift!.stats.lost, 0); assert.equal(g.world.shift!.stats.penalty, 0);
+});
+
+test('hidden time freezes pending orders and freshness while preserving real calendar time and replay', () => {
+  const a = create(), b = create();
+  for (const g of [a, b]) firstOrder(g);
+  const hiddenMs = 24 * 60 * 60 * 1000;
+  send(b, { type: 'activity', active: false });
+  const snapshot = structuredClone(b.world);
+  b.advance(b.world.now + hiddenMs);
+  assert.equal(b.world.staminaMs, snapshot.staminaMs);
+  assert.deepEqual(b.world.events, snapshot.events);
+  assert.equal(b.world.shift!.pausedMs, hiddenMs);
+  assert.equal(dayKey(b.world.now, b.config), '1970-01-02');
+  assert.deepEqual(decodeSave(encodeSave(b)).world, b.world);
+  send(b, { type: 'activity', active: true });
+  for (const g of [a, b]) {
+    const table = g.world.tables.find(t => t.order)!;
+    assert.deepEqual(send(g, { type: 'serve', tableId: table.id, orderId: table.order!.id }), { ok: true, outcome: 'early', amount: 65 });
+  }
+  assert.equal(a.world.coins, b.world.coins);
+  assert.equal(b.world.shift!.endsAt - b.world.now, a.world.shift!.endsAt - a.world.now);
+});
+
+test('Vietnam midnight resets each earn bucket while shift count belongs to its closing day', () => {
+  for (const start of ['2026-09-08T16:59:45Z', '2026-09-08T17:00:01Z']) {
+    const raw = structuredClone(config.raw); raw.shift.dailyEarnCapBase = 20;
+    const createdAt = Date.parse(start), g = new Game(loadConfig(raw), 42, createdAt);
+    send(g, { type: 'startShift' }); g.advance(createdAt + 11000);
+    const table = g.world.tables.find(t => t.order)!;
+    assert.equal(send(g, { type: 'serve', tableId: table.id, orderId: table.order!.id }).amount, 50);
+    send(g, { type: 'endShift' });
+    const beforeDay = dayKey(g.world.now, g.config);
+    g.advance(Math.max(Date.parse('2026-09-08T17:00:00Z'), g.world.now));
+    const currentDay = dayKey(g.world.now, g.config);
+    assert.equal(credit(g.world, g.config, 65, 'servePayment'), beforeDay === currentDay ? 0 : 50);
+    g.advance(g.world.now + 30000);
+    assert.equal(g.world.dayEarned[beforeDay], 50);
+    assert.equal(g.world.dayEarned[currentDay], 50);
+    assert.equal(g.world.dayShifts['2026-09-09'], 1);
+    assert.equal(g.world.dayShifts['2026-09-08'], undefined);
+    assert.equal(g.world.seasonEarned, beforeDay === currentDay ? 50 : 100);
+  }
 });

@@ -80,3 +80,5 @@ Ba mục item-list (hành phi, đá lạnh, giá cosmetic) đã **chốt theo đ
 | 2026-09-08 | Cập nhật snapshot game mới, config 1.7.0, kiểm tra runtime và trạng thái review; giữ riêng evidence prototype. |
 
 | 2026-09-08 owner UI/art | Tham khảo 7 asset boards mới, cốc xanh không quai là anchor; khách bỏ đi chỉ hiện toast số xu/uy tín thực trừ. |
+
+| 2026-09-08 local history/time | Tracker v0.8.1: save v2 đọc v1, pause hidden/offline, recovery import/reset; 26 unit + 9 E2E, 10-row cold/full sim pass. Review corrections đang chờ re-review độc lập, không nâng trạng thái hoàn tất. |

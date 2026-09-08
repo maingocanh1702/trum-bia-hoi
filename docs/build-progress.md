@@ -103,3 +103,21 @@ The independent CLI review of `30c0285..041cdc5` completed 2026-09-08 with findi
 | No midnight cap regression | Accept; test earnings on each VN day and shift attribution on finalize. |
 
 Additional checks completed: startup config rejects invalid levels, fractional stock/costs, zero-weight populations and invalid audio gain; UI exposes existing retail `one` restock; canonical sim now covers five seeds each for cold/full menu. Current verification: 17 unit tests + 6 browser tests; cold k 2.2702–2.5072, full-menu k 2.4662–2.6965. These corrections are not a completed-M3 claim.
+
+
+## Review corrections — local history and time
+
+Implemented after `681538a`, awaiting independent re-review:
+
+- Save v2 persists emitted events and command-level config/rules versions. A fixture produced by the original `041cdc5` engine proves that v1 replay retains coins, reputation, IDs, glass ownership and a running second shift. Historical v1 commands retain their original rules; new commands use rules v2. Event replay permits additive diagnostic fields but rejects changed recorded values.
+- Hidden/offline local play shifts gameplay deadlines while preserving wall-clock VN day keys. It does not spend stamina, expire orders, stale beer, or recover resting stamina. Visible sheets keep time running. The shift book excludes paused time and stops elapsed time at actual close.
+- Queue patience no longer gets seated-order grace. Round selection reads configured bounds with mixed-group precedence: ngồi-lỳ, then vội, then VIP, then thường. Ngồi-lỳ samples the range; other non-hurried groups choose lower/upper via `pSecondRound`; vội samples its configured range when nonconstant.
+- An available shift can open after the daily earnings cap; actual gameplay credit remains zero. Earnings straddling VN midnight use separate day buckets, while the shift count uses its closing day.
+- Service timing and tip amount are independent: early zero-tip guests get early feedback without claiming a tip. Per-customer patience for tips is retained per 03-SPEC section 4. Clearing an already-served/expired table cannot fine it again.
+- Recovery now validates imports before replacing saves and offers a deliberate fresh start; either path stores the original under a separate backup key before replacement. A failed validation/storage write leaves the current save intact. Three queued guests leaving count as three for onboarding.
+
+Verification: `npm run verify` passes (26 unit tests). `npm run test:e2e` passes all 9 browser tests, including hidden/offline resume, invalid/valid import, confirmed fresh start, and numeric-only customer-loss toasts. Sim values after timing/round fixes: cold **2.3401 / 2.3249 / 2.3746 / 2.3481 / 2.4498**, full menu **2.7020 / 2.5748 / 2.4766 / 2.6760 / 2.6970**; at least 500 customer serve records per seed/profile. No M3 or release completion claim.
+
+| Date | Change |
+|---|---|
+| 2026-09-08 | Addressed accepted foundation findings with versioned historical replay, local pause/recovery and targeted rule regressions; recorded false-positive tip disposition against 03-SPEC. Re-review pending. |

@@ -1,7 +1,7 @@
 import { config as defaultConfig, DISHES, EQUIPMENT, WEATHER, type Config, type SeatedType, type Rush } from './config';
 import { integer, random, weighted } from './rng';
 import { addStock, credit, customerValue, dayKey, dishUnlocked, freshnessMs, queueSlots, restockQuote, rushConfig, upgradeQuote } from './rules';
-import type { Command, Customer, Envelope, Group, Item, LoggedCommand, Order, Result, Stats, Table, World } from './types';
+import type { Command, Customer, Envelope, Group, Item, LoggedCommand, Order, Result, RulesVersion, Stats, Table, World } from './types';
 
 const emptyStats = (): Stats => ({ arrived: 0, served: 0, lost: 0, rejected: 0, orders: 0, payment: 0, tip: 0, credited: 0, penalty: 0, spent: 0, rep: 0 });
 
@@ -10,6 +10,8 @@ export class Game {
   readonly world: World;
   readonly log: LoggedCommand[] = [];
   private readonly results = new Map<string, LoggedCommand>();
+  private commandKey: string | null = null;
+  private rulesVersion: RulesVersion = 2;
   constructor(readonly config: Config = defaultConfig, readonly seed = 1, readonly createdAt = 0, readonly playerId = 'guest') {
     if (!Number.isSafeInteger(seed) || !Number.isSafeInteger(createdAt) || createdAt < 0) throw Error('game:invalid-origin');
     const c = config.values;
@@ -28,13 +30,17 @@ export class Game {
   }
   private id(kind: string) { return `${kind}-${++this.world.nextId}`; }
   private emit(type: string, data: World['events'][number]['data'] = {}) {
-    this.world.events.push({ id: this.id('event'), type, at: this.world.now, configVersion: this.config.version, data });
+    const id = this.id('event');
+    this.world.events.push({ id, type, at: this.world.now, configVersion: this.config.version, idempotencyKey: this.commandKey ?? `tick:${id}`, data });
   }
   private newTable(): Table {
     const level = this.config.values.runtime.initialTableLevel;
     return { id: this.id('table'), level, capacity: this.config.values.upgrades.table.levels[level - 1].capacity, state: 'empty', group: null, order: null, until: null, roundsServed: 0 };
   }
   private items(): Item[] { return this.world.tables.flatMap(t => t.order?.items ?? []); }
+  private queueDeadline(group: Group): number {
+    return group.arrivedAt + Math.min(...group.customers.map(x => x.patienceMs)) + (this.rulesVersion === 1 ? this.config.values.patience.graceMs : 0);
+  }
   private nextDue(): number {
     const w = this.world, c = this.config.values, times: number[] = [];
     if (w.phase === 'open' && w.shift) {
@@ -46,7 +52,7 @@ export class Game {
       if (t.order?.state === 'pending') times.push(t.order.placedAt + t.order.patienceMs);
       if (t.order?.state === 'grace') times.push(t.order.placedAt + t.order.patienceMs + c.patience.graceMs);
     }
-    for (const q of w.queue) times.push(q.arrivedAt + Math.min(...q.customers.map(x => x.patienceMs)) + c.patience.graceMs);
+    for (const q of w.queue) times.push(this.queueDeadline(q));
     for (const item of this.items()) {
       if (item.state === 'preparing' && item.readyAt !== null) times.push(item.readyAt);
       if (item.state === 'ready' && item.glassId) {
@@ -60,6 +66,28 @@ export class Game {
   advance(now: number): void {
     const w = this.world, c = this.config.values;
     if (!Number.isSafeInteger(now) || now < w.now) throw Error('clock:non-monotonic');
+    if (!w.active && this.rulesVersion !== 1) {
+      const elapsed = now - w.now;
+      // Keep calendar time real; move gameplay deadlines so hidden/offline time is not played.
+      if (w.shift && w.phase !== 'resting') {
+        w.shift.pausedMs += elapsed;
+        w.shift.endsAt += elapsed; w.shift.nextSpawnAt += elapsed;
+        for (const rush of w.shift.rushes) { rush.start += elapsed; rush.end += elapsed; }
+      }
+      for (const table of w.tables) {
+        if (table.until !== null) table.until += elapsed;
+        if (table.group) table.group.arrivedAt += elapsed;
+        if (table.order) {
+          table.order.placedAt += elapsed;
+          for (const item of table.order.items) if (item.readyAt !== null) item.readyAt += elapsed;
+        }
+      }
+      for (const group of w.queue) group.arrivedAt += elapsed;
+      for (const glass of w.glasses) if (glass.readyAt !== null) glass.readyAt += elapsed;
+      if (w.lastServedAt !== null) w.lastServedAt += elapsed;
+      w.now = now;
+      return;
+    }
     while (w.now < now) {
       const next = Math.min(now, this.nextDue());
       if (w.phase === 'open' && w.shift) w.staminaMs = Math.max(0, w.shift.endsAt - next);
@@ -70,6 +98,7 @@ export class Game {
   }
   private processDue(): void {
     const w = this.world, c = this.config.values, s = w.shift;
+    if (!w.active && this.rulesVersion !== 1) return;
     if (w.phase === 'open' && s) {
       if (w.now >= s.endsAt) { w.phase = 'closing'; this.emit('shift_closing'); }
       const rush = s.rushes.find(r => w.now >= r.start && w.now < r.end)?.kind ?? 'none';
@@ -116,7 +145,7 @@ export class Game {
       }
     }
     for (const group of [...w.queue]) {
-      if (w.now >= group.arrivedAt + Math.min(...group.customers.map(x => x.patienceMs)) + c.patience.graceMs) {
+      if (w.now >= this.queueDeadline(group)) {
         w.queue = w.queue.filter(x => x.id !== group.id);
         if (s) s.stats.lost += group.customers.length;
         const loss = this.penalize(0, group.customers.length);
@@ -213,9 +242,12 @@ export class Game {
       const profile = c.customerTypes[type];
       return { id: this.id('customer'), type, patienceMs: Math.round(c.patience.thuongMs * profile.patienceMult * c.weather[s.weather].patienceMult), enjoyMs: integer(w, c.enjoy.minMs, c.enjoy.maxMs) * profile.enjoyMult };
     });
-    let rounds = 1;
-    if (customers.some(x => x.type === 'ngoily')) rounds = integer(w, ...c.rounds.ngoily as [number, number]);
-    else if (!first && !customers.some(x => x.type === 'voi') && random(w) < c.demandMix.pSecondRound) rounds = c.rounds.thuong[1];
+    const leisurely = customers.some(x => x.type === 'ngoily'), hurried = customers.some(x => x.type === 'voi');
+    const range = leisurely ? c.rounds.ngoily : hurried ? c.rounds.voi : customers.some(x => x.type === 'vip') ? c.rounds.vip : c.rounds.thuong;
+    let rounds = this.rulesVersion === 1 ? 1 : range[0]; // config-exempt: v1 historical replay default
+    if (leisurely) rounds = integer(w, ...range as [number, number]);
+    else if (!first && !hurried && random(w) < c.demandMix.pSecondRound) rounds = this.rulesVersion === 1 ? c.rounds.thuong[1] : range[1];
+    else if (this.rulesVersion !== 1 && !first && hurried && range[0] !== range[1]) rounds = integer(w, ...range as [number, number]);
     const group: Group = { id: this.id('group'), customers, rounds, arrivedAt: w.now };
     s.stats.arrived += size;
     if (w.queue.length >= queueSlots(w, this.config) && !w.tables.some(t => t.state === 'empty' && t.capacity >= size)) {
@@ -285,17 +317,24 @@ export class Game {
       this.emit('glass_washing', { glassId: glass.id });
     }
   }
-  command(envelope: Envelope): Result {
+  command(envelope: Envelope): Result { return this.applyCommand(envelope, 2); }
+  /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
+  replay(entry: LoggedCommand): Result { return this.applyCommand(entry, entry.rulesVersion); }
+  private applyCommand(envelope: Envelope, rulesVersion: RulesVersion): Result {
     if (!validEnvelope(envelope)) return { ok: false, reason: 'invalidCommand' };
     const previous = this.results.get(envelope.idempotencyKey);
     if (previous) return JSON.stringify(previous.command) === JSON.stringify(envelope.command) ? { ...previous.result } : { ok: false, reason: 'idempotencyConflict' };
     if (envelope.at < this.world.now) return { ok: false, reason: 'staleCommand' };
+    this.rulesVersion = rulesVersion;
     this.advance(envelope.at);
-    const result = this.execute(envelope.command);
-    const entry = structuredClone({ ...envelope, result });
-    this.log.push(entry); this.results.set(entry.idempotencyKey, entry);
-    this.processDue();
-    return { ...result };
+    this.commandKey = envelope.idempotencyKey;
+    try {
+      const result = this.execute(envelope.command);
+      const entry = structuredClone({ ...envelope, result, configVersion: this.config.version, rulesVersion });
+      this.log.push(entry); this.results.set(entry.idempotencyKey, entry);
+      this.processDue();
+      return { ...result };
+    } finally { this.commandKey = null; }
   }
   private execute(cmd: Command): Result {
     const w = this.world, c = this.config.values, s = w.shift;
@@ -309,7 +348,7 @@ export class Game {
         if (c.shift.openRequiresFullStamina && w.staminaMs < c.shift.durationMs) return fail('restFirst');
         const day = dayKey(w.now, this.config);
         if ((w.dayShifts[day] ?? 0) >= c.shift.dailyShiftCap.newbie) return fail('dailyShiftCap');
-        if ((w.dayEarned[day] ?? 0) >= c.shift.dailyEarnCapBase) return fail('dailyEarnCap');
+        if (this.rulesVersion === 1 && (w.dayEarned[day] ?? 0) >= c.shift.dailyEarnCapBase) return fail('dailyEarnCap');
         const onboarding = c.onboarding.enabled && w.completedShifts === 0;
         const weather = weighted(w, WEATHER.map(k => [k, c.weather[k].weight]));
         const rushes: NonNullable<World['shift']>['rushes'] = [];
@@ -321,7 +360,7 @@ export class Game {
             rushes.push({ kind, start, end: Math.min(w.now + c.shift.durationMs, start + c.rush[kind].durationMs) });
           }
         }
-        w.shift = { id: this.id('shift'), startedAt: w.now, endsAt: w.now + c.shift.durationMs, closedAt: null, configVersion: this.config.version, weather, rush: 'none', rushes, nextSpawnAt: w.now + Math.round(onboarding ? c.onboarding.firstShift.guaranteedFirstGroupWithinMs - c.runtime.tableSeatingMs : c.spawn.baseMs * c.spawn.warmupMult), firstGroup: true, onboarding, stats: emptyStats() };
+        w.shift = { id: this.id('shift'), startedAt: w.now, pausedMs: 0, endsAt: w.now + c.shift.durationMs, closedAt: null, configVersion: this.config.version, weather, rush: 'none', rushes, nextSpawnAt: w.now + Math.round(onboarding ? c.onboarding.firstShift.guaranteedFirstGroupWithinMs - c.runtime.tableSeatingMs : c.spawn.baseMs * c.spawn.warmupMult), firstGroup: true, onboarding, stats: emptyStats() };
         w.phase = 'open'; w.lastServedAt = null; w.lostStreak = 0;
         this.emit('shift_opened', { shiftId: w.shift.id }); this.emit('weather_rolled', { weather });
         return { ok: true };
@@ -332,7 +371,10 @@ export class Game {
       case 'kickAll':
         if (w.phase === 'resting' || !c.shift.kickAllAllowed) return fail('noShift');
         w.phase = 'closing';
-        for (const t of w.tables) if (t.order && t.group) this.lose(t); else if (t.group) this.clean(t);
+        for (const t of w.tables) {
+          if (t.order && t.group && (this.rulesVersion === 1 || ['pending', 'grace'].includes(t.order.state))) this.lose(t);
+          else if (t.group && t.state !== 'cleaning') this.clean(t);
+        }
         w.queue = []; return { ok: true };
       case 'serve': {
         const t = w.tables.find(t => t.id === cmd.tableId);
@@ -342,22 +384,23 @@ export class Game {
         if (!s || w.phase === 'resting' || !['pending', 'grace'].includes(o.state)) return fail('orderGone');
         if (!o.items.every(i => i.state === 'ready')) return fail('orderNotReady');
         if (w.lastServedAt !== null && w.now - w.lastServedAt < 1000 / c.spawn.playerServeCeilingPerSec) return fail('serveCooldown');
-        let amount = 0, anyStale = false, anyTip = false;
+        let amount = 0, anyStale = false, anyTip = false, anyEarly = false;
         const grace = o.state === 'grace';
         for (const customer of t.group!.customers) {
           const value = customerValue(w, this.config, o, customer);
           const credited = credit(w, this.config, value.payment, 'servePayment') + credit(w, this.config, value.tip, 'serveTip');
           const rep = value.stale ? c.reputation.staleGlass : value.tip > 0 ? c.reputation.serveWithTip : c.reputation.serveNoTip;
           this.changeRep(rep); amount += credited; anyStale ||= value.stale; anyTip ||= value.tip > 0;
+          anyEarly ||= value.ratio >= c.tip.patienceThreshold;
           s.stats.payment += value.payment; s.stats.tip += value.tip; s.stats.credited += credited; s.stats.served++;
           w.serves.push({ t: w.now, customerId: customer.id, customerType: customer.type, orderId: o.id, dishes: value.dishes, payment: value.payment, tip: value.tip, credited, hadMoi: value.dishes.some(d => d !== 'bia'), stale: value.stale, patienceRatio: value.ratio });
           this.emit('customer_served', { customerId: customer.id, type: customer.type, payment: value.payment, tip: value.tip, stale: value.stale });
         }
-        const outcome = anyStale ? 'stale' : grace ? 'grace' : anyTip ? 'early' : 'late';
+        const outcome = anyStale ? 'stale' : grace ? 'grace' : (this.rulesVersion === 1 ? anyTip : anyEarly) ? 'early' : 'late';
         o.state = 'served'; o.items.forEach(i => { i.state = 'served'; }); t.roundsServed++;
         t.state = 'consuming'; t.until = w.now + Math.round(Math.max(...t.group!.customers.map(x => x.enjoyMs)));
         w.lastServedAt = w.now; w.lostStreak = 0;
-        this.emit('order_served', { tableId: t.id, orderId: o.id, outcome, amount }); this.emit('coin_gain', { amount });
+        this.emit('order_served', { tableId: t.id, orderId: o.id, outcome, amount, tipped: anyTip }); this.emit('coin_gain', { amount });
         return { ok: true, outcome, amount };
       }
       case 'restock': {
