@@ -53,11 +53,11 @@ Còn lại chỉ là **3 việc bạn đã chủ động để "chốt sau"** (m
 
 Ba mục item-list (hành phi, đá lạnh, giá cosmetic) đã **chốt theo đề xuất 08/09**: bỏ hành phi + đá lạnh khỏi nguyên liệu (6 món ↔ 6 nguyên liệu, `mat-onion`/`mat-ice` không vẽ, B1 còn 12 icon); giá cosmetic là giá cuối, không ×k (JSON 1.5.1 có `_rule`).
 
-## 5. Việc nội bộ còn nợ
+## 5. Git & việc nội bộ
 
-- Bộ docs **chưa commit git** (chủ dự án tự commit). Backup từng file trước sửa ở `$HOME/*.bak`.
-- `tools/dashboard-engine/build_dashboard.py`: `PHASE_DATES` vẫn là mốc ngày cũ (chỉ ảnh hưởng biểu đồ timeline; ROADMAP v3.0 chưa gán ngày). Sửa khi team chốt ước lượng.
-- `scripts/apply_pending_0809.py` là script vá một lần, đã chạy — xoá được.
+- **Đã commit:** `b4c39eb` trên nhánh **`docs/2026-09-08-docs-pack`** (66 file: toàn bộ docs pack 08/09 + quyết định + tracker/dashboard + `package.json` gốc). Working tree sạch. Chủ dự án **fast-forward vào master** khi muốn: `git checkout master && git merge --ff-only docs/2026-09-08-docs-pack` (rồi push). Git phải chạy trực tiếp trên máy (qua mount không xoá được `index.lock`).
+- `PHASE_DATES` trong `tools/dashboard-engine/build_dashboard.py` để trống có chủ đích (ROADMAP v3.1 chưa gán ngày) — dashboard ghi "Chưa gán ngày"; điền lại khi team chốt ước lượng.
+- Script vá một lần `scripts/apply_pending_0809.py` đã xoá. Backup `$HOME/*.bak` trên máy có thể xoá.
 
 ## 6. Bản đồ nhanh — đọc gì trước
 
