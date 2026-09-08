@@ -35,6 +35,13 @@ export function deliveryBundles(c: Economy, kitchen: number, grossRange: readonl
   return bundles;
 }
 
+export type SignStyle = keyof Economy['signboard']['styles'];
+export const SIGN_STYLES = Object.keys(seed.signboard.styles) as SignStyle[];
+export function signWeightMult(definition: Economy['signboard']['styles'][SignStyle] | undefined, type: string): number {
+  const key = type === 'vip' ? 'vipWeightMult' : type === 'voi' ? 'voiWeightMult' : type === 'ngoily' ? 'ngoilyWeightMult' : null;
+  return key ? (definition as Record<string, number> | undefined)?.[key] ?? 1 : 1;
+}
+
 export const BUSINESS_UNLOCKS = ['phone', 'qr'] as const;
 export type BusinessUnlock = typeof BUSINESS_UNLOCKS[number];
 export type ProgressRequirement =
@@ -192,6 +199,21 @@ function validate(c: Economy): void {
     for (const k of ['price', 'unitCost', 'bulkCost'] as const) whole(c.menu[d][k], `menu.${d}.${k}`);
     if (c.menu[d].bulkCost > c.menu[d].unitCost || c.menu[d].unitCost > c.menu[d].price) throw Error(`config:menu.${d}:costs`);
   }
+  whole(c.signboard.gate.stallLevel, 'signboard.stallLevel', 1);
+  if (c.signboard.gate.stallLevel > c.upgrades.stall.priceBase.length) throw Error('config:signboardGate');
+  whole(c.signboard.installFeeBase, 'signboard.installFee');
+  whole(Math.round(c.signboard.installFeeBase * c.k.value) + Math.round(c.signboard.styles.wood.priceBase * c.k.value), 'signboard.installCost');
+  for (const style of SIGN_STYLES) {
+    const definition = c.signboard.styles[style];
+    for (const amount of [definition.priceBase, 'repBase' in definition ? definition.repBase : 0]) {
+      whole(amount, 'signboard.price'); whole(Math.round(amount * c.k.value), 'signboard.scaledPrice');
+    }
+    for (const weather of WEATHER) for (const rush of Object.values(c.rush).filter(r => typeof r === 'object' && 'floorMs' in r)) {
+      const weights = Object.entries(c.customerTypes).filter(([, t]) => t.usesTable && t.weight > 0).map(([type, t]) => t.weight * ((c.weather[weather].customerWeightMult as Record<string, number>)[type] ?? 1) * (type === 'voi' && 'voiWeightMult' in rush ? Number(rush.voiWeightMult) : 1) * signWeightMult(definition, type));
+      const total = weights.reduce((a, b) => a + b, 0);
+      if (!Number.isFinite(total) || total <= 0) throw Error('config:signboardWeights');
+    }
+  }
   const shipper = c.customerTypes.shipper, grossRange = shipper.grossBase.map(n => Math.round(n * c.k.value));
   for (const n of [...shipper.orderLines, ...shipper.grossBase, ...grossRange, shipper.spawnIntervalMs, shipper.deadlineMs]) whole(n, 'shipper.range', 1);
   if (shipper.orderLines[0] > shipper.orderLines[1] || grossRange[0] > grossRange[1] || shipper.requires !== 'phone') throw Error('config:shipper');
@@ -200,6 +222,8 @@ function validate(c: Economy): void {
   for (const weather of WEATHER) {
     positive(c.weather[weather].shipperMult, 'shipper.weather');
     whole(Math.round(shipper.spawnIntervalMs / c.weather[weather].shipperMult), 'shipper.interval', 1);
+    positive(c.signboard.styles.neon.shipperMult, 'signboard.shipperMult');
+    whole(Math.round(shipper.spawnIntervalMs / c.weather[weather].shipperMult / c.signboard.styles.neon.shipperMult), 'signboard.shipperInterval', 1);
   }
   for (let kitchen = c.runtime.initialKitchenLevel; kitchen < c.upgrades.kitchen.priceBase.length; kitchen++) if (!deliveryBundles(c, kitchen, grossRange).length) throw Error('config:deliveryCatalogEmpty');
   if (c.glasses.start > c.glasses.storageCap || c.glasses.buyCap > c.glasses.storageCap) throw Error('config:glasses');

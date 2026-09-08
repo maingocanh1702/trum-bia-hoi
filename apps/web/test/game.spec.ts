@@ -576,3 +576,43 @@ test('a pending shipper blocks paid closure and expires with a numeric-only pena
   await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(fixture.coins - fixture.quote.penalty));
   await expect(page.locator('.ledger')).toContainText('Đơn giao quá hạn');
 });
+
+for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }, { width: 1280, height: 400 }]) {
+ test(`business sign installation, ownership, reputation gate and live yard at ${viewport.width}×${viewport.height}`, async ({ page }) => {
+  const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/signboard.ts'], { encoding: 'utf8' }));
+  const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  await page.setViewportSize(viewport); await page.clock.install({ time: new Date(fixture.now) }); await page.clock.pauseAt(new Date(fixture.now));
+  await page.addInitScript(save => { if (!localStorage.getItem('sign-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('sign-seeded', '1'); } }, fixture.save);
+  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click(); await page.getByRole('button', { name: 'Biển hiệu Chưa lắp biển', exact: true }).click();
+  const panel = page.getByRole('dialog', { name: 'Biển hiệu', exact: true }), money = (n: number) => new Intl.NumberFormat('vi-VN').format(n);
+  await expect(panel.getByRole('article')).toHaveCount(5);
+  await panel.getByRole('button', { name: /^Lắp biển Gỗ/ }).click();
+  const wood = panel.getByRole('article', { name: 'Gỗ', exact: true }), neon = panel.getByRole('article', { name: 'Neon', exact: true }), golden = panel.getByRole('article', { name: 'Hoàng kim', exact: true });
+  await expect(wood.getByRole('button')).toHaveText('Đang treo'); await expect(golden.getByRole('button')).toBeDisabled();
+  await expect(golden).toContainText('Không trừ uy tín');
+  await neon.getByRole('button').click(); await expect(neon.getByRole('button')).toHaveText('Đang treo');
+  for (const img of await panel.locator('.sign-card > img').all()) expect(await img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth === 1536)).toBe(true);
+  await wood.getByRole('button').click(); await expect(neon.getByRole('button')).toHaveText('Treo biển này'); await neon.getByRole('button').click();
+  await page.keyboard.press('Escape'); const prop = page.getByRole('button', { name: 'Biển Neon · đổi kiểu', exact: true });
+  const b = (await prop.boundingBox())!; expect(b.width).toBeGreaterThanOrEqual(44); expect(b.height).toBeGreaterThanOrEqual(44);
+  await expect(page.locator('.money strong')).toHaveText(money(fixture.coins - fixture.install - fixture.neon));
+  await prop.click(); await page.clock.runFor(1000); await expect(golden.getByRole('button')).toBeDisabled(); await page.keyboard.press('Escape'); await expect(prop).toBeFocused();
+  await page.getByRole('button', { name: 'Xem mâm · bàn 1', exact: true }).first().click(); await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
+  await prop.click(); await expect(golden.getByRole('button')).toBeEnabled(); await golden.getByRole('button').click();
+  await expect(golden.getByRole('button')).toHaveText('Đang treo');
+  await page.keyboard.press('Escape'); await page.reload();
+  await expect(page.getByRole('button', { name: 'Biển Hoàng kim · đổi kiểu', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Cài đặt', exact: true }).click(); await page.getByLabel('Ngôn ngữ').selectOption('en'); await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Golden sign · change style', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Shop sign', exact: true })).toContainText('VIP attraction ×3');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));
+  expect(saved.events.filter((e: { type: string }) => e.type === 'signboard_installed')).toHaveLength(1);
+  expect(saved.events.filter((e: { type: string }) => e.type === 'signboard_bought')).toHaveLength(2);
+  const purchase = saved.events.filter((e: { type: string }) => e.type === 'signboard_bought').at(-1);
+  expect(purchase.data.requiredRep).toBe(fixture.reputationGate); expect(purchase.data.cost).toBe(fixture.golden);
+  expect(errors).toEqual([]);
+ });
+}

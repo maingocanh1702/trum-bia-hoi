@@ -67,3 +67,15 @@ deadlines. Legacy shifts retain their original payloads, with no invented summar
 | Date | Change |
 |---|---|
 | 2026-09-09 | Documented actual rules v8 rush lifecycle/report payloads and event-window semantics; lunch/football arbitration remains pending. |
+
+## Local business sign events — rules v9
+
+`signboard_installed`, `signboard_bought`, `signboard_equipped` carry style,
+previousStyle (null at installation), cost and requiredRep. These deterministic
+events share the command idempotency key. requiredRep is a purchase threshold,
+not a debit; re-equipping owned styles costs zero. No season/lifetime faucet or
+remote collection is added.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Added actual local business-sign purchase/equip payloads; prices and gate use the canonical snapshot. |

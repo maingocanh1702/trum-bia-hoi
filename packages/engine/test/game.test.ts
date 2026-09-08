@@ -186,7 +186,7 @@ test('v1 save migrates without changing prior fines, identifiers or an in-progre
   assert.ok(data.events.every((e: { idempotencyKey: string; configVersion: string }) => e.idempotencyKey && e.configVersion === g.config.version));
   assert.deepEqual(decodeSave(migrated).world, g.world);
   assert.equal(send(g, { type: 'activity', active: true }).ok, true);
-  assert.equal(g.log.at(-1)!.rulesVersion, 8);
+  assert.equal(g.log.at(-1)!.rulesVersion, 9);
   assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
   data.events[0].configVersion = 'tampered';
   assert.throws(() => decodeSave(JSON.stringify(data)), /event-mismatch/);

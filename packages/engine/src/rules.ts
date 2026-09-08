@@ -1,3 +1,4 @@
+import { signboardStyle } from './signboard';
 import { DISHES, type Config, type Dish, type Equipment, type Rush } from './config';
 import type { Customer, Order, Table, World } from './types';
 
@@ -108,7 +109,8 @@ export function credit(w: World, c: Config, amount: number, source: string): num
   return credited;
 }
 export function deliveryInterval(w: World, c: Config) {
-  return Math.round(c.values.customerTypes.shipper.spawnIntervalMs / c.values.weather[w.shift?.weather ?? 'sunny'].shipperMult);
+  const style = signboardStyle(w, c), mult = style && 'shipperMult' in style ? Number(style.shipperMult) : 1;
+  return Math.round(c.values.customerTypes.shipper.spawnIntervalMs / c.values.weather[w.shift?.weather ?? 'sunny'].shipperMult / mult);
 }
 export function deliveryQuote(w: World, c: Config) {
   const order = w.delivery;

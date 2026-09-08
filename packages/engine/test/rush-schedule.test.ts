@@ -61,7 +61,7 @@ test('genuine active v7 schedule and identifiers survive a same-time v8 command 
   for (const key of ['now', 'coins', 'reputation', 'rng', 'nextId'] as const) assert.equal(w[key], expected[key]);
   assert.deepEqual(w.shift!.rushes, expected.rushes); assert.deepEqual(w.shift!.stats, expected.stats); assert.deepEqual(w.events, JSON.parse(text).events);
   assert.deepEqual(g.log.at(-1)!.result, expected.result); send(g, { type: 'activity', active: true });
-  assert.equal(g.log.at(-1)!.rulesVersion, 8); assert.deepEqual(w.shift!.rushes, expected.rushes); assert.equal(w.shift!.rushScheduleSeed, undefined);
+  assert.equal(g.log.at(-1)!.rulesVersion, 9); assert.deepEqual(w.shift!.rushes, expected.rushes); assert.equal(w.shift!.rushScheduleSeed, undefined);
   assert.equal(w.events.filter(e => e.type === 'rush_scheduled').length, 0);
   send(g, { type: 'endShift' }); g.advance(w.shift!.rushes[0].end);
   const ended = w.events.find(e => e.type === 'rush_ended')!; assert.deepEqual(ended.data, { kind: expected.rushes[0].kind });

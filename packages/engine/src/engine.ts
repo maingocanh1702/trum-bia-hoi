@@ -1,13 +1,15 @@
-import { config as defaultConfig, BUSINESS_UNLOCKS, DISHES, EQUIPMENT, WEATHER, deliveryBundles, type Config, type SeatedType, type Rush } from './config';
+import { config as defaultConfig, BUSINESS_UNLOCKS, SIGN_STYLES, signWeightMult, DISHES, EQUIPMENT, WEATHER, deliveryBundles, type Config, type SeatedType, type Rush } from './config';
 import { integer, random, weighted } from './rng';
 import { addStock, credit, currentGuests, customerValue, dayKey, deliveryInterval, deliveryQuote, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
 import { lifePathStatus, lifePathRewardQuote, unlockQuote } from './progression';
+import { signboardQuote, signboardStyle } from './signboard';
 import { planRushes, summarizeRush } from './rush';
 import type { Command, Customer, Envelope, Group, Item, LoggedCommand, Order, Result, RulesVersion, Stats, Table, World } from './types';
 
 const RUSH_CLOCK_RULES: RulesVersion = 5; // config-exempt: fixed replay protocol revision
 const PROGRESSION_RULES: RulesVersion = 6; // config-exempt: fixed replay protocol revision
 const DELIVERY_RULES: RulesVersion = 7; // config-exempt: fixed replay protocol revision
+const SIGNBOARD_RULES: RulesVersion = 9; // config-exempt: fixed replay protocol revision
 const RUSH_SCHEDULE_RULES: RulesVersion = 8; // config-exempt: fixed replay protocol revision
 const emptyStats = (): Stats => ({ arrived: 0, served: 0, lost: 0, rejected: 0, orders: 0, payment: 0, tip: 0, credited: 0, penalty: 0, spent: 0, rep: 0, wellRestedBonus: 0 });
 
@@ -18,7 +20,7 @@ export class Game {
   private readonly results = new Map<string, LoggedCommand>();
   private commandKey: string | null = null;
   private activeRushIndex: number | null = null;
-  private rulesVersion: RulesVersion = RUSH_SCHEDULE_RULES;
+  private rulesVersion: RulesVersion = SIGNBOARD_RULES;
   constructor(readonly config: Config = defaultConfig, readonly seed = 1, readonly createdAt = 0, readonly playerId = 'guest') {
     if (!Number.isSafeInteger(seed) || !Number.isSafeInteger(createdAt) || createdAt < 0) throw Error('game:invalid-origin');
     const c = config.values;
@@ -317,7 +319,7 @@ export class Game {
         const rush = rushConfig(this.config, s.rush);
         const rushMult = key === 'voi' && 'voiWeightMult' in rush ? rush.voiWeightMult : 1;
         const allowed = key !== 'vip' || vipCount < c.customerTypes.vip.maxPerGroupPhase2;
-        return [key, allowed ? value.weight * weatherMult * rushMult : 0];
+        return [key, allowed ? value.weight * weatherMult * rushMult * (this.rulesVersion >= SIGNBOARD_RULES ? signWeightMult(signboardStyle(w, this.config), key) : 1) : 0];
       }));
       if (type === 'vip') vipCount++;
       const profile = c.customerTypes[type], rush = rushConfig(this.config, s.rush);
@@ -399,7 +401,7 @@ export class Game {
       this.emit('glass_washing', { glassId: glass.id });
     }
   }
-  command(envelope: Envelope): Result { return this.applyCommand(envelope, RUSH_SCHEDULE_RULES); }
+  command(envelope: Envelope): Result { return this.applyCommand(envelope, SIGNBOARD_RULES); }
   /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
   replay(entry: LoggedCommand): Result { return this.applyCommand(entry, entry.rulesVersion); }
   private applyCommand(envelope: Envelope, rulesVersion: RulesVersion): Result {
@@ -580,6 +582,17 @@ export class Game {
         this.spend(q.cost); w.unlocks.push(cmd.item);
         this.emit('unlock_bought', { item: cmd.item, cost: q.cost }); return { ok: true, amount: q.cost };
       }
+      case 'installSignboard': case 'setSignboard': {
+        const q = signboardQuote(w, this.config, cmd.type === 'installSignboard' ? null : cmd.style);
+        if (!q.ok) return fail(q.reason!);
+        const previousStyle = w.signStyle ?? null;
+        if (q.cost) this.spend(q.cost);
+        if (cmd.type === 'installSignboard') w.unlocks.push('signboard');
+        else if (!q.owned) w.unlocks.push(`signboard:${q.target}`);
+        w.signStyle = q.target;
+        this.emit(cmd.type === 'installSignboard' ? 'signboard_installed' : q.owned ? 'signboard_equipped' : 'signboard_bought', { style: q.target, previousStyle, cost: q.cost, requiredRep: q.requiredRep });
+        return { ok: true, amount: q.cost };
+      }
       case 'upgradeDog': {
         if (cmd.level !== w.dogLevel + 1) return fail('dogLevelChanged');
         const q = dogUpgradeQuote(w, this.config);
@@ -631,7 +644,7 @@ export function validEnvelope(input: unknown): input is Envelope {
   if (typeof e.idempotencyKey !== 'string' || !e.idempotencyKey || e.idempotencyKey.length > 128 || !Number.isSafeInteger(e.at) || e.at < 0 || !e.command || typeof e.command !== 'object') return false; // config-exempt: protocol key length
   const c = e.command;
   switch (c.type) {
-    case 'startShift': case 'endShift': case 'buyTable': case 'emergencyPack': return true;
+    case 'startShift': case 'endShift': case 'buyTable': case 'emergencyPack': case 'installSignboard': return true;
     case 'kickAll': return (c.shiftId === undefined || typeof c.shiftId === 'string') && (c.maxCost === undefined || Number.isSafeInteger(c.maxCost) && c.maxCost >= 0);
     case 'activity': return typeof c.active === 'boolean';
     case 'serve': return typeof c.tableId === 'string' && typeof c.orderId === 'string';
@@ -639,6 +652,7 @@ export function validEnvelope(input: unknown): input is Envelope {
     case 'upgradeTable': return typeof c.tableId === 'string';
     case 'claimLifePath': return Number.isSafeInteger(c.level) && c.level > 0;
     case 'buyUnlock': return BUSINESS_UNLOCKS.includes(c.item);
+    case 'setSignboard': return SIGN_STYLES.includes(c.style);
     case 'upgradeDog': return Number.isSafeInteger(c.level) && c.level > 0;
     case 'restock': return DISHES.includes(c.dish) && ['bulk', 'full', 'one'].includes(c.mode);
     case 'upgrade': return EQUIPMENT.includes(c.kind);

@@ -950,3 +950,16 @@ Không gen 6-10 asset khác nhau trong một ảnh. “Batch” chỉ là hàng 
 3. **Size:** kích thước 128x128 trong catalog cũ chỉ còn áp cho icon/item nhỏ; world object dùng native footprint như §2.
 4. **Referral badge IDs:** cần chốt mapping giữa `Kết Nối/Bạn Bè/Đồng Hành` và `badge-ket-noi/badge-ban-be/badge-dong-hanh` trước khi hiện label runtime.
 5. **Rare glass:** reward đã xuất hiện trong feature risk/event nhưng lifecycle/naming chưa được catalog chính thức; file này đề xuất `glass-rare-chairman` làm identity anchor.
+
+## Local sign sprite receipt — 2026-09-09
+
+Five original sprites generated separately with built-in image_gen, one per style.
+Exact prompts: docs/reference/assets-owner-2026-09-08/signboard-prompts.json. Final
+project paths assets/sign-{wood,neon,vintage,calligraphy,golden}.png. Native1536×1024
+RGBA retained without pixel edits; alpha ranges0–254. Owner asset boards informed
+shape/style, no screenshots were cut into production art. Actual yard/shop previews
+checked at360/390/1280 widths. Manifest marks these draft pending final release QA.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Added builtin business-sign prompt/output provenance and native-alpha QA evidence. |

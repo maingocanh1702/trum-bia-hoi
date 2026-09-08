@@ -241,7 +241,7 @@ Khi gen bằng ChatGPT, dùng rule:
 | 2 | **Neon** | 15,000 | 37,500 | VIP ×2, shipper ×1.2 | Biển neon ống thủy tinh kiểu cũ, hơi chập chờn |
 | 3 | **Vintage** | 20,000 | 50,000 | VIP ×2, **khách vội** ×0.5 (`voiWeightMult`) | Biển vintage retro |
 | 4 | **Thư pháp** | 25,000 | 62,500 | VIP ×2, stubborn ×0.8 | Biển thư pháp Hán Nôm |
-| 5 | **Hoàng kim** 🌟 | 30,000 + **5,000⭐** | 75,000 + **12,500⭐** | **VIP ×3** | Biển vàng sang trọng |
+| 5 | **Hoàng kim** 🌟 | 30,000; gate **5,000⭐** | 75,000; gate **12,500⭐** | **VIP ×3** | Biển vàng sang trọng |
 
 **Subtotal: 5 sprites**
 
@@ -491,3 +491,5 @@ Khi gen bằng ChatGPT, dùng rule:
 | v1.7 | Chốt 3 mục theo đề xuất (08/09): bỏ hành phi + đá lạnh khỏi nguyên liệu (6 món ↔ 6 NL, `mat-onion`/`mat-ice` không vẽ); giá cosmetic = giá cuối không ×k (nhãn cột). |
 
 *Nguồn: `02-GDD-trum-bia-hoi.md` v1.5, `economy-spec-from-bundle.md`, `00-TONG-HOP-trumviahe.md`.*
+
+| 2026-09-09 local signs | Clarified Golden reputation as purchase gate, not a debit (GDD/original authority). Five original builtin sprites now assets/sign-{wood,neon,vintage,calligraphy,golden}.png, native1536×1024 alpha, scaled in DOM. Numeric config unchanged; these business signs remain separate from donation cosmetics. Release art approval pending. |

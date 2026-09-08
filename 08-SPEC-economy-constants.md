@@ -288,7 +288,7 @@ Phí lắp lần đầu **20.000 base (50.000 ×k)**, gate **Quầy Lv3**.
 | `neon` | Neon | 15.000 | 37.500 | VIP ×2, shipper ×1.2 |
 | `vintage` | Vintage | 20.000 | 50.000 | VIP ×2, weight `voi` ×0.5 |
 | `calligraphy` | Thư pháp | 25.000 | 62.500 | VIP ×2, `ngoily` ×0.8 |
-| `golden` | Hoàng kim | 30.000 + ⭐5.000 | 75.000 + ⭐12.500 | **VIP ×3** |
+| `golden` | Hoàng kim | 30.000; gate ⭐5.000 | 75.000; gate ⭐12.500 | **VIP ×3** |
 
 Biển = modifier risk/reward (VIP ×10 cả tip lẫn phạt), không phải cosmetic. Phase 2.
 
@@ -562,3 +562,5 @@ Mọi section của `docs/config/economy.tbh.json` đều nằm trong registry. 
 | v1.3.4 | Rules v7: làm rõ shipperMult là tần suất theo GDD §9/F09/original §18, sửa dấu nhân interval ở §4 thành chia. Đơn lấy tổng giá món cuối trong grossBase ×k, đủ toàn bộ nguyên liệu mới giao; net và Tỉnh Táo qua cùng credit/cap. Không đổi JSON hoặc số cân bằng. Ngừng đón khách được phép, ca chỉ finalize sau khi đơn đang chạy được giao/hết hạn; kick-all từ chối trước debit. |
 
 | v1.3.5 | Rules v8 nối seeded ordinary rush planning, fit preflight, heavy enjoyMult và báo cáo cuối slot. Dùng nguyên JSON 1.7.0; không thêm số cân bằng, không đổi k denominator. Lịch v1–v7 và config lịch sử giữ replay được; chỉ mở ca mới từ chối lịch không vừa. |
+
+| v1.3.6 | Rules v9 nối biển kinh doanh theo JSON hiện hành: lắp Gỗ, sở hữu/đổi5 kiểu, customer weight cho khách mới và Neon cho interval shipper mới. Làm rõ golden.repBase là ngưỡng mua, không debit uy tín (GDD §8/original §7); bảng §10 ghi rõ gate. Phí xu qua spend, không đổi JSON/k, không reset timer/khách đang có; donation cosmetic không cấp hiệu ứng này. |

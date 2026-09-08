@@ -662,3 +662,32 @@ donation cosmetics. Lunch/football, other M3 and M4–M9 remain in the full scop
 | Date | Change |
 |---|---|
 | 2026-09-09 | Recorded independent no-finding full-diff review6535484..5e46cf1 and all rush verification; continuing the full-game goal. |
+
+## 2026-09-09 — Business signboard rules v9
+
+Base bdbb493525e5ce336eb7146b2cf4e092cb420172. Implemented installation after configured
+Counter gate, five owned/equipped business styles, Golden reputation purchase
+threshold (not debit), canonical quote/spend and future-arrival/delivery-cadence
+effects. Same-time changes preserve guests/orders/deadlines; owned re-equip is free.
+Exact genuine v8 delivery/rush histories remain unchanged before current commands.
+No canonical JSON changed, no donation power or paid unlock introduced.
+
+Author npm run verify passed: config/build/92 unit/normal10-row sim/15 pressure
+windows. New tests include6000 actual seeded first groups across no-sign/five styles,
+VIP cap, retuned config validation, exact cost/gate/idempotency, live timers, old/new
+replay.37 browser tests passed (.qa/signboard-e2e.txt), including installation,
+rep-gated Golden after a real serve, free switching, focus/reload/VI–EN at360/390/
+1280×400. Actual screenshot sets .qa/signboard-{install,gate,yard,en}-{360,390,1280}.png
+inspected. Five original native-alpha1536×1024 sprites and paired upgrade SFX mapping
+bring manifest to127 entries/32 SFX pairs,30 placeholders/89 drafts. Release QA remains.
+
+Separate110 sign sim rows (five styles alone and with QR+shipper+rested; one Golden
+QR+shipper profile) all>=500 seated serves, k2.3072–2.8616. Logs .qa/signboard-*-sim.txt.
+These prove the local measurement band, not hosted Alpha/final full-game balance.
+Independent full-diff review pending. Trackerv0.13.0 keeps full F10/M0–M9 in progress;
+root preserved, no merge/push. Next M3 work includes flyers and remaining upgrade
+flows, followed by the full server/meta/risk/events scope.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Implemented and verified business signs, native sprites/VI–EN UI and replay/economy evidence; full independent review pending. |

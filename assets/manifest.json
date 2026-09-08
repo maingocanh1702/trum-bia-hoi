@@ -1743,7 +1743,10 @@
         "dog_upgraded",
         "unlock_bought",
         "life_path_level_reached",
-        "life_path_reward_claimed"
+        "life_path_reward_claimed",
+        "signboard_installed",
+        "signboard_bought",
+        "signboard_equipped"
       ],
       "loop": false,
       "status": "draft",
@@ -1766,7 +1769,10 @@
         "dog_upgraded",
         "unlock_bought",
         "life_path_level_reached",
-        "life_path_reward_claimed"
+        "life_path_reward_claimed",
+        "signboard_installed",
+        "signboard_bought",
+        "signboard_equipped"
       ],
       "loop": false,
       "status": "draft",
@@ -2102,6 +2108,91 @@
       ],
       "status": "draft",
       "review_notes": "Original adult courier, native alpha retained. Prompt/source at docs/reference/assets-owner-2026-09-08/shipper-prompt.md; final family approval pending."
+    },
+    {
+      "id": "sign-wood",
+      "type": "sprite",
+      "path": "assets/sign-wood.png",
+      "source": "imagegen_builtin",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "transparent": true,
+      "usage": [
+        "signboard",
+        "business-upgrade"
+      ],
+      "status": "draft",
+      "review_notes": "Original builtin generated sign, native alpha retained. Style based on owner reference boards; no reused source screenshot. Prompt set docs/reference/assets-owner-2026-09-08/signboard-prompts.json; final release art QA pending."
+    },
+    {
+      "id": "sign-neon",
+      "type": "sprite",
+      "path": "assets/sign-neon.png",
+      "source": "imagegen_builtin",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "transparent": true,
+      "usage": [
+        "signboard",
+        "business-upgrade"
+      ],
+      "status": "draft",
+      "review_notes": "Original builtin generated sign, native alpha retained. Style based on owner reference boards; no reused source screenshot. Prompt set docs/reference/assets-owner-2026-09-08/signboard-prompts.json; final release art QA pending."
+    },
+    {
+      "id": "sign-vintage",
+      "type": "sprite",
+      "path": "assets/sign-vintage.png",
+      "source": "imagegen_builtin",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "transparent": true,
+      "usage": [
+        "signboard",
+        "business-upgrade"
+      ],
+      "status": "draft",
+      "review_notes": "Original builtin generated sign, native alpha retained. Style based on owner reference boards; no reused source screenshot. Prompt set docs/reference/assets-owner-2026-09-08/signboard-prompts.json; final release art QA pending."
+    },
+    {
+      "id": "sign-calligraphy",
+      "type": "sprite",
+      "path": "assets/sign-calligraphy.png",
+      "source": "imagegen_builtin",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "transparent": true,
+      "usage": [
+        "signboard",
+        "business-upgrade"
+      ],
+      "status": "draft",
+      "review_notes": "Original builtin generated sign, native alpha retained. Style based on owner reference boards; no reused source screenshot. Prompt set docs/reference/assets-owner-2026-09-08/signboard-prompts.json; final release art QA pending."
+    },
+    {
+      "id": "sign-golden",
+      "type": "sprite",
+      "path": "assets/sign-golden.png",
+      "source": "imagegen_builtin",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "transparent": true,
+      "usage": [
+        "signboard",
+        "business-upgrade"
+      ],
+      "status": "draft",
+      "review_notes": "Original builtin generated sign, native alpha retained. Style based on owner reference boards; no reused source screenshot. Prompt set docs/reference/assets-owner-2026-09-08/signboard-prompts.json; final release art QA pending."
     }
   ]
 }

@@ -5,3 +5,4 @@ export * from './engine';
 export * from './save';
 export * from './progression';
 export * from './rush';
+export * from './signboard';

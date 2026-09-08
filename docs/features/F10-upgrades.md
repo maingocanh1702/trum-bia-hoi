@@ -91,3 +91,38 @@ unlock prerequisite. Shipper now uses the phone prop and its own rules-v7 delive
 | 2026-09-09 | Added config-driven phone/QR purchases, active ownership props and the shared progression gate; preserved whole-table service and added real QR tip/replay verification. |
 
 | 2026-09-09 | Phone consumer now opens local shipper orders with whole-stock handoff and a live deadline; purchase gate/price remain shared, social producer unfinished. |
+
+## 10. Local business signboard — rules v9
+
+Install the default Wood sign after reaching signboard.gate.stallLevel, using the
+scaled installFeeBase plus Wood priceBase (currently zero). Installation writes the
+existing signboard unlock used by LP requirements. Each other style is bought once,
+then free to re-equip. Exact style identities come from the finite JSON catalog.
+Golden repBase is a scaled purchase threshold, not a reputation debit, consistent
+with GDD §8/original §7; owned Golden remains usable after reputation falls.
+
+One signboardQuote owns installation/ownership/selection/coin/rep checks. Both
+commands recheck at execution; only successful purchases use existing spend, with
+no season/lifetime credit. Style ownership uses existing unlocks with signboard:
+prefix; selected signStyle is optional in old worlds. Original v8 active-delivery
+and active-rush fixtures preserve their history; savev2 accepts rules1–9.
+
+Business sign changes are available during a shift, like Phone/QR; the phase1
+physical-equipment restriction does not apply. They affect future customer weight
+rolls and newly scheduled delivery intervals only. VIP per-group cap, existing
+people/orders/deadlines and all payment/penalty formulas remain unchanged. Neon
+multiplies delivery frequency, not its wait duration. Hidden time keeps existing
+deadlines paused through the same scheduler. Donation cosmetics cannot grant these
+business effects.
+
+The native VI/EN sheet is reachable from Upgrades and the installed yard sign. It
+shows actual prices, attraction/frequency effects, equipped/owned states and Golden
+rep requirement. Art: five original native-alpha builtin sprites, prompts in
+docs/reference/assets-owner-2026-09-08/signboard-prompts.json; upgrade SFX pair reused.
+Author92 unit/37 E2E, config/build/assets and110 sign economy rows passed; k2.3072–
+2.8616 with>=500 serves/row. Baseline10 rows and15 pressure windows also passed.
+Independent full-diff review pending. Other F10/game work remains in progress.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Implemented local business sign installation, five-style ownership/equip, future-arrival/cadence effects and original sprites; clarified Golden reputation gate. Full independent review pending. |
