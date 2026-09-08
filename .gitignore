@@ -27,5 +27,11 @@ venv/
 # GitNexus index (self-managed)
 .gitnexus/
 
+# Dashboard generated cache (dashboard-engine, self-managed)
+.dashboard/cache/
+
 # Autopilot runtime state (registry/ledger/state) — never commit
 .autopilot/
+
+# Stale pre-v11 skill mirror (missing HALT LEGACY_LAUNCHER guard; superseded by .claude/commands + .claude/skills)
+.agents/
