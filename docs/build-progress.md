@@ -421,3 +421,27 @@ reduced motion and separate hitboxes at360×740,1280×720 and1280×400. Visual c
 scrollable native sheet. A 360px hitbox overlap discovered during testing was fixed
 by narrowing/repositioning the new dog target. Asset validation:119 entries,32 paired
 SFX,30 sprite placeholders,81 drafts; production art remains incomplete.
+
+## 2026-09-09 — Dog purchase independent review receipt
+
+Product commit `0216cb07122d135e5cc544c120300bdea6598178`; immutable base
+`db83b84e69c71a37daca2919ce948dabb9dcdc1d`. Independent Codex output
+`.qa/review-dog.txt` returned **VERDICT: CLEAN**. It independently passed build,
+all60 unit tests, assets and normal sim. Its browser rerun was blocked by server-port
+EPERM in the review sandbox; author-side full28 browser tests passed in the local
+runtime, covering all three dog levels at360×740/1280×720/1280×400.
+
+Final author verification: config/build/60 unit/28 E2E,119 asset entries,32 paired
+SFX, normal+rested sims (20 rows, k2.3249–2.7020, >=500 serves each). No root-checkout
+merge or push. Tracked worktree is clean after this receipt; ignored QA files and
+untracked dashboard telemetry remain local.
+
+The original full M0–M9 goal stays active. Full F18 combat/capture/protection/server
+acceptance remains open; these effects are not claimed by the local dog purchase.
+Read-only next-step authority/decision notes are `.qa/next-life-path-phone.md`:
+LP1 needs lifetime+seats+dog; phone requires LP1; LP2 also needs upgraded stall+phone.
+Reward claims, full meta conditions, shipper and remaining mechanics are unfinished.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Recorded independent CLEAN for dog purchase/three-level UI and final 60-unit/28-browser verification; kept full-game goal and F18 remainder open. |

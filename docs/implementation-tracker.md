@@ -1,6 +1,6 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.9.2
+> **Version:** v0.9.3
 > **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-09 (layout/art theo ảnh owner)
 > **Trạng thái:** Active — **M0 qua verify; review sửa lỗi nền và layout/art đã CLEAN. M1–M3 tiếp tục triển khai; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.0** (1 phase, mốc M0–M9).
 > **Owner:** Team
@@ -78,7 +78,7 @@
 | F15 | 🎮 Code | Sự Cố Quán Nhậu — bảo kê, trộm offline, đánh nhau (kiểm tra ATTP ⏸ pending) | ⬜ | `—` | 🔒S | Spec `docs/features/F15-risk-events.md`; §4 kiểm tra pending, `risk.inspection.enabled=false`. |
 | F16 | 🎮 Code | Rủ Bạn & Huy Hiệu — 3 mốc, huy hiệu Kết Nối | ⬜ | `—` | 🔒S | Spec `docs/features/F16-referral-badges.md`. |
 | F28 | 🎮 Code | Bảng Xếp Hạng & Bàn Thờ Ông Địa — top N, hàng của tôi, snapshot kết Vụ | ⬜ | `—` | 🔒S 🔒B | Spec `docs/features/F28-leaderboard.md`; config `leaderboard` tier A. Mốc M5. |
-| F18 | 🎮 Code | Chó Giữ Quán — combat bảo kê, bảo hiểm trộm | 🟡 | `codex/game-build-isolated` | 🔒S | Mua/nâng 3 cấp từ config, debit chung + replay; sheet VI/EN, hình cùng một chó 3 cấp và reduced motion. Đang verify/review; combat/capture/theft/server chưa có. |
+| F18 | 🎮 Code | Chó Giữ Quán — combat bảo kê, bảo hiểm trộm | 🟡 | `codex/game-build-isolated` | 🔒S | Mua/nâng 3 cấp từ config, debit chung + replay; sheet VI/EN, hình cùng một chó 3 cấp và reduced motion. Review CLEAN tại 0216cb0, config/build/60 unit/28 E2E/asset/sim pass; combat/capture/theft/server chưa có. |
 | F22 | 🎮 Code | Bia Đấm — LLM server-side, quota 20/ngày | ⬜ | `—` | 🔒S | Spec `docs/features/F22-ai-assistant.md`. Tùy feasibility. |
 | F26 | 🎮 Code | ~~Vé Mở Ca & Thanh Toán~~ — ⛔ **bỏ 08/09: chơi free hết** | ⏸ | `—` | — | Spec `docs/features/F26-daily-session-pass-payments.md`. Cần payment/provider review. |
 
@@ -153,3 +153,5 @@
 | 2026-09-09 | v0.9.1 | Ghi nhận review rush clock b97ff07..1c18b2d không còn lỗi actionable; 55 unit/25 E2E, k 2.3249–2.7020. F08 và toàn bộ M0–M9 vẫn in progress. |
 
 | 2026-09-09 | v0.9.2 | F18 bắt đầu với prerequisite mua/nâng chó 3 cấp, quote config/replay/UI/art draft; combat/protection/server còn tiếp tục, review pending. |
+
+| 2026-09-09 | v0.9.3 | F18 purchase/upgrade review CLEAN db83b84..0216cb0; 60 unit/28 E2E, asset/config/build + normal/rested sim pass. Full F18 và M0–M9 vẫn in progress. |
