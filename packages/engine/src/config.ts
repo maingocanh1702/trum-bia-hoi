@@ -11,6 +11,27 @@ export const DISHES = Object.keys(seed.menu) as Dish[];
 export const EQUIPMENT: Equipment[] = ['keg', 'washer', 'cooler', 'stall', 'kitchen'];
 export const WEATHER: Weather[] = ['sunny', 'hot', 'humid', 'rain', 'cold'];
 
+export const BUSINESS_UNLOCKS = ['phone', 'qr'] as const;
+export type BusinessUnlock = typeof BUSINESS_UNLOCKS[number];
+export type ProgressRequirement =
+  | { kind: 'seats' | 'equipment' | 'stall' | 'level'; need: number; exact: boolean }
+  | { kind: 'owned'; target: string }
+  | { kind: 'peak'; target: string };
+/** Closed config grammar; unknown tokens never become an unlocked prerequisite. */
+export function parseProgressRequirement(token: string, c: Economy): ProgressRequirement {
+  const seats = /^(\d+) seats$/.exec(token), gear = /^(equipment|stall)(>=|=)(\d+)$/.exec(token);
+  if (seats || gear) {
+    const need = Number(seats?.[1] ?? gear![3]);
+    if (!Number.isSafeInteger(need) || need < 1) throw Error('config:progressRequirementNumber');
+    return { kind: seats ? 'seats' : gear![1] as 'equipment' | 'stall', need, exact: gear?.[2] === '=' };
+  }
+  const level = c.lifePath.findIndex(row => row.id === token);
+  if (level >= 0) return { kind: 'level', need: level, exact: false };
+  if (['dog', 'phone', 'qr', 'flyer', 'signboard'].includes(token)) return { kind: 'owned', target: token };
+  if (token.startsWith('peak:') && c.league.tiers.some(tier => tier.id === token.slice('peak:'.length))) return { kind: 'peak', target: token.slice('peak:'.length) };
+  throw Error(`config:progressRequirement:${token}`);
+}
+
 /** Complete snapshots only: a partial or malformed config must never become live. */
 function shape(value: unknown, expected: unknown, path: string): void {
   if (expected === null) {
@@ -73,6 +94,33 @@ function validate(c: Economy): void {
       whole(quantity, `dog.materials.${dish}`, 1);
     }
   });
+  if (new Set(c.league.tiers.map(tier => tier.id)).size !== c.league.tiers.length) throw Error('config:leagueIds');
+  c.lifePath.forEach((row, index) => {
+    if (row.id !== `LP${index}` || (index === 0 ? row.lifetimeBase !== 0 : row.lifetimeBase <= c.lifePath[index - 1].lifetimeBase)) throw Error('config:lifePathOrder');
+    for (const [name, value] of Object.entries({ lifetime: row.lifetimeBase, reward: row.rewardCoinBase })) {
+      whole(value, `lifePath.${name}`); whole(Math.round(value * c.k.value), `lifePath.scaled${name}`);
+    }
+    for (const token of row.requires ?? []) {
+      const requirement = parseProgressRequirement(token, c);
+      if (requirement.kind === 'level' && requirement.need >= index) throw Error('config:lifePathCycle');
+    }
+    for (const reward of row.extra) if (!['badgeShard', 'cosmeticToken', ...Object.keys(c.crates).map(key => `crate.${key}`)].includes(reward)) throw Error('config:lifePathReward');
+    const stock: Partial<Record<Dish, number>> = {};
+    let maximumCredit = Math.round(row.rewardCoinBase * c.k.value);
+    for (const reward of row.extra) if (reward.startsWith('crate.')) {
+      const crate = c.crates[reward.slice('crate.'.length) as keyof typeof c.crates] as Partial<Record<Dish, number>>;
+      for (const dish of DISHES) stock[dish] = (stock[dish] ?? 0) + (crate[dish] ?? 0);
+    }
+    for (const dish of DISHES) { whole(stock[dish] ?? 0, 'lifePath.rewardStock'); maximumCredit += (stock[dish] ?? 0) * c.menu[dish].unitCost; }
+    whole(maximumCredit, 'lifePath.maximumCredit');
+
+  });
+  for (const item of BUSINESS_UNLOCKS) {
+    whole(c.unlocks[item].priceBase, `unlocks.${item}`); whole(Math.round(c.unlocks[item].priceBase * c.k.value), `unlocks.scaled${item}`);
+    for (const token of [c.unlocks[item].gate].flat()) parseProgressRequirement(token, c);
+  }
+  for (const crate of Object.values(c.crates)) for (const amount of Object.values(crate)) whole(amount, 'crate');
+  if (c.ledgers.countedSources.some(source => !seed.ledgers.countedSources.includes(source))) throw Error('config:countedSources');
   const initialTable = c.upgrades.table.levels[c.runtime.initialTableLevel - 1];
   if (!initialTable) throw Error('config:initialTableLevel');
   whole(c.upgrades.table.startingTables, 'startingTables', 1);

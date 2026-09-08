@@ -1,9 +1,11 @@
-import { config as defaultConfig, DISHES, EQUIPMENT, WEATHER, type Config, type SeatedType, type Rush } from './config';
+import { config as defaultConfig, BUSINESS_UNLOCKS, DISHES, EQUIPMENT, WEATHER, type Config, type SeatedType, type Rush } from './config';
 import { integer, random, weighted } from './rng';
 import { addStock, credit, currentGuests, customerValue, dayKey, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
+import { lifePathStatus, lifePathRewardQuote, unlockQuote } from './progression';
 import type { Command, Customer, Envelope, Group, Item, LoggedCommand, Order, Result, RulesVersion, Stats, Table, World } from './types';
 
 const RUSH_CLOCK_RULES: RulesVersion = 5; // config-exempt: fixed replay protocol revision
+const PROGRESSION_RULES: RulesVersion = 6; // config-exempt: fixed replay protocol revision
 const emptyStats = (): Stats => ({ arrived: 0, served: 0, lost: 0, rejected: 0, orders: 0, payment: 0, tip: 0, credited: 0, penalty: 0, spent: 0, rep: 0, wellRestedBonus: 0 });
 
 /** No wall clock, IO or renderer: only config, seed, explicit time and commands. */
@@ -13,7 +15,7 @@ export class Game {
   private readonly results = new Map<string, LoggedCommand>();
   private commandKey: string | null = null;
   private activeRushIndex: number | null = null;
-  private rulesVersion: RulesVersion = RUSH_CLOCK_RULES;
+  private rulesVersion: RulesVersion = PROGRESSION_RULES;
   constructor(readonly config: Config = defaultConfig, readonly seed = 1, readonly createdAt = 0, readonly playerId = 'guest') {
     if (!Number.isSafeInteger(seed) || !Number.isSafeInteger(createdAt) || createdAt < 0) throw Error('game:invalid-origin');
     const c = config.values;
@@ -26,7 +28,7 @@ export class Game {
       inventory: Object.fromEntries(DISHES.map(d => [d, (c.inventory.startingStock as Record<string, number[]>)[d]?.[0] ?? 0])) as World['inventory'],
       equipment: Object.fromEntries(EQUIPMENT.map(k => [k, k === 'kitchen' ? c.runtime.initialKitchenLevel : c.runtime.initialEquipmentLevel])) as World['equipment'],
       tables: [], glasses: [], queue: [], shift: null, serves: [], events: [], lostStreak: 0,
-      dogLevel: 0, location: c.locations.fallback, lifePath: 0, unlocks: [], badges: [],
+      dogLevel: 0, claimedLifePaths: [], badgeShards: 0, cosmeticTokens: 0, peakLeague: null, location: c.locations.fallback, lifePath: 0, unlocks: [], badges: [],
     };
     for (let i = 0; i < c.upgrades.table.startingTables; i++) this.world.tables.push(this.newTable());
     for (let i = 0; i < c.glasses.start; i++) this.world.glasses.push({ id: this.id('glass'), state: 'clean', itemId: null, readyAt: null, staleEmitted: false });
@@ -357,7 +359,7 @@ export class Game {
       this.emit('glass_washing', { glassId: glass.id });
     }
   }
-  command(envelope: Envelope): Result { return this.applyCommand(envelope, RUSH_CLOCK_RULES); }
+  command(envelope: Envelope): Result { return this.applyCommand(envelope, PROGRESSION_RULES); }
   /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
   replay(entry: LoggedCommand): Result { return this.applyCommand(entry, entry.rulesVersion); }
   private applyCommand(envelope: Envelope, rulesVersion: RulesVersion): Result {
@@ -370,12 +372,21 @@ export class Game {
     this.commandKey = envelope.idempotencyKey;
     try {
       if (rulesVersion >= RUSH_CLOCK_RULES) this.updateRush();
+      if (rulesVersion >= PROGRESSION_RULES) this.updateProgression();
       const result = this.execute(envelope.command);
+      if (rulesVersion >= PROGRESSION_RULES) this.updateProgression();
       const entry = structuredClone({ ...envelope, result, configVersion: this.config.version, rulesVersion });
       this.log.push(entry); this.results.set(entry.idempotencyKey, entry);
       this.processDue();
       return { ...result };
     } finally { this.commandKey = null; }
+  }
+  private updateProgression() {
+    const target = lifePathStatus(this.world, this.config).level;
+    while (this.world.lifePath < target) {
+      this.world.lifePath++;
+      this.emit('life_path_level_reached', { level: this.config.values.lifePath[this.world.lifePath].id, lifetimeEarned: this.world.lifetimeEarned });
+    }
   }
   private execute(cmd: Command): Result {
     const w = this.world, c = this.config.values, s = w.shift;
@@ -487,6 +498,27 @@ export class Game {
         this.spend(q.cost); w.equipment[cmd.kind] = q.next;
         this.emit('upgrade_bought', { kind: cmd.kind, level: q.next, cost: q.cost }); return { ok: true, amount: q.cost };
       }
+      case 'claimLifePath': {
+        const q = lifePathRewardQuote(w, this.config, cmd.level);
+        if (!q) return fail('rewardUnavailable');
+        if (!q.safe) return fail('rewardOverflow');
+        credit(w, this.config, q.coin, 'quest'); addStock(w, this.config, q.stock);
+        w.badgeShards += q.badgeShards; w.cosmeticTokens += q.cosmeticTokens; w.claimedLifePaths.push(cmd.level);
+        this.emit('life_path_reward_claimed', { level: c.lifePath[cmd.level].id, coin: q.coin, overflow: q.overflow, badgeShards: q.badgeShards, cosmeticTokens: q.cosmeticTokens, ...Object.fromEntries(DISHES.map(d => [`stock_${d}`, q.added[d]])) });
+        return { ok: true, amount: q.amount };
+      }
+      case 'buyUnlock': {
+        const q = unlockQuote(w, this.config, cmd.item);
+        if (q.owned) return fail('unlockOwned');
+        if (!q.requirements.every(r => r.met)) {
+          const level = q.requirements.find(r => r.kind === 'level')?.need;
+          this.emit('life_path_gate_blocked', { feature: cmd.item, requiredLevel: level == null ? null : c.lifePath[level].id });
+          return fail('featureLocked');
+        }
+        if (!q.ok) return fail('notEnoughCoins');
+        this.spend(q.cost); w.unlocks.push(cmd.item);
+        this.emit('unlock_bought', { item: cmd.item, cost: q.cost }); return { ok: true, amount: q.cost };
+      }
       case 'upgradeDog': {
         if (cmd.level !== w.dogLevel + 1) return fail('dogLevelChanged');
         const q = dogUpgradeQuote(w, this.config);
@@ -543,6 +575,8 @@ export function validEnvelope(input: unknown): input is Envelope {
     case 'activity': return typeof c.active === 'boolean';
     case 'serve': return typeof c.tableId === 'string' && typeof c.orderId === 'string';
     case 'upgradeTable': return typeof c.tableId === 'string';
+    case 'claimLifePath': return Number.isSafeInteger(c.level) && c.level > 0;
+    case 'buyUnlock': return BUSINESS_UNLOCKS.includes(c.item);
     case 'upgradeDog': return Number.isSafeInteger(c.level) && c.level > 0;
     case 'restock': return DISHES.includes(c.dish) && ['bulk', 'full', 'one'].includes(c.mode);
     case 'upgrade': return EQUIPMENT.includes(c.kind);

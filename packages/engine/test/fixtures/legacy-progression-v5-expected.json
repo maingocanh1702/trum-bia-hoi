@@ -1,0 +1,11 @@
+{
+  "lifePath": 0,
+  "coins": 242048,
+  "lifetime": 68,
+  "nextId": 32,
+  "result": {
+    "ok": true,
+    "outcome": "early",
+    "amount": 68
+  }
+}

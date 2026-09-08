@@ -445,3 +445,38 @@ Reward claims, full meta conditions, shipper and remaining mechanics are unfinis
 | Date | Change |
 |---|---|
 | 2026-09-09 | Recorded independent CLEAN for dog purchase/three-level UI and final 60-unit/28-browser verification; kept full-game goal and F18 remainder open. |
+
+## 2026-09-09 — Life Path and phone/QR (review pending)
+
+Rules v6 adds the full configured requirement/reward projection, monotone reached
+levels and separately claimable rewards. Phone/QR purchases now use that gate with
+exact IDs and the shared spend ledger; QR's existing whole-table tip multiplier is
+reachable by purchase. Rewards preflight total coin/stock/token effects, reuse the
+stock overflow helper and never increase day/season/lifetime service earnings.
+Actual v5 fixture from d2918e9 preserves LP0/coins242048/lifetime68/events through
+replay; the first v6 command recognizes eligible LP1. New v6 histories replay exactly.
+
+The native VI/EN ladder displays real missing requirements and claimed/claimable
+states. Two original imagegen draft sprites (keypad phone, paper QR) appear in the
+business panel and on the yard after purchase; exact prompts are under owner
+reference docs. No new dependency, screenshot-derived economy number or real-money
+payment path was added.
+
+Author config/build/66 unit tests pass; browser paths buy phone before claiming,
+upgrade to LP2, buy QR, receive both rewards once in either order, reload and switch
+locale. Full30 browser tests passed, including360×740 and1280×400; inspected captures
+at360/390/1280px confirm scrollable sheets, readable states and separate yard targets.
+Asset validation passes121 entries/32 paired SFX, with30 placeholders and83 drafts
+still preventing production-art approval. Independent review follows. Four simulation
+profiles (normal, rested, QR, QR+rested), two menus and five seeds each keep all40 rows
+in k2.3249–2.7688, >=500 serves each. QR profile starts with QR owned to measure its
+service effect; actual acquisition is covered separately by unit/browser flows.
+
+F13 remains in progress: real season/peak, flyer/signboard producers, downstream
+location gates and server claims still need integration. The later LP condition
+and reward rows are tested at their pure-state boundary, not claimed reachable in
+current play. Full M0–M9 goal remains active; shipper is the next phone consumer.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Implemented v6 progression/claims and phone/QR producer with full config semantics and legacy replay proof; independent review pending. |

@@ -73,3 +73,19 @@ Displayed price = `round(priceBaseXu * k)`.
 - No purchase can create negative coins.
 - Buying washer/cooler produces measurable improvement in wash wait/stale rate.
 - Prices scale with server `k`.
+
+## 9. Local business unlocks — 2026-09-09
+
+Phone/QR purchases use a shared quote over config unlocks.*.gate and priceBase.
+The command validates exact identity, ownership, reached LP and current coins, then
+uses the existing spend ledger. A repeated purchase cannot debit again. A locked
+attempt emits life_path_gate_blocked with feature and configured required level.
+The UI lists unmet conditions, shows owned status and uses original draft sprites;
+QR feeds the existing customerValue tip path immediately. Reward claims are not an
+unlock prerequisite. Shipper/social behavior still needs its own producer wiring.
+
+## Changelog (append-only)
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Added config-driven phone/QR purchases, active ownership props and the shared progression gate; preserved whole-table service and added real QR tip/replay verification. |

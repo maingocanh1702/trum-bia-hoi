@@ -44,7 +44,9 @@
       "human_status": "IN_PROGRESS",
       "progress": 30,
       "runtime_urgency": "normal",
-      "overlays": [],
+      "overlays": [
+        "tracker-modified"
+      ],
       "signals": {
         "spec_exists": false,
         "tech_exists": false,
@@ -70,7 +72,7 @@
         "spec_modified_at": null,
         "tech_hash": null,
         "tech_modified_at": null,
-        "tracker_row_hash": "77a049ba6aa2f5c09877906b403f8527da1fec5794d0cbe79af6354561904df7",
+        "tracker_row_hash": "63f315b834c85ab47fed0fd0580352d2bffd0f1c17da25db1d77fcedac40a5c9",
         "foundation_codex_approved": null,
         "foundation_founder_signoff": null
       },
@@ -386,7 +388,9 @@
       "human_status": "IN_PROGRESS",
       "progress": 30,
       "runtime_urgency": "normal",
-      "overlays": [],
+      "overlays": [
+        "tracker-modified"
+      ],
       "signals": {
         "spec_exists": false,
         "tech_exists": false,
@@ -412,7 +416,7 @@
         "spec_modified_at": null,
         "tech_hash": null,
         "tech_modified_at": null,
-        "tracker_row_hash": "484aed43fdeeee1102a414d25cd840c8298450d72c3860985305d2f0e2a55cda",
+        "tracker_row_hash": "a11f06a057f85bbf8efada1ceb9325e103119c38529de2a9be37f1f00627cf53",
         "foundation_codex_approved": null,
         "foundation_founder_signoff": null
       },
@@ -533,14 +537,50 @@
       "last_event_ts": null
     },
     {
+      "item_id": "F13",
+      "status": "branch-created",
+      "human_status": "IN_PROGRESS",
+      "progress": 30,
+      "runtime_urgency": "normal",
+      "overlays": [],
+      "signals": {
+        "spec_exists": false,
+        "tech_exists": false,
+        "branch_exists": true,
+        "commits_count": 0,
+        "last_commit_sha": null,
+        "pr_state": "none",
+        "pr_number": null,
+        "review_state": "none",
+        "ci_state": "unknown",
+        "deploy_state": "unknown",
+        "warnings": [
+          "missing_spec_link",
+          "missing_tech_link",
+          "ci_no_commit_sha",
+          "railway_unknown"
+        ],
+        "pr_url": null,
+        "ci_check_run_count": 0,
+        "last_review_at": null,
+        "last_deploy_at": null,
+        "spec_hash": null,
+        "spec_modified_at": null,
+        "tech_hash": null,
+        "tech_modified_at": null,
+        "tracker_row_hash": "a2f739aa850ee0ab86f1d2a6e4da0530a6770c7e1a737eb3744d2f2e54965fd1",
+        "foundation_codex_approved": null,
+        "foundation_founder_signoff": null
+      },
+      "last_event_ts": null
+    },
+    {
       "item_id": "F18",
       "status": "branch-created",
       "human_status": "IN_PROGRESS",
       "progress": 30,
       "runtime_urgency": "normal",
-      "overlays": [
-        "tracker-modified"
-      ],
+      "overlays": [],
       "signals": {
         "spec_exists": false,
         "tech_exists": false,

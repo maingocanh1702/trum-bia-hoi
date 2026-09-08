@@ -75,7 +75,7 @@ test('tiny and large advances preserve all warning and closing-rush event timest
   assert.deepEqual(a.world, b.world);
 });
 
-test('real v4 closing rush replay preserves old earnings, then a same-timestamp v5 command synchronizes the clock', () => {
+test('real v4 closing rush replay preserves old earnings, then a same-timestamp current command synchronizes the clock', () => {
   const read = (name: string) => readFileSync(new URL(`./fixtures/${name}.json`, import.meta.url), 'utf8');
   const text = read('legacy-rush-v4'), expected = JSON.parse(read('legacy-rush-v4-expected')), g = decodeSave(text);
   for (const key of ['coins', 'reputation', 'phase', 'nextId'] as const) assert.equal(g.world[key], expected[key]);
@@ -84,7 +84,7 @@ test('real v4 closing rush replay preserves old earnings, then a same-timestamp 
   assert.ok(g.log.every(e => e.rulesVersion === 4));
   send(g, { type: 'activity', active: true });
   assert.equal(g.world.coins, expected.coins); assert.equal(g.world.shift!.rush, 'none');
-  assert.equal(g.world.events.at(-1)!.type, 'rush_ended'); assert.equal(g.log.at(-1)!.rulesVersion, 5);
+  assert.equal(g.world.events.at(-1)!.type, 'rush_ended'); assert.equal(g.log.at(-1)!.rulesVersion, 6);
   assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
 });
 

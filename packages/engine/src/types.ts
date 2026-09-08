@@ -1,4 +1,4 @@
-import type { Dish, Equipment, SeatedType, Weather, Rush } from './config';
+import type { Dish, Equipment, SeatedType, Weather, Rush, BusinessUnlock } from './config';
 
 export interface Customer { id: string; type: SeatedType; patienceMs: number; enjoyMs: number }
 export interface Item {
@@ -49,7 +49,7 @@ export interface World {
   inventory: Record<Dish, number>; equipment: Record<Equipment, number>; tables: Table[];
   glasses: Glass[]; queue: Group[]; shift: Shift | null; serves: ServeRecord[];
   events: DomainEvent[]; lostStreak: number;
-  dogLevel: number;
+  dogLevel: number; claimedLifePaths: number[]; badgeShards: number; cosmeticTokens: number; peakLeague: string | null;
   location: string; lifePath: number; unlocks: string[]; badges: string[];
 }
 export type Command =
@@ -62,9 +62,11 @@ export type Command =
   | { type: 'upgradeTable'; tableId: string }
   | { type: 'buyTable' }
   | { type: 'upgradeDog'; level: number }
+  | { type: 'claimLifePath'; level: number }
+  | { type: 'buyUnlock'; item: BusinessUnlock }
   | { type: 'activity'; active: boolean }
   | { type: 'emergencyPack' };
 export interface Envelope { idempotencyKey: string; at: number; command: Command }
 export interface Result { ok: boolean; reason?: string; outcome?: 'early' | 'late' | 'grace' | 'expired' | 'stale'; amount?: number }
-export type RulesVersion = 1 | 2 | 3 | 4 | 5; // config-exempt: persisted replay protocol revisions, not economy tuning
+export type RulesVersion = 1 | 2 | 3 | 4 | 5 | 6; // config-exempt: persisted replay protocol revisions, not economy tuning
 export interface LoggedCommand extends Envelope { result: Result; configVersion: string; rulesVersion: RulesVersion }

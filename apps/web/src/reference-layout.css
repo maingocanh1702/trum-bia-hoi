@@ -160,3 +160,36 @@
 .dog-links button { flex: 1; }
 @keyframes dog-idle { 50% { transform: translateY(-2px) rotate(.5deg); } }
 @media (prefers-reduced-motion: reduce) { .dog-object .sprite { animation: none; } }
+
+.business-grid { display: grid; gap: 12px; margin: 12px 0 24px; }
+.business-card { display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--panelBorder); padding: 12px 0; }
+.business-card > .sprite { width: 68px; height: 76px; flex-shrink: 0; }
+.business-card > div { flex: 1; min-width: 0; }
+.business-card p { font-size: 12px; color: var(--creamMuted); margin: 5px 0; }
+.business-card button { width: 100%; margin-top: 6px; background: var(--stoolRedDeep); }
+.business-props { display: flex; position: absolute; left: calc(50% - 128px); top: 0; gap: 3px; }
+.business-props button { width: 44px; height: 50px; padding: 0; background: transparent; border: 0; }
+.business-props .sprite { width: 100%; height: 100%; }
+.bottom-nav button { position: relative; }
+.nav-badge { position: absolute; top: 5px; right: 8px; border-radius: 10px; min-width: 16px; background: var(--coinGold); color: var(--panelDeep); font-size: 10px; }
+.requirement-list { list-style: none; padding: 0; margin: 8px 0; }
+.requirement-list li { display: flex; align-items: baseline; gap: 7px; color: var(--creamMuted); font-size: 12px; line-height: 1.6; }
+.requirement-list .met { color: #b7e5a5; }
+.requirement-list li > span { min-width: 12px; }
+.journey-summary { border-bottom: 1px solid var(--panelBorder); padding: 4px 0 18px; }
+.journey-summary > span { color: var(--creamMuted); font-size: 12px; }
+.journey-summary h3 { color: var(--coinGold); font-size: 26px; margin: 5px 0; }
+.journey-summary p { font-size: 12px; margin: 8px 0; color: var(--creamMuted); }
+.journey-summary progress { width: 100%; height: 9px; accent-color: var(--coinGold); }
+.progress-wallet { display: flex; flex-wrap: wrap; gap: 10px 20px; margin: 18px 0; font-size: 12px; color: var(--creamMuted); }
+.progress-wallet b { color: var(--cream); margin-left: 4px; }
+.milestone-list { list-style: none; padding: 0; }
+.milestone-list > li { padding: 18px 0; border-bottom: 1px solid var(--panelBorder); }
+.milestone-list header { display: flex; align-items: center; gap: 10px; }
+.milestone-list h3 { font-size: 15px; }
+.milestone-number { border: 1px solid var(--creamMuted); border-radius: 50%; width: 28px; height: 28px; line-height: 26px; text-align: center; flex-shrink: 0; }
+.milestone-list .current .milestone-number { border-color: var(--coinGold); color: var(--coinGold); }
+.milestone-state { margin-left: auto; text-align: right; font-size: 10px; color: var(--creamMuted); }
+.milestone-state.claimable { color: var(--coinGold); }
+.milestone-rewards { font-size: 12px; line-height: 1.6; margin: 10px 0; color: var(--coinGold); }
+.milestone-list button { width: 100%; margin-top: 10px; }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { DISHES, EQUIPMENT, currentGuests, dogUpgradeQuote, encodeSave, freshnessMs, kickAllQuote, restockQuote, rushStatus, stockCap, upgradeQuote, wellRestedRemaining, type Command, type Equipment, type Order, type Table } from '../../../packages/engine/src';
+import { BUSINESS_UNLOCKS, DISHES, EQUIPMENT, currentGuests, dogUpgradeQuote, encodeSave, freshnessMs, kickAllQuote, lifePathStatus, restockQuote, rushStatus, stockCap, unlockQuote, upgradeQuote, wellRestedRemaining, type Command, type Equipment, type Order, type RequirementStatus, type Table } from '../../../packages/engine/src';
 import { Sprite, TableSeats, menuAsset, reactions } from './assets';
 import { translate } from './i18n';
 import { advanceGuide, boot, dispatch, download, persist, readSettings, writeSettings, replaceSave } from './local';
@@ -81,6 +81,8 @@ export function App() {
     if (!result.ok) { sound.play('ui:denied'); setToast({ text: t(`error.${result.reason}`), kind: 'error' }); }
     else if (cmd.type === 'restock' || cmd.type === 'upgrade') setToast({ text: t(cmd.type === 'restock' ? 'stock.success' : 'upgrade.success'), kind: 'early' });
     if (result.ok && cmd.type === 'upgradeDog') { setSheet(null); setToast({ text: t('dog.success', { n: w.dogLevel }), kind: 'early' }); }
+    if (result.ok && cmd.type === 'buyUnlock') setToast({ text: t('business.success', { name: t(`business.${cmd.item}`) }), kind: 'early' });
+    if (result.ok && cmd.type === 'claimLifePath') setToast({ text: t('journey.received', { n: num(result.amount ?? 0) }), kind: 'early', gain: result.amount });
     processEvents(); save(); setFrame(x => x + 1);
     return result;
   };
@@ -146,6 +148,8 @@ export function App() {
   const shift = w.shift, inShift = w.phase !== 'resting';
   const rush = rushStatus(w, game.config);
   const dogQuote = dogUpgradeQuote(w, game.config);
+  const path = lifePathStatus(w, game.config), nextMilestone = path.rows[w.lifePath + 1];
+  const claimCount = path.rows.filter(row => row.claimable).length;
   const guide = settings.guideIndex === null ? null : c.onboarding.stepGuide.steps[settings.guideIndex];
   const showGuide = guide && (!guide.onlyAfter || w.completedShifts > 0);
   const cleanGlasses = w.glasses.filter(g => g.state === 'clean').length;
@@ -182,6 +186,20 @@ export function App() {
       <Sprite id={`${kind}-lv${Math.max(1, w.equipment[kind])}`} /><span>{t(`equipment.${kind}`)}</span><b>{t('level', { n: w.equipment[kind] })}</b>
     </button>;
   }
+  const levelName = (level: number) => locale === 'vi' ? c.lifePath[level].name : c.lifePath[level].id;
+  function requirementCopy(r: RequirementStatus) {
+    const name = r.kind === 'peak' ? c.league.tiers.find(tier => tier.id === r.target)?.name ?? '' : r.kind === 'level' ? levelName(r.need!) : r.target ? t(`requirement.${r.target}`) : '';
+    return t(`requirement.${r.kind}`, { have: num(r.have ?? 0), need: num(r.need ?? 0), name });
+  }
+  function requirementList(requirements: RequirementStatus[]) {
+    return <ul className="requirement-list">{requirements.map((r, index) => <li key={index} className={r.met ? 'met' : ''}><span aria-label={t(r.met ? 'requirement.met' : 'requirement.missing')}>{r.met ? '✓' : '○'}</span>{requirementCopy(r)}</li>)}</ul>;
+  }
+  function businessCards() {
+    return <div className="business-grid">{BUSINESS_UNLOCKS.map(item => {
+      const quote = unlockQuote(w, game.config, item);
+      return <article className="business-card" key={item}><Sprite id={item === 'qr' ? 'qr-payment' : 'phone'} /><div><h3>{t(`business.${item}`)}</h3>{item === 'qr' && <p>{t('business.qrEffect', { mult: c.tip.qrMult })}</p>}{requirementList(quote.requirements)}<button disabled={!quote.ok} onClick={() => run({ type: 'buyUnlock', item })}>{quote.owned ? t('business.owned') : t('business.buy', { cost: num(quote.cost) })}</button></div></article>;
+    })}</div>;
+  }
   function upgradeCard(kind: Equipment) {
     const q = upgradeQuote(w, game.config, kind);
     return <div className="upgrade-card" key={kind}><Sprite id={`${kind}-lv${Math.max(1, w.equipment[kind])}`} /><h3>{t(`equipment.${kind}`)}</h3><p>{t('level', { n: w.equipment[kind] })} {q.cost !== null ? `→ ${q.next}` : ''}</p><button disabled={!q.ok} onClick={() => run({ type: 'upgrade', kind })}>{q.cost === null ? t('upgrade.max') : t('upgrade.buy', { cost: num(q.cost) })}</button></div>;
@@ -201,6 +219,7 @@ export function App() {
         <div className="owner-station"><Sprite id="owner-idle" /><div className="serving-counter"><div className="counter-canopy" /><div className="counter-front"><h1>{t('brand')}</h1><div className="counter-bottles" aria-hidden="true"><i /><i /><i /><i /><i /></div></div></div></div>
         <div className="equipment-row">{['cooler', 'keg', 'washer'].map(k => equipmentButton(k as Equipment))}</div>
         <div className="glass-counter"><Sprite id="glass-clean" /><span>{cleanGlasses}<small>/{w.glasses.length}</small></span><span className="sr-only">{t('glass.clean')}</span></div>
+        <div className="business-props">{BUSINESS_UNLOCKS.filter(item => w.unlocks.includes(item)).map(item => <button key={item} onClick={() => open('upgrades')} aria-label={t(`business.${item}`)}><Sprite id={item === 'qr' ? 'qr-payment' : 'phone'} /></button>)}</div>
         {w.dogLevel > 0 && <button className="dog-object" aria-label={t('dog.open', { n: w.dogLevel })} aria-haspopup="dialog" onClick={() => open('dog')}><Sprite id={`dog-idle-lv${w.dogLevel}`} /><span>{t('level', { n: w.dogLevel })}</span></button>}
       </section>
       <section className="yard" aria-label={t('location.hem_nho')}>
@@ -216,7 +235,7 @@ export function App() {
         <button className={!inShift ? 'primary' : ''} onClick={() => inShift ? open('book') : run({ type: 'startShift' })}><Icon name={inShift ? 'book' : 'bolt'} /><span>{t(inShift ? 'nav.book' : 'nav.shift')}</span></button>
         <button onClick={() => open('stock')}><Icon name="stock" /><span>{t('nav.stock')}</span></button>
         <button onClick={() => open('upgrades')}><Icon name="upgrade" /><span>{t('nav.upgrades')}</span></button>
-        <button onClick={() => open('journey')}><Icon name="star" /><span>{t('nav.journey')}</span></button>
+        <button onClick={() => open('journey')}><Icon name="star" /><span>{t('nav.journey')}</span>{claimCount > 0 && <b className="nav-badge" aria-hidden="true">{claimCount}</b>}</button>
       </nav>
       {toast?.loss ? <div className="toast toast-loss" role="status" aria-label={t('loss.aria', { coins: num(toast.loss.coins), reputation: num(toast.loss.reputation) })}>
         <span className="loss-value" aria-hidden="true"><Icon name="coin" /><strong>{toast.loss.coins ? '−' : ''}{num(toast.loss.coins)}</strong></span>
@@ -246,9 +265,18 @@ export function App() {
       </div>}
       {sheet === 'close' && <div className="close-confirm"><p>{t('close.copy')}</p><p>{t('close.guests', { n: closeQuote.guests.length })}</p><div className="close-price"><Icon name="coin" /><strong>{num(closeQuote.cost)}</strong><span>{t('coins')}</span></div>{!closeQuote.ok && <p role="status">{t('error.notEnoughCoins')}</p>}<div className="button-stack"><button className="primary" disabled={!closeQuote.ok || closeShift !== shift?.id} onClick={() => run({ type: 'kickAll', shiftId: closeShift!, maxCost: closeQuote.cost })}>{t('close.confirm', { cost: num(closeQuote.cost) })}</button><button onClick={() => open('book')}>{t('close.wait')}</button></div></div>}
       {sheet === 'stock' && <><p className="sheet-intro">{t('stock.copy')} <b>{num(w.coins)} {t('coins')}</b></p><div className="stock-list">{DISHES.map(dish => <div className="stock-row" key={dish}><Sprite id={menuAsset[dish]} /><div className="stock-info"><strong>{t(`dish.${dish}`)}</strong><span>{w.inventory[dish]} / {stockCap(w, game.config)}</span><progress value={w.inventory[dish]} max={stockCap(w, game.config)} /></div>{c.menu[dish].unlock.kitchenLevel > w.equipment.kitchen ? <small>{t('stock.locked', { n: c.menu[dish].unlock.kitchenLevel })}</small> : <div className="stock-actions">{(['one', 'bulk', 'full'] as const).map(mode => { const q = restockQuote(w, game.config, dish, mode); return <button key={mode} disabled={!q.ok} onClick={() => run({ type: 'restock', dish, mode })}>{t('stock.buy', { action: mode === 'one' ? t('stock.one') : mode === 'bulk' ? t('stock.bulk', { n: c.inventory.bulkSize }) : t('stock.full'), cost: num(q.cost) })}</button>; })}</div>}</div>)}</div><button className="secondary full" onClick={() => run({ type: 'emergencyPack' })}>{t('stock.emergency')}</button></>}
-      {sheet === 'upgrades' && <><button className="dog-entry full" onClick={() => open('dog')}><Sprite id={`dog-idle-lv${w.dogLevel || 1}`} /><span><strong>{t('dog.title')}</strong><small>{t(`dog.level${w.dogLevel}`)}</small></span><span aria-hidden="true">›</span></button><p className="sheet-intro">{t(inShift ? 'upgrade.outside' : 'upgrade.copy')}</p><div className="upgrade-grid">{EQUIPMENT.map(upgradeCard)}</div><h3>{t('upgrade.tables')}</h3><div className="upgrade-grid">{w.tables.map((table, i) => { const next = c.upgrades.table.levels[table.level]; return <div className="upgrade-card" key={table.id}><Sprite id={`table-lv${table.level}-empty`} /><h3>{t('table', { n: i + 1 })}</h3><p>{t('table.seats', { n: table.capacity })}</p><button disabled={!next || inShift} onClick={() => run({ type: 'upgradeTable', tableId: table.id })}>{next ? t('upgrade.buy', { cost: num(next.priceBase) }) : t('upgrade.max')}</button></div>; })}</div><button className="secondary full" onClick={() => run({ type: 'buyTable' })}>{t('upgrade.addTable')}</button></>}
+      {sheet === 'upgrades' && <><button className="dog-entry full" onClick={() => open('dog')}><Sprite id={`dog-idle-lv${w.dogLevel || 1}`} /><span><strong>{t('dog.title')}</strong><small>{t(`dog.level${w.dogLevel}`)}</small></span><span aria-hidden="true">›</span></button><h3>{t('business.title')}</h3>{businessCards()}<p className="sheet-intro">{t(inShift ? 'upgrade.outside' : 'upgrade.copy')}</p><div className="upgrade-grid">{EQUIPMENT.map(upgradeCard)}</div><h3>{t('upgrade.tables')}</h3><div className="upgrade-grid">{w.tables.map((table, i) => { const next = c.upgrades.table.levels[table.level]; return <div className="upgrade-card" key={table.id}><Sprite id={`table-lv${table.level}-empty`} /><h3>{t('table', { n: i + 1 })}</h3><p>{t('table.seats', { n: table.capacity })}</p><button disabled={!next || inShift} onClick={() => run({ type: 'upgradeTable', tableId: table.id })}>{next ? t('upgrade.buy', { cost: num(next.priceBase) }) : t('upgrade.max')}</button></div>; })}</div><button className="secondary full" onClick={() => run({ type: 'buyTable' })}>{t('upgrade.addTable')}</button></>}
       {sheet === 'book' && (shift ? <><p className="sheet-intro">{t('shift')} · {time(Math.min(shift.closedAt ?? w.now, shift.endsAt) - shift.startedAt - shift.pausedMs)}<b>{t(`weather.${shift.weather}`)}</b></p><dl className="ledger">{(['served', 'lost', 'payment', 'tip', 'penalty', 'spent'] as const).map(key => <div key={key}><dt>{t(`book.${key}`)}</dt><dd>{num(shift.stats[key])}</dd></div>)}{shift.stats.wellRestedBonus > 0 && <div><dt>{t('book.wellRestedBonus')}</dt><dd>{num(shift.stats.wellRestedBonus)}</dd></div>}<div className="ledger-total"><dt>{t('book.net')}</dt><dd>{num(shift.stats.credited - shift.stats.penalty - shift.stats.spent)}</dd></div></dl>{inShift && <div className="button-stack"><button className="primary" onClick={() => run({ type: 'endShift' })}>{t('book.end')}</button><button className="secondary" disabled={!c.shift.kickAllAllowed} onClick={() => { setCloseShift(shift.id); open('close'); }}>{t('book.kick', { cost: num(closeQuote.cost) })}</button></div>}</> : <p>{t('book.none')}</p>)}
-      {sheet === 'journey' && <><p className="sheet-intro">{t('journey.copy')}</p><dl className="ledger"><div><dt>{t('journey.lifetime')}</dt><dd>{num(w.lifetimeEarned)}</dd></div><div><dt>{t('journey.season')}</dt><dd>{num(w.seasonEarned)}</dd></div></dl><ol className="journey-list">{c.lifePath.map((level, i) => <li key={level.id} className={i === w.lifePath ? 'current' : ''}><span>{i}</span><div><h3>{locale === 'vi' ? level.name : `LP${i}`}</h3><p>{t(i === w.lifePath ? 'journey.current' : 'journey.unlock', { n: num(level.lifetimeBase) })}</p></div><Icon name={i === w.lifePath ? 'check' : 'star'} /></li>)}</ol></>}
+      {sheet === 'journey' && <>
+        <div className="journey-summary"><span>{t('journey.current')}</span><h3>{levelName(w.lifePath)}</h3><p>{num(w.lifetimeEarned)} {t('journey.earned')}</p>{nextMilestone && <><progress aria-label={t('journey.next', { name: levelName(nextMilestone.index) })} max={nextMilestone.lifetimeBase} value={Math.min(w.lifetimeEarned, nextMilestone.lifetimeBase)} /><p>{t('journey.next', { name: levelName(nextMilestone.index) })}</p></>}</div>
+        <div className="progress-wallet"><span>{t('reward.badgeShard')} <b>{w.badgeShards}</b></span><span>{t('reward.cosmeticToken')} <b>{w.cosmeticTokens}</b></span></div>
+        <ol className="milestone-list">{path.rows.map(row => <li key={row.id} data-level={row.index} className={row.index === w.lifePath ? 'current' : ''}>
+          <header><span className="milestone-number">{row.index}</span><h3>{levelName(row.index)}</h3><span className={`milestone-state ${row.claimable ? 'claimable' : ''}`}>{t(row.index === 0 ? 'journey.reached' : row.claimed ? 'journey.claimed' : row.claimable ? 'journey.claimable' : 'journey.locked')}</span></header>
+          {row.index > 0 && <p className="milestone-rewards">{num(row.rewardCoinBase)} {t('coins')}{row.extra.map((reward, index) => <span key={index}> · {t(`reward.${reward}`)}</span>)}</p>}
+          {!row.reached && requirementList(row.requirements)}
+          {row.claimable && <button className="primary" onClick={() => run({ type: 'claimLifePath', level: row.index })}>{t('journey.claim', { name: levelName(row.index) })}</button>}
+        </li>)}</ol><button className="secondary full" onClick={() => open('upgrades')}>{t('journey.upgrades')}</button>
+      </>}
       {sheet === 'settings' && <div className="settings-list"><label>{t('settings.language')}<select value={locale} onChange={e => setPrefs({ locale: e.target.value as 'vi' | 'en' })}><option value="vi">Tiếng Việt</option><option value="en">English</option></select></label><button className="setting-row" onClick={() => setPrefs({ muted: !settings.muted })}><span>{t('settings.sound')}</span><b>{t(settings.muted ? 'settings.soundOff' : 'settings.soundOn')}</b></button><p>{t('settings.saved')}</p><button onClick={() => download(encodeSave(game), 'tbh-backup.json')}>{t('settings.export')}</button><button onClick={() => { setPrefs({ guideDone: false, guideIndex: 0 }); setSheet(null); }}>{t('settings.guide')}</button><button onClick={() => open('config')}>{t('settings.config')}</button></div>}
       {sheet === 'config' && <><p>{t('config.pinned', { version: game.config.version })}</p><pre className="config-json">{JSON.stringify(game.config.raw, null, 2)}</pre></>}
     </SheetDialog>}

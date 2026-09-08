@@ -793,3 +793,4 @@ Cập nhật lại bằng: `ls assets/*.png`
 
 | 2026-09-08 build | Initial core audio: 32 original procedural clips in assets/audio, Ogg + AAC with sources/presets; manifest status draft, listening QA pending. No production checklist boxes marked done. |
 | 2026-09-09 build | Added three original dog-idle-lv1/2/3 imagegen drafts with native alpha and same-family identity, manifest and prompt provenance. No production boxes marked done. A9 art-table material names are historical: purchase code uses economy.tbh.json dog.levels (lac/nem) and scaled coinBase, never the old tea-game costs. |
+| 2026-09-09 build | Added original native-alpha phone and qr-payment drafts, keypad/paper era styling, manifest and exact prompts. Business unlocks render these on the yard; no real payment QR or production approval is implied. |

@@ -102,15 +102,21 @@ export function credit(w: World, c: Config, amount: number, source: string): num
   }
   return credited;
 }
-export function addStock(w: World, c: Config, stock: Partial<Record<Dish, number>>): number {
+/** Project a complete gift before applying it; reward consumers share this overflow calculation. */
+export function stockGiftQuote(w: World, c: Config, stock: Partial<Record<Dish, number>>) {
   let overflow = 0;
+  const added = {} as Record<Dish, number>;
   for (const dish of DISHES) {
     const value = stock[dish] ?? 0;
     if (!Number.isSafeInteger(value) || value < 0) throw Error('inventory:invalid-gift');
-    if (!dishUnlocked(w, c, dish)) continue;
-    const added = Math.min(value, Math.max(0, stockCap(w, c) - w.inventory[dish]));
-    w.inventory[dish] += added;
-    overflow += (value - added) * c.values.menu[dish].unitCost;
+    added[dish] = dishUnlocked(w, c, dish) ? Math.min(value, Math.max(0, stockCap(w, c) - w.inventory[dish])) : 0;
+    if (dishUnlocked(w, c, dish)) overflow += (value - added[dish]) * c.values.menu[dish].unitCost;
   }
-  return credit(w, c, overflow, 'giftOverflow');
+  if (!Number.isSafeInteger(overflow) || overflow < 0) throw Error('inventory:invalid-overflow');
+  return { added, overflow };
+}
+export function addStock(w: World, c: Config, stock: Partial<Record<Dish, number>>): number {
+  const q = stockGiftQuote(w, c, stock);
+  for (const dish of DISHES) w.inventory[dish] += q.added[dish];
+  return credit(w, c, q.overflow, 'giftOverflow');
 }

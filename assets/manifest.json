@@ -1734,7 +1734,10 @@
       "usage": [
         "upgrade_bought",
         "dog_bought",
-        "dog_upgraded"
+        "dog_upgraded",
+        "unlock_bought",
+        "life_path_level_reached",
+        "life_path_reward_claimed"
       ],
       "loop": false,
       "status": "draft",
@@ -1754,7 +1757,10 @@
       "usage": [
         "upgrade_bought",
         "dog_bought",
-        "dog_upgraded"
+        "dog_upgraded",
+        "unlock_bought",
+        "life_path_level_reached",
+        "life_path_reward_claimed"
       ],
       "loop": false,
       "status": "draft",
@@ -2039,6 +2045,40 @@
       "transparent": true,
       "status": "draft",
       "review_notes": "Original dog family, built-in imagegen from owner style references. Native alpha preserved; no post-processing. Final export/family approval pending; see docs/reference/assets-owner-2026-09-08/dog-prompts.md."
+    },
+    {
+      "id": "phone",
+      "type": "sprite",
+      "usage": [
+        "scene",
+        "business-upgrades"
+      ],
+      "path": "assets/phone-illustrated-v1.png",
+      "source": "imagegen_builtin",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "transparent": true,
+      "status": "draft",
+      "review_notes": "Original imagegen cutout with native alpha, era-safe keypad phone / decorative paper QR. See docs/reference/assets-owner-2026-09-08/business-prompts.md; final export approval pending."
+    },
+    {
+      "id": "qr-payment",
+      "type": "sprite",
+      "usage": [
+        "scene",
+        "business-upgrades"
+      ],
+      "path": "assets/qr-payment-illustrated-v1.png",
+      "source": "imagegen_builtin",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "transparent": true,
+      "status": "draft",
+      "review_notes": "Original imagegen cutout with native alpha, era-safe keypad phone / decorative paper QR. See docs/reference/assets-owner-2026-09-08/business-prompts.md; final export approval pending."
     }
   ]
 }

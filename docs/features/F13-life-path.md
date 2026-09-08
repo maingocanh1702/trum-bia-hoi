@@ -73,3 +73,37 @@ Base values multiply by `k`.
 - Spending coins cannot lower Đường Lên Trùm.
 - Claiming reward twice is impossible.
 - Location gates reflect LP immediately after level-up.
+
+## 9. Local implementation — rules v6, 2026-09-09 (in progress)
+
+The shared progression module evaluates every configured subsidiary requirement;
+lifetime alone never grants a milestone. The closed grammar covers seats, core
+gear/stall levels, dog and feature ownership, configured peak tiers and LP gates.
+Core equipment means keg/washer/cooler/stall (the four-device group in item-list
+section16); kitchen has a separate four-paid-level ladder. LP3 already has stall3
+through LP2, and LP6 explicitly includes stall5. Unknown config tokens fail load.
+
+Current level advances monotonically at one pre/post-command transition point,
+emitting each newly reached milestone once. Rewards are separately claimable in
+any order after reaching the level, keyed by numeric level in claimedLifePaths.
+The full reward is quoted and checked before mutation: config coins, crate stock,
+unitCost overflow, repeated badge shards and decor tokens. Shared credit/addStock
+apply the reward; none counts as service/day/season/lifetime earnings. The native
+VI/EN ladder shows requirements, progress, claimable/claimed and reward counters.
+
+Real rules-v5 fixture captured on d2918e9 stays at its historical LP0/events/money;
+the first rules-v6 command recognizes its already eligible LP1. Replay1–5 remain
+inert for progression, and v6 saves replay level and claim events exactly. Phone
+and QR gates use reached level, independently of reward claims.
+
+`peakLeague` is an input for the real season subsystem; it is not inferred from
+lifetime or the current pre-season aggregate. Full league/peak production,
+flyer/signboard ownership production, server claims and downstream location gates
+still need integration. The later requirement/reward table is covered at the pure
+state boundary; this is not evidence that all LP0–LP7 are reachable in current play.
+
+## Changelog (append-only)
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Added v6 local progression and separate claim-once rewards, closed requirement grammar, preflighted stock/coin/token rewards, actionable ladder. Numeric claim IDs and derived eligibility replace the illustrative schema; full producer/server integration remains open. |

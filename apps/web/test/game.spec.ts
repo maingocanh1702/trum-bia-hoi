@@ -457,3 +457,52 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 
     expect(saved.map((e: { data: { toLevel: number } }) => e.data.toLevel)).toEqual([1, 2, 3]);
   });
 }
+
+for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 }]) {
+  test(`life path rewards and business upgrades remain separate at ${viewport.width}×${viewport.height}`, async ({ page }) => {
+    const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/progression.ts'], { encoding: 'utf8' }));
+    await page.setViewportSize(viewport); await page.clock.install({ time: new Date(fixture.now) }); await page.clock.pauseAt(new Date(fixture.now));
+    await page.addInitScript(save => { if (!localStorage.getItem('path-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('path-seeded', '1'); } }, fixture.save);
+    await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+    await page.getByRole('button', { name: 'Đường lên Trùm', exact: true }).click();
+    await expect(page.locator('.journey-summary h3')).toHaveText('Phụ Quán');
+    const lp1 = page.locator('.milestone-list > li[data-level="1"]'), lp2 = page.locator('.milestone-list > li[data-level="2"]');
+    await expect(lp1).toContainText('Có thể nhận'); await expect(lp2).toContainText('Quầy / kho: cấp 2 / 3'); await expect(lp2).toContainText('Có điện thoại');
+    await expect(page.locator('.journey-summary progress')).toHaveAttribute('value', '5');
+    await page.getByRole('button', { name: 'Xem nâng cấp quán', exact: true }).click();
+    const phone = page.locator('.business-card').filter({ has: page.getByRole('heading', { name: 'Điện thoại', exact: true }) });
+    const qr = page.locator('.business-card').filter({ has: page.getByRole('heading', { name: 'Bảng QR', exact: true }) });
+    await expect(qr.getByRole('button')).toBeDisabled();
+    await phone.getByRole('button', { name: 'Mua · 12.500 xu', exact: true }).click();
+    await expect(phone.getByRole('button', { name: 'Đã có', exact: true })).toBeDisabled();
+    await expect(qr.getByRole('button')).toBeDisabled();
+    await page.locator('.upgrade-card').filter({ has: page.getByRole('heading', { name: 'Quầy hàng', exact: true }) }).getByRole('button').click();
+    await expect(qr.getByRole('button')).toBeEnabled(); await qr.getByRole('button', { name: 'Mua · 20.000 xu', exact: true }).click();
+    for (const img of await page.locator('.business-card img').all()) expect(await img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0)).toBe(true);
+    await page.keyboard.press('Escape'); await expect(page.locator('.business-props button')).toHaveCount(2);
+    await page.getByRole('button', { name: 'Đường lên Trùm', exact: true }).click();
+    await expect(page.locator('.journey-summary h3')).toHaveText('Tay Ngang');
+    await expect(lp1).toContainText('Có thể nhận'); await expect(lp2).toContainText('Có thể nhận');
+    await lp2.getByRole('button', { name: 'Nhận thưởng · Tay Ngang', exact: true }).click();
+    await expect(lp2).toContainText('Đã nhận'); await expect(lp2.getByRole('button')).toHaveCount(0);
+    await expect(page.locator('.progress-wallet')).toContainText('Mảnh huy hiệu 1');
+    await lp1.getByRole('button', { name: 'Nhận thưởng · Phụ Quán', exact: true }).click(); await expect(lp1).toContainText('Đã nhận');
+    await expect(page.locator('.journey-summary')).toContainText(`${fixture.lifetime} xu trọn đời`);
+    await page.keyboard.press('Escape'); await expect(page.locator('.nav-badge')).toHaveCount(0);
+    const coins = fixture.coins - 12500 - 12500 - 20000 + 25000 + 12500;
+    await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(coins));
+    await page.reload(); await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(coins));
+    for (const prop of await page.locator('.business-props button').all()) {
+      const a = (await prop.boundingBox())!; expect(a.width).toBeGreaterThanOrEqual(44); expect(a.height).toBeGreaterThanOrEqual(44);
+      for (const target of await page.locator('.equipment-object, .glass-counter, .dog-object, .stock-strip button').all()) {
+        const b = (await target.boundingBox())!; expect(a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y).toBe(true);
+      }
+    }
+    await page.getByRole('button', { name: 'Cài đặt', exact: true }).click(); await page.getByLabel('Ngôn ngữ').selectOption('en'); await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Your journey', exact: true }).click();
+    await expect(lp1).toContainText('Claimed'); await expect(lp2).toContainText('Claimed'); await expect(page.locator('.milestone-list > li[data-level="3"]')).toContainText('Core equipment');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    const state = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));
+    expect(state.events.filter((e: { type: string }) => e.type === 'life_path_reward_claimed').map((e: { data: { level: string } }) => e.data.level)).toEqual(['LP2', 'LP1']);
+  });
+}
