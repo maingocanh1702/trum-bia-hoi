@@ -139,3 +139,12 @@ Focused follow-up completed: **VERDICT: CLEAN** for `12afb011cb7c4f68b3bfa7ea866
 | Date | Change |
 |---|---|
 | 2026-09-09 | Closed the two correction-review findings at `830787c`. Applied owner layout/art steering, preserved gameplay economics and numeric loss feedback, added order-panel/short-window checks. Full game remains in progress. |
+
+### Interaction verification follow-up
+
+Browser measurement found the new stock rail buttons were only 38px wide. They
+are now 46×48px, with an assertion at all four tested viewport sizes. Table-panel
+focus records the actual opener and a stable table-button fallback: keyboard
+switching between tables returns to the latest opener, while expiry returns to
+the surviving table button after its order hint disappears. Build and all 11
+E2E tests pass. These refinements follow `999dc57` and require review with it.

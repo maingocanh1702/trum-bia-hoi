@@ -48,6 +48,7 @@ export function App() {
   const [toast, setToast] = useState<{ text: string; kind: string; loss?: { coins: number; reputation: number } } | null>(null);
   const cursor = useRef(w.events.length);
   const orderPanelRef = useRef<HTMLElement>(null);
+  const tableTrigger = useRef<{ button: HTMLButtonElement; fallback: HTMLButtonElement | null } | null>(null);
   const locale = settings.locale;
   const t = (key: string, params: Record<string, string | number> = {}) => translate(locale, key, params);
   const num = (n: number) => new Intl.NumberFormat(locale === 'vi' ? 'vi-VN' : 'en-US').format(Math.round(n));
@@ -86,14 +87,20 @@ export function App() {
     setSelectedTable(null); setSheet(value);
     if (value === 'upgrades') { advanceGuide(prefs.current, game, [], 'ui_sheet_open:upgrade'); save(); }
   };
+  const showTable = (id: string, button: HTMLButtonElement) => {
+    tableTrigger.current = { button, fallback: button.closest('.table-space')?.querySelector<HTMLButtonElement>('.table-object') ?? null };
+    setSelectedTable(id);
+  };
   useEffect(() => {
     sound.play(sheet || selectedEquipment || selectedTable || welcome ? 'ui:sheet_open' : 'ui:sheet_close');
   }, [sheet, selectedEquipment, selectedTable, welcome]);
   useEffect(() => {
-    if (!selectedTable) return;
-    const trigger = document.activeElement;
-    orderPanelRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
-    return () => { if (trigger instanceof HTMLElement && trigger.isConnected) trigger.focus(); };
+    if (selectedTable) orderPanelRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+    else {
+      const origin = tableTrigger.current;
+      (origin?.button.isConnected ? origin.button : origin?.fallback)?.focus();
+      tableTrigger.current = null;
+    }
   }, [selectedTable]);
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -140,11 +147,11 @@ export function App() {
     const patience = activeOrder ? Math.max(0, (o.placedAt + o.patienceMs - w.now) / o.patienceMs) : 0;
     const stale = activeOrder && o.items.some(i => i.glassId && i.readyAt !== null && w.now >= i.readyAt + freshnessMs(w, game.config));
     return <section className={`table-space table-${index} state-${table.state}`} key={table.id} aria-label={t('table', { n: index + 1 })}>
-      {activeOrder && <button className={`table-order-hint ${ready ? 'is-ready' : ''} ${o.state === 'grace' ? 'is-urgent' : ''}`} onClick={() => setSelectedTable(table.id)} aria-label={t('order.details', { n: index + 1 })}>
+      {activeOrder && <button className={`table-order-hint ${ready ? 'is-ready' : ''} ${o.state === 'grace' ? 'is-urgent' : ''}`} onClick={e => showTable(table.id, e.currentTarget)} aria-label={t('order.details', { n: index + 1 })}>
         <Sprite id={stale ? 'glass-stale' : 'glass-full'} /><span>{ready ? t('order.ready') : t('order.time', { s: Math.ceil(Math.max(0, o.placedAt + o.patienceMs - w.now) / 1000) })}</span>
         <span className="patience-track"><i style={{ width: `${patience * 100}%` }} /></span>
       </button>}
-      <button className="table-object" aria-haspopup="dialog" aria-controls={selectedTable === table.id ? 'active-table-order' : undefined} onClick={() => setSelectedTable(table.id)} aria-label={t('order.details', { n: index + 1 })}>
+      <button className="table-object" aria-haspopup="dialog" aria-controls={selectedTable === table.id ? 'active-table-order' : undefined} onClick={e => showTable(table.id, e.currentTarget)} aria-label={t('order.details', { n: index + 1 })}>
         <TableChairs capacity={table.capacity} />
         <Sprite id={`table-lv${table.level}-empty`} />
         {table.group?.customers.map((customer, i) => <span className={`seated seated-${i}`} key={customer.id}><Sprite id={`customer-${customer.type.replace('_', '-')}`} /></span>)}

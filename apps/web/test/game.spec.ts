@@ -16,6 +16,10 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
     await expect(page.locator('.guide')).toContainText('Chạm Phục vụ');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const tables = await page.locator('.table-object').all();
+    for (const button of await page.locator('.stock-strip > button').all()) {
+      const box = (await button.boundingBox())!;
+      expect(box.width).toBeGreaterThanOrEqual(44); expect(box.height).toBeGreaterThanOrEqual(44);
+    }
     const boxes = await Promise.all(tables.map(table => table.boundingBox()));
     for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
       const a = boxes[i]!, b = boxes[j]!;
@@ -82,6 +86,12 @@ test('tapped order stays live, returns keyboard focus, and closes on customer ex
   await expect(panel).toHaveCount(0);
   await expect(trigger).toBeFocused();
   await trigger.press('Enter');
+  const secondTable = page.getByRole('button', { name: 'Xem mâm · bàn 2', exact: true });
+  await secondTable.focus(); await secondTable.press('Enter');
+  await expect(page.getByRole('dialog', { name: 'Bàn 2', exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(secondTable).toBeFocused();
+  await trigger.click();
   const timeBefore = await page.locator('.energy strong').textContent();
   await page.clock.runFor(3000);
   await expect(panel.getByRole('button', { name: 'Phục vụ cả mâm', exact: true })).toBeEnabled();
@@ -89,6 +99,7 @@ test('tapped order stays live, returns keyboard focus, and closes on customer ex
   await page.clock.runFor(17900);
   await expect(panel).toHaveCount(0);
   await expect(page.locator('.toast-loss')).toHaveText(/^[−\d\s.,]+$/);
+  await expect(page.locator('.table-object').first()).toBeFocused();
   await expect(page.locator('.lost-bubble')).toHaveCount(0);
 });
 

@@ -55,8 +55,8 @@
 .table-order-hint .patience-track { position: absolute; bottom: -3px; left: 12%; width: 76%; height: 3px; margin: 0; }
 .table-order-hint.is-ready { border: 1px solid #f5d56f; }
 .table-order-hint.is-urgent { background: #a24431; }
-.stock-strip { position: absolute; top: 143px; right: 8px; width: 40px; flex-direction: column; border-radius: 21px; margin: 0; padding: 5px 1px; gap: 1px; background: #456760c9; z-index: 8; }
-.stock-strip > button { flex-direction: column; flex: none; width: 38px; min-height: 48px; padding: 2px; gap: 0; color: #fff; font-size: 10px; }
+.stock-strip { position: absolute; top: 143px; right: 8px; width: 48px; flex-direction: column; border-radius: 21px; margin: 0; padding: 5px 1px; gap: 1px; background: #456760c9; z-index: 8; }
+.stock-strip > button { flex-direction: column; flex: none; width: 46px; min-height: 48px; padding: 2px; gap: 0; color: #fff; font-size: 10px; }
 .stock-strip .sprite { width: 24px; height: 23px; }
 .stock-strip .reputation { min-width: 0; margin: 0; border-top: 1px solid #8dab9c; padding-top: 6px; }
 .reputation svg { color: #fff0a8; }
