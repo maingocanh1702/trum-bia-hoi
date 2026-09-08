@@ -371,3 +371,18 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 
     expect(save.events.filter((e: { type: string }) => e.type === 'rush_ended')).toHaveLength(1);
   });
 }
+
+
+test('an overlapping upcoming rush cannot interrupt the active-rush HUD with a screen-reader warning', async ({ page }) => {
+  const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/rush.ts', 'overlap'], { encoding: 'utf8' }));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.clock.install({ time: new Date(fixture.now) }); await page.clock.pauseAt(new Date(fixture.now));
+  await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), fixture.save);
+  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await page.clock.runFor(1000);
+  await expect(page.locator('.rush-label.is-active b')).toHaveText('Giờ Vàng');
+  await expect(page.locator('.rush-label.is-warning')).toHaveCount(0);
+  await expect(page.getByRole('status').filter({ hasText: 'Chuẩn bị đón' })).toHaveCount(0);
+  const before = await page.locator('.rush-label time').textContent();
+  await page.clock.runFor(1000); expect(await page.locator('.rush-label time').textContent()).not.toBe(before);
+});

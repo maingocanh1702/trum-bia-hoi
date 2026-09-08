@@ -72,7 +72,7 @@ effectiveInterval = max(
 ## 6. UI
 
 - HUD ưu tiên **đợt đang chạy + thời gian còn lại**; khi chưa có đợt chạy mới hiển thị **loại đợt kế + ETA**. Đang closing/resting không quảng bá đợt kế.
-- `rush.schedule.warningMs` trước rush (seed 20s): nhãn HUD viền vàng + loại/ETA và một thông báo screen reader; không pause game, không che bàn/serve/sheet. Native timer không tự đọc lại mỗi giây.
+- `rush.schedule.warningMs` trước rush (seed 20s): nhãn HUD viền vàng + loại/ETA và một thông báo screen reader; không pause game, không che bàn/serve/sheet. Native timer không tự đọc lại mỗi giây. Nếu đã có đợt đang chạy, cả hình ảnh và thông báo screen reader đều ưu tiên đợt đó; không chen thông báo của slot bị chồng.
 - Trong rush: viền HUD đổi màu, spawn lane rõ, không mở text dài.
 - Nếu người chơi mở restock/upgrade trong rush, game không pause; đây là quyết định vận hành.
 
@@ -95,3 +95,5 @@ effectiveInterval = max(
 | Date | Change |
 |---|---|
 | 2026-09-09 | Rules v5 nối warning theo config, ưu tiên active timer, đóng đúng slot khi closing/finalize; hidden dời deadline, mỗi slot warning một lần. Replay v1–v4 giữ lịch sử, private slot tracking tái dựng qua replay. Lịch hiện vẫn light/heavy chia đều; seeded slot planning, lunch/football/priority và analytics tổng hợp vẫn đang triển khai. |
+
+| 2026-09-09 review fix | Đồng bộ cảnh báo screen reader với HUD khi slot chồng nhau: chỉ announce upcoming khi không có đợt active. Thêm browser regression với lịch cấu hình chồng giờ. |
