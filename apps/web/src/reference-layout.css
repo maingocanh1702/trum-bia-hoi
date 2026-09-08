@@ -193,3 +193,29 @@
 .milestone-state.claimable { color: var(--coinGold); }
 .milestone-rewards { font-size: 12px; line-height: 1.6; margin: 10px 0; color: var(--coinGold); }
 .milestone-list button { width: 100%; margin-top: 10px; }
+
+.business-props button { position: relative; }
+.business-props .has-delivery { border: 1px solid #f8edd0; border-radius: 8px; background: #508697; }
+.business-props .has-delivery.is-urgent { border-color: #ffe286; background: #835329; }
+.has-delivery .sprite { animation: customer-in 220ms ease-out; }
+.delivery-clock { position: absolute; bottom: -3px; left: 50%; transform: translateX(-50%); border-radius: 4px; background: #28556b; color: #fff6c5; font-size: 9px; line-height: 13px; padding: 0 3px; font-variant-numeric: tabular-nums; pointer-events: none; }
+.delivery-summary { display: flex; align-items: center; gap: 18px; }
+.delivery-summary > .sprite { width: 95px; height: 140px; }
+.delivery-summary > div { flex: 1; }
+.delivery-summary h3 { font-size: 18px; color: var(--cream); }
+.delivery-summary time { display: block; margin-top: 8px; font-size: 29px; color: var(--coinGold); font-variant-numeric: tabular-nums; }
+.delivery-summary p { font-size: 12px; line-height: 1.6; color: var(--creamMuted); }
+.delivery-progress { width: 100%; max-width: none; height: 6px; margin: 8px 0; accent-color: #83ce9a; }
+.delivery-progress::-webkit-progress-value { background: #83ce9a; }
+.delivery-urgent { color: #ffe286; margin: 8px 0; font-weight: 650; }
+.delivery-lines { list-style: none; padding: 0; margin: 12px 0; }
+.delivery-lines li { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--panelBorder); }
+.delivery-lines .sprite { width: 37px; height: 39px; }
+.delivery-lines li > div { flex: 1; }
+.delivery-lines strong, .delivery-lines small { display: block; }
+.delivery-lines small { color: var(--creamMuted); margin-top: 5px; }
+.delivery-lines .is-ready > span { color: #a9e4a9; }
+.delivery-terms { font-size: 12px; color: var(--creamMuted); line-height: 1.7; margin: 16px 0; }
+.delivery-panel > .primary { background: var(--stoolRedDeep); min-height: 50px; }
+.delivery-panel > .secondary { margin-top: 10px; }
+@media (prefers-reduced-motion: reduce) { .has-delivery .sprite { animation: none; } }

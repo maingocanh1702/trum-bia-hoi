@@ -1,11 +1,12 @@
-import { config as defaultConfig, BUSINESS_UNLOCKS, DISHES, EQUIPMENT, WEATHER, type Config, type SeatedType, type Rush } from './config';
+import { config as defaultConfig, BUSINESS_UNLOCKS, DISHES, EQUIPMENT, WEATHER, deliveryBundles, type Config, type SeatedType, type Rush } from './config';
 import { integer, random, weighted } from './rng';
-import { addStock, credit, currentGuests, customerValue, dayKey, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
+import { addStock, credit, currentGuests, customerValue, dayKey, deliveryInterval, deliveryQuote, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
 import { lifePathStatus, lifePathRewardQuote, unlockQuote } from './progression';
 import type { Command, Customer, Envelope, Group, Item, LoggedCommand, Order, Result, RulesVersion, Stats, Table, World } from './types';
 
 const RUSH_CLOCK_RULES: RulesVersion = 5; // config-exempt: fixed replay protocol revision
 const PROGRESSION_RULES: RulesVersion = 6; // config-exempt: fixed replay protocol revision
+const DELIVERY_RULES: RulesVersion = 7; // config-exempt: fixed replay protocol revision
 const emptyStats = (): Stats => ({ arrived: 0, served: 0, lost: 0, rejected: 0, orders: 0, payment: 0, tip: 0, credited: 0, penalty: 0, spent: 0, rep: 0, wellRestedBonus: 0 });
 
 /** No wall clock, IO or renderer: only config, seed, explicit time and commands. */
@@ -15,7 +16,7 @@ export class Game {
   private readonly results = new Map<string, LoggedCommand>();
   private commandKey: string | null = null;
   private activeRushIndex: number | null = null;
-  private rulesVersion: RulesVersion = PROGRESSION_RULES;
+  private rulesVersion: RulesVersion = DELIVERY_RULES;
   constructor(readonly config: Config = defaultConfig, readonly seed = 1, readonly createdAt = 0, readonly playerId = 'guest') {
     if (!Number.isSafeInteger(seed) || !Number.isSafeInteger(createdAt) || createdAt < 0) throw Error('game:invalid-origin');
     const c = config.values;
@@ -28,6 +29,7 @@ export class Game {
       inventory: Object.fromEntries(DISHES.map(d => [d, (c.inventory.startingStock as Record<string, number[]>)[d]?.[0] ?? 0])) as World['inventory'],
       equipment: Object.fromEntries(EQUIPMENT.map(k => [k, k === 'kitchen' ? c.runtime.initialKitchenLevel : c.runtime.initialEquipmentLevel])) as World['equipment'],
       tables: [], glasses: [], queue: [], shift: null, serves: [], events: [], lostStreak: 0,
+      delivery: null, nextDeliveryAt: null,
       dogLevel: 0, claimedLifePaths: [], badgeShards: 0, cosmeticTokens: 0, peakLeague: null, location: c.locations.fallback, lifePath: 0, unlocks: [], badges: [],
     };
     for (let i = 0; i < c.upgrades.table.startingTables; i++) this.world.tables.push(this.newTable());
@@ -50,6 +52,10 @@ export class Game {
     const w = this.world, c = this.config.values, times: number[] = [];
     if (w.phase === 'open' && w.shift) {
       times.push(w.shift.endsAt, w.shift.nextSpawnAt);
+    }
+    if (this.rulesVersion >= DELIVERY_RULES) {
+      if (w.delivery) times.push(w.delivery.expiresAt);
+      else if (w.phase === 'open' && w.nextDeliveryAt !== null) times.push(w.nextDeliveryAt);
     }
     if (w.shift && (w.phase === 'open' || this.rulesVersion >= RUSH_CLOCK_RULES && w.phase === 'closing')) {
       for (const r of w.shift.rushes) {
@@ -100,6 +106,8 @@ export class Game {
       for (const group of w.queue) group.arrivedAt += elapsed;
       for (const glass of w.glasses) if (glass.readyAt !== null) glass.readyAt += elapsed;
       if (w.lastServedAt !== null) w.lastServedAt += elapsed;
+      if (w.nextDeliveryAt !== null) w.nextDeliveryAt += elapsed;
+      if (w.delivery) { w.delivery.placedAt += elapsed; w.delivery.expiresAt += elapsed; }
       w.now = now;
       return;
     }
@@ -195,9 +203,10 @@ export class Game {
     }
     this.seatQueue();
     if (w.phase === 'open' && s && w.now >= s.nextSpawnAt) this.spawn();
+    if (this.rulesVersion >= DELIVERY_RULES) this.processDelivery();
     this.prepare();
     this.wash();
-    if (w.phase === 'closing' && w.queue.length === 0 && w.tables.every(t => ['empty', 'cleaning', 'broken'].includes(t.state))) {
+    if (w.phase === 'closing' && !w.delivery && w.queue.length === 0 && w.tables.every(t => ['empty', 'cleaning', 'broken'].includes(t.state))) {
       w.phase = 'resting'; w.completedShifts++;
       w.staminaAnchorMs = w.staminaMs; w.staminaAnchorAt = w.now;
       w.restStartedAt = w.now;
@@ -207,6 +216,27 @@ export class Game {
       if (this.rulesVersion >= RUSH_CLOCK_RULES) this.updateRush();
       this.emit('shift_closed', { shiftId: s?.id ?? '', credited: s?.stats.credited ?? 0 });
     }
+  }
+  private processDelivery() {
+    const w = this.world, c = this.config.values;
+    if (w.delivery && w.now >= w.delivery.expiresAt) {
+      const q = deliveryQuote(w, this.config)!;
+      const loss = this.penalize(q.penalty, 0);
+      w.shift!.stats.deliveryMissed = (w.shift!.stats.deliveryMissed ?? 0) + 1;
+      this.emit('shipper_missed', { deliveryId: w.delivery.id, gross: q.gross, penalty: loss.coins, reputation: loss.reputation });
+      w.delivery = null;
+    }
+    if (w.phase !== 'open') { w.nextDeliveryAt = null; return; }
+    if (!w.delivery && w.nextDeliveryAt !== null && w.now >= w.nextDeliveryAt) {
+      const bundles = deliveryBundles(c, w.equipment.kitchen, c.customerTypes.shipper.grossBase);
+      const bundle = bundles[integer(w, 0, bundles.length - 1)];
+      w.delivery = { id: this.id('delivery'), placedAt: w.now, expiresAt: w.now + c.customerTypes.shipper.deadlineMs, lines: bundle.lines };
+      w.nextDeliveryAt = w.now + deliveryInterval(w, this.config);
+      this.emit('shipper_arrived', { deliveryId: w.delivery.id, gross: bundle.gross, expiresAt: w.delivery.expiresAt, items: bundle.lines.reduce((n, line) => n + line.quantity, 0), ...Object.fromEntries(bundle.lines.map(line => [`qty_${line.dish}`, line.quantity])) });
+    }
+  }
+  private serveCoolingDown() {
+    return this.world.lastServedAt !== null && this.world.now - this.world.lastServedAt < 1000 / this.config.values.spawn.playerServeCeilingPerSec;
   }
   private changeRep(delta: number) {
     const w = this.world;
@@ -359,7 +389,7 @@ export class Game {
       this.emit('glass_washing', { glassId: glass.id });
     }
   }
-  command(envelope: Envelope): Result { return this.applyCommand(envelope, PROGRESSION_RULES); }
+  command(envelope: Envelope): Result { return this.applyCommand(envelope, DELIVERY_RULES); }
   /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
   replay(entry: LoggedCommand): Result { return this.applyCommand(entry, entry.rulesVersion); }
   private applyCommand(envelope: Envelope, rulesVersion: RulesVersion): Result {
@@ -374,6 +404,7 @@ export class Game {
       if (rulesVersion >= RUSH_CLOCK_RULES) this.updateRush();
       if (rulesVersion >= PROGRESSION_RULES) this.updateProgression();
       const result = this.execute(envelope.command);
+      if (rulesVersion >= DELIVERY_RULES && this.world.phase === 'open' && this.world.nextDeliveryAt === null && this.world.unlocks.includes(this.config.values.customerTypes.shipper.requires)) this.world.nextDeliveryAt = this.world.now + deliveryInterval(this.world, this.config);
       if (rulesVersion >= PROGRESSION_RULES) this.updateProgression();
       const entry = structuredClone({ ...envelope, result, configVersion: this.config.version, rulesVersion });
       this.log.push(entry); this.results.set(entry.idempotencyKey, entry);
@@ -425,6 +456,7 @@ export class Game {
         w.phase = 'closing'; this.emit('shift_closing'); return { ok: true };
       case 'kickAll':
         if (w.phase === 'resting' || !c.shift.kickAllAllowed) return fail('noShift');
+        if (w.delivery) return fail('deliveryPending');
         if (this.rulesVersion >= 4) {
           if (cmd.shiftId !== s?.id) return fail('shiftChanged');
           const quote = kickAllQuote(w, this.config);
@@ -458,7 +490,7 @@ export class Game {
         if (o.state === 'expired') return { ok: false, reason: 'orderExpired', outcome: 'expired' };
         if (!s || w.phase === 'resting' || !['pending', 'grace'].includes(o.state)) return fail('orderGone');
         if (!o.items.every(i => i.state === 'ready')) return fail('orderNotReady');
-        if (w.lastServedAt !== null && w.now - w.lastServedAt < 1000 / c.spawn.playerServeCeilingPerSec) return fail('serveCooldown');
+        if (this.serveCoolingDown()) return fail('serveCooldown');
         let amount = 0, anyStale = false, anyTip = false, anyEarly = false;
         const grace = o.state === 'grace';
         const values = t.group!.customers.map(customer => {
@@ -485,6 +517,20 @@ export class Game {
         w.lastServedAt = w.now; w.lostStreak = 0;
         this.emit('order_served', { tableId: t.id, orderId: o.id, outcome, amount, tipped: anyTip }); this.emit('coin_gain', { amount });
         return { ok: true, outcome, amount };
+      }
+      case 'serveDelivery': {
+        const q = deliveryQuote(w, this.config);
+        if (!s || w.phase === 'resting' || !q || q.order.id !== cmd.deliveryId || q.remainingMs === 0) return fail('deliveryGone');
+        if (!q.ready) return fail('deliveryStock');
+        if (this.serveCoolingDown()) return fail('serveCooldown');
+        if (!q.safe) return fail('rewardOverflow');
+        for (const line of q.lines) w.inventory[line.dish] -= line.quantity;
+        const net = credit(w, this.config, q.net, 'shipperNet'), bonus = credit(w, this.config, q.bonus, 'shipperNet'), amount = net + bonus;
+        s.stats.deliveryCompleted = (s.stats.deliveryCompleted ?? 0) + 1; s.stats.deliveryNet = (s.stats.deliveryNet ?? 0) + q.net; s.stats.deliveryBonus = (s.stats.deliveryBonus ?? 0) + bonus; s.stats.wellRestedBonus += bonus; s.stats.credited += amount;
+        this.changeRep(c.reputation.serveNoTip); w.lastServedAt = w.now;
+        this.emit('shipper_completed', { deliveryId: q.order.id, gross: q.gross, net: q.net, credited: amount, bonus, onTime: true });
+        this.emit('coin_gain', { amount }); w.delivery = null;
+        return { ok: true, amount };
       }
       case 'restock': {
         const q = restockQuote(w, this.config, cmd.dish, cmd.mode);
@@ -574,6 +620,7 @@ export function validEnvelope(input: unknown): input is Envelope {
     case 'kickAll': return (c.shiftId === undefined || typeof c.shiftId === 'string') && (c.maxCost === undefined || Number.isSafeInteger(c.maxCost) && c.maxCost >= 0);
     case 'activity': return typeof c.active === 'boolean';
     case 'serve': return typeof c.tableId === 'string' && typeof c.orderId === 'string';
+    case 'serveDelivery': return typeof c.deliveryId === 'string';
     case 'upgradeTable': return typeof c.tableId === 'string';
     case 'claimLifePath': return Number.isSafeInteger(c.level) && c.level > 0;
     case 'buyUnlock': return BUSINESS_UNLOCKS.includes(c.item);

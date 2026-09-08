@@ -1,0 +1,9 @@
+# Original shipper draft — local delivery slice
+
+Source: /Users/maingocanh/.codex/generated_images/01a0818e-012b-7de0-823a-5a3664364529/exec-34fe1ddd-30d6-46da-8d0f-8d9a35be2634.png
+
+1024x1536; browser canvas verified1,026,008 transparent pixels and546,856 partial alpha pixels, corner alpha0. Native alpha retained. Copied unchanged into assets/customer-shipper-illustrated-v1.png; manifest customer-shipper remains draft. Green/navy original courier with phone, bag and delivery box; no brand or text.
+
+Exact imagegen prompt:
+
+Create ONE original transparent-background PNG game sprite for the Vietnamese beer-stall tycoon game Trum Bia Hoi. A friendly adult Vietnamese male delivery courier, age about 28, full body standing in a relaxed three-quarter view facing slightly left, next to ONE small insulated delivery box on the ground. Short navy jacket with muted jade-green shoulder panels, plain matching open-face helmet with chin strap, charcoal trousers and brown sandals. One hand holds a small plain phone, the other loosely holds the handle of a kraft paper takeaway bag. No logos or text anywhere. Compact caricature proportions with a large expressive adult head and short sturdy body, matching a hand-painted 2D Vietnamese casual tycoon sprite family: clean dark brown contour, detailed painted face, warm honey edge light, softly textured fabric, readable silhouette at 80px tall. Entire figure, helmet, bag, sandals and delivery box fully visible with ample empty alpha margin. Centered composition, no furniture, no stool, no motorcycle, no scenery, no floor, no backdrop, no UI, no writing, no QR codes, no checkerboard. True transparent alpha around and between the figure and objects. High quality polished original character, warm and approachable, clearly an adult, not photorealistic, not vector-flat, not plastic 3D.

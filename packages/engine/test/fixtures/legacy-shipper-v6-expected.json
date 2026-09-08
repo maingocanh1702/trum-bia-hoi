@@ -1,0 +1,24 @@
+{
+  "source": "598f66fe64d84ea2d623241794cb042776055cbd",
+  "now": 1788861841000,
+  "phase": "open",
+  "lifePath": 1,
+  "coins": 228721,
+  "lifetime": 68,
+  "nextId": 311,
+  "result": {
+    "ok": true,
+    "amount": 12500
+  },
+  "inventory": {
+    "bia": 0,
+    "lac": 0,
+    "nem": 0,
+    "dau": 0,
+    "topmo": 0,
+    "long": 0
+  },
+  "unlocks": [
+    "phone"
+  ]
+}

@@ -1,6 +1,6 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.10.1
+> **Version:** v0.11.0
 > **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-09 (layout/art theo ảnh owner)
 > **Trạng thái:** Active — **M0 qua verify; review sửa lỗi nền và layout/art đã CLEAN. M1–M3 tiếp tục triển khai; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.0** (1 phase, mốc M0–M9).
 > **Owner:** Team
@@ -54,7 +54,7 @@
 | PR | Wave | Feature | Status | Branch | Gates | Notes |
 |----|------|---------|:------:|--------|:-----:|-------|
 | F24 | 🎨 Design | Thiết Kế UI/UX Quán Bia — tokens, wireframe, sprite, animation | 🟡 | `codex/game-build-isolated` | 🔒S | Sân xanh/cảnh phố, HUD gọn, quầy trên, kho dọc, thẻ mâm khi chạm bàn. 12 E2E pass; review CLEAN tại `2d80437`. 14 art draft, 30 sprite placeholders; chưa đủ art/release. |
-| F07 | 🎮 Code | Các Kiểu Khách — 3 loại P1 (thường/vội/VIP) | 🟡 | `codex/game-build-isolated` | 🔒S 🔒B | 5 kiểu khách ngồi có trong engine. Shipper + football chưa nối đủ; occupied/rounds cần kiểm thử sâu. |
+| F07 | 🎮 Code | Các Kiểu Khách — 3 loại P1 (thường/vội/VIP) | 🟡 | `codex/game-build-isolated` | 🔒S 🔒B | 5 kiểu khách ngồi; shipper local v7 có timer riêng, giao cả đơn, cap/timeout/closing/replay và UI điện thoại. Review shipper đang chờ; football và acceptance đầy đủ còn thiếu. |
 | F09 | ⚖️ Economy | Thời Tiết Quán — tối giản (hệ số độ hơi/tip/spawn) | 🟡 | `codex/game-build-isolated` | 🔒S | 5 thời tiết từ config; áp freshness/patience/spawn/tip. Còn sprite/ambient và statistical QA. |
 | F10 | 🎮 Code | Nâng Cấp Quán — bom/rửa/hầm/bàn cơ bản (×k) | 🟡 | `codex/game-build-isolated` | 🔒S 🔒B | Bom/rửa/hầm/quầy/bếp + mua/nâng bàn có command/UI; phone/QR quote/gate/command/UI + boa qua review không còn findings tại598f66f; cốc mua/biển/tờ rơi còn thiếu. |
 | F25 | 🎮 Code | Ngôn Ngữ / Tài Khoản — chọn vi/en, guest play, Google login (kể cả giữa ca) | 🟡 | `codex/game-build-isolated` | 🔒S | Guest local + vi/en + backup/replay v1→v2 + import/reset giữ bản cũ đã có; Google/claim/cloud ở M4 chưa có. |
@@ -159,3 +159,5 @@
 | 2026-09-09 | v0.10.0 | F13 in progress: local requirements/claim-once/reward quote + phone/QR UI; 66 unit và40 sim rows xanh. Chưa có full meta producer/server, review pending. |
 
 | 2026-09-09 | v0.10.1 | Đóng hai findings progression (chu trình LP/unlock + tên VI/EN); review đầy đủ d2918e9..598f66f không còn lỗi actionable.67 unit/30 E2E/config/build/asset/sim pass; F13 và full game tiếp tục, shipper kế tiếp. |
+
+| v0.11.0 | Shipper rules v7 và phone sheet theo mẫu owner: stock atomic, capped net/bonus, closing/expiry/legacy replay. 76 unit/33 E2E và30 sim rows k2.3191–2.8154 xanh; review độc lập đang chờ. F07/full game vẫn in progress. |

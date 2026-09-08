@@ -9,6 +9,7 @@ export interface Order {
   id: string; placedAt: number; patienceMs: number; items: Item[];
   state: 'pending' | 'grace' | 'served' | 'expired' | 'cancelled'; readyEmitted: boolean;
 }
+export interface DeliveryOrder { id: string; placedAt: number; expiresAt: number; lines: { dish: Dish; quantity: number }[] }
 export interface Group { id: string; customers: Customer[]; rounds: number; arrivedAt: number }
 export interface Table {
   id: string; level: number; capacity: number;
@@ -32,6 +33,7 @@ export interface Stats {
   arrived: number; served: number; lost: number; rejected: number; orders: number;
   payment: number; tip: number; credited: number; penalty: number; spent: number; rep: number;
   wellRestedBonus: number;
+  deliveryCompleted?: number; deliveryMissed?: number; deliveryNet?: number; deliveryBonus?: number;
 }
 export interface Shift {
   id: string; startedAt: number; pausedMs: number; endsAt: number; closedAt: number | null; configVersion: string;
@@ -49,6 +51,7 @@ export interface World {
   inventory: Record<Dish, number>; equipment: Record<Equipment, number>; tables: Table[];
   glasses: Glass[]; queue: Group[]; shift: Shift | null; serves: ServeRecord[];
   events: DomainEvent[]; lostStreak: number;
+  delivery: DeliveryOrder | null; nextDeliveryAt: number | null;
   dogLevel: number; claimedLifePaths: number[]; badgeShards: number; cosmeticTokens: number; peakLeague: string | null;
   location: string; lifePath: number; unlocks: string[]; badges: string[];
 }
@@ -57,6 +60,7 @@ export type Command =
   | { type: 'endShift' }
   | { type: 'kickAll'; shiftId?: string; maxCost?: number }
   | { type: 'serve'; tableId: string; orderId: string }
+  | { type: 'serveDelivery'; deliveryId: string }
   | { type: 'restock'; dish: Dish; mode: 'bulk' | 'full' | 'one' }
   | { type: 'upgrade'; kind: Equipment }
   | { type: 'upgradeTable'; tableId: string }
@@ -68,5 +72,5 @@ export type Command =
   | { type: 'emergencyPack' };
 export interface Envelope { idempotencyKey: string; at: number; command: Command }
 export interface Result { ok: boolean; reason?: string; outcome?: 'early' | 'late' | 'grace' | 'expired' | 'stale'; amount?: number }
-export type RulesVersion = 1 | 2 | 3 | 4 | 5 | 6; // config-exempt: persisted replay protocol revisions, not economy tuning
+export type RulesVersion = 1 | 2 | 3 | 4 | 5 | 6 | 7; // config-exempt: persisted replay protocol revisions, not economy tuning
 export interface LoggedCommand extends Envelope { result: Result; configVersion: string; rulesVersion: RulesVersion }

@@ -159,6 +159,7 @@ test('an unrepresentable configured bonus cannot partially serve the earlier cus
     c.onboarding.enabled = false;
     Object.entries(c.customerTypes).forEach(([key, profile]) => { profile.weight = key === 'thuong' || key === 'voi' ? 1 : 0; });
     c.customerTypes.thuong.paymentMult = 0;
+    c.customerTypes.shipper.netRate = 0; // Isolate the table overflow path from the new delivery config guard.
     c.shift.wellRested.mult = c.tip.wellRestedMult = Number.MAX_VALUE;
   }, origin, 8);
   openRested(g); g.advance(g.world.shift!.nextSpawnAt + g.config.values.runtime.tableSeatingMs);

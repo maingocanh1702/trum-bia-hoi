@@ -9,7 +9,7 @@ complete-game goal; milestones below are implementation order, not scope cuts.
 | M0 — config, pure engine, deterministic replay, k sim, workspaces | Verification passed; correction review CLEAN | Config/schema + workspaces + pure engine + replay + actual 5-seed k sim; 27 unit checks pass; review evidence below |
 | M1 — serve loop, glasses, stock, upgrades, local save, spatial UI, core audio | In progress | Playable loop, local save/replay, stock/equipment/table UI, core SFX wired; final sprites and listening QA pending |
 | M2 — guest, vi/en, onboarding | In progress | Local guest + matching vi/en keys + event-driven guide with skip/repeat cap; Google account linking and 5-person evidence pending |
-| M3 — full menu, customer mix, weather, rush, business unlocks | In progress | 6 menu entries and hot prep, 5 seated types, 5 weather states, basic scheduled rush. Shipper/football, business unlocks and exhaustive balance/edge QA remain |
+| M3 — full menu, customer mix, weather, rush, business unlocks | In progress | 6 menu entries and hot prep, 5 seated types, 5 weather states, basic scheduled rush. Local phone/QR progression reviewed; shipper local implemented with review pending. Football, remaining business upgrades and exhaustive balance/edge QA remain |
 | M4 — server authority, accounts, reconnect, config registry/admin | Pending | |
 | M5 — seasons, leaderboard/shrine, life path, leases, quests/referrals | Pending | |
 | M6 — risks, dog, emergency supplies | Pending | |
@@ -531,3 +531,37 @@ shipper draft/provenance is `.qa/shipper-art-draft.md` (not yet a product asset)
 | Date | Change |
 |---|---|
 | 2026-09-09 | Recorded independent no-findings review d2918e9..598f66f, both review fixes and final67-unit/30-browser evidence; full-game goal continues with shipper. |
+
+
+## 2026-09-09 — Shipper delivery rules v7
+
+Base `ef0c0532bd0af0e9b5c8ca9775e9d41e5a2ab0c4`, same isolated branch. One phone-gated
+DeliveryOrder runs outside tables, glasses and queue. Seeded finite bundles obey
+configured unit/gross bounds and shown final menu prices. Exact-id whole-stock handoff
+uses the shared serve ceiling and credit projection; actual capped net/rested bonus
+are audited separately. Timeout charges available coins only, numeric loss feedback;
+closing waits for the active delivery, kick-all refuses before debit. Hidden time
+moves deadlines. True v6 fixture from598f66f keeps historical money/events unchanged.
+
+The shared native SheetDialog now closes during layout cleanup, before removal, so
+successful service restores phone focus. Mobile/low-height browser checks cover the
+live deadline, missing stock refill, one handoff, reload, VI/EN, expiry and close gate.
+Original courier draft is supplied as native alpha with exact prompt provenance;
+manifest122 assets/32 paired SFX,30 sprite placeholders/84 drafts remain.
+
+Evidence: `.qa/shipper-verify.txt`, `.qa/shipper-e2e.txt`, `.qa/shipper-sim*.txt`;
+76 unit/33 E2E plus30 normal/shipper/shipper+rested+QR sim rows, each >=500 seated
+serves. k2.3191–2.8154; every shipper row also records17–39 completed deliveries.
+The first verify invocation aborted in its npm sim child (Abort trap6); both explicit
+shipper invocations and the full canonical verify rerun succeeded. No code change or
+test relaxation was needed for that transient process failure. Added separate tests
+for shared service cooldown/no backlog and natural exhaustion; full checks rerun below.
+
+Actual captures `.qa/shipper-{yard,panel,urgent,gain}-{360,390,1280}.png` inspected:
+readable courier/clock/ingredients,44px non-overlapping phone target, scrollable sheets
+at400px height. Progress track widened after visual inspection. Independent review is
+pending; full M0–M9 remains active and no root merge/push occurred.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Implemented local shipper v7 and original courier art, documented weather-frequency clarification and delivery closing contract; independent review pending. |

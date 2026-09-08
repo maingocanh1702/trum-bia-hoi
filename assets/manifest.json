@@ -1120,7 +1120,8 @@
       "dimensions": null,
       "transparent": false,
       "usage": [
-        "order_placed"
+        "order_placed",
+        "shipper_arrived"
       ],
       "loop": false,
       "status": "draft",
@@ -1138,7 +1139,8 @@
       "dimensions": null,
       "transparent": false,
       "usage": [
-        "order_placed"
+        "order_placed",
+        "shipper_arrived"
       ],
       "loop": false,
       "status": "draft",
@@ -1300,7 +1302,8 @@
       "dimensions": null,
       "transparent": false,
       "usage": [
-        "order_served:early"
+        "order_served:early",
+        "shipper_completed"
       ],
       "loop": false,
       "status": "draft",
@@ -1318,7 +1321,8 @@
       "dimensions": null,
       "transparent": false,
       "usage": [
-        "order_served:early"
+        "order_served:early",
+        "shipper_completed"
       ],
       "loop": false,
       "status": "draft",
@@ -1372,7 +1376,8 @@
       "dimensions": null,
       "transparent": false,
       "usage": [
-        "order_expired"
+        "order_expired",
+        "shipper_missed"
       ],
       "loop": false,
       "status": "draft",
@@ -1390,7 +1395,8 @@
       "dimensions": null,
       "transparent": false,
       "usage": [
-        "order_expired"
+        "order_expired",
+        "shipper_missed"
       ],
       "loop": false,
       "status": "draft",
@@ -2079,6 +2085,23 @@
       "transparent": true,
       "status": "draft",
       "review_notes": "Original imagegen cutout with native alpha, era-safe keypad phone / decorative paper QR. See docs/reference/assets-owner-2026-09-08/business-prompts.md; final export approval pending."
+    },
+    {
+      "id": "customer-shipper",
+      "type": "sprite",
+      "path": "assets/customer-shipper-illustrated-v1.png",
+      "source": "imagegen_builtin",
+      "dimensions": [
+        1024,
+        1536
+      ],
+      "transparent": true,
+      "usage": [
+        "shipper_arrived",
+        "delivery"
+      ],
+      "status": "draft",
+      "review_notes": "Original adult courier, native alpha retained. Prompt/source at docs/reference/assets-owner-2026-09-08/shipper-prompt.md; final family approval pending."
     }
   ]
 }

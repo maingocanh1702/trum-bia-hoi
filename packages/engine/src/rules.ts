@@ -86,14 +86,19 @@ export function kickAllQuote(w: World, c: Config) {
   for (const group of w.queue) for (const customer of group.customers) guests.push({ customerId: customer.id, tableId: null, orderId: null, fee: 0 });
   const cost = guests.reduce((sum, guest) => sum + guest.fee, 0);
   if (!Number.isSafeInteger(cost) || cost < 0) throw Error('ledger:invalid-close-fee');
-  return { guests, cost, ok: w.phase !== 'resting' && c.values.shift.kickAllAllowed && w.coins >= cost };
+  return { guests, cost, deliveryBlocked: w.delivery !== null, ok: w.phase !== 'resting' && c.values.shift.kickAllAllowed && w.coins >= cost && !w.delivery };
 }
-/** The only faucet entry point. Spending/rewards cannot accidentally inflate league scores. */
-export function credit(w: World, c: Config, amount: number, source: string): number {
+/** All credit consumers use the same day cap before mutation. */
+export function creditQuote(w: World, c: Config, amount: number, source: string) {
   if (!Number.isSafeInteger(amount) || amount < 0) throw Error('ledger:invalid-credit');
   const counted = c.values.ledgers.countedSources.includes(source);
   const day = dayKey(w.now, c);
   const credited = counted ? Math.min(amount, Math.max(0, c.values.shift.dailyEarnCapBase - (w.dayEarned[day] ?? 0))) : amount;
+  return { credited, counted, day };
+}
+/** The only faucet entry point. Spending/rewards cannot accidentally inflate league scores. */
+export function credit(w: World, c: Config, amount: number, source: string): number {
+  const { credited, counted, day } = creditQuote(w, c, amount, source);
   w.coins += credited;
   if (counted) {
     w.dayEarned[day] = (w.dayEarned[day] ?? 0) + credited;
@@ -101,6 +106,22 @@ export function credit(w: World, c: Config, amount: number, source: string): num
     w.lifetimeEarned += credited;
   }
   return credited;
+}
+export function deliveryInterval(w: World, c: Config) {
+  return Math.round(c.values.customerTypes.shipper.spawnIntervalMs / c.values.weather[w.shift?.weather ?? 'sunny'].shipperMult);
+}
+export function deliveryQuote(w: World, c: Config) {
+  const order = w.delivery;
+  if (!order) return null;
+  const lines = order.lines.map(line => ({ ...line, have: w.inventory[line.dish] }));
+  const gross = lines.reduce((sum, line) => sum + c.values.menu[line.dish].price * line.quantity, 0);
+  const net = Math.round(gross * c.values.customerTypes.shipper.netRate), bonus = wellRestedBonus(w, c, net, 0);
+  const { credited, counted, day } = creditQuote(w, c, net + bonus, 'shipperNet');
+  const creditedBonus = credited - creditQuote(w, c, net, 'shipperNet').credited, stats = w.shift?.stats;
+  const safe = [gross, net, bonus, credited, w.coins + credited, ...(counted ? [(w.dayEarned[day] ?? 0) + credited, w.seasonEarned + credited, w.lifetimeEarned + credited] : []),
+    (stats?.deliveryNet ?? 0) + net, (stats?.deliveryBonus ?? 0) + creditedBonus, (stats?.wellRestedBonus ?? 0) + creditedBonus, (stats?.credited ?? 0) + credited].every(n => Number.isSafeInteger(n) && n >= 0);
+  return { order, lines, gross, net, bonus, credited, creditedBonus, safe, penalty: Math.round(gross * c.values.customerTypes.shipper.missPenaltyRate),
+    ready: lines.every(line => line.have >= line.quantity), remainingMs: Math.max(0, order.expiresAt - w.now) };
 }
 /** Project a complete gift before applying it; reward consumers share this overflow calculation. */
 export function stockGiftQuote(w: World, c: Config, stock: Partial<Record<Dish, number>>) {

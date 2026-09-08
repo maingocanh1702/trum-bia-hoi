@@ -11,6 +11,30 @@ export const DISHES = Object.keys(seed.menu) as Dish[];
 export const EQUIPMENT: Equipment[] = ['keg', 'washer', 'cooler', 'stall', 'kitchen'];
 export const WEATHER: Weather[] = ['sunny', 'hot', 'humid', 'rain', 'cold'];
 
+/** Final dish prices; only the gross range supplied by the caller is Base-scaled. */
+export function deliveryBundles(c: Economy, kitchen: number, grossRange: readonly number[]) {
+  const dishes = DISHES.filter(d => c.menu[d].unlock.kitchenLevel <= kitchen);
+  const bundles: { lines: { dish: Dish; quantity: number }[]; gross: number }[] = [];
+  const lines: { dish: Dish; quantity: number }[] = [];
+  let work = 0;
+  const walk = (index: number, remaining: number, gross: number) => {
+    // config-exempt: CPU/memory ceiling for untrusted configuration validation, not game tuning.
+    if (++work > 100000) throw Error('config:deliveryCatalogTooLarge');
+    if (index === dishes.length) {
+      if (remaining === 0 && gross >= grossRange[0] && gross <= grossRange[1]) bundles.push({ lines: lines.map(line => ({ ...line })), gross });
+      return;
+    }
+    const dish = dishes[index], price = c.menu[dish].price;
+    for (let quantity = 0; quantity <= Math.min(remaining, Math.floor((grossRange[1] - gross) / price)); quantity++) {
+      if (quantity) lines.push({ dish, quantity });
+      walk(index + 1, remaining - quantity, gross + quantity * price);
+      if (quantity) lines.pop();
+    }
+  };
+  for (let units = c.customerTypes.shipper.orderLines[0]; units <= c.customerTypes.shipper.orderLines[1]; units++) walk(0, units, 0);
+  return bundles;
+}
+
 export const BUSINESS_UNLOCKS = ['phone', 'qr'] as const;
 export type BusinessUnlock = typeof BUSINESS_UNLOCKS[number];
 export type ProgressRequirement =
@@ -168,6 +192,16 @@ function validate(c: Economy): void {
     for (const k of ['price', 'unitCost', 'bulkCost'] as const) whole(c.menu[d][k], `menu.${d}.${k}`);
     if (c.menu[d].bulkCost > c.menu[d].unitCost || c.menu[d].unitCost > c.menu[d].price) throw Error(`config:menu.${d}:costs`);
   }
+  const shipper = c.customerTypes.shipper, grossRange = shipper.grossBase.map(n => Math.round(n * c.k.value));
+  for (const n of [...shipper.orderLines, ...shipper.grossBase, ...grossRange, shipper.spawnIntervalMs, shipper.deadlineMs]) whole(n, 'shipper.range', 1);
+  if (shipper.orderLines[0] > shipper.orderLines[1] || grossRange[0] > grossRange[1] || !BUSINESS_UNLOCKS.includes(shipper.requires as BusinessUnlock)) throw Error('config:shipper');
+  for (const rate of [shipper.netRate, shipper.missPenaltyRate]) if (rate < 0 || rate > 1) throw Error('config:shipperRate');
+  whole(Math.round(Math.round(grossRange[1] * shipper.netRate) * rested.mult), 'shipper.maximumCredit');
+  for (const weather of WEATHER) {
+    positive(c.weather[weather].shipperMult, 'shipper.weather');
+    whole(Math.round(shipper.spawnIntervalMs / c.weather[weather].shipperMult), 'shipper.interval', 1);
+  }
+  for (let kitchen = c.runtime.initialKitchenLevel; kitchen < c.upgrades.kitchen.priceBase.length; kitchen++) if (!deliveryBundles(c, kitchen, grossRange).length) throw Error('config:deliveryCatalogEmpty');
   if (c.glasses.start > c.glasses.storageCap || c.glasses.buyCap > c.glasses.storageCap) throw Error('config:glasses');
   for (const [segment, max] of Object.entries(c.shift.dailyShiftCap)) {
     const free = c.entitlements.freeSessionsPerDay.bySegment[segment as keyof typeof c.shift.dailyShiftCap];

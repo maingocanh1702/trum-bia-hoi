@@ -512,3 +512,59 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 
     expect(state.events.filter((e: { type: string }) => e.type === 'life_path_reward_claimed').map((e: { data: { level: string } }) => e.data.level)).toEqual(['LP2', 'LP1']);
   });
 }
+
+for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 }]) {
+  test(`shipper ingredients, whole handoff, phone focus and reload at ${viewport.width}×${viewport.height}`, async ({ page }) => {
+    const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/shipper.ts'], { encoding: 'utf8' }));
+    await page.setViewportSize(viewport); await page.clock.install({ time: new Date(fixture.now) }); await page.clock.pauseAt(new Date(fixture.now));
+    await page.addInitScript(save => { if (!localStorage.getItem('shipper-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('shipper-seeded', '1'); } }, fixture.save);
+    await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+    const phone = page.getByRole('button', { name: 'Điện thoại · đơn giao hàng', exact: true });
+    await expect(phone).toHaveClass(/has-delivery/); await expect(phone).toHaveAccessibleDescription(/Hạn giao còn lại.*00:45/);
+    const bounds = (await phone.boundingBox())!; expect(bounds.width).toBeGreaterThanOrEqual(44); expect(bounds.height).toBeGreaterThanOrEqual(44);
+    for (const target of await page.locator('.equipment-object, .glass-counter, .dog-object, .stock-strip button').all()) {
+      const b = (await target.boundingBox())!; expect(bounds.x + bounds.width <= b.x || b.x + b.width <= bounds.x || bounds.y + bounds.height <= b.y || b.y + b.height <= bounds.y).toBe(true);
+    }
+    await page.emulateMedia({ reducedMotion: 'reduce' }); expect(await phone.locator('img').evaluate(el => getComputedStyle(el).animationName)).toBe('none');
+    await phone.click(); const panel = page.getByRole('dialog', { name: 'Đơn giao hàng', exact: true });
+    await expect(panel.getByRole('button', { name: /^Giao cả đơn/ })).toBeDisabled(); await expect(panel.locator('.delivery-lines li')).toHaveCount(fixture.lines.length);
+    expect(await panel.locator('.delivery-summary img').evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 1024)).toBe(true);
+    await page.clock.runFor(1000); await expect(panel.getByRole('timer')).toHaveText('00:44');
+    await panel.getByRole('button', { name: 'Nhập nguyên liệu còn thiếu', exact: true }).click();
+    let cost = 0;
+    for (const line of fixture.lines) { cost += line.cost; await page.locator('.stock-row').nth(line.index).getByRole('button', { name: /^Đầy kho/ }).click(); }
+    await page.keyboard.press('Escape'); await phone.click();
+    await expect(panel.getByRole('button', { name: /^Giao cả đơn/ })).toBeEnabled();
+    await panel.getByRole('button', { name: /^Giao cả đơn/ }).click();
+    await expect(panel).toHaveCount(0); await expect(phone).toBeFocused(); await expect(phone).not.toHaveClass(/has-delivery/);
+    await expect(page.locator('.toast-gain strong')).toHaveText(`+${fixture.quote.credited}`);
+    const amount = fixture.coins - cost + fixture.quote.credited;
+    await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(amount));
+    await page.reload(); await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(amount));
+    await page.getByRole('button', { name: 'Sổ ca', exact: true }).click(); await expect(page.locator('.ledger')).toContainText('Đơn đã giao'); await expect(page.locator('.ledger')).toContainText('Tiền đơn sau chiết khấu');
+    await page.keyboard.press('Escape'); await page.getByRole('button', { name: 'Cài đặt', exact: true }).click(); await page.getByLabel('Ngôn ngữ').selectOption('en'); await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Phone · delivery orders', exact: true }).click();
+    await expect(page.getByRole('dialog', { name: 'Delivery order', exact: true })).toContainText('Next order in');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));
+    expect(saved.events.filter((e: { type: string }) => e.type === 'shipper_completed')).toHaveLength(1);
+  });
+}
+
+test('a pending shipper blocks paid closure and expires with a numeric-only penalty', async ({ page }) => {
+  const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/shipper.ts', 'ready'], { encoding: 'utf8' }));
+  await page.setViewportSize({ width: 390, height: 844 }); await page.clock.install({ time: new Date(fixture.now) }); await page.clock.pauseAt(new Date(fixture.now));
+  await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), fixture.save);
+  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
+  await page.getByRole('button', { name: /Mời tất cả về/ }).click();
+  await expect(page.getByRole('button', { name: /^Trả .* xu và đóng ca$/ })).toBeDisabled(); await expect(page.getByRole('dialog')).toContainText('Giao đơn shipper đang chờ');
+  await page.getByRole('button', { name: 'Đợi khách dùng xong', exact: true }).click(); await page.getByRole('button', { name: 'Ngừng đón khách', exact: true }).click();
+  await page.keyboard.press('Escape'); const phone = page.getByRole('button', { name: 'Điện thoại · đơn giao hàng', exact: true }); await phone.click();
+  await page.clock.runFor(20000); await expect(page.locator('.delivery-urgent')).toBeVisible(); await expect(phone).toHaveAccessibleDescription(/Sắp hết hạn giao/);
+  await page.clock.runFor(25000); await expect(page.getByRole('dialog', { name: 'Đơn giao hàng', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Sổ ca hôm nay', exact: true })).toBeVisible();
+  await expect(page.locator('.toast-loss')).toHaveText(/^[−\d\s.,]+$/); await expect(page.locator('.toast-loss')).toHaveAccessibleName(`Trừ ${fixture.quote.penalty} xu và 0 uy tín`);
+  await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(fixture.coins - fixture.quote.penalty));
+  await expect(page.locator('.ledger')).toContainText('Đơn giao quá hạn');
+});

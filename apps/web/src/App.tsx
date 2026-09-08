@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { BUSINESS_UNLOCKS, DISHES, EQUIPMENT, currentGuests, dogUpgradeQuote, encodeSave, freshnessMs, kickAllQuote, lifePathStatus, restockQuote, rushStatus, stockCap, unlockQuote, upgradeQuote, wellRestedRemaining, type Command, type Equipment, type Order, type RequirementStatus, type Table } from '../../../packages/engine/src';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { BUSINESS_UNLOCKS, DISHES, EQUIPMENT, currentGuests, deliveryQuote, dogUpgradeQuote, encodeSave, freshnessMs, kickAllQuote, lifePathStatus, restockQuote, rushStatus, stockCap, unlockQuote, upgradeQuote, wellRestedRemaining, type Command, type Equipment, type Order, type RequirementStatus, type Table } from '../../../packages/engine/src';
 import { Sprite, TableSeats, menuAsset, reactions } from './assets';
 import { translate } from './i18n';
 import { advanceGuide, boot, dispatch, download, persist, readSettings, writeSettings, replaceSave } from './local';
 import { createSound } from './audio';
 
-type Sheet = 'stock' | 'upgrades' | 'book' | 'close' | 'journey' | 'settings' | 'config' | 'dog' | null;
+type Sheet = 'stock' | 'upgrades' | 'book' | 'close' | 'journey' | 'settings' | 'config' | 'dog' | 'delivery' | null;
 const icons: Record<string, string> = {
   coin: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 4v10m3-8h-4a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4H9',
   bolt: 'M13 2 5 13h6l-1 9 9-13h-6l1-7Z',
@@ -25,7 +25,7 @@ const orderDishes = (order: Order) => DISHES.map(dish => ({ dish, items: order.i
 
 function SheetDialog({ title, close, children, view }: { title: string; close: () => void; children: ReactNode; view?: string }) {
   const ref = useRef<HTMLDialogElement>(null);
-  useEffect(() => { ref.current?.showModal(); return () => { ref.current?.close(); }; }, []);
+  useLayoutEffect(() => { const dialog = ref.current; dialog?.showModal(); return () => { dialog?.close(); }; }, []);
   useEffect(() => { if (view) ref.current?.querySelector<HTMLButtonElement>('.sheet-header button')?.focus(); }, [view]);
   return <dialog ref={ref} className="sheet" aria-label={title} onCancel={close} onClick={e => { if (e.target === e.currentTarget) close(); }}>
     <div className="sheet-inner"><div className="sheet-handle" /><header className="sheet-header"><h2>{title}</h2><button className="icon-button" aria-label={title + ' ×'} onClick={close}><Icon name="close" /></button></header><div className="sheet-content">{children}</div></div>
@@ -64,15 +64,18 @@ export function App() {
     for (const e of events) {
       sound.event(e);
       if (e.type === 'order_expired') setSelectedTable(current => current === e.data.tableId ? null : current);
-      if (e.type === 'order_expired' || (e.type === 'customer_left' && e.data.reason === 'queue')) {
+      if (e.type === 'order_expired' || e.type === 'shipper_missed' || (e.type === 'customer_left' && e.data.reason === 'queue')) {
         loss ??= { coins: 0, reputation: 0 };
         loss.coins += Number(e.data.penalty); loss.reputation += Number(e.data.reputation);
       }
+      if (e.type === 'shipper_arrived') setToast({ text: translate(prefs.current.locale, 'delivery.arrived'), kind: 'early' });
+      if (e.type === 'shipper_missed' || e.type === 'shipper_completed') setSheet(current => current === 'delivery' ? null : current);
+      if (e.type === 'shipper_completed') setToast({ id: e.id, text: translate(prefs.current.locale, 'delivery.completed', { n: Number(e.data.credited) }), kind: 'earlyNoTip', gain: Number(e.data.credited) });
       if (e.type === 'order_served') {
         const kind = e.data.outcome === 'early' && e.data.tipped === false ? 'earlyNoTip' : String(e.data.outcome);
         setToast({ id: e.id, text: translate(prefs.current.locale, `outcome.${kind}`, { n: Number(e.data.amount) }), kind, gain: Number(e.data.amount) });
       }
-      if (e.type === 'shift_closed') { setSelectedTable(null); setSheet('book'); setToast({ text: translate(prefs.current.locale, 'book.closed'), kind: 'early' }); }
+      if (e.type === 'shift_closed') { setSelectedTable(null); setSheet('book'); if (!events.some(event => event.type === 'shipper_completed')) setToast({ text: translate(prefs.current.locale, 'book.closed'), kind: 'early' }); }
     }
     if (loss) setToast({ text: '', kind: 'loss', loss });
   };
@@ -148,6 +151,8 @@ export function App() {
   const shift = w.shift, inShift = w.phase !== 'resting';
   const rush = rushStatus(w, game.config);
   const dogQuote = dogUpgradeQuote(w, game.config);
+  const delivery = deliveryQuote(w, game.config);
+  const deliveryUrgent = delivery && delivery.remainingMs / c.customerTypes.shipper.deadlineMs < c.tip.patienceThreshold;
   const path = lifePathStatus(w, game.config), nextMilestone = path.rows[w.lifePath + 1];
   const claimCount = path.rows.filter(row => row.claimable).length;
   const guide = settings.guideIndex === null ? null : c.onboarding.stepGuide.steps[settings.guideIndex];
@@ -219,7 +224,7 @@ export function App() {
         <div className="owner-station"><Sprite id="owner-idle" /><div className="serving-counter"><div className="counter-canopy" /><div className="counter-front"><h1>{t('brand')}</h1><div className="counter-bottles" aria-hidden="true"><i /><i /><i /><i /><i /></div></div></div></div>
         <div className="equipment-row">{['cooler', 'keg', 'washer'].map(k => equipmentButton(k as Equipment))}</div>
         <div className="glass-counter"><Sprite id="glass-clean" /><span>{cleanGlasses}<small>/{w.glasses.length}</small></span><span className="sr-only">{t('glass.clean')}</span></div>
-        <div className="business-props">{BUSINESS_UNLOCKS.filter(item => w.unlocks.includes(item)).map(item => <button key={item} onClick={() => open('upgrades')} aria-label={t(`business.${item}`)}><Sprite id={item === 'qr' ? 'qr-payment' : 'phone'} /></button>)}</div>
+        <div className="business-props">{BUSINESS_UNLOCKS.filter(item => w.unlocks.includes(item)).map(item => <button key={item} className={item === 'phone' && delivery ? `has-delivery ${deliveryUrgent ? 'is-urgent' : ''}` : ''} onClick={() => open(item === 'phone' ? 'delivery' : 'upgrades')} aria-label={t(item === 'phone' ? 'delivery.open' : `business.${item}`)} aria-describedby={item === 'phone' && delivery ? 'delivery-clock' : undefined}><Sprite id={item === 'qr' ? 'qr-payment' : item === 'phone' && delivery ? 'customer-shipper' : 'phone'} />{item === 'phone' && delivery && <span id="delivery-clock" className="delivery-clock"><span className="sr-only">{t(deliveryUrgent ? 'delivery.urgent' : 'delivery.deadline')}</span>{deliveryUrgent && <b aria-hidden="true">! </b>}{time(Math.ceil(delivery.remainingMs / 1000) * 1000)}</span>}</button>)}</div>
         {w.dogLevel > 0 && <button className="dog-object" aria-label={t('dog.open', { n: w.dogLevel })} aria-haspopup="dialog" onClick={() => open('dog')}><Sprite id={`dog-idle-lv${w.dogLevel}`} /><span>{t('level', { n: w.dogLevel })}</span></button>}
       </section>
       <section className="yard" aria-label={t('location.hem_nho')}>
@@ -249,7 +254,19 @@ export function App() {
 
     {welcome && <SheetDialog title={t('welcome.title')} close={() => { setWelcome(false); setPrefs({ welcomed: true }); }}><div className="welcome-content"><Sprite id="glass-full" /><p>{t('welcome.copy')}</p><button className="primary" onClick={() => { setWelcome(false); setPrefs({ welcomed: true }); }}>{t('continue')}</button><small>{t('rest.free')}</small></div></SheetDialog>}
 
-    {sheet && <SheetDialog view={sheet} title={t(sheet === 'dog' ? 'dog.title' : sheet === 'close' ? 'close.title' : sheet === 'book' ? 'book.title' : sheet === 'journey' ? 'journey.title' : sheet === 'settings' ? 'settings.title' : sheet === 'config' ? 'config.title' : `nav.${sheet}`)} close={() => setSheet(null)}>
+    {sheet && <SheetDialog view={sheet} title={t(sheet === 'delivery' ? 'delivery.title' : sheet === 'dog' ? 'dog.title' : sheet === 'close' ? 'close.title' : sheet === 'book' ? 'book.title' : sheet === 'journey' ? 'journey.title' : sheet === 'settings' ? 'settings.title' : sheet === 'config' ? 'config.title' : `nav.${sheet}`)} close={() => setSheet(null)}>
+      {sheet === 'delivery' && <div className="delivery-panel">
+        <div className="delivery-summary"><Sprite id="customer-shipper" /><div><h3>{t(delivery ? 'delivery.waiting' : 'delivery.idle')}</h3>{delivery ? <time role="timer" aria-label={t('delivery.deadline')}>{time(Math.ceil(delivery.remainingMs / 1000) * 1000)}</time> : <p>{t(w.phase === 'open' && w.nextDeliveryAt !== null ? 'delivery.next' : 'delivery.closed', { time: time(Math.max(0, (w.nextDeliveryAt ?? w.now) - w.now)) })}</p>}</div></div>
+        {delivery && <>
+          <progress className="delivery-progress" value={delivery.remainingMs} max={c.customerTypes.shipper.deadlineMs} aria-label={t('delivery.deadline')} />
+          {deliveryUrgent && <p className="delivery-urgent" role="status">{t('delivery.urgent')}</p>}
+          <ul className="delivery-lines">{delivery.lines.map(line => <li key={line.dish} className={line.have >= line.quantity ? 'is-ready' : ''}><Sprite id={menuAsset[line.dish]} /><div><strong>{t(`dish.${line.dish}`)} × {line.quantity}</strong><small>{t('delivery.stock', { have: line.have, need: line.quantity })}</small></div><span aria-label={t(line.have >= line.quantity ? 'requirement.met' : 'requirement.missing')}>{line.have >= line.quantity ? '✓' : '○'}</span></li>)}</ul>
+          <p className="delivery-terms">{t('delivery.terms', { gross: num(delivery.gross), net: num(delivery.net), penalty: num(delivery.penalty) })}</p>
+          <button className="primary full" disabled={!delivery.ready || !delivery.safe || !delivery.remainingMs} onClick={() => run({ type: 'serveDelivery', deliveryId: delivery.order.id })}>{t('delivery.serve', { n: num(delivery.credited) })}</button>
+          {!delivery.safe && <p role="status">{t('error.rewardOverflow')}</p>}
+          {!delivery.ready && <button className="secondary full" onClick={() => open('stock')}>{t('delivery.restock')}</button>}
+        </>}
+      </div>}
       {sheet === 'dog' && <div className="dog-panel">
         <div className="dog-summary"><Sprite id={`dog-idle-lv${w.dogLevel || dogQuote.next?.level}`} /><div><h3>{t(`dog.level${w.dogLevel}`)}</h3><p>{t(w.dogLevel ? 'dog.home' : 'dog.welcome')}</p></div></div>
         {dogQuote.next && dogQuote.cost !== null ? <>
@@ -263,10 +280,10 @@ export function App() {
           <div className="dog-links"><button onClick={() => open('stock')}>{t('nav.stock')}</button><button onClick={() => open('upgrades')}>{t('dog.storage')}</button></div>
         </> : <p>{t('upgrade.max')}</p>}
       </div>}
-      {sheet === 'close' && <div className="close-confirm"><p>{t('close.copy')}</p><p>{t('close.guests', { n: closeQuote.guests.length })}</p><div className="close-price"><Icon name="coin" /><strong>{num(closeQuote.cost)}</strong><span>{t('coins')}</span></div>{!closeQuote.ok && <p role="status">{t('error.notEnoughCoins')}</p>}<div className="button-stack"><button className="primary" disabled={!closeQuote.ok || closeShift !== shift?.id} onClick={() => run({ type: 'kickAll', shiftId: closeShift!, maxCost: closeQuote.cost })}>{t('close.confirm', { cost: num(closeQuote.cost) })}</button><button onClick={() => open('book')}>{t('close.wait')}</button></div></div>}
+      {sheet === 'close' && <div className="close-confirm"><p>{t('close.copy')}</p><p>{t('close.guests', { n: closeQuote.guests.length })}</p><div className="close-price"><Icon name="coin" /><strong>{num(closeQuote.cost)}</strong><span>{t('coins')}</span></div>{!closeQuote.ok && <p role="status">{t(closeQuote.deliveryBlocked ? 'error.deliveryPending' : 'error.notEnoughCoins')}</p>}<div className="button-stack"><button className="primary" disabled={!closeQuote.ok || closeShift !== shift?.id} onClick={() => run({ type: 'kickAll', shiftId: closeShift!, maxCost: closeQuote.cost })}>{t('close.confirm', { cost: num(closeQuote.cost) })}</button><button onClick={() => open('book')}>{t('close.wait')}</button></div></div>}
       {sheet === 'stock' && <><p className="sheet-intro">{t('stock.copy')} <b>{num(w.coins)} {t('coins')}</b></p><div className="stock-list">{DISHES.map(dish => <div className="stock-row" key={dish}><Sprite id={menuAsset[dish]} /><div className="stock-info"><strong>{t(`dish.${dish}`)}</strong><span>{w.inventory[dish]} / {stockCap(w, game.config)}</span><progress value={w.inventory[dish]} max={stockCap(w, game.config)} /></div>{c.menu[dish].unlock.kitchenLevel > w.equipment.kitchen ? <small>{t('stock.locked', { n: c.menu[dish].unlock.kitchenLevel })}</small> : <div className="stock-actions">{(['one', 'bulk', 'full'] as const).map(mode => { const q = restockQuote(w, game.config, dish, mode); return <button key={mode} disabled={!q.ok} onClick={() => run({ type: 'restock', dish, mode })}>{t('stock.buy', { action: mode === 'one' ? t('stock.one') : mode === 'bulk' ? t('stock.bulk', { n: c.inventory.bulkSize }) : t('stock.full'), cost: num(q.cost) })}</button>; })}</div>}</div>)}</div><button className="secondary full" onClick={() => run({ type: 'emergencyPack' })}>{t('stock.emergency')}</button></>}
       {sheet === 'upgrades' && <><button className="dog-entry full" onClick={() => open('dog')}><Sprite id={`dog-idle-lv${w.dogLevel || 1}`} /><span><strong>{t('dog.title')}</strong><small>{t(`dog.level${w.dogLevel}`)}</small></span><span aria-hidden="true">›</span></button><h3>{t('business.title')}</h3>{businessCards()}<p className="sheet-intro">{t(inShift ? 'upgrade.outside' : 'upgrade.copy')}</p><div className="upgrade-grid">{EQUIPMENT.map(upgradeCard)}</div><h3>{t('upgrade.tables')}</h3><div className="upgrade-grid">{w.tables.map((table, i) => { const next = c.upgrades.table.levels[table.level]; return <div className="upgrade-card" key={table.id}><Sprite id={`table-lv${table.level}-empty`} /><h3>{t('table', { n: i + 1 })}</h3><p>{t('table.seats', { n: table.capacity })}</p><button disabled={!next || inShift} onClick={() => run({ type: 'upgradeTable', tableId: table.id })}>{next ? t('upgrade.buy', { cost: num(next.priceBase) }) : t('upgrade.max')}</button></div>; })}</div><button className="secondary full" onClick={() => run({ type: 'buyTable' })}>{t('upgrade.addTable')}</button></>}
-      {sheet === 'book' && (shift ? <><p className="sheet-intro">{t('shift')} · {time(Math.min(shift.closedAt ?? w.now, shift.endsAt) - shift.startedAt - shift.pausedMs)}<b>{t(`weather.${shift.weather}`)}</b></p><dl className="ledger">{(['served', 'lost', 'payment', 'tip', 'penalty', 'spent'] as const).map(key => <div key={key}><dt>{t(`book.${key}`)}</dt><dd>{num(shift.stats[key])}</dd></div>)}{shift.stats.wellRestedBonus > 0 && <div><dt>{t('book.wellRestedBonus')}</dt><dd>{num(shift.stats.wellRestedBonus)}</dd></div>}<div className="ledger-total"><dt>{t('book.net')}</dt><dd>{num(shift.stats.credited - shift.stats.penalty - shift.stats.spent)}</dd></div></dl>{inShift && <div className="button-stack"><button className="primary" onClick={() => run({ type: 'endShift' })}>{t('book.end')}</button><button className="secondary" disabled={!c.shift.kickAllAllowed} onClick={() => { setCloseShift(shift.id); open('close'); }}>{t('book.kick', { cost: num(closeQuote.cost) })}</button></div>}</> : <p>{t('book.none')}</p>)}
+      {sheet === 'book' && (shift ? <><p className="sheet-intro">{t('shift')} · {time(Math.min(shift.closedAt ?? w.now, shift.endsAt) - shift.startedAt - shift.pausedMs)}<b>{t(`weather.${shift.weather}`)}</b></p><dl className="ledger">{(['served', 'lost', 'payment', 'tip', 'penalty', 'spent'] as const).map(key => <div key={key}><dt>{t(`book.${key}`)}</dt><dd>{num(shift.stats[key])}</dd></div>)}{(shift.stats.deliveryCompleted ?? 0) > 0 && <><div><dt>{t('book.deliveryCompleted')}</dt><dd>{shift.stats.deliveryCompleted}</dd></div><div><dt>{t('book.deliveryNet')}</dt><dd>{num(shift.stats.deliveryNet ?? 0)}</dd></div></>}{(shift.stats.deliveryMissed ?? 0) > 0 && <div><dt>{t('book.deliveryMissed')}</dt><dd>{shift.stats.deliveryMissed}</dd></div>}{shift.stats.wellRestedBonus > 0 && <div><dt>{t('book.wellRestedBonus')}</dt><dd>{num(shift.stats.wellRestedBonus)}</dd></div>}<div className="ledger-total"><dt>{t('book.net')}</dt><dd>{num(shift.stats.credited - shift.stats.penalty - shift.stats.spent)}</dd></div></dl>{inShift && <div className="button-stack"><button className="primary" onClick={() => run({ type: 'endShift' })}>{t('book.end')}</button><button className="secondary" disabled={!c.shift.kickAllAllowed} onClick={() => { setCloseShift(shift.id); open('close'); }}>{t('book.kick', { cost: num(closeQuote.cost) })}</button></div>}</> : <p>{t('book.none')}</p>)}
       {sheet === 'journey' && <>
         <div className="journey-summary"><span>{t('journey.current')}</span><h3>{levelName(w.lifePath)}</h3><p>{num(w.lifetimeEarned)} {t('journey.earned')}</p>{nextMilestone && <><progress aria-label={t('journey.next', { name: levelName(nextMilestone.index) })} max={nextMilestone.lifetimeBase} value={Math.min(w.lifetimeEarned, nextMilestone.lifetimeBase)} /><p>{t('journey.next', { name: levelName(nextMilestone.index) })}</p></>}</div>
         <div className="progress-wallet"><span>{t('reward.badgeShard')} <b>{w.badgeShards}</b></span><span>{t('reward.cosmeticToken')} <b>{w.cosmeticTokens}</b></span></div>

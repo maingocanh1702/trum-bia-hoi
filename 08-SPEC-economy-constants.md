@@ -100,7 +100,7 @@ Giá **xu bia hơi đã chốt** (neo 1 xu ≈ 300 VND; bia cốc 50 xu ≈ 15k)
 - Xác suất VIP nền (không biển) = 0.1/1.53 = **6,5%**; biển Gỗ ×2 → 12,3%; Hoàng kim ×3 → 17,3% (§10).
 - Thời tiết nhân weight: humid `chipheo ×1.5`; rain `ngoily ×2` (§5). Rush nhân weight `voi` (§6).
 - 🟡 Phase 2: tối đa **1 VIP/nhóm** (F07 §4) cho tới khi phạt cụm cân xong.
-- Shipper: spawn base **220.000ms** × weather.shipperMult; đơn 4–7 món gross 180–290 **×k** 🟡; cần **Điện thoại** (§11); không đóng ca khi đơn đang chạy.
+- Shipper: spawn interval **round(220.000ms / weather.shipperMult)** (hệ số tần suất: mưa làm đơn tới nhiều hơn); đơn 4–7 món gross 180–290 **×k** 🟡; cần **Điện thoại** (§11); không đóng ca khi đơn đang chạy.
 - **Prototype đang chạy 3 loại** (`CUSTOMER_WEIGHTS` = {thuong 1.0, voi 0.3, vip 0.1}).
 
 ---
@@ -556,3 +556,5 @@ Mọi section của `docs/config/economy.tbh.json` đều nằm trong registry. 
 | v1.3.2 | Runtime rules v4 nối phí mời về §9 qua cùng customerValue/ab và spend; không thêm hằng số. Khách đã rời không tính lại, mọi khách còn dùng món tính phí; báo giá không gán món cho queue/seating. Thiếu xu từ chối, lịch sử v1–v3 không đổi. |
 
 | v1.3.3 | Rules v5 sửa vòng đời rush/telegraph theo F08, dùng số JSON hiện hành. Thêm kiểm tra integer cho warning/count/timing; không đổi config version hoặc các hệ số kinh tế. Replay v1–v4 giữ số/event IDs cũ. |
+
+| v1.3.4 | Rules v7: làm rõ shipperMult là tần suất theo GDD §9/F09/original §18, sửa dấu nhân interval ở §4 thành chia. Đơn lấy tổng giá món cuối trong grossBase ×k, đủ toàn bộ nguyên liệu mới giao; net và Tỉnh Táo qua cùng credit/cap. Không đổi JSON hoặc số cân bằng. Ngừng đón khách được phép, ca chỉ finalize sau khi đơn đang chạy được giao/hết hạn; kick-all từ chối trước debit. |

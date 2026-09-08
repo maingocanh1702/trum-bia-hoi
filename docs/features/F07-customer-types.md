@@ -100,3 +100,34 @@ type Customer = {
 - VIP sớm tạo tip lớn rõ rệt; VIP trễ/mất tạo phạt đủ đau.
 - `chipheo` không làm bàn rơi vào state lửng; bàn luôn về `EMPTY` sau khi rời/đuổi.
 - `shipper` không tiêu cốc, không chiếm bàn, không cộng sai vào queue.
+
+
+## 9. Local delivery implementation — rules v7 (2026-09-09)
+
+- Owned phone starts a separate timer on the next current command while open. One
+  active order, no queue/backlog. Weather multiplies frequency (interval divided),
+  following GDD/F09; the contradictory interval wording in08 §4 is corrected.
+- Seeded selection among finite unlocked-menu bundles satisfies configured unit and
+  gross bounds. Gross is the sum of shown final menu prices; no second price scaling.
+  Handoff requires the exact active id, a future deadline, every ingredient and the
+  shared service cooldown. Consume all stock once; no prep slots, glasses or tables.
+- Net and rested bonus use shared counted credit/cap and integer preflight. No tip.
+  Successful handoff adds configured serveNoTip reputation; timeout debits available
+  coins up to the configured gross penalty, without seated reputation/lost penalties.
+- Manual stop/exhaustion stops arrivals, keeps the current delivery serveable and
+  delays finalization. Paid kick-all refuses before debit while it remains active.
+  Hidden/offline time pauses both arrival and delivery deadlines.
+- Phone becomes a blue courier button with a live clock; the native sheet shows
+  all quantities/readiness, stock refill, actual credited reward and nominal penalty.
+  Urgency includes text, not colour alone. Timeout feedback is numeric/icon loss only.
+- Events include deterministic deliveryId and gross; arrival records item quantities,
+  completion records net/credited/bonus/onTime, missed records actual coin/rep debit.
+  Separate delivery stats stay outside seated serve records and the k measurement.
+- This is local runtime coverage. Football mix, full customer acceptance/balance,
+  future signboard multiplier and server authority remain separate unfinished work.
+
+## Changelog (append-only)
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Local shipper rules v7, closing/stock/ledger/replay contract and reference-style phone/sheet/toast UI; no new tuning values. Full F07 remains in progress. |
