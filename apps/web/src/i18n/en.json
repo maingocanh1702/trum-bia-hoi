@@ -11,7 +11,7 @@
   "table": "Table {n}", "table.empty": "Waiting for guests", "table.seating": "Taking a seat", "table.waiting": "Ordering", "table.consuming": "Enjoying the meal", "table.occupied": "Still lingering", "table.cleaning": "Cleaning up", "table.broken": "Needs repair", "table.seats": "{n} seats",
   "customer.thuong": "Regular", "customer.voi": "In a hurry", "customer.vip": "Big spender", "customer.chipheo": "Troublemaker", "customer.ngoily": "Lingering guests", "customer.football_fan": "Football fans",
   "order.preparing": "Preparing {ready}/{total}", "order.ready": "Everything is ready!", "order.serve": "Serve the whole table", "order.grace": "Guests are getting up!", "order.stale": "Flat beer · no tip", "order.time": "{s}s left", "order.details": "View order · table {n}",
-  "loss.aria": "Lost {coins} coins and {reputation} reputation",
+  "loss.aria": "Lost {coins} coins and {reputation} reputation", "order.dishCount": "{n} dishes",
   "outcome.early": "Perfect timing! +{n} coins, with a tip", "outcome.late": "Served! +{n} coins · too late for a tip", "outcome.grace": "Saved the table! +{n} coins · no tip", "outcome.stale": "Flat beer! +{n} coins · no tip, reputation lost",
   "glass.clean": "Clean glasses", "glass.washing": "Washing", "glass.busy": "Glasses in use", "queue": "{n} groups waiting",
   "stock.copy": "Buying full batches costs less than buying singles.", "stock.bulk": "+{n}", "stock.full": "Fill stock", "stock.one": "+1", "stock.locked": "Kitchen level {n} required", "stock.buy": "{action} · {cost} coins", "stock.emergency": "Claim free emergency supplies", "stock.success": "Supplies restocked",

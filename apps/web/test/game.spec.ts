@@ -27,7 +27,8 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
       expect(a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y).toBe(true);
     }
     await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
-    await expect(page.locator('.toast')).toContainText('có boa');
+    await expect(page.locator('.toast-gain')).toHaveAccessibleName(/có boa/);
+    await expect(page.locator('.toast-gain strong')).toHaveText(/^\+\d+$/);
     const coins = await page.locator('.money strong').textContent();
     expect(await page.locator('.money').ariaSnapshot()).toContain('Xu');
     expect(await page.locator('.glass-counter').ariaSnapshot()).toContain('Cốc sạch');
@@ -106,6 +107,7 @@ test('tapped order stays live, returns keyboard focus, and closes on customer ex
   await expect(panel).toHaveCount(0);
   await expect(page.locator('.toast-loss')).toHaveText(/^[−\d\s.,]+$/);
   await expect(page.locator('.table-object').first()).toBeFocused();
+  await expect(page.locator('.table-space').first().locator('.seat-customer')).toHaveCount(0);
   await expect(page.locator('.lost-bubble')).toHaveCount(0);
 });
 
@@ -118,13 +120,53 @@ test('mixed customers retain their urgent identity and a live grace countdown wh
   await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), fixture.save);
   await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
   const hint = page.locator('.table-space').first().locator('.table-order-hint');
-  const countdown = await hint.locator('span').first().textContent();
+  const countdown = await hint.locator('.bubble-time').textContent();
   expect(countdown).toMatch(/^Còn [1-3]s$/);
   await hint.click();
   await expect(page.locator('.customer-tag')).toHaveText('Khách vội');
   await expect(page.locator('.order-heading b')).toHaveText(countdown!);
   await expect(page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true })).toBeDisabled();
 });
+
+for (const [mode, emoji] of [['early', '🤩'], ['late', '😐'], ['grace', '😥'], ['stale', '😖']]) {
+  test(`multi-dish service shows the actual ${mode} reward and guest reaction`, async ({ page }) => {
+    const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/service-states.ts', mode], { encoding: 'utf8' }));
+    expect(fixture.result).toMatchObject({ ok: true, outcome: mode });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.clock.install({ time: new Date(fixture.now) });
+    await page.clock.pauseAt(new Date(fixture.now));
+    await page.addInitScript(save => { if (!localStorage.getItem('service-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('service-seeded', '1'); } }, fixture.save);
+    await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+    const table = page.locator('.table-space').first(), hint = table.locator('.table-order-hint');
+    await expect(hint.locator('.bubble-dish')).toHaveCount(2);
+    const dishBoxes = await Promise.all((await hint.locator('.bubble-dish').all()).map(dish => dish.boundingBox()));
+    expect(dishBoxes[0]!.y).toBe(dishBoxes[1]!.y);
+    await expect(hint).toHaveAccessibleDescription(/Bia hơi × 1, Lạc rang × 1/);
+    await hint.click();
+    await expect(page.locator('.order-heading strong')).toHaveText('2 món');
+    await expect(page.locator('.dish-ready')).toHaveCount(2);
+    await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
+    await expect(page.locator('.order-panel')).toHaveCount(0);
+    await expect(hint).toHaveCount(0);
+    await expect(table.locator('.customer-reaction')).toHaveText(emoji);
+    await expect(table.locator('.enjoy-time')).toHaveText(/^\d{2}:\d{2}$/);
+    await expect(table.locator('.guest-label')).toHaveText('Bàn lai rai');
+    await expect(page.locator('.toast-gain')).toHaveCount(1);
+    await expect(page.locator('.toast-gain strong')).toHaveText(`+${fixture.result.amount}`);
+    await expect(page.locator('.toast-gain button')).toHaveCount(0);
+    const balance = new Intl.NumberFormat('vi-VN').format(fixture.coins + fixture.result.amount);
+    await expect(page.locator('.money strong')).toHaveText(balance);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    expect(await table.locator('.customer-reaction').evaluate(el => getComputedStyle(el).animationName)).toBe('none');
+    expect(await page.locator('.toast-gain').evaluate(el => getComputedStyle(el).animationName)).toBe('none');
+    await page.clock.runFor(2500);
+    await expect(page.locator('.toast-gain')).toHaveCount(0);
+    await page.reload();
+    await expect(page.locator('.money strong')).toHaveText(balance);
+    await expect(page.locator('.toast-gain')).toHaveCount(0);
+    await expect(table.locator('.customer-reaction')).toHaveText(emoji);
+  });
+}
 
 test('corrupt saves are preserved and the app offers the original for recovery', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('tbh.save.v1', '{broken-save'));
@@ -167,7 +209,8 @@ test('hidden and offline time preserves the current order and remaining shift', 
   await page.getByRole('button', { name: 'Xem mâm · bàn 1', exact: true }).first().click();
   await expect(page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true })).toHaveCount(1);
   await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
-  await expect(page.locator('.toast')).toContainText('có boa');
+  await expect(page.locator('.toast-gain')).toHaveAccessibleName(/có boa/);
+    await expect(page.locator('.toast-gain strong')).toHaveText(/^\+\d+$/);
 });
 
 test('recovery rejects a bad import, accepts a valid backup and preserves the original', async ({ page }) => {

@@ -193,3 +193,26 @@ Next: implement the well-rested credit lifecycle with historical replay preserve
 Read-only diagnosis and a real pre-bonus v2 save/expected result from `2d80437`
 are prepared under `.qa/next-m3-well-rested.md` and
 `.qa/well-rested-legacy-v2-{save,expected}.json`. Full M0–M9 goal remains active.
+
+### Mobile serving sequence — 2026-09-09, review pending
+
+Owner IMG_5002–5006 now guide the service interaction. Bubbles show actual ordered
+dishes/quantities with one patience bar; tapping opens the live dark-green panel,
+ready dishes have checks, and the red button still serves the whole table. A
+successful order shows one numeric/icon gain near the HUD, using the engine's
+actual credited amount. Each customer gets the appropriate early/tipped, early
+without tip, late, grace or stale reaction. Consumption time and special customer
+identity stay visible; departed customers are removed from the scene during
+cleaning. Loss feedback remains only actual numeric/icon deductions.
+
+Short CSS entrances/pop motions are inferred from the static references and turn
+off under reduced motion. No new dependencies, generated art, engine, economy or
+save changes. The Tỉnh Táo mechanism remains next in M3; its pre-change legacy-v2
+fixture and decision table are preserved in `.qa/next-m3-well-rested.md`.
+
+Config/build and 27 unit tests pass; all 16 browser tests pass, including real
+engine saves for multi-dish early/late/grace/stale results, actual balance/gain,
+reload without replaying gain, reduced motion, existing four viewports and numeric
+losses. Visual before/panel/after captures cover 390×844, 1280×720 and 1280×400.
+A final visual refinement keeps the two dish icons on one bubble row; the final
+build/check and independent review follow. Full M0–M9 goal is still active.

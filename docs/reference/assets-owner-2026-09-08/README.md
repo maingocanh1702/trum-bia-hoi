@@ -41,3 +41,25 @@ sprites use smooth display sampling; glass anchors keep their original pixel loo
 | 2026-09-09 | Applied the owner's newer layout/style reference. Blue ground and green panels supersede the previous warm-ground/brown-panel suggestion for this screen. Internal placeholder IDs remain in the manifest, not visible in play. No economy/content rules changed. |
 
 | 2026-09-09 customer set | Added four adult customer draft types after rejecting opaque checkerboard variants. Seat rendering uses either a customer-with-stool or an empty stool, never both. VIP soft halo and final image-size/family QA remain pending. |
+
+## Mobile service sequence — owner update 2026-09-09
+
+Five unchanged originals are archived as `service-owner-5002.png` through
+`service-owner-5006.png` (Downloads `IMG_5002.PNG` … `IMG_5006.PNG`). They show:
+
+1. Waiting guest: cream dish bubble, one patience bar and a subtle selection ring.
+2. Tapped guest: dark green rounded panel, customer badge, dish/countdown and a large red serve action.
+3. Successful service: panel/bubble closes, a compact numeric gain appears near the HUD, guest emotion replaces the order bubble.
+4. Lingering guest: visible identity and the remaining occupied/consumption time.
+5. Multiple dishes: names/checkmarks describe readiness; one action serves the order.
+
+The images are static. Short arrival, bubble/panel entrance, emotion pop and
+upward reward entrance animations are implementation interpretations, not
+measured timing from the reference game. They use CSS only and respect reduced
+motion. Browser chrome, tea/snack content and reference-game prices are excluded.
+Trùm Bia Hơi keeps its own menu, whole-table rules, one warning ring/timer per table,
+actual ledger amounts and the owner's numeric-only departure feedback.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 mobile service | Added the five owner screenshots and adapted the service sequence: actual dish bubbles, per-customer result emotions, serving readiness, table-level selection, numeric gain near HUD and consumption timer. Static-image motion interpretations are explicit; game/economy rules unchanged. |

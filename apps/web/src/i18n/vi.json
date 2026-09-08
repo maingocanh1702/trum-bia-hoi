@@ -11,7 +11,7 @@
   "table": "Bàn {n}", "table.empty": "Đợi khách", "table.seating": "Khách vào bàn", "table.waiting": "Đang gọi món", "table.consuming": "Đang nhâm nhi", "table.occupied": "Lai rai chưa về", "table.cleaning": "Đang dọn bàn", "table.broken": "Cần sửa bàn", "table.seats": "{n} chỗ",
   "customer.thuong": "Dân nhậu", "customer.voi": "Khách vội", "customer.vip": "Khách sộp", "customer.chipheo": "Khách quậy", "customer.ngoily": "Bàn lai rai", "customer.football_fan": "Hội cổ vũ",
   "order.preparing": "Đang chuẩn bị {ready}/{total}", "order.ready": "Mâm đã đủ!", "order.serve": "Phục vụ cả mâm", "order.grace": "Khách sắp đứng dậy!", "order.stale": "Bia hết hơi · không có boa", "order.time": "Còn {s}s", "order.details": "Xem mâm · bàn {n}",
-  "loss.aria": "Trừ {coins} xu và {reputation} uy tín",
+  "loss.aria": "Trừ {coins} xu và {reputation} uy tín", "order.dishCount": "{n} món",
   "outcome.early": "Đúng nhịp! +{n} xu, có boa", "outcome.late": "Đã phục vụ +{n} xu · trễ nên mất boa", "outcome.grace": "Kịp giữ khách! +{n} xu · không boa", "outcome.stale": "Bia hết hơi! +{n} xu · mất boa, giảm uy tín",
   "glass.clean": "Cốc sạch", "glass.washing": "Đang rửa", "glass.busy": "Cốc đang dùng", "queue": "{n} nhóm đang đợi",
   "stock.copy": "Mua theo lô tiết kiệm hơn mua lẻ.", "stock.bulk": "+{n}", "stock.full": "Đầy kho", "stock.one": "+1", "stock.locked": "Cần Bếp cấp {n}", "stock.buy": "{action} · {cost} xu", "stock.emergency": "Nhận Thùng Cấp Cứu miễn phí", "stock.success": "Đã nhập hàng",
