@@ -41,7 +41,12 @@
 
 Phạm vi Phase 0 (3 bàn · bia + 2 mồi tức thì · 2 mức rush · freshness · vòng đời cốc · tip/patience) **đã code xong và merge**. Phần đo tự động **đã PASS**. Việc còn lại **duy nhất**:
 
-1. **Hẹn 3–5 người**, mỗi người chơi **≥3 ca** (`cd prototype && npm run dev`), phải có cả nhịp thường lẫn cao điểm.
+0. **Deploy build tĩnh trước** — đây là thứ đã chặn gate suốt 8 tuần, không phải kỹ thuật:
+   `cd prototype && npm run build` → publish `prototype/dist/` lên host tĩnh bất kỳ (`base: './'`
+   đã set sẵn, client-only, không cần cấu hình) → có link. Trước đây protocol bắt `npm run dev`
+   nên mọi tester phải ngồi vào máy mình; giờ gửi link là xong.
+1. **Gửi link + brief cho 3–5 người**: [`docs/phase0-alpha-tester-brief.md`](docs/phase0-alpha-tester-brief.md)
+   (soạn sẵn tiếng Việt, gửi thẳng qua chat). Mỗi người chơi **≥3 ca** trên điện thoại của họ, phải có cả nhịp thường lẫn cao điểm.
 2. **Không coach** sau khi giới thiệu thao tác — người chơi bối rối chỗ nào chính là bằng chứng cần thu.
 3. Điền phiếu [`docs/phase0-alpha-playtest.md`](docs/phase0-alpha-playtest.md): bảng log mỗi ca + 5 câu hỏi gate + bảng quyết định.
 4. Lưu ý khi ghi số: đọc **mất khách theo từng ca**, không đọc dòng "Dồn cả phiên" (luôn hiện 0 — engine không giữ lost xuyên ca); `% cốc hết hơi` chỉ hand-play mới đo được (bot ra 0%).

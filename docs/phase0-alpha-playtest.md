@@ -17,18 +17,55 @@
 
 One partial shift was exercised through the local browser: open/close shift, group spawn, serve table, HUD k update (`2.42`), normal→peak toggle, glass/wash lifecycle, stale/loss log. No browser console errors occurred. A deliberately delayed serve produced one stale delivery and an unattended table lost two customers; these are mechanism checks, not balance evidence.
 
+A second smoke pass was run by the builder on 2026-09-08, after the docs/tooling cleanup, to
+confirm the build still plays end-to-end. No figures were recorded from it. Like the first pass
+it is a mechanism check performed by the person who designed the mechanisms, so it cannot close
+the gate: the five questions below ask whether a **new** player learns the timing and where they
+get confused, and a designer cannot be confused by their own design. Builder smoke answers "does
+it still run"; Alpha answers "does it teach itself".
+
 ## Required sample
 
 - 3–5 human testers.
 - At least 3 complete shifts per tester.
 - Do not coach moment-to-moment after the controls are introduced; confusion is evidence.
 - Each tester must experience normal and peak cadence.
-- Run from the merged build:
+- Testers run the **hosted build** on their own device, on their own schedule (see below).
+
+### Hosting the build — this is what unblocks the gate
+
+The original instruction here was `cd prototype && npm run dev`, which chained every tester to
+the builder's machine: 3–5 people × 3 shifts × 12 minutes of someone else's time at one desk,
+scheduled. That is the reason this gate sat open from 2026-07-15 — the blocker was logistical,
+not technical.
+
+It is removable in minutes. `prototype/vite.config.ts` already sets `base: './'`, the prototype
+is client-only (no server, no persistence) and its viewport is locked to mobile, so a static
+build drops onto any static host with zero configuration:
 
 ```bash
 cd prototype
-npm run dev
+npm run build     # → prototype/dist/
 ```
+
+Publish `prototype/dist/` (drag-and-drop onto any static host) and send the link. The game is
+mobile-first by design, so testers play on their own phone whenever they have 12 free minutes.
+
+**Current build URL:** `<fill in after deploying>`
+
+### Collecting evidence remotely
+
+After each shift the tester opens **Sổ ca** and taps **Copy log** — that puts the full
+`ServeEvent` JSON on the clipboard — and sends it back. A screenshot of the stats sheet is an
+acceptable fallback. The per-shift figures below come from those logs, not from the builder
+watching over anyone's shoulder; not watching is required anyway, since coaching destroys the
+confusion evidence.
+
+Read per-shift numbers from each shift's own sheet. Do **not** read the "Dồn cả phiên" aggregate
+row — the engine does not carry lost/rejected counts across shifts, so that row always shows `0`.
+
+**Tester-facing instructions**, ready to send as-is (fill in the link first):
+[`phase0-alpha-tester-brief.md`](phase0-alpha-tester-brief.md).
 
 ## Per-shift log
 
