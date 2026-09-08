@@ -1,4 +1,4 @@
-# 🍺 GAME DESIGN DOCUMENT — Trùm Bia Hơi (v1.6)
+# 🍺 GAME DESIGN DOCUMENT — Trùm Bia Hơi (v1.12)
 
 > Tài liệu thiết kế game hoàn chỉnh. Tổng hợp từ nghiên cứu game tham chiếu `trumviahe.com` (`00-TONG-HOP`, `economy-spec-from-bundle`) + các quyết định chuyển hóa trong `01-MAP-tra-da-to-bia-hoi.md` (v0.9). Ngày: 2026-06. Người chơi mục tiêu: người Việt, mobile-first.
 >
@@ -7,8 +7,21 @@
 > **⚠️ Mức độ cam kết — đọc trước.** Tài liệu này KHÔNG đồng nhất "đã chốt". Mỗi quyết định gắn 1 trong 3 nhãn:
 > - 🟢 **CORE** — hướng thiết kế cốt lõi, ổn định (concept: phục vụ theo ca, hệ bàn, bia mất hơi, 5 lớp economy, server-authoritative).
 > - 🟡 **PROTOTYPE-ASSUMPTION** — giả định để bắt đầu, **được phép đổi sau khi đo** (k_value, số freshness/prep/giá cấp, hậu quả mất hơi).
-> - 🔵 **POST-MVP** — ý tưởng để sau, chưa cam kết, một số cần review (World Cup API, xổ số/Vietlott, Giải Nhậu/Đường Lên Trùm đầy đủ, bảo kê, donation).
+> - 🔵 **Làm sau cùng — VẪN TRONG SCOPE** (chốt founder 09/09: giao 1 phase, đủ 5 lớp economy — xem `00-HANDOFF` §4). Trước đây đọc là "POST-MVP, chưa cam kết"; nay chỉ là **thứ tự làm**, không phải cắt scope. Riêng **xổ số** vẫn chờ **legal review** (gate pháp lý, `lottery.legalGate`), World Cup API cần chốt nguồn dữ liệu.
 > Xem bảng tổng ở §20.
+
+---
+
+## 0. Bộ tài liệu triển khai (đọc `00-HANDOFF-trum-bia-hoi.md` trước)
+
+GDD là nguồn sự thật về **quyết định**; các doc dưới cụ thể hoá để designer/dev làm được ngay, **không đổi quyết định nào**:
+- **`08-SPEC-economy-constants.md` + `docs/config/economy.tbh.json`** — mọi hằng số/công thức (base × k) máy đọc được; khi số ở đây lệch GDD (§2–§16) thì **JSON thắng về số**, GDD thắng về quyết định. §21 của 08-SPEC liệt kê 8 chỗ các doc lệch nhau và cách chốt (bếp 4 cấp trả tiền, mặt bằng theo F14, thời tiết theo F09, vật liệu chó ánh xạ lạc/nem, uy tín-thưởng ×k…).
+- **`09-SPEC-uiux-screens.md`** — IA, từng màn hình, luồng phục vụ/mất khách/ca, component, motion, microcopy, a11y (điền phần 📐/🔧 của 05-SPEC).
+- **`10-SPEC-tech-implementation.md`** — kiến trúc client-only → server-authoritative, domain model, state machine, tick/command/event, API/WS, lưu, test, DoD.
+- **`trum-bia-hoi-brd-admin.md`** (BRD admin/CRM) — §5.2 **Config Registry**: quyết định founder 08/09 — *mọi* tham số vận hành (số ca free/ngày, giá, cap, tỉ lệ, thời gian, lịch, flag) là config sửa ở admin, **không hardcode**; tier A/B/C, dual approval, `effectiveAt`, override player > campaign > segment > default. Nhãn 🟢 trong GDD = thiết kế không đổi, không phải ghi cứng vào code.
+- **`docs/asset-blender-pipeline.md`** — sản xuất asset bằng Blender MCP → hậu kỳ pixel-art theo anchor.
+- **`11-PROMPT-PACK-designer-blender-dev.md`** — prompt theo thứ tự cho designer (Blender MCP → pixel-art theo anchor) và dev (config → asset → engine/UI P1 → P2 → P3 → P4 → release) + Phụ lục T (tech skeleton) + Phụ lục U (screen spec).
+- `03-SPEC` (hệ bàn) · `04-SPEC` (prototype/đo k) · `05-SPEC` + F24 (design) · `07-SPEC` (shop Vụ Bia) · `docs/features/F07–F26`.
 
 ---
 
@@ -143,7 +156,7 @@ type Customer = {               // giữ field gốc
 
 **Tầng 1 — Cốc đã rót (chính):** mỗi cốc rót xong có `beerFreshnessMs`. Quá hạn → bia hết hơi. Buộc **rót đúng nhịp, không tích trữ cốc**.
 - 🟡 **Hậu quả — MVP (mềm, dễ test):** phục vụ cốc hết hơi → **tip ×0 + giảm uy tín nhẹ (−1)**, **VẪN thu payment** (khách "uống tạm"). Tránh quá gắt khi chưa cân bằng.
-- 🔵 **Hậu quả — Post-MVP (gắt hơn, nếu cần độ khó):** có thể nâng thành khách từ chối/đổ bỏ cốc (mất payment) — **chỉ bật sau khi economy ổn**.
+- 🔵 **Hậu quả — làm sau cùng, bật bằng config `freshness.staleConsequence` (gắt hơn, nếu cần độ khó):** có thể nâng thành khách từ chối/đổ bỏ cốc (mất payment) — **chỉ bật sau khi economy ổn**.
 - Hai hướng này ảnh hưởng economy rất khác nhau → MVP chọn hướng mềm, đo rồi mới quyết.
 - Base **12s** (= 3–4× thời gian 1 lượt rót-bưng ≈ 5s → đệm ~2 cốc; cốc thứ 3+ mới rủi ro → chỉ phạt tích trữ).
 - Nâng qua **Hầm lạnh** theo đường cong Thùng đá: L1 12s · L2 20s · L3 35s · L4 60s · L5 ∞.
@@ -188,6 +201,8 @@ Mỗi loại ép một quyết định: VIP/vội = tốc độ, bàn lai rai = 
 ---
 
 ## 9. Thời tiết & Rush (lớp hệ số)
+
+> **Số chính thức:** bảng hệ số thời tiết bia hơi ở **F09** + `08-SPEC` §5 + JSON `weather`; rush ở F08 + `08-SPEC` §6. Số kể dưới đây (gốc trà đá) chỉ để hiểu ý (08 §21 #4).
 
 **Thời tiết** (sunny35/hot20/humid10/rain20/cold15):
 - Nóng: bia mất hơi nhanh ×1.5, tip ×1.15, shipper ×1.5, **bán chạy hơn**.
@@ -296,13 +311,13 @@ Mỗi loại ép một quyết định: VIP/vội = tốc độ, bàn lai rai = 
 
 ---
 
-## 15. 🔵 Xổ số (POST-MVP — cần legal review; currency sink, KHÔNG pay-to-win, KHÔNG cá độ)
+## 15. 🔵 Xổ số (trong scope kỹ thuật, làm sau cùng — **gate PHÁP LÝ** `lottery.legalGate`; currency sink, KHÔNG pay-to-win, KHÔNG cá độ)
 
-> **Trạng thái: POST-MVP, KHÔNG đưa vào MVP.** Dù dùng xu in-game & không bán vé bằng tiền thật, đây là **vùng nhạy cảm** → cần **legal review** trước khi build, và phải tránh trở thành retention loop kiểu cờ bạc. Giữ ý tưởng dưới đây làm tham khảo, quyết định triển khai sau.
+> **Trạng thái: trong scope 1 phase, ship với `lottery.legalGate = off`; chỉ bật khi có ý kiến pháp lý.** Dù dùng xu in-game & không bán vé bằng tiền thật, đây là **vùng nhạy cảm** → cần **legal review** trước khi build, và phải tránh trở thành retention loop kiểu cờ bạc. Giữ ý tưởng dưới đây làm tham khảo, quyết định triển khai sau.
 
 **Mục tiêu:** đốt xu chống lạm phát + bản sắc (vé số dạo ở quán nhậu). **Là xổ số kiến thiết/Vietlott thật**, KHÔNG phải cá độ bóng đá.
 
-**2 chế độ (cả hai đều POST-MVP):**
+**2 chế độ (cả hai sau legal gate):**
 - **A — Kiến thiết (vé in):** NPC bán vé dạo qua bàn → mua vé bằng xu (🔧 ~200 ×k), vé 6 số cố định; dò **số đuôi** (trùng 2/3/4/6 số cuối). Nếu có làm thì làm chế độ này trước.
 - **B — Vietlott (tự chọn):** tự chọn 6 số (Mega 6/45) → đối chiếu số trùng (3/4/5/6), jackpot progressive.
 
@@ -326,12 +341,12 @@ Mỗi loại ép một quyết định: VIP/vội = tốc độ, bàn lai rai = 
 → Thưởng nhiệm vụ = uy tín + xu nhỏ + vật phẩm, **KHÔNG tính xếp hạng** → retention phụ, không phá cân bằng.
 - ✅ **Cơ chế gán (đo live, lưu ý cho bia hơi):** 5 nhiệm vụ/ngày = 3 lõi (bốc 1/bucket bằng **seed theo ngày**, reward cố định theo bucket 120/220/320xu+5⭐) + 2 cố định (3 ca = 1.000+100; gửi quà 3 người KHÁC nhau = 300+15). **Target co giãn theo TIER** (`pm()`: base→max theo `((tier-1)/8)^1.5`) → veteran ghim gần MAX. **Vấn đề gốc: pool bucket quá nhỏ (3/2/1) + target ghim tier → nhiệm vụ "trông y hệt mỗi ngày"** → bia hơi nên **pool loại lớn hơn + đa dạng target** để cảm giác tươi mới. Gửi quà = transfer NL P2P (chống farm: 1 tin chưa đọc/người + trần gửi/nhận ngày + đếm uniqueRecipients).
 
-**🔵 Account & access monetization (Post-MVP/production):**
+**🟢 Account & monetization (nền tảng đi kèm — F25/F20; chốt chủ dự án 08/09: CHƠI FREE HẾT, monetization = DONATE cho admin):**
 - **Ngôn ngữ đầu game:** người chơi chọn `vi` hoặc `en` trước khi vào gameplay; đổi được trong settings. Spec: `docs/features/F25-localization-account.md`.
 - **Tài khoản:** cho phép chơi guest không đăng nhập, nhưng nhắc tạo tài khoản/đăng nhập Google để **lưu tiến trình, chơi đa thiết bị, đua top, gửi quà/referral, thanh toán**. Guest có thể migrate progress vào Google account. Spec: `docs/features/F25-localization-account.md`.
-- **Session access:** free user được **1 session/ngày** (theo ngày VN). Người chơi đăng nhập có thể **thanh toán mua Session Pass** để mở khóa toàn bộ số session còn lại trong ngày/kỳ theo normal daily cap (8/6/5 tùy segment), vẫn chịu stamina/cap doanh thu/anti-cheat. Đây là **pay-for-access**, không bán xu/power/hạng trực tiếp. Spec: `docs/features/F26-daily-session-pass-payments.md`.
-- **Donation "Mời Bia" vẫn cosmetic-only:** chuyển khoản/ủng hộ 20k/50k VND → chọn quà cảm ơn cosmetic (đèn lồng / cây cảnh / biển hiệu / cờ mùa giải). **KHÔNG** tặng vật phẩm có tác dụng gameplay.
-- **Gate gameplay tách bạch:** thứ mở khóa lối chơi (vd **bàn VIP**) **CHỈ** unlock bằng **free progression / referral / uy tín** — không bao giờ qua donation. Session Pass chỉ mở quyền chơi thêm ca, không grant tài nguyên.
+- **Quyền chơi: FREE toàn bộ.** Mọi ca trong trần ngày (8/6/5 theo segment, §10) đều free; **không Vé Mở Ca, không bán quyền chơi, không paywall** (F26 ⛔ bỏ). `entitlements` chỉ còn là công tắc campaign (ví dụ giảm cap tạm thời), không có tier trả tiền.
+- **Donation "Mời Bia Hơi" = monetization DUY NHẤT (F20):** người chơi tự nguyện ủng hộ admin; chuyển khoản/ủng hộ 20k/50k VND → chọn quà cảm ơn cosmetic (đèn lồng / cây cảnh / biển hiệu / cờ mùa giải). **KHÔNG** tặng vật phẩm có tác dụng gameplay.
+- **Gate gameplay tách bạch:** thứ mở khóa lối chơi (vd **bàn VIP**) **CHỈ** unlock bằng **free progression / referral / uy tín** — không bao giờ qua donation. Không có gì trong game bán bằng tiền.
 - **Cosmetic đến từ 2 nguồn, cả hai đều cosmetic-only:** (a) **xu in-game** (currency-sink — vd **theme đội tuyển** mùa World Cup §14.0, đèn/cây/biển mua bằng xu); (b) **donation** tiền thật. Trang trí không đụng spawn/tip/rush/hạng.
 
 ---
@@ -357,11 +372,13 @@ Mỗi loại ép một quyết định: VIP/vội = tốc độ, bàn lai rai = 
 - **Vì sao giữ:** chống gian lận & xếp hạng công bằng; event/dữ liệu thật (tỉ số WC, kết quả xổ số) cần server fetch; web mobile-first = rào cản gia nhập thấp.
 - ✅ **Enforcement + appeal (xác nhận gốc):** ngoài chặn kỹ thuật (server-authoritative + CAPTCHA), gốc có **hệ xử phạt/gắn cờ** (`status:"flagged"`) + **kênh khiếu nại có quy trình** (ticket `anticheat-appeal` / `pardon_dispute`). → Một game đua hạng nghiêm túc cần cả enforcement lẫn due-process appeal, không chỉ chặn bot. (Bia hơi: Phase 3.)
 - **Thêm mới (không đổi kiến trúc):** model `Table` + logic nhiều order/bàn; timer `beerFreshnessMs`/`kegFreshnessMs`; bộ asset mới.
-- **🔵 Post-MVP integrations (Phase 4, KHÔNG phải scope kiến trúc sớm):** tích hợp 2 nguồn dữ liệu thật — tỉ số/lịch World Cup & kết quả xổ số. Chỉ làm khi tới Phase 4 (xem §19).
+- **🔵 Integrations làm sau cùng (trong scope; adapter + feature flag):** tích hợp 2 nguồn dữ liệu thật — tỉ số/lịch World Cup & kết quả xổ số. Default = admin nhập tay (tier C), API thật là adapter bật bằng flag (00-HANDOFF §4.5).
 
 ---
 
 ## 19. Roadmap
+
+> ⚠️ **Lịch sử.** Chia phase dưới đây là kế hoạch cũ; từ 09/09 giao **1 phase đủ 5 lớp economy** — thứ tự code xem `00-HANDOFF` §4.3. Giữ lại để truy vết quyết định, không dùng làm cổng scope.
 
 **Phase 0 — Prototype (client-only, validate "feel"):**
 - Scope cụ thể xem `04-SPEC-prototype-phase0.md`: 1 màn quán, **3 bàn** (2 ghế/bàn), bia + 2 mồi tức thì, **2 mức rush** (thường / cao điểm), freshness cốc, vòng đời cốc + rửa, tip/patience, log đo.
@@ -394,20 +411,20 @@ Mục tiêu: chứng minh **vòng lặp vận hành ca vui & economy cân**. KH�
 | Hệ bàn (đơn vị chính) | 🟢 CORE | spec: `03-SPEC-he-ban.md` |
 | Bia mất hơi (concept) | 🟢 CORE | hậu quả thì 🟡 |
 | Menu 6 món (danh mục) | 🟢 CORE | giá/vốn cụ thể 🟡 |
-| Server-authoritative, Pixi+React | 🟢 CORE | |
+| Server-authoritative, Pixi+React | 🟢 CORE | trạng thái đích; thứ tự code: localStorage trước, server sau (chốt 08/09, 10-SPEC §9) |
 | k = 2.5 | 🟡 PROTOTYPE | đo lại được; cách tính (chỉ value, không throughput) là CORE |
 | Số freshness/prep/giá từng cấp | 🟡 PROTOTYPE | fine-tune qua playtest |
 | Hậu quả mất hơi (tip×0+uy tín / mất payment) | 🟡 PROTOTYPE | MVP dùng bản mềm |
 | Thời tiết lạnh cho bia (đảo so trà đá) | 🟡 PROTOTYPE | cần cân bằng |
-| Giải Nhậu / Đường Lên Trùm / mặt bằng đầy đủ | 🔵 POST-MVP | Phase 3 |
-| Bảo kê / kiểm tra ATTP / trộm | 🔵 POST-MVP | Phase 3 |
-| Event World Cup (+ API tỉ số/lịch) | 🔵 POST-MVP | Phase 4 |
-| Donation (cosmetic-only) | 🔵 POST-MVP | Phase 4 |
+| Giải Nhậu / Đường Lên Trùm / mặt bằng đầy đủ | 🔵 LÀM SAU CÙNG (trong scope) | thứ tự code: meta |
+| Bảo kê / kiểm tra ATTP / trộm | 🔵 LÀM SAU CÙNG (trong scope) | thứ tự code: risk |
+| Event World Cup (+ API tỉ số/lịch) | 🔵 LÀM SAU CÙNG (trong scope) | feature flag; default admin nhập tay |
+| Donation "Mời Bia Hơi" (cosmetic-only) | 🟢 CORE — **monetization duy nhất** | mốc M7; cổng nhận tiền = adapter (QR chuyển khoản mặc định) |
 | Localization + Google account / guest migration | 🟢 CORE | cần cho production onboarding/save |
-| Session Pass payment (free 1 session/day, paid unlock daily cap) | 🔵 POST-MVP | pay-for-access, cần server/payment |
-| Xổ số / Vietlott | 🔵 POST-MVP | Phase 4, **cần legal review** |
+| Session Pass payment | ⛔ **BỎ** (08/09) | chơi free hết; F26 giữ làm lưu trữ |
+| Xổ số / Vietlott | 🔵 LÀM SAU CÙNG (trong scope kỹ thuật) | **gate pháp lý** `lottery.legalGate = off` |
 
-**Còn mở cần quyết khi tới phase tương ứng:** nguồn API (tỉ số/lịch WC, kết quả XSMB/Vietlott); payment provider + giá Session Pass + refund policy; số server-only (boss gangster, lượng trộm, câu hỏi kiểm tra); EV & giới hạn vé xổ số.
+**Còn mở — nay đã trong scope 1 phase, không còn "phase tương ứng" để đợi; default để dev không chờ ở `00-HANDOFF` §4.5:** nguồn API (tỉ số/lịch WC, kết quả XSMB/Vietlott); cổng nhận donate (mặc định QR chuyển khoản + admin xác nhận) + refund policy donate — Session Pass đã bỏ; số server-only (boss gangster, lượng trộm, câu hỏi kiểm tra); EV & giới hạn vé xổ số.
 
 ---
 ## Changelog (append-only — thêm dòng mới, KHÔNG ghi đè)
@@ -422,6 +439,12 @@ Mục tiêu: chứng minh **vòng lặp vận hành ca vui & economy cân**. KH�
 | v1.3+ | Đồng bộ roadmap Phase 0 theo `04-SPEC-prototype-phase0.md`: scope cụ thể = 3 bàn, bia + 2 mồi tức thì, 2 mức rush; Phase 2 chuyển thành Giờ Vàng đầy đủ/lịch tự động. |
 | v1.4 | §14 mở rộng "3 trụ"→"4 trụ": chốt pricing **lịch thi đấu** (booster bằng xu ~15k×k, hiện lịch HUD + cổ vũ spawn ×1.15/Vụ) + thêm trụ **theme đội tuyển** (cosmetic-only mua bằng xu ~8k×k/đội, sở hữu vĩnh viễn, trang trí nhẹ cờ/đèn/biển; combo 6 đội ~36k×k −25%). Thêm bảng **§14.0 Shop Vụ Bia** (neo giá theo trần 500k/ngày) + danh sách đội động server-driven (WC2026 = 48 đội) + note IP/art cho theme (bảng màu+biệt danh nhại, tránh huy hiệu/logo). §16 thêm ghi chú cosmetic đến từ **cả xu lẫn donation**, đều không P2W. |
 | v1.5 | Thêm production onboarding/access: chọn ngôn ngữ `vi/en`, guest play + Google login/cloud save/leaderboard prompt, và Session Pass payment (free 1 session/ngày; paid unlock normal daily cap). Làm rõ đây là pay-for-access, không bán xu/power/hạng; bổ sung server ownership cho locale/account/payment entitlement. |
+| v1.7 | Thêm §0 "Bộ tài liệu triển khai" trỏ `00-HANDOFF`, `08-SPEC-economy-constants` + `docs/config/economy.tbh.json` (nguồn số máy đọc), `11-PROMPT-PACK` (prompt designer Blender MCP + dev). Ghi rõ luật: quyết định → GDD, số → JSON. Không đổi quyết định nào; các mâu thuẫn số giữa F09/F10/F14/item-list được chốt ở 08-SPEC §21 (GDD §9 thời tiết nên đọc theo F09/08-SPEC §5). |
 | v1.6 | **Rebrand thuật ngữ bia hơi (cascade từ `item-list-upgrade-levels.md` v1.4):** League → Giải Nhậu (Cốc Nhựa→Trùm Bia Hơi), Season → Vụ Bia, Life Path → Đường Lên Trùm (Bưng Bê→Trùm Bia Hơi), Đền Thiêng → Bàn Thờ Ông Địa, Well-rested → Tỉnh Táo, Rush Hour → Giờ Vàng, crate → thùng hàng, badge shard → mảnh huy hiệu, cosmetic token → tem trang trí. 15 terms. |
+| v1.9 | Chốt founder 09/09: **giao 1 phase — game đủ 5 lớp economy**, không "phase trước/phase sau"; nhãn 🔵 đọc lại là "làm sau cùng, vẫn trong scope" (xổ số vẫn chờ legal). Scope chi tiết ở `00-HANDOFF` §4. |
+| v1.8 | Quyết định founder 08/09: **mọi tham số vận hành là config ở admin, không hardcode** (số ca free/ngày, giá, cap, tỉ lệ, thời gian, lịch, flag). §0 thêm `trum-bia-hoi-brd-admin.md` v0.3 §5.2 (Config Registry, tier A/B/C, override, `effectiveAt`). Không đổi quyết định gameplay nào; 🟢 = thiết kế không đổi, không phải ghi cứng. Chi tiết số: 08-SPEC v1.2 §0.7/§22; kỹ thuật: 10-SPEC v1.2 §7. |
+| v1.10 | Quét nhãn phase theo `docs/TRANG-THAI-DOCS.md`: §15 tiêu đề/trạng thái xổ số → trong scope + gate pháp lý; §18 integrations → adapter + flag, default admin nhập tay; §19 gắn banner "lịch sử"; §20 bảng 🔵 POST-MVP/Phase → "LÀM SAU CÙNG (trong scope)", Session Pass → 🟢 nền tảng; "còn mở khi tới phase" → trỏ 00-HANDOFF §4.5. Không đổi quyết định gameplay nào. |
+| v1.11 | §9 thêm con trỏ số chính thức → F09/08 §5–§6/JSON (đóng 08 §21 #4). |
+| v1.12 | Chủ dự án 08/09: **chơi free hoàn toàn, monetization = donate cho admin** — §16 viết lại (quyền chơi free, F26 bỏ, F20 = nguồn thu duy nhất), §20 hai dòng Donation/Session Pass. |
 
 *Nguồn: `00-TONG-HOP-trumviahe.md`, `economy-spec-from-bundle.md`, `01-MAP-tra-da-to-bia-hoi.md`. Spec hệ bàn: `03-SPEC-he-ban.md`. Script: `scripts/measure_k.py`.*

@@ -1,0 +1,83 @@
+{
+  "_schema": {
+    "_doc": "F15 kiểm tra ATTP/trật tự/nồng độ cồn — tier C, admin nhập. Server chọn ngẫu nhiên theo topic + difficulty, gửi client {id, text, options} (KHÔNG gửi correct); client trả optionId; server chấm. Text qua i18n: vi bắt buộc, en fallback vi + log.",
+    "id": "string, slug duy nhất",
+    "topic": "attp | trat_tu | con | chung",
+    "difficulty": "1..3 (1 dễ)",
+    "text": { "vi": "string ≤ 120 ký tự", "en": "string" },
+    "options": "3–4 phần tử {id, vi, en}; đúng 1 đáp án",
+    "correct": "optionId — chỉ server thấy",
+    "explain": { "vi": "1 câu sau khi trả lời, ≤ 100 ký tự", "en": "string" },
+    "tags": "string[] tuỳ chọn",
+    "enabled": "bool"
+  },
+  "_rules": {
+    "minPoolPerTopic": 20,
+    "neverRepeatWithinShifts": 5,
+    "timeLimitMs": "risk.inspection.quizMs (08 §17)",
+    "attempts": 2,
+    "tone": "trung tính, mô phỏng quản lý quán — không cổ vũ uống, không chế giễu cơ quan chức năng"
+  },
+  "questions": [
+    {
+      "id": "attp_01", "topic": "attp", "difficulty": 1,
+      "text": { "vi": "Cốc bia rửa xong nên úp ở đâu?", "en": "Where should washed beer glasses be placed?" },
+      "options": [
+        { "id": "a", "vi": "Trên giá thoáng, sạch", "en": "On a clean, ventilated rack" },
+        { "id": "b", "vi": "Dưới đất cạnh bồn", "en": "On the ground next to the sink" },
+        { "id": "c", "vi": "Trong xô nước rửa", "en": "In the wash bucket" }
+      ],
+      "correct": "a",
+      "explain": { "vi": "Cốc úp giá thoáng mới khô và sạch.", "en": "Glasses dry clean only on a ventilated rack." },
+      "enabled": true
+    },
+    {
+      "id": "attp_02", "topic": "attp", "difficulty": 2,
+      "text": { "vi": "Lòng xào dưa để ngoài trời nắng bao lâu là không nên bán nữa?", "en": "How long can stir-fried offal sit out in the sun before it should not be sold?" },
+      "options": [
+        { "id": "a", "vi": "Quá 2 giờ", "en": "More than 2 hours" },
+        { "id": "b", "vi": "Cả ngày vẫn được", "en": "A whole day is fine" },
+        { "id": "c", "vi": "Chỉ cần đậy lồng bàn", "en": "Just cover it with a food cover" }
+      ],
+      "correct": "a",
+      "explain": { "vi": "Thức ăn chín để ngoài quá 2 giờ dễ hỏng.", "en": "Cooked food left out over 2 hours spoils easily." },
+      "enabled": true
+    },
+    {
+      "id": "trat_tu_01", "topic": "trat_tu", "difficulty": 1,
+      "text": { "vi": "Bàn ghế nhựa được kê tới đâu trên vỉa hè?", "en": "How far onto the pavement may plastic tables go?" },
+      "options": [
+        { "id": "a", "vi": "Chừa lối đi cho người đi bộ", "en": "Leave a walkway for pedestrians" },
+        { "id": "b", "vi": "Tràn xuống lòng đường", "en": "Spill onto the road" },
+        { "id": "c", "vi": "Chắn hết vỉa hè cho đông khách", "en": "Block the whole pavement for more seats" }
+      ],
+      "correct": "a",
+      "explain": { "vi": "Vỉa hè phải còn lối cho người đi bộ.", "en": "The pavement must keep a walkway." },
+      "enabled": true
+    },
+    {
+      "id": "con_01", "topic": "con", "difficulty": 2,
+      "text": { "vi": "Khách đã lảo đảo mà vẫn đòi thêm bia, chủ quán nên làm gì?", "en": "A customer is staggering but asks for more beer. What should the owner do?" },
+      "options": [
+        { "id": "a", "vi": "Mời nước, gợi ý về sớm", "en": "Offer water, suggest heading home" },
+        { "id": "b", "vi": "Rót thêm cho vui", "en": "Pour another for fun" },
+        { "id": "c", "vi": "Bán gấp đôi giá", "en": "Charge double" }
+      ],
+      "correct": "a",
+      "explain": { "vi": "Quán có trách nhiệm không phục vụ khách đã say.", "en": "The stall must not serve someone already drunk." },
+      "enabled": true
+    },
+    {
+      "id": "chung_01", "topic": "chung", "difficulty": 1,
+      "text": { "vi": "Bom bia hơi nên bảo quản ở đâu?", "en": "Where should a draft-beer keg be kept?" },
+      "options": [
+        { "id": "a", "vi": "Nơi mát, tránh nắng", "en": "Somewhere cool, out of the sun" },
+        { "id": "b", "vi": "Ngoài nắng cho ấm", "en": "In the sun to warm it" },
+        { "id": "c", "vi": "Cạnh bếp than", "en": "Next to the charcoal stove" }
+      ],
+      "correct": "a",
+      "explain": { "vi": "Bia hơi nóng là mất hơi nhanh.", "en": "Warm draft beer goes flat fast." },
+      "enabled": true
+    }
+  ]
+}

@@ -5,7 +5,7 @@
 ## 1. Scope
 
 - Gangster/bảo kê event.
-- Inspection quiz event.
+- Inspection quiz event — ⏸ pending (xem §4).
 - Chí Phèo -> đại gia reveal reward.
 - Drunk fight simple intervention.
 - Offline theft.
@@ -35,7 +35,9 @@ type RiskEvent = {
 - Decision window = 20s: `pay`, `fight`, `ignore`.
 - Fight uses F18 turn-based combat. Lose can break tables/chairs and capture dog.
 
-## 4. Inspection
+## 4. Inspection (kiểm tra ATTP/trật tự) — ⏸ **PENDING, chưa chốt (chủ dự án 08/09)**
+
+> Tính năng này **và** ngân hàng câu hỏi (`docs/content/inspection-questions.json`) đều đang chờ chủ dự án chốt. Ship với `risk.inspection.enabled = false`; nội dung dưới là spec sẵn để khi chốt thì bật. Không tính vào acceptance của mốc M6.
 
 - Quiz deadline ~15s, 2 attempts.
 - Server sends question/options/correct validation token; client never knows correct answer.

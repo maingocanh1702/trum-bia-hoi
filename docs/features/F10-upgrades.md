@@ -57,7 +57,8 @@ Displayed price = `round(priceBaseXu * k)`.
 
 - Upgrade cards show current stat -> next stat, price, lock reason.
 - Recommendation badge can point to observed bottleneck: no clean glasses, stale beer, stock full.
-- Sprite changes after each level in Phase 2.
+- Sprite changes after each level (checklist A3–A7: the countable stat — taps/basins/burners — must read at 64 px).
+- Reference flows (owner, 2026-09-08, not a contract): `docs/reference/trumviahe-sheet-upgrade-equipment.png` / `-business.png` (sheet with tabs, card grid, MAX/lock states, location row with Expired · Renew) and `docs/reference/trumviahe-popover-upgrade-inplace.png` (tap the equipment on the yard → anchored popover: current sprite → next sprite with stat under each, price button, no pause). Either entry point must lead to the same purchase command.
 
 ## 7. Analytics
 

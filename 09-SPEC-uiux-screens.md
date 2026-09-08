@@ -1,0 +1,257 @@
+# 🖥️ SPEC — UI/UX màn hình & tương tác — Trùm Bia Hơi (v1.1)
+
+> ⚠️ **THAM KHẢO, KHÔNG RÀNG BUỘC (chốt founder 09/09).** Dev **tự quyết layout, màn hình, điều hướng, thao tác, motion** của game. Doc này mô tả *một* phương án chạy được — dùng khi muốn tham chiếu, không phải hợp đồng. Ràng buộc thật chỉ còn: luật chơi (`02-GDD` + `03-SPEC`), số (`08-SPEC` + `economy.tbh.json`), không-hardcode (`trum-bia-hoi-brd-admin.md` §5.2), bất biến đo k (`04-SPEC` §5), server-authoritative + engine thuần (`10-SPEC` §7/§1).
+>
+> **Tương ứng với `uiux-analysis-trumviahe.md`** (phân tích game gốc) nhưng là **spec sản xuất** cho Trùm Bia Hơi: IA, từng màn (wireframe, component, state, dữ liệu, luồng), motion, âm thanh, microcopy, a11y, checklist nghiệm thu. Điền phần 📐/🔧 mà `05-SPEC-design-uiux.md` để trống. Token/màu: `docs/design-tokens.md` (nguồn duy nhất). Asset: `docs/asset-list-designer.md`.
+> **Layout tham khảo ưu tiên (chủ dự án 08/09):** `docs/reference/` (README mục lục 8 ảnh; ảnh chính `trumviahe-hud-layout-2026-09-08.png`) — sân quán **không gian** như game gốc (quầy/thiết bị tâm trên, bàn rải trên nền, khách ngồi thật, bong bóng tại chỗ, rail kho phải, 4 nút đáy). Wireframe §3.1 dưới đây là **card-list của prototype** — chỉ để tham chiếu component/state, không phải hướng ưu tiên. Những gì vẫn bắt buộc dù layout nào: `00-HANDOFF` §6 "UI invariants".
+> Ngày: 2026-09-08. Nguồn: GDD v1.7 §17, 03-SPEC §9.5–§9.6, 05-SPEC, F24, F07–F26 (§UI), uiux-analysis §14/§18/§21–§23/§25–§27/§36, prototype hiện có (`prototype/src/ui/`). Nhãn: ✅ đã có trong prototype · P1/P2/P3/P4 = **thứ tự code** (không phải cổng scope — 00-HANDOFF §4) · 🟡 chốt khi playtest.
+
+---
+
+## 1. Nguyên tắc UX (từ gốc, áp cho bia hơi)
+
+1. **Đơn vị chính là BÀN, không phải khách lẻ** — mọi cảnh báo, timer, hit area, floating indicator ở mức bàn (03 §9.5). Khách lẻ chỉ đổi nét mặt/badge.
+2. **HUD cố định cho thông tin sống còn; bottom-sheet cho vận hành lặp lại; modal cho meta; dialog có hạn cho sự kiện** (uiux §22). Sheet **không pause** — quán vẫn chạy phía sau (quyết định vận hành, F08 §6).
+3. **Phục vụ = 1 chạm** vào popover/bàn khi đủ món; **rót/rửa tự động** (GDD §4; chốt 08/09/2026) — người chơi chỉ quyết *khi nào bưng* và *nâng cấp gì*.
+4. **Thất bại tường minh, phân biệt mềm/cứng**: trễ (mất tip, viền vàng) ≠ mất cụm (viền đỏ, −xu, popover "KHÁCH BỎ ĐI") — dạy "phục vụ sớm = tiền boa" (03 §9.6).
+5. **Telegraph trước áp lực**: Giờ Vàng báo 20s, thời tiết báo trước ca, sự kiện phạt nặng không chồng nhau.
+6. **Icon + nhãn chữ song hành**, emoji cho cảm xúc; tiếng Việt có dấu ở mọi chữ người chơi đọc (canvas dùng Be Vietnam Pro).
+7. **3 vòng UX**: Operate (ca) · Learn (sổ ca, tip "Bạn có biết", Bia Đấm) · Belong (Xếp hạng, Dạo Phố, Bàn Thờ Ông Địa, trang trí).
+8. **Không dark pattern, không paywall**: game free hoàn toàn (08/09); donation là ủng hộ tự nguyện, nói rõ "không bán xu/sức mạnh/quyền chơi".
+
+---
+
+## 2. Information architecture
+
+```
+[Landing/ngôn ngữ] → [Cổng ca] → [HUD ca đang chạy] ⇄ sheets: Nhập hàng · Nâng cấp · Sổ ca
+                                     ↓ hết thể lực / Đóng ca
+                              [Đóng cửa + Sổ sách] → [Xả Hơi (nghỉ)] → [Cổng ca]
+meta (modal, mọi lúc trừ khi dialog sự kiện): Nhiệm vụ · Xếp hạng/Dạo Phố · Bàn Thờ Ông Địa · Hồ sơ/Huy hiệu · Cài đặt/Tài khoản · Bia Đấm · Shop Vụ Bia (P4) · Vé số (P4) · Mời Bia Hơi (P4)
+sự kiện (dialog có hạn): Giờ Vàng telegraph · Côn đồ · Kiểm tra · Đại gia lộ diện · Trộm offline · Kết Vụ · Trận đấu (P4)
+```
+
+Tầng thông tin (uiux §23): (1) sống còn trong ca → (2) vận hành → (3) meta → (4) trợ giúp → (5) sự kiện. Khi mở sheet, nền quán vẫn thấy phía sau (không tách khỏi ngữ cảnh).
+
+---
+
+## 3. Màn chính — HUD ca (P0 ✅ → P1 hoàn thiện)
+
+### 3.1 Wireframe (mobile dọc 390×844; canvas 600×720 fit width; desktop 1280×720 canvas giữa, HUD hai bên)
+```
+┌─────────────────────────────────────────────────────────┐
+│ TOP  [💰 294.031] [⚡ 11:02 · 0/5] [⏱ NHẸ 03:34] [🌤 Nắng] [🍺 9/10] │  ← pill, 1 hàng, cuộn ngang nếu thiếu chỗ
+├─────────────────────────────────────────────────────────┤
+│  lane: "Nắng / Nhịp thường"  ▓▓▓ áp lực bàn  ▓▓ cốc      │
+│  HÀNG ĐỢI  (●●) (●)                                      │
+│  ┌ BÀN 1 ──── đợt 1/2 đang gọi ─── [patience ▓▓▓░] ┐   │
+│  │ 👤     ┌ VIP · nhóm 2 · đợt 1/2        8s ┐    👤 │   │
+│  │        │ Boa ×10 — nhưng nhanh dỗi…          │       │   │  ← POPOVER Order (03 §9.5)
+│  │        │ 🍺 Bia hơi ×2      sẵn sàng ●       │       │   │
+│  │        │ 🍢 Nem chua        sẵn sàng ●       │       │   │
+│  │        │ [ ✅  PHỤC VỤ ]                     │       │   │
+│  └────────┴──────────────────────────────────┴───────┘   │
+│  ┌ BÀN 2 ─ trống ── "chờ nhóm mới" ─┐  ┌ Bom bia tự động ┐ │
+│  └───────────────────────────────────┘  │ ▓▓▓░ đang rót   │ │
+│  ┌ BÀN 3 ─ đang lai rai ─ "DANG NHAP LY"┐ ├ Bồn rửa tự động ┤ │
+│  └───────────────────────────────────┘  │ 1 slot × 7s ▓░  │ │
+│                                         ├ Giá cốc 9/10   ┤ │
+│                                         │ 🍺🍺🍺🍺🍺 … │ │
+│                                         └ chủ quán + chó ┘ │
+├─────────────────────────────────────────────────────────┤
+│ ops: [Bàn 1/3 · đợi 0] [Vòng cốc 1 dùng · 0 bẩn] [Mất khách 0] │
+│ log 6 dòng gần nhất (mờ dần)                             │
+├─────────────────────────────────────────────────────────┤
+│ RAIL/BOT  [🔔] [🔇] [🎯 2/5] | [CA] [NHẬP HÀNG] [NÂNG CẤP] [SỔ CA] │
+└─────────────────────────────────────────────────────────┘
+```
+- P1: tối đa 6 bàn → lưới 2 cột × 3 hàng (card 280×140) hoặc giữ 1 cột cuộn dọc 🟡 (playtest quyết). Cụm thiết bị chuyển xuống dưới lưới bàn khi 2 cột.
+- Desktop: canvas 600×720 giữa, pill top thành 1 hàng, sheet thành panel phải 360px.
+
+### 3.2 Component & state trên sân
+| Component | State | Visual (token) | Hit | Asset |
+|---|---|---|---|---|
+| **Card bàn** | `empty` · `awaiting_serve` (order pending) · `grace` (P1) · `enjoying` · `paying/cleaning` (anim ngắn, P1) · `occupied` (Chí Phèo, P2) · `broken` (P3) | viền `panelBorder` → patience `success`>60% / `warning`>30% / `danger` ≤30%; pulse khi allReady; `info` khi enjoying | **cả card** (≥ sprite) → serve; đang cờ mất → đóng cờ + serve | `table-lv{n}-{state}` (prop-only; viền do code) |
+| **Popover Order** ✅ | pending · allReady · (grace) | box `panelDeep` viền theo patience; badge loại (VIP `coinGold`/ink · vội `stoolRed` · thường `success` · Chí Phèo nâu · ngồi lỳ `reputation` · shipper `info`); countdown 18px màu viền; subtitle 9.5px `creamMuted`; dòng món: icon 0.38 + tên (MENU.label) + trạng thái (chờ rót `panelBorder` / đang rót `info` / sẵn sàng `success` / sắp mất hơi `warning` / HẾT HƠI `glassStale`); nút `stoolRed` 22px "PHỤC VỤ" + tick xanh; chưa đủ: `panelRaised` "đang chuẩn bị món…" | trong card | code + `badge-*`, `menu-*` |
+| **Cờ mất nhóm** ✅ | bàn trống → popover đỏ 62px "KHÁCH BỎ ĐI / chờ quá lâu · chạm để đóng"; bàn đã có nhóm mới → banner 22px hàng tiêu đề | `danger` + `stoolRedDeep` | 1 chạm đóng (và vẫn thử serve) | code |
+| Ghế + khách | trống / ngồi / cảnh báo (patience <25%: vòng đỏ + ghế đỏ) | `stoolRed`, avatar theo type × thời tiết | — | `chair-plastic*`, `customer-{type}-{wx}`, `face-*` |
+| Hàng đợi | token nhóm (số người), `urgent` khi >60% patience | `panel` / `danger` | — | `queue-token` (code) |
+| Bom bia | idle / pouring (progress `beerAmber`) | | ✅ không hit (auto) | `keg-lv{n}[-pouring]` |
+| Bồn rửa | idle / mỗi slot progress `info` | viền `warning` khi có cốc bẩn | không hit | `washer-lv{n}[-washing]` |
+| Giá cốc | 10 cốc: clean/in_use(+thanh freshness)/dirty/washing; freshness `beerFoam`→`glassWarn`→`glassStale` | | — | `glass-*` |
+| Hầm lạnh (P1) | cấp + chip "12s" | | — | `cooler-lv{n}` |
+| Bếp (P2) | slot × job progress; cảnh báo "xong sau khi khách hết kiên nhẫn" | `warning` | chạm mở panel bếp | `kitchen-lv{n}[-cooking]` |
+| Chủ quán + chó | idle bob; chó idle/attack/captured (P3) | | — | `stall-owner-{wx}`, `dog-*` |
+| Floating pill | `+n xu` (`coinGold`) · `+boa n` · `−n xu` (`danger`) · `🚨 Mất khách sộp!` | 1 pill/Order, 1.2s bay lên | — | code |
+| Overlay thời tiết | tint theo `docs/design-tokens.md` §4 + particle mưa/gió (P2) | | — | code (Pixi filter/particles) |
+
+### 3.3 Pill top & rail
+| Pill | Dữ liệu | State | Chạm |
+|---|---|---|---|
+| 💰 Xu | `coins` (định dạng 1.234) | +anim khi tăng | mở Thông tin nhanh (Xu/Uy tín) P2 |
+| ⚡ Thể lực · ca | `stamina%` mm:ss · `dailyShiftsCompleted/cap` | `warning` <60s; "Hết giới hạn ngày" | mở bảng thể lực |
+| ⏱ Giờ Vàng | `nextRushType` + ETA mm:ss; khi active: "NHẸ 01:12" + viền HUD | shake 20s trước, pulse khi active (nặng mạnh hơn) | — |
+| 🌤 Thời tiết | label + 1 dòng tác động | shimmer khi humid | popup chi tiết hệ số |
+| 🍺 Cốc | `clean/total` | `warning` ≤2 | — |
+| ⭐ Uy tín (bottom-left, P1) | `reputation` (+Δ ca) | | Thông tin nhanh |
+| Rail kho (P1) | pill mỗi nguyên liệu `stock/cap` | đủ / sắp hết (<20%) `warning` / hết `danger` | mở Nhập hàng |
+| 🔔 🔇 🎯 🤖 ⛩ | thông báo · âm · nhiệm vụ x/5 (P2) · Bia Đấm (P3) · Bàn Thờ (P3) | chấm đỏ khi có mới | modal tương ứng |
+
+---
+
+## 4. Luồng tương tác cốt lõi
+
+### 4.1 Phục vụ 1 bàn (happy path + 4 kết cục 03 §9.3)
+```
+nhóm ngồi → popover hiện (món chờ rót) → vòi tự rót từng cốc (3s/cốc, cần cốc sạch) → mọi món ✅ → nút đỏ PHỤC VỤ + viền pulse
+→ chạm (bất kỳ đâu trên card) → engine.serve → floating "+tiền +boa" → khách "DANG NHAP LY" 5–10s → đợt 2 (35%) hoặc rời → cốc bẩn → bồn rửa 7s → cốc sạch
+kết cục theo thời điểm chạm:  sớm ≥60%: +tiền +tip │ trễ <60%: +tiền, KHÔNG tip (pill không có "boa") │ trong grace (P1): viền đỏ pulse, nhóm "đẩy ghế", chạm kịp → +tiền không tip │ hết grace: KHÁCH BỎ ĐI, −xu, uy tín −5/khách
+```
+- Khi cốc trong Order **sắp mất hơi** (cờ vàng) mà chưa đủ món (vd bếp chậm) → dòng món đổi `warning`; hết hơi → `HẾT HƠI` xám; giao vẫn được, tip ×0 + uy tín −1; toast "⚠️ Cốc hết hơi — tip ×0".
+- Bàn có VIP: badge vàng + subtitle "Boa ×10 — nhưng nhanh dỗi"; mất → pill "🚨 Mất khách sộp!".
+
+### 4.2 Mở ca / đóng ca / nghỉ
+```
+Cổng ca (thể lực 100%? ca hôm nay x/cap? free N/ngày theo config P3?) → [MỞ CA] → thời tiết ca hiện toast 3s → spawn
+hết thể lực (12') hoặc [ĐÓNG CA] → closing: không spawn, khách uống nốt; nút [MỜI VỀ (~−n xu)] đóng ngay
+→ finalize → màn Đóng cửa + Sổ sách → [XẢ HƠI] → đồng hồ hồi thể lực (chỉ đếm khi tab active) → Cổng ca
+```
+- Hết ca vẫn **tiêu xu được** (Nâng cấp / Nhập hàng) — chỉ khoá kiếm (GDD §10).
+
+### 4.3 Nhập hàng (P1) — sheet không pause
+Header "Kho cho ca tới" + hint theo thời tiết ca kế ("Nóng → bia bay hơi nhanh: nâng Hầm lạnh; Mưa → nhiều ship"). Hàng: icon · tên · `stock/cap` progress · [+10 = bulkPrice] · [Đầy = công thức 08 §2]. Preset "Đủ 1 ca" (🟡 = ước lượng từ ca trước ×1.2). Footer: tổng xu + [NHẬP HÀNG]. Kho đầy → nút disabled + "Nâng Quầy để chứa thêm".
+
+### 4.4 Nâng cấp (P1)
+Tabs: **Vận hành** (bom · rửa · hầm · quầy · bếp) · **Bàn** (mua thêm / nâng từng bàn) · **Kinh doanh** (P2: điện thoại · QR · biển hiệu · tờ rơi · chó) · **Trang trí** (P3). Card: sprite cấp hiện → cấp kế · stat → stat' ("rửa 7s → 5s") · giá ×k · lý do khoá (chữ người chơi: "Cần Quầy cấp 3", "Cần huy hiệu Kết Nối — rủ 1 bạn chơi") · badge **Gợi ý** trên ≤2 card từ bottleneck ca trước (hết cốc sạch → rửa/cốc; stale cao → hầm; queue đầy → bàn). P1: chỉ mua **ngoài ca** (nút disabled trong ca kèm lý do).
+
+### 4.5 Đóng cửa + Sổ sách (P1)
+5 số lớn: **Thực thu** (= gross − phạt) · **Phục vụ** n/N (%) · **Bỏ đi** n (theo nguyên nhân: hết kiên nhẫn / hàng đợi / từ chối cửa) · **Boa** % lượt · **Uy tín** Δ (có thể âm). Mốc thưởng trong ca ("↑ Phục vụ +50"). Insight 3 card: **Nghẽn chính** (cốc sạch / bàn / rót / mồi — từ metric: thời gian chờ cốc, queue full %, stale %) · **Cơ hội** (VIP lỡ n, combo bán tốt, thời tiết hợp) · **Gợi ý ca sau** (1 nâng cấp + 1 nhập hàng). Preview thời tiết ca kế. So sánh ca trước. Nút [SỔ CA CHI TIẾT] (menu mix, k — alpha/dev) · [XẢ HƠI] · [Copy log] (alpha).
+
+### 4.6 Giờ Vàng
+20s trước: banner "Giờ Vàng NHẸ sau 00:20 — chuẩn bị cốc!" (không pause) + pill ⏱ shake. Active: viền HUD `warning` (nhẹ) / `danger` (nặng) pulse, spawn dồn. Kết thúc: toast tổng kết "Giờ Vàng: 46 khách, 100% phục vụ, boa 52%".
+
+### 4.7 Sự kiện (P3) — dialog có hạn, **no-pause với sự kiện phạt**
+| Sự kiện | Dialog | Hạn | Kết cục |
+|---|---|---|---|
+| Côn đồ đòi bảo kê | "?" số tên (ẩn), "Chó: Có · Lv3", [Cống nạp (14s)] [Phản kháng] | 20s, quán vẫn chạy | Chiến trường (replay turn-based, pause) → THẮNG +xu / THUA: chó bị bắt + sửa đồ |
+| Kiểm tra ATTP | câu hỏi + 4 đáp án, 15s, 2 lượt | no-pause | đúng: gia hạn chứng chỉ · sai: "ĐÌNH CHỈ CA" → đóng ca |
+| Đại gia lộ diện | khói + két bí ẩn → mở: xu / nguyên liệu / uy tín / **cốc** | 1 chạm | |
+| Trộm offline | báo cáo khi vào: mất gì, chó bảo vệ? | 1 chạm | |
+| Kết Vụ Bia | hòm thư: hạng, thưởng bó nguyên liệu, huy chương | claim | |
+| Trận đấu (P4) | TV hiện tỉ số thật, "Giờ Vàng xem bóng" | theo suất chiếu | |
+
+---
+
+## 5. Màn phụ (meta)
+
+| Màn | Pattern | Nội dung | Phase |
+|---|---|---|---|
+| **Landing / ngôn ngữ** | full-screen bg + CTA | chọn Tiếng Việt / English (F25) → guest tự động; CTA "VÀO QUÁN" | P1 |
+| **Cổng ca** | card giữa | thể lực, ca hôm nay x/cap, thời tiết ca kế, [MỞ CA]; (free hết — không Vé Mở Ca) + nút đăng nhập mềm | P1 → P3 |
+| **Nhiệm vụ** | modal tab | Hôm nay (5: 3 lõi + 3 ca + gửi quà; progress + claim; bonus 5/5) · Điểm danh (ladder 7 ngày ⭐) · Thử thách (referral 3 mốc, link/mã mời) | P2 |
+| **Thông tin nhanh** | dialog tab | Xu: 3 sổ (số dư / thu Vụ / trọn đời) giải thích · Uy tín: kiếm/mất/tiêu | P2 |
+| **Xếp hạng** | drawer tab | Giải Nhậu: tab bậc ‹›, hàng: hạng · tên · thu Vụ · ⭐ · mốc; "Chưa có ai" ở bậc trống; đếm ngược kết Vụ; 2 Vụ (Phân Hạng / Tranh Bá) · **Dạo Phố**: hàng xóm theo mặt bằng × bậc, thẻ quán (biển/đèn/cây, profileViews) → xem quán (pause ca) / react / quà / chặn | P3 |
+| **Bàn Thờ Ông Địa** | prestige modal | top 3 podium Vụ trước + tường lưu danh | P3 |
+| **Hồ sơ & huy hiệu** | modal | tên, mốc Đường Lên Trùm (progress tới mốc kế), 8 huy hiệu (Kết Nối có tác dụng — nói rõ), tem trang trí | P3 |
+| **Mặt bằng** | full screen list | 9 vị trí: mult, rent 7 ngày, cọc, hoà vốn ước tính, gate LP, [THUÊ] / hiện tại: còn Xd Yh | P3 |
+| **Cài đặt / tài khoản** | sheet | ngôn ngữ, âm thanh, pin, guest → [Đăng nhập Google] (lợi ích: lưu, đua top, đa thiết bị, quà), hỗ trợ/ticket | P1 (ngôn ngữ+âm) → P3 |
+| **Bia Đấm** | chat panel (Learn) | 4 intent chip; quota x/20; tip rule-based trước LLM; không che bàn khi đang ca | P3 |
+| **Shop Vụ Bia** | modal | TV / Lịch / Theme đội (grid palette, bundle 6) — theo 07-SPEC | P4 |
+| **Mời Bia Hơi** | modal | **monetization duy nhất (08/09)**: 2 mức, QR chuyển khoản (admin xác nhận), chọn quà cosmetic, "game free — không bán xu/sức mạnh" | M7 |
+| **Vé số** | NPC + ví vé + kết quả | feature flag, legal gate | P4 |
+
+---
+
+## 6. Component library (DOM React + Pixi)
+
+| Component | Variant | State | Ghi chú |
+|---|---|---|---|
+| `HudPill` | coin · stamina · rush · weather · glass · reputation · stock | default · warning · danger · pulsing | Chakra Petch số; icon+nhãn |
+| `ControlButton` ✅ | primary(`stoolRed`) · neutral · success · warning · danger | default · active · disabled(+lý do) · loading | min-h 52 |
+| `IconButton` ✅ | rail | badge chấm đỏ | 44×44 |
+| `Sheet` ✅ (bottom-sheet) | restock · upgrade · stats · settings | open/close anim `popover-sheet-in`; kéo xuống đóng | không pause; nền quán thấy sau |
+| `Modal` | mission · rank · shrine · profile · shop | tab | `game-modal-in` |
+| `EventDialog` | gangster · inspection · chairman · theft · season | countdown ring | no-pause (phạt) / pause (kết quả) |
+| `UpgradeCard` | equipment · table · business · cosmetic | affordable · locked(reason) · recommended · maxed | sprite→sprite |
+| `RestockRow` | ingredient | ok · low · empty · full | +10 / Đầy |
+| `LedgerStat` · `InsightCard` | 5 số + 3 card | | |
+| `LeaderboardRow` · `StreetCard` | | me highlight · empty tier | |
+| `QuestCard` · `AttendanceLadder` | | active · claimable · claimed · expired | |
+| `Toast` | info · success · warning · danger | stack ≤3, auto 2.5s, critical giữ | 1 dòng |
+| `CoachMark` | onboarding | | theo ngữ cảnh, không tutorial tuyến tính (uiux §15) |
+| Pixi: `TableCard` ✅ · `OrderPopover` ✅ · `LostFlash` ✅ · `QueueLane` · `KegStation` · `Sink` · `GlassRack` · `Cooler` · `KitchenPanel` · `OwnerDog` · `WeatherOverlay` · `FloatingPill` | | | vẽ code + sprite từ registry |
+
+---
+
+## 7. Motion & âm thanh (F24 §5, catalog gốc §4)
+
+| Tín hiệu | Anim | Thời lượng |
+|---|---|---|
+| Rót | progress tuyến tính theo `pourMs` + bọt dâng | 3s |
+| Freshness cốc | bọt đầy → vơi (75%) → cờ vàng (25% còn) → xám | theo cấp hầm |
+| Đủ món | viền bàn pulse + nút đỏ glow | loop 0.9s |
+| Trễ / grace | viền vàng → đỏ pulse, nhóm "đẩy ghế đứng dậy" | 2–3s |
+| Served | pill `+n` bay lên fade, cụng ly "dô" (anim-cheers) | 1.2s |
+| Mất nhóm | popover/banner đỏ + rung nhẹ card, pill `−n` | 1.8s tự tắt |
+| Giờ Vàng | pill shake 20s trước; viền HUD pulse (nặng mạnh hơn) | |
+| Thời tiết | overlay tint crossfade 1s; mưa/gió particle canvas | |
+| Đại gia | khói + két mở (secretBoxBurst) | 1.5s |
+| Tỉnh Táo | pill tím ×1.10 đếm ngược, nhấp nháy 10s cuối | |
+| Onboarding | coachmark glow/pulse | |
+Tất cả ≤ 2s, easing out, tôn trọng `prefers-reduced-motion` (tắt shake/pulse, giữ đổi màu).
+
+Âm: 1 track `ambient-quanbia` loop + `radio-loa-phuong` khi Xả Hơi; SFX: pour · glass-clink · glass-wash · coin · tip · lost-customer · rush-start · warning-stale · ui-tap; toggle 🔇; không SFX dồn dập (gộp trong 100ms).
+
+---
+
+## 8. Microcopy (vi — key i18n `vi.json`; en dịch sau, thiếu key fallback vi + log)
+
+| Key | vi |
+|---|---|
+| `btn.openShift` / `btn.closeShift` / `btn.serve` / `btn.restock` / `btn.upgrade` / `btn.ledger` / `btn.confirm` | MỞ CA / ĐÓNG CA / PHỤC VỤ / NHẬP HÀNG / NÂNG CẤP / SỔ CA / CHỐT |
+| `btn.kickAll` | Mời về (~−{n} xu) |
+| `table.empty` / `table.ordering` / `table.enjoying` / `table.lost` | chờ nhóm mới / đợt {r}/{R} đang gọi / đang lai rai / KHÁCH BỎ ĐI — chờ quá lâu |
+| `item.pending` / `item.pouring` / `item.ready` / `item.warn` / `item.stale` | chờ rót / đang rót / sẵn sàng / sắp mất hơi / HẾT HƠI |
+| `popover.preparing` | đang chuẩn bị món… |
+| `hint.vip` / `hint.voi` / `hint.thuong` / `hint.ngoily` / `hint.chipheo` | Boa ×10 — nhưng nhanh dỗi, bưng ngay / Khách vội — chờ ngắn, ưu tiên bàn này / Rót xong bưng ngay — bia 12s là mất hơi / Ngồi dai nhưng gọi đều — cứ chiều / Không trả tiền… nhưng biết đâu là đại gia |
+| `toast.earn` / `toast.tip` / `toast.lost` / `toast.lostVip` / `toast.stale` / `toast.cap` | +{n} xu / Boa +{n} / 😤 Bàn bỏ đi! Mất {n} khách / 🚨 Mất khách sộp! / ⚠️ Cốc hết hơi — tip ×0 / 🧱 Chạm trần ngày {cap} xu |
+| `rush.warn` / `rush.active` / `rush.end` | Giờ Vàng {type} sau {mm:ss} — chuẩn bị cốc! / GIỜ VÀNG {type} / Giờ Vàng: {n} khách · {served}% phục vụ · boa {tip}% |
+| `weather.*` | Nắng · Nóng · Oi bức · Mưa phùn · Lạnh (+1 dòng tác động, 08-SPEC §5) |
+| `shift.open` / `shift.exhausted` / `shift.closing` / `shift.dayLimit` | 🔔 Mở ca! Thể lực 100%. / 😮‍💨 Hết thể lực — đóng ca. Khách đang ngồi vẫn phục vụ nốt. / Đang đóng cửa — khách uống nốt / Hết giới hạn ngày — mai gặp lại |
+| `event.gangster.title` / `.pay` / `.resist` / `.win` / `.lose` | Côn đồ đòi bảo kê / Cống nạp / Phản kháng / Thắng! +{n} xu / Thua — chó bị bắt, đồ bị đập |
+| `event.inspection.*` | Tổ kiểm tra ATTP ghé quán / Chứng chỉ gia hạn / Chứng chỉ bị thu hồi — ĐÌNH CHỈ CA |
+| `event.patrol` | Ông xe ôm báo đội trật tự đang ở đầu phố! |
+| `event.chairman` | Hoá ra là đại gia! Két Bia Bí Ẩn |
+| `flavor.cheers` / `flavor.ai` / `flavor.lottery` | Một hai ba… dô! / Bia Đấm / Lấy em tờ vé lấy hên! |
+| `gate.login` | Đăng nhập để lưu tiến trình, đua top, và mở khoá thêm ca trong ngày. |
+| `gate.free` | Chơi free hết. Muốn ủng hộ quán? Mời Bia Hơi — không bán xu, không bán sức mạnh. |
+| `donate.note` | Mời Bia Hơi là ủng hộ tác giả — quà cảm ơn chỉ là trang trí. |
+| `tip.didYouKnow.*` | Bạn có biết… (xoay vòng: mất hơi 12s, VIP ×10, tờ rơi ×3.6, kick ngồi lỳ bằng uy tín, …) |
+
+Giọng: thân, vỉa hè, ngắn; không hù doạ; số luôn kèm đơn vị (xu/⭐/s).
+
+---
+
+## 9. Onboarding (không tutorial tuyến tính — uiux §15, §28)
+Ca 1: coachmark theo ngữ cảnh: (1) nhóm đầu ngồi → "Chờ đủ món rồi chạm ✅ PHỤC VỤ" trỏ popover; (2) lần đầu cốc cờ vàng → "Bia rót xong 12s là mất hơi — bưng sớm!"; (3) lần đầu mất nhóm → "Chờ lâu quá khách bỏ đi — mất xu & uy tín"; (4) hết ca → sổ sách + "Nâng cấp gì trước?" trỏ card Gợi ý. Tối đa 1 coachmark/lúc, 1 chạm bỏ qua, không lặp.
+
+---
+
+## 10. A11y & mobile (F24 §6, uiux §32)
+Hit ≥ 44px; bàn ≥ sprite; không hover; màu không là tín hiệu duy nhất (stale đổi hình bọt + chữ); text vừa nút tiếng Việt; vùng ngón cái cho CA/NHẬP HÀNG/NÂNG CẤP/PHỤC VỤ; 390×844 & 360×740 & 1280×720 không overflow/không cuộn ngang; DOM HUD/sheet qua axe (contrast ≥ 4.5:1 chữ trên `panel`); `prefers-reduced-motion`; font canvas Be Vietnam Pro (có dấu) — Chakra Petch chỉ cho số.
+
+---
+
+## 11. Checklist nghiệm thu UI (theo thứ tự code P1→P4 — tất cả đều trong scope 1 phase)
+- **P1:** 7 màn §3–§4.5 chạy 3 viewport; popover đúng 03 §9.5; 4 kết cục phục vụ phân biệt thị giác; sheet không pause; Gợi ý nâng cấp khớp bottleneck thật (so metric); i18n key 100% (không chuỗi cứng); screenshot baseline; axe pass; 30 giây đầu chơi được không đọc hướng dẫn (playtest).
+- **P2:** bếp panel + bubble tách bia/mồi nóng; badge khách đặc biệt phân biệt ở 32px; telegraph loại rush; quest panel; biển hiệu sheet.
+- **P3:** dialog sự kiện no-pause đúng luật; Xếp hạng/Dạo Phố/Bàn Thờ; cổng ca + đăng nhập + Mời Bia Hơi không dark pattern.
+- **P4:** TV tỉ số; shop Vụ Bia; donation; vé số (flag).
+
+---
+
+## Changelog (append-only)
+| Ver | Thay đổi |
+|---|---|
+| v1.0 | Bản đầu 2026-09-08: IA, HUD wireframe + component/state, 4 luồng lõi, màn phụ theo phase, component library, motion/âm, microcopy i18n, onboarding, a11y, checklist. Phản ánh popover Order + cờ mất nhóm đã build (slice p0-ui-serve-popover--r2). |
+| v1.1 | Theo audit 08/09: header thêm layout tham khảo ưu tiên (ảnh HUD gốc, sân quán không gian) và nói rõ §3.1 là card-list prototype; nhãn P1–P4 = thứ tự code; §11 đổi tên. Không đổi nội dung màn/component. |

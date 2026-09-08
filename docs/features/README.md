@@ -33,10 +33,19 @@
 | F24 Thiết Kế UI/UX Quán Bia | `F24-design-uiux-production.md` + `../../05-SPEC-design-uiux.md` |
 | F25 Ngôn Ngữ, Tài Khoản & Đăng Nhập | `F25-localization-account.md` |
 | F26 Vé Mở Ca & Thanh Toán | `F26-daily-session-pass-payments.md` |
+| F28 Bảng Xếp Hạng & Bàn Thờ Ông Địa | `F28-leaderboard.md` — tách từ F12 §6; config `leaderboard` tier A |
+| F27 Onboarding (ca đầu tiên, step guide, guest → login) | `F27-onboarding.md` — 🟢 luật chủ dự án 08/09; config `onboarding` tier C |
+| **Mọi hằng số/công thức** | `../../08-SPEC-economy-constants.md` + `../config/economy.tbh.json` (số thắng) |
+| **UI/UX màn hình & luồng** | `../../09-SPEC-uiux-screens.md` |
+| **Kỹ thuật triển khai (kiến trúc/API/test)** | `../../10-SPEC-tech-implementation.md` |
+| **Admin/CRM + Config Registry (mọi tham số config ở admin, không hardcode)** | `../../trum-bia-hoi-brd-admin.md` §5.2 + `../../08-SPEC-economy-constants.md` §22 |
+| **Pipeline asset Blender MCP** | `../asset-blender-pipeline.md` |
+| **Prompt triển khai theo thứ tự (designer Blender MCP → dev)** | `../../11-PROMPT-PACK-designer-blender-dev.md` (+ Phụ lục T tech, U screen) |
+| **Điểm vào** | `../../00-HANDOFF-trum-bia-hoi.md` |
 
 ## Cách đọc
 
 - `CORE`: quyết định ổn định, nên code theo.
 - `TUNE`: số khởi điểm, được chỉnh bằng playtest/balance.
-- `POST-MVP`: spec đã có để tránh mơ hồ, nhưng không đưa vào scope sớm.
+- `POST-MVP` / `Phase N` trong các F: nhãn cũ = **thứ tự code** (mốc M ở 06-ROADMAP v3.0), vẫn trong scope 1 phase (00-HANDOFF §4).
 - Mỗi feature nên có analytics event tối thiểu để phục vụ playtest và dashboard.

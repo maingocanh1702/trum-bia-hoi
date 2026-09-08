@@ -57,7 +57,7 @@ export class Engine {
   private say(msg: string) {
     const w = this.world
     w.lastEvents.unshift(msg)
-    if (w.lastEvents.length > 6) w.lastEvents.pop()
+    if (w.lastEvents.length > 6) w.lastEvents.pop() // config-exempt: buffer log HUD, không phải số economy
   }
 
   // ───────────────────────── actions (player) ─────────────────────────

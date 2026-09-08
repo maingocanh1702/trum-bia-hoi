@@ -1,0 +1,50 @@
+# F28 — Bảng Xếp Hạng & Bàn Thờ Ông Địa (Leaderboard)
+
+> Tách từ F12 §6 "Views" (2 dòng) thành feature riêng theo yêu cầu chủ dự án 08/09. **F12** giữ bậc Giải Nhậu, Vụ Bia, thưởng; **F28** = bản thân các bảng: ai được lên bảng, xếp thế nào, hiện gì, đóng băng khi nào, lưu danh ra sao. Outcome/acceptance — cách trình bày do dev tự quyết; ảnh tham khảo `docs/reference/trumviahe-modal-shrine-leaderboard.png` (Bàn Thờ) và nút RANK ở `trumviahe-hud-layout-2026-09-08.png`.
+> Ngày: 2026-09-08. Config: `docs/config/economy.tbh.json` → `leaderboard` (tier **A** — thứ hạng). Cần server (F23); trước khi có server: bảng chỉ có mình + trạng thái "Chưa có ai".
+
+## 1. Scope
+
+- **Xếp hạng Vụ** (nút RANK): bảng sống trong Vụ Bia đang chạy, theo bậc Giải Nhậu, xuyên mặt bằng. 2 Vụ song song (Phân Hạng 7 ngày · Tranh Bá 14 ngày, F12).
+- **Bàn Thờ Ông Địa**: bảng vàng **Vụ đã kết** — podium top 3 + Wall of Legacy hạng 4–`wallSize`; xem lại Vụ cũ; huy chương của tôi.
+- **Dạo Phố** (hàng xóm theo `location × bậc`, thẻ quán, react/quà/chặn) — vẫn ở F12/F14, không lặp ở đây; F28 chỉ cung cấp thứ hạng cho nó.
+- Ngoài scope: phần thưởng (F12 §5), huy hiệu referral (F16).
+
+## 2. Product rules
+
+- **Điểm xếp hạng** = `seasonEarned` của Vụ tương ứng (sổ "thu Vụ", 08 §15; quest/tặng quà không tính — F17). Tie-break `firstReachedCurrentSeasonEarnedAt` (config F12).
+- **Điều kiện lên bảng:** tài khoản đã đăng nhập (guest xem được nhưng không có hàng — F25); đã đóng ≥ `minShiftsToRank` ca trong Vụ; không bị `flagged` (F23 §6). Bị gắn cờ giữa Vụ → ẩn khỏi bảng ngay, thứ hạng người khác dồn lên; gỡ cờ → trở lại.
+- **Hiển thị:** top `topN` mỗi bậc + **hàng của tôi** luôn thấy kèm `neighborsWindow` người trên/dưới; bậc trống hiện "Chưa có ai" (F12). Mỗi hàng: hạng · tên · thu Vụ · ⭐ uy tín · mốc Đường Lên Trùm; tên hiển thị qua bộ lọc từ (tier C).
+- **Làm mới:** server tính lại tối đa mỗi `refreshMs`; client hiện mốc "cập nhật … trước"; không realtime từng serve.
+- **Kết Vụ:** tại `endsAt` bảng **đóng băng** (F12 §5) → snapshot bất biến → Bàn Thờ hiện podium + wall; huy chương top 10 ghi vào hồ sơ; giữ `historySeasonsKept` Vụ gần nhất để xem lại.
+- **Đếm ngược kết Vụ** hiện trên bảng; 24 h cuối có nhãn "sắp kết" (cách thể hiện tự quyết).
+- **Bàn Thờ** là màn prestige: không có nút mua gì; chỉ xem + react (nếu F12 Dạo Phố có react).
+- **Không pause ca** khi mở bảng (sheet/modal như mọi màn meta, 09 §2); xem quán người khác (Dạo Phố) mới pause.
+
+## 3. Data & config
+
+- Config `leaderboard` (tier A, `next_season` trừ `refreshMs`/`topN` là hiển thị → Economy Admin, `next_day`): `topN`, `neighborsWindow`, `refreshMs`, `minShiftsToRank`, `shrineTop`, `wallSize`, `historySeasonsKept`, `hideFlagged`, `displayNameFilter`.
+- Server projection `season_rank(seasonId, tier, playerId, seasonEarned, firstReachedAt, rank, updatedAt)`; snapshot `season_result(seasonId, tier, rank, playerId, medal)` khi kết Vụ (bất biến).
+- Client cache bảng gần nhất trong `localStorage` chỉ để hiện tức thì khi mở (kèm mốc thời gian) — không phải nguồn sự thật.
+
+## 4. API (gợi ý — F12 §7 đã có `GET /leaderboard`)
+
+`GET /leaderboard?seasonId&tier&page` (trả top + `me`) · `GET /leaderboard/me?seasonId` · `GET /shrine?seasonId` (podium + wall + medals của tôi) · `GET /seasons/history?limit`.
+
+## 5. Analytics (gộp vào `docs/analytics-events.md`)
+
+`leaderboard_viewed {seasonKind, tier, page, myRank}` · `leaderboard_me_viewed {rankDelta}` · `shrine_viewed {seasonId}` · `season_result_snapshotted {seasonId, tier, entries}` · `rank_hidden_flagged {playerId}`.
+
+## 6. Acceptance
+
+- Người chưa đăng nhập: xem được bảng, không có hàng của mình, có lời mời đăng nhập (F25).
+- 2 tài khoản cùng `seasonEarned` → thứ hạng theo `firstReachedCurrentSeasonEarnedAt`, ổn định qua các lần refresh.
+- Người bị `flagged` không xuất hiện ở bảng lẫn snapshot; bỏ cờ trước kết Vụ → có mặt lại.
+- Snapshot kết Vụ **không đổi** sau khi tạo, kể cả khi player đổi tên/xoá tài khoản (giữ tên tại thời điểm khắc).
+- Mở bảng giữa ca: ca vẫn chạy, không mất tick; bảng tải từ cache tức thì rồi thay bằng dữ liệu server.
+- Mọi ngưỡng ở §3 đổi được ở admin, `npm run check:config` xanh; thứ hạng/snapshot không bao giờ tính ở client.
+
+## Changelog (append-only)
+| Ver | Thay đổi |
+|---|---|
+| v1.0 | Bản đầu 2026-09-08 — tách từ F12 §6 theo yêu cầu chủ dự án; ảnh tham khảo Bàn Thờ. |

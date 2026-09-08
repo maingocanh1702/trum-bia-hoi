@@ -13,6 +13,7 @@ npm install
 npm run dev      # chơi tay — nguồn đo k chính thức
 npm run sim      # headless bot ≥500 lượt — verify pipeline đo k
 npm run build    # tsc + vite build
+npm run check:config  # economy JSON ↔ constants.ts + coverage registry (luật KHÔNG hardcode)
 ```
 
 ## Cách chơi (1 ca = 12 phút)

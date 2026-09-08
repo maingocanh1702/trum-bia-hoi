@@ -1,11 +1,15 @@
 # 🎨 SPEC — Design / UI-UX / Asset — Trùm Bia Hơi
 
-> **Khung (skeleton) — bắt đầu sản xuất ở Phase 1, KHÔNG dùng cho Phase 0** (Phase 0 placeholder, xem `04-SPEC-prototype-phase0.md`). Mục tiêu doc này: chuyển hóa phân tích game gốc (`uiux-analysis-trumviahe.md`, `design-component-catalog-trumviahe.md`) + định hướng đã chốt (`02-GDD-trum-bia-hoi.md` §17) thành **spec sản xuất**: design tokens, wireframe màn bia hơi, và **asset/icon list** đếm được. Bản production supplement để dev bắt đầu implement nằm ở `docs/features/F24-design-uiux-production.md`.
+> ⚠️ **THAM KHẢO, KHÔNG RÀNG BUỘC (chốt founder 09/09).** Dev **tự quyết layout, màn hình, điều hướng, thao tác, motion** của game. Doc này mô tả *một* phương án chạy được — dùng khi muốn tham chiếu, không phải hợp đồng. Ràng buộc thật chỉ còn: luật chơi (`02-GDD` + `03-SPEC`), số (`08-SPEC` + `economy.tbh.json`), không-hardcode (`trum-bia-hoi-brd-admin.md` §5.2), bất biến đo k (`04-SPEC` §5), server-authoritative + engine thuần (`10-SPEC` §7/§1).
+>
+> **Khung (skeleton)** (Phase 0 placeholder, xem `04-SPEC-prototype-phase0.md`). Mục tiêu doc này: chuyển hóa phân tích game gốc (`uiux-analysis-trumviahe.md`, `design-component-catalog-trumviahe.md`) + định hướng đã chốt (`02-GDD-trum-bia-hoi.md` §17) thành **spec sản xuất**: design tokens, wireframe màn bia hơi, và **asset/icon list** đếm được. Bản production supplement để dev bắt đầu implement nằm ở `docs/features/F24-design-uiux-production.md`.
 > Ngày: 2026-06-09. Nguồn sự thật vẫn là GDD. Nhãn: ✅ = đã chốt (từ GDD §17) · 🔧 = cần thiết kế/quyết khi tới Phase 1 · 📐 = cần wireframe/mockup.
 
 ---
 
 ## 0. Trạng thái doc
+
+> **2026-09-08:** screen spec rút gọn (IA, HUD, sheet, microcopy, motion, a11y) để dev code Phase 1 nằm ở **`09-SPEC-uiux-screens.md`**; pipeline asset chuyển sang **Blender MCP → pixelate** theo **`docs/asset-blender-pipeline.md`** (prompt A0–A9 ở `11-PROMPT-PACK`). Các mục 📐/🔧 dưới đây vẫn đúng làm checklist.
 
 Đây là **khung định hướng + checklist sản xuất**, chưa phải design final. Mỗi mục dưới ghi rõ phần nào đã có (từ GDD/analysis) và phần nào còn 🔧/📐. Điền dần khi vào Phase 1.
 
@@ -123,6 +127,7 @@ Từ GDD §17 + analysis: cốc bọt (đầy→xẹp→cờ vàng) · phục v�
 
 | Ver | Thay đổi |
 |---|---|
+| v0.2 | Trỏ screen spec sang `09-SPEC-uiux-screens.md`; pipeline asset Blender MCP ở `docs/asset-blender-pipeline.md`. |
 | v0.1 | Khung đầu: art direction + tokens (từ GDD §17), layout HUD + component (từ `uiux-analysis`), **asset/icon list** đếm được (từ §17 + `design-component-catalog`), phân nhãn ✅/🔧/📐. Sản xuất bắt đầu Phase 1. |
 
 *Nguồn: `02-GDD-trum-bia-hoi.md` §17, `uiux-analysis-trumviahe.md`, `design-component-catalog-trumviahe.md`.*

@@ -61,14 +61,14 @@ Guest can:
 - play local/free session;
 - see basic tutorial;
 - keep local progress on same device;
-- buy nothing with real money.
+- donate (Mời Bia Hơi) as support; cosmetic thank-you gift requires an account. Nothing in the game is sold for money.
 
 Logged-in account can:
 
 - cloud save and restore;
 - appear on Giải Nhậu/Dạo Phố;
 - send gifts/referrals;
-- buy session pass/payment items;
+- donate (Mời Bia Hơi) and claim the cosmetic thank-you gift (F20); nothing else is sold.
 - use support/appeal flows.
 
 ## 6. Localization rules
@@ -85,7 +85,7 @@ Logged-in account can:
 - Guest badge in profile/settings.
 - Sign-in prompt after closing first shift: save progress, đua top, chơi đa thiết bị.
 - Giải Nhậu lock prompt for guests.
-- Payment lock prompt for guests.
+- Donation-gift prompt for guests (support is possible without login; gift needs an account).
 
 ## 8. API
 
@@ -107,8 +107,11 @@ Logged-in account can:
 
 ## 10. Acceptance
 
+- **Sign-in mid-shift (owner 2026-09-08, F27 §1.2):** signing in with Google while a shift is running never interrupts the shift (no reload, no lost tick); the running shift and all progress before it attach to the account at once; the local `eventLog` since shift start is uploaded so no serve is counted twice (`idempotencyKey`); before the server exists the local save simply gains `accountId`.
+- Guest play is unrestricted for core gameplay; sign-in prompts state exactly three benefits (save progress · achievements · compete on the leaderboard) and respect `onboarding.loginPrompt.cooldownShifts`.
+
 - User can start first session without login.
 - User must choose or accept a locale before first gameplay screen.
 - Locale switch updates UI without corrupting save.
 - Guest progress migrates once into Google account.
-- Guest cannot enter Giải Nhậu ranking write path or payment checkout.
+- Guest cannot enter Giải Nhậu ranking write path or claim a donation gift.

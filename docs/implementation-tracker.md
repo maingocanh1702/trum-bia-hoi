@@ -1,10 +1,10 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.6.0
-> **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-08
-> **Trạng thái:** Active — **Phase 0 automated gate đã pass** (build + 5-seed sim, tái lập độc lập 2026-08-24). Đồng bộ theo `06-ROADMAP` v2.7 (~22%). 🔴 **Exit-gate còn lại — Alpha playtest feel — treo từ 2026-07-15 (~8 tuần).**
+> **Version:** v0.7.1
+> **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-08 (reset theo ROADMAP v3.0)
+> **Trạng thái:** Active — **Game mới viết từ đầu: 0 %, chưa bắt đầu M0.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.0** (1 phase, mốc M0–M9).
 > **Owner:** Team
-> **Mục đích:** Master status board cho mọi feature F01–F26 (Phase 0 → 4). Là **input cho dashboard-engine** (`tools/dashboard-engine/build_dashboard.py`). Nguồn quyết định/scope = `02-GDD-trum-bia-hoi.md` + `06-ROADMAP-trum-bia-hoi.md`; tracker chỉ theo dõi **trạng thái build**.
+> **Mục đích:** Master status board cho mọi feature F01–F28. Nhãn `Phase N` chỉ là **khoá parser** của dashboard-engine; mốc thật: P0 → M0 (nền) · P1 → M1–M2 · P2 → M3 · P3 → M4–M6 · P4 → M7–M8 · QA/release → M9. Là **input cho dashboard-engine** (`tools/dashboard-engine/build_dashboard.py`). Nguồn quyết định/scope = `02-GDD-trum-bia-hoi.md` + `06-ROADMAP-trum-bia-hoi.md`; tracker chỉ theo dõi **trạng thái build**.
 > **Cập nhật:** đổi status mỗi khi 1 feature chuyển trạng thái (bắt đầu code / review / merge).
 
 ---
@@ -33,57 +33,61 @@
 
 ---
 
-## 1. Status board — Phase 0 → 4
+## 1. Status board — thứ tự code (Phase N = khoá parser; mốc thật M0–M9 ở `06-ROADMAP` v3.0)
 
-### Phase 0: Prototype (validate feel + đo k)
+### Phase 0: Nền (M0 — config loader, engine thuần, sim k, port check:config)
+
+> Prototype (lưu trữ) từng đạt: F04/F05 ✅, F01/F02/F03/F06/F08 🟡, 5-seed k = 2.24–2.34. **Không tính vào game mới** — mọi dòng dưới đây là trạng thái của game viết lại.
 
 | PR | Wave | Feature | Status | Branch | Gates | Notes |
 |----|------|---------|:------:|--------|:-----:|-------|
-| F04 | 🎮 Code | Vòng Đời Cốc — bottleneck cốc clean→in_use→dirty→washing→clean | ✅ | `prototype/` | 🔒S | Lõi đủ (`engine/engine.ts`). Bottleneck build trước. |
-| F01 | 🎮 Code | Vòng Lặp Mở Ca — ca 12 phút, thể lực, trần ngày 500k | 🟡 | `prototype/` | 🔒S | ca 12' + trần ngày 500k xong; thể lực persist deferred → Phase 1 (`stamina-day-budget`). |
-| F02 | ⚖️ Economy | Menu & Kinh Tế Quán — 3 món P0 (bia+2 mồi), đo k | 🟡 | `prototype/` | 🔒S 🔒B | 3/6 món. **5-seed sim k=2.24–2.34** (2026-07-15, mỗi seed ≥503 lượt) — PASS dải 2.0–3.0; **tái lập độc lập 2026-08-24**, khớp từng số. Chờ hand-play xác nhận. |
-| F03 | 🎮 Code | Hệ Bàn — 3 bàn, serve theo Order | 🟡 | `prototype/` | 🔒S | 3 bàn + serve-theo-Order + queue; chưa 4 cấp/mua-nâng cấp. |
-| F05 | 🎮 Code | Độ Hơi Bia — mất hơi 12s, cờ vàng, MVP mềm | ✅ | `prototype/` | 🔒S 🔒P | Lõi đủ (tip×0 khi hết hơi, cờ vàng). Chờ playtest feel. |
-| F06 | 🎮 Code | Tip / Uy tín / Phạt — VIP ×10, grace window | 🟡 | `prototype/` | 🔒S | Có tip; chưa uy tín/phạt cụm. |
-| F08 | 🎮 Code | Giờ Vàng — 2 mức (nhẹ 90s/nặng 150s), spawn floor | 🟡 | `prototype/` | 🔒S 🔒P | P0: toggle normal/peak xong; P1/P2 (lịch/full) chưa. |
+| F04 | 🎮 Code | Vòng Đời Cốc — bottleneck cốc clean→in_use→dirty→washing→clean | ⬜ | `—` | 🔒S | Lõi đủ (`engine/engine.ts`). Bottleneck build trước. |
+| F01 | 🎮 Code | Vòng Lặp Mở Ca — ca 12 phút, thể lực, trần ngày 500k | ⬜ | `—` | 🔒S | ca 12' + trần ngày 500k xong; thể lực persist deferred → Phase 1 (`stamina-day-budget`). |
+| F02 | ⚖️ Economy | Menu & Kinh Tế Quán — 3 món P0 (bia+2 mồi), đo k | ⬜ | `—` | 🔒S 🔒B | 3/6 món. **5-seed sim k=2.24–2.34** (2026-07-15, mỗi seed ≥503 lượt) — PASS dải 2.0–3.0; **tái lập độc lập 2026-08-24**, khớp từng số. Chờ hand-play xác nhận. |
+| F03 | 🎮 Code | Hệ Bàn — 3 bàn, serve theo Order | ⬜ | `—` | 🔒S | 3 bàn + serve-theo-Order + queue; chưa 4 cấp/mua-nâng cấp. |
+| F05 | 🎮 Code | Độ Hơi Bia — mất hơi 12s, cờ vàng, MVP mềm | ⬜ | `—` | 🔒S 🔒P | Lõi đủ (tip×0 khi hết hơi, cờ vàng). Chờ playtest feel. |
+| F06 | 🎮 Code | Tip / Uy tín / Phạt — VIP ×10, grace window | ⬜ | `—` | 🔒S | Có tip; chưa uy tín/phạt cụm. |
+| F08 | 🎮 Code | Giờ Vàng — 2 mức (nhẹ 90s/nặng 150s), spawn floor | ⬜ | `—` | 🔒S 🔒P | P0: toggle normal/peak xong; P1/P2 (lịch/full) chưa. |
 
-### Phase 1: MVP + Art v1
+### Phase 1: Vòng phục vụ lõi + onboarding (M1–M2 — lưu localStorage)
 
 | PR | Wave | Feature | Status | Branch | Gates | Notes |
 |----|------|---------|:------:|--------|:-----:|-------|
 | F24 | 🎨 Design | Thiết Kế UI/UX Quán Bia — tokens, wireframe, sprite, animation | ⬜ | `—` | 🔒S | Spec `05` + `docs/features/F24-design-uiux-production.md`. Thay placeholder bằng art thật. |
-| F07 | 🎮 Code | Các Kiểu Khách — 3 loại P1 (thường/vội/VIP) | 🟡 | `prototype/` | 🔒S 🔒B | 3/6 loại (thường/vội/VIP) đã code ở mức lõi Phase 0; đủ ở P2. |
+| F07 | 🎮 Code | Các Kiểu Khách — 3 loại P1 (thường/vội/VIP) | ⬜ | `—` | 🔒S 🔒B | 3/6 loại (thường/vội/VIP) đã code ở mức lõi Phase 0; đủ ở P2. |
 | F09 | ⚖️ Economy | Thời Tiết Quán — tối giản (hệ số độ hơi/tip/spawn) | ⬜ | `—` | 🔒S | Spec `docs/features/F09-weather.md`. Đầy đủ ở P2. |
 | F10 | 🎮 Code | Nâng Cấp Quán — bom/rửa/hầm/bàn cơ bản (×k) | ⬜ | `—` | 🔒S 🔒B | Spec `docs/features/F10-upgrades.md`. Đầy đủ ở P2. |
-| F25 | 🎮 Code | Ngôn Ngữ / Tài Khoản — chọn vi/en, guest play, Google login | ⬜ | `—` | 🔒S | Spec `docs/features/F25-localization-account.md`. |
+| F25 | 🎮 Code | Ngôn Ngữ / Tài Khoản — chọn vi/en, guest play, Google login (kể cả giữa ca) | ⬜ | `—` | 🔒S | Spec `docs/features/F25-localization-account.md`. |
+| F27 | 🎮 Code | Onboarding — ca 1 = 1 khách 1 bia, thông báo mất khách, step guide (lần đầu + sau 3 lần mất khách) | ⬜ | `—` | 🔒S | Spec `docs/features/F27-onboarding.md` 🟢; config `onboarding` tier C. Mốc M2. |
 
-### Phase 2: Mở rộng core
+### Phase 2: Đủ demand-mix (M3)
 
 | PR | Wave | Feature | Status | Branch | Gates | Notes |
 |----|------|---------|:------:|--------|:-----:|-------|
-| F11 | 🎮 Code | Bếp & Mồi Nóng — bếp 2 cấp, 3 mồi nóng | ⬜ | `—` | 🔒S 🔒B | Spec `docs/features/F11-kitchen-hot-dishes.md`. Đủ 6 món. |
+| F11 | 🎮 Code | Bếp & Mồi Nóng — bếp 4 cấp, 3 mồi nóng | ⬜ | `—` | 🔒S 🔒B | Spec `docs/features/F11-kitchen-hot-dishes.md`. Đủ 6 món. |
 | F17 | 🎮 Code | Nhiệm Vụ Quán Nhậu — 7 nhánh (ngày/ca/gift/điểm danh/referral/ĐLT) | ⬜ | `—` | 🔒S | Spec `docs/features/F17-quest-system.md`. Pool lớn hơn gốc. |
 
-### Phase 3: Meta & social
+### Phase 3: Server + meta + risk (M4–M6 — server-authoritative từ M4)
 
 | PR | Wave | Feature | Status | Branch | Gates | Notes |
 |----|------|---------|:------:|--------|:-----:|-------|
-| F23 | 🎮 Code | Kiến Trúc Server Quán — server-auth, websocket, CAPTCHA | ⬜ | `—` | 🔒S | Spec `docs/features/F23-server-architecture.md`. Chuyển client-only → server. |
+| F23 | 🎮 Code | Kiến Trúc Server Quán — server-auth, websocket, CAPTCHA | ⬜ | `—` | 🔒S | Spec `docs/features/F23-server-architecture.md`. **localStorage trước (M1) → server ở M4**; §8 mất mạng/reconnect. |
 | F12 | 🎮 Code | Giải Nhậu & Vụ Bia — 8 bậc, 2 Vụ Bia song song | ⬜ | `—` | 🔒S 🔒B | Spec `docs/features/F12-league-seasons.md`. Phân Hạng 7d / Tranh Bá 14d. |
 | F13 | 🎮 Code | Đường Lên Trùm — LP0–LP7, gate tính năng & mặt bằng | ⬜ | `—` | 🔒S | Spec `docs/features/F13-life-path.md`. |
 | F14 | 🎮 Code | Mặt Bằng Quán — 9 mặt bằng, rent/cọc 7 ngày | ⬜ | `—` | 🔒S 🔒B | Spec `docs/features/F14-locations.md`. |
-| F15 | 🎮 Code | Sự Cố Quán Nhậu — bảo kê, kiểm tra ATTP, trộm offline | ⬜ | `—` | 🔒S | Spec `docs/features/F15-risk-events.md`. |
+| F15 | 🎮 Code | Sự Cố Quán Nhậu — bảo kê, trộm offline, đánh nhau (kiểm tra ATTP ⏸ pending) | ⬜ | `—` | 🔒S | Spec `docs/features/F15-risk-events.md`; §4 kiểm tra pending, `risk.inspection.enabled=false`. |
 | F16 | 🎮 Code | Rủ Bạn & Huy Hiệu — 3 mốc, huy hiệu Kết Nối | ⬜ | `—` | 🔒S | Spec `docs/features/F16-referral-badges.md`. |
+| F28 | 🎮 Code | Bảng Xếp Hạng & Bàn Thờ Ông Địa — top N, hàng của tôi, snapshot kết Vụ | ⬜ | `—` | 🔒S 🔒B | Spec `docs/features/F28-leaderboard.md`; config `leaderboard` tier A. Mốc M5. |
 | F18 | 🎮 Code | Chó Giữ Quán — combat bảo kê, bảo hiểm trộm | ⬜ | `—` | 🔒S | Spec `docs/features/F18-dog-guard.md`. |
 | F22 | 🎮 Code | Bia Đấm — LLM server-side, quota 20/ngày | ⬜ | `—` | 🔒S | Spec `docs/features/F22-ai-assistant.md`. Tùy feasibility. |
-| F26 | 🎮 Code | Vé Mở Ca & Thanh Toán — free 1 ca/ngày, paid unlock daily cap | ⬜ | `—` | 🔒S | Spec `docs/features/F26-daily-session-pass-payments.md`. Cần payment/provider review. |
+| F26 | 🎮 Code | ~~Vé Mở Ca & Thanh Toán~~ — ⛔ **bỏ 08/09: chơi free hết** | ⏸ | `—` | — | Spec `docs/features/F26-daily-session-pass-payments.md`. Cần payment/provider review. |
 
-### Phase 4: Event & sink (cần review)
+### Phase 4: Vé Mở Ca + sự kiện (M7–M8)
 
 | PR | Wave | Feature | Status | Branch | Gates | Notes |
 |----|------|---------|:------:|--------|:-----:|-------|
 | F19 | 🎮 Code | Cúp Bóng Đá — lịch + tỉ số thật, TV, Giờ Vàng xem bóng | ⬜ | `—` | 🔒S | Spec `docs/features/F19-world-cup-event.md` + `07-SPEC-shop-mua-giai-worldcup.md`. Cần nguồn API. |
-| F20 | 🎮 Code | Mời Bia Hơi — cosmetic-only, KHÔNG P2W | ⬜ | `—` | 🔒S | Spec `docs/features/F20-donation.md`. |
+| F20 | 🎮 Code | Mời Bia Hơi — **monetization duy nhất**, donate cho admin, cosmetic-only, KHÔNG P2W (mốc M7) | ⬜ | `—` | 🔒S | Spec `docs/features/F20-donation.md`. |
 | F21 | ⚖️ Economy | Vé Số Lấy Hên — xổ số/Vietlott, **cần legal review** | ⬜ | `—` | 🔒S | Spec `docs/features/F21-lottery.md`. EV target 0.6–0.8 (sink); blocked tới legal review. |
 
 ---
@@ -92,16 +96,14 @@
 
 | Phase | Total | Done (✅) | In progress (🟡) | Blocked | Deferred | % |
 |-------|:-----:|:--------:|:----------------:|:-------:|:--------:|:-:|
-| 0 — Prototype | 7 | 2 | 5 | 0 | 0 | ~30% |
-| 1 — MVP + Art v1 | 5 | 0 | 1 | 0 | 0 | ~5% |
-| 2 — Mở rộng core | 2 | 0 | 0 | 0 | 0 | 0% |
-| 3 — Meta & social | 9 | 0 | 0 | 0 | 0 | 0% |
-| 4 — Event & sink | 3 | 0 | 0 | 0 | 0 | 0% |
-| **MVP total** | **26** | **2** | **6** | **0** | **0** | **~22%** |
+| 0 — Nền (M0) | 7 | 0 | 0 | 0 | 0 | 0% |
+| 1 — Lõi + onboarding (M1–M2) | 6 | 0 | 0 | 0 | 0 | 0% |
+| 2 — Demand-mix (M3) | 2 | 0 | 0 | 0 | 0 | 0% |
+| 3 — Server + meta + risk (M4–M6) | 10 | 0 | 0 | 0 | 1 | 0% |
+| 4 — Vé Mở Ca + sự kiện (M7–M8) | 3 | 0 | 0 | 0 | 0 | 0% |
+| **MVP total** | **28** | **0** | **0** | **0** | **1** | **0%** |
 
-> Tổng ~22% khớp `06-ROADMAP` v2.7. Lõi Phase 0 đã chạy: F04+F05 ✅ đủ phạm vi phase; F01/F02/F03/F06/F08 (+F07 ở P1) 🟡 mới phần lõi Phase 0. **Automated exit gate PASS:** build xanh; 5 seed cho `k=2.24–2.34`, normal loss 0%, peak loss 26.1–40.8% — **audit 2026-08-24 chạy lại sim độc lập và tái lập đúng từng con số**, nên số liệu bảng này là đo được, không phải tự khai.
->
-> 🔴 **Không feature nào đổi status từ 2026-07-15.** Exit-gate còn lại là **Alpha playtest feel** (freshness, bàn nhóm, bottleneck cốc, nhịp 2 rush) — treo ~8 tuần; bot không thay thế hand-play. Phiếu bằng chứng: [`phase0-alpha-playtest.md`](phase0-alpha-playtest.md). Mọi ô 🟡 của Phase 0 chỉ chuyển ✅ sau khi gate này đóng.
+> **Reset 2026-09-08 theo `06-ROADMAP` v3.0:** game viết lại từ đầu, chưa mở M0 → mọi feature ⬜. Prototype (`prototype/`) là lưu trữ, không tính. Thêm F27 (onboarding, M2) và F28 (bảng xếp hạng, M5) → 28 feature. Cột "Phase" giữ tên để dashboard-engine parse; mốc thật xem ROADMAP.
 
 ---
 
@@ -115,3 +117,5 @@
 | v0.4.0 | Đồng bộ với `06-ROADMAP` v2.5: prototype Phase 0 đã code → F04/F05 ✅, F01/F02/F03/F06/F07/F08 🟡; tổng ~22%. Ghi kết quả sim đo k=1.63 (506 lượt, 2026-07-02, dưới dải 2.0–3.0). Bỏ nhãn "pre-code 0%". |
 | v0.5.0 | Đồng bộ merged cadence + sim fail-closed (2026-07-15): 5 seed k=2.24–2.34, normal loss 0%, peak loss 26.1–40.8%; automated gate pass, Phase 0 vẫn chờ Alpha playtest feel. |
 | v0.6.0 | Đồng bộ sau audit repo (2026-09-08). **Không đổi status feature nào** — đúng thực tế: không có tiến triển gameplay từ 15/07. Sửa phạm vi header F01–F24 → **F01–F26** (F25/F26 đã có từ v0.3.0); ghi nhận sim gate được **tái lập độc lập 24/08**; đánh dấu rõ Alpha playtest là gate treo ~8 tuần và là điều kiện DUY NHẤT để các ô 🟡 Phase 0 chuyển ✅; trỏ `06-ROADMAP` v2.7. |
+| v0.7.0 | **Reset theo ROADMAP v3.0 (2026-09-08):** game mới 0 %, mọi feature ⬜, branch `—`; prototype thành ghi chú lưu trữ ở Phase 0; heading Phase N ánh xạ mốc M0–M9 (giữ khoá parser); thêm F27 + F28 → 28 feature; ghi chú F11 bếp 4 cấp, F15 kiểm tra pending, F23 localStorage→server M4. |
+| v0.7.1 | Chủ dự án 08/09: chơi free hết → F26 ⏸ (bỏ, không build); F20 = monetization duy nhất (M7). |

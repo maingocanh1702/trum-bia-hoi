@@ -1,7 +1,7 @@
 # 🏟️ SPEC — Shop Vụ Bia (World Cup) — Trùm Bia Hơi
 
 > Spec triển khai cho dev. Đào sâu **§14.0 Shop Vụ Bia** của `02-GDD-trum-bia-hoi.md` (v1.6): data model item + flow mua/sở hữu/áp theme, validate server-side. Trả lời 4 câu hỏi triển khai: (1) model item & quyền sở hữu, (2) mua/validate ở đâu, (3) theme áp lên render thế nào, (4) danh sách đội động lấy từ đâu.
-> Ngày: 2026-06-11. **Phase: 🔵 4 (POST-MVP)** — không thuộc scope MVP, chỉ là spec sẵn để khi tới Phase 4 build ngay. Nguồn sự thật vẫn là GDD §14/§14.0/§14.1/§16/§18.
+> Ngày: 2026-06-11. **🔵 Làm sau cùng — vẫn trong scope 1 phase (mốc M8, 06-ROADMAP v3.0; bật bằng feature flag)** — ghi chú cũ: Phase 4 (POST-MVP), không thuộc scope MVP, chỉ là spec sẵn để khi tới Phase 4 build ngay. Nguồn sự thật vẫn là GDD §14/§14.0/§14.1/§16/§18.
 > Nhãn: 🟢 CORE = cốt lõi không đổi · 🟡 = số cần balance · 🔧 = chốt khi vào sản xuất.
 
 ---

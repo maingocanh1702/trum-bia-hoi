@@ -61,8 +61,9 @@ resume or reclassify an older READY/AWAIT/HALT lifecycle in place.
   that worktree before implementation.
 - Parallelize only file-, invariant-, dependency- and mutable-state-disjoint slices. Serialize shared
   engine/economy/schema/generated state.
-- Verify fail-closed: `cd prototype && npm run build`; also run `npm run sim` and re-measure `k` for
-  simulation/economy changes.
+- Verify fail-closed: `npm run check:config` at the repo root (JSON ↔ config registry), then the game
+  package's build + tests + headless sim (`k` must stay in 2.0–3.0) for simulation/economy changes.
+  `cd prototype && npm run build` applies only when touching the archived `prototype/`.
 - P1/P2 READY only comes from the v11 scope/readiness gate, which reruns declared verification and
   the pinned independent Codex review before writing `READY.txt`.
 

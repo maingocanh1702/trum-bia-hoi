@@ -160,16 +160,12 @@ STATUS_MAP = {
 IN_FLIGHT_STATUSES = {"in-review", "in-progress", "ready"}
 ACTIVE_STATUSES = IN_FLIGHT_STATUSES | {"blocked"}
 
-# Approx phase windows for Mermaid Gantt (mirror roadmap §3 timeline)
-# Baseline theo 06-ROADMAP v2.7 (re-baseline 2026-09-08; moc cu giu trong comment de doi chieu).
-# Neo vao gia dinh Alpha playtest chay trong T9/2026 — Alpha truot bao lau thi chuoi sau doi bay nhieu.
-PHASE_DATES = {
-    "Phase 0": ("2026-06-09", "2026-09-30"),  # cu: -> 2026-07-01
-    "Phase 1": ("2026-09-30", "2026-12-15"),  # cu: 2026-07-01 -> 2026-09-15
-    "Phase 2": ("2026-12-15", "2027-01-31"),  # cu: 2026-09-15 -> 2026-10-31
-    "Phase 3": ("2027-01-31", "2027-03-31"),  # cu: 2026-10-31 -> 2026-12-15
-    "Phase 4": ("2027-03-31", "2027-05-15"),  # cu: 2026-12-15 -> 2027-01-31
-}
+# Phase windows for the Gantt. 06-ROADMAP v3.1 (2026-09-08) is a single phase with
+# milestones M0–M9 gated by exit criteria and NO dates assigned yet, so this is empty on
+# purpose: render_gantt shows its empty placeholder and the Markdown timeline says so.
+# When the team commits to estimates, fill it back in as {"Phase N": ("YYYY-MM-DD", "YYYY-MM-DD")}
+# ("Phase N" = parser key; P0→M0 · P1→M1–M2 · P2→M3 · P3→M4–M6 · P4→M7–M8).
+PHASE_DATES: dict[str, tuple[str, str]] = {}
 
 FEATURE_ID_RE = re.compile(r"^F\d{2}$")
 
@@ -1368,7 +1364,7 @@ def render_md(prs, stats, mvp, active, in_flight, upcoming, branch, state_map=No
         lines += [
             f"- **MVP progress:** **{mvp['percent']}%** ({mvp['merged']}/{mvp['total']} PR merged)",
             f"- **In flight:** {len(in_flight)} PR · **Blocked:** {mvp['blocked']} · **Deferred:** {mvp['deferred']}",
-            "- **Target (estimate, baseline 06-ROADMAP v2.7):** Phase 0 xong ~T9/2026 (chặn bởi Alpha playtest) · Phase 1/MVP ~15/12/2026",
+            "- **Lộ trình (baseline 06-ROADMAP v3.0):** 1 phase, mốc M0–M9 theo exit criteria — chưa gán ngày; Phase N ở đây = khoá parser (P0→M0 · P1→M1–M2 · P2→M3 · P3→M4–M6 · P4→M7–M8)",
             "",
         ]
 
@@ -1430,8 +1426,16 @@ def render_md(prs, stats, mvp, active, in_flight, upcoming, branch, state_map=No
                 )
         lines.append("")
 
-    # Mermaid Gantt
-    lines += [
+    # Mermaid Gantt (skipped while PHASE_DATES is empty — ROADMAP v3.1 has no dates yet)
+    if not PHASE_DATES:
+        lines += [
+            "## Timeline",
+            "",
+            "> Chưa gán ngày — `06-ROADMAP` v3.1 chạy theo mốc M0–M9 với exit criteria, không theo lịch. "
+            "Điền `PHASE_DATES` trong `tools/dashboard-engine/build_dashboard.py` khi team chốt ước lượng.",
+            "",
+        ]
+    lines += [] if not PHASE_DATES else [
         "## Timeline",
         "",
         "```mermaid",
@@ -1455,7 +1459,8 @@ def render_md(prs, stats, mvp, active, in_flight, upcoming, branch, state_map=No
         label = phase.replace("Phase ", "P")
         lines.append(f"    section {phase}")
         lines.append(f"    {label} ({s_obj.percent}%) : {tag}{start}, {end}")
-    lines += ["```", ""]
+    if PHASE_DATES:
+        lines += ["```", ""]
 
     # Current focus
     lines += ["## Đang làm", ""]

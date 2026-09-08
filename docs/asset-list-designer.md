@@ -20,6 +20,8 @@
 
 ### 0.1 AI generation contract — dùng trực tiếp với ChatGPT
 
+> **2026-09-08 — pipeline sản xuất chuyển sang Blender MCP** (giao việc: `11-PROMPT-PACK-designer-blender-dev.md` Phần A — chỉ ràng buộc đầu vào/đầu ra/QA, cách làm do designer quyết): model 3D low-poly tô màu token → render ortho → hậu kỳ pixelate/quantize/outline bằng `scripts/asset_postprocess.py`. Contract dưới đây (kích thước, camera, outline, palette, QA) **vẫn là chuẩn output cuối**; dòng "không 3D render" hiểu là *output không được trông như 3D render* — 3D chỉ là nguồn.
+
 **Mục tiêu:** Mỗi asset phải đọc được ở size nhỏ, cùng góc nhìn, cùng viền, cùng palette. Không dùng emoji làm asset cuối; emoji trong docs chỉ là gợi ý ý nghĩa.
 
 | Hạng mục | Chốt sản xuất |
@@ -81,7 +83,7 @@ Use the global style. Asset name: {asset_name}. Subject: {subject}. Gameplay mea
 
 > **Nguyên tắc lõi:** mọi vật thể "có thật trong quán" (diegetic) phải mang **hình thái Việt Nam thập niên 2000** — đồ nhôm/inox cũ, nhựa, gỗ mộc, sơn tay, hơi sờn cũ, ấm áp hoài niệm. Mọi prompt **phải append `{era_modifier}`** ở §0.3.D. Đây là lớp dùng chung — KHÔNG cần lặp ở từng dòng asset; khi một asset có hình thái nhạy thời đại thì tra bảng §0.3.B.
 >
-> **Ngoại lệ — icon meta/hệ thống thuần (`icon-payment-*`, `icon-session-pass`, `icon-google-login`, `icon-ai-*`, `connection-status`, leaderboard…):** giữ **rõ chức năng** trước, không ép hình thái cổ; nhưng vẫn dùng palette + pixel-art của bộ này, và **nếu khoác được lớp vỏ hoài niệm thì ưu tiên** (vd trợ lý AI "Bia Đấm" tạo hình **đài/loa phường cũ**; QR thanh toán = **tờ giấy in dán trên bìa carton/tường**, không phải thẻ NFC bóng bẩy).
+> **Ngoại lệ — icon meta/hệ thống thuần (`icon-payment-*`, ~~`icon-session-pass`~~ (bỏ 08/09), `icon-google-login`, `icon-ai-*`, `connection-status`, leaderboard…):** giữ **rõ chức năng** trước, không ép hình thái cổ; nhưng vẫn dùng palette + pixel-art của bộ này, và **nếu khoác được lớp vỏ hoài niệm thì ưu tiên** (vd trợ lý AI "Bia Đấm" tạo hình **đài/loa phường cũ**; QR thanh toán = **tờ giấy in dán trên bìa carton/tường**, không phải thẻ NFC bóng bẩy).
 
 **A. Cảm giác chung:** ảnh chụp film cũ buổi trưa/chiều — màu hơi ngả nắng, vật dụng sờn, nhựa phai, inox xước, gỗ mộc. Bình dân, đông đúc, thân thuộc. KHÔNG bóng bẩy/tối giản/hi-tech.
 
@@ -308,8 +310,8 @@ Era: Vietnam early-to-mid 2000s street vibe — aged aluminum/inox, worn red pla
 | 87 | `mat-bean-raw` | Đậu sống | Cho đậu tẩm hành | P2 |
 | 88 | `mat-pork-fat` | Mỡ lợn | Cho tóp mỡ | P2 |
 | 89 | `mat-intestine-raw` | Lòng + dưa chua | Cho lòng xào dưa | P2 |
-| 90 | `mat-onion` | Hành phi | Gia vị chung | P2 |
-| 91 | `mat-ice` | Đá lạnh | Giữ bia (hầm lạnh supplement) | P1 |
+| ~~90~~ **bỏ 08/09** | `mat-onion` | Hành phi | Gia vị chung | P2 |
+| ~~91~~ **bỏ 08/09** | `mat-ice` | Đá lạnh | Giữ bia (hầm lạnh supplement) | P1 |
 
 **Subtotal: 8 icons**
 
@@ -438,8 +440,8 @@ Era: Vietnam early-to-mid 2000s street vibe — aged aluminum/inox, worn red pla
 | I24 | `icon-dlt-lp6` | Đường Lên Trùm | Mốc Đại Gia Bia | P3 |
 | I25 | `icon-dlt-lp7` | Đường Lên Trùm | Mốc Trùm Bia Hơi | P3 |
 | I26 | `badge-ket-noi` | Referral | Huy hiệu Kết Nối, gate bàn VIP | P3 |
-| I27 | `badge-prestige-1` | Referral | Huy hiệu khoe mốc 2 | P3 |
-| I28 | `badge-prestige-2` | Referral | Huy hiệu khoe mốc 3 | P3 |
+| I27 | `badge-ban-be` | Referral | Huy hiệu Bạn Bè (mốc 2, khoe) | P3 |
+| I28 | `badge-dong-hanh` | Referral | Huy hiệu Đồng Hành (mốc 3, khoe) | P3 |
 | I29 | `icon-referral-link` | Referral | Link/mã mời bạn | P3 |
 | I30 | `icon-quest-daily` | Quest | Nhiệm vụ ngày | P2 |
 | I31 | `icon-quest-shift` | Quest | Nhiệm vụ theo ca | P2 |
@@ -464,7 +466,7 @@ Era: Vietnam early-to-mid 2000s street vibe — aged aluminum/inox, worn red pla
 | I50 | `icon-google-login` | Account | Đăng nhập Google generic | P1 |
 | I51 | `icon-cloud-save` | Account | Lưu cloud | P1 |
 | I52 | `icon-device-sync` | Account | Đồng bộ nhiều thiết bị | P2 |
-| I53 | `icon-session-pass` | Payment/access | Session Pass | P3 |
+| I53 | ~~`icon-session-pass`~~ | — | **bỏ 08/09** (chơi free hết) | — |
 | I54 | `icon-payment-qr` | Payment/access | QR thanh toán pass/donation | P3 |
 | I55 | `icon-payment-pending` | Payment/access | Thanh toán chờ xác nhận | P3 |
 | I56 | `icon-payment-success` | Payment/access | Thanh toán thành công | P3 |
@@ -701,15 +703,15 @@ Era: Vietnam early-to-mid 2000s street vibe — aged aluminum/inox, worn red pla
 | U39 | `ai-quota-pill` | F22 | Pill quota/lượt hỏi còn lại | DOM pill | P3 |
 | U40 | `ai-suggestion-card` | F22 | Card gợi ý nâng cấp/ưu tiên theo state | DOM card | P3 |
 | U41 | `language-select-screen` | F25 | First-run language screen VI/EN | DOM screen | P1 |
-| U42 | `login-prompt` | F25/F26 | Prompt đăng nhập để lưu tiến trình/đua top/thanh toán | DOM modal | P1 |
+| U42 | `login-prompt` | F25 | Prompt đăng nhập để lưu tiến trình/thành tích/đua top | DOM modal | P1 |
 | U43 | `guest-progress-claim` | F25 | Màn claim/migrate guest progress | DOM screen | P2 |
 | U44 | `account-conflict-screen` | F25 | Màn xử lý Google account đã có progress | DOM screen | P2 |
 | U45 | `leaderboard-lock-prompt` | F25 | Prompt khóa leaderboard cho guest | DOM modal | P3 |
-| U46 | `payment-lock-prompt` | F25/F26 | Prompt khóa payment cho guest | DOM modal | P3 |
-| U47 | `session-gate-panel` | F26 | Gate số ca/ngày: used, free limit, paid unlock | DOM panel | P3 |
-| U48 | `session-pass-product-card` | F26 | Card day/week pass, giá, quyền mở ca | DOM card | P3 |
-| U49 | `checkout-screen` | F26/F20 | Màn checkout/payment instructions | DOM screen | P3 |
-| U50 | `payment-status-card` | F26/F20 | Pending/success/failed/refunded status | DOM card | P3 |
+| U46 | `donation-gift-prompt` | F25/F20 | Guest donate được; nhận quà cần tài khoản | DOM modal | P3 |
+| U47 | `session-gate-panel` | GDD §10 | Cổng ca: used/cap (free hết, không paid unlock) | DOM panel | P1 |
+| U48 | ~~`session-pass-product-card`~~ | — | **bỏ 08/09** | — | — |
+| U49 | `donation-screen` | F20 | Màn Mời Bia Hơi: mức, QR chuyển khoản, hướng dẫn | DOM screen | M7 |
+| U50 | `donation-status-card` | F20 | Pending (chờ admin xác nhận)/confirmed/refunded | DOM card | M7 |
 | U51 | `donation-gift-picker` | F20 | Chọn quà cosmetic-only sau donation | DOM screen | P4 |
 | U52 | `donation-thank-you` | F20 | Màn cảm ơn supporter, không P2W copy | DOM screen | P4 |
 | U53 | `lottery-result-screen` | F21 | Kết quả vé số với nguồn/ngày rõ ràng | DOM screen | P4 |

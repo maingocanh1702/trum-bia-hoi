@@ -1,0 +1,19 @@
+{
+  "_schema": {
+    "_doc": "Lời thoại/bong bóng khách — tier C. Chọn ngẫu nhiên theo (customerType | any) × situation; hiển thị ≤ 2.5 s, không chồng; không dòng nào là luật chơi. Giọng GDD §17, ≤ 8 từ, không tục, không cổ vũ uống quá mức.",
+    "id": "string",
+    "customerType": "thuong | voi | vip | chipheo | ngoily | shipper | football_fan | any",
+    "situation": "arrive | order | order_more | waiting_low | served | cheers | tip | leave_angry | leave_stale | finish | kicked",
+    "vi": "string",
+    "en": "string",
+    "weight": "int",
+    "enabled": "bool"
+  },
+  "lines": [
+    { "id": "any_arrive_01", "customerType": "any", "situation": "arrive", "vi": "Cho mâm ngoài này nhé!", "en": "A table out here, please!", "weight": 10, "enabled": true },
+    { "id": "voi_order_01", "customerType": "voi", "situation": "order", "vi": "Nhanh nhanh em ơi!", "en": "Quick, quick!", "weight": 10, "enabled": true },
+    { "id": "vip_tip_01", "customerType": "vip", "situation": "tip", "vi": "Khỏi thối, em!", "en": "Keep the change!", "weight": 10, "enabled": true },
+    { "id": "any_cheers_01", "customerType": "any", "situation": "cheers", "vi": "Một hai ba… dô!", "en": "One, two, three… cheers!", "weight": 10, "enabled": true },
+    { "id": "any_leave_stale_01", "customerType": "any", "situation": "leave_stale", "vi": "Bia nhạt thế này…", "en": "This beer went flat…", "weight": 10, "enabled": true }
+  ]
+}

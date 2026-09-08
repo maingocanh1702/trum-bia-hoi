@@ -30,7 +30,7 @@ Khi gen bằng ChatGPT, dùng rule:
 | Lv1 | **Bàn con** (khởi đầu) | 2 | có sẵn | có sẵn | — | Bàn nhựa thấp, ghế nhựa là asset riêng đặt quanh bàn | P0 |
 | Lv2 | **Bàn vuông** | 4 | ~700 | ~1,750 | — | Bàn inox vuông, 4 ghế | P1 |
 | Lv3 | **Bàn dài** | 6 | ~2,500 | ~6,250 | — | Bàn inox dài, 6 ghế | P2 |
-| Lv4 | **Bàn VIP / kê dài** | 8-10 | ~17,500 | ~43,750 | Huy hiệu Kết Nối + uy tín 3k-40k | Có khăn trải, đèn bàn, ghế tựa | P3 |
+| Lv4 | **Bàn VIP / kê dài** | 8 | ~17,500 | ~43,750 | Huy hiệu Kết Nối + uy tín 3k-40k | Có khăn trải, đèn bàn, ghế tựa | P3 |
 
 ### Ghế — theo bàn (mua thêm từng chiếc)
 
@@ -143,19 +143,18 @@ Khi gen bằng ChatGPT, dùng rule:
 
 ---
 
-## 6. 🍳 BẾP — 5 cấp (GDD §4 — MỚI, mở mồi nóng)
+## 6. 🍳 BẾP — 4 cấp (GDD §4 — MỚI, mở mồi nóng) — đồng bộ 08 §8.5 (08/09)
 
-> Bếp mở thêm 3 món nóng (đậu tẩm hành, tóp mỡ, lòng xào dưa). Giảm prep time.
+> Bếp mở 3 món nóng (đậu tẩm hành, tóp mỡ, lòng xào dưa), tăng slot nấu và giảm prep. **Số là JSON `upgrades.kitchen`** — bảng này chỉ tra cứu.
 
-| Cấp | Tên | Giá ×k (đề xuất) | Mở món | Prep time | Visual |
-|:---:|-----|:-----------------:|--------|:---------:|--------|
-| Lv1 | **Bếp than tổ ong** | 5,000 | Đậu tẩm hành | ~8s | Bếp than, chảo gang |
-| Lv2 | **Bếp gas nhỏ** | 15,000 | + Tóp mỡ Triều Khúc | ~7s | Bếp gas 1 lò |
-| Lv3 | **Bếp gas đôi** | 40,000 | + **Lòng xào dưa** | ~5s | Bếp gas 2 lò |
-| Lv4 | **Bếp công nghiệp** | 100,000 | — (giảm prep) | ~3s | Bếp inox lớn, quạt hút |
-| Lv5 | **Bếp master** | 250,000 | — (giảm prep) | ~2s | Bếp pro, nhiều nồi/chảo |
+| Cấp | Tên | priceBase | ×k | Slot | Prep× | Mở món | Visual |
+|:---:|-----|--:|--:|:--:|--:|--------|--------|
+| Lv1 | **Bếp than tổ ong** | 8.000 | 20.000 | 1 | 1.00 | `dau`, `topmo` | Bếp than, chảo gang, 1 họng |
+| Lv2 | **Bếp gas nhỏ** | 35.000 | 87.500 | 2 | 0.90 | `long` | Bếp gas 1 lò + 1 bếp phụ, 2 chảo |
+| Lv3 | **Bếp gas đôi** | 120.000 | 300.000 | 2 | 0.75 | — | Bếp gas 2 lò chắc, mép sơ chế |
+| Lv4 | **Bếp công nghiệp** | 300.000 | 750.000 | 3 | 0.60 | — | Bếp inox lớn 3 họng, quạt hút |
 
-**Subtotal: 5 sprites**
+**Subtotal: 4 sprites** (`kitchen-lv1..4`; không còn Lv5)
 
 ---
 
@@ -188,8 +187,8 @@ Khi gen bằng ChatGPT, dùng rule:
 | 2 | **Lạc (đậu phộng)** | 75 | 26 | 65% | ❌ | Tức thì | Từ đầu | `menu-peanut` | Đĩa lạc rang vàng nâu, vài hạt văng tự nhiên |
 | 3 | **Nem chua** | 150 | 60 | 60% | ❌ | Tức thì | Từ đầu | `menu-nemchua` | Nem chua cuộn lá chuối, cắt lát thấy màu hồng, có lá xanh |
 | 4 | **Đậu tẩm hành** | 100 | 45 | 55% | ❌ | ~8s | Bếp Lv1 | `menu-friedbean` | Bát/đĩa đậu chiên vàng, hành phi xanh/vàng phía trên |
-| 5 | **Tóp mỡ Triều Khúc** | 165 | 82 | 50% | ❌ | ~10s | Bếp Lv2 | `menu-crackle` | Đĩa tóp mỡ vàng giòn, miếng vuông nhỏ, bóng nhẹ |
-| 6 | **Lòng xào dưa** | 280 | 155 | 45% | ❌ | ~15s | Bếp Lv3 | `menu-intestine` | Đĩa lòng xào dưa chua, miếng lòng sáng, dưa vàng xanh, hơi nóng |
+| 5 | **Tóp mỡ Triều Khúc** | 165 | 82 | 50% | ❌ | ~10s | Bếp Lv1 | `menu-crackle` | Đĩa tóp mỡ vàng giòn, miếng vuông nhỏ, bóng nhẹ |
+| 6 | **Lòng xào dưa** | 280 | 155 | 45% | ❌ | ~15s | Bếp Lv2 | `menu-intestine` | Đĩa lòng xào dưa chua, miếng lòng sáng, dưa vàng xanh, hơi nóng |
 
 ### Nguyên liệu (kho)
 
@@ -201,8 +200,8 @@ Khi gen bằng ChatGPT, dùng rule:
 | 4 | Đậu sống | 45 | 360 | -20% | `mat-bean-raw` | Bao đậu sống/khối đậu trắng chưa chiên |
 | 5 | Mỡ lợn | 82 | 660 | -20% | `mat-pork-fat` | Khối mỡ lợn trắng hồng trong khay nhỏ, chưa chế biến |
 | 6 | Lòng + dưa chua | 155 | 1,240 | -20% | `mat-intestine-raw` | Xô/hũ nguyên liệu có lòng sống và dưa chua, phân biệt với món đã xào |
-| 7 | Hành phi | ~20 | ~160 | -20% | `mat-onion` | Lọ hành phi/bao hành khô vàng, dùng như gia vị |
-| 8 | Đá lạnh | ~5 | ~40 | -20% | `mat-ice` | Bịch đá viên trong suốt xanh nhạt, dùng giữ lạnh |
+| 7 | ~~Hành phi~~ — **bỏ 08/09**: chỉ là chi tiết hình của món đậu, không phải nguyên liệu tiêu hao (6 món ↔ 6 nguyên liệu 1:1 theo JSON `menu`) | — | — | — | ~~`mat-onion`~~ | không vẽ |
+| 8 | ~~Đá lạnh~~ — **bỏ 08/09**: `inventory.iceIsConsumable=false`; làm lạnh đã mô hình bằng `cooler` + freshness, không có nguyên liệu đá | — | — | — | ~~`mat-ice`~~ | không vẽ |
 
 **Subtotal: 6 icons món + 8 icons NL = 14 icons**
 
@@ -210,13 +209,13 @@ Khi gen bằng ChatGPT, dùng rule:
 
 ## 9. 🐕 CHÓ — 3 cấp (GDD §13)
 
-> Mua chó → bảo hiểm gangster + trộm offline. Cho ăn để nâng cấp.
+> Mua chó → bảo hiểm gangster + trộm offline. Cho ăn để nâng cấp. Vật liệu ánh xạ `lac`/`nem` theo 08 §12 (08/09); số ở JSON `dog`.
 
 | Cấp | Tên | Chi phí mua/nâng | HP | ATK | Khả năng | Visual |
 |:---:|-----|:----------------:|:--:|:---:|---------|--------|
-| Lv1 | **Chó con** | 2,000 xu + 20 đá lạnh | 1 | 1 | Chặn trộm nhỏ | Chó nhỏ, idle |
-| Lv2 | **Chó trưởng thành** | 8,000 xu + 20 kẹo | 2 | 2 | Đánh gangster thường | Chó to hơn, cơ bắp |
-| Lv3 | **Chó chiến** | 25,000 xu + 40 kẹo | 3 | 3 | One-shot côn đồ, thắng sạch | Chó to, dữ, cổ đeo |
+| Lv1 | **Chó con** | 2,000 base (5,000 ×k) + 20 `lac` | 1 | 1 | Chặn trộm nhỏ | Chó nhỏ, idle |
+| Lv2 | **Chó trưởng thành** | 8,000 base (20,000 ×k) + 20 `nem` | 2 | 2 | Đánh gangster thường | Chó to hơn, cơ bắp |
+| Lv3 | **Chó chiến** | 25,000 base (62,500 ×k) + 40 `nem` | 3 | 3 | One-shot côn đồ, thắng sạch | Chó to, dữ, cổ đeo |
 
 > **Thua gangster → chó bị bắt** (`dogCaptured`, mất 1 thời gian).
 
@@ -240,7 +239,7 @@ Khi gen bằng ChatGPT, dùng rule:
 |:---:|-------|:-------:|:------:|---------|--------|
 | 1 | **Gỗ** (mặc định) | 0 | 0 | VIP spawn ×2 | Biển gỗ mộc, chữ viết tay |
 | 2 | **Neon** | 15,000 | 37,500 | VIP ×2, shipper ×1.2 | Biển neon ống thủy tinh kiểu cũ, hơi chập chờn |
-| 3 | **Vintage** | 20,000 | 50,000 | VIP ×2, Giờ Vàng ×0.5 | Biển vintage retro |
+| 3 | **Vintage** | 20,000 | 50,000 | VIP ×2, **khách vội** ×0.5 (`voiWeightMult`) | Biển vintage retro |
 | 4 | **Thư pháp** | 25,000 | 62,500 | VIP ×2, stubborn ×0.8 | Biển thư pháp Hán Nôm |
 | 5 | **Hoàng kim** 🌟 | 30,000 + **5,000⭐** | 75,000 + **12,500⭐** | **VIP ×3** | Biển vàng sang trọng |
 
@@ -255,7 +254,7 @@ Khi gen bằng ChatGPT, dùng rule:
 
 ### Lồng đèn — 4 style
 
-| # | Style | Giá ×k (đề xuất) | Visual |
+| # | Style | Giá cuối (JSON `cosmetics.lantern`, **không ×k** — chốt 08/09) | Visual |
 |:---:|-------|:-----------------:|--------|
 | 1 | Đèn Nhật (izakaya) | 5,000 | Đèn giấy Nhật đỏ |
 | 2 | Đèn hoa sen | 8,000 | Đèn hình hoa sen |
@@ -264,7 +263,7 @@ Khi gen bằng ChatGPT, dùng rule:
 
 ### Cây cảnh — 4 style
 
-| # | Style | Giá ×k | Visual |
+| # | Style | Giá cuối (JSON `cosmetics.plant`, **không ×k** — chốt 08/09) | Visual |
 |:---:|-------|:------:|--------|
 | 1 | Trúc | 4,000 | Bụi trúc xanh |
 | 2 | Bonsai | 12,000 | Cây bonsai nhỏ |
@@ -337,26 +336,25 @@ Khi gen bằng ChatGPT, dùng rule:
 
 ---
 
-## 14. 🗺️ MẶT BẰNG — 10 vị trí (GDD §12)
+## 14. 🗺️ MẶT BẰNG — 9 vị trí (GDD §12) — đồng bộ F14 / 08 §16 / JSON (08/09)
 
-> Multiplier áp lên payment. Rent trả trước 7 ngày + cọc 25%.
+> Multiplier áp lên payment. Rent trả trước 7 ngày + cọc 25%. Rent/ngày base = `round(700 × (e/5) × (1 + e/50))`; **số là JSON `locations.list`** — bảng này chỉ tra cứu. Background: `bg-location-<id>` (checklist §A13).
 
-| # | Vị trí | Rent/ngày gốc | Rent/ngày ×k | Tiền kỳ (7d) ×k | Cọc 25% ×k | Multiplier | Gate LP |
-|:---:|--------|:----------:|:----------:|:-----------:|:-------:|:----------:|:-------:|
-| 1 | **Hẻm Nhỏ** | 0 | 0 | 0 | 0 | ×1.00 | — |
-| 2 | Công Trường | 770 | 1,925 | 13,475 | 3,369 | ×1.05 | LP1 |
-| 3 | Chung Cư Cũ | 1,680 | 4,200 | 29,400 | 7,350 | ×1.10 | LP1 |
-| 4 | Cổng Trường | 2,730 | 6,825 | 47,775 | 11,944 | ×1.15 | LP2 |
-| 5 | Chợ Đêm | 3,920 | 9,800 | 68,600 | 17,150 | ×1.20 | LP2 |
-| 6 | Khu Văn Phòng | 6,720 | 16,800 | 117,600 | 29,400 | ×1.30 | LP3 |
-| 7 | Gần Sân Vận Động | — | ~20,000 | ~140,000 | ~35,000 | ×1.40 | LP3+ |
-| 8 | Phố Cổ | 11,970 | 29,925 | 209,475 | 52,369 | ×1.45 | LP4 |
-| 9 | Ga Metro | 18,480 | 46,200 | 323,400 | 80,850 | ×1.60 | LP5 |
-| 10 | Khu Phố Tây | 29,120 | 72,800 | 509,600 | 127,400 | ×1.80 | LP6 |
+| # | Vị trí | id | Rent/ngày base | Rent/ngày ×k | Tiền kỳ (7d) ×k | Cọc 25% ×k | Multiplier | Gate LP |
+|:---:|--------|----|:----------:|:----------:|:-----------:|:-------:|:----------:|:-------:|
+| 1 | **Hẻm Nhỏ** | `hem_nho` | 0 | 0 | 0 | 0 | ×1.00 | — |
+| 2 | Ngõ Chợ | `ngo_cho` | 1,680 | 4,200 | 29,400 | 7,350 | ×1.10 | LP1 |
+| 3 | Bến Xe | `ben_xe` | 2,730 | 6,825 | 47,775 | 11,944 | ×1.20 | LP1 |
+| 4 | Gần Công Sở | `gan_cong_so` | 3,920 | 9,800 | 68,600 | 17,150 | ×1.30 | LP2 |
+| 5 | Gần Sân Vận Động | `gan_svd` | 5,250 | 13,125 | 91,875 | 22,969 | ×1.40 | LP3 |
+| 6 | Hồ Bia Đêm | `ho_bia_dem` | 6,720 | 16,800 | 117,600 | 29,400 | ×1.50 | LP3 |
+| 7 | Phố Cổ | `pho_co` | 8,330 | 20,825 | 145,775 | 36,444 | ×1.60 | LP4 |
+| 8 | Ga Metro | `ga_metro` | 10,080 | 25,200 | 176,400 | 44,100 | ×1.70 | LP5 |
+| 9 | Khu Phố Tây | `pho_tay` | 11,970 | 29,925 | 209,475 | 52,369 | ×1.80 | LP6 |
 
 > **Mỗi mặt bằng = 1 background illustration riêng** (full screen canvas).
 
-**Subtotal: 10 backgrounds**
+**Subtotal: 9 backgrounds** (+ `bg-quanbia-upgrade` biến thể)
 
 ---
 
@@ -427,14 +425,14 @@ Khi gen bằng ChatGPT, dùng rule:
 | Bồn rửa | 5 cấp | ✅ | ~10 |
 | Hầm lạnh | 5 cấp | ✅ | ~10 |
 | Quầy/kho | 5 cấp | ✅ | ~10 |
-| Bếp | 5 cấp | ✅ | ~10 |
+| Bếp | 4 cấp | ✅ | ~8 |
 | Cốc bia | 7 states | — | ~7 |
-| Chó | 3 cấp × 3 states | ✅ | ~9 |
+| Chó | 3 cấp × 2 states + captured | ✅ | 7 |
 | Biển hiệu | 5 styles | — | ~5 |
 | Cosmetic | 8 + masks | — | ~11 |
 | Mở khoá | 6 items | — | ~6 |
 | Nhân vật | 7 loại khách × 3 + NPCs | — | ~30+ |
-| Mặt bằng | 10 locations | — | ~10 |
+| Mặt bằng | 9 locations (+1 biến thể) | — | 10 |
 | **TỔNG** | | | **~152+ sprites** |
 
 ### Đường cong giá nâng cấp (tóm tắt — giá ×k)
@@ -488,5 +486,8 @@ Khi gen bằng ChatGPT, dùng rule:
 | v1.2 | Đồng bộ customer visual archetypes với `asset-list-designer.md` v0.4: 7 gameplay type giữ nguyên logic, skin chỉ tăng visual variety. |
 | v1.1 | Thêm quy ước asset generation tham chiếu asset-list v0.2; bổ sung asset name + visual prompt focus cho menu/nguyên liệu; sửa heading mặt bằng từ 9 thành 10 vị trí. |
 | v1.0 | Danh sách đầu: 16 categories, ~152+ sprites, pricing ×k=2.5. Nguồn: GDD v1.5 + `economy-spec-from-bundle.md` §9. Bao gồm: bàn 4 cấp, ghế nhựa/tựa, bom bia 5 cấp, bồn rửa 5 cấp, hầm lạnh 5 cấp, quầy 5 cấp, bếp 5 cấp, cốc 7 states, chó 3 cấp, biển hiệu 5 styles, cosmetic 8+masks, mở khoá 6 items, 7 loại khách, 10 mặt bằng, Giải Nhậu 8 bậc, Đường Lên Trùm 8 mốc. |
+| v1.5 | Đồng bộ theo 08 §21 (08/09): §6 bếp 4 cấp (8k/35k/120k/300k base, Lòng Lv2); §9 chó vật liệu `lac`/`nem`; §14 mặt bằng 9 theo JSON/F14 (tên, id, rent, gate). Số chính thức luôn ở JSON. |
+| v1.6 | Soát theo JSON 08/09: §8 mở khoá món về Bếp Lv1/Lv1/Lv2; §10 vintage = khách vội ×0.5 (không phải Giờ Vàng); §1 bàn Lv4 sức chứa 8; §16 bếp 4 cấp + chó 7 sprite; đánh dấu ⚠️ 3 mục chưa chốt (hành phi, đá lạnh, giá cosmetic base-hay-×k). |
+| v1.7 | Chốt 3 mục theo đề xuất (08/09): bỏ hành phi + đá lạnh khỏi nguyên liệu (6 món ↔ 6 NL, `mat-onion`/`mat-ice` không vẽ); giá cosmetic = giá cuối không ×k (nhãn cột). |
 
 *Nguồn: `02-GDD-trum-bia-hoi.md` v1.5, `economy-spec-from-bundle.md`, `00-TONG-HOP-trumviahe.md`.*

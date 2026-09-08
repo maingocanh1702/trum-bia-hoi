@@ -1,0 +1,10 @@
+{
+  "name": "trum-bia-hoi-docs",
+  "private": true,
+  "description": "Root scripts: gate 'không hardcode' (JSON ↔ registry) chạy từ gốc repo. Game code sống ở package riêng; prototype/ là lưu trữ.",
+  "scripts": {
+    "check:economy": "python3 scripts/check_economy_config.py",
+    "check:config-coverage": "python3 scripts/check_config_coverage.py",
+    "check:config": "npm run check:economy && npm run check:config-coverage"
+  }
+}

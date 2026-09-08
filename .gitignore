@@ -35,3 +35,9 @@ venv/
 
 # Stale pre-v11 skill mirror (missing HALT LEGACY_LAUNCHER guard; superseded by .claude/commands + .claude/skills)
 .agents/
+
+# Local Netlify folder
+.netlify
+
+# Thùng rác tạm (Claude không có quyền xoá file) — xoá cả thư mục này
+_to_delete/

@@ -1,29 +1,34 @@
-# 🗺️ ROADMAP — Trùm Bia Hơi v2.7
+# 🗺️ ROADMAP — Trùm Bia Hơi v3.0
 
 > **Roadmap sản phẩm.** Đây là **công cụ truyền đạt định hướng**, không phải project plan chi tiết — tasks cụ thể nằm ở các SPEC.
 > **Nguồn sự thật về quyết định/số = GDD** (`02-GDD-trum-bia-hoi.md`); roadmap mâu thuẫn GDD thì GDD thắng.
-> **Ngày:** 2026-09-08. **Nhãn:** 🟢 CORE · 🟡 PROTOTYPE · 🔵 POST-MVP.
+> **v3.0 (2026-09-08, theo chốt chủ dự án):** giao **1 phase — game đủ 5 lớp economy**; lộ trình dưới đây là **mốc M0–M9 theo thứ tự code** (`00-HANDOFF` §4.3), **lưu localStorage trước, server sau** (10-SPEC §9). Không có "phase sau" về scope. Phần "Timeline theo phase" cũ giữ ở **Phụ lục lịch sử** cuối doc để truy vết.
+> **Ngày:** 2026-09-08. **Nhãn:** 🟢 CORE · 🟡 TUNE · 🔵 LÀM SAU CÙNG (vẫn trong scope) · ⚪ chưa bắt đầu.
 
 ---
 
-## 📊 Overall Progress
+## 📊 Lộ trình 1 phase — mốc M0–M9 (v3.0)
 
-> 🚀 **Tổng tiến độ: ~22%** — ████░░░░░░░░░░░░░░░░ (Spec + prototype code xong · automated k/loss gate pass · **chờ Alpha feel từ 2026-07-15**)
->
-> ⏳ **Cảnh báo nhịp độ (2026-09-08):** Phase 0 chỉ còn thiếu **Alpha playtest feel** — hạng mục này đã treo **~8 tuần** kể từ khi automated gate pass (15/07). Commit gameplay cuối cùng cũng là 15/07; từ đó tới nay repo chỉ có commit tooling. Timeline §dưới đã **re-baseline theo thực tế**. Blocker không phải kỹ thuật — build chạy được, gate tự động PASS và tái lập được — mà là **tổ chức buổi playtest 3–5 người**.
->
-> ℹ️ **Lưu ý KPI:** mọi target KPI dưới đây (retention, conversion, EV…) là **benchmark provisional theo chuẩn ngành**, KHÔNG rút từ GDD — chốt lại khi có data playtest thật.
+> Tiến độ game mới: **0 %** (bộ docs xong 08/09; `prototype/` là lưu trữ, không tính). Không gán ngày — team chốt ước lượng khi có capacity; mỗi mốc có **exit criteria** đo được, không có mốc nào là cổng scope. Ba track chạy song song: **Game** (dev), **Art** (Blender MCP, checklist A/B), **Audio** (checklist B7), **Admin** (BRD §11).
 
-| | Phase | Trạng thái | Outcome cần đạt |
+| Mốc | Nội dung | Exit criteria (đo được) | Trạng thái |
 |---|---|---|---|
-| **NOW** | Phase 0 — Prototype | 🔴 **Blocked ~8 tuần — chỉ còn Alpha playtest feel** | Biết core có *feel* đúng + `k_value` thật |
-| **NOW** | Design Track (song song P0) | 🟡 **Khung spec xong** | Tokens + wireframe + quyết định art pipeline |
-| **NEXT** | Phase 1 — MVP + Art v1 | ⚪ Not started | Vòng lặp ca vui & economy cân, có art thật |
-| **LATER** | Phase 2 — Mở rộng core | ⚪ Not started | Đủ chiều sâu gameplay (6 món, khách đặc biệt) |
-| **LATER** | Phase 3 — Meta & social | 🔵 Not started | Giữ chân + đua hạng (league, Life Path, cosmetic) |
-| **LATER** | Phase 4 — Event & sink | 🔵 Cần review | World Cup / donation / xổ số (legal) |
+| **M0 · Nền** | Repo game mới; config loader từ `economy.tbh.json` + schema; engine thuần + shift loop; sim headless đo k; port `check:config`; skeleton `analytics-events.md`, `vi.json/en.json`, `assets/manifest.json`; placeholder convention | `npm run check:config` xanh trên repo mới; sim 5 seed k ∈ 2.0–3.0; build + test xanh | ⚪ |
+| **M1 · Vòng phục vụ lõi** | Bàn/Order/serve 1 chạm + 4 kết cục + grace; cốc/freshness; rót & rửa tự động; kho + nâng cấp thiết bị; **UI do dev thiết kế** theo `docs/reference/`; **lưu localStorage** versioned + `eventLog`; audio nhóm ui/shift/serve/beer | Chơi trọn ca 12 phút trên 3 viewport; 09 §11 mục P1; k giữ band; reload không mất tiến độ | ⚪ |
+| **M2 · Onboarding + guest** | F27 (1 khách 1 bia, thông báo mất khách, step guide lần đầu + sau 3 lần mất khách); F25 ngôn ngữ + guest local; nút khuyến khích đăng nhập (chưa cần server) | 5 người mới: ≥ 4/5 phục vụ khách đầu ≤ 30 s, ≥ 4/5 đóng ca 1; F27 §6 | ⚪ |
+| **M3 · Đủ demand-mix** | 6 món + bếp; 7 loại khách; 5 thời tiết; Giờ Vàng đủ mức + lịch; đợt gọi 2+; tip/uy tín/phạt đầy đủ; biển hiệu, mở khoá một lần | Sim: k band + loss theo 04 §5/§6; 09 §11 mục P2; asset batch thiết bị/khách/món đã thay placeholder | ⚪ |
+| **M4 · Server + tài khoản + admin** | Server event store (đổi adapter `SaveStore`), Google login + guest claim (kể cả giữa ca), config service + pin `configVersion`, admin B1–B3, reconnect/resync, anti-cheat, rollover ngày VN | F23 §8 + F25 §10 acceptance; đổi 1 key ở admin → hiệu lực đúng `effectiveAt`; replay event log = state | ⚪ |
+| **M5 · Meta** | Giải Nhậu/Vụ Bia, **F28 bảng xếp hạng + Bàn Thờ**, Đường Lên Trùm, 9 mặt bằng, nhiệm vụ/điểm danh, referral + huy hiệu, Két Bia Bí Ẩn, cosmetic | Kết Vụ tự động + snapshot bất biến; F12/F13/F14/F16/F17/F28 acceptance | ⚪ |
+| **M6 · Risk** | Côn đồ/bảo kê, kiểm tra (câu hỏi từ `docs/content/`), trật tự đô thị, đánh nhau, trộm offline, chó, Thùng Cấp Cứu | F15/F18 acceptance; dialog no-pause; sim k không lệch band khi bật risk | ⚪ |
+| **M7 · Donate + pháp lý** | **Mời Bia Hơi (F20) = monetization duy nhất**: cổng nhận donate adapter (mặc định QR chuyển khoản + admin xác nhận), quà cosmetic, refund policy; age gate + disclaimer (config); en đầy đủ. **Không có Vé Mở Ca** (F26 bỏ) | F20 acceptance với luồng xác nhận tay; không dark pattern, không paywall (09 §11 P3); admin BRD §7 thấy donate | ⚪ |
+| **M8 · Sự kiện** | Cúp Bóng Đá (admin nhập tay, API là adapter + flag), shop Vụ Bia (xu); vé số **off** (`lottery.legalGate`) | F19/F20/07-SPEC acceptance; flag tắt = không dấu vết trong UI | ⚪ |
+| **M9 · QA · perf · release** | Playtest rộng, perf budget (workflow §11), replay test, canvas QA, asset manifest đủ, release checklist, PWA install | First playable < 5 s mobile, ≥ 30 fps; 0 console error; 0 missing asset; k band trên bản release | ⚪ |
 
-Thiết kế & nghiên cứu (GDD v1.6, MAP v0.9, 3 SPEC triển khai/khung: `03`/`04`/`05`) **đã xong**. Ranh giới NOW = chuyển từ thiết kế sang code + design khung; art thật bắt đầu Phase 1.
+**Art track (song song, theo critical path brief A):** ghế + bàn Lv1 → HUD icon lõi → chủ quán + 7 khách → thiết bị Lv1–3 → `bg-quanbia-default` → phần còn lại. M1 chạy bằng placeholder; M3 là mốc phải có sprite thật cho thiết bị/khách/món; M5 cần background 9 mặt bằng + cosmetic; M9 cần đủ ~530.
+**Audio track:** B7.2/B7.5/B7.6/B7.3 (ui, serve, beer, shift) cho M1; B7.4/B7.7 (khách, bếp) M3; B7.8/B7.9 M5–M8; ambient theme `default` từ M1.
+**Admin track (BRD §11):** B1 registry + audit song song M0–M1 (đọc từ JSON), B2 RBAC/override M4, B3 dashboard/CRM M4–M5, B4 phần còn lại M7+.
+
+**Thứ tự phụ thuộc cứng:** M0 → M1 → M2 → M3 → M4 → (M5 ‖ M6) → M7 → M8 → M9. M2 có thể bắt đầu khi M1 chơi được 1 ca. M4 là mốc **duy nhất** đổi nơi lưu (local → server); trước M4 mọi thứ chạy local nhưng đã ghi `eventLog`.
 
 ---
 
@@ -86,7 +91,7 @@ Phase 2+: Tất cả tracks song song, cadence 2 tuần review.
 | F23 | **Server Architecture** | Server tối thiểu nếu cần → server-authoritative đầy đủ, websocket, CAPTCHA, anti-cheat | 1–3 | ✅ | ⬜ | — | — |
 | F24 | **Design / UI / UX** | Tokens, wireframes, sprites, animation, art direction | 1+ | ✅ | — | ⬜ | — |
 | F25 | **Localization / Account Login** | Chọn ngôn ngữ vi/en, guest play, Google login, cloud save, leaderboard prompt | 1+ | ✅ | ⬜ | ⬜ | — |
-| F26 | **Daily Session Pass / Payments** | Free 1 session/ngày; paid unlock toàn bộ daily sessions theo cap | 3+ | ✅ | ⬜ | ⬜ | 🟡 |
+| F26 | ~~**Daily Session Pass / Payments**~~ | ⛔ **Bỏ 08/09 — chơi free hết**; monetization = F20 donate | — | — | — | — | ⏸ |
 
 > **Đọc cột "Spec":** ✅ = **đã thiết kế trong GDD** (đủ để hiểu/ưu tiên), KHÔNG có nghĩa "đã code". Spec triển khai hiện có: F03 (`03-SPEC-he-ban.md`); F01/F02/F04/F05/F06/F08 P0 (`04-SPEC-prototype-phase0.md`); F07-F26 (`docs/features/Fxx-*.md`, riêng F19 có thêm `07-SPEC-shop-mua-giai-worldcup.md`). Các feature sau Phase 0 vẫn phải chờ đúng phase/playtest gate trước khi code. F21 vẫn cần legal review; F26 cần payment/provider review.
 
@@ -94,7 +99,11 @@ Phase 2+: Tất cả tracks song song, cadence 2 tuần review.
 
 ---
 
-## 📅 Timeline
+## 🗄️ PHỤ LỤC — Kế hoạch theo phase cũ (v2.7, lịch sử — không dùng làm cổng scope)
+
+> Giữ nguyên để truy vết quyết định và KPI benchmark. "Phase N" ở đây ánh xạ sang mốc: P0 → (lưu trữ) · P1 → M1–M2 · P2 → M3 · P3 → M4–M6 · P4 → M7–M8. Các mục Playtest, Rủi ro, Monetization, Nguyên tắc cập nhật phía sau **vẫn hiệu lực**.
+
+## 📅 Timeline (v2.7)
 
 **Baseline hiện hành (re-baseline 2026-09-08).** Baseline cũ (v2.0–v2.6) ước Phase 1 chạy T7–T9/2026; thực tế Phase 0 chưa đóng gate nên mọi mốc dời **~2,5 tháng**.
 
@@ -459,12 +468,12 @@ League/Life Path tạo mục tiêu dài hạn rõ; server-auth chặn gian lận
 | Nguyên tắc | Chi tiết |
 |---|---|
 | **Cosmetic-only** | Quà donation = đèn lồng / cây cảnh / biển hiệu. KHÔNG tặng gameplay advantage. |
-| **Session Pass** | Free user 1 session/ngày; paid user unlock normal daily cap. Đây là pay-for-access, không grant tài nguyên trực tiếp. |
+| ~~**Session Pass**~~ | ⛔ **Bỏ 08/09 — chơi free hết.** *(cũ)* Free user 1 session/ngày; paid user unlock normal daily cap. Đây là pay-for-access, không grant tài nguyên trực tiếp. |
 | **KHÔNG bán xu/power/hạng** | Không bán coins/materials/league points/Life Path. |
 | **Gate gameplay free** | Gate gameplay (bàn VIP) CHỈ unlock bằng free progression / referral / uy tín. |
 | **Cosmetic mua bằng xu = currency-sink** | Trang trí mua bằng xu in-game (vd **theme đội World Cup** §14.0, đèn/cây/biển) là **sink chống lạm phát**, cosmetic-only, không P2W — tách bạch hẳn với donation tiền thật. |
 
-**Revenue streams tiềm năng:** Session Pass / Donation / In-game ads (cân nhắc) / Cosmetic shop mở rộng. **Xu-sink (theme đội, decor) không tạo doanh thu** — vai trò là chống lạm phát + bản sắc mùa giải.
+**Revenue stream (chốt 08/09): chỉ Donation** — Mời Bia Hơi, tự nguyện, cosmetic thank-you. ~~Session Pass / In-game ads / Cosmetic shop tiền thật~~ không làm. **Xu-sink (theme đội, decor) không tạo doanh thu** — vai trò là chống lạm phát + bản sắc mùa giải.
 
 ---
 
@@ -492,5 +501,7 @@ League/Life Path tạo mục tiêu dài hạn rõ; server-auth chặn gian lận
 | v2.5 | **Đồng bộ với code thực tế (2026-06-23).** Prototype Phase 0 đã được code (`prototype/src/{engine,sim,ui}`, ~2.100 dòng TS, `tsc` pass): F04/F05 ✅ đủ, F08 toggle normal/peak, F01/F02(3 món)/F03/F06(tip)/F07(3 loại) ở mức lõi Phase 0. Tổng tiến độ 15%→**22%**; cột Code F01–F08 ⬜→✅/🟡; bảng NOW + Phase 0 Summary chuyển sang Done/In-progress; thêm chú thích cột "Code"; còn thiếu **đo k_value** trước exit-gate. |
 | v2.6 | **Đồng bộ Phase 0 automated gate (2026-07-15).** Cadence spawn sửa về nhịp mỗi khách; sim aggregate loss fail-closed; 5 seed k=2.24–2.34, normal loss 0%, peak loss 26.1–40.8%. Automated gate pass; không mở Phase 1 trước Alpha playtest feel. |
 | v2.7 | **Re-baseline timeline + đồng bộ trạng thái thật (2026-09-08, sau audit repo).** Không có feature nào đổi status — tiến độ vẫn ~22%; thay đổi là **thừa nhận trượt lịch**: Phase 0 treo ~8 tuần ở Alpha playtest, baseline cũ (P1 chạy T7–T9) đã vô hiệu. Timeline dời ~2,5 tháng (P0→30/09/2026, P1→15/12/2026, P2→31/01/2027, P3→31/03/2027, P4→15/05/2027) + bảng đối chiếu baseline cũ/mới; thêm cảnh báo nhịp độ ở Overall Progress; NOW đổi 🟡→🔴 và thêm dòng Alpha playtest như hạng mục chặn duy nhất; KPI Phase 0 ghi rõ chỉ hand-play mới đo được stale-rate; ghi nhận automated gate đã **tái lập độc lập 24/08**. |
+| v3.0 | **Viết lại theo 1 phase** (chủ dự án 08/09 "follow recommend"): mốc M0–M9 theo thứ tự code + exit criteria, 3 track song song, localStorage trước → server ở M4, onboarding M2, F28 ở M5; kế hoạch phase cũ chuyển thành Phụ lục lịch sử với bảng ánh xạ. Tiến độ game mới đặt về 0 %. |
+| v3.1 | Chủ dự án 08/09: chơi free hết — M7 đổi thành "Donate + pháp lý", Mời Bia Hơi (F20) là monetization duy nhất, F26 bỏ; §Monetization Reference sửa. |
 
 *Nguồn: `02-GDD-trum-bia-hoi.md` §19, `03-SPEC-he-ban.md`, `04-SPEC-prototype-phase0.md`, `05-SPEC-design-uiux.md`.*

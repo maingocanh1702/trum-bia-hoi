@@ -32,14 +32,15 @@ class ParsePrsTests(unittest.TestCase):
 
         self.assertEqual([pr.pr_id for pr in prs], ["F19"])
 
-    def test_live_tracker_has_only_26_unique_feature_ids(self) -> None:
+    def test_live_tracker_has_only_28_unique_feature_ids(self) -> None:
+        # 28 = F01–F26 + F27 (onboarding) + F28 (leaderboard), tracker v0.7.0 (2026-09-08)
         tracker_path = MODULE_PATH.parents[2] / "docs" / "implementation-tracker.md"
 
         prs = dashboard_build.parse_prs(tracker_path.read_text(encoding="utf-8"))
         pr_ids = [pr.pr_id for pr in prs]
 
-        self.assertEqual(len(pr_ids), 26)
-        self.assertEqual(len(set(pr_ids)), 26)
+        self.assertEqual(len(pr_ids), 28)
+        self.assertEqual(len(set(pr_ids)), 28)
         self.assertTrue(all(dashboard_build.FEATURE_ID_RE.fullmatch(pr_id) for pr_id in pr_ids))
 
 

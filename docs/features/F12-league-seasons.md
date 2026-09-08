@@ -64,6 +64,8 @@ Base thresholds are multiplied by `k`.
 
 ## 6. Views
 
+> Bảng xếp hạng & Bàn Thờ Ông Địa tách thành **F28-leaderboard.md** (08/09): ai lên bảng, tie-break, refresh, đóng băng, snapshot, huy chương. Mục này chỉ giữ tên view.
+
 - `Leaderboard`: grouped by Giải Nhậu tier across locations.
 - `Street`: grouped by `locationId x leagueTier`; shows hàng xóm and reputation star.
 - Empty high tier displays "Chưa có ai" state to create aspirational goal.

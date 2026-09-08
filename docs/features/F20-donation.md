@@ -1,6 +1,6 @@
 # F20 — Mời Bia Hơi (Donation)
 
-> Phase 4. Monetization as supporter donation with cosmetic-only thank-you gifts. No coins, no power, no ranking advantage.
+> 🟢 **Monetization DUY NHẤT của game (chủ dự án chốt 08/09/2026): game chơi free hoàn toàn; người chơi tự nguyện donate cho admin.** Quà cảm ơn cosmetic-only. No coins, no power, no ranking advantage, **no paywall anywhere** (F26 bỏ). Mốc M7 (06-ROADMAP v3.0). Config: `donation` (tier A).
 
 ## 1. Scope
 
@@ -15,6 +15,9 @@
 - Do not sell gameplay unlocks, `Kết Nối`, VIP table, Giải Nhậu points, Đường Lên Trùm progress, or boosts.
 - Mời Bia Hơi gifts are cosmetic-only: lồng đèn, cây cảnh, biển hiệu, cờ/theme Vụ Bia.
 - Payment does not affect `seasonEarned`, `lifetimeEarned`, matchmaking, spawn, tip, or cap.
+- **The whole game is free:** no feature, shift, or cap is ever locked behind money. Donation prompts are soft, never block play, never use dark patterns (09-SPEC §1 rule 8).
+- Guests may donate (support only); claiming the cosmetic thank-you gift requires an account (F25). Config `donation.guestAllowed`.
+- Receiving side is the admin's account (bank QR / provider adapter — provider is an adapter, chosen later; manual bank-transfer confirmation by admin is the default path).
 
 ## 3. Data model
 

@@ -1,0 +1,23 @@
+{
+  "_schema": {
+    "_doc": "F17 quest pool — tier C. Engine sinh quest theo type × bucket; target/reward scale theo tier bằng pm() (F17 §3); quest KHÔNG đổi seasonEarned. Trường có hậu tố Base = ×k.",
+    "id": "string",
+    "type": "daily | shift | gift | attendance | referral | life_path",
+    "bucket": "core | shift | social — daily có 3 core + 3 shift (09 §5)",
+    "event": "domain event cộng dồn (10-SPEC §6)",
+    "filter": "tuỳ chọn: {field: value} trên payload event",
+    "targetBase": "số cần đạt ở tier thấp nhất; scale pm()",
+    "reward": { "coinsBase": "int ×k", "repBase": "int ×k", "items": "{menuId: qty} tuỳ chọn" },
+    "copyKey": "i18n key: quest.<id>.title / .desc",
+    "weight": "trọng số bốc",
+    "minLifePath": "LP gate tuỳ chọn",
+    "enabled": "bool"
+  },
+  "quests": [
+    { "id": "serve_orders", "type": "daily", "bucket": "core", "event": "order_served", "targetBase": 20, "reward": { "coinsBase": 400, "repBase": 0 }, "copyKey": "quest.serve_orders", "weight": 10, "enabled": true },
+    { "id": "serve_vip", "type": "daily", "bucket": "core", "event": "order_served", "filter": { "customerType": "vip" }, "targetBase": 2, "reward": { "coinsBase": 800, "repBase": 20 }, "copyKey": "quest.serve_vip", "weight": 6, "minLifePath": 1, "enabled": true },
+    { "id": "no_stale_shift", "type": "shift", "bucket": "shift", "event": "shift_closed", "filter": { "staleGlasses": 0 }, "targetBase": 1, "reward": { "coinsBase": 300, "repBase": 10 }, "copyKey": "quest.no_stale_shift", "weight": 8, "enabled": true },
+    { "id": "sell_hot_dishes", "type": "daily", "bucket": "core", "event": "order_served", "filter": { "hasHotDish": true }, "targetBase": 10, "reward": { "coinsBase": 600, "items": { "lac": 10 } }, "copyKey": "quest.sell_hot_dishes", "weight": 7, "minLifePath": 1, "enabled": true },
+    { "id": "send_gift", "type": "gift", "bucket": "social", "event": "gift_sent", "targetBase": 1, "reward": { "repBase": 30 }, "copyKey": "quest.send_gift", "weight": 5, "enabled": true }
+  ]
+}

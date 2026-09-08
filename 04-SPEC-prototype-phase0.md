@@ -1,5 +1,7 @@
 # 🧪 SPEC — Prototype Phase 0 (client-only) — Trùm Bia Hơi
 
+> ⚠️ **LƯU TRỮ (chốt founder 09/09).** Prototype Phase 0 **không còn là điểm xuất phát** của game: `prototype/` giữ lại như bản thử nghiệm đã hoàn thành nhiệm vụ (đo được k = 2.24–2.34), dev **không** kế thừa code/layout/màn hình của nó. Phần **duy nhất còn ràng buộc là §5 — cách đo k** (`k = mean(payment + tip) / 82.5`, throughput không vào k).
+>
 > Spec tối thiểu để dựng prototype validate **"feel"** và **đo lại `k_value`** trước khi cam kết stack/scope đầy đủ. Nguồn số: `02-GDD-trum-bia-hoi.md` (v1.3) §2/§3/§4/§6/§7/§8 + `economy-spec-from-bundle.md` §3/§4 + `03-SPEC-he-ban.md`. **GDD vẫn là nguồn sự thật**; doc này chỉ cụ thể hóa con số khởi điểm cho prototype.
 > Ngày: 2026-06-09. Nhãn: 🟢 CORE = không đổi trong Phase 0 · 🟡 = số khởi điểm, **được phép chỉnh khi đo**.
 

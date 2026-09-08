@@ -34,9 +34,9 @@ type Lease = {
 
 | Location | Mult | `e` rent index | Gate |
 |---|--:|--:|---|
-| Hẻm Nhỏ | 1.0 | 5 | start |
-| Ngõ Chợ | 1.1 | 10 | - |
-| Bến Xe | 1.2 | 15 | - |
+| Hẻm Nhỏ | 1.0 | — (rent 0, 08 §16) | start |
+| Ngõ Chợ | 1.1 | 10 | LP1 |
+| Bến Xe | 1.2 | 15 | LP1 |
 | Gần Công Sở | 1.3 | 20 | LP2 |
 | Gần Sân Vận Động | 1.4 | 25 | LP3 |
 | Hồ Bia Đêm | 1.5 | 30 | LP3 |

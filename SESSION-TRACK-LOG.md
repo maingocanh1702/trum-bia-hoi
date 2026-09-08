@@ -5,58 +5,38 @@
 
 ---
 
-## 🧭 Trạng thái dự án (snapshot 2026-09-08)
+## 🧭 Trạng thái dự án (snapshot 2026-09-08, cuối ngày)
 
-**Là gì:** Game idle/tycoon **phục vụ khách theo ca** ở quán bia hơi vỉa hè VN, mobile-first web. Mô phỏng & re-skin từ `trumviahe.com` (game gốc trà đá), giữ 5 lớp economy + thêm 2 cơ chế đặc thù (**hệ bàn**, **bia mất hơi**).
+**Là gì:** Game idle/tycoon **phục vụ khách theo ca 12 phút** ở quán bia hơi vỉa hè Hà Nội 2000s, mobile-first web; re-skin từ trumviahe.com (trà đá), giữ 5 lớp economy, thêm hệ bàn + bia mất hơi.
 
-**Giai đoạn:** Thiết kế/nghiên cứu **đã xong** (GDD v1.6 ổn). **Prototype Phase 0 đã code xong** (`prototype/` — engine + UI Pixi + sim headless, build pass). **`k_value` đã đo: 2.24–2.34** qua 5 seed (trong band 2.0–3.0), tái lập độc lập 24/08.
+**Giai đoạn:** **Bộ docs đã chốt và đủ để giao dev/designer.** Game **viết mới từ đầu, 0 %, chưa mở M0**. `prototype/` là lưu trữ (đã đo k = 2.24–2.34), không kế thừa code/layout. Không còn blocker.
 
-> 🔴 **BLOCKER HIỆN TẠI — đọc trước khi làm bất cứ việc gì khác.** Phase 0 chỉ còn thiếu **Alpha playtest feel**: 3–5 người thật × ≥3 ca/người, điền [`docs/phase0-alpha-playtest.md`](docs/phase0-alpha-playtest.md). Hạng mục này treo từ **2026-07-15 (~8 tuần)**; commit gameplay cuối cùng cũng là 15/07. **Không mở Phase 1 trước khi gate này đóng** — bot metrics không thay thế hand-play. Đây là việc tổ chức, không phải việc kỹ thuật: build chạy được (`cd prototype && npm run dev`).
+**Đọc theo thứ tự:** `00-HANDOFF` v1.11 → `11-PROMPT-PACK` v1.11 (Phần A designer / Phần B dev) → `02-GDD` v1.11 + `03-SPEC` → `08-SPEC` v1.2.6 + `docs/config/economy.tbh.json` 1.5.1 → `06-ROADMAP` v3.0 (mốc M0–M9) + `docs/implementation-tracker.md` v0.7.0 (0/28) → `docs/features/F07–F28` → `docs/reference/` (layout) → `trum-bia-hoi-brd-admin.md` §5.2. **Trạng thái chi tiết + việc chờ:** `docs/TRANG-THAI-DOCS.md` (chỉ giữ bản mới nhất).
 
-**Tài liệu chính (theo thứ tự đọc):**
+**Quyết định đang hiệu lực (chủ dự án 08/09):** 1 phase, đủ 5 lớp economy, P/Phase = thứ tự code · **localStorage trước, server ở M4** (server-ready qua `eventLog`) · onboarding F27 🟢 (guest không đăng ký, login Google giữa ca, ca 1 = 1 khách 1 bia, 3 lần mất khách → step guide) · layout tham khảo = ảnh game gốc `docs/reference/` · 9 mặt bằng · bếp 4 cấp · audio 75 id theo thư mục nhóm · content bank + tính năng kiểm tra ⏸ pending · **chơi FREE hoàn toàn, monetization duy nhất = donate cho admin (F20), F26 bỏ** · `npm run check:config` chạy ở gốc repo · **doc giao việc chỉ ghi input/output/plugin/acceptance, không cầm tay**.
 
-| File | Vai trò | Trạng thái |
-|---|---|---|
-| `02-GDD-trum-bia-hoi.md` | **GDD v1.6 — tài liệu nguồn chính** | ✅ ổn định |
-| `economy-spec-from-bundle.md` | Hằng số economy trích trực tiếp từ bundle game gốc | ✅ tham chiếu |
-| `03-SPEC-he-ban.md` | Spec hệ bàn (đơn vị gameplay chính) | ✅ |
-| `04-SPEC-prototype-phase0.md` | Spec prototype Phase 0 (state model + số khởi điểm + cách đo k) | ✅ |
-| `05-SPEC-design-uiux.md` | Khung design/UIUX/asset (tokens + wireframe + icon list); sản xuất từ Phase 1 | 🔧 khung |
-| `06-ROADMAP-trum-bia-hoi.md` | Roadmap v2.7 Now/Next/Later (Phase 0–4) + exit gate + timeline re-baseline 08/09 | ✅ |
-| `07-SPEC-shop-mua-giai-worldcup.md` | Spec shop mùa giải WC (TV/lịch/theme đội) — Phase 4 | ✅ |
-| `01-MAP-tra-da-to-bia-hoi.md` | Mapping trà đá → bia hơi (v0.9) | ✅ tham chiếu |
-| `00-TONG-HOP-trumviahe.md` | Tổng hợp nghiên cứu game gốc | ✅ tham chiếu |
-| `scripts/measure_k.py` | Đo lại hệ số rescale k (đã verify k≈2.5) | ✅ |
-| `uiux-analysis-trumviahe.md`, `design-component-catalog-trumviahe.md`, `research-*` | Phân tích UI/UX + research bổ trợ | ✅ tham chiếu |
-
-**Quyết định nền (🟢 CORE — ổn định):** phục vụ theo ca · 5 lớp economy (unit·throughput·demand-mix·risk·meta) · hệ bàn · bia mất hơi · menu 6 món · server-authoritative (Pixi.js + React).
-
-**Còn là giả định (🟡 PROTOTYPE — đo lại được):** `k=2.5` · số freshness/prep/giá từng cấp · hậu quả mất hơi (MVP dùng bản mềm: tip×0 + uy tín −1) · thời tiết lạnh có lợi cho bia.
-
-**Để sau (🔵 POST-MVP):** league/Life Path/9 mặt bằng đầy đủ · bảo kê/kiểm tra ATTP/trộm · Event World Cup (+API tỉ số) · donation cosmetic-only · xổ số (cần legal review).
+**Chốt sau (đã có default, không chặn):** content bank + kiểm tra (M5–M6) · cổng nhận donate (provider tự động nếu có; mặc định QR + admin xác nhận) / age gate (M7) · nguồn API bóng đá (M8).
 
 ---
 
-## ⏭️ Việc tiếp theo — CHẠY ALPHA PLAYTEST
+## ⏭️ Việc tiếp theo — BẮT ĐẦU M0
 
-Phạm vi Phase 0 (3 bàn · bia + 2 mồi tức thì · 2 mức rush · freshness · vòng đời cốc · tip/patience) **đã code xong và merge**. Phần đo tự động **đã PASS**. Việc còn lại **duy nhất**:
-
-0. **Deploy build tĩnh trước** — đây là thứ đã chặn gate suốt 8 tuần, không phải kỹ thuật:
-   `cd prototype && npm run build` → publish `prototype/dist/` lên host tĩnh bất kỳ (`base: './'`
-   đã set sẵn, client-only, không cần cấu hình) → có link. Trước đây protocol bắt `npm run dev`
-   nên mọi tester phải ngồi vào máy mình; giờ gửi link là xong.
-1. **Gửi link + brief cho 3–5 người**: [`docs/phase0-alpha-tester-brief.md`](docs/phase0-alpha-tester-brief.md)
-   (soạn sẵn tiếng Việt, gửi thẳng qua chat). Mỗi người chơi **≥3 ca** trên điện thoại của họ, phải có cả nhịp thường lẫn cao điểm.
-2. **Không coach** sau khi giới thiệu thao tác — người chơi bối rối chỗ nào chính là bằng chứng cần thu.
-3. Điền phiếu [`docs/phase0-alpha-playtest.md`](docs/phase0-alpha-playtest.md): bảng log mỗi ca + 5 câu hỏi gate + bảng quyết định.
-4. Lưu ý khi ghi số: đọc **mất khách theo từng ca**, không đọc dòng "Dồn cả phiên" (luôn hiện 0 — engine không giữ lost xuyên ca); `% cốc hết hơi` chỉ hand-play mới đo được (bot ra 0%).
-5. **PASS** → đóng Phase 0, mở Phase 1 (`ui-art-v1` ∥ 1 engine slice). **FAIL** mục nào → tạo corrective slice bounded đúng mục đó, không mở Phase 1.
-
-> Chưa nhồi meta/event. Core feel (bàn + mất hơi + economy) phải đúng TRƯỚC.
+1. **Dev:** dán `11-PROMPT-PACK` Phần B vào Claude Code/Codex trong repo. Slice đầu = **M0**: repo game mới, config loader từ JSON + schema, engine thuần + shift loop, sim headless đo k, trỏ 2 script `check_*.py` sang code mới, skeleton `docs/analytics-events.md` + `vi.json/en.json` + `assets/manifest.json`, placeholder convention (HANDOFF §4.4). Exit: `check:config` xanh trên code mới · sim 5 seed k ∈ 2.0–3.0 · build + test xanh.
+2. **Designer (song song):** dán Phần A. Critical path: ghế + bàn Lv1 → HUD icon lõi → chủ quán + 7 khách → thiết bị Lv1–3 → `bg-quanbia-default`; audio nhóm ui/serve/beer/shift cho M1. Đầu ra theo `docs/asset-production-checklist.md` v1.4 + `assets/manifest.json`.
+3. **Chủ dự án:** commit git bộ docs 08/09; xoá `scripts/apply_pending_0809.py` (script vá đã chạy); slice prototype `p0-ui-serve-popover--r2` merge hay bỏ tuỳ ý — không chặn.
+4. Mỗi slice kết thúc bằng báo cáo mẫu `11-PROMPT-PACK` §0.3; đổi trạng thái feature ở tracker rồi `python3 tools/dashboard-engine/build_dashboard.py --no-network`.
 
 ---
 
 ## 🗒️ Nhật ký phiên
+
+### Session 2026-09-08 (22) — Audit HANDOFF → chốt quyết định → đồng bộ toàn bộ docs, reset tracker
+- **Audit `00-HANDOFF` v1.5** đối chiếu từng file: 4 lỗ hổng (onboarding không ràng buộc; nhãn POST-MVP/phase sót; `check:config` trỏ prototype; layout card-list ≠ ý chủ dự án). Cả 4 đã xử lý cùng ngày.
+- **Chủ dự án chốt:** localStorage trước → server M4 · onboarding 5 luật (F27 🟢) · layout = ảnh game gốc (`docs/reference/` 8 ảnh) · 9 mặt bằng · content bank + kiểm tra pending · doc giao việc không cầm tay · "follow recommend" cho phần còn lại.
+- **Docs mới:** F27 onboarding, F28 leaderboard + Bàn Thờ, `docs/reference/` + README, `docs/content/` (schema, pending), `docs/TRANG-THAI-DOCS.md` (thay audit; chỉ giữ bản mới nhất), `package.json` gốc (`check:config`).
+- **Docs sửa:** HANDOFF v1.11 · GDD v1.11 · 06-ROADMAP **v3.0** (1 phase, M0–M9) · 08-SPEC v1.2.6 + JSON 1.5.1 (+`network`, `onboarding`, `audio`, `leaderboard`, `risk.inspection` pending, `cosmetics._rule`) · 09-SPEC v1.1 · 10-SPEC v1.7 · 11-PROMPT-PACK v1.11 · F10/F12/F14/F15/F16/F23/F25 · checklist v1.4 (B7 audio 75 id theo thư mục nhóm, 8 gap §P2 đóng, bếp 4 cấp, B1 12 icon, ~550 asset) · item-list v1.7 · tracker **v0.7.0 reset 0/28** + dashboard rebuild + test guard 26→28 · CLAUDE.md/AGENTS.md dòng verify.
+- **Chốt thêm cuối ngày:** **chơi free hết — monetization = donate cho admin.** F26 ⛔ bỏ (giữ file lưu trữ), F20 = nguồn thu duy nhất (M7); JSON 1.6.0 `entitlements.mode=free` + section `donation` (A); sửa HANDOFF v1.12, GDD v1.12, 08 v1.2.7, 09/10-SPEC, 11-PP v1.12, ROADMAP v3.1, tracker v0.7.1 (F26 ⏸), BRD v0.5 §7 Donation, asset-list/checklist bỏ `icon-session-pass`.
+- **Chưa commit git.** Backup `$HOME/*.bak`. Việc kế: **bắt đầu M0** (xem trên).
 
 ### Session 2026-09-08 (21) — Audit toàn repo + đồng bộ docs theo tiến độ thật
 - **Audit toàn bộ repo** (docs + codebase + tooling + git state) → `AUDIT-REPO-2026-08-24.md`. Xác minh độc lập: chạy lại `npm run sim` từ source, **tái lập đúng từng con số** của gate 15/07 (k 2.27/2.34/2.27/2.28/2.24; normal loss 0%; peak 26.1–40.8%); typecheck strict engine+sim sạch; probe riêng (chạy 2.000s không thao tác, trần ngày, glass invariant) không lộ bug. → **số liệu trong tracker/roadmap là đo được, không phải tự khai.**

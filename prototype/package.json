@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "sim": "tsx src/sim/headless.ts"
+    "sim": "tsx src/sim/headless.ts",
+    "check:economy": "python3 ../scripts/check_economy_config.py",
+    "check:config-coverage": "python3 ../scripts/check_config_coverage.py",
+    "check:config": "npm run check:economy && npm run check:config-coverage"
   },
   "dependencies": {
     "pixi.js": "^8.6.6",

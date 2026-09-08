@@ -1,10 +1,12 @@
-# F26 — Vé Mở Ca & Thanh Toán (Daily Session Pass)
+# F26 — Vé Mở Ca & Thanh Toán (Daily Session Pass) — ⛔ **BỎ, không build**
 
-> Phase 3+. Access monetization. Free users can play 1 ca/day; paying users can unlock the normal daily ca allowance for that day or entitlement period. This sells play access, not coins/power.
+> ⛔ **Chủ dự án chốt 08/09/2026: game CHƠI FREE HOÀN TOÀN — không Vé Mở Ca, không bán quyền chơi, không paywall.** Monetization duy nhất = **donate cho admin** (F20 Mời Bia Hơi, tự nguyện, quà cảm ơn cosmetic-only). File này giữ làm lưu trữ; `entitlements.sessionPass.enabled=false`. Mọi ca trong trần ngày (8/6/5) đều free.
+>
+> *(Nội dung cũ)* Phase 3+. Access monetization. Free users can play 1 ca/day; paying users can unlock the normal daily ca allowance for that day or entitlement period. This sells play access, not coins/power.
 
 ## 1. Scope
 
-- Free daily ca limit: 1 completed/started ca per VN day.
+- Free daily ca limit: N ca/VN day với N = `entitlements.freeSessionsPerDay` (config, mặc định 1).
 - Paid Vé Mở Ca unlocks all remaining ca allowed by the normal daily cap.
 - Payment checkout for logged-in users.
 - Entitlement enforcement server-side.
@@ -14,7 +16,7 @@
 
 Base game has a normal daily cap from GDD (`8/6/5` sessions depending player segment). F26 adds an access layer:
 
-- Free entitlement: `freeSessionsPerDay = 1`.
+- Free entitlement: `freeSessionsPerDay` là **giá trị config server-side** (remote config: `default` 1, `bySegment`, `campaignOverride`, override admin/promo — xem `docs/config/economy.tbh.json` → `entitlements`), **không hardcode**; đổi không cần deploy; client chỉ hiển thị số server trả về. Sửa qua admin: `trum-bia-hoi-brd-admin.md` §5.2 (Tier A, dual approval, ví dụ luồng §5.2.4); giá Session Pass, `dailyShiftCap`, products cũng là config cùng registry.
 - Paid entitlement: can play up to normal cap for that day/period.
 - Paid users still obey stamina, daily coin cap, anti-cheat, and all economy rules.
 - No direct coins, materials, upgrades, Giải Nhậu points, or Đường Lên Trùm progress are sold.
@@ -94,6 +96,7 @@ Guest users must sign in before checkout so purchases attach to an account.
 - Day bucket uses VN timezone.
 - If user buys after using free session, paid entitlement grants remaining sessions up to normal cap for that day.
 - If normal cap changes by segment, entitlement resolves max sessions at day start or purchase time and stores it.
+- Nếu `freeSessionsPerDay` đổi giữa ngày (campaign), entitlement của ngày đã resolve giữ nguyên `maxSessions` (không làm mất ca đã dùng/đã mua); giá trị mới áp từ ngày kế hoặc lần resolve kế theo rule `entitlements.resolveAt`.
 
 ## 8. UI
 
@@ -104,7 +107,7 @@ Guest users must sign in before checkout so purchases attach to an account.
 
 ## 9. API
 
-- `GET /entitlements/session-pass`
+- `GET /entitlements/session-pass` → `{kind, dayBucket, maxSessions, usedSessions, freeSessionsPerDay, normalDailyCap, products[]}`
 - `POST /billing/session-pass/create`
 - `POST /billing/webhook/{provider}`
 - `POST /shift/start` checks entitlement
@@ -121,7 +124,8 @@ Guest users must sign in before checkout so purchases attach to an account.
 
 ## 11. Acceptance
 
-- Free player cannot start session #2 in the same VN day.
+- Free player cannot start session #(N+1) in the same VN day, với N = `freeSessionsPerDay` từ config (test với N=1 và N=2 để chứng minh không hardcode).
+- Đổi `freeSessionsPerDay` bằng remote config (không deploy) → cổng ca phản ánh ở lần resolve kế.
 - Paid player can start remaining sessions up to normal cap, but not beyond cap.
 - Guest cannot purchase until signed in.
 - Payment webhook is idempotent.

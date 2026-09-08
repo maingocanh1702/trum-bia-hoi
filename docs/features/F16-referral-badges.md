@@ -44,8 +44,8 @@ Server owns qualification.
 | Milestone | Requirement | Reward | Badge |
 |---|---|---|---|
 | 1 | 1 qualified friend | 250 reputation x k | `ket_noi` |
-| 2 | 3 qualified friends | 1.000 reputation x k | prestige badge |
-| 3 | referred friend reaches LP2 | 3.000 reputation x k | high prestige badge |
+| 2 | 3 qualified friends | 1.000 reputation x k | `ban_be` (asset `badge-ban-be`, cosmetic only) |
+| 3 | referred friend reaches LP2 | 3.000 reputation x k | `dong_hanh` (asset `badge-dong-hanh`, cosmetic only) |
 
 Only `ket_noi` has gameplay effect: unlock VIP table gate. It must never be sold in donation.
 

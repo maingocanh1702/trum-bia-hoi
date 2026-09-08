@@ -266,7 +266,7 @@ Change only the operating state: show amber beer flowing from the tap into one t
 | `kitchen-lv2` | 240x192 | `Create one small single-burner tabletop gas stove with old red cylinder partly visible, one wok and a simple splash guard. Clearly faster than the coal stove.` |
 | `kitchen-lv3` | 304x208 | `Create one sturdy double-burner gas stove with two pans, wider prep edge and shared old gas cylinder. Two simultaneous cooking positions.` |
 | `kitchen-lv4` | 400x288 | `Create one large inox commercial stove with several heavy burners, tall backsplash and old metal exhaust hood. Professional but analog, no digital controls.` |
-| `kitchen-lv5` | 480x320 | `Create one master street-kitchen line with multiple burners, wok station, stock pot, broad prep surface and powerful old metal hood. Maximum throughput, highly organized, no modern display.` |
+| ~~`kitchen-lv5`~~ (bỏ 08/09 — bếp 4 cấp) | 480x320 | `Create one master street-kitchen line with multiple burners, wok station, stock pot, broad prep surface and powerful old metal hood. Maximum throughput, highly organized, no modern display.` |
 
 ---
 
@@ -321,8 +321,8 @@ Change only the liquid, foam, dirt or washing state to match Image 2. Preserve t
 | `mat-bean-raw` | `Create one shallow crate of uncooked white tofu blocks protected by a damp cloth, clean but clearly raw stock.` |
 | `mat-pork-fat` | `Create one small enamel tray of uncooked pale pink-white pork fat blocks on crushed ice, neutral and non-gory.` |
 | `mat-intestine-raw` | `Create one lidded enamel pail containing neatly separated raw intestine and pickled greens, non-gory and clearly ingredient stock, not a finished dish.` |
-| `mat-onion` | `Create one old glass jar and small paper bag of fried shallots and dried scallion, blank label, pantry ingredient presentation.` |
-| `mat-ice` | `Create one tied clear plastic bag of chunky ice cubes with cool blue highlights and condensation, no logo or text.` |
+| ~~`mat-onion`~~ **bỏ 08/09** | `Create one old glass jar and small paper bag of fried shallots and dried scallion, blank label, pantry ingredient presentation.` |
+| ~~`mat-ice`~~ **bỏ 08/09** | `Create one tied clear plastic bag of chunky ice cubes with cool blue highlights and condensation, no logo or text.` |
 
 ---
 
@@ -593,8 +593,8 @@ Dùng `GLOBAL_STYLE_LOCK + ICON_LOCK + row + TRANSPARENCY_LOCK`. Mỗi row là m
 | `icon-dlt-lp6` | `One premium keg, gold coin stack and upgraded sign grouped as an owner-tycoon emblem.` |
 | `icon-dlt-lp7` | `One crowned stall crest with traditional glass, keg and laurel, ultimate milestone.` |
 | `badge-ket-noi` | `One enamel badge of two linked bia-hoi glasses and handshake, green-gold palette, no text.` |
-| `badge-prestige-1` | `One enamel prestige badge with two linked stools and one gold star.` |
-| `badge-prestige-2` | `One ornate prestige badge with linked stall awnings, two gold stars and amber ribbon shape, no text.` |
+| `badge-ban-be` | `One enamel prestige badge with two linked stools and one gold star.` |
+| `badge-dong-hanh` | `One ornate prestige badge with linked stall awnings, two gold stars and amber ribbon shape, no text.` |
 | `icon-referral-link` | `Two interlocking chain links shaped from small beer-glass outlines, one tiny invite arrow.` |
 | `icon-quest-daily` | `One tear-off paper calendar page with checklist and small sun, no number.` |
 | `icon-quest-shift` | `One old alarm clock beside a serving tray.` |
@@ -696,7 +696,7 @@ Social emotes — gen 8 file riêng, 32x32 master có thể gen lớn rồi near
 
 ### 10.1 Location source lock
 
-File này tạm dùng danh sách **10 location** trong `docs/item-list-upgrade-levels.md` v1.4 vì đây là catalog item/upgrade mới nhất. `docs/features/F14-locations.md` vẫn ghi 9 location và dùng tên khác. Cần reconcile tên/ID trước khi chốt production filename; art prompt dưới đây vẫn có thể dùng làm concept.
+⚠️ **Đã chốt 08/09: 9 mặt bằng** theo `economy.tbh.json` — bảng dưới là prompt cũ cho bộ 10, dùng làm ý tưởng; tên file/ID chính thức xem `asset-production-checklist.md` §A13 (`bg-location-<id>`). Ghi chú cũ: file này tạm dùng danh sách **10 location** trong `docs/item-list-upgrade-levels.md` v1.4 vì đây là catalog item/upgrade mới nhất. `docs/features/F14-locations.md` vẫn ghi 9 location và dùng tên khác. Cần reconcile tên/ID trước khi chốt production filename; art prompt dưới đây vẫn có thể dùng làm concept.
 
 ### 10.2 Gameplay backgrounds
 
@@ -945,8 +945,8 @@ Không gen 6-10 asset khác nhau trong một ảnh. “Batch” chỉ là hàng 
 
 ## 17. Spec gaps cần chốt trước production final
 
-1. **Location:** `item-list-upgrade-levels.md` có 10 location, `F14-locations.md` có 9 location và tên khác. File này tạm dùng bộ 10.
+1. ✅ **Đã chốt 08/09: 9 location** (checklist §A13). Ghi chú cũ: `item-list-upgrade-levels.md` có 10 location, `F14-locations.md` có 9 location và tên khác. File này tạm dùng bộ 10.
 2. **Table state:** production UI có 9 state, asset catalog cũ có 5. File này dùng 9 state và giữ bảng alias legacy.
 3. **Size:** kích thước 128x128 trong catalog cũ chỉ còn áp cho icon/item nhỏ; world object dùng native footprint như §2.
-4. **Referral badge IDs:** cần chốt mapping giữa `Kết Nối/Bạn Bè/Đồng Hành` và `badge-ket-noi/badge-prestige-1/badge-prestige-2` trước khi hiện label runtime.
+4. **Referral badge IDs:** cần chốt mapping giữa `Kết Nối/Bạn Bè/Đồng Hành` và `badge-ket-noi/badge-ban-be/badge-dong-hanh` trước khi hiện label runtime.
 5. **Rare glass:** reward đã xuất hiện trong feature risk/event nhưng lifecycle/naming chưa được catalog chính thức; file này đề xuất `glass-rare-chairman` làm identity anchor.
