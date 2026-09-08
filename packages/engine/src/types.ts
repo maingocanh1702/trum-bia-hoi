@@ -35,9 +35,9 @@ export interface Stats {
 }
 export interface Shift {
   id: string; startedAt: number; pausedMs: number; endsAt: number; closedAt: number | null; configVersion: string;
-  weather: Weather; rush: Rush; rushes: { kind: Rush; start: number; end: number }[];
+  weather: Weather; rush: Rush; rushes: { kind: Rush; start: number; end: number; warned?: boolean }[];
   nextSpawnAt: number; firstGroup: boolean; onboarding: boolean; stats: Stats;
-  wellRestedUntil: number | null;
+  wellRestedUntil: number | null; rushUntil?: number | null;
 }
 export interface World {
   now: number; rng: number; nextId: number; phase: 'resting' | 'open' | 'closing';
@@ -64,5 +64,5 @@ export type Command =
   | { type: 'emergencyPack' };
 export interface Envelope { idempotencyKey: string; at: number; command: Command }
 export interface Result { ok: boolean; reason?: string; outcome?: 'early' | 'late' | 'grace' | 'expired' | 'stale'; amount?: number }
-export type RulesVersion = 1 | 2 | 3 | 4; // config-exempt: persisted replay protocol revisions, not economy tuning
+export type RulesVersion = 1 | 2 | 3 | 4 | 5; // config-exempt: persisted replay protocol revisions, not economy tuning
 export interface LoggedCommand extends Envelope { result: Result; configVersion: string; rulesVersion: RulesVersion }

@@ -1,0 +1,27 @@
+{
+  "sourceCommit": "b97ff07",
+  "result": {
+    "ok": true,
+    "outcome": "stale",
+    "amount": 210
+  },
+  "coins": 960,
+  "reputation": 0,
+  "phase": "closing",
+  "rush": "light",
+  "nextId": 119,
+  "stats": {
+    "arrived": 24,
+    "served": 1,
+    "lost": 0,
+    "rejected": 13,
+    "orders": 3,
+    "payment": 210,
+    "tip": 0,
+    "credited": 210,
+    "penalty": 0,
+    "spent": 0,
+    "rep": 0,
+    "wellRestedBonus": 0
+  }
+}

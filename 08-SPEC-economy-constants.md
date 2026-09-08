@@ -124,6 +124,8 @@ Phân bố weight 35/20/10/20/15 (roll 1 lần khi mở ca; server-side từ Pha
 
 ## 6. Giờ Vàng (rush) — F08 🟡
 
+Runtime rules v5: `rush.schedule.warningMs` điều khiển báo trước, không hardcode 20s. Closing chỉ giữ đợt đang chạy đến deadline; không mở đợt kế. Hệ số về `none` trước khi tính tiền/phí ở đúng deadline; finalize sớm cũng kết thúc rush.
+
 | id | Tên | Kéo dài | spawnInterval× | Sàn (`floorMs`) | pay× | tip× | phạt× | weight `voi`× | Phase |
 |---|---|--:|--:|--:|--:|--:|--:|--:|:--:|
 | `none` | Nhịp thường | — | 1.00 | 10.500 | 1.00 | 1.00 | 1.0 | 1 | P0 |
@@ -552,3 +554,5 @@ Mọi section của `docs/config/economy.tbh.json` đều nằm trong registry. 
 | v1.3.1 | Runtime rules v3 nối Tỉnh Táo theo JSON hiện hành, không đổi số/config version: `shift.wellRested` canonical, aliases trong `tip` phải trùng. Bonus ghi riêng và credit qua `servePayment`, chịu trần ngày; payment/tip gốc giữ nguyên để đo k. Làm rõ open-day khác finalize-day; nghỉ mới bắt đầu tại createdAt/đóng hẳn ca, offline tính nghỉ nhưng không hồi thể lực. Replay rules v1/v2 giữ nguyên. |
 
 | v1.3.2 | Runtime rules v4 nối phí mời về §9 qua cùng customerValue/ab và spend; không thêm hằng số. Khách đã rời không tính lại, mọi khách còn dùng món tính phí; báo giá không gán món cho queue/seating. Thiếu xu từ chối, lịch sử v1–v3 không đổi. |
+
+| v1.3.3 | Rules v5 sửa vòng đời rush/telegraph theo F08, dùng số JSON hiện hành. Thêm kiểm tra integer cho warning/count/timing; không đổi config version hoặc các hệ số kinh tế. Replay v1–v4 giữ số/event IDs cũ. |

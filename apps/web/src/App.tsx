@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { DISHES, EQUIPMENT, currentGuests, encodeSave, freshnessMs, kickAllQuote, restockQuote, stockCap, upgradeQuote, wellRestedRemaining, type Command, type Equipment, type Order, type Table } from '../../../packages/engine/src';
+import { DISHES, EQUIPMENT, currentGuests, encodeSave, freshnessMs, kickAllQuote, restockQuote, rushStatus, stockCap, upgradeQuote, wellRestedRemaining, type Command, type Equipment, type Order, type Table } from '../../../packages/engine/src';
 import { Sprite, TableSeats, menuAsset, reactions } from './assets';
 import { translate } from './i18n';
 import { advanceGuide, boot, dispatch, download, persist, readSettings, writeSettings, replaceSave } from './local';
@@ -143,7 +143,7 @@ export function App() {
     <button onClick={() => location.reload()}>{t('save.retry')}</button></main>;
 
   const shift = w.shift, inShift = w.phase !== 'resting';
-  const nextRush = shift?.rushes.find(r => r.start > w.now);
+  const rush = rushStatus(w, game.config);
   const guide = settings.guideIndex === null ? null : c.onboarding.stepGuide.steps[settings.guideIndex];
   const showGuide = guide && (!guide.onlyAfter || w.completedShifts > 0);
   const cleanGlasses = w.glasses.filter(g => g.state === 'clean').length;
@@ -194,7 +194,7 @@ export function App() {
         <div className="energy"><div><Icon name="bolt" /><strong>{inShift && shift ? time(shift.endsAt - w.now) : `${Math.floor(w.staminaMs / c.shift.durationMs * 100)}%`}</strong></div><span className="energy-track"><i style={{ width: `${w.staminaMs / c.shift.durationMs * 100}%` }} /></span></div>
         <button className="icon-button settings-button" onClick={() => open('settings')} aria-label={t('nav.settings')}><Icon name="settings" /></button>
       </header>
-      <div className="weather-row"><span className="weather-chip"><span aria-hidden="true">{shift?.weather === 'rain' ? '☂' : '☀'}</span>{t(`weather.${shift?.weather ?? 'sunny'}`)}</span>{restedMs > 0 && <span className="well-rested" role="timer" aria-label={t('wellRested.active', { time: time(restedMs), mult: c.shift.wellRested.mult })}><Icon name="star" /><time>{time(restedMs)}</time><b>×{c.shift.wellRested.mult}</b></span>}<span className="rush-label">{inShift && nextRush ? t('rush.next', { time: time(nextRush.start - w.now) }) : t(`rush.${shift?.rush ?? 'none'}`)}</span></div>
+      <div className="weather-row"><span className="weather-chip"><span aria-hidden="true">{shift?.weather === 'rain' ? '☂' : '☀'}</span>{t(`weather.${shift?.weather ?? 'sunny'}`)}</span>{restedMs > 0 && <span className="well-rested" role="timer" aria-label={t('wellRested.active', { time: time(restedMs), mult: c.shift.wellRested.mult })}><Icon name="star" /><time>{time(restedMs)}</time><b>×{c.shift.wellRested.mult}</b></span>}<span className={`rush-label ${rush.active ? 'is-active' : rush.next?.warning ? 'is-warning' : ''}`} role="timer">{rush.active ? <><Icon name="bolt" /><span><b>{t(`rush.${rush.active.kind}`)}</b><time>{t('rush.ends', { time: time(rush.active.remainingMs) })}</time></span></> : rush.next ? <span><b>{t('rush.upcoming', { kind: t(`rush.${rush.next.kind}`) })}</b><time>{time(rush.next.remainingMs)}</time></span> : t('rush.none')}</span>{rush.next?.warning && <span className="sr-only" role="status">{t('rush.warning', { kind: t(`rush.${rush.next.kind}`) })}</span>}</div>
       <section className="stall-scene" aria-label={t('brand')}>
         <div className="owner-station"><Sprite id="owner-idle" /><div className="serving-counter"><div className="counter-canopy" /><div className="counter-front"><h1>{t('brand')}</h1><div className="counter-bottles" aria-hidden="true"><i /><i /><i /><i /><i /></div></div></div></div>
         <div className="equipment-row">{['cooler', 'keg', 'washer'].map(k => equipmentButton(k as Equipment))}</div>

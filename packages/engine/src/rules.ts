@@ -4,6 +4,16 @@ import type { Customer, Order, Table, World } from './types';
 export function dayKey(now: number, c: Config): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: c.values.shift.dayRollover.tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
 }
+/** Project the current rush first; upcoming slots are only relevant while accepting guests. */
+export function rushStatus(w: World, c: Config) {
+  const s = w.shift;
+  const active = w.phase !== 'resting' && s && s.rush !== 'none' && s.rushUntil != null && s.rushUntil > w.now ? { kind: s.rush, remainingMs: s.rushUntil - w.now } : null;
+  const next = w.phase === 'open' ? s?.rushes.find(r => r.start > w.now) : undefined;
+  return {
+    active,
+    next: next ? { kind: next.kind, remainingMs: next.start - w.now, warning: next.start - w.now <= c.values.rush.schedule.warningMs } : null,
+  };
+}
 export function wellRestedRemaining(w: World): number {
   return w.phase === 'resting' || w.shift?.wellRestedUntil == null ? 0 : Math.max(0, w.shift.wellRestedUntil - w.now);
 }

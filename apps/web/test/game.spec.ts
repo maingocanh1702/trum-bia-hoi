@@ -333,3 +333,41 @@ test('a mixed occupied table renders only the remaining Chi Pheo and closes with
   await expect(page.locator('.seat-customer')).toHaveCount(0);
   await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(fixture.coins));
 });
+
+for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 }]) {
+  test(`rush warning stays live in sheets, active timer wins, and closing ends it at ${viewport.width}px`, async ({ page }) => {
+    const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/rush.ts'], { encoding: 'utf8' }));
+    await page.setViewportSize(viewport);
+    await page.clock.install({ time: new Date(fixture.now) }); await page.clock.pauseAt(new Date(fixture.now));
+    await page.addInitScript(save => { if (!localStorage.getItem('rush-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('rush-seeded', '1'); } }, fixture.save);
+    await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+    const hud = page.locator('.rush-label');
+    await expect(hud).toContainText('Sắp tới · Giờ Vàng'); await expect(hud.locator('time')).toHaveText('00:21');
+    await expect(page.locator('.rush-label.is-warning')).toHaveCount(0);
+    await page.clock.runFor(1000);
+    await expect(page.locator('.rush-label.is-warning')).toHaveCount(1);
+    await expect(page.getByRole('status').filter({ hasText: 'Chuẩn bị đón Giờ Vàng.' })).toHaveCount(1);
+    await page.getByRole('button', { name: 'Nhập hàng', exact: true }).click();
+    await page.clock.runFor(1000); await expect(hud.locator('time')).toHaveText('00:19');
+    await page.keyboard.press('Escape');
+    await page.clock.runFor(fixture.warningMs - 1000);
+    await expect(page.locator('.rush-label.is-active')).toHaveCount(1);
+    await expect(hud).toHaveText('Giờ VàngCòn 01:30');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.locator('.table-order-hint').first().click();
+    await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
+    await expect(page.locator('.toast-gain')).toBeVisible();
+    await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
+    await page.getByRole('button', { name: 'Ngừng đón khách', exact: true }).click();
+    await page.clock.fastForward(fixture.first.end - fixture.first.start);
+    await expect(hud).toHaveText('Nhịp quán bình thường');
+    await page.clock.fastForward(fixture.second.start - fixture.first.end + 1);
+    await expect(hud).toHaveText('Nhịp quán bình thường');
+    await page.keyboard.press('Escape'); await page.reload();
+    await expect(hud).toHaveText('Nhịp quán bình thường');
+    const save = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));
+    expect(save.events.filter((e: { type: string }) => e.type === 'rush_warning')).toHaveLength(1);
+    expect(save.events.filter((e: { type: string }) => e.type === 'rush_started')).toHaveLength(1);
+    expect(save.events.filter((e: { type: string }) => e.type === 'rush_ended')).toHaveLength(1);
+  });
+}

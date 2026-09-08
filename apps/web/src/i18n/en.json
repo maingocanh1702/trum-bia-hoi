@@ -40,5 +40,8 @@
   "close.confirm": "Pay {cost} coins and close",
   "close.wait": "Let guests finish",
   "error.closeCostChanged": "The fee changed. Check the amount and confirm again.",
-  "error.shiftChanged": "That shift has ended. Open the shift book for the current shift."
+  "error.shiftChanged": "That shift has ended. Open the shift book for the current shift.",
+  "rush.upcoming": "Next · {kind}",
+  "rush.ends": "{time} left",
+  "rush.warning": "Get ready for {kind}."
 }

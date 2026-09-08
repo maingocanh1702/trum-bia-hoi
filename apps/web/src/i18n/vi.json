@@ -40,5 +40,8 @@
   "close.confirm": "Trả {cost} xu và đóng ca",
   "close.wait": "Đợi khách dùng xong",
   "error.closeCostChanged": "Phí vừa thay đổi. Kiểm tra số tiền rồi xác nhận lại.",
-  "error.shiftChanged": "Ca này đã kết thúc. Mở lại Sổ ca để xem ca hiện tại."
+  "error.shiftChanged": "Ca này đã kết thúc. Mở lại Sổ ca để xem ca hiện tại.",
+  "rush.upcoming": "Sắp tới · {kind}",
+  "rush.ends": "Còn {time}",
+  "rush.warning": "Chuẩn bị đón {kind}."
 }

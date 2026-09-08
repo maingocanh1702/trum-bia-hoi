@@ -44,6 +44,10 @@ function validate(c: Economy): void {
   whole(rested.durationMs, 'wellRested.durationMs', 1);
   if (rested.mult < 1 || !Number.isSafeInteger(rested.requiresRestHours * 3600000)) throw Error('config:wellRested'); // config-exempt: hours to milliseconds
   if (c.tip.wellRestedMult !== rested.mult || c.tip.wellRestedDurationMs !== rested.durationMs || c.tip.wellRestedKeyedBy !== 'open-day') throw Error('config:wellRestedAliases');
+  whole(c.rush.schedule.warningMs, 'rush.warningMs');
+  whole(c.rush.schedule.perShift, 'rush.perShift');
+  whole(c.rush.schedule.noRushFirstMs, 'rush.noRushFirstMs');
+  for (const kind of ['light', 'heavy', 'lunch_light'] as const) whole(c.rush[kind].durationMs, `rush.${kind}.durationMs`, 1);
   positive(c.spawn.baseMs, 'spawn.baseMs');
   positive(c.spawn.playerServeCeilingPerSec, 'serveCeiling');
   positive(c.patience.thuongMs, 'patience');

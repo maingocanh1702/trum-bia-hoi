@@ -3,6 +3,7 @@ import { integer, random, weighted } from './rng';
 import { addStock, credit, currentGuests, customerValue, dayKey, dishUnlocked, freshnessMs, kickAllQuote, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
 import type { Command, Customer, Envelope, Group, Item, LoggedCommand, Order, Result, RulesVersion, Stats, Table, World } from './types';
 
+const RUSH_CLOCK_RULES: RulesVersion = 5; // config-exempt: fixed replay protocol revision
 const emptyStats = (): Stats => ({ arrived: 0, served: 0, lost: 0, rejected: 0, orders: 0, payment: 0, tip: 0, credited: 0, penalty: 0, spent: 0, rep: 0, wellRestedBonus: 0 });
 
 /** No wall clock, IO or renderer: only config, seed, explicit time and commands. */
@@ -11,7 +12,8 @@ export class Game {
   readonly log: LoggedCommand[] = [];
   private readonly results = new Map<string, LoggedCommand>();
   private commandKey: string | null = null;
-  private rulesVersion: RulesVersion = 4;
+  private activeRushIndex: number | null = null;
+  private rulesVersion: RulesVersion = RUSH_CLOCK_RULES;
   constructor(readonly config: Config = defaultConfig, readonly seed = 1, readonly createdAt = 0, readonly playerId = 'guest') {
     if (!Number.isSafeInteger(seed) || !Number.isSafeInteger(createdAt) || createdAt < 0) throw Error('game:invalid-origin');
     const c = config.values;
@@ -46,7 +48,15 @@ export class Game {
     const w = this.world, c = this.config.values, times: number[] = [];
     if (w.phase === 'open' && w.shift) {
       times.push(w.shift.endsAt, w.shift.nextSpawnAt);
-      for (const r of w.shift.rushes) times.push(r.start, r.end);
+    }
+    if (w.shift && (w.phase === 'open' || this.rulesVersion >= RUSH_CLOCK_RULES && w.phase === 'closing')) {
+      for (const r of w.shift.rushes) {
+        times.push(r.end);
+        if (w.phase === 'open') {
+          times.push(r.start);
+          if (this.rulesVersion >= RUSH_CLOCK_RULES && !r.warned) times.push(r.start - c.rush.schedule.warningMs);
+        }
+      }
     }
     for (const t of w.tables) {
       if (t.until !== null) times.push(t.until);
@@ -74,6 +84,7 @@ export class Game {
         w.shift.pausedMs += elapsed;
         w.shift.endsAt += elapsed; w.shift.nextSpawnAt += elapsed;
         if (w.shift.wellRestedUntil !== null) w.shift.wellRestedUntil += elapsed;
+        if (w.shift.rushUntil != null) w.shift.rushUntil += elapsed;
         for (const rush of w.shift.rushes) { rush.start += elapsed; rush.end += elapsed; }
       }
       for (const table of w.tables) {
@@ -98,12 +109,37 @@ export class Game {
       this.processDue();
     }
   }
+  private updateRush(): void {
+    const w = this.world, s = w.shift;
+    if (!s || !w.active) return;
+    const candidate = w.phase === 'open' ? s.rushes.findIndex(r => w.now >= r.start && w.now < r.end) : this.activeRushIndex;
+    const planned = candidate == null ? undefined : s.rushes[candidate];
+    const slot = w.phase !== 'resting' && planned && planned.start <= w.now && w.now < planned.end ? planned : undefined;
+    const index = slot ? candidate : null, kind = slot?.kind ?? 'none';
+    s.rushUntil = slot?.end ?? null;
+    if (kind !== s.rush || index !== this.activeRushIndex) {
+      const previous = s.rush; s.rush = kind; this.activeRushIndex = index;
+      if (previous !== 'none') this.emit('rush_ended', { kind: previous });
+      if (kind !== 'none') this.emit('rush_started', { kind, until: slot!.end, weather: s.weather, location: w.location });
+    }
+    if (w.phase === 'open') for (const [index, r] of s.rushes.entries()) {
+      if (!r.warned && w.now >= r.start - this.config.values.rush.schedule.warningMs && w.now < r.start) {
+        r.warned = true;
+        this.emit('rush_warning', { kind: r.kind, startsAt: r.start, remainingMs: r.start - w.now, slot: index });
+      }
+    }
+  }
   private processDue(): void {
     const w = this.world, c = this.config.values, s = w.shift;
     if (!w.active && this.rulesVersion !== 1) return;
-    if (w.phase === 'open' && s) {
+    if (this.rulesVersion >= RUSH_CLOCK_RULES) {
+      if (w.phase === 'open' && s && w.now >= s.endsAt) { w.phase = 'closing'; this.emit('shift_closing'); }
+      this.updateRush();
+    } else if (w.phase === 'open' && s) {
       if (w.now >= s.endsAt) { w.phase = 'closing'; this.emit('shift_closing'); }
-      const rush = s.rushes.find(r => w.now >= r.start && w.now < r.end)?.kind ?? 'none';
+      const index = s.rushes.findIndex(r => w.now >= r.start && w.now < r.end);
+      this.activeRushIndex = index < 0 ? null : index; // Private replay bookkeeping preserves the original slot without changing legacy events.
+      const rush = s.rushes[index]?.kind ?? 'none';
       if (rush !== s.rush) { if (s.rush !== 'none') this.emit('rush_ended', { kind: s.rush }); s.rush = rush; if (rush !== 'none') this.emit('rush_started', { kind: rush }); }
     }
     for (const g of w.glasses) {
@@ -166,6 +202,7 @@ export class Game {
       const key = dayKey(w.now, this.config);
       w.dayShifts[key] = (w.dayShifts[key] ?? 0) + 1;
       if (s) s.closedAt = w.now;
+      if (this.rulesVersion >= RUSH_CLOCK_RULES) this.updateRush();
       this.emit('shift_closed', { shiftId: s?.id ?? '', credited: s?.stats.credited ?? 0 });
     }
   }
@@ -320,7 +357,7 @@ export class Game {
       this.emit('glass_washing', { glassId: glass.id });
     }
   }
-  command(envelope: Envelope): Result { return this.applyCommand(envelope, 4); }
+  command(envelope: Envelope): Result { return this.applyCommand(envelope, RUSH_CLOCK_RULES); }
   /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
   replay(entry: LoggedCommand): Result { return this.applyCommand(entry, entry.rulesVersion); }
   private applyCommand(envelope: Envelope, rulesVersion: RulesVersion): Result {
@@ -332,6 +369,7 @@ export class Game {
     this.advance(envelope.at);
     this.commandKey = envelope.idempotencyKey;
     try {
+      if (rulesVersion >= RUSH_CLOCK_RULES) this.updateRush();
       const result = this.execute(envelope.command);
       const entry = structuredClone({ ...envelope, result, configVersion: this.config.version, rulesVersion });
       this.log.push(entry); this.results.set(entry.idempotencyKey, entry);

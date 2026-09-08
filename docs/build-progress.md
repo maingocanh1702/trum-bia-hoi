@@ -345,3 +345,23 @@ closing-rush expiry and telegraph are a bounded clock correction still required.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Recorded independent CLEAN for 858615e..5bce63c and final 46-unit/22-browser verification. Full-game goal remains active. |
+
+## 2026-09-09 — Rush deadline and warning (review pending)
+
+Rules v5 ends an existing rush at its deadline while closing, never starts a later
+slot after admissions stop, and clears it on finalization. This also removes stale
+rush multipliers before same-timestamp current commands calculate money. The
+active slot is retained privately, including during legacy replay, so even later
+same-kind overlapping slots cannot continue it during closing. HUD uses the shared
+rushStatus projection and the active deadline; inactive time shifts that deadline.
+
+Each slot emits a warning once at config.warningMs. The compact HUD announces the
+warning once to screen readers; its native timer stays quiet between seconds,
+prioritizes current rush over the next slot, and keeps serving/sheets live. Actual
+v4 fixture from b97ff07 proves preserved historical result210/coins960/event IDs.
+Config/build/55 unit tests and normal/boosted sims pass. Browser and pinned review
+follow; full seeded scheduling/lunch/football/priority and the full game remain open.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Added v5 rush lifecycle and config-driven telegraph. Validation covers custom overlapping slots, hidden time, equal-timestamp migration and legacy replay; independent review pending. |
