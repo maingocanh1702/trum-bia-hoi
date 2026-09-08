@@ -1,10 +1,21 @@
 # Autopilot — lessons learned (Trum Bia Hoi)
 
+> **Numbering convention.** Lesson numbers in this file (`L1`, `L2`, ...) are **repo-local** — they
+> start at `L1` here and only resolve within this file. An `L<n>` citation found inside a file that is
+> synced verbatim from the canonical kit (`scripts/ap-finish.sh`, `scripts/autopilot-scope-gate`, ...)
+> is **not** a line number and does **not** point here — it points to the kit's own lesson corpus,
+> physically kept at `Bestminton Club Payment check bot/docs/autopilot-LESSONS.md` (that repo numbers
+> each entry `### L<n>`, currently through `L76`). Concretely: the `"L67"` in `ap-finish.sh:242` is
+> lesson `L67` in that repo — the single-HALT-file durable-artifact case — not a line in this file, and
+> not this file's own `L1` below (different repo, different lesson, coincidentally the same number).
+> Don't "fix" that comment here: `ap-finish.sh` is synced verbatim from the canonical kit; a repo-local
+> edit forks it and gets silently overwritten on the next `autopilot-sync`.
+
 > Incident write-ups for this repo's autopilot kit, referenced by scripts (e.g. `scripts/ap-finish.sh`)
 > so a failure mode is fixed once instead of rediscovered per slice. One entry per incident; append,
 > don't rewrite past entries.
 
-## Ghost review: clean verdict with no receipt (`dashboard-phase-table-boundary`)
+## L1 — Ghost review: clean verdict with no receipt (`dashboard-phase-table-boundary`)
 
 **Symptom.** `INFLIGHT.md` carried `status: ready` for slice `dashboard-phase-table-boundary`, but the
 worktree's state directory had none of `READY.txt`, `gate-result.json` or `gate-attempt-count.txt`.
@@ -40,3 +51,5 @@ longer produce.
 - Structural fix for the gate: write the terminal receipt (`READY.txt` + `gate-result.json`) atomically
   (write to a temp path, then rename) in the same step that persists a clean review verdict, so there
   is no dead window between "review completed" and "receipt exists" for an interruption to land in.
+  This is a kit-tier gap, not local to this repo — pushed to the canonical corpus as
+  `(arch: readiness-receipt-non-atomic)`.
