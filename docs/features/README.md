@@ -7,12 +7,12 @@
 
 | Feature | Spec |
 |---|---|
-| F01 Vòng Lặp Mở Ca | `04-SPEC-prototype-phase0.md` |
-| F02 Menu & Kinh Tế Quán | `04-SPEC-prototype-phase0.md` + `F11-kitchen-hot-dishes.md` |
+| F01 Vòng Lặp Mở Ca | GDD §10 + 08-SPEC §13 + F27 (ca 1) — *04-SPEC chỉ còn §5 đo k* |
+| F02 Menu & Kinh Tế Quán | GDD §2–§3 + 08-SPEC §2 + JSON `menu`/`inventory` + `F11-kitchen-hot-dishes.md` |
 | F03 Hệ Bàn | `03-SPEC-he-ban.md` |
-| F04 Vòng Đời Cốc | `04-SPEC-prototype-phase0.md` |
-| F05 Độ Hơi Bia | `04-SPEC-prototype-phase0.md` |
-| F06 Tip / Uy tín / Phạt | `04-SPEC-prototype-phase0.md` + `03-SPEC-he-ban.md` |
+| F04 Vòng Đời Cốc | GDD §4 + 08-SPEC §8.2/§8.7 + JSON `glasses`/`upgrades.washer` |
+| F05 Độ Hơi Bia | GDD §6 + 08-SPEC §7 + JSON `freshness` |
+| F06 Tip / Uy tín / Phạt | GDD §8 + 08-SPEC §9 + `03-SPEC-he-ban.md` §5/§9 |
 | F07 Các Kiểu Khách | `F07-customer-types.md` |
 | F08 Giờ Vàng | `F08-rush-system.md` |
 | F09 Thời Tiết Quán | `F09-weather.md` |

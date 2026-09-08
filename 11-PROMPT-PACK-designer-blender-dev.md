@@ -1,4 +1,4 @@
-# 🎯 PROMPT PACK — Designer & Dev — Trùm Bia Hơi (v1.12)
+# 🎯 PROMPT PACK — Designer & Dev — Trùm Bia Hơi (v1.13)
 
 > **Mục đích:** 2 bản giao việc để dán cho 2 agent — (A) **Designer** dựng game asset bằng Blender MCP, (B) **Dev** code game. Cả hai đều **chỉ ràng buộc đầu vào / đầu ra / QA**; *cách làm, kiến trúc, layout, design do agent tự quyết*.
 > Ngày: 2026-09-09. Nguồn sự thật: `00-HANDOFF-trum-bia-hoi.md` → `02-GDD-trum-bia-hoi.md` (quyết định) → `08-SPEC-economy-constants.md` + `docs/config/economy.tbh.json` (số) → `trum-bia-hoi-brd-admin.md` §5.2 (config admin).
@@ -217,6 +217,8 @@ budget held (first playable < 5s on mobile, >= 30fps floor); no new business lit
 spec/tracker updated.
 
 FIRST SLICE MUST ALSO CREATE (they do not exist yet — 00-HANDOFF §4.4)
+Code lives in THIS repo as npm workspaces: packages/engine (pure rules), apps/web, apps/server
+(from M4). Never put new code under prototype/ (archived); do not start a separate repo.
 docs/analytics-events.md, i18n vi.json + en.json skeleton, assets/manifest.json, the headless
 k sim. `npm run check:config` already runs from the repo root (root package.json); when the
 new engine exposes config.get(), point the two python scripts' SRC_DIR/constants at it.
@@ -251,6 +253,7 @@ referral) -> risk + dog -> events (World Cup, donation) -> QA, perf, release.
 
 | Ver | Thay đổi |
 |---|---|
+| v1.13 | Phần B: chốt vị trí code (`packages/engine`, `apps/web`, `apps/server` — workspaces trong repo này). |
 | v1.12 | Binding 8: chơi free hết, F26 bỏ, monetization duy nhất = donate cho admin (F20). |
 | v1.11 | Đối soát số 08/09: tổng ~550 (~475 sprite/icon + 75 audio id); nhóm 2 = 12 icon (bỏ mat-onion/mat-ice). |
 | v1.10 | Binding 11 onboarding → ràng buộc theo F27 v1.1 (luật chủ dự án 08/09). |

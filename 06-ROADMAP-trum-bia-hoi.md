@@ -13,7 +13,7 @@
 
 | Mốc | Nội dung | Exit criteria (đo được) | Trạng thái |
 |---|---|---|---|
-| **M0 · Nền** | Repo game mới; config loader từ `economy.tbh.json` + schema; engine thuần + shift loop; sim headless đo k; port `check:config`; skeleton `analytics-events.md`, `vi.json/en.json`, `assets/manifest.json`; placeholder convention | `npm run check:config` xanh trên repo mới; sim 5 seed k ∈ 2.0–3.0; build + test xanh | ⚪ |
+| **M0 · Nền** | Workspaces `packages/engine` + `apps/web` trong repo này (HANDOFF §4.4); config loader từ `economy.tbh.json` + schema; engine thuần + shift loop; sim headless đo k; port `check:config`; skeleton `analytics-events.md`, `vi.json/en.json`, `assets/manifest.json`; placeholder convention | `npm run check:config` xanh trên repo mới; sim 5 seed k ∈ 2.0–3.0; build + test xanh | ⚪ |
 | **M1 · Vòng phục vụ lõi** | Bàn/Order/serve 1 chạm + 4 kết cục + grace; cốc/freshness; rót & rửa tự động; kho + nâng cấp thiết bị; **UI do dev thiết kế** theo `docs/reference/`; **lưu localStorage** versioned + `eventLog`; audio nhóm ui/shift/serve/beer | Chơi trọn ca 12 phút trên 3 viewport; 09 §11 mục P1; k giữ band; reload không mất tiến độ | ⚪ |
 | **M2 · Onboarding + guest** | F27 (1 khách 1 bia, thông báo mất khách, step guide lần đầu + sau 3 lần mất khách); F25 ngôn ngữ + guest local; nút khuyến khích đăng nhập (chưa cần server) | 5 người mới: ≥ 4/5 phục vụ khách đầu ≤ 30 s, ≥ 4/5 đóng ca 1; F27 §6 | ⚪ |
 | **M3 · Đủ demand-mix** | 6 món + bếp; 7 loại khách; 5 thời tiết; Giờ Vàng đủ mức + lịch; đợt gọi 2+; tip/uy tín/phạt đầy đủ; biển hiệu, mở khoá một lần | Sim: k band + loss theo 04 §5/§6; 09 §11 mục P2; asset batch thiết bị/khách/món đã thay placeholder | ⚪ |

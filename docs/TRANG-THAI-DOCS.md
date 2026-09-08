@@ -5,9 +5,9 @@
 
 ## 1. Kết luận
 
-**Đủ để bắt đầu M0** theo brief B trong `11-PROMPT-PACK` v1.10. Ràng buộc rõ, số tập trung ở JSON, layout có ảnh tham khảo, onboarding đã thành luật, gate `npm run check:config` chạy được ở gốc repo và đang xanh (37/37 + coverage). Không còn mục 🔴.
+**Đủ để bắt đầu M0** theo brief B trong `11-PROMPT-PACK` v1.13. Ràng buộc rõ, số tập trung ở JSON, layout có ảnh tham khảo, onboarding đã thành luật, gate `npm run check:config` chạy được ở gốc repo và đang xanh (37/37 + coverage). Không còn mục 🔴.
 
-Còn lại chỉ là **3 việc bạn đã chủ động để "chốt sau"** (mục 4) — không mục nào chặn M0–M6.
+Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **3 việc bạn cần làm trước khi giao** (mục 4b — quan trọng nhất là merge + push để Level 3 chạy được).
 
 ## 2. Độ phủ theo lĩnh vực
 
@@ -53,6 +53,16 @@ Còn lại chỉ là **3 việc bạn đã chủ động để "chốt sau"** (m
 
 Ba mục item-list (hành phi, đá lạnh, giá cosmetic) đã **chốt theo đề xuất 08/09**: bỏ hành phi + đá lạnh khỏi nguyên liệu (6 món ↔ 6 nguyên liệu, `mat-onion`/`mat-ice` không vẽ, B1 còn 12 icon); giá cosmetic là giá cuối, không ×k (JSON 1.5.1 có `_rule`).
 
+## 4b. Checklist trước khi bấm "giao" (audit cuối 08/09)
+
+| # | Việc | Ai | Vì sao |
+|---|---|---|---|
+| 1 | **Merge nhánh `docs/2026-09-08-docs-pack` vào `master` và `git push origin master`** | Chủ dự án | Level 3 (`CLAUDE.md`) bắt `/ap-init` đọc v11 pack + docs từ **`origin/master`** — chưa push thì dev agent theo Level 3 không mở được slice M0; `origin/master` hiện còn ở `e3310cb` (trước cả commit playtest `c3803c2`) |
+| 2 | Xác nhận môi trường agent designer có **Blender MCP + Blender ≥ 4.2 + Python Pillow/numpy** (brief A §0.1 ghi "đã cài sẵn") | Chủ dự án | Brief A coi đây là giả định; nếu chưa có thì designer bắt đầu bằng cài đặt, không phải asset |
+| 3 | Dev có thể bỏ Level 3 cho M0? Brief B §0.1: "theo CLAUDE.md/AGENTS.md trừ khi chủ dự án nói bỏ" | Chủ dự án | Level 3 (worktree riêng, scope gate, Codex review) tối ưu cho slice nhỏ trên code có sẵn; M0 là dựng khung từ đầu — nếu muốn nhanh, nói rõ "M0 chạy thường, Level 3 từ M1" |
+
+Đã chốt trong đợt audit này (không cần bạn làm gì): code game mới đặt ở **`packages/engine` · `apps/web` · `apps/server`** (npm workspaces trong repo này, root `package.json` có `workspaces`), không đụng `prototype/`; README features F01–F06 trỏ GDD/08/03 thay vì 04-SPEC lưu trữ; ghi rõ P0–P3 trong CLAUDE.md là mức rủi ro autopilot, không phải phase.
+
 ## 5. Git & việc nội bộ
 
 - **Đã commit:** `b4c39eb` trên nhánh **`docs/2026-09-08-docs-pack`** (66 file: toàn bộ docs pack 08/09 + quyết định + tracker/dashboard + `package.json` gốc). Working tree sạch. Chủ dự án **fast-forward vào master** khi muốn: `git checkout master && git merge --ff-only docs/2026-09-08-docs-pack` (rồi push). Git phải chạy trực tiếp trên máy (qua mount không xoá được `index.lock`).
@@ -61,4 +71,4 @@ Ba mục item-list (hành phi, đá lạnh, giá cosmetic) đã **chốt theo đ
 
 ## 6. Bản đồ nhanh — đọc gì trước
 
-`00-HANDOFF` v1.12 (điểm vào, §4 scope + §6 quy ước) → `11-PROMPT-PACK` v1.12 Phần A (designer) / Phần B (dev) → `02-GDD` v1.12 + `03-SPEC` (luật chơi) → `08-SPEC` v1.2.7 + `economy.tbh.json` 1.6.0 (số) → `06-ROADMAP` v3.1 (mốc M0–M9) + `implementation-tracker` v0.7.1 (0/28) → `docs/features/F07–F28` → `docs/reference/` (layout) → `trum-bia-hoi-brd-admin.md` §5.2 (config admin).
+`00-HANDOFF` v1.13 (điểm vào, §4 scope + §6 quy ước) → `11-PROMPT-PACK` v1.13 Phần A (designer) / Phần B (dev) → `02-GDD` v1.12 + `03-SPEC` (luật chơi) → `08-SPEC` v1.2.7 + `economy.tbh.json` 1.6.0 (số) → `06-ROADMAP` v3.1 (mốc M0–M9) + `implementation-tracker` v0.7.1 (0/28) → `docs/features/F07–F28` → `docs/reference/` (layout) → `trum-bia-hoi-brd-admin.md` §5.2 (config admin).

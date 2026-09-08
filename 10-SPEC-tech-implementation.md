@@ -46,7 +46,7 @@ prototype/
 server/ (P3)         src/{api,ws,store,projections,jobs}/ · dùng @tbh/engine (workspace package)
 docs/config/economy.tbh.json · assets/manifest.json · scripts/{check_economy_config,check_asset_manifest}.py
 ```
-- Khi tách package: `packages/engine` (không phụ thuộc), `apps/web`, `apps/server` (pnpm/npm workspaces). Chưa cần trước P3.
+- **Bố cục chốt 08/09 (00-HANDOFF §4.4):** `packages/engine` (thuần, không phụ thuộc), `apps/web`, `apps/server` (từ M4) — npm workspaces ở root `package.json`, ngay từ M0.
 
 ---
 
