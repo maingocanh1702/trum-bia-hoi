@@ -126,3 +126,6 @@ Independent full-diff review pending. Other F10/game work remains in progress.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Implemented local business sign installation, five-style ownership/equip, future-arrival/cadence effects and original sprites; clarified Golden reputation gate. Full independent review pending. |
+
+
+| 2026-09-09 review receipt | Full immutable diff bdbb493..9239007 independently reviewed with no introduced actionable defects. Corrected VIP-cap exhaustion at config intake, synchronized both sign gate keys, and aligned quote spend validation with active-shift ledger ownership.95 unit/37 E2E/config/build/assets plus normal/pressure sim passed. Full F10/M0-M9 remains in progress. |

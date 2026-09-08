@@ -729,3 +729,36 @@ Round3 author verification passed: config/build/95 unit/10 normal k rows/15 pres
 windows (.qa/signboard-r3-verify.txt) and all37 E2E again in31.7s
 (.qa/signboard-r3-e2e.txt). The earlier110 sign sim rows still cover unchanged
 canonical formulas/styles. No product mutation during prior independent reviews.
+
+
+## 2026-09-09 — Business signboard review receipt
+
+Immutable base bdbb493525e5ce336eb7146b2cf4e092cb420172 → final product
+923900741e32def42ad0c37ddefafaa676d8c6ef. The independent third full-base Codex review
+(.qa/review-signboard-r3.txt/log) returned: "The full immutable diff is free of
+introduced actionable defects." The reviewer independently passed typecheck,
+95 unit tests, config validation via node --import tsx (no IPC), config coverage
+and asset validation. Its native prose verdict is retained without inventing a
+rubric marker. The two earlier reviews/fixes remain documented above.
+
+Author final config/build/95 unit/37 E2E and normal10-row k +15 controlled pressure
+windows passed.110 style economy rows remain applicable to unchanged canonical
+formulas, all>=500 served each and k2.3072–2.8616. No tuning number changed. Runtime
+manifest remains127 entries,32 paired SFX,30 placeholders/89 drafts: full art/release
+is unfinished. No product changes during any independent review. Tracker v0.13.1
+and dashboard keep16 features in progress and zero full features complete; full
+M0–M9 goal remains active. Preview is http://127.0.0.1:5174/, no root merge/push.
+
+Next intake: .qa/arrival-interval-contract.md, then .qa/next-flyer-intake.md. A read-only
+probe found ordinary rush.none.floorMs clamps the configured hot/humid and future
+flyer demand modifiers; the next slice must reconcile/document that formula before
+wiring marketing. Genuine rules9 hot/humid histories were captured fromf861417 for
+replay evidence; original Neon history from6e390be is preserved. Neither is a
+fabricated fixture from a future implementation. An original builtin flyer draft
+is staged at .qa/assets/flyer-bundle.png (1254×1254 RGBA alpha0–255), prompt at
+.qa/flyer-prompt.json; it is not a runtime asset yet. Integrate/provenance/manifest
+with the flyer producer after the arrival correction, not this frozen signboard diff.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Recorded full-base independent no-finding review bdbb493..9239007, final95 unit/37 browser verification and preserved the full-game backlog. |
