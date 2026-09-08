@@ -7,7 +7,7 @@
 
 **Đủ để bắt đầu M0** theo brief B trong `11-PROMPT-PACK` v1.13. Ràng buộc rõ, số tập trung ở JSON, layout có ảnh tham khảo, onboarding đã thành luật, gate `npm run check:config` chạy được ở gốc repo và đang xanh (37/37 + coverage). Không còn mục 🔴.
 
-Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **3 việc bạn cần làm trước khi giao** (mục 4b — quan trọng nhất là merge + push để Level 3 chạy được).
+Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **2 việc nhỏ trước khi giao** (mục 4b). Quy trình build **do dev tự quyết** — Level 3 không còn bắt buộc.
 
 ## 2. Độ phủ theo lĩnh vực
 
@@ -38,8 +38,9 @@ Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **3 việc bạ
 4. **Layout tham khảo = `docs/reference/`** (ảnh game gốc, kiểu sân quán không gian) — không phải card-list ở 09-SPEC §3.1.
 5. **Content bank + tính năng kiểm tra: pending**, chưa dùng làm ràng buộc, không tính vào acceptance M6.
 6. **Mặt bằng: 9** (theo `locations.list` / F14 / 08 §16).
-7. **Chơi FREE hoàn toàn — monetization duy nhất = donate cho admin.** Không Vé Mở Ca, không bán quyền chơi/xu/sức mạnh, không paywall; donate tự nguyện (F20), quà cảm ơn cosmetic-only; cổng nhận tiền = adapter, mặc định QR chuyển khoản + admin xác nhận tay.
-8. Việc còn lại: làm theo đề xuất, không hỏi lại.
+7. **Quy trình build do dev/agent tự quyết** — Level 3/autopilot (worktree, scope gate, Codex review, `/ap-*`) **không còn bắt buộc**; `.autopilot/` + `docs/autopilot-*.md` là lưu trữ. Ràng buộc chỉ còn là kết quả: `check:config` xanh, build/test xanh, k trong band, changelog khi lệch doc, tracker/dashboard cập nhật (CLAUDE.md/AGENTS.md block "Build workflow").
+8. **Chơi FREE hoàn toàn — monetization duy nhất = donate cho admin.** Không Vé Mở Ca, không bán quyền chơi/xu/sức mạnh, không paywall; donate tự nguyện (F20), quà cảm ơn cosmetic-only; cổng nhận tiền = adapter, mặc định QR chuyển khoản + admin xác nhận tay.
+9. Việc còn lại: làm theo đề xuất, không hỏi lại.
 
 **Cách viết doc giao việc (áp cho mọi bổ sung sau này):** chỉ định nghĩa đầu vào, đầu ra mong muốn, plugin/công cụ (Blender MCP cho asset…), acceptance/QA. Không viết quy trình từng bước — cách build do dev/agent tự quyết.
 
@@ -53,19 +54,18 @@ Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **3 việc bạ
 
 Ba mục item-list (hành phi, đá lạnh, giá cosmetic) đã **chốt theo đề xuất 08/09**: bỏ hành phi + đá lạnh khỏi nguyên liệu (6 món ↔ 6 nguyên liệu, `mat-onion`/`mat-ice` không vẽ, B1 còn 12 icon); giá cosmetic là giá cuối, không ×k (JSON 1.5.1 có `_rule`).
 
-## 4b. Checklist trước khi bấm "giao" (audit cuối 08/09)
+## 4b. Trước khi bấm "giao" (còn 2 việc nhỏ)
 
 | # | Việc | Ai | Vì sao |
 |---|---|---|---|
-| 1 | **Merge nhánh `docs/2026-09-08-docs-pack` vào `master` và `git push origin master`** | Chủ dự án | Level 3 (`CLAUDE.md`) bắt `/ap-init` đọc v11 pack + docs từ **`origin/master`** — chưa push thì dev agent theo Level 3 không mở được slice M0; `origin/master` hiện còn ở `e3310cb` (trước cả commit playtest `c3803c2`) |
-| 2 | Xác nhận môi trường agent designer có **Blender MCP + Blender ≥ 4.2 + Python Pillow/numpy** (brief A §0.1 ghi "đã cài sẵn") | Chủ dự án | Brief A coi đây là giả định; nếu chưa có thì designer bắt đầu bằng cài đặt, không phải asset |
-| 3 | Dev có thể bỏ Level 3 cho M0? Brief B §0.1: "theo CLAUDE.md/AGENTS.md trừ khi chủ dự án nói bỏ" | Chủ dự án | Level 3 (worktree riêng, scope gate, Codex review) tối ưu cho slice nhỏ trên code có sẵn; M0 là dựng khung từ đầu — nếu muốn nhanh, nói rõ "M0 chạy thường, Level 3 từ M1" |
+| 1 | `git push origin master` | Chủ dự án | `master` đã có đủ docs (ff-merge `8bca922`), nhưng `origin/master` vẫn ở `e3310cb`; agent chạy từ clone khác sẽ không thấy docs |
+| 2 | Xác nhận môi trường agent designer có **Blender MCP + Blender ≥ 4.2 + Python Pillow/numpy** (brief A §0.1 ghi "đã cài sẵn") | Chủ dự án | Nếu chưa có thì designer bắt đầu bằng cài đặt, không phải asset |
 
-Đã chốt trong đợt audit này (không cần bạn làm gì): code game mới đặt ở **`packages/engine` · `apps/web` · `apps/server`** (npm workspaces trong repo này, root `package.json` có `workspaces`), không đụng `prototype/`; README features F01–F06 trỏ GDD/08/03 thay vì 04-SPEC lưu trữ; ghi rõ P0–P3 trong CLAUDE.md là mức rủi ro autopilot, không phải phase.
+Đã chốt: code game mới đặt ở **`packages/engine` · `apps/web` · `apps/server`** (npm workspaces trong repo này); README features F01–F06 trỏ GDD/08/03; P0–P3 trong CLAUDE.md là mức rủi ro autopilot cũ, không phải phase; **Level 3 không còn bắt buộc** — dev tự quyết quy trình.
 
 ## 5. Git & việc nội bộ
 
-- **Đã commit:** `b4c39eb` trên nhánh **`docs/2026-09-08-docs-pack`** (66 file: toàn bộ docs pack 08/09 + quyết định + tracker/dashboard + `package.json` gốc). Working tree sạch. Chủ dự án **fast-forward vào master** khi muốn: `git checkout master && git merge --ff-only docs/2026-09-08-docs-pack` (rồi push). Git phải chạy trực tiếp trên máy (qua mount không xoá được `index.lock`).
+- **Đã vào `master`:** 4 commit `b4c39eb` → `8bca922` (docs pack 08/09, quyết định, tracker/dashboard, `package.json` gốc, bỏ Level 3) — fast-forward từ nhánh `docs/2026-09-08-docs-pack` (nhánh giữ lại, xoá được). **Lưu ý:** checkout sang nhánh cũ/`origin/master` sẽ làm các file docs biến mất khỏi thư mục (chúng chỉ tồn tại từ `b4c39eb`) — không phải mất dữ liệu, `git checkout master` là quay lại. Chưa push origin. Git chạy trực tiếp trên máy (qua mount không xoá được `index.lock`).
 - `PHASE_DATES` trong `tools/dashboard-engine/build_dashboard.py` để trống có chủ đích (ROADMAP v3.1 chưa gán ngày) — dashboard ghi "Chưa gán ngày"; điền lại khi team chốt ước lượng.
 - Script vá một lần `scripts/apply_pending_0809.py` đã xoá. Backup `$HOME/*.bak` trên máy có thể xoá.
 
