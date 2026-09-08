@@ -237,7 +237,7 @@ CI: `lint → typecheck → test → probe → sim → check:config (economy + c
 
 > Scope = 1 phase, game đủ 5 lớp economy (`00-HANDOFF` §4, founder 09/09). Bảng dưới chỉ là **thứ tự merge** cho gọn; P1–P4 không có nghĩa "để sau mới quyết làm".
 
-| Phase | Slice (serialize theo `docs/autopilot-invariant-catalog.md`) | Feature |
+| Phase | Slice (gợi ý — dev tự quyết; Level 3 không còn bắt buộc) | Feature |
 |---|---|---|
 | P1 | config-loader · inventory-restock-ledger · tables-buy-upgrade · upgrades-basic · rush-light-weather3-grace · ui-hud-sheets-ledger · asset-registry-atlas · save-local-v1 · i18n-vi | F01–F06, F08(1), F09(3), F10(basic), F24, F25(locale) |
 | P2 | kitchen-6-dishes · customer-types-p2 · rush-schedule-full · weather-5 · stall-signboard-unlocks-flyer · quests-local · ui-p2 | F07, F08, F09, F11, F17, F10(full) |

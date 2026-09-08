@@ -1,5 +1,5 @@
 <!-- gitnexus:start -->
-# GitNexus — Code Intelligence
+# GitNexus — Code Intelligence (recommended tooling, not a gate — index currently covers `prototype/` only)
 
 This project is indexed by GitNexus as **trum-bia-hoi** (2190 symbols, 3232 relationships, 102 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
@@ -7,19 +7,19 @@ This project is indexed by GitNexus as **trum-bia-hoi** (2190 symbols, 3232 rela
 
 ## Always Do
 
-- **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
-- **MUST run `detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows. For regression review, compare against the default branch: `detect_changes({scope: "compare", base_ref: "master"})`.
-- **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
+- **Recommended: run impact analysis before editing an indexed symbol.** Before modifying a function, class, or method, run `impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
+- **Recommended: run `detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows. For regression review, compare against the default branch: `detect_changes({scope: "compare", base_ref: "master"})`.
+- **Warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
 - When exploring unfamiliar code, use `query({search_query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
 - When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `context({name: "symbolName"})`.
 - For security review, `explain({target: "fileOrSymbol"})` lists taint findings (source→sink flows; needs `analyze --pdg`).
 
 ## Never Do
 
-- NEVER edit a function, class, or method without first running `impact` on it.
-- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis.
-- NEVER rename symbols with find-and-replace — use `rename` which understands the call graph.
-- NEVER commit changes without running `detect_changes()` to check affected scope.
+- Prefer running `impact` before editing an indexed function, class, or method.
+- Do not ignore HIGH or CRITICAL risk warnings from impact analysis.
+- Prefer `rename` (call-graph aware) over find-and-replace for indexed symbols.
+- Prefer running `detect_changes()` before committing. New code under `packages/`/`apps/` is not indexed until `node .gitnexus/run.cjs analyze` is re-run — the tool is optional there.
 
 ## Resources
 
@@ -44,46 +44,32 @@ This project is indexed by GitNexus as **trum-bia-hoi** (2190 symbols, 3232 rela
 <!-- gitnexus:end -->
 
 <!-- autopilot:start -->
-# Level 3 supervised workflow — future tasks
+# Build workflow — the building agent decides (owner decision 2026-09-08)
 
-Every task/session/feature opened after the Level 3 v11 kit is published follows the canonical
-`$HOME/Projects/Claude template/autopilot/level3-workflow.md` plus the globally loaded invariants.
-No activation watermark or certification ceremony is required. This is forward-only: never migrate,
-resume or reclassify an older READY/AWAIT/HALT lifecycle in place.
+The Level 3 supervised workflow (autopilot kit: worktree-per-slice, task contracts, scope/readiness
+gate, pinned Codex review, READY/AWAIT/HALT lifecycles, `/ap-*` commands) is **no longer required**.
+The agent building the game decides its own process — branching, slicing, order of work, review,
+merge, tooling. `.autopilot/` and `docs/autopilot-*.md` are archived kit material: optional, never a gate.
 
-## Always Do
-- Build the compact task contract before implementation: outcome, exact context/base, scope and
-  negative scope, risk, autonomy mode, slice graph, permissions, verification, reviews and stops.
-- `/ap-init` must report the complete v11 pack on the fetched `origin/master` used as `BASE_SHA`.
-  Missing remote/origin publication is a hard preparation blocker.
-- One writing slice = one explicit-base branch/worktree + one writer. Create the worktree from the
-  pinned `origin/master` SHA, write the task contract/runtime manifest inside it, then register from
-  that worktree before implementation.
-- Parallelize only file-, invariant-, dependency- and mutable-state-disjoint slices. Serialize shared
-  engine/economy/schema/generated state.
-- Verify fail-closed: `npm run check:config` at the repo root (JSON ↔ config registry), then build +
-  tests + headless sim (`k` must stay in 2.0–3.0) of the game workspaces `packages/engine` / `apps/*`
-  for simulation/economy changes. `cd prototype && npm run build` applies only when touching the
-  archived `prototype/`.
-- P1/P2 READY only comes from the v11 scope/readiness gate, which reruns declared verification and
-  the pinned independent Codex review before writing `READY.txt`.
-
-## Never Do
-- Never auto-merge by default. P0 is prepare-only; P1 is supervised/manual-merge; P2 is supervised
-  unless a narrow routine has earned proactive authority; P3 is report-only.
-- Never edit `.autopilot/INFLIGHT.md`, share a writing worktree, use an implicit base, bypass a
-  breaker, trust an empty-diff review, or raw-remove a lifecycle.
-- Cleanup only through `scripts/ap-finish.sh <FEATURE_ID>` after origin-verified merge or an
-  explicitly authorized close. `scripts/ap-housekeep.sh` is inventory-only.
+## What still binds (outcomes, not process)
+- Game rules, numbers and constraints: `00-HANDOFF-trum-bia-hoi.md` §4/§6 and `11-PROMPT-PACK` Part B
+  "WHAT IS BINDING" (GDD + 03-SPEC rules · numbers only from `docs/config/economy.tbh.json`, no
+  hardcode · k invariant · engine purity · localStorage first, server at M4 · free-to-play, donate only).
+- Before calling a slice done: `npm run check:config` at the repo root is green; build + tests green;
+  headless sim keeps `k` in 2.0–3.0 whenever economy/sim code changes. `cd prototype && npm run build`
+  only if you touch the archived `prototype/`.
+- Code lives in npm workspaces `packages/engine` · `apps/web` · `apps/server` (00-HANDOFF §4.4).
+  Never put new code in `prototype/`.
+- Docs: when you deviate from a doc, append a changelog row to that doc (append-only). When a feature
+  changes state, update `docs/implementation-tracker.md` and rebuild the dashboard
+  (`python3 tools/dashboard-engine/build_dashboard.py --no-network`).
+- Keep `master` buildable. End each slice with a short report (template: `11-PROMPT-PACK` §0.3).
 
 ## Resources
 | File | Use for |
 |------|---------|
-| `$HOME/Projects/Claude template/autopilot/level3-workflow.md` | Canonical operational workflow. |
-| `SESSION-TRACK-LOG.md` | Project handoff/context index; read before planning a new task. |
-| `docs/autopilot-invariant-catalog.md` | Global plus Trum Bia Hoi serialization tokens. |
-| `docs/autopilot-parallel-scope-gate.md` | Repository v11 gate contract. |
-| `docs/autopilot-manifests/_TEMPLATE.json` | Slice manifest template. |
-| `docs/autopilot-manifests/_READINESS_EVIDENCE_TEMPLATE.json` | Readiness evidence template. |
-| `docs/autopilot-backlog.md` | Project task/dependency context; status is not runtime proof. |
+| `00-HANDOFF-trum-bia-hoi.md` | Entry point: scope, binding constraints, reading order. |
+| `docs/TRANG-THAI-DOCS.md` | Latest state of the docs + open decisions (only the newest version is kept). |
+| `SESSION-TRACK-LOG.md` | Project snapshot + next step; read before planning. |
+| `docs/autopilot-*.md`, `.autopilot/` | Archived Level 3 kit — optional reference, not a process requirement. |
 <!-- autopilot:end -->

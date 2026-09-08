@@ -1,4 +1,4 @@
-# 🎯 PROMPT PACK — Designer & Dev — Trùm Bia Hơi (v1.13)
+# 🎯 PROMPT PACK — Designer & Dev — Trùm Bia Hơi (v1.14)
 
 > **Mục đích:** 2 bản giao việc để dán cho 2 agent — (A) **Designer** dựng game asset bằng Blender MCP, (B) **Dev** code game. Cả hai đều **chỉ ràng buộc đầu vào / đầu ra / QA**; *cách làm, kiến trúc, layout, design do agent tự quyết*.
 > Ngày: 2026-09-09. Nguồn sự thật: `00-HANDOFF-trum-bia-hoi.md` → `02-GDD-trum-bia-hoi.md` (quyết định) → `08-SPEC-economy-constants.md` + `docs/config/economy.tbh.json` (số) → `trum-bia-hoi-brd-admin.md` §5.2 (config admin).
@@ -13,7 +13,7 @@
 | Agent | Cần có | Quyền ghi |
 |---|---|---|
 | **Designer** | Claude Code hoặc Codex + **Blender MCP plugin** (đã cài sẵn ở cả hai; Blender ≥ 4.2 mở sẵn, addon bật) + Python 3 có Pillow/numpy | `assets/`, `scripts/`, `docs/asset-*` |
-| **Dev** | Claude Code hoặc Codex, Node 22, npm | toàn repo; theo `CLAUDE.md`/`AGENTS.md` (Level 3: worktree riêng, không auto-merge) trừ khi chủ dự án nói bỏ |
+| **Dev** | Claude Code hoặc Codex, Node 22, npm | toàn repo; **tự quyết quy trình build** (branch, slice, review, merge, tooling) — Level 3/autopilot **không còn bắt buộc** (chủ dự án 08/09); ràng buộc duy nhất = "WHAT IS BINDING" ở Phần B |
 
 ### 0.2 Thứ tự & cổng (gate)
 
@@ -135,7 +135,9 @@ YOU DECIDE, FREELY
 - Architecture, module boundaries, state management, rendering approach, build tooling.
 - Every screen: layout, navigation, controls, feedback, motion, how the player serves a table.
 - Which libraries to use. (Pixi.js + React is what the docs assume, but it is a suggestion.)
-- Slice order, branch strategy inside CLAUDE.md/AGENTS.md rules.
+- Your whole process: slice order, branch strategy, review, merge, tooling. The Level 3 /
+  autopilot workflow is NOT required (owner, 2026-09-08); `.autopilot/` and `docs/autopilot-*`
+  are archived material you may ignore.
 `prototype/` is an ARCHIVED EXPERIMENT, not a starting point: do not inherit its code, its
 layout or its screens. Read it only if you want to see how k was measured.
 `09-SPEC-uiux-screens.md`, `05-SPEC-design-uiux.md` and `docs/features/F24` are REFERENCE, not
@@ -253,6 +255,7 @@ referral) -> risk + dog -> events (World Cup, donation) -> QA, perf, release.
 
 | Ver | Thay đổi |
 |---|---|
+| v1.14 | Chủ dự án 08/09: bỏ ràng buộc Level 3 — dev tự quyết quy trình build; §0.1 + Phần B "YOU DECIDE". |
 | v1.13 | Phần B: chốt vị trí code (`packages/engine`, `apps/web`, `apps/server` — workspaces trong repo này). |
 | v1.12 | Binding 8: chơi free hết, F26 bỏ, monetization duy nhất = donate cho admin (F20). |
 | v1.11 | Đối soát số 08/09: tổng ~550 (~475 sprite/icon + 75 audio id); nhóm 2 = 12 icon (bỏ mat-onion/mat-ice). |

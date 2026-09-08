@@ -1,7 +1,7 @@
-# 🍺 HANDOFF — Trùm Bia Hơi — điểm vào cho Designer & Dev (v1.13)
+# 🍺 HANDOFF — Trùm Bia Hơi — điểm vào cho Designer & Dev (v1.14)
 
 > **Tương ứng với `00-TONG-HOP-trumviahe.md`** (bản nghiên cứu game gốc) — nhưng đây là bản **của Trùm Bia Hơi**: đọc file này trước mọi file khác. Mục tiêu: một designer (có Blender MCP) và một dev cầm bộ docs này là **tạo asset và code được game**, không cần hỏi lại lịch sử.
-> Ngày: 2026-09-08 (v1.13). **Cách đọc bộ docs (chốt founder 09/09):** ràng buộc là **luật chơi** (`02-GDD` + `03-SPEC`), **số** (`08-SPEC` + `docs/config/economy.tbh.json`), **không-hardcode/config admin** (`trum-bia-hoi-brd-admin.md` §5.2), **bất biến đo k** (`04-SPEC` §5), **server-authoritative + engine thuần** (`10-SPEC` §7/§1; thứ tự code: lưu localStorage trước, server sau — §4.2). Mọi thứ còn lại — kiến trúc, module, thư viện, **layout, màn hình, design** — do dev/designer **tự quyết**. `prototype/` là bản thử nghiệm lưu trữ, KHÔNG phải điểm xuất phát.
+> Ngày: 2026-09-08 (v1.14). **Cách đọc bộ docs (chốt founder 09/09):** ràng buộc là **luật chơi** (`02-GDD` + `03-SPEC`), **số** (`08-SPEC` + `docs/config/economy.tbh.json`), **không-hardcode/config admin** (`trum-bia-hoi-brd-admin.md` §5.2), **bất biến đo k** (`04-SPEC` §5), **server-authoritative + engine thuần** (`10-SPEC` §7/§1; thứ tự code: lưu localStorage trước, server sau — §4.2). Mọi thứ còn lại — kiến trúc, module, thư viện, **layout, màn hình, design** — do dev/designer **tự quyết**. `prototype/` là bản thử nghiệm lưu trữ, KHÔNG phải điểm xuất phát.
 >
 > Trạng thái dự án: prototype Phase 0 đã hoàn thành nhiệm vụ của nó — chứng minh "feel" và **đo được k = 2.24–2.34** (trong band 2.0–3.0), bản Alpha đã host và chủ dự án đã chơi, phản hồi đã đưa vào GDD/03-SPEC (rót & rửa tự động, phục vụ theo Order). Từ 09/09 `prototype/` chuyển sang **lưu trữ**; game viết mới từ đầu. Slice `feat/p0-ui-serve-popover--r2` và gate "Alpha playtest 3–5 người" chỉ còn liên quan tới prototype — merge hay bỏ tuỳ chủ dự án, **không chặn** việc bắt đầu game (xem `SESSION-TRACK-LOG.md`).
 
@@ -81,7 +81,8 @@ Kinh tế một câu: **bia = workhorse quay vòng cốc (rẻ, volume); mồi c
 | `docs/design-tokens.md` | palette/typo | `uiux-analysis` §24, §41 | ✅ v1.0 |
 | `docs/asset-list-designer.md` · `asset-production-checklist.md` · `asset-generation-prompts.md` · `item-list-upgrade-levels.md` | asset catalog + checklist + mô tả | `design-component-catalog-trumviahe.md` | ✅ (8/~550 asset đã có; checklist v1.4: 75 audio id, 8 gap §P2 đã đóng, 9 mặt bằng, bếp 4 cấp, B1 12 icon) |
 | `game-extended-workflow-cl.md` | quy trình game canvas | — | ✅ |
-| `06-ROADMAP` v3.0 (mốc M0–M9, 1 phase) · `docs/implementation-tracker.md` · `docs/dashboard.*` · `docs/autopilot-backlog.md` | tiến độ | — | ✅ ROADMAP viết lại 08/09; tracker/dashboard còn theo prototype |
+| `06-ROADMAP` v3.0 (mốc M0–M9, 1 phase) · `docs/implementation-tracker.md` · `docs/dashboard.*` | tiến độ | — | ✅ ROADMAP v3.1, tracker v0.7.1 reset 0/28 |
+| `docs/autopilot-*.md` · `.autopilot/` | **lưu trữ** kit Level 3 — không còn bắt buộc (08/09) | — | 🗄️ |
 | `economy-spec-from-bundle.md` · `uiux-analysis-trumviahe.md` · `design-component-catalog-trumviahe.md` · `research-*` · `brief-gameplay-trumviahe.md` | **research game gốc** (chỉ để truy vết) | | 🔒 không sửa |
 
 **Luật mâu thuẫn:** quyết định → GDD thắng; số → `docs/config/economy.tbh.json` thắng (sửa spec cho khớp); hệ bàn → 03-SPEC; asset naming → `asset-list-designer.md` §11.
@@ -153,15 +154,15 @@ Giao việc: `11-PROMPT-PACK` Phần A (designer) và Phần B (dev) — cả ha
 ## 6. Quy ước
 
 - **Tự do thiết kế (founder 09/09):** dev/designer tự quyết kiến trúc, thư viện, layout, màn hình, thao tác, hình ảnh. Doc UI/UX (09-SPEC, 05-SPEC, F24) và kiến trúc (10-SPEC §1–§6, §8–§11) là **tham khảo**; đừng coi là hợp đồng.
-- **P0–P3 trong `CLAUDE.md`/`AGENTS.md` = mức rủi ro autopilot (Level 3), không phải phase game.** Nhãn P0–P4/Phase N trong docs game = thứ tự code (mốc M0–M9).
+- **Quy trình build do dev/agent tự quyết (chủ dự án 08/09):** Level 3/autopilot (worktree, scope gate, Codex review, `/ap-*`) **không còn bắt buộc**; `.autopilot/` + `docs/autopilot-*.md` là lưu trữ. Ràng buộc chỉ còn là **kết quả**: `check:config` xanh, build/test xanh, k trong band, changelog khi lệch doc, tracker/dashboard cập nhật. Nhãn P0–P4/Phase N trong docs game = thứ tự code (mốc M0–M9).
 - Nhãn: 🟢 CORE · 🟡 TUNE (đổi số trong JSON, không sửa spec) · 🔵 **vẫn trong scope 1 phase, làm sau cùng** (trước đây ghi "POST-MVP") · 🔧 cần chốt khi vào sản xuất · 📐 cần wireframe. Mọi chữ "P0–P4 / Phase N" còn sót trong docs = **thứ tự code**, không phải cổng scope.
 - **UI invariants — vẫn bắt buộc dù layout tự do:** phục vụ **1 chạm cả mâm** theo Order cấp bàn với popover/bong bóng đúng 03-SPEC §9.5 (badge loại khách · món · countdown · nút ✅); 4 kết cục serve (03 §9.3) phân biệt được bằng mắt; hit ≥ 44px; không hover-only; màu không là tín hiệu duy nhất; chạy đủ 390×844 · 360×740 · 1280×720 không cuộn ngang; i18n key 100% (không chuỗi cứng); `prefers-reduced-motion`; sheet không pause ca, dialog phạt no-pause; mất mạng giữa ca có trạng thái rõ + resync (F23 §8); mọi action có SFX theo checklist B7, gộp trùng 100 ms, có 🔇.
 - **Cách viết doc giao việc (chủ dự án 08/09):** chỉ định nghĩa đầu vào, đầu ra mong muốn, plugin/công cụ (Blender MCP cho asset…), acceptance/QA. Không viết quy trình từng bước — cách build do agent tự quyết.
 - **Không hardcode (founder 08/09):** mọi tham số vận hành — kể cả 🟢 — là config trong admin (BRD §5.2); code chỉ giữ schema + default fallback; 🟢 = "thiết kế không đổi", không phải "ghi cứng vào code".
 - Số xu/uy tín-thưởng = **base × k**; thời gian/hệ số/weight/số lượng không nhân (08-SPEC §0).
 - Changelog **append-only** ở cuối mỗi doc; không ghi đè lịch sử.
-- Code: engine thuần TS không DOM; RNG seedable; k chỉ đo từ giá trị/lượt; asset phải có manifest; mỗi slice có probe/test + sim + build. Lưu trữ: localStorage (versioned + migrate) trước, server sau — nhưng mọi mutation đi qua event log ngay từ đầu.
-- Giao tiếp: mọi prompt kết thúc bằng báo cáo mẫu `11-PROMPT-PACK` §0.4.
+- Code: engine thuần TS không DOM; RNG seedable; k chỉ đo từ giá trị/lượt; asset phải có manifest; slice "xong" = `check:config` + build + test xanh (+ sim k khi đụng economy). Lưu trữ: localStorage (versioned + migrate) trước, server sau — nhưng mọi mutation đi qua event log ngay từ đầu.
+- Giao tiếp: kết thúc mỗi slice bằng báo cáo ngắn theo mẫu `11-PROMPT-PACK` §0.3 (gợi ý).
 
 ---
 
@@ -182,3 +183,4 @@ Giao việc: `11-PROMPT-PACK` Phần A (designer) và Phần B (dev) — cả ha
 | v1.11 | Chủ dự án 08/09: content bank + **tính năng kiểm tra (policy check) → PENDING** (F15 §4 banner, `risk.inspection.enabled=false`, JSON 1.5.0); 9 mặt bằng xác nhận chốt; item-list soát lại (§8 mở khoá món, §10 hiệu ứng vintage, §1 sức chứa Lv4, §16 tổng hợp đồng bộ JSON). |
 | v1.12 | Chủ dự án 08/09: **chơi free hoàn toàn, monetization = donate cho admin** (F20). F26 ⛔ bỏ; §4.2 hàng Monetization; §4.5 cổng donate; glossary; JSON 1.6.0 `donation` (A) + `entitlements.mode=free`. |
 | v1.13 | Audit cuối trước handoff: chốt vị trí code game mới (`packages/engine` · `apps/web` · `apps/server`, npm workspaces, không đụng `prototype/`); §6 phân biệt P0–P3 rủi ro autopilot vs phase game; README features F01–F06 trỏ GDD/08/03 thay 04-SPEC lưu trữ. |
+| v1.14 | Chủ dự án 08/09: **bỏ ràng buộc Level 3** — dev tự quyết quy trình build; CLAUDE.md/AGENTS.md block autopilot thay bằng "outcomes still bind"; GitNexus MUST → khuyến nghị; §6 + bản đồ docs cập nhật. |
