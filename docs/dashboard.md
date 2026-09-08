@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-09 02:56 · **Branch hiện tại:** `codex/game-build-isolated`
+> **Cập nhật:** 2026-09-09 03:12 · **Branch hiện tại:** `codex/game-build-isolated`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -146,7 +146,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S 🔒P
 - **Phase:** Phase 0
-- **Notes:** Lịch light/heavy cơ bản + modifiers; rules v5 sửa clock khi closing/finalize, warning config/HUD active ưu tiên, replay v4 thật. 55 unit/config/build/sim xanh; đang review, full seeded schedule/lunch/football/priority còn tiếp tục.
+- **Notes:** Lịch light/heavy cơ bản + modifiers; rules v5 sửa clock khi closing/finalize, warning config/HUD active ưu tiên, replay v4 thật. 55 unit/25 E2E/config/build/sim xanh; review đầy đủ b97ff07..1c18b2d không còn findings sau sửa cảnh báo trợ năng; full seeded schedule/lunch/football/priority còn tiếp tục.
 
 ### F24 — Thiết Kế UI/UX Quán Bia — tokens, wireframe, sprite, animation
 

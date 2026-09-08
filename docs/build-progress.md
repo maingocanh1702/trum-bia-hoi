@@ -365,3 +365,29 @@ follow; full seeded scheduling/lunch/football/priority and the full game remain 
 | Date | Change |
 |---|---|
 | 2026-09-09 | Added v5 rush lifecycle and config-driven telegraph. Validation covers custom overlapping slots, hidden time, equal-timestamp migration and legacy replay; independent review pending. |
+
+## 2026-09-09 — Rush clock independent review receipt
+
+Reviewed full immutable range `b97ff076df10f8109b92da46d5997a216b8d94a2`
+to `1c18b2d2422d7d94dc9c355ec8282d62b735ff11`. First review found one
+accessibility issue: the next-slot live announcement could compete with an active
+rush under custom overlapping schedules. The same active-first predicate now gates
+both visible HUD and announcement; a production-shaped overlap browser regression
+passes. Final independent output `.qa/review-rush-round2.txt` says:
+
+> No actionable introduced defects found in the full immutable diff.
+
+The reviewer did not emit the requested literal CLEAN marker; this receipt records
+the actual no-findings conclusion, not a manufactured gate verdict. It independently
+passed config, build, all 55 engine tests and normal sim. Its npm wrapper hit tsx IPC
+sandbox restrictions and it did not rerun browser tests. Author checks on the final
+tree passed config/build/55 unit/25 E2E; normal and well-rested simulations retain
+k 2.3249–2.7020 across 20 rows, each with at least 500 serves.
+
+Preview remains local on port 5174. No merge/push to the original checkout. Current
+rush deadline/warning mechanism is verified; full F08 scheduling and the full
+M0–M9 goal remain open. Next bounded prerequisite: dog purchase/upgrade for LP1.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Recorded final rush review without actionable findings, accessibility regression and final 55-unit/25-browser checks. |
