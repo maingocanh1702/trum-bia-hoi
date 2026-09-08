@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **Trum Bia Hoi** (1946 symbols, 2880 relationships, 96 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **trum-bia-hoi** (2190 symbols, 3232 relationships, 102 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
 
@@ -25,10 +25,10 @@ This project is indexed by GitNexus as **Trum Bia Hoi** (1946 symbols, 2880 rela
 
 | Resource | Use for |
 |----------|---------|
-| `gitnexus://repo/Trum Bia Hoi/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/Trum Bia Hoi/clusters` | All functional areas |
-| `gitnexus://repo/Trum Bia Hoi/processes` | All execution flows |
-| `gitnexus://repo/Trum Bia Hoi/process/{name}` | Step-by-step execution trace |
+| `gitnexus://repo/trum-bia-hoi/context` | Codebase overview, check index freshness |
+| `gitnexus://repo/trum-bia-hoi/clusters` | All functional areas |
+| `gitnexus://repo/trum-bia-hoi/processes` | All execution flows |
+| `gitnexus://repo/trum-bia-hoi/process/{name}` | Step-by-step execution trace |
 
 ## CLI
 
