@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { DISHES, EQUIPMENT, currentGuests, encodeSave, freshnessMs, kickAllQuote, restockQuote, rushStatus, stockCap, upgradeQuote, wellRestedRemaining, type Command, type Equipment, type Order, type Table } from '../../../packages/engine/src';
+import { DISHES, EQUIPMENT, currentGuests, dogUpgradeQuote, encodeSave, freshnessMs, kickAllQuote, restockQuote, rushStatus, stockCap, upgradeQuote, wellRestedRemaining, type Command, type Equipment, type Order, type Table } from '../../../packages/engine/src';
 import { Sprite, TableSeats, menuAsset, reactions } from './assets';
 import { translate } from './i18n';
 import { advanceGuide, boot, dispatch, download, persist, readSettings, writeSettings, replaceSave } from './local';
 import { createSound } from './audio';
 
-type Sheet = 'stock' | 'upgrades' | 'book' | 'close' | 'journey' | 'settings' | 'config' | null;
+type Sheet = 'stock' | 'upgrades' | 'book' | 'close' | 'journey' | 'settings' | 'config' | 'dog' | null;
 const icons: Record<string, string> = {
   coin: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 4v10m3-8h-4a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4H9',
   bolt: 'M13 2 5 13h6l-1 9 9-13h-6l1-7Z',
@@ -80,6 +80,7 @@ export function App() {
     const result = dispatch(game, cmd);
     if (!result.ok) { sound.play('ui:denied'); setToast({ text: t(`error.${result.reason}`), kind: 'error' }); }
     else if (cmd.type === 'restock' || cmd.type === 'upgrade') setToast({ text: t(cmd.type === 'restock' ? 'stock.success' : 'upgrade.success'), kind: 'early' });
+    if (result.ok && cmd.type === 'upgradeDog') { setSheet(null); setToast({ text: t('dog.success', { n: w.dogLevel }), kind: 'early' }); }
     processEvents(); save(); setFrame(x => x + 1);
     return result;
   };
@@ -144,6 +145,7 @@ export function App() {
 
   const shift = w.shift, inShift = w.phase !== 'resting';
   const rush = rushStatus(w, game.config);
+  const dogQuote = dogUpgradeQuote(w, game.config);
   const guide = settings.guideIndex === null ? null : c.onboarding.stepGuide.steps[settings.guideIndex];
   const showGuide = guide && (!guide.onlyAfter || w.completedShifts > 0);
   const cleanGlasses = w.glasses.filter(g => g.state === 'clean').length;
@@ -199,6 +201,7 @@ export function App() {
         <div className="owner-station"><Sprite id="owner-idle" /><div className="serving-counter"><div className="counter-canopy" /><div className="counter-front"><h1>{t('brand')}</h1><div className="counter-bottles" aria-hidden="true"><i /><i /><i /><i /><i /></div></div></div></div>
         <div className="equipment-row">{['cooler', 'keg', 'washer'].map(k => equipmentButton(k as Equipment))}</div>
         <div className="glass-counter"><Sprite id="glass-clean" /><span>{cleanGlasses}<small>/{w.glasses.length}</small></span><span className="sr-only">{t('glass.clean')}</span></div>
+        {w.dogLevel > 0 && <button className="dog-object" aria-label={t('dog.open', { n: w.dogLevel })} aria-haspopup="dialog" onClick={() => open('dog')}><Sprite id={`dog-idle-lv${w.dogLevel}`} /><span>{t('level', { n: w.dogLevel })}</span></button>}
       </section>
       <section className="yard" aria-label={t('location.hem_nho')}>
         {w.tables.map(renderTable)}
@@ -227,10 +230,23 @@ export function App() {
 
     {welcome && <SheetDialog title={t('welcome.title')} close={() => { setWelcome(false); setPrefs({ welcomed: true }); }}><div className="welcome-content"><Sprite id="glass-full" /><p>{t('welcome.copy')}</p><button className="primary" onClick={() => { setWelcome(false); setPrefs({ welcomed: true }); }}>{t('continue')}</button><small>{t('rest.free')}</small></div></SheetDialog>}
 
-    {sheet && <SheetDialog view={sheet} title={t(sheet === 'close' ? 'close.title' : sheet === 'book' ? 'book.title' : sheet === 'journey' ? 'journey.title' : sheet === 'settings' ? 'settings.title' : sheet === 'config' ? 'config.title' : `nav.${sheet}`)} close={() => setSheet(null)}>
+    {sheet && <SheetDialog view={sheet} title={t(sheet === 'dog' ? 'dog.title' : sheet === 'close' ? 'close.title' : sheet === 'book' ? 'book.title' : sheet === 'journey' ? 'journey.title' : sheet === 'settings' ? 'settings.title' : sheet === 'config' ? 'config.title' : `nav.${sheet}`)} close={() => setSheet(null)}>
+      {sheet === 'dog' && <div className="dog-panel">
+        <div className="dog-summary"><Sprite id={`dog-idle-lv${w.dogLevel || dogQuote.next?.level}`} /><div><h3>{t(`dog.level${w.dogLevel}`)}</h3><p>{t(w.dogLevel ? 'dog.home' : 'dog.welcome')}</p></div></div>
+        {dogQuote.next && dogQuote.cost !== null ? <>
+          <h3>{t('dog.next', { name: t(`dog.level${dogQuote.next.level}`) })}</h3>
+          <ul className="dog-requirements">
+            <li className={w.coins >= dogQuote.cost ? 'is-ready' : ''}><Icon name="coin" /><strong>{num(dogQuote.cost)} {t('coins')}</strong><span>{t('dog.have', { n: num(w.coins) })}</span></li>
+            {dogQuote.materials.map(m => <li key={m.dish} className={m.have >= m.quantity ? 'is-ready' : ''}><Sprite id={menuAsset[m.dish]} /><strong>{t(`dish.${m.dish}`)} × {m.quantity}</strong><span>{t('dog.have', { n: m.have })}</span></li>)}
+          </ul>
+          {dogQuote.materials.some(m => m.quantity > stockCap(w, game.config)) && <p>{t('dog.capacity')}</p>}
+          <button className="primary full" disabled={!dogQuote.ok} onClick={() => run({ type: 'upgradeDog', level: dogQuote.next!.level })}>{t(w.dogLevel ? 'dog.upgrade' : 'dog.buy', { cost: num(dogQuote.cost) })}</button>
+          <div className="dog-links"><button onClick={() => open('stock')}>{t('nav.stock')}</button><button onClick={() => open('upgrades')}>{t('dog.storage')}</button></div>
+        </> : <p>{t('upgrade.max')}</p>}
+      </div>}
       {sheet === 'close' && <div className="close-confirm"><p>{t('close.copy')}</p><p>{t('close.guests', { n: closeQuote.guests.length })}</p><div className="close-price"><Icon name="coin" /><strong>{num(closeQuote.cost)}</strong><span>{t('coins')}</span></div>{!closeQuote.ok && <p role="status">{t('error.notEnoughCoins')}</p>}<div className="button-stack"><button className="primary" disabled={!closeQuote.ok || closeShift !== shift?.id} onClick={() => run({ type: 'kickAll', shiftId: closeShift!, maxCost: closeQuote.cost })}>{t('close.confirm', { cost: num(closeQuote.cost) })}</button><button onClick={() => open('book')}>{t('close.wait')}</button></div></div>}
       {sheet === 'stock' && <><p className="sheet-intro">{t('stock.copy')} <b>{num(w.coins)} {t('coins')}</b></p><div className="stock-list">{DISHES.map(dish => <div className="stock-row" key={dish}><Sprite id={menuAsset[dish]} /><div className="stock-info"><strong>{t(`dish.${dish}`)}</strong><span>{w.inventory[dish]} / {stockCap(w, game.config)}</span><progress value={w.inventory[dish]} max={stockCap(w, game.config)} /></div>{c.menu[dish].unlock.kitchenLevel > w.equipment.kitchen ? <small>{t('stock.locked', { n: c.menu[dish].unlock.kitchenLevel })}</small> : <div className="stock-actions">{(['one', 'bulk', 'full'] as const).map(mode => { const q = restockQuote(w, game.config, dish, mode); return <button key={mode} disabled={!q.ok} onClick={() => run({ type: 'restock', dish, mode })}>{t('stock.buy', { action: mode === 'one' ? t('stock.one') : mode === 'bulk' ? t('stock.bulk', { n: c.inventory.bulkSize }) : t('stock.full'), cost: num(q.cost) })}</button>; })}</div>}</div>)}</div><button className="secondary full" onClick={() => run({ type: 'emergencyPack' })}>{t('stock.emergency')}</button></>}
-      {sheet === 'upgrades' && <><p className="sheet-intro">{t(inShift ? 'upgrade.outside' : 'upgrade.copy')}</p><div className="upgrade-grid">{EQUIPMENT.map(upgradeCard)}</div><h3>{t('upgrade.tables')}</h3><div className="upgrade-grid">{w.tables.map((table, i) => { const next = c.upgrades.table.levels[table.level]; return <div className="upgrade-card" key={table.id}><Sprite id={`table-lv${table.level}-empty`} /><h3>{t('table', { n: i + 1 })}</h3><p>{t('table.seats', { n: table.capacity })}</p><button disabled={!next || inShift} onClick={() => run({ type: 'upgradeTable', tableId: table.id })}>{next ? t('upgrade.buy', { cost: num(next.priceBase) }) : t('upgrade.max')}</button></div>; })}</div><button className="secondary full" onClick={() => run({ type: 'buyTable' })}>{t('upgrade.addTable')}</button></>}
+      {sheet === 'upgrades' && <><button className="dog-entry full" onClick={() => open('dog')}><Sprite id={`dog-idle-lv${w.dogLevel || 1}`} /><span><strong>{t('dog.title')}</strong><small>{t(`dog.level${w.dogLevel}`)}</small></span><span aria-hidden="true">›</span></button><p className="sheet-intro">{t(inShift ? 'upgrade.outside' : 'upgrade.copy')}</p><div className="upgrade-grid">{EQUIPMENT.map(upgradeCard)}</div><h3>{t('upgrade.tables')}</h3><div className="upgrade-grid">{w.tables.map((table, i) => { const next = c.upgrades.table.levels[table.level]; return <div className="upgrade-card" key={table.id}><Sprite id={`table-lv${table.level}-empty`} /><h3>{t('table', { n: i + 1 })}</h3><p>{t('table.seats', { n: table.capacity })}</p><button disabled={!next || inShift} onClick={() => run({ type: 'upgradeTable', tableId: table.id })}>{next ? t('upgrade.buy', { cost: num(next.priceBase) }) : t('upgrade.max')}</button></div>; })}</div><button className="secondary full" onClick={() => run({ type: 'buyTable' })}>{t('upgrade.addTable')}</button></>}
       {sheet === 'book' && (shift ? <><p className="sheet-intro">{t('shift')} · {time(Math.min(shift.closedAt ?? w.now, shift.endsAt) - shift.startedAt - shift.pausedMs)}<b>{t(`weather.${shift.weather}`)}</b></p><dl className="ledger">{(['served', 'lost', 'payment', 'tip', 'penalty', 'spent'] as const).map(key => <div key={key}><dt>{t(`book.${key}`)}</dt><dd>{num(shift.stats[key])}</dd></div>)}{shift.stats.wellRestedBonus > 0 && <div><dt>{t('book.wellRestedBonus')}</dt><dd>{num(shift.stats.wellRestedBonus)}</dd></div>}<div className="ledger-total"><dt>{t('book.net')}</dt><dd>{num(shift.stats.credited - shift.stats.penalty - shift.stats.spent)}</dd></div></dl>{inShift && <div className="button-stack"><button className="primary" onClick={() => run({ type: 'endShift' })}>{t('book.end')}</button><button className="secondary" disabled={!c.shift.kickAllAllowed} onClick={() => { setCloseShift(shift.id); open('close'); }}>{t('book.kick', { cost: num(closeQuote.cost) })}</button></div>}</> : <p>{t('book.none')}</p>)}
       {sheet === 'journey' && <><p className="sheet-intro">{t('journey.copy')}</p><dl className="ledger"><div><dt>{t('journey.lifetime')}</dt><dd>{num(w.lifetimeEarned)}</dd></div><div><dt>{t('journey.season')}</dt><dd>{num(w.seasonEarned)}</dd></div></dl><ol className="journey-list">{c.lifePath.map((level, i) => <li key={level.id} className={i === w.lifePath ? 'current' : ''}><span>{i}</span><div><h3>{locale === 'vi' ? level.name : `LP${i}`}</h3><p>{t(i === w.lifePath ? 'journey.current' : 'journey.unlock', { n: num(level.lifetimeBase) })}</p></div><Icon name={i === w.lifePath ? 'check' : 'star'} /></li>)}</ol></>}
       {sheet === 'settings' && <div className="settings-list"><label>{t('settings.language')}<select value={locale} onChange={e => setPrefs({ locale: e.target.value as 'vi' | 'en' })}><option value="vi">Tiếng Việt</option><option value="en">English</option></select></label><button className="setting-row" onClick={() => setPrefs({ muted: !settings.muted })}><span>{t('settings.sound')}</span><b>{t(settings.muted ? 'settings.soundOff' : 'settings.soundOn')}</b></button><p>{t('settings.saved')}</p><button onClick={() => download(encodeSave(game), 'tbh-backup.json')}>{t('settings.export')}</button><button onClick={() => { setPrefs({ guideDone: false, guideIndex: 0 }); setSheet(null); }}>{t('settings.guide')}</button><button onClick={() => open('config')}>{t('settings.config')}</button></div>}

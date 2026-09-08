@@ -386,3 +386,74 @@ test('an overlapping upcoming rush cannot interrupt the active-rush HUD with a s
   const before = await page.locator('.rush-label time').textContent();
   await page.clock.runFor(1000); expect(await page.locator('.rush-label time').textContent()).not.toBe(before);
 });
+
+for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 }, { width: 1280, height: 400 }]) {
+  test(`dog purchase has a reachable stock path, three sprites and exact reload at ${viewport.width}×${viewport.height}`, async ({ page }) => {
+    const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/dog.ts'], { encoding: 'utf8' }));
+    await page.setViewportSize(viewport); await page.clock.install({ time: new Date(fixture.now) }); await page.clock.pauseAt(new Date(fixture.now));
+    await page.addInitScript(save => { if (!localStorage.getItem('dog-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('dog-seeded', '1'); } }, fixture.save);
+    await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+    await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click();
+    await page.locator('.dog-entry').click();
+    await expect(page.getByRole('dialog')).toHaveAccessibleName('Chó giữ quán');
+    await expect(page.getByRole('button', { name: 'Đón chó · 5.000 xu', exact: true })).toBeDisabled();
+    await expect(page.locator('.dog-panel')).toContainText('Nâng quầy / kho để chứa đủ nguyên liệu.');
+    await expect(page.locator('.dog-requirements')).toContainText('Lạc rang × 20');
+    await page.getByRole('button', { name: 'Nâng quầy / kho', exact: true }).click();
+    const stall = page.locator('.upgrade-card').filter({ has: page.getByRole('heading', { name: 'Quầy hàng', exact: true }) });
+    await stall.getByRole('button').click();
+    await page.locator('.dog-entry').click(); await page.getByRole('button', { name: 'Nhập hàng', exact: true }).last().click();
+    await page.locator('.stock-row').filter({ hasText: 'Lạc rang' }).getByRole('button', { name: /Đầy kho/ }).click();
+    await page.keyboard.press('Escape'); await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click(); await page.locator('.dog-entry').click();
+    await page.getByRole('button', { name: 'Đón chó · 5.000 xu', exact: true }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.locator('.dog-object')).toHaveAccessibleName('Chó giữ quán · cấp 1');
+    await expect(page.locator('.dog-object img')).toHaveAttribute('src', /dog-idle-lv1/);
+    const dogSprites = [await page.locator('.dog-object img').getAttribute('src')];
+    const boughtCoins = await page.locator('.money strong').textContent();
+    await page.reload(); await expect(page.locator('.money strong')).toHaveText(boughtCoins!);
+    await expect(page.locator('.dog-object')).toHaveAccessibleName('Chó giữ quán · cấp 1');
+    for (const level of [2, 3]) {
+      await page.locator('.dog-object').click();
+      if (level === 3) {
+        await expect(page.locator('.dog-panel')).toContainText('Nâng quầy / kho để chứa đủ nguyên liệu.');
+        await page.getByRole('button', { name: 'Nâng quầy / kho', exact: true }).click(); await stall.getByRole('button').click();
+        await page.locator('.dog-entry').click();
+      }
+      await page.getByRole('button', { name: 'Nhập hàng', exact: true }).last().click();
+      await page.locator('.stock-row').filter({ hasText: 'Nem chua' }).getByRole('button', { name: /Đầy kho/ }).click();
+      await page.keyboard.press('Escape'); await page.locator('.dog-object').click();
+      await page.locator('.dog-panel > .primary').click();
+      await expect(page.getByRole('dialog')).toHaveCount(0); await expect(page.locator('.dog-object img')).toHaveAttribute('src', new RegExp(`dog-idle-lv${level}`));
+      dogSprites.push(await page.locator('.dog-object img').getAttribute('src'));
+    }
+    const box = (await page.locator('.dog-object').boundingBox())!;
+    expect(box.width).toBeGreaterThanOrEqual(44); expect(box.height).toBeGreaterThanOrEqual(44);
+    for (const target of await page.locator('.equipment-object, .glass-counter, .stock-strip button').all()) {
+      const other = (await target.boundingBox())!;
+      expect(box.x + box.width <= other.x || other.x + other.width <= box.x || box.y + box.height <= other.y || other.y + other.height <= box.y).toBe(true);
+    }
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    expect(await page.locator('.dog-object img').evaluate(el => getComputedStyle(el).animationName)).toBe('none');
+    // Verify real alpha, not a painted checkerboard, in each delivered sprite.
+    for (const src of dogSprites) {
+      const alpha = await page.evaluate(async src => {
+        const img = new Image(); img.src = src!; await img.decode();
+        const canvas = document.createElement('canvas'); canvas.width = img.width; canvas.height = img.height;
+        const ctx = canvas.getContext('2d')!; ctx.drawImage(img, 0, 0);
+        const pixels = ctx.getImageData(0, 0, img.width, img.height).data;
+        let transparent = 0, opaque = 0;
+        for (let i = 3; i < pixels.length; i += 4) { if (pixels[i] === 0) transparent++; if (pixels[i] === 255) opaque++; }
+        return { transparent, opaque };
+      }, src);
+      expect(alpha.transparent).toBeGreaterThan(0); expect(alpha.opaque).toBeGreaterThan(0);
+    }
+    await page.locator('.dog-object').click(); await expect(page.locator('.dog-panel')).toContainText('Đã tối đa');
+    await page.keyboard.press('Escape'); await page.getByRole('button', { name: 'Cài đặt', exact: true }).click();
+    await page.getByLabel('Ngôn ngữ').selectOption('en'); await page.keyboard.press('Escape'); await page.locator('.dog-object').click();
+    await expect(page.getByRole('dialog')).toHaveAccessibleName('Guard dog'); await expect(page.locator('.dog-panel')).toContainText('Veteran dog');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!).events.filter((e: { type: string }) => ['dog_bought', 'dog_upgraded'].includes(e.type)));
+    expect(saved.map((e: { data: { toLevel: number } }) => e.data.toLevel)).toEqual([1, 2, 3]);
+  });
+}

@@ -43,5 +43,22 @@
   "error.shiftChanged": "Ca này đã kết thúc. Mở lại Sổ ca để xem ca hiện tại.",
   "rush.upcoming": "Sắp tới · {kind}",
   "rush.ends": "Còn {time}",
-  "rush.warning": "Chuẩn bị đón {kind}."
+  "rush.warning": "Chuẩn bị đón {kind}.",
+  "dog.title": "Chó giữ quán",
+  "dog.open": "Chó giữ quán · cấp {n}",
+  "dog.level0": "Chưa có chó",
+  "dog.level1": "Chó con",
+  "dog.level2": "Chó trưởng thành",
+  "dog.level3": "Chó chiến",
+  "dog.home": "Đang ở quán",
+  "dog.welcome": "Đón một người bạn về quán.",
+  "dog.next": "Tiếp theo · {name}",
+  "dog.have": "Đang có {n}",
+  "dog.capacity": "Nâng quầy / kho để chứa đủ nguyên liệu.",
+  "dog.buy": "Đón chó · {cost} xu",
+  "dog.upgrade": "Nâng cấp · {cost} xu",
+  "dog.storage": "Nâng quầy / kho",
+  "dog.success": "Chó giữ quán đã lên cấp {n}",
+  "error.dogLevelChanged": "Cấp chó đã thay đổi. Mở lại để xem nâng cấp mới.",
+  "error.dogMaterials": "Chưa đủ nguyên liệu để nâng cấp chó."
 }

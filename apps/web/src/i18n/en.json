@@ -43,5 +43,22 @@
   "error.shiftChanged": "That shift has ended. Open the shift book for the current shift.",
   "rush.upcoming": "Next · {kind}",
   "rush.ends": "{time} left",
-  "rush.warning": "Get ready for {kind}."
+  "rush.warning": "Get ready for {kind}.",
+  "dog.title": "Guard dog",
+  "dog.open": "Guard dog · level {n}",
+  "dog.level0": "No dog yet",
+  "dog.level1": "Puppy",
+  "dog.level2": "Grown dog",
+  "dog.level3": "Veteran dog",
+  "dog.home": "At the stall",
+  "dog.welcome": "Bring a new friend to your stall.",
+  "dog.next": "Next · {name}",
+  "dog.have": "You have {n}",
+  "dog.capacity": "Upgrade the counter / storage to hold enough ingredients.",
+  "dog.buy": "Adopt · {cost} coins",
+  "dog.upgrade": "Upgrade · {cost} coins",
+  "dog.storage": "Upgrade storage",
+  "dog.success": "Your dog is now level {n}",
+  "error.dogLevelChanged": "Your dog level changed. Reopen to see the next upgrade.",
+  "error.dogMaterials": "Not enough ingredients for this dog upgrade."
 }

@@ -792,3 +792,4 @@ Cập nhật lại bằng: `ls assets/*.png`
 | v1.5 | Chơi free hết (08/09): bỏ `icon-session-pass`; nhóm B3 "Thanh toán & session" → "Donate" 3 icon. |
 
 | 2026-09-08 build | Initial core audio: 32 original procedural clips in assets/audio, Ogg + AAC with sources/presets; manifest status draft, listening QA pending. No production checklist boxes marked done. |
+| 2026-09-09 build | Added three original dog-idle-lv1/2/3 imagegen drafts with native alpha and same-family identity, manifest and prompt provenance. No production boxes marked done. A9 art-table material names are historical: purchase code uses economy.tbh.json dog.levels (lac/nem) and scaled coinBase, never the old tea-game costs. |

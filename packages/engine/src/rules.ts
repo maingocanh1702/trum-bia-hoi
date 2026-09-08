@@ -43,6 +43,13 @@ export function upgradeQuote(w: World, c: Config, kind: Equipment) {
   const cost = prices[index];
   return { next, cost: cost ?? null, ok: cost != null && w.coins >= cost && (w.phase === 'resting' || !c.values.upgrades.phase1UpgradesOutsideShiftOnly) };
 }
+/** One level owns purchase state; dog stats and requirements remain in the config. */
+export function dogUpgradeQuote(w: World, c: Config) {
+  const next = c.values.dog.levels.find(level => level.level === w.dogLevel + 1) ?? null;
+  const materials = Object.entries(next?.materials ?? {}).map(([dish, quantity]) => ({ dish: dish as Dish, quantity, have: w.inventory[dish as Dish] }));
+  const cost = next?.coinBase ?? null;
+  return { next, materials, cost, ok: cost !== null && Number.isSafeInteger(cost) && cost >= 0 && w.coins >= cost && materials.every(m => m.have >= m.quantity) };
+}
 export function freshnessMs(w: World, c: Config): number {
   const base = c.values.upgrades.cooler.freshnessMs[w.equipment.cooler - 1];
   return base === null ? Infinity : base * c.values.weather[w.shift?.weather ?? 'sunny'].freshnessMult;

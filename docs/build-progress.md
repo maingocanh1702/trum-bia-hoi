@@ -391,3 +391,33 @@ M0–M9 goal remain open. Next bounded prerequisite: dog purchase/upgrade for LP
 | Date | Change |
 |---|---|
 | 2026-09-09 | Recorded final rush review without actionable findings, accessibility regression and final 55-unit/25-browser checks. |
+
+## 2026-09-09 — Dog purchase prerequisite (review pending)
+
+The current local game can buy and advance the same guard dog through all three
+config levels. One level field owns purchase state; the shared quote and spend
+ledger enforce exact target/resources and emit audit events. Purchase does not
+change rep, lifetime, season or daily earnings. Old actual saved histories still
+replay. No circular LP1 gate is introduced; the starter needs a storage upgrade to
+hold the first material requirement, and the UI routes to that existing panel.
+
+Three native-alpha draft illustrations are saved in assets and selected by manifest.
+A dog appears beside the owner after purchase. A VI/EN native sheet shows the next
+level, coin/ingredient costs, available stock and direct restock/storage routes.
+It closes on successful purchase; reduced motion disables the idle movement. Full
+F18 combat/protection/capture/server and full M0–M9 remain open. Final config/build,
+unit/sim/browser checks and pinned independent review follow.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Implemented dog purchase/level progression and illustrated UI, advancing the LP1 prerequisite; full F18 remains partial and review is pending. |
+
+Dog verification before review: `npm run verify` passed config/build/all60 unit
+checks and normal sim; `npm run sim -- --well-rested` passed the boosted profile.
+All20 sim rows keep k2.3249–2.7020 with at least500 serves each. Full28 browser tests
+passed, including complete adoption/three levels, reload, all sprite alpha, VI/EN,
+reduced motion and separate hitboxes at360×740,1280×720 and1280×400. Visual captures
+`.qa/dog-yard-*.png` and `.qa/dog-panel-*.png` confirm the dog beside the counter and
+scrollable native sheet. A 360px hitbox overlap discovered during testing was fixed
+by narrowing/repositioning the new dog target. Asset validation:119 entries,32 paired
+SFX,30 sprite placeholders,81 drafts; production art remains incomplete.

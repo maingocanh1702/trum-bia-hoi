@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-09 03:12 · **Branch hiện tại:** `codex/game-build-isolated`
+> **Cập nhật:** 2026-09-09 03:26 · **Branch hiện tại:** `codex/game-build-isolated`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -11,7 +11,7 @@
 ## Tổng quan
 
 - **MVP progress:** **0%** (0/28 PR merged)
-- **In flight:** 14 PR · **Blocked:** 0 · **Deferred:** 1
+- **In flight:** 15 PR · **Blocked:** 0 · **Deferred:** 1
 - **Lộ trình (baseline 06-ROADMAP v3.0):** 1 phase, mốc M0–M9 theo exit criteria — chưa gán ngày; Phase N ở đây = khoá parser (P0→M0 · P1→M1–M2 · P2→M3 · P3→M4–M6 · P4→M7–M8)
 
 ## Phase progress
@@ -67,7 +67,7 @@
 | `F15` | Sự Cố Quán Nhậu — bảo kê, trộm offline, đánh nhau (kiểm tra ATTP ⏸ pending) | ⬜ Not started | — | `—` |
 | `F16` | Rủ Bạn & Huy Hiệu — 3 mốc, huy hiệu Kết Nối | ⬜ Not started | — | `—` |
 | `F28` | Bảng Xếp Hạng & Bàn Thờ Ông Địa — top N, hàng của tôi, snapshot kết Vụ | ⬜ Not started | — | `—` |
-| `F18` | Chó Giữ Quán — combat bảo kê, bảo hiểm trộm | ⬜ Not started | — | `—` |
+| `F18` | Chó Giữ Quán — combat bảo kê, bảo hiểm trộm | 🟡 In progress | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
 | `F22` | Bia Đấm — LLM server-side, quota 20/ngày | ⬜ Not started | — | `—` |
 | `F26` | ~~Vé Mở Ca & Thanh Toán~~ — ⛔ **bỏ 08/09: chơi free hết** | ⏸ Deferred | — | `—` |
 
@@ -210,6 +210,15 @@
 - **Gates:** 🔒S 🔒B
 - **Phase:** Phase 2
 - **Notes:** Cấu hình 3 mồi nóng + prep/slot bếp đã có. Chưa đủ acceptance test bếp nâng hết và cân bằng menu.
+
+### F18 — Chó Giữ Quán — combat bảo kê, bảo hiểm trộm
+
+- **Status:** 🟡 In progress · 🌿 đang trên branch này
+- **Branch:** `codex/game-build-isolated`
+- **Wave:** 🎮 Code
+- **Gates:** 🔒S
+- **Phase:** Phase 3
+- **Notes:** Mua/nâng 3 cấp từ config, debit chung + replay; sheet VI/EN, hình cùng một chó 3 cấp và reduced motion. Đang verify/review; combat/capture/theft/server chưa có.
 
 ## Up next
 

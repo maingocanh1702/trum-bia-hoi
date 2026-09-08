@@ -49,6 +49,7 @@ export interface World {
   inventory: Record<Dish, number>; equipment: Record<Equipment, number>; tables: Table[];
   glasses: Glass[]; queue: Group[]; shift: Shift | null; serves: ServeRecord[];
   events: DomainEvent[]; lostStreak: number;
+  dogLevel: number;
   location: string; lifePath: number; unlocks: string[]; badges: string[];
 }
 export type Command =
@@ -60,6 +61,7 @@ export type Command =
   | { type: 'upgrade'; kind: Equipment }
   | { type: 'upgradeTable'; tableId: string }
   | { type: 'buyTable' }
+  | { type: 'upgradeDog'; level: number }
   | { type: 'activity'; active: boolean }
   | { type: 'emergencyPack' };
 export interface Envelope { idempotencyKey: string; at: number; command: Command }

@@ -64,6 +64,15 @@ function validate(c: Economy): void {
     if (level >= c.upgrades[kind].priceBase.length + (kind === 'kitchen' ? 0 : 1)) throw Error(`config:${kind}:initialLevel`);
     c.upgrades[kind].priceBase.forEach((price, index) => { if (kind !== 'kitchen' || index !== 0) whole(price as number, `${kind}.priceBase`); });
   }
+  c.dog.levels.forEach((dog, index) => {
+    if (dog.level !== index + 1) throw Error('config:dogLevelOrder');
+    whole(dog.coinBase, 'dog.coinBase'); whole(Math.round(dog.coinBase * c.k.value), 'dog.scaledCost');
+    whole(dog.hp, 'dog.hp', 1); whole(dog.atk, 'dog.atk', 1);
+    for (const [dish, quantity] of Object.entries(dog.materials)) {
+      if (!DISHES.includes(dish as Dish)) throw Error('config:dogMaterial');
+      whole(quantity, `dog.materials.${dish}`, 1);
+    }
+  });
   const initialTable = c.upgrades.table.levels[c.runtime.initialTableLevel - 1];
   if (!initialTable) throw Error('config:initialTableLevel');
   whole(c.upgrades.table.startingTables, 'startingTables', 1);

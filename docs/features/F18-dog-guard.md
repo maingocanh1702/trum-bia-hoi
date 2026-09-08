@@ -70,3 +70,26 @@ type BattleReplayStep = {
 - Combat replay matches server outcome exactly.
 - Captured dog cannot be used via client manipulation.
 - Offline theft protection respects dog state.
+
+## 9. Local purchase implementation — 2026-09-09 (partial)
+
+`World.dogLevel` is the canonical purchase state: zero is unowned; level stats and
+requirements are read from the pinned config, avoiding duplicated owned/hp/atk
+fields before combat exists. `dogUpgradeQuote` projects the next configured level;
+`upgradeDog {level}` accepts only current+1 and rechecks all stock and coins after
+advancing to command time. It debits through the shared spend ledger and emits
+`dog_bought` / `dog_upgraded {fromLevel,toLevel,cost,material_<dish>}`. Stale target,
+insufficient resources and malformed commands leave the purchase unchanged.
+
+There is no LP or shift-phase gate on dog purchase in this spec; LP1 itself needs a
+dog. Existing commands/replay outcomes stay unchanged (additive v5 command). The UI
+uses a native VI/EN sheet, config coin/material requirements, restock/storage links,
+three draft illustrated sprites, and closes after success to avoid an accidental
+next-level purchase. No battle, capture timer, offline protection or server outcome
+is implemented by this purchase mechanism; sections4/5/8 remain open.
+
+## Changelog (append-only)
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Added local purchase/upgrade mechanism and derived dog stats; native state projection differs from the illustrative duplicated DogState in section2. Full combat/protection/server acceptance remains pending. |

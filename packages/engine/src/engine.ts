@@ -1,6 +1,6 @@
 import { config as defaultConfig, DISHES, EQUIPMENT, WEATHER, type Config, type SeatedType, type Rush } from './config';
 import { integer, random, weighted } from './rng';
-import { addStock, credit, currentGuests, customerValue, dayKey, dishUnlocked, freshnessMs, kickAllQuote, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
+import { addStock, credit, currentGuests, customerValue, dayKey, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
 import type { Command, Customer, Envelope, Group, Item, LoggedCommand, Order, Result, RulesVersion, Stats, Table, World } from './types';
 
 const RUSH_CLOCK_RULES: RulesVersion = 5; // config-exempt: fixed replay protocol revision
@@ -26,7 +26,7 @@ export class Game {
       inventory: Object.fromEntries(DISHES.map(d => [d, (c.inventory.startingStock as Record<string, number[]>)[d]?.[0] ?? 0])) as World['inventory'],
       equipment: Object.fromEntries(EQUIPMENT.map(k => [k, k === 'kitchen' ? c.runtime.initialKitchenLevel : c.runtime.initialEquipmentLevel])) as World['equipment'],
       tables: [], glasses: [], queue: [], shift: null, serves: [], events: [], lostStreak: 0,
-      location: c.locations.fallback, lifePath: 0, unlocks: [], badges: [],
+      dogLevel: 0, location: c.locations.fallback, lifePath: 0, unlocks: [], badges: [],
     };
     for (let i = 0; i < c.upgrades.table.startingTables; i++) this.world.tables.push(this.newTable());
     for (let i = 0; i < c.glasses.start; i++) this.world.glasses.push({ id: this.id('glass'), state: 'clean', itemId: null, readyAt: null, staleEmitted: false });
@@ -487,6 +487,20 @@ export class Game {
         this.spend(q.cost); w.equipment[cmd.kind] = q.next;
         this.emit('upgrade_bought', { kind: cmd.kind, level: q.next, cost: q.cost }); return { ok: true, amount: q.cost };
       }
+      case 'upgradeDog': {
+        if (cmd.level !== w.dogLevel + 1) return fail('dogLevelChanged');
+        const q = dogUpgradeQuote(w, this.config);
+        if (!q.next || q.cost === null) return fail('maxLevel');
+        if (!q.ok) return fail(w.coins < q.cost ? 'notEnoughCoins' : 'dogMaterials');
+        this.spend(q.cost);
+        for (const m of q.materials) w.inventory[m.dish] -= m.quantity;
+        const fromLevel = w.dogLevel; w.dogLevel = q.next.level;
+        this.emit(fromLevel === 0 ? 'dog_bought' : 'dog_upgraded', {
+          fromLevel, toLevel: w.dogLevel, cost: q.cost,
+          ...Object.fromEntries(q.materials.map(m => [`material_${m.dish}`, m.quantity])),
+        });
+        return { ok: true, amount: q.cost };
+      }
       case 'upgradeTable': {
         if (w.phase !== 'resting' && c.upgrades.phase1UpgradesOutsideShiftOnly) return fail('outsideShiftOnly');
         const t = w.tables.find(t => t.id === cmd.tableId);
@@ -529,6 +543,7 @@ export function validEnvelope(input: unknown): input is Envelope {
     case 'activity': return typeof c.active === 'boolean';
     case 'serve': return typeof c.tableId === 'string' && typeof c.orderId === 'string';
     case 'upgradeTable': return typeof c.tableId === 'string';
+    case 'upgradeDog': return Number.isSafeInteger(c.level) && c.level > 0;
     case 'restock': return DISHES.includes(c.dish) && ['bulk', 'full', 'one'].includes(c.mode);
     case 'upgrade': return EQUIPMENT.includes(c.kind);
     default: return false;

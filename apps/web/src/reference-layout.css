@@ -140,3 +140,23 @@
 .rush-label > svg { width: 16px; height: 21px; }
 .rush-label.is-active { color: var(--panelDeep); background: var(--coinGold); }
 .rush-label.is-warning { border-color: var(--coinGold); color: #fff0b6; }
+
+.dog-object { position: absolute; left: calc(50% + 58px); top: 0; width: 60px; height: 94px; padding: 0; border: 0; background: transparent; }
+.dog-object .sprite { width: 60px; height: 80px; transform-origin: center bottom; animation: dog-idle 3s ease-in-out infinite; }
+.dog-object > span { display: block; width: max-content; margin: -2px auto 0; padding: 1px 5px; border-radius: 5px; background: var(--panelRaised); color: var(--cream); font-size: 9px; }
+.dog-entry { display: flex; align-items: center; gap: 14px; text-align: left; margin-bottom: 20px; background: var(--panelRaised); }
+.dog-entry .sprite { width: 60px; height: 60px; }
+.dog-entry span:nth-child(2) { flex: 1; display: grid; gap: 4px; }
+.dog-entry small { color: var(--creamMuted); }
+.dog-summary { display: flex; align-items: center; gap: 18px; margin-bottom: 16px; }
+.dog-summary .sprite { width: 112px; height: 112px; }
+.dog-panel p { color: var(--creamMuted); margin: 8px 0 18px; line-height: 1.5; }
+.dog-requirements { list-style: none; padding: 0; margin: 12px 0 20px; }
+.dog-requirements li { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--panelBorder); font-size: 13px; flex-wrap: wrap; }
+.dog-requirements li > :first-child { width: 30px; height: 30px; }
+.dog-requirements li > span { margin-left: auto; color: var(--creamMuted); }
+.dog-requirements .is-ready > span { color: #b7e5a5; }
+.dog-links { display: flex; gap: 8px; margin-top: 12px; }
+.dog-links button { flex: 1; }
+@keyframes dog-idle { 50% { transform: translateY(-2px) rotate(.5deg); } }
+@media (prefers-reduced-motion: reduce) { .dog-object .sprite { animation: none; } }
