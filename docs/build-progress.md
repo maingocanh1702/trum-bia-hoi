@@ -503,3 +503,31 @@ retaining every numeric-only loss assertion. No gameplay closing behavior change
 Final typecheck and diff check pass. Previous rested/QR/QR+rested results remain
 applicable: these fixes change invalid-config rejection and labels, not accepted
 configuration economics.
+
+## 2026-09-09 — Progression independent review receipt
+
+Product tip `598f66fe64d84ea2d623241794cb042776055cbd`; immutable base
+`d2918e98def7c2b6f0b5d5f90798b8b870536c10`. Independent review output
+`.qa/review-progression-round2.txt` confirms both prior findings are addressed and
+reports **no remaining actionable introduced defects** over the full pinned diff.
+It independently passed67 engine tests and typecheck. The output did not use the
+literal CLEAN marker; this receipt records the actual no-findings conclusion.
+
+Final author evidence: config/build/67 unit/30 browser tests green; normal sim
+re-run after fixes, plus unchanged rested/QR/QR+rested profiles give40 rows with
+k2.3249–2.7688 and at least500 serves each. Assets pass121 entries/32 paired SFX;
+30 sprite placeholders and83 draft files remain. Captures at360/390/1280px and the
+English360px ladder confirm scrollable sheets and translated milestone/peak names.
+First browser rerun exposed an old random closing-test assumption, corrected using
+configured guest deadlines; all30 pass afterward. Original progression replay,
+claim idempotency, crossed-gate validation and separate progress ledgers stay covered.
+
+The full M0–M9 goal remains active. This is local progression/phone/QR readiness,
+not full F13/server/season completion. No root-checkout merge or push. Next bounded
+phone consumer is shipper; authority/probes are `.qa/next-shipper.md`, genuine
+pre-change v6 phone-owned history is `.qa/legacy-shipper-v6*.json`, and an original
+shipper draft/provenance is `.qa/shipper-art-draft.md` (not yet a product asset).
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Recorded independent no-findings review d2918e9..598f66f, both review fixes and final67-unit/30-browser evidence; full-game goal continues with shipper. |
