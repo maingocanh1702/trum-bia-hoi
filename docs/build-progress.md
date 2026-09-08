@@ -637,3 +637,28 @@ zero complete; full M0–M9 goal remains active, root preserved, no merge/push.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Implemented seeded ordinary rush planning/report UI, legacy replay, pressure experiment and verification; independent review pending. |
+
+## 2026-09-09 — Rush schedule/report independent review receipt
+
+Immutable reviewed diff 653548438d67decde8ee9fbbcc471591cd0eb7f7..5e46cf16383afaa966d671b096e75d02945ceebf.
+Independent Codex review completed at .qa/review-rush-schedule.txt: "No actionable
+introduced defects were found." It reviewed source, tests and author verification
+logs; this receipt does not claim that the reviewer independently reran the suite.
+
+Author config/build/85 unit/34 browser tests and asset check passed.50 economy rows
+remain within k2.2622–2.7625 (>=500 seated serves each);15 separate controlled pressure
+windows pass demand/loss ordering, spawn floors, service ceiling and report parity.
+Actual VI/EN report sheet captures include360/390px mobile and1280×400 low window.
+No product changes were made during review. The original rules8 active-delivery
+fixture was additionally captured in .qa/legacy-delivery-v8*.json from the reviewed
+product for the next save regression. Tracker v0.12.1/dashboard stay16 in progress,
+zero full features complete. Full M0–M9 continues; no root merge/push.
+
+Next bounded intake: .qa/next-signboard-intake.md. It corrects an earlier provisional
+reading of golden reputation: GDD/original call it a gate, not a debit. The next
+implementation must preserve this authority and separate business effects from
+donation cosmetics. Lunch/football, other M3 and M4–M9 remain in the full scope.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Recorded independent no-finding full-diff review6535484..5e46cf1 and all rush verification; continuing the full-game goal. |
