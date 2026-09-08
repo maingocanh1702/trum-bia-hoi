@@ -169,6 +169,8 @@ PHASE_DATES = {
     "Phase 4": ("2026-12-15", "2027-01-31"),
 }
 
+FEATURE_ID_RE = re.compile(r"^F\d{2}$")
+
 
 @dataclass
 class PR:
@@ -212,6 +214,9 @@ def parse_prs(text: str) -> list[PR]:
         phase = m.group(1)
         start = m.end()
         end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+        section_boundary = re.search(r"^##\s+", text[start:end], re.MULTILINE)
+        if section_boundary:
+            end = start + section_boundary.start()
         out.extend(_parse_phase_block(phase, text[start:end]))
     return out
 
@@ -224,7 +229,7 @@ def _parse_phase_block(phase: str, block: str) -> list[PR]:
         cells = [c.strip() for c in line.strip("|").split("|")]
         if len(cells) < 7:
             continue
-        if cells[0] in ("PR", ""):
+        if not FEATURE_ID_RE.fullmatch(cells[0]):
             continue
         if all(set(c) <= set("-: ") for c in cells):
             continue
