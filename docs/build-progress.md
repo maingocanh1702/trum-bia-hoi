@@ -298,3 +298,24 @@ kicks, shipper and other remaining M3 mechanics are separate remaining work.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Closed independent Tỉnh Táo review at `c984541`; 38 unit/18 browser tests and normal/boosted simulations green. Continue manual close accounting and remaining full-game scope. |
+
+## 2026-09-09 — Manual close fee and confirmation (review pending)
+
+Rules v4 quotes voluntary close via existing `customerValue().penalty`, including
+served guests still consuming. `currentGuests()` excludes departed members of
+occupied mixed tables, shared with the renderer. Unassigned seating/queue guests
+cost zero without creating orders or consuming stock. Manual close records
+`spent` and dismissal events, preserves reputation/lost/ranking, cancels pending
+orders and releases glasses once. Insufficient coins, old shift IDs and costs
+above the displayed maximum refuse before mutation. The live confirmation keeps
+the shift running and returns to the book on natural finalization.
+
+The real rules-v3 fixture from `c984541` preserves its prior free close result,
+ledger and event IDs. New v4 saves replay exactly. Config/build and full browser
+checks pass (22 E2E); unit/sim checks and visual captures are in `.qa/kick-*` and
+`.qa/close-{360-740,390-844,1280-400}.png`. Final pinned verification and independent
+review follow; the full M0–M9 goal and single-table reputation ejection remain open.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Implemented v4 manual-close quote/confirmation and real v3 replay compatibility; full feature remains in progress pending independent review and remaining M3 mechanics. |

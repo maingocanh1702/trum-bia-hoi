@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { DISHES, EQUIPMENT, encodeSave, freshnessMs, restockQuote, stockCap, upgradeQuote, wellRestedRemaining, type Command, type Equipment, type Order, type Table } from '../../../packages/engine/src';
+import { DISHES, EQUIPMENT, currentGuests, encodeSave, freshnessMs, kickAllQuote, restockQuote, stockCap, upgradeQuote, wellRestedRemaining, type Command, type Equipment, type Order, type Table } from '../../../packages/engine/src';
 import { Sprite, TableSeats, menuAsset, reactions } from './assets';
 import { translate } from './i18n';
 import { advanceGuide, boot, dispatch, download, persist, readSettings, writeSettings, replaceSave } from './local';
 import { createSound } from './audio';
 
-type Sheet = 'stock' | 'upgrades' | 'book' | 'journey' | 'settings' | 'config' | null;
+type Sheet = 'stock' | 'upgrades' | 'book' | 'close' | 'journey' | 'settings' | 'config' | null;
 const icons: Record<string, string> = {
   coin: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 4v10m3-8h-4a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4H9',
   bolt: 'M13 2 5 13h6l-1 9 9-13h-6l1-7Z',
@@ -23,10 +23,11 @@ function Icon({ name }: { name: string }) { return <svg viewBox="0 0 24 24" fill
 const time = (ms: number) => `${Math.floor(Math.max(0, ms) / 60000).toString().padStart(2, '0')}:${Math.floor(Math.max(0, ms) / 1000 % 60).toString().padStart(2, '0')}`;
 const orderDishes = (order: Order) => DISHES.map(dish => ({ dish, items: order.items.filter(i => i.dish === dish) })).filter(x => x.items.length);
 
-function SheetDialog({ title, close, children }: { title: string; close: () => void; children: ReactNode }) {
+function SheetDialog({ title, close, children, view }: { title: string; close: () => void; children: ReactNode; view?: string }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => { ref.current?.showModal(); return () => { ref.current?.close(); }; }, []);
-  return <dialog ref={ref} className="sheet" onCancel={close} onClick={e => { if (e.target === e.currentTarget) close(); }}>
+  useEffect(() => { if (view) ref.current?.querySelector<HTMLButtonElement>('.sheet-header button')?.focus(); }, [view]);
+  return <dialog ref={ref} className="sheet" aria-label={title} onCancel={close} onClick={e => { if (e.target === e.currentTarget) close(); }}>
     <div className="sheet-inner"><div className="sheet-handle" /><header className="sheet-header"><h2>{title}</h2><button className="icon-button" aria-label={title + ' ×'} onClick={close}><Icon name="close" /></button></header><div className="sheet-content">{children}</div></div>
   </dialog>;
 }
@@ -40,6 +41,7 @@ export function App() {
   const [, setSettingsVersion] = useState(0);
   const settings = prefs.current;
   const [sheet, setSheet] = useState<Sheet>(null);
+  const [closeShift, setCloseShift] = useState<string | null>(null);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [welcome, setWelcome] = useState(!settings.welcomed);
@@ -146,16 +148,17 @@ export function App() {
   const showGuide = guide && (!guide.onlyAfter || w.completedShifts > 0);
   const cleanGlasses = w.glasses.filter(g => g.state === 'clean').length;
   const restedMs = wellRestedRemaining(w);
+  const closeQuote = kickAllQuote(w, game.config);
 
   function renderTable(table: Table, index: number) {
     const o = table.order, activeOrder = o && ['pending', 'grace'].includes(o.state);
     const ready = activeOrder && o.items.every(i => i.state === 'ready');
     const patience = activeOrder ? Math.max(0, (o.placedAt + o.patienceMs - w.now) / o.patienceMs) : 0;
     const stale = activeOrder && o.items.some(i => i.glassId && i.readyAt !== null && w.now >= i.readyAt + freshnessMs(w, game.config));
-    const seated = !['empty', 'cleaning', 'broken'].includes(table.state);
+    const guests = currentGuests(table), seated = guests.length > 0;
     const served = seated && o?.state === 'served' ? w.events.find(e => e.type === 'order_served' && e.data.orderId === o.id) : undefined;
     const feedback = served ? w.serves.filter(s => s.orderId === o?.id).map(s => ({ customerId: s.customerId, kind: s.stale ? 'stale' : served.data.outcome === 'grace' ? 'grace' : s.patienceRatio >= c.tip.patienceThreshold ? s.tip > 0 ? 'early' : 'earlyNoTip' : 'late' })) : [];
-    const special = seated ? table.group?.customers.find(x => x.type === 'vip')?.type ?? table.group?.customers.find(x => x.type !== 'thuong')?.type : undefined;
+    const special = guests.find(x => x.type === 'vip')?.type ?? guests.find(x => x.type !== 'thuong')?.type;
     return <section className={`table-space table-${index} state-${table.state} ${activeOrder ? 'has-order' : ''} ${special ? `guest-${special}` : ''} ${o?.state === 'grace' ? 'is-urgent' : ''} ${selectedTable === table.id ? 'is-selected' : ''}`} key={table.id} aria-label={t('table', { n: index + 1 })}>
       {activeOrder && <button className={`table-order-hint ${ready ? 'is-ready' : ''} ${o.state === 'grace' ? 'is-urgent' : ''}`} onClick={e => showTable(table.id, e.currentTarget)} aria-label={t('order.details', { n: index + 1 })} aria-describedby={`${o.id}-description ${o.id}-time`}>
         <span className="bubble-dishes" aria-hidden="true">{orderDishes(o).map(({ dish, items }) => <span key={dish} className="bubble-dish"><Sprite id={dish === 'bia' ? stale ? 'glass-stale' : 'glass-full' : menuAsset[dish]} />{items.length > 1 && <b>{items.length}</b>}</span>)}</span>
@@ -165,7 +168,7 @@ export function App() {
         <span className={`patience-track ${patience < c.tip.patienceThreshold ? 'is-low' : ''}`}><i style={{ width: `${patience * 100}%` }} /></span>
       </button>}
       <button className="table-object" aria-haspopup="dialog" aria-controls={selectedTable === table.id ? 'active-table-order' : undefined} onClick={e => showTable(table.id, e.currentTarget)} aria-label={t('order.details', { n: index + 1 })}>
-        <TableSeats capacity={table.capacity} customers={seated ? table.group?.customers : undefined} feedback={feedback} />
+        <TableSeats capacity={table.capacity} customers={guests} feedback={feedback} />
         <Sprite id={`table-lv${table.level}-empty`} />
         <span className="table-number">{index + 1}</span>
       </button>
@@ -224,10 +227,11 @@ export function App() {
 
     {welcome && <SheetDialog title={t('welcome.title')} close={() => { setWelcome(false); setPrefs({ welcomed: true }); }}><div className="welcome-content"><Sprite id="glass-full" /><p>{t('welcome.copy')}</p><button className="primary" onClick={() => { setWelcome(false); setPrefs({ welcomed: true }); }}>{t('continue')}</button><small>{t('rest.free')}</small></div></SheetDialog>}
 
-    {sheet && <SheetDialog title={t(sheet === 'book' ? 'book.title' : sheet === 'journey' ? 'journey.title' : sheet === 'settings' ? 'settings.title' : sheet === 'config' ? 'config.title' : `nav.${sheet}`)} close={() => setSheet(null)}>
+    {sheet && <SheetDialog view={sheet} title={t(sheet === 'close' ? 'close.title' : sheet === 'book' ? 'book.title' : sheet === 'journey' ? 'journey.title' : sheet === 'settings' ? 'settings.title' : sheet === 'config' ? 'config.title' : `nav.${sheet}`)} close={() => setSheet(null)}>
+      {sheet === 'close' && <div className="close-confirm"><p>{t('close.copy')}</p><p>{t('close.guests', { n: closeQuote.guests.length })}</p><div className="close-price"><Icon name="coin" /><strong>{num(closeQuote.cost)}</strong><span>{t('coins')}</span></div>{!closeQuote.ok && <p role="status">{t('error.notEnoughCoins')}</p>}<div className="button-stack"><button className="primary" disabled={!closeQuote.ok || closeShift !== shift?.id} onClick={() => run({ type: 'kickAll', shiftId: closeShift!, maxCost: closeQuote.cost })}>{t('close.confirm', { cost: num(closeQuote.cost) })}</button><button onClick={() => open('book')}>{t('close.wait')}</button></div></div>}
       {sheet === 'stock' && <><p className="sheet-intro">{t('stock.copy')} <b>{num(w.coins)} {t('coins')}</b></p><div className="stock-list">{DISHES.map(dish => <div className="stock-row" key={dish}><Sprite id={menuAsset[dish]} /><div className="stock-info"><strong>{t(`dish.${dish}`)}</strong><span>{w.inventory[dish]} / {stockCap(w, game.config)}</span><progress value={w.inventory[dish]} max={stockCap(w, game.config)} /></div>{c.menu[dish].unlock.kitchenLevel > w.equipment.kitchen ? <small>{t('stock.locked', { n: c.menu[dish].unlock.kitchenLevel })}</small> : <div className="stock-actions">{(['one', 'bulk', 'full'] as const).map(mode => { const q = restockQuote(w, game.config, dish, mode); return <button key={mode} disabled={!q.ok} onClick={() => run({ type: 'restock', dish, mode })}>{t('stock.buy', { action: mode === 'one' ? t('stock.one') : mode === 'bulk' ? t('stock.bulk', { n: c.inventory.bulkSize }) : t('stock.full'), cost: num(q.cost) })}</button>; })}</div>}</div>)}</div><button className="secondary full" onClick={() => run({ type: 'emergencyPack' })}>{t('stock.emergency')}</button></>}
       {sheet === 'upgrades' && <><p className="sheet-intro">{t(inShift ? 'upgrade.outside' : 'upgrade.copy')}</p><div className="upgrade-grid">{EQUIPMENT.map(upgradeCard)}</div><h3>{t('upgrade.tables')}</h3><div className="upgrade-grid">{w.tables.map((table, i) => { const next = c.upgrades.table.levels[table.level]; return <div className="upgrade-card" key={table.id}><Sprite id={`table-lv${table.level}-empty`} /><h3>{t('table', { n: i + 1 })}</h3><p>{t('table.seats', { n: table.capacity })}</p><button disabled={!next || inShift} onClick={() => run({ type: 'upgradeTable', tableId: table.id })}>{next ? t('upgrade.buy', { cost: num(next.priceBase) }) : t('upgrade.max')}</button></div>; })}</div><button className="secondary full" onClick={() => run({ type: 'buyTable' })}>{t('upgrade.addTable')}</button></>}
-      {sheet === 'book' && (shift ? <><p className="sheet-intro">{t('shift')} · {time(Math.min(shift.closedAt ?? w.now, shift.endsAt) - shift.startedAt - shift.pausedMs)}<b>{t(`weather.${shift.weather}`)}</b></p><dl className="ledger">{(['served', 'lost', 'payment', 'tip', 'penalty', 'spent'] as const).map(key => <div key={key}><dt>{t(`book.${key}`)}</dt><dd>{num(shift.stats[key])}</dd></div>)}{shift.stats.wellRestedBonus > 0 && <div><dt>{t('book.wellRestedBonus')}</dt><dd>{num(shift.stats.wellRestedBonus)}</dd></div>}<div className="ledger-total"><dt>{t('book.net')}</dt><dd>{num(shift.stats.credited - shift.stats.penalty - shift.stats.spent)}</dd></div></dl>{inShift && <div className="button-stack"><button className="primary" onClick={() => run({ type: 'endShift' })}>{t('book.end')}</button><button className="secondary" onClick={() => run({ type: 'kickAll' })}>{t('book.kick')}</button></div>}</> : <p>{t('book.none')}</p>)}
+      {sheet === 'book' && (shift ? <><p className="sheet-intro">{t('shift')} · {time(Math.min(shift.closedAt ?? w.now, shift.endsAt) - shift.startedAt - shift.pausedMs)}<b>{t(`weather.${shift.weather}`)}</b></p><dl className="ledger">{(['served', 'lost', 'payment', 'tip', 'penalty', 'spent'] as const).map(key => <div key={key}><dt>{t(`book.${key}`)}</dt><dd>{num(shift.stats[key])}</dd></div>)}{shift.stats.wellRestedBonus > 0 && <div><dt>{t('book.wellRestedBonus')}</dt><dd>{num(shift.stats.wellRestedBonus)}</dd></div>}<div className="ledger-total"><dt>{t('book.net')}</dt><dd>{num(shift.stats.credited - shift.stats.penalty - shift.stats.spent)}</dd></div></dl>{inShift && <div className="button-stack"><button className="primary" onClick={() => run({ type: 'endShift' })}>{t('book.end')}</button><button className="secondary" disabled={!c.shift.kickAllAllowed} onClick={() => { setCloseShift(shift.id); open('close'); }}>{t('book.kick', { cost: num(closeQuote.cost) })}</button></div>}</> : <p>{t('book.none')}</p>)}
       {sheet === 'journey' && <><p className="sheet-intro">{t('journey.copy')}</p><dl className="ledger"><div><dt>{t('journey.lifetime')}</dt><dd>{num(w.lifetimeEarned)}</dd></div><div><dt>{t('journey.season')}</dt><dd>{num(w.seasonEarned)}</dd></div></dl><ol className="journey-list">{c.lifePath.map((level, i) => <li key={level.id} className={i === w.lifePath ? 'current' : ''}><span>{i}</span><div><h3>{locale === 'vi' ? level.name : `LP${i}`}</h3><p>{t(i === w.lifePath ? 'journey.current' : 'journey.unlock', { n: num(level.lifetimeBase) })}</p></div><Icon name={i === w.lifePath ? 'check' : 'star'} /></li>)}</ol></>}
       {sheet === 'settings' && <div className="settings-list"><label>{t('settings.language')}<select value={locale} onChange={e => setPrefs({ locale: e.target.value as 'vi' | 'en' })}><option value="vi">Tiếng Việt</option><option value="en">English</option></select></label><button className="setting-row" onClick={() => setPrefs({ muted: !settings.muted })}><span>{t('settings.sound')}</span><b>{t(settings.muted ? 'settings.soundOff' : 'settings.soundOn')}</b></button><p>{t('settings.saved')}</p><button onClick={() => download(encodeSave(game), 'tbh-backup.json')}>{t('settings.export')}</button><button onClick={() => { setPrefs({ guideDone: false, guideIndex: 0 }); setSheet(null); }}>{t('settings.guide')}</button><button onClick={() => open('config')}>{t('settings.config')}</button></div>}
       {sheet === 'config' && <><p>{t('config.pinned', { version: game.config.version })}</p><pre className="config-json">{JSON.stringify(game.config.raw, null, 2)}</pre></>}
@@ -238,10 +242,11 @@ export function App() {
       const active = o && ['pending', 'grace'].includes(o.state);
       const ready = active && o.items.every(i => i.state === 'ready');
       const stale = active && o.items.some(i => i.glassId && i.readyAt !== null && w.now >= i.readyAt + freshnessMs(w, game.config));
-      const type = table.group?.customers.find(x => x.type === 'vip')?.type ?? table.group?.customers.find(x => x.type !== 'thuong')?.type ?? 'thuong';
+      const guests = currentGuests(table);
+      const type = guests.find(x => x.type === 'vip')?.type ?? guests.find(x => x.type !== 'thuong')?.type ?? 'thuong';
       const dishes = active ? orderDishes(o) : [];
       return <section ref={orderPanelRef} id="active-table-order" className={`order-panel ${o?.state === 'grace' ? 'is-urgent' : ''}`} role="dialog" aria-label={t('table', { n: w.tables.indexOf(table) + 1 })}>
-        <header><span className={`customer-tag type-${type}`}>{table.group ? t(`customer.${type}`) : t('table.empty')}</span><span>{t('table', { n: w.tables.indexOf(table) + 1 })}</span><button className="icon-button" aria-label={t('close')} onClick={() => setSelectedTable(null)}><Icon name="close" /></button></header>
+        <header><span className={`customer-tag type-${type}`}>{guests.length ? t(`customer.${type}`) : t('table.empty')}</span><span>{t('table', { n: w.tables.indexOf(table) + 1 })}</span><button className="icon-button" aria-label={t('close')} onClick={() => setSelectedTable(null)}><Icon name="close" /></button></header>
         {active ? <><div className="order-heading"><strong>{dishes.length === 1 ? t(`dish.${dishes[0].dish}`) : t('order.dishCount', { n: dishes.length })}</strong><b>{orderTime(o)}</b></div>
           <div className="order-dishes">{dishes.map(({ dish, items }) => <div key={dish} className={items.every(i => i.state === 'ready') ? 'dish-ready' : ''}><Sprite id={menuAsset[dish]} /><strong>{t(`dish.${dish}`)}</strong>{items.every(i => i.state === 'ready') && <Icon name="check" />}<span>{items.filter(i => i.state === 'ready').length}/{items.length}</span></div>)}</div>
           {(stale || o.state === 'grace') && <p className="order-warning">{t(stale ? 'order.stale' : 'order.grace')}</p>}

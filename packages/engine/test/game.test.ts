@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { Game, config, loadConfig, encodeSave, decodeSave, credit, customerValue, dayKey, restockQuote, type Command, type Economy } from '../src/index';
+import { Game, kickAllQuote, config, loadConfig, encodeSave, decodeSave, credit, customerValue, dayKey, restockQuote, type Command, type Economy } from '../src/index';
 
 function create(patch?: (c: Economy) => void) {
   const raw = structuredClone(config.raw);
@@ -186,7 +186,7 @@ test('v1 save migrates without changing prior fines, identifiers or an in-progre
   assert.ok(data.events.every((e: { idempotencyKey: string; configVersion: string }) => e.idempotencyKey && e.configVersion === g.config.version));
   assert.deepEqual(decodeSave(migrated).world, g.world);
   assert.equal(send(g, { type: 'activity', active: true }).ok, true);
-  assert.equal(g.log.at(-1)!.rulesVersion, 3);
+  assert.equal(g.log.at(-1)!.rulesVersion, 4);
   assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
   data.events[0].configVersion = 'tampered';
   assert.throws(() => decodeSave(JSON.stringify(data)), /event-mismatch/);
@@ -206,7 +206,7 @@ test('a patient guest beside a hurried guest keeps their own tip clock (03-SPEC 
 
 test('daily cap permits another available shift, with zero credited earnings', () => {
   const g = create(c => { c.shift.dailyEarnCapBase = 20; });
-  const { command } = firstOrder(g); send(g, command); send(g, { type: 'kickAll' });
+  const { command } = firstOrder(g); send(g, command); send(g, { type: 'kickAll', shiftId: g.world.shift!.id, maxCost: kickAllQuote(g.world, g.config).cost });
   g.advance(12000 + g.config.values.shift.durationMs / g.config.values.shift.regenRate);
   const coins = g.world.coins;
   assert.ok(send(g, { type: 'startShift' }).ok);
@@ -246,14 +246,15 @@ test('queued groups leave exactly at patience, without the seated-order grace', 
   assert.equal(event.data.reputation, -g.config.values.reputation.customerLeft * 2);
 });
 
-test('an early zero-tip guest is early, and clearing a served table never fines them', () => {
+test('an early zero-tip guest keeps reputation when manually dismissed, with only the explicit close fee', () => {
   const g = create(c => { c.customerTypes.thuong.tipMult = 0; });
   const { command } = firstOrder(g);
   assert.deepEqual(send(g, command), { ok: true, outcome: 'early', amount: 50 });
   assert.equal(g.world.events.find(e => e.type === 'order_served')!.data.tipped, false);
   const coins = g.world.coins, rep = g.world.reputation;
-  send(g, { type: 'kickAll' }); send(g, { type: 'kickAll' });
-  assert.equal(g.world.coins, coins); assert.equal(g.world.reputation, rep);
+  send(g, { type: 'kickAll', shiftId: g.world.shift!.id, maxCost: kickAllQuote(g.world, g.config).cost }); send(g, { type: 'kickAll', shiftId: g.world.shift!.id, maxCost: kickAllQuote(g.world, g.config).cost });
+  assert.equal(g.world.coins, coins - 5); assert.equal(g.world.reputation, rep);
+  assert.equal(g.world.shift!.stats.spent, 5);
   assert.equal(g.world.shift!.stats.lost, 0); assert.equal(g.world.shift!.stats.penalty, 0);
 });
 

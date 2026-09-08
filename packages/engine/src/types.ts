@@ -7,7 +7,7 @@ export interface Item {
 }
 export interface Order {
   id: string; placedAt: number; patienceMs: number; items: Item[];
-  state: 'pending' | 'grace' | 'served' | 'expired'; readyEmitted: boolean;
+  state: 'pending' | 'grace' | 'served' | 'expired' | 'cancelled'; readyEmitted: boolean;
 }
 export interface Group { id: string; customers: Customer[]; rounds: number; arrivedAt: number }
 export interface Table {
@@ -54,7 +54,7 @@ export interface World {
 export type Command =
   | { type: 'startShift' }
   | { type: 'endShift' }
-  | { type: 'kickAll' }
+  | { type: 'kickAll'; shiftId?: string; maxCost?: number }
   | { type: 'serve'; tableId: string; orderId: string }
   | { type: 'restock'; dish: Dish; mode: 'bulk' | 'full' | 'one' }
   | { type: 'upgrade'; kind: Equipment }
@@ -64,5 +64,5 @@ export type Command =
   | { type: 'emergencyPack' };
 export interface Envelope { idempotencyKey: string; at: number; command: Command }
 export interface Result { ok: boolean; reason?: string; outcome?: 'early' | 'late' | 'grace' | 'expired' | 'stale'; amount?: number }
-export type RulesVersion = 1 | 2 | 3; // config-exempt: persisted replay protocol revisions, not economy tuning
+export type RulesVersion = 1 | 2 | 3 | 4; // config-exempt: persisted replay protocol revisions, not economy tuning
 export interface LoggedCommand extends Envelope { result: Result; configVersion: string; rulesVersion: RulesVersion }

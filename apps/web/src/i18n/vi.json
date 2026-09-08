@@ -16,7 +16,7 @@
   "glass.clean": "Cốc sạch", "glass.washing": "Đang rửa", "glass.busy": "Cốc đang dùng", "queue": "{n} nhóm đang đợi",
   "stock.copy": "Mua theo lô tiết kiệm hơn mua lẻ.", "stock.bulk": "+{n}", "stock.full": "Đầy kho", "stock.one": "+1", "stock.locked": "Cần Bếp cấp {n}", "stock.buy": "{action} · {cost} xu", "stock.emergency": "Nhận Thùng Cấp Cứu miễn phí", "stock.success": "Đã nhập hàng",
   "upgrade.copy": "Mỗi nâng cấp giúp quán đón được nhiều khách hơn.", "upgrade.outside": "Nâng cấp sau khi đóng ca. Ca vẫn đang chạy.", "upgrade.buy": "Nâng · {cost} xu", "upgrade.max": "Đã tối đa", "upgrade.tables": "Bàn ghế", "upgrade.addTable": "Mua thêm bàn", "upgrade.success": "Quán vừa lên đời!",
-  "book.title": "Sổ ca hôm nay", "book.served": "Đã phục vụ", "book.lost": "Khách bỏ đi", "book.payment": "Tiền món", "book.tip": "Tiền boa", "book.penalty": "Tiền phạt", "book.spent": "Chi trong ca", "book.net": "Thu ròng", "book.end": "Ngừng đón khách", "book.kick": "Mời tất cả về · có phí", "book.closed": "Ca đã khép lại", "book.none": "Chưa mở ca nào. Mở quán để bắt đầu câu chuyện nhé.",
+  "book.title": "Sổ ca hôm nay", "book.served": "Đã phục vụ", "book.lost": "Khách bỏ đi", "book.payment": "Tiền món", "book.tip": "Tiền boa", "book.penalty": "Tiền phạt", "book.spent": "Chi trong ca", "book.net": "Thu ròng", "book.end": "Ngừng đón khách", "book.kick": "Mời tất cả về · {cost} xu", "book.closed": "Ca đã khép lại", "book.none": "Chưa mở ca nào. Mở quán để bắt đầu câu chuyện nhé.",
   "journey.title": "Đường lên Trùm", "journey.copy": "Từ bưng bê đến chủ quán. Tiền kiếm từ phục vụ đưa bạn đi xa hơn.", "journey.lifetime": "Tổng thu phục vụ", "journey.season": "Thu trong Vụ Bia", "journey.current": "Bạn đang ở đây", "journey.unlock": "Mốc {n} xu",
   "settings.title": "Góc riêng của bạn", "settings.language": "Ngôn ngữ", "settings.sound": "Âm thanh", "settings.soundOn": "Đang bật", "settings.soundOff": "Đã tắt", "settings.export": "Tải bản lưu dự phòng", "settings.saved": "Tiến độ lưu tự động trên trình duyệt này.", "settings.guide": "Xem lại hướng dẫn", "settings.config": "Xem cấu hình game",
   "config.title": "Cấu hình đang dùng", "config.pinned": "Ca hiện tại giữ nguyên phiên bản {version}.",
@@ -33,5 +33,12 @@
   "save.cancel": "Hủy",
   "pause.hidden": "Game tự tạm dừng",
   "wellRested.active": "Tỉnh Táo ×{mult} · còn {time}",
-  "book.wellRestedBonus": "Thưởng Tỉnh Táo"
+  "book.wellRestedBonus": "Thưởng Tỉnh Táo",
+  "close.title": "Mời khách về để đóng ca?",
+  "close.copy": "Phí thay đổi theo khách còn ở quán. Khách chưa gọi món được mời về miễn phí. Ca vẫn đang chạy.",
+  "close.guests": "Còn {n} khách",
+  "close.confirm": "Trả {cost} xu và đóng ca",
+  "close.wait": "Đợi khách dùng xong",
+  "error.closeCostChanged": "Phí vừa thay đổi. Kiểm tra số tiền rồi xác nhận lại.",
+  "error.shiftChanged": "Ca này đã kết thúc. Mở lại Sổ ca để xem ca hiện tại."
 }

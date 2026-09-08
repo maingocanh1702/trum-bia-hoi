@@ -127,3 +127,8 @@
   .game { min-height: 100dvh; }
   .order-panel { top: 20dvh; max-height: 75dvh; }
 }
+
+.close-confirm > p { color: var(--creamMuted); line-height: 1.5; }
+.close-price { display: flex; align-items: center; justify-content: center; gap: 9px; margin: 16px 0; color: var(--coinGold); }
+.close-price svg { width: 30px; height: 30px; }
+.close-price strong { font-size: 32px; font-variant-numeric: tabular-nums; }

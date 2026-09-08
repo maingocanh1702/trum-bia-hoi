@@ -266,7 +266,7 @@ credited = min(credited, DAILY_EARN_CAP − dayEarned)      // trần ngày; log
 | Phạt mất khách `ab` | `round(gross × 0.10 × type.leavePenaltyMult) × rush.penaltyMult` — gross = giá gốc chưa tip | ×k (vì gross đã là xu bia hơi → **không nhân thêm**) |
 | Phạt cụm | Order expire → **mọi khách chưa phục vụ** trong nhóm bỏ cùng lúc; phạt = Σ từng khách (VIP ×10) | 03 §5 |
 | Overflow tại cửa | 0 phạt, chỉ đếm `rejectedAtDoor` | |
-| "Mời về để đóng cửa" | phí = Σ `ab(c)` mọi khách còn ngồi (VIP = 100% đơn, Chí Phèo = 0) | gốc §12b |
+| "Mời về để đóng cửa" | phí = Σ `ab(c)` mọi khách còn ngồi, kể cả đang dùng món (VIP = 100% đơn trước rush, Chí Phèo = 0); queue/seating chưa có món đã gán phí 0 | gốc §12b; xác nhận trước khi chi; ghi `spent`, không phạt uy tín/lost; thiếu xu từ chối |
 | Tiễn ngồi lỳ giữa ca | tốn **uy tín** ∝ giây đã ngồi (server); đề xuất `⌈giây/10⌉ × 5 ⭐ ×k` 🟡 | |
 | Prototype hiện tại | tip = patience + freshness + VIP; **bỏ** rush/weather/QR/Tỉnh Táo (04 §4) | |
 
@@ -550,3 +550,5 @@ Mọi section của `docs/config/economy.tbh.json` đều nằm trong registry. 
 | v1.3.0 | New engine seed 1.7.0: added registry-owned `runtime` timing/initial-level keys; reconciled `lottery.legalGate=false` with HANDOFF legal hold. `check:config` will target the new engine and actual loader rather than archived constants. |
 
 | v1.3.1 | Runtime rules v3 nối Tỉnh Táo theo JSON hiện hành, không đổi số/config version: `shift.wellRested` canonical, aliases trong `tip` phải trùng. Bonus ghi riêng và credit qua `servePayment`, chịu trần ngày; payment/tip gốc giữ nguyên để đo k. Làm rõ open-day khác finalize-day; nghỉ mới bắt đầu tại createdAt/đóng hẳn ca, offline tính nghỉ nhưng không hồi thể lực. Replay rules v1/v2 giữ nguyên. |
+
+| v1.3.2 | Runtime rules v4 nối phí mời về §9 qua cùng customerValue/ab và spend; không thêm hằng số. Khách đã rời không tính lại, mọi khách còn dùng món tính phí; báo giá không gán món cho queue/seating. Thiếu xu từ chối, lịch sử v1–v3 không đổi. |

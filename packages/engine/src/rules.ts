@@ -1,5 +1,5 @@
 import { DISHES, type Config, type Dish, type Equipment, type Rush } from './config';
-import type { Customer, Order, World } from './types';
+import type { Customer, Order, Table, World } from './types';
 
 export function dayKey(now: number, c: Config): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: c.values.shift.dayRollover.tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
@@ -53,6 +53,23 @@ export function customerValue(w: World, c: Config, order: Order, customer: Custo
   tip = Math.round(tip);
   const penalty = Math.round(Math.round(gross * c.values.penalty.leaveRate * type.leavePenaltyMult) * rush.leavePenaltyMult);
   return { payment, tip, penalty, stale, ratio, dishes: items.map(i => i.dish) };
+}
+export function currentGuests(table: Table): Customer[] {
+  if (['empty', 'cleaning', 'broken'].includes(table.state)) return [];
+  if (!table.group) throw Error('state:tableGroup');
+  if (table.state !== 'seating' && !table.order) throw Error('state:tableOrder');
+  return table.state === 'occupied' ? table.group.customers.filter(c => c.type === 'chipheo') : table.group.customers;
+}
+/** Quote assigned orders only: guests still queueing/seating have not ordered or spent stock. */
+export function kickAllQuote(w: World, c: Config) {
+  const guests = w.tables.flatMap(table => currentGuests(table).map(customer => ({
+    customerId: customer.id, tableId: table.id as string | null, orderId: table.order?.id ?? null,
+    fee: table.order ? customerValue(w, c, table.order, customer).penalty : 0,
+  })));
+  for (const group of w.queue) for (const customer of group.customers) guests.push({ customerId: customer.id, tableId: null, orderId: null, fee: 0 });
+  const cost = guests.reduce((sum, guest) => sum + guest.fee, 0);
+  if (!Number.isSafeInteger(cost) || cost < 0) throw Error('ledger:invalid-close-fee');
+  return { guests, cost, ok: w.phase !== 'resting' && c.values.shift.kickAllAllowed && w.coins >= cost };
 }
 /** The only faucet entry point. Spending/rewards cannot accidentally inflate league scores. */
 export function credit(w: World, c: Config, amount: number, source: string): number {

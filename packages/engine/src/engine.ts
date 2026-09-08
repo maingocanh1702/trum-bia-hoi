@@ -1,6 +1,6 @@
 import { config as defaultConfig, DISHES, EQUIPMENT, WEATHER, type Config, type SeatedType, type Rush } from './config';
 import { integer, random, weighted } from './rng';
-import { addStock, credit, customerValue, dayKey, dishUnlocked, freshnessMs, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
+import { addStock, credit, currentGuests, customerValue, dayKey, dishUnlocked, freshnessMs, kickAllQuote, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
 import type { Command, Customer, Envelope, Group, Item, LoggedCommand, Order, Result, RulesVersion, Stats, Table, World } from './types';
 
 const emptyStats = (): Stats => ({ arrived: 0, served: 0, lost: 0, rejected: 0, orders: 0, payment: 0, tip: 0, credited: 0, penalty: 0, spent: 0, rep: 0, wellRestedBonus: 0 });
@@ -11,7 +11,7 @@ export class Game {
   readonly log: LoggedCommand[] = [];
   private readonly results = new Map<string, LoggedCommand>();
   private commandKey: string | null = null;
-  private rulesVersion: RulesVersion = 3;
+  private rulesVersion: RulesVersion = 4;
   constructor(readonly config: Config = defaultConfig, readonly seed = 1, readonly createdAt = 0, readonly playerId = 'guest') {
     if (!Number.isSafeInteger(seed) || !Number.isSafeInteger(createdAt) || createdAt < 0) throw Error('game:invalid-origin');
     const c = config.values;
@@ -320,7 +320,7 @@ export class Game {
       this.emit('glass_washing', { glassId: glass.id });
     }
   }
-  command(envelope: Envelope): Result { return this.applyCommand(envelope, 3); }
+  command(envelope: Envelope): Result { return this.applyCommand(envelope, 4); }
   /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
   replay(entry: LoggedCommand): Result { return this.applyCommand(entry, entry.rulesVersion); }
   private applyCommand(envelope: Envelope, rulesVersion: RulesVersion): Result {
@@ -376,6 +376,26 @@ export class Game {
         w.phase = 'closing'; this.emit('shift_closing'); return { ok: true };
       case 'kickAll':
         if (w.phase === 'resting' || !c.shift.kickAllAllowed) return fail('noShift');
+        if (this.rulesVersion >= 4) {
+          if (cmd.shiftId !== s?.id) return fail('shiftChanged');
+          const quote = kickAllQuote(w, this.config);
+          if (cmd.maxCost === undefined || quote.cost > cmd.maxCost) return fail('closeCostChanged');
+          if (!quote.ok) return fail('notEnoughCoins');
+          this.spend(quote.cost);
+          if (w.phase === 'open') this.emit('shift_closing');
+          w.phase = 'closing';
+          for (const guest of quote.guests) this.emit('customer_dismissed', guest);
+          for (const table of w.tables) if (currentGuests(table).length) {
+            if (table.order && ['pending', 'grace'].includes(table.order.state)) {
+              table.order.state = 'cancelled';
+              for (const item of table.order.items) if (item.state !== 'pending') item.state = 'wasted';
+            }
+            this.clean(table);
+          }
+          w.queue = [];
+          this.emit('guests_dismissed', { shiftId: s!.id, cost: quote.cost, count: quote.guests.length });
+          return { ok: true, amount: quote.cost };
+        }
         w.phase = 'closing';
         for (const t of w.tables) {
           if (t.order && t.group && (this.rulesVersion === 1 || ['pending', 'grace'].includes(t.order.state))) this.lose(t);
@@ -466,7 +486,8 @@ export function validEnvelope(input: unknown): input is Envelope {
   if (typeof e.idempotencyKey !== 'string' || !e.idempotencyKey || e.idempotencyKey.length > 128 || !Number.isSafeInteger(e.at) || e.at < 0 || !e.command || typeof e.command !== 'object') return false; // config-exempt: protocol key length
   const c = e.command;
   switch (c.type) {
-    case 'startShift': case 'endShift': case 'kickAll': case 'buyTable': case 'emergencyPack': return true;
+    case 'startShift': case 'endShift': case 'buyTable': case 'emergencyPack': return true;
+    case 'kickAll': return (c.shiftId === undefined || typeof c.shiftId === 'string') && (c.maxCost === undefined || Number.isSafeInteger(c.maxCost) && c.maxCost >= 0);
     case 'activity': return typeof c.active === 'boolean';
     case 'serve': return typeof c.tableId === 'string' && typeof c.orderId === 'string';
     case 'upgradeTable': return typeof c.tableId === 'string';

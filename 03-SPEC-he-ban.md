@@ -184,6 +184,7 @@ Chi tiết:
 
 ## 8. Edge cases & quy tắc 🟡
 - **Bàn đang `AWAITING_SERVE` mà đóng ca:** vào grace "closing" — order còn hạn vẫn phục vụ được; hết hạn thì mất như thường. `kick-all` đóng ngay.
+- **Chủ động mời về đóng ca (runtime rules v4):** UI hiện tổng phí trước khi xác nhận; ca vẫn chạy. Phí theo `08 §9` cho khách đang chờ/dùng món, không gọi lại nhánh khách bỏ đi: không trừ uy tín hoặc tăng `lost`. Phí ghi `spent`, không giảm `seasonEarned`/`lifetimeEarned`. Thiếu xu thì giữ khách để chờ dùng xong. Khách chưa có Order (queue/seating) có tập món đã gán rỗng nên phí 0; báo giá không tạo Order/RNG hoặc dùng nguyên liệu. Bàn `occupied` chỉ còn Chí Phèo; người đã rời không còn avatar và không tính phí. `empty/cleaning/broken` không tính lại. Đơn chưa phục vụ bị `cancelled`, món đã chuẩn bị bị waste, cốc trả rửa đúng một lần; finalize ca theo luồng hiện hành.
 - **Không đủ cốc sạch/bia cho cả Order:** không giao được Order đó → đồng hồ vẫn chạy → áp lực rửa cốc/rót. (Bottleneck cốc giữ nguyên vai trò gốc.)
 - **Khách Chí Phèo trong nhóm — quy tắc giữ bàn 🟢:** không trả tiền + giữ ghế lâu (patience ×5). Khi phần còn lại của nhóm sang `PAYING`/`CLEANING` mà Chí Phèo **vẫn ngồi** → **bàn KHÔNG về `EMPTY` ngay**. MVP chọn cách đơn giản: **giữ nguyên cả bàn ở trạng thái "bị chiếm" (occupied)** cho tới khi Chí Phèo tự rời (hết patience ×5) hoặc bị xử (tiễn bằng uy tín như "ngồi lỳ"); lúc đó mới `CLEANING → EMPTY`. → bàn không nhận nhóm mới khi còn Chí Phèo (đúng tinh thần "chiếm chỗ" gốc). (Tách Chí Phèo thành occupant 1-ghế để giải phóng ghế còn lại = 🔵 post-MVP.)
 - **Freshness vs Order:** mỗi cốc bia trong Order có timer riêng; nếu rót sớm rồi để quá hạn trước khi giao Order → cốc đó mất hơi (hậu quả MVP mềm: tip×0 + uy tín−1, vẫn thu payment).
@@ -279,3 +280,5 @@ t-0    Order hết patience → bàn vào GRACE: viền ĐỎ pulse, cả nhóm 
 | v1.3 | Owner 2026-09-08: khách bỏ đi chỉ hiện toast xu/uy tín thực trừ; bỏ text giải thích, popover thất bại và thao tác xác nhận. Giữ số ledger, grace và luật phạt. |
 
 | v1.4 | Runtime rules v2: số đợt lấy đủ bounds trong config; nhóm trộn ưu tiên ngồi-lỳ → vội → VIP → thường. Patience hàng đợi không cộng grace của Order. Boa vẫn theo patience từng khách (§4); dọn bàn đã phục vụ không phạt lại. Lịch sử v1 giữ luật cũ khi replay. |
+
+| v1.5 | 2026-09-09: tách phí tự nguyện đóng ca khỏi phạt bỏ đi, làm rõ v1.4 chỉ nói dọn tự nhiên. Xác nhận phí live, thiếu xu giữ nguyên, queue/seating chưa gọi món phí 0, occupied chỉ giữ Chí Phèo. Replay v1–v3 giữ hành vi cũ. |

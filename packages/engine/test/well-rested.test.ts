@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { Game, config, loadConfig, dayKey, encodeSave, decodeSave, wellRestedRemaining, type Command, type Economy } from '../src';
+import { Game, kickAllQuote, config, loadConfig, dayKey, encodeSave, decodeSave, wellRestedRemaining, type Command, type Economy } from '../src';
 
 const origin = Date.parse('2026-09-08T00:00:00Z');
 function create(patch?: (raw: Economy) => void, at = origin, seed = 42) {
@@ -138,7 +138,7 @@ test('the real pre-bonus v2 save preserves amounts, event IDs and its unboosted 
   assert.ok(g.log.every(e => e.rulesVersion === 2)); assert.equal(g.world.shift!.wellRestedUntil, null);
   send(g, { type: 'activity', active: true });
   assert.equal(wellRestedRemaining(g.world), 0); assert.deepEqual(g.world.wellRestedDays, {});
-  send(g, { type: 'kickAll' }); openRested(g);
+  send(g, { type: 'kickAll', shiftId: g.world.shift!.id, maxCost: kickAllQuote(g.world, g.config).cost }); openRested(g);
   assert.ok(wellRestedRemaining(g.world) > 0);
   assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
 });

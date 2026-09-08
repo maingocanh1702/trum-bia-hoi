@@ -1,0 +1,25 @@
+{
+  "sourceCommit": "c984541872a0879f2aba6682191824b23a2cbc55",
+  "before": 815,
+  "coins": 815,
+  "reputation": 3,
+  "phase": "resting",
+  "stats": {
+    "arrived": 1,
+    "served": 1,
+    "lost": 0,
+    "rejected": 0,
+    "orders": 1,
+    "payment": 50,
+    "tip": 15,
+    "credited": 65,
+    "penalty": 0,
+    "spent": 0,
+    "rep": 3,
+    "wellRestedBonus": 0
+  },
+  "nextId": 32,
+  "result": {
+    "ok": true
+  }
+}

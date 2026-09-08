@@ -16,7 +16,7 @@
   "glass.clean": "Clean glasses", "glass.washing": "Washing", "glass.busy": "Glasses in use", "queue": "{n} groups waiting",
   "stock.copy": "Buying full batches costs less than buying singles.", "stock.bulk": "+{n}", "stock.full": "Fill stock", "stock.one": "+1", "stock.locked": "Kitchen level {n} required", "stock.buy": "{action} · {cost} coins", "stock.emergency": "Claim free emergency supplies", "stock.success": "Supplies restocked",
   "upgrade.copy": "Each upgrade helps you welcome more guests.", "upgrade.outside": "Upgrade after closing. Your shift is still running.", "upgrade.buy": "Upgrade · {cost} coins", "upgrade.max": "Max level", "upgrade.tables": "Tables & seats", "upgrade.addTable": "Buy another table", "upgrade.success": "Your stall just got better!",
-  "book.title": "Today's shift book", "book.served": "Guests served", "book.lost": "Guests lost", "book.payment": "Food & beer", "book.tip": "Tips", "book.penalty": "Penalties", "book.spent": "Shift expenses", "book.net": "Net income", "book.end": "Stop taking new guests", "book.kick": "Send everyone home · fees apply", "book.closed": "Another shift in the books", "book.none": "No shifts yet. Open your stall to start the story.",
+  "book.title": "Today's shift book", "book.served": "Guests served", "book.lost": "Guests lost", "book.payment": "Food & beer", "book.tip": "Tips", "book.penalty": "Penalties", "book.spent": "Shift expenses", "book.net": "Net income", "book.end": "Stop taking new guests", "book.kick": "Send everyone home · {cost} coins", "book.closed": "Another shift in the books", "book.none": "No shifts yet. Open your stall to start the story.",
   "journey.title": "From waiter to boss", "journey.copy": "From your first tray to a thriving stall. Service earnings move you forward.", "journey.lifetime": "Lifetime service earnings", "journey.season": "This season's earnings", "journey.current": "You are here", "journey.unlock": "Milestone: {n} coins",
   "settings.title": "Your own corner", "settings.language": "Language", "settings.sound": "Sound", "settings.soundOn": "On", "settings.soundOff": "Muted", "settings.export": "Download a backup", "settings.saved": "Progress saves automatically in this browser.", "settings.guide": "Show the guide again", "settings.config": "View game configuration",
   "config.title": "Current configuration", "config.pinned": "Your shift keeps version {version}.",
@@ -33,5 +33,12 @@
   "save.cancel": "Cancel",
   "pause.hidden": "Game automatically paused",
   "wellRested.active": "Well rested ×{mult} · {time} remaining",
-  "book.wellRestedBonus": "Well-rested bonus"
+  "book.wellRestedBonus": "Well-rested bonus",
+  "close.title": "Send guests home and close?",
+  "close.copy": "The fee follows the guests still here. Guests who have not ordered leave for free. The shift keeps running.",
+  "close.guests": "{n} guests remaining",
+  "close.confirm": "Pay {cost} coins and close",
+  "close.wait": "Let guests finish",
+  "error.closeCostChanged": "The fee changed. Check the amount and confirm again.",
+  "error.shiftChanged": "That shift has ended. Open the shift book for the current shift."
 }

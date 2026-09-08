@@ -268,3 +268,68 @@ test('starting fresh requires an explicit choice and retains the corrupt backup'
   await expect(page.locator('.money strong')).toHaveText('750');
   expect(await page.evaluate(() => Object.keys(localStorage).filter(k => k.startsWith('tbh.backup.')).map(k => localStorage.getItem(k)))).toContain('{bad-reset');
 });
+
+for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 }]) {
+  test(`manual close shows its fee, allows cancellation and debits consuming guests once at ${viewport.width}px`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.clock.install({ time: new Date('2026-09-08T10:00:00Z') });
+    await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+    await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
+    await page.getByRole('button', { name: 'Bỏ qua', exact: true }).click();
+    await page.clock.runFor(11100);
+    await page.locator('.table-order-hint').first().click();
+    await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
+    const coins = Number((await page.locator('.money strong').textContent())!.replace(/\./g, ''));
+    await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
+    await page.getByRole('button', { name: 'Mời tất cả về · 5 xu', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Mời khách về để đóng ca?', exact: true });
+    await expect(dialog).toBeVisible(); await expect(dialog.locator('.sheet-header button')).toBeFocused();
+    await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(coins));
+    const time = await page.locator('.energy strong').textContent();
+    await page.clock.runFor(1000); expect(await page.locator('.energy strong').textContent()).not.toBe(time);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.getByRole('button', { name: 'Đợi khách dùng xong', exact: true }).click();
+    await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(coins)); await expect(page.locator('.state-consuming')).toHaveCount(1);
+    await page.getByRole('button', { name: 'Mời tất cả về · 5 xu', exact: true }).click();
+    await page.getByRole('button', { name: 'Trả 5 xu và đóng ca', exact: true }).click();
+    await expect(page.getByRole('dialog', { name: 'Sổ ca hôm nay' })).toBeVisible();
+    await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(coins - 5));
+    await expect(page.locator('.ledger > div').filter({ hasText: 'Chi trong ca' }).locator('dd')).toHaveText('5');
+    await expect(page.locator('.seat-customer')).toHaveCount(0);
+    await expect(page.locator('.toast-loss')).toHaveCount(0);
+    await page.reload(); await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(coins - 5));
+    const save = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));
+    expect(save.events.filter((e: { type: string }) => e.type === 'guests_dismissed')).toHaveLength(1);
+  });
+}
+
+test('insufficient close funds keep the guest, and natural expiry closes the confirmation without a second fee', async ({ page }) => {
+  const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/manual-close.ts', 'poor'], { encoding: 'utf8' }));
+  await page.clock.install({ time: new Date(fixture.now) }); await page.clock.pauseAt(new Date(fixture.now));
+  await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), fixture.save);
+  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
+  await page.getByRole('button', { name: 'Mời tất cả về · 5 xu', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Trả 5 xu và đóng ca', exact: true })).toBeDisabled();
+  await expect(page.locator('.seat-customer')).toHaveCount(1);
+  await expect(page.locator('.money strong')).toHaveText(String(fixture.coins));
+  await page.clock.runFor(20000);
+  await expect(page.getByRole('dialog', { name: 'Sổ ca hôm nay' })).toBeVisible();
+  await expect(page.locator('.money strong')).toHaveText('0');
+  const save = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));
+  expect(save.events.some((e: { type: string }) => e.type === 'guests_dismissed')).toBe(false);
+});
+
+test('a mixed occupied table renders only the remaining Chi Pheo and closes with zero fee', async ({ page }) => {
+  const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/manual-close.ts', 'occupied'], { encoding: 'utf8' }));
+  await page.clock.install({ time: new Date(fixture.now) }); await page.clock.pauseAt(new Date(fixture.now));
+  await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), fixture.save);
+  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await expect(page.locator('.state-occupied .seat-customer')).toHaveCount(1);
+  await expect(page.locator('.state-occupied .seat-customer')).toHaveAttribute('data-customer-id', fixture.guests[0]);
+  await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
+  await page.getByRole('button', { name: 'Mời tất cả về · 0 xu', exact: true }).click();
+  await page.getByRole('button', { name: 'Trả 0 xu và đóng ca', exact: true }).click();
+  await expect(page.locator('.seat-customer')).toHaveCount(0);
+  await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(fixture.coins));
+});
