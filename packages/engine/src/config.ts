@@ -209,9 +209,11 @@ function validate(c: Economy): void {
       whole(amount, 'signboard.price'); whole(Math.round(amount * c.k.value), 'signboard.scaledPrice');
     }
     for (const weather of WEATHER) for (const rush of Object.values(c.rush).filter(r => typeof r === 'object' && 'floorMs' in r)) {
-      const weights = Object.entries(c.customerTypes).filter(([, t]) => t.usesTable && t.weight > 0).map(([type, t]) => t.weight * ((c.weather[weather].customerWeightMult as Record<string, number>)[type] ?? 1) * (type === 'voi' && 'voiWeightMult' in rush ? Number(rush.voiWeightMult) : 1) * signWeightMult(definition, type));
-      const total = weights.reduce((a, b) => a + b, 0);
-      if (!Number.isFinite(total) || total <= 0) throw Error('config:signboardWeights');
+      const weights = Object.entries(c.customerTypes).filter(([, t]) => t.usesTable && t.weight > 0).map(([type, t]) => ({ type, weight: t.weight * ((c.weather[weather].customerWeightMult as Record<string, number>)[type] ?? 1) * (type === 'voi' && 'voiWeightMult' in rush ? Number(rush.voiWeightMult) : 1) * signWeightMult(definition, type) }));
+      const total = weights.reduce((sum, entry) => sum + entry.weight, 0);
+      const postCap = weights.reduce((sum, entry) => sum + (entry.type === 'vip' ? 0 : entry.weight), 0);
+      const capCanExclude = c.upgrades.table.levels.some(t => t.capacity > c.customerTypes.vip.maxPerGroupPhase2);
+      if (!Number.isFinite(total) || total <= 0 || (capCanExclude && postCap <= 0)) throw Error('config:signboardWeights');
     }
   }
   const shipper = c.customerTypes.shipper, grossRange = shipper.grossBase.map(n => Math.round(n * c.k.value));

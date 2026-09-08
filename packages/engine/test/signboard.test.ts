@@ -104,3 +104,23 @@ test('sign configuration rejects unsafe costs, weights and zero-tick delivery fr
   const g = setup(r => { r.signboard.installFeeBase = 101; r.signboard.styles.wood.priceBase = 3; }); upgrade(g);
   assert.equal(signboardQuote(g.world, g.config).cost, Math.round(101 * config.values.k.value) + Math.round(3 * config.values.k.value));
 });
+
+test('vintage cannot remove the last eligible customer type after a group reaches its VIP cap', () => {
+  const raw = structuredClone(setup().config.raw);
+  raw.runtime.initialEquipmentLevel = raw.signboard.gate.stallLevel;
+  for (const [type, profile] of Object.entries(raw.customerTypes)) if (profile.usesTable) profile.weight = type === 'vip' || type === 'voi' ? 1 : 0;
+  const g = new Game(loadConfig(raw), 5, 0);
+  assert.ok(send(g, { type: 'installSignboard' }).ok); assert.ok(send(g, { type: 'setSignboard', style: 'vintage' }).ok);
+  assert.ok(send(g, { type: 'startShift' }).ok); g.advance(g.world.shift!.nextSpawnAt);
+  const guests = g.world.tables.flatMap(t => t.group?.customers ?? []);
+  assert.ok(guests.length > raw.customerTypes.vip.maxPerGroupPhase2);
+  assert.ok(guests.some(c => c.type === 'voi')); assert.equal(guests.filter(c => c.type === 'vip').length, 1);
+  raw.signboard.styles.vintage.voiWeightMult = 0;
+  for (const cap of [1, 0]) {
+    raw.customerTypes.vip.maxPerGroupPhase2 = cap;
+    assert.throws(() => loadConfig(raw), /config:signboardWeights/);
+  }
+  // A cap covering every possible group never removes VIP from a subsequent draw.
+  raw.customerTypes.vip.maxPerGroupPhase2 = Math.max(...raw.upgrades.table.levels.map(t => t.capacity));
+  assert.doesNotThrow(() => loadConfig(raw));
+});

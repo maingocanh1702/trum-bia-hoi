@@ -223,6 +223,7 @@ test('custom normal, VIP, hurried and leisurely round ranges reach spawned group
     const g = create(c => {
       c.onboarding.enabled = false; c.upgrades.table.levels[0].capacity = 1;
       Object.entries(c.customerTypes).forEach(([key, profile]) => { profile.weight = key === type ? 1 : 0; });
+      if (type === 'vip') c.customerTypes.vip.maxPerGroupPhase2 = Math.max(...c.upgrades.table.levels.map(t => t.capacity));
       c.rounds[type] = [...range]; c.demandMix.pSecondRound = probability;
     });
     send(g, { type: 'startShift' }); g.advance(g.world.shift!.nextSpawnAt);

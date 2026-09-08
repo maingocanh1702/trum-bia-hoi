@@ -691,3 +691,22 @@ flows, followed by the full server/meta/risk/events scope.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Implemented and verified business signs, native sprites/VI–EN UI and replay/economy evidence; full independent review pending. |
+
+
+### Signboard independent-review correction
+
+First independent review at6e390be found one P2: a registry with only VIP/voi weights
+and Vintage voiWeightMult0 passed intake, then exhausted eligible weights after the
+VIP group cap (seed5). Config now checks the remaining non-VIP pool whenever a table
+can hold more than that cap. A cap covering every possible group remains valid.
+Regression exercises the actual baseline group, rejects the sign-zeroed pool at caps
+1 and0, and accepts the unreachable-cap case. No spawn fallback or VIP-cap bypass,
+no canonical economy number changed. Full original-base re-review pending.
+
+
+Correction verification: npm run verify passed config/build/93 unit/10 normal sim
+rows and15 rush-pressure windows (.qa/signboard-corrected-verify.txt). The existing
+VIP-only round-range fixture now declares a cap covering all table levels, so the
+fixture remains safe after upgrades while preserving its single-guest round check.
+Previously passed37 E2E and110 style sim rows remain applicable: the correction only
+rejects unsafe imported configurations; accepted canonical gameplay/UI is unchanged.
