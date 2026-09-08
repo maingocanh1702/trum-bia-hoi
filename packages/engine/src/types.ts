@@ -22,6 +22,7 @@ export interface Glass {
 export interface ServeRecord {
   t: number; customerId: string; customerType: SeatedType; orderId: string; dishes: Dish[];
   payment: number; tip: number; credited: number; hadMoi: boolean; stale: boolean; patienceRatio: number;
+  wellRestedBonus?: number;
 }
 export interface DomainEvent {
   id: string; type: string; at: number; configVersion: string; idempotencyKey: string;
@@ -30,17 +31,20 @@ export interface DomainEvent {
 export interface Stats {
   arrived: number; served: number; lost: number; rejected: number; orders: number;
   payment: number; tip: number; credited: number; penalty: number; spent: number; rep: number;
+  wellRestedBonus: number;
 }
 export interface Shift {
   id: string; startedAt: number; pausedMs: number; endsAt: number; closedAt: number | null; configVersion: string;
   weather: Weather; rush: Rush; rushes: { kind: Rush; start: number; end: number }[];
   nextSpawnAt: number; firstGroup: boolean; onboarding: boolean; stats: Stats;
+  wellRestedUntil: number | null;
 }
 export interface World {
   now: number; rng: number; nextId: number; phase: 'resting' | 'open' | 'closing';
   playerId: string; coins: number; reputation: number; seasonEarned: number; lifetimeEarned: number;
   staminaMs: number; staminaAnchorMs: number; staminaAnchorAt: number;
   completedShifts: number; active: boolean; lastServedAt: number | null;
+  restStartedAt: number; wellRestedDays: Record<string, boolean>;
   dayEarned: Record<string, number>; dayShifts: Record<string, number>;
   inventory: Record<Dish, number>; equipment: Record<Equipment, number>; tables: Table[];
   glasses: Glass[]; queue: Group[]; shift: Shift | null; serves: ServeRecord[];
@@ -60,5 +64,5 @@ export type Command =
   | { type: 'emergencyPack' };
 export interface Envelope { idempotencyKey: string; at: number; command: Command }
 export interface Result { ok: boolean; reason?: string; outcome?: 'early' | 'late' | 'grace' | 'expired' | 'stale'; amount?: number }
-export type RulesVersion = 1 | 2; // config-exempt: persisted replay protocol revisions, not economy tuning
+export type RulesVersion = 1 | 2 | 3; // config-exempt: persisted replay protocol revisions, not economy tuning
 export interface LoggedCommand extends Envelope { result: Result; configVersion: string; rulesVersion: RulesVersion }

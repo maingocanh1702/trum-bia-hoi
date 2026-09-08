@@ -83,6 +83,8 @@ test('tapped order stays live, returns keyboard focus, and closes on customer ex
   await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
   await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
   await page.clock.runFor(8100);
+  const originalCustomer = await page.locator('.seat-customer').first().getAttribute('data-customer-id');
+  expect(originalCustomer).toBeTruthy();
   const trigger = page.getByRole('button', { name: 'Xem mâm · bàn 1', exact: true }).first();
   await trigger.click();
   const panel = page.getByRole('dialog', { name: 'Bàn 1', exact: true });
@@ -107,7 +109,7 @@ test('tapped order stays live, returns keyboard focus, and closes on customer ex
   await expect(panel).toHaveCount(0);
   await expect(page.locator('.toast-loss')).toHaveText(/^[−\d\s.,]+$/);
   await expect(page.locator('.table-object').first()).toBeFocused();
-  await expect(page.locator('.table-space').first().locator('.seat-customer')).toHaveCount(0);
+  await expect(page.locator(`[data-customer-id="${originalCustomer}"]`)).toHaveCount(0);
   await expect(page.locator('.lost-bubble')).toHaveCount(0);
 });
 
@@ -174,6 +176,34 @@ test('corrupt saves are preserved and the app offers the original for recovery',
   await expect(page.getByRole('alert')).toContainText('Bản lưu chưa đọc được');
   expect(await page.evaluate(() => localStorage.getItem('tbh.save.v1'))).toBe('{broken-save');
 });
+
+for (const width of [360, 390]) {
+  test(`well-rested timer pauses offline and actual bonus appears in the shift book at ${width}px`, async ({ page }) => {
+    const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/service-states.ts', 'rested'], { encoding: 'utf8' }));
+    await page.setViewportSize({ width, height: 844 });
+    await page.clock.install({ time: new Date(fixture.now) });
+    await page.clock.pauseAt(new Date(fixture.now));
+    await page.addInitScript(save => { if (!localStorage.getItem('rested-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('rested-seeded', '1'); } }, fixture.save);
+    await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+    const badge = page.locator('.well-rested');
+    await expect(badge).toHaveAccessibleName(/Tỉnh Táo ×1.1/);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    const before = await badge.locator('time').textContent();
+    await page.goto('about:blank'); await page.clock.setSystemTime(new Date(fixture.now + 86400000));
+    await page.goto('/'); await expect(badge.locator('time')).toHaveText(before!);
+    await page.locator('.table-order-hint').first().click();
+    await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
+    await expect(page.locator('.toast-gain strong')).toHaveText(`+${fixture.result.amount}`);
+    await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
+    await expect(page.locator('.ledger > div').filter({ hasText: 'Thưởng Tỉnh Táo' }).locator('dd')).toHaveText(String(fixture.bonus));
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Cài đặt', exact: true }).click();
+    await page.getByLabel('Ngôn ngữ').selectOption('en'); await page.keyboard.press('Escape');
+    await expect(badge).toHaveAccessibleName(/Well rested ×1.1/);
+    await page.clock.runFor(1000);
+    expect(await badge.locator('time').textContent()).not.toBe(before);
+  });
+}
 
 test('muting, guide skipping and reduced-motion preference survive normal play', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });

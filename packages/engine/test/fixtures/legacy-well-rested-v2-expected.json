@@ -1,0 +1,34 @@
+{
+  "sourceCommit": "2d80437b493ee1628f851e9e57aeed6d68369706",
+  "result": {
+    "ok": true,
+    "outcome": "early",
+    "amount": 68
+  },
+  "now": 1788858011101,
+  "coins": 818,
+  "reputation": 3,
+  "lifetimeEarned": 68,
+  "day": "2026-09-08",
+  "dayEarned": {
+    "2026-09-08": 68
+  },
+  "nextId": 29,
+  "serves": [
+    {
+      "t": 1788858011101,
+      "customerId": "customer-17",
+      "customerType": "thuong",
+      "orderId": "order-22",
+      "dishes": [
+        "bia"
+      ],
+      "payment": 50,
+      "tip": 18,
+      "credited": 68,
+      "hadMoi": false,
+      "stale": false,
+      "patienceRatio": 0.7703703703703704
+    }
+  ]
+}

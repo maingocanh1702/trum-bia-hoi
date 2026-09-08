@@ -15,6 +15,6 @@ export function TableSeats({ capacity, customers = [], feedback = [] }: { capaci
     const angle = i * Math.PI * 2 / capacity + Math.PI;
     const customer = customers[i];
     const reaction = feedback.find(s => s.customerId === customer?.id);
-    return <span className={`seat ${customer ? 'seat-customer' : 'seat-empty'}`} key={customer?.id ?? i} style={{ left: `${50 + 45 * Math.cos(angle)}%`, top: `${70 + 30 * Math.sin(angle)}%` }}><Sprite id={customer ? `customer-${customer.type.replace('_', '-')}` : 'chair-plastic'} />{reaction && <span className={`customer-reaction reaction-${reaction.kind}`}>{reactions[reaction.kind]}</span>}</span>;
+    return <span className={`seat ${customer ? 'seat-customer' : 'seat-empty'}`} key={customer?.id ?? i} data-customer-id={customer?.id} style={{ left: `${50 + 45 * Math.cos(angle)}%`, top: `${70 + 30 * Math.sin(angle)}%` }}><Sprite id={customer ? `customer-${customer.type.replace('_', '-')}` : 'chair-plastic'} />{reaction && <span className={`customer-reaction reaction-${reaction.kind}`}>{reactions[reaction.kind]}</span>}</span>;
   })}</div>;
 }

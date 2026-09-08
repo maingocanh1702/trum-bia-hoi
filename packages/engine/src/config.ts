@@ -40,6 +40,10 @@ function validate(c: Economy): void {
   if (!c._meta.version.trim() || c.k.value < c.k.band[0] || c.k.value > c.k.band[1]) throw Error('config:k');
   positive(c.k.anchorValuePerServe, 'anchor');
   positive(c.shift.durationMs, 'shift.durationMs');
+  const rested = c.shift.wellRested;
+  whole(rested.durationMs, 'wellRested.durationMs', 1);
+  if (rested.mult < 1 || !Number.isSafeInteger(rested.requiresRestHours * 3600000)) throw Error('config:wellRested'); // config-exempt: hours to milliseconds
+  if (c.tip.wellRestedMult !== rested.mult || c.tip.wellRestedDurationMs !== rested.durationMs || c.tip.wellRestedKeyedBy !== 'open-day') throw Error('config:wellRestedAliases');
   positive(c.spawn.baseMs, 'spawn.baseMs');
   positive(c.spawn.playerServeCeilingPerSec, 'serveCeiling');
   positive(c.patience.thuongMs, 'patience');

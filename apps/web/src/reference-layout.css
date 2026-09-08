@@ -17,7 +17,10 @@
 .energy svg { width: 15px; height: 15px; }
 .energy-track { height: 3px; margin-top: 2px; }
 .settings-button { margin-left: auto; border: 0; border-radius: 50%; background: #456760; }
-.weather-row { padding: 0 15px; min-height: 29px; }
+.weather-row { padding: 0 15px; min-height: 29px; flex-wrap: wrap; }
+.well-rested { display: inline-flex; align-items: center; gap: 5px; padding: 6px 9px; border-radius: 18px; background: #8062ae; color: #fff6de; font-size: 11px; font-variant-numeric: tabular-nums; }
+.well-rested svg { width: 15px; height: 15px; color: #ffe166; }
+.well-rested b { color: #ffe166; }
 .weather-chip { border-radius: 9px; padding: 2px 8px; background: #76b8c799; color: #153b43; }
 .rush-label { max-width: 180px; background: #456760; color: #eff5dc; padding: 5px 9px; border-radius: 9px; }
 .stall-scene { height: 223px; padding: 0; margin-top: 13px; }

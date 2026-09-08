@@ -159,7 +159,7 @@ tick(dtMs):  now += dt
 
 - **Nguồn giờ = server** khi có server; trước đó client dùng cùng hàm day-key/cap (engine thuần) — chuyển sang server = đổi nguồn `now`, không đổi luật. Engine dùng `now` truyền vào (không `Date.now()` bên trong) → replay được.
 - Day-key = `Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Ho_Chi_Minh'})` → `YYYY-MM-DD`. Rollover nửa đêm VN.
-- Cap tiền: **per-earn** — mỗi `ServeEvent` gán bucket ngày tại thời điểm earn; `credited = min(gross, cap − dayEarned[bucket])`. Số ca: credit lúc **finalize** → ngày đóng ca. Tỉnh Táo keyed theo **cùng mốc** (chốt: finalize-day cho cả ba để tránh lỗ hổng GDD §10) 🟡.
+- Cap tiền: **per-earn** — mỗi `ServeEvent` gán bucket ngày tại thời điểm earn; `credited = min(gross, cap − dayEarned[bucket])`. Số ca: credit lúc **finalize** → ngày đóng ca. Tỉnh Táo keyed theo **open-day**, đúng `tip.wellRestedKeyedBy` trong JSON: chỉ đánh dấu khi mở ca thành công và đủ điều kiện nghỉ. Ba bucket phục vụ ba mục đích khác nhau; không dời tiền thưởng sang ngày mở/đóng ca.
 - Thể lực: `ms` giảm theo `elapsed` trong ca; hồi `0.4×` chỉ khi `document.visibilityState==='visible'` (anti-idle: pause ca khi ẩn tab — engine không tick, hiện overlay "Game tự tạm dừng").
 
 ---
@@ -261,3 +261,5 @@ CI: `lint → typecheck → test → probe → sim → check:config (economy + c
 | 2026-09-08 build | New implementation uses packages/engine (explicit-time event scheduler and replayable command log) + React DOM/CSS spatial web UI. Config coverage targets the new engine; seed-schema validation replaces zod for this initial runtime. |
 
 | 2026-09-08 local replay v2 | Save v2 lưu command + event với configVersion/idempotencyKey, rulesVersion giữ replay v1; schema envelope hiện tại là local contract, server adapter ở M4 chưa xây. Hidden/offline dời gameplay deadlines, giữ wall clock VN, trừ pausedMs trong sổ ca. Nhập save có validate; tạo mới cần xác nhận trong UI và giữ bản cũ riêng. |
+
+| 2026-09-09 rules v3 | Tỉnh Táo: wall rest anchor tách stamina anchor, stamp open-day, deadline được dời khi hidden/offline; bonus tách payment/tip nhưng dùng credit() và trần per-earn. Save container v2 chấp nhận rules v3, replay v1/v2 không thêm bonus/events; fixture v2 thật từ `2d80437` giữ amount 68, event IDs và lịch sử. HUD timer dùng cùng helper; sổ ca ghi thưởng thực nhận. |

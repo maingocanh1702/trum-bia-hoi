@@ -235,3 +235,40 @@ legacy replay preservation; owner service UI is now verified and reviewed.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Closed owner mobile-service UI review at `1e30b78`; final 27 unit/16 E2E/config/build green, numeric departure feedback preserved. No merge/deploy/full-game completion claim. |
+
+### Tỉnh Táo lifecycle and service credit — 2026-09-09, review pending
+
+Rules v3 now grant the configured well-rested benefit after **strictly more than
+6 hours** resting, once per successful **opening VN day**. The wall rest anchor
+starts at account creation and resets only at finalization. Offline time counts
+as rest but does not regenerate stamina; failed/full-stamina-blocked starts and
+retries never consume a grant. Hidden gameplay moves the bonus deadline with the
+shift; the exact deadline ends the benefit and hiding cannot revive it.
+
+The bonus is `round((payment + tip) × mult) − (payment + tip)` per customer, routed
+through existing counted `servePayment` after base payment/tip. The existing
+credit helper applies the per-earn daily cap and all earning ledgers. Nominal and
+actual bonus are audited separately; payment/tip remain the canonical k inputs.
+Shift stats/Sổ ca show actual bonus. All customer bonus values are validated
+before serving any member of the table. `shift.wellRested` owns numbers; duplicated
+tip aliases must match. JSON remains 1.7.0, with no new config/source schema.
+
+Save container v2 now accepts rules v3 while replaying original v1/v2 rules.
+The **actual pre-change v2 fixture from `2d80437`** still restores amount 68,
+coins 818, its old event IDs and unboosted shift; new play can earn a later grant.
+The HUD purple timer shares the engine's remaining-time helper and supports both
+locales. Existing departure and service feedback remain intact.
+
+Verification: config/build, **38 unit tests**, **18 browser tests**. Both normal
+and `npm run sim -- --well-rested` profiles pass five seeds × cold/full menus,
+>=500 customer serves each. The boosted profile actually credits 822–1446 bonus
+coins per run. Across both profiles k stays **2.3249–2.7020**; throughput is never
+in the formula. Stable mobile screenshots: `.qa/rested-after-360-740.png` and
+390×844 before/panel/after. A pre-existing browser assertion was corrected to
+track the departed customer's ID, since random weather may let a new group take
+the same table before the check; it still asserts the old sprite disappears.
+
+GDD/08/10 now reconcile the outdated tip-only multiplier and finalize-day language
+with authoritative JSON/08 formula, with append-only changelog rows. Independent
+review follows the pinned commit. M3 still needs ejection accounting, segment
+caps, shipper/football, full rush logic; M4–M9 remain part of the full goal.

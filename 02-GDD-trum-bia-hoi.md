@@ -189,7 +189,7 @@ Mỗi loại ép một quyết định: VIP/vội = tốc độ, bàn lai rai = 
 
 ## 8. Tip · Uy tín · Phạt (công thức — giữ nguyên 100%, chỉ thêm freshness)
 
-**Tip** (`ub`): nếu `patience/maxPatience < 0.6` → **0**; ngược lại `round(payment × 0.3)`. Rồi ×rush ×weather ×type(VIP 10) ×QR(ceil 1.2) ×Tỉnh Táo(1.1). **Thêm:** ×freshness (mục §6).
+**Tip** (`ub`): nếu `patience/maxPatience < 0.6` → **0**; ngược lại `round(payment × 0.3)`. Rồi ×rush ×weather ×type(VIP 10) ×QR(ceil 1.2). Tỉnh Táo cộng riêng lên tổng tiền món + tip theo 08-SPEC §9 và JSON; không nhân lại tip. **Thêm:** ×freshness (mục §6).
 → Vách đá 60%: VIP sớm vs trễ chênh ~5.5×. Một khách sộp đáng từ ~60 đến ~400+ xu (×k).
 
 **Uy tín ca** = Σ(+3 có tip / +1 không tip) − ~5 × (số bỏ đi). Thước đo chất lượng phục vụ.
@@ -448,3 +448,5 @@ Mục tiêu: chứng minh **vòng lặp vận hành ca vui & economy cân**. KH�
 | v1.12 | Chủ dự án 08/09: **chơi free hoàn toàn, monetization = donate cho admin** — §16 viết lại (quyền chơi free, F26 bỏ, F20 = nguồn thu duy nhất), §20 hai dòng Donation/Session Pass. |
 
 *Nguồn: `00-TONG-HOP-trumviahe.md`, `economy-spec-from-bundle.md`, `01-MAP-tra-da-to-bia-hoi.md`. Spec hệ bàn: `03-SPEC-he-ban.md`. Script: `scripts/measure_k.py`.*
+
+| v1.7 runtime Tỉnh Táo | Theo công thức 08-SPEC §9 và JSON: bonus = round((payment+tip) × mult) − (payment+tip), không nhân Tỉnh Táo riêng vào tip. Thời gian nghỉ bắt đầu khi đóng hẳn ca (tài khoản mới: createdAt), tính cả offline; hiệu lực dùng thời gian chơi đang hoạt động. Ngày dùng = ngày mở ca; tiền vẫn per-earn, số ca vẫn finalize-day. |

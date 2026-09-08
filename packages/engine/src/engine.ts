@@ -1,9 +1,9 @@
 import { config as defaultConfig, DISHES, EQUIPMENT, WEATHER, type Config, type SeatedType, type Rush } from './config';
 import { integer, random, weighted } from './rng';
-import { addStock, credit, customerValue, dayKey, dishUnlocked, freshnessMs, queueSlots, restockQuote, rushConfig, upgradeQuote } from './rules';
+import { addStock, credit, customerValue, dayKey, dishUnlocked, freshnessMs, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
 import type { Command, Customer, Envelope, Group, Item, LoggedCommand, Order, Result, RulesVersion, Stats, Table, World } from './types';
 
-const emptyStats = (): Stats => ({ arrived: 0, served: 0, lost: 0, rejected: 0, orders: 0, payment: 0, tip: 0, credited: 0, penalty: 0, spent: 0, rep: 0 });
+const emptyStats = (): Stats => ({ arrived: 0, served: 0, lost: 0, rejected: 0, orders: 0, payment: 0, tip: 0, credited: 0, penalty: 0, spent: 0, rep: 0, wellRestedBonus: 0 });
 
 /** No wall clock, IO or renderer: only config, seed, explicit time and commands. */
 export class Game {
@@ -11,7 +11,7 @@ export class Game {
   readonly log: LoggedCommand[] = [];
   private readonly results = new Map<string, LoggedCommand>();
   private commandKey: string | null = null;
-  private rulesVersion: RulesVersion = 2;
+  private rulesVersion: RulesVersion = 3;
   constructor(readonly config: Config = defaultConfig, readonly seed = 1, readonly createdAt = 0, readonly playerId = 'guest') {
     if (!Number.isSafeInteger(seed) || !Number.isSafeInteger(createdAt) || createdAt < 0) throw Error('game:invalid-origin');
     const c = config.values;
@@ -20,6 +20,7 @@ export class Game {
       reputation: 0, seasonEarned: 0, lifetimeEarned: 0, staminaMs: c.shift.durationMs,
       staminaAnchorMs: c.shift.durationMs, staminaAnchorAt: createdAt,
       completedShifts: 0, active: true, lastServedAt: null, dayEarned: {}, dayShifts: {},
+      restStartedAt: createdAt, wellRestedDays: {},
       inventory: Object.fromEntries(DISHES.map(d => [d, (c.inventory.startingStock as Record<string, number[]>)[d]?.[0] ?? 0])) as World['inventory'],
       equipment: Object.fromEntries(EQUIPMENT.map(k => [k, k === 'kitchen' ? c.runtime.initialKitchenLevel : c.runtime.initialEquipmentLevel])) as World['equipment'],
       tables: [], glasses: [], queue: [], shift: null, serves: [], events: [], lostStreak: 0,
@@ -72,6 +73,7 @@ export class Game {
       if (w.shift && w.phase !== 'resting') {
         w.shift.pausedMs += elapsed;
         w.shift.endsAt += elapsed; w.shift.nextSpawnAt += elapsed;
+        if (w.shift.wellRestedUntil !== null) w.shift.wellRestedUntil += elapsed;
         for (const rush of w.shift.rushes) { rush.start += elapsed; rush.end += elapsed; }
       }
       for (const table of w.tables) {
@@ -160,6 +162,7 @@ export class Game {
     if (w.phase === 'closing' && w.queue.length === 0 && w.tables.every(t => ['empty', 'cleaning', 'broken'].includes(t.state))) {
       w.phase = 'resting'; w.completedShifts++;
       w.staminaAnchorMs = w.staminaMs; w.staminaAnchorAt = w.now;
+      w.restStartedAt = w.now;
       const key = dayKey(w.now, this.config);
       w.dayShifts[key] = (w.dayShifts[key] ?? 0) + 1;
       if (s) s.closedAt = w.now;
@@ -317,7 +320,7 @@ export class Game {
       this.emit('glass_washing', { glassId: glass.id });
     }
   }
-  command(envelope: Envelope): Result { return this.applyCommand(envelope, 2); }
+  command(envelope: Envelope): Result { return this.applyCommand(envelope, 3); }
   /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
   replay(entry: LoggedCommand): Result { return this.applyCommand(entry, entry.rulesVersion); }
   private applyCommand(envelope: Envelope, rulesVersion: RulesVersion): Result {
@@ -360,9 +363,12 @@ export class Game {
             rushes.push({ kind, start, end: Math.min(w.now + c.shift.durationMs, start + c.rush[kind].durationMs) });
           }
         }
-        w.shift = { id: this.id('shift'), startedAt: w.now, pausedMs: 0, endsAt: w.now + c.shift.durationMs, closedAt: null, configVersion: this.config.version, weather, rush: 'none', rushes, nextSpawnAt: w.now + Math.round(onboarding ? c.onboarding.firstShift.guaranteedFirstGroupWithinMs - c.runtime.tableSeatingMs : c.spawn.baseMs * c.spawn.warmupMult), firstGroup: true, onboarding, stats: emptyStats() };
+        const rested = c.shift.wellRested;
+        const wellRested = this.rulesVersion >= 3 && w.now - w.restStartedAt > rested.requiresRestHours * 3600000 && (!rested.oncePerDay || !w.wellRestedDays[day]); // config-exempt: hours to milliseconds
+        w.shift = { id: this.id('shift'), startedAt: w.now, pausedMs: 0, endsAt: w.now + c.shift.durationMs, closedAt: null, configVersion: this.config.version, weather, rush: 'none', rushes, nextSpawnAt: w.now + Math.round(onboarding ? c.onboarding.firstShift.guaranteedFirstGroupWithinMs - c.runtime.tableSeatingMs : c.spawn.baseMs * c.spawn.warmupMult), firstGroup: true, onboarding, stats: emptyStats(), wellRestedUntil: wellRested ? w.now + rested.durationMs : null };
         w.phase = 'open'; w.lastServedAt = null; w.lostStreak = 0;
         this.emit('shift_opened', { shiftId: w.shift.id }); this.emit('weather_rolled', { weather });
+        if (wellRested) { w.wellRestedDays[day] = true; this.emit('well_rested_started', { shiftId: w.shift.id, day, until: w.shift.wellRestedUntil, mult: rested.mult }); }
         return { ok: true };
       }
       case 'endShift':
@@ -386,15 +392,23 @@ export class Game {
         if (w.lastServedAt !== null && w.now - w.lastServedAt < 1000 / c.spawn.playerServeCeilingPerSec) return fail('serveCooldown');
         let amount = 0, anyStale = false, anyTip = false, anyEarly = false;
         const grace = o.state === 'grace';
-        for (const customer of t.group!.customers) {
+        const values = t.group!.customers.map(customer => {
           const value = customerValue(w, this.config, o, customer);
-          const credited = credit(w, this.config, value.payment, 'servePayment') + credit(w, this.config, value.tip, 'serveTip');
+          const nominalBonus = this.rulesVersion >= 3 ? wellRestedBonus(w, this.config, value.payment, value.tip) : 0;
+          return { customer, value, nominalBonus };
+        });
+        for (const { customer, value, nominalBonus } of values) {
+          const baseCredit = credit(w, this.config, value.payment, 'servePayment') + credit(w, this.config, value.tip, 'serveTip');
+          const bonus = nominalBonus ? credit(w, this.config, nominalBonus, 'servePayment') : 0;
+          const credited = baseCredit + bonus;
           const rep = value.stale ? c.reputation.staleGlass : value.tip > 0 ? c.reputation.serveWithTip : c.reputation.serveNoTip;
           this.changeRep(rep); amount += credited; anyStale ||= value.stale; anyTip ||= value.tip > 0;
           anyEarly ||= value.ratio >= c.tip.patienceThreshold;
           s.stats.payment += value.payment; s.stats.tip += value.tip; s.stats.credited += credited; s.stats.served++;
-          w.serves.push({ t: w.now, customerId: customer.id, customerType: customer.type, orderId: o.id, dishes: value.dishes, payment: value.payment, tip: value.tip, credited, hadMoi: value.dishes.some(d => d !== 'bia'), stale: value.stale, patienceRatio: value.ratio });
+          s.stats.wellRestedBonus += bonus;
+          w.serves.push({ t: w.now, customerId: customer.id, customerType: customer.type, orderId: o.id, dishes: value.dishes, payment: value.payment, tip: value.tip, credited, hadMoi: value.dishes.some(d => d !== 'bia'), stale: value.stale, patienceRatio: value.ratio, ...(this.rulesVersion >= 3 ? { wellRestedBonus: bonus } : {}) });
           this.emit('customer_served', { customerId: customer.id, type: customer.type, payment: value.payment, tip: value.tip, stale: value.stale });
+          if (nominalBonus) this.emit('well_rested_bonus', { customerId: customer.id, orderId: o.id, nominal: nominalBonus, credited: bonus });
         }
         const outcome = anyStale ? 'stale' : grace ? 'grace' : (this.rulesVersion === 1 ? anyTip : anyEarly) ? 'early' : 'late';
         o.state = 'served'; o.items.forEach(i => { i.state = 'served'; }); t.roundsServed++;

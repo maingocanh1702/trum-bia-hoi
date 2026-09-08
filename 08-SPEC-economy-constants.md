@@ -260,7 +260,7 @@ credited = min(credited, DAILY_EARN_CAP − dayEarned)      // trần ngày; log
 | `TIP_RATE` | 0.30 | |
 | `TIP_VIP_MULT` | 10 | |
 | QR | ceil ×1.2 | cần Điện thoại + LP2 (§11) |
-| Tỉnh Táo (well-rested) | ×1.1 lên (payment+tip), 10 phút, 1 lần/ngày, keyed theo **open-day** = shift-count keyed (GDD §10 bài học: dùng CÙNG mốc) | |
+| Tỉnh Táo (well-rested) | ×1.1 lên (payment+tip), 10 phút, 1 lần/ngày, keyed theo **open-day** (`tip.wellRestedKeyedBy`); số ca tính finalize-day, tiền tính per-earn | |
 | Grace (03 §9.3) | chạm trong grace: patience ép = 10% → tip 0, vẫn thu tiền, không phạt | P1 |
 | Uy tín / lượt | **+3** có tip · **+1** không tip · **−5** mỗi khách bỏ đi (`queueLost`/expired) · **−1** cốc hết hơi (gộp: chỉ trừ 1 lần theo lý do nặng nhất, 03 §9.4) | không ×k |
 | Phạt mất khách `ab` | `round(gross × 0.10 × type.leavePenaltyMult) × rush.penaltyMult` — gross = giá gốc chưa tip | ×k (vì gross đã là xu bia hơi → **không nhân thêm**) |
@@ -548,3 +548,5 @@ Mọi section của `docs/config/economy.tbh.json` đều nằm trong registry. 
 | v1.2.7 | Chủ dự án 08/09: chơi free hết — §13 quyền chơi = normal cap, `entitlements.mode="free"`, `sessionPass.enabled=false`; JSON 1.6.0 thêm section `donation` (A) = monetization duy nhất; §22 sửa 2 dòng. |
 
 | v1.3.0 | New engine seed 1.7.0: added registry-owned `runtime` timing/initial-level keys; reconciled `lottery.legalGate=false` with HANDOFF legal hold. `check:config` will target the new engine and actual loader rather than archived constants. |
+
+| v1.3.1 | Runtime rules v3 nối Tỉnh Táo theo JSON hiện hành, không đổi số/config version: `shift.wellRested` canonical, aliases trong `tip` phải trùng. Bonus ghi riêng và credit qua `servePayment`, chịu trần ngày; payment/tip gốc giữ nguyên để đo k. Làm rõ open-day khác finalize-day; nghỉ mới bắt đầu tại createdAt/đóng hẳn ca, offline tính nghỉ nhưng không hồi thể lực. Replay rules v1/v2 giữ nguyên. |

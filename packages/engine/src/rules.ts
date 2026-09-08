@@ -4,6 +4,15 @@ import type { Customer, Order, World } from './types';
 export function dayKey(now: number, c: Config): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: c.values.shift.dayRollover.tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
 }
+export function wellRestedRemaining(w: World): number {
+  return w.phase === 'resting' || w.shift?.wellRestedUntil == null ? 0 : Math.max(0, w.shift.wellRestedUntil - w.now);
+}
+/** Base payment/tip remain the k measurement; the service boost is a separate counted credit. */
+export function wellRestedBonus(w: World, c: Config, payment: number, tip: number): number {
+  const bonus = wellRestedRemaining(w) > 0 ? Math.round((payment + tip) * c.values.shift.wellRested.mult) - payment - tip : 0;
+  if (!Number.isSafeInteger(bonus) || bonus < 0) throw Error('ledger:invalid-bonus');
+  return bonus;
+}
 export function stockCap(w: World, c: Config): number { return c.values.upgrades.stall.stockCap[w.equipment.stall - 1]; }
 export function queueSlots(w: World, c: Config): number {
   return c.values.runtime.queueBaseSlots + Math.floor(w.tables.reduce((s, t) => s + t.capacity, 0) / c.values.runtime.queueSeatsPerSlot);
