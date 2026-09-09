@@ -3,10 +3,11 @@ import { createHash, randomBytes, randomInt, randomUUID } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import { validGoogleSubject, type GoogleIdentity } from './google';
 import { LOCAL_ARCHIVE_BYTES, validateLocalArchive } from './local-archive';
+import { AdminAuth, initializeAdmin } from './admin-auth';
 import { ConfigRegistry, initializeRegistry, heartbeatTiming } from './registry';
 import { Game, config as seedConfig, configContent, decodeSave, loadConfig, validEnvelope, type Config, type Command, type DomainEvent, type EngineCheckpoint, type LoggedCommand, type World } from '@tbh/engine';
 
-const SCHEMA_VERSION = 8, CACHE_SIZE = 64; // config-exempt: persistence format and bounded process cache, not game tuning
+const SCHEMA_VERSION = 9, CACHE_SIZE = 64; // config-exempt: persistence format and bounded process cache, not game tuning
 const GOOGLE_CHALLENGE_TTL_MS = 300000; // config-exempt: five-minute authentication nonce lifetime, not gameplay time
 const EVENT_PAGE_SIZE = 100; // config-exempt: transport history page bound, not gameplay tuning
 type PlayerRow = { id: string; seed: number; created_at: number; config_version: string; now: number; revision: number; projection: string };
@@ -34,7 +35,8 @@ function sessionExpiry(now: number, ttlMs: number) {
  * never accept a client world, seed, clock or config here as authoritative state. */
 export class GameStore {
   private readonly db: DatabaseSync;
-  private readonly registry: ConfigRegistry;
+  readonly registry: ConfigRegistry;
+  readonly adminAuth: AdminAuth;
   private readonly cache = new Map<string, LiveGame & { revision: number }>();
   constructor(path: string, config: Config = seedConfig, private readonly clock = Date.now) {
     const candidate = loadConfig(config.raw);
@@ -111,7 +113,9 @@ export class GameStore {
       // Register approved historical snapshots for import/replay without activating them.
       const registered = this.registerConfig(candidate);
       if (Number(version) < 8) initializeRegistry(this.db, registered, this.now());
+      if (Number(version) < 9) initializeAdmin(this.db);
       this.registry = new ConfigRegistry(this.db, () => this.now());
+      this.adminAuth = new AdminAuth(this.db, () => this.now());
       heartbeatTiming(this.registry.active());
       this.db.exec('COMMIT');
     } catch (error) {

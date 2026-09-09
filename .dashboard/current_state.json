@@ -576,7 +576,9 @@
       "human_status": "IN_PROGRESS",
       "progress": 30,
       "runtime_urgency": "normal",
-      "overlays": [],
+      "overlays": [
+        "tracker-modified"
+      ],
       "signals": {
         "spec_exists": false,
         "tech_exists": false,
@@ -602,7 +604,7 @@
         "spec_modified_at": null,
         "tech_hash": null,
         "tech_modified_at": null,
-        "tracker_row_hash": "a62ec2ed0c6a3149ff326516d7d7fc666c1ed1883b2ae8aceb5b28d2b8497db2",
+        "tracker_row_hash": "55ce516eba621fc4b2b0e608e6cd636a1bb4d4cc367ad461ace11916fb2a3c1e",
         "foundation_codex_approved": null,
         "foundation_founder_signoff": null
       },

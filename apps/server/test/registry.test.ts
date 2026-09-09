@@ -161,9 +161,9 @@ test('failed publication transaction leaves no activation or audit, and persiste
 test('schema7 migration seeds once while preserving actual prior career history and projection', t => {
   const f = fixture(t); f.store.createPlayer('legacy', 42); f.store.command('legacy', { idempotencyKey: 'open', command: { type: 'startShift' } });
   const before = f.store.read('legacy'); f.store.close();
-  f.db.exec('DROP TABLE registry_audit; DROP TABLE registry_publications; DROP TABLE registry_approvals; DROP TABLE registry_proposals; PRAGMA user_version=7');
+  f.db.exec('DROP TABLE admin_sessions; DROP TABLE admin_factors; DROP TABLE registry_audit; DROP TABLE registry_publications; DROP TABLE registry_approvals; DROP TABLE registry_proposals; PRAGMA user_version=7');
   const migrated = f.open(); assert.deepEqual(migrated.read('legacy'), before);
-  assert.equal(f.db.prepare('PRAGMA user_version').get()!.user_version, 8);
+  assert.equal(f.db.prepare('PRAGMA user_version').get()!.user_version, 9);
   const raw = structuredClone(config.raw); raw._meta.version = 'replacement-seed'; raw.menu.bia.price += 2;
   assert.equal(f.open(loadConfig(raw)).createPlayer('next', 43).configVersion, config.version);
 });

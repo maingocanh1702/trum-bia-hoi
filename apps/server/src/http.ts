@@ -3,11 +3,14 @@ import type { OAuth2Client } from 'google-auth-library';
 import { validEnvelope, loadConfig, menuReport, type Config, type Command, type DomainEvent, type WorldView } from '@tbh/engine';
 import { GameStore, type Snapshot } from './store';
 import { googleVerifier } from './google';
+import { adminDirectory } from './admin-auth';
+import type { ProposalInput } from './registry';
 
 // config-exempt: deployment security/resource limits, not gameplay or economic parameters
 const BODY_BYTES = 16384, RATE_KEYS = 4096, REQUEST_TIMEOUT_MS = 30000, HEADER_TIMEOUT_MS = 10000;
-export interface ServerOptions { origin: string; sessionTtlMs: number; rateWindowMs: number; rateMax: number; googleClientId?: string }
+export interface ServerOptions { origin: string; sessionTtlMs: number; rateWindowMs: number; rateMax: number; googleClientId?: string; adminAccountsFile?: string }
 class HttpError extends Error { constructor(readonly status: number, message: string) { super(message); } }
+const pathIsAdmin = (url: string | undefined) => url?.startsWith('/admin/');
 const record = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 // HTTP accepts only these fields; historical replay keeps the engine's existing decoder.
 const commandFields = {
@@ -32,13 +35,13 @@ function publicState(state: Snapshot, config: Config) {
   return { world: view, presentation: presentation.map(publicEvent), menu: menuReport(state.world, config),
     configVersion: state.configVersion, serverNow: world.now, revision: state.revision, lastEventSeq: state.lastEventSeq };
 }
-async function json(req: IncomingMessage): Promise<unknown> {
+async function json(req: IncomingMessage, maxBytes = BODY_BYTES): Promise<unknown> {
   if (!/^application\/json(?:\s*;|$)/i.test(req.headers['content-type'] ?? '')) throw new HttpError(415, 'jsonRequired');
   if (req.headers['content-encoding'] && req.headers['content-encoding'] !== 'identity') throw new HttpError(415, 'encodingUnsupported');
   let size = 0; const chunks: Buffer[] = [];
   for await (const chunk of req.iterator({ destroyOnReturn: false })) {
     size += chunk.length;
-    if (size > BODY_BYTES) throw new HttpError(413, 'bodyTooLarge');
+    if (size > maxBytes) throw new HttpError(413, 'bodyTooLarge');
     chunks.push(chunk);
   }
   try { return JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { throw new HttpError(400, 'invalidJson'); }
@@ -51,11 +54,14 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
   const verifyGoogle = googleVerifier(options.googleClientId, googleClient);
   const secure = url.protocol === 'https:', cookieName = secure ? '__Host-tbh-session' : 'tbh-session';
   const cookie = (token: string, expires: number) => `${cookieName}=${token}; Path=/; HttpOnly; SameSite=Lax; Expires=${new Date(expires).toUTCString()}${secure ? '; Secure' : ''}`;
-  const credential = (req: IncomingMessage) => {
-    const values = (req.headers.cookie ?? '').split(';').map(p => p.trim()).filter(p => p === cookieName || p.startsWith(`${cookieName}=`));
+  const credential = (req: IncomingMessage, name = cookieName) => {
+    const values = (req.headers.cookie ?? '').split(';').map(p => p.trim()).filter(p => p === name || p.startsWith(`${name}=`));
     if (values.length > 1) throw new HttpError(401, 'invalidSession');
-    return values[0]?.slice(cookieName.length + 1);
+    return values[0]?.slice(name.length + 1);
   };
+  const adminName = secure ? '__Host-tbh-admin' : 'tbh-admin';
+  const adminCookie = (token: string, expiresAt: number) => `${adminName}=${token}; Path=/; HttpOnly; SameSite=Strict; Expires=${new Date(expiresAt).toUTCString()}${secure ? '; Secure' : ''}`;
+  const directory = () => { if (!options.adminAccountsFile || !verifyGoogle) throw Error('admin:unavailable'); return adminDirectory(options.adminAccountsFile); };
   // ponytail: bounded process-local limiter; enforce at a shared edge before multi-host deployment.
   const configs = new Map<string, Config>();
   const configAt = (version: string) => {
@@ -83,7 +89,64 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
       }
       if (!req.url?.startsWith('/') || req.url.startsWith('//')) throw new HttpError(400, 'invalidUrl');
       const route = new URL(req.url, options.origin), path = route.pathname;
-      if (route.search && path !== '/player/events' && path !== '/player/config') throw new HttpError(400, 'invalidQuery');
+      if (route.search && !['/admin/registry', '/admin/config', '/admin/audit'].includes(path) && path !== '/player/events' && path !== '/player/config') throw new HttpError(400, 'invalidQuery');
+      if (path.startsWith('/admin/')) {
+        // Body IO precedes all access decisions. Actor fields never cross this boundary.
+        const body = req.method === 'POST' ? await json(req, path === '/admin/proposals' ? 524288 : BODY_BYTES) : undefined; // config-exempt:512KiB bounded full-config JSON input
+        const token = credential(req, adminName), auth = store.adminAuth;
+        const fields = (allowed: string[]) => { if (!record(body) || Object.keys(body).some(k => !allowed.includes(k))) throw new HttpError(400, 'invalidBody'); return body; };
+        if (req.method === 'POST' && path === '/admin/auth/logout') {
+          fields([]); auth.logout(token); res.setHeader('Set-Cookie', adminCookie('', 0)); reply(200, { ok: true }); return;
+        }
+        if (req.method === 'GET' && path === '/admin/auth') {
+          if (!options.adminAccountsFile || !verifyGoogle) { reply(200, { enabled: false, phase: 'signedOut' }); return; }
+          reply(200, { enabled: true, ...auth.status(token, directory()) }); return;
+        }
+        if (req.method === 'POST' && path === '/admin/auth/challenge') {
+          fields([]); directory(); const { token: next, ...challenge } = auth.challenge(token);
+          res.setHeader('Set-Cookie', adminCookie(next, challenge.expiresAt)); reply(200, { ...challenge, clientId: options.googleClientId }); return;
+        }
+        if (req.method === 'POST' && path === '/admin/auth/google') {
+          const input = fields(['credential']); directory(); const nonce = auth.nonce(token);
+          let identity;
+          try { identity = await verifyGoogle!(input.credential, nonce); }
+          catch (error) { auth.rejectGoogle(token, nonce); throw error; }
+          const result = auth.google(token, nonce, identity, directory());
+          if ('token' in result) res.setHeader('Set-Cookie', adminCookie(result.token, result.expiresAt));
+          reply(200, { phase: result.phase, expiresAt: result.expiresAt }); return;
+        }
+        if (req.method === 'POST' && path === '/admin/auth/factor') {
+          const input = fields(['code']), result = auth.factor(token, input.code, directory());
+          res.setHeader('Set-Cookie', adminCookie(result.token, result.expiresAt)); reply(200, { phase: result.phase, expiresAt: result.expiresAt }); return;
+        }
+        const actor = auth.actor(token, directory()), registry = store.registry;
+        const cursor = (name: string, fallback: number) => {
+          if (!route.search) return fallback;
+          const value = route.searchParams.get(name);
+          if (route.searchParams.size !== 1 || !value || !/^(0|[1-9]\d*)$/.test(value) || !Number.isSafeInteger(Number(value))) throw new HttpError(400, 'invalidCursor');
+          return Number(value);
+        };
+        if (req.method === 'GET' && path === '/admin/registry') { reply(200, registry.index(actor, cursor('before', Number.MAX_SAFE_INTEGER))); return; }
+        if (req.method === 'GET' && path === '/admin/audit') { reply(200, registry.auditPage(actor, cursor('after', 0))); return; }
+        if (req.method === 'GET' && path === '/admin/config') {
+          const version = route.searchParams.get('version');
+          if (route.searchParams.size !== 1 || !version || version.length > 128) throw new HttpError(400, 'invalidVersion'); // config-exempt:transport string bound
+          reply(200, registry.details(actor, version)); return;
+        }
+        if (req.method === 'POST' && path === '/admin/proposals') {
+          const input = fields(['key', 'baseVersion', 'snapshot', 'reason', 'effective']);
+          if (typeof input.baseVersion !== 'string' || input.baseVersion.length > 128) throw new HttpError(400, 'invalidVersion'); // config-exempt:transport string bound
+          const draft = registry.propose(actor, input as ProposalInput);
+          reply(200, { version: draft.version }); return;
+        }
+        if (req.method === 'POST' && ['/admin/approve', '/admin/publish'].includes(path)) {
+          const input = fields(['version']);
+          if (typeof input.version !== 'string' || !input.version || input.version.length > 128) throw new HttpError(400, 'invalidVersion'); // config-exempt:transport string bound
+          if (path === '/admin/approve') { const draft = registry.approve(actor, input.version); reply(200, { version: draft.version }); }
+          else reply(200, registry.publish(actor, input.version)); return;
+        }
+        throw new HttpError(404, 'notFound');
+      }
       const token = credential(req);
       if (req.method === 'POST' && path === '/auth/session') {
         const body = await json(req); if (!record(body) || Object.keys(body).length) throw new HttpError(400, 'invalidBody');
@@ -151,6 +214,18 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
       }
       throw new HttpError(404, 'notFound');
     } catch (error) {
+      const adminErrors: Record<string, number> = {
+        'admin:unavailable': 503, 'admin:invalidSession': 401, 'admin:invalidChallenge': 401,
+        'admin:notAllowed': 403, 'admin:invalidFactor': 401, 'admin:rateLimited': 429,
+        'registry:invalidActor': 401, 'registry:forbidden': 403, 'registry:distinctApprover': 403,
+        'store:heartbeatClock': 400, 'registry:missingVersion': 404, 'registry:missingProposal': 404, 'registry:rateLimited': 429,
+        'registry:staleBase': 409, 'registry:scheduleConflict': 409, 'registry:keyConflict': 409,
+        'registry:alreadyApproved': 409, 'registry:approvalRequired': 409,
+      };
+      if (pathIsAdmin(req.url) && error instanceof Error && (error.message.startsWith('registry:') || error.message.startsWith('config:') || error.message.startsWith('admin:') || error.message === 'store:heartbeatClock')) {
+        const status = adminErrors[error.message] ?? (error.message.startsWith('config:') || ['registry:invalidInput', 'registry:bindingRange', 'registry:identityMigrationRequired', 'registry:metadataImmutable', 'registry:invalidKeys', 'registry:earlyActivation', 'registry:unsafeSchedule', 'registry:ungovernedKey'].includes(error.message) ? 400 : 500);
+        reply(status, { error: status === 500 ? 'serverError' : error.message }); req.resume(); return;
+      }
       const auth = error instanceof Error && {
         'store:invalidSession': [401, 'invalidSession'], 'store:invalidGoogleChallenge': [401, 'invalidGoogleChallenge'],
         'auth:googleVerificationFailed': [401, 'googleVerificationFailed'],

@@ -130,8 +130,8 @@ test('one worker admission and SQLite rollback preserve both accounts and allow 
 
 test('schema4 migration and approved legacy configuration retain the original v1 archive without inventing approval', async t => {
   const f = fixture(t), account = f.login(), s = f.store;
-  s.close(); f.db.exec('DROP TABLE registry_audit; DROP TABLE registry_publications; DROP TABLE registry_approvals; DROP TABLE registry_proposals; DROP TABLE client_presence; DROP TABLE engine_checkpoints; DROP TABLE local_imports; PRAGMA user_version=4');
-  const migrated = f.open(); assert.equal(f.db.prepare('PRAGMA user_version').get()!.user_version, 8);
+  s.close(); f.db.exec('DROP TABLE admin_sessions; DROP TABLE admin_factors; DROP TABLE registry_audit; DROP TABLE registry_publications; DROP TABLE registry_approvals; DROP TABLE registry_proposals; DROP TABLE client_presence; DROP TABLE engine_checkpoints; DROP TABLE local_imports; PRAGMA user_version=4');
+  const migrated = f.open(); assert.equal(f.db.prepare('PRAGMA user_version').get()!.user_version, 9);
   assert.equal(migrated.session(account.token)!.provider, 'google');
   const text = readFileSync('packages/engine/test/fixtures/legacy-save-v1.json', 'utf8'), raw = JSON.parse(text);
   await assert.rejects(migrated.claimLocal(account.token, text), /unknownLocalConfig/);

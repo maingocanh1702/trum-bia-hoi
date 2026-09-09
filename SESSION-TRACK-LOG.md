@@ -5,6 +5,16 @@
 
 ---
 
+## 🧭 Admin authentication/registry transport implemented — 2026-09-10
+
+Base291264c, schema9/config2.0.1/rules24. Google signed identity + independent TOTP
+establish admin authority; private server directory grants roles, eight-hour cookie,
+durable replay/failure lockout and atomic audit. Protected read/propose/approve/publish
+routes call existing registry handlers; player session/shift remains independent.
+320full tests/config/build pass; final TierC/remote checks and native review underway.
+Editor is next on this verified boundary, then scopes and remaining M4 accounts/locale,
+M6–M9. ClientID absent; no fabricated MFA, public upload,80MB tuning or merge/deploy.
+
 ## 🧭 Default registry verified; admin auth/editor next — 2026-09-10
 
 Productc1e953c (base732f860, foundation65f9242), schema8/config2.0.1/rules24.

@@ -409,3 +409,33 @@ table, exact scope and real SQLite/opening/replay/scheduler checks.
 | 2026-09-10 | Schema8 default registry and actual opening resolution; internal service verification/review underway, admin API/editor/scopes remain. |
 
 | 2026-09-10 verified | c1e953c default service passes310engine/server (12registry),10remote browser, config/build and k/rush; correction review CLEAN. Admin auth/editor/scopes remain unexposed. Evidence `.qa/registry-verification.json`. |
+
+## Admin authentication and default registry API — schema9
+
+Set `TBH_ADMIN_ACCOUNTS_FILE` to the private server-owned directory described in
+[admin authentication](../../docs/admin-auth.md), alongside `TBH_GOOGLE_CLIENT_ID`.
+With either absent, admin sign-in stays unavailable; player auth/play remains usable.
+Google and admin cookies are separate. Admin routes do not create/link a player or
+pause any shift. No role, subject, MFA or clock field is accepted from the browser.
+
+| Method / route | Action |
+|---|---|
+| GET `/admin/auth` | Enabled state; current admin session or pending MFA. |
+| POST `/admin/auth/challenge` `{}` | Fresh HttpOnly admin challenge cookie; nonce/clientId for GIS. |
+| POST `/admin/auth/google` `{credential}` | Verify signed Google token and consume nonce; MFA or rotated authenticated session. |
+| POST `/admin/auth/factor` `{code}` | Complete independent TOTP; rotate cookie. |
+| POST `/admin/auth/logout` `{}` | Revoke this admin session; keep player cookie intact. |
+| GET `/admin/registry?before=<cursor>` | Latest/active version and up to50proposals; optional descending cursor. |
+| GET `/admin/config?version=<version>` | Complete snapshot, proposal/base/diff-key policy, approval/publication. |
+| GET `/admin/audit?after=<seq>` | Up to50append-only security/config events. |
+| POST `/admin/proposals` `{key,baseVersion,snapshot,reason,effective?}` | Existing canonical validation, tier and immutable draft handler. |
+| POST `/admin/approve` or `/admin/publish` `{version}` | Existing approval/schedule/retry handlers with server actor. |
+
+Use `/api` prefix through the web proxy. Admin requests share exact-origin/CSRF/rate
+limits with the player API. Full snapshot proposal ceiling is512KiB; other bodies
+retain16KiB. Cookies use HttpOnly/SameSite=Strict and HTTPS Secure/`__Host-` naming.
+TOTP replay/failure counters, challenge/session state and audit are durable in SQLite.
+Schema8→9 adds only admin session/factor tables, preserving player/config history.
+Browser editor, enrollment/account recovery and scoped registry UI are subsequent slices.
+
+| 2026-09-10 admin transport implementation | Google SSO + independent TOTP/RBAC/session boundary and protected default registry routes implemented;320full tests/config/build pass, final role/HTTP checks and independent review underway. Real Client ID/directory remain unconfigured. |

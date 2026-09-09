@@ -12,7 +12,8 @@ export type ProposalInput = { key: string; baseVersion: string; snapshot: unknow
 type Proposal = { version: string; request_key: string; base_version: string; fingerprint: string; changed_by: string;
   keys: string; reason: string; effective: Effective; created_at: number };
 type Publication = { seq: number; version: string; effective_at: number; published_at: number; changed_by: string; approved_by: string };
-const DAY_MS = 86400000, ADMIN_SESSION_MS = 28800000, PUBLISH_PER_DAY = 5; // config-exempt: calendar units and admin authentication/abuse limits (BRD9.2/9.4), not gameplay tuning
+export const ADMIN_SESSION_MS = 28800000; // config-exempt:BRD9.2 eight-hour admin authentication limit
+const DAY_MS = 86400000, PUBLISH_PER_DAY = 5; // config-exempt: calendar units and admin authentication/abuse limits (BRD9.2/9.4), not gameplay tuning
 const under = (path: string, prefix: string) => path === prefix || path.startsWith(prefix + '.');
 export function heartbeatTiming(config: Config) {
   const timeoutMs = config.values.network.reconnectingUiDelayMs;
@@ -121,6 +122,32 @@ export class ConfigRegistry {
   private rollbackSource(original: Config, baseVersion: string) {
     const known = this.db.prepare('SELECT snapshot FROM configs WHERE version=?').get(original.version);
     return original.version !== baseVersion && known && configContent(loadConfig(JSON.parse(String(known.snapshot)))) === configContent(original) ? original.version : null;
+  }
+  index(actor: AdminActor, before = Number.MAX_SAFE_INTEGER) {
+    this.actor(actor, this.now());
+    if (!Number.isSafeInteger(before) || before < 1) throw Error('registry:invalidInput');
+    const proposals = this.db.prepare(`SELECT rowid AS cursor,version,base_version,changed_by,keys,reason,effective,created_at
+      FROM registry_proposals WHERE rowid<? ORDER BY rowid DESC LIMIT 50`).all(before); // config-exempt:admin pagination bound
+    return { latest: this.latest(), activeVersion: this.active().version, proposals,
+      nextCursor: proposals.length === 50 ? Number(proposals.at(-1)!.cursor) : null }; // config-exempt:admin pagination bound
+  }
+  details(actor: AdminActor, version: string) {
+    this.actor(actor, this.now());
+    const config = this.config(version);
+    const draft = this.db.prepare(`SELECT version,base_version,changed_by,keys,reason,effective,created_at
+      FROM registry_proposals WHERE version=?`).get(version);
+    return { snapshot: config.raw, draft: draft ?? null,
+      base: draft ? this.config(String(draft.base_version)).raw : null,
+      policy: draft ? registryPolicy(JSON.parse(String(draft.keys)), this.config(String(draft.base_version))) : null,
+      approval: this.db.prepare('SELECT approved_by,approved_at FROM registry_approvals WHERE version=?').get(version) ?? null,
+      publication: this.db.prepare('SELECT * FROM registry_publications WHERE version=?').get(version) ?? null };
+  }
+  auditPage(actor: AdminActor, after = 0) {
+    this.actor(actor, this.now());
+    if (!Number.isSafeInteger(after) || after < 0) throw Error('registry:invalidInput');
+    const events = this.db.prepare('SELECT * FROM registry_audit WHERE seq>? ORDER BY seq LIMIT 50').all(after); // config-exempt:admin audit pagination bound
+    return { events: events.map(e => ({ seq: e.seq, type: e.type, data: JSON.parse(String(e.payload)) })),
+      nextCursor: events.length ? Number(events.at(-1)!.seq) : after };
   }
   proposal(version: string) {
     const row = this.db.prepare('SELECT * FROM registry_proposals WHERE version=?').get(version) as Proposal | undefined;

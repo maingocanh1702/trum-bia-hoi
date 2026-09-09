@@ -2201,3 +2201,12 @@ Foundation P2 publisher-rotation bypass fixed by charging the author; persisted 
 identity changes now require explicit migration. Independent correction review CLEAN.
 Receipt `.qa/registry-verification.json`. M4 remains10/18 OPEN; next authenticated
 admin transport/editor, scoped rules and remaining account acceptance, then M6–M9.
+
+## Admin identity and registry HTTP — 2026-09-10
+
+Base291264c: schema9 Google challenge + independent TOTP, private sub/role directory,
+eight-hour admin cookie, atomic security audit, durable OTP replay/lockout and actual
+registry read/propose/approve/publish endpoints. No browser-supplied actor fields and
+no player session mutation.320tests/config/build pass; final positive TierC check,
+remote browser regression and independent review underway. Editor/enrollment and
+scoped config are next; no live Client ID, public archive upload or M9 tuning.
