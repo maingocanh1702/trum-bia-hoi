@@ -111,3 +111,31 @@ test('an unsafe new clock is refused before onboarding can install an unrepresen
   assert.deepEqual(g.command(open(g), c), { ok: false, reason: 'configClock' }); assert.equal(g.world.phase, 'resting'); assert.equal(g.config.version, 'pin-A');
   assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
 });
+
+test('a published location rename cannot orphan an owned stall, including the first onboarding shift that skips rush validation', () => {
+  for (const returning of [false, true]) {
+    const g = new Game(pinConfig('pin-A'), 42, 0);
+    if (returning) { sendKitchen(g, { type: 'startShift' }); servePin(g); restPin(g); }
+    const before = structuredClone({ coins: g.world.coins, location: g.world.location, stamina: g.world.staminaMs, tables: g.world.tables, shift: g.world.shift, rng: g.world.rng });
+    const renamed = pinConfig('rename', raw => {
+      raw.locations.list.find(l => l.id === g.world.location)!.id = 'new-location'; raw.locations.fallback = 'new-location';
+    });
+    assert.deepEqual(g.command(open(g), renamed), { ok: false, reason: 'configLocationMissing' });
+    assert.equal(g.config.version, 'pin-A'); assert.deepEqual({ coins: g.world.coins, location: g.world.location, stamina: g.world.staminaMs, tables: g.world.tables, shift: g.world.shift, rng: g.world.rng }, before);
+    assert.ok(!g.world.events.some(e => e.type === 'config_pinned')); assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
+    const compatible = nextPin(); assert.ok(g.command(open(g), compatible).ok); servePin(g); assert.ok(g.world.serves.at(-1)!.payment > 0);
+    assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
+  }
+});
+
+test('registry reserialization may reorder object keys but cannot change same-version values or array order', () => {
+  const a = pinConfig('pin-A');
+  const reorder = (value: unknown): unknown => Array.isArray(value) ? value.map(reorder) : value && typeof value === 'object'
+    ? Object.fromEntries(Object.entries(value).reverse().map(([key, item]) => [key, reorder(item)])) : value;
+  const reordered = loadConfig(reorder(a.raw)), g = new Game(a, 42, 0);
+  assert.notEqual(JSON.stringify(a.raw), JSON.stringify(reordered.raw)); assert.ok(g.command(open(g), reordered).ok);
+  assert.equal(g.config.version, a.version); assert.equal(g.configs.length, 1); assert.ok(!g.world.events.some(e => e.type === 'config_pinned'));
+  const before = encodeSave(g), swapped = structuredClone(a.raw); swapped.upgrades.keg.pourMs.reverse();
+  assert.deepEqual(g.command(open(g), loadConfig(swapped)), { ok: false, reason: 'configVersionConflict' }); assert.equal(encodeSave(g), before);
+  assert.deepEqual(decodeSave(before).world, g.world);
+});

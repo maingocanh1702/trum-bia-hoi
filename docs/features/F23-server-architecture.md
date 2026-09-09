@@ -126,3 +126,6 @@ an opening snapshot directly from an untrusted client when building the server.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Marked M4 in progress for engine config pinning/savev3 prerequisite only; explicitly retained server/registry/auth/network acceptance as unfinished. |
+
+
+| 2026-09-09 review correction | Refuse a candidate that removes the owned location before adoption. Compare immutable snapshot content independently of JSON object-key ordering; preserve array/value distinctions. Server registry/auth remains unfinished. |

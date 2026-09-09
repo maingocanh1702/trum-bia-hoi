@@ -21,6 +21,9 @@ const ATTENDANCE_RULES: RulesVersion = 13; // config-exempt: fixed replay protoc
 const MENU_RULES: RulesVersion = 14; // config-exempt: fixed replay protocol revision
 const CONFIG_PIN_RULES: RulesVersion = 15; // config-exempt: fixed replay protocol revision
 const emptyStats = (): Stats => ({ arrived: 0, served: 0, lost: 0, rejected: 0, orders: 0, payment: 0, tip: 0, credited: 0, penalty: 0, spent: 0, rep: 0, wellRestedBonus: 0 });
+// Registry storage may reorder object keys; arrays retain their meaningful order.
+const snapshotContent = (c: Config) => JSON.stringify(c.raw, (_, value) => value && typeof value === 'object' && !Array.isArray(value)
+  ? Object.fromEntries(Object.keys(value).sort().map(key => [key, value[key]])) : value);
 
 /** No wall clock, IO or renderer: only config, seed, explicit time and commands. */
 export class Game {
@@ -503,7 +506,7 @@ export class Game {
     if (envelope.at < this.world.now) return { ok: false, reason: 'staleCommand' };
     if (openingConfig && envelope.command.type !== 'startShift') return { ok: false, reason: 'configOnlyOnStart' };
     const selected = openingConfig ?? this.config, known = this.snapshots.get(selected.version);
-    if (known && known !== selected && JSON.stringify(known.raw) !== JSON.stringify(selected.raw)) return { ok: false, reason: 'configVersionConflict' };
+    if (known && known !== selected && snapshotContent(known) !== snapshotContent(selected)) return { ok: false, reason: 'configVersionConflict' };
     // Old logs switched before advancing; v10+ keeps elapsed autonomous history under its preceding rules.
     if (rulesVersion < ARRIVAL_INTERVAL_RULES) this.rulesVersion = rulesVersion;
     this.advance(envelope.at);
@@ -543,6 +546,7 @@ export class Game {
       case 'startShift': {
         const c = openingConfig.values, changed = openingConfig.version !== this.config.version, previousVersion = this.config.version;
         if (w.phase !== 'resting') return fail('shiftRunning');
+        if (changed && !c.locations.list.some(location => location.id === w.location)) return fail('configLocationMissing');
         if (c.shift.openRequiresFullStamina && w.staminaMs < this.config.values.shift.durationMs) return fail('restFirst');
         if (this.rulesVersion >= CONFIG_PIN_RULES && !Number.isSafeInteger(w.now + c.shift.durationMs)) return fail('configClock');
         const day = dayKey(w.now, openingConfig);

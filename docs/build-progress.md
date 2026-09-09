@@ -1284,3 +1284,29 @@ reconnect or full M4. Full M0–M9 remains active; root checkout is untouched.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Implemented rules15 per-shift config adoption and savev3 prerequisite, updated F23/tracker to in progress; final verification and independent review pending. |
+
+
+## 2026-09-09 — Config pin review corrections
+
+Independent native review ofd732240..82b6490 found two actionable faults: a valid
+snapshot could rename the owned location and orphan service, and JSON object-key
+reordering could falsely conflict with the same immutable version. Preserve the
+first round at .qa/review-config-pinning-round1.{txt,log} and its prompt.
+
+The opening guard now refuses a candidate missing the owned location before
+adoption, including onboarding that skips rush planning. It never relocates the
+player or changes assets. Snapshot collision comparison canonicalizes object keys
+recursively while preserving array order and all values. Two regression cases
+exercise first/returning shifts, rejected-candidate save/replay, later compatible
+service, nested reordered keys and real array/value conflicts.
+
+Initial full checks passed151 unit/64 browser and20 k rows2.3125–2.7562 plus15
+rush-pressure rows. Final153 unit/browser/config/build/sim verification and a new
+independent full-base review are running. A separate probe from actual parent
+rules14 code also preserved the complete world/history through a new rules15 pin.
+No complete-M4 or release claim; the owner's new management-menu auto-pause request
+is queued next and takes precedence over earlier no-pause UI guidance.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Fixed both native review findings: reject orphaned location on config adoption; compare same-version snapshots independently of object-key order. Added two actual regression cases; final re-verification/review pending. |

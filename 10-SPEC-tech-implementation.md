@@ -337,3 +337,6 @@ remain M4 work. Local save validation is not an anti-cheat or authenticity proof
 | Date | Change |
 |---|---|
 | 2026-09-09 | Added rules15 trusted opening snapshot, immutable config catalog and multi-config savev3; preserved old replay protocols and clarified rejected-candidate log/event semantics. M4 server/registry still pending. |
+
+
+| 2026-09-09 pin review correction | A candidate must retain the current owned location ID; otherwise opening refuses without relocation or adoption. Same-version equality ignores object-key order recursively, but array order and values remain immutable. |
