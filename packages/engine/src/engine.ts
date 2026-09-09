@@ -126,10 +126,11 @@ export class Game {
   catchUp(now: number): void {
     this.validateAdvance(now);
     if (this.rulesVersion === DISCONNECT_RULES && !this.world.active && now > this.world.now) {
-      let idempotencyKey = `system:calendar:${ABSENT_CALENDAR_RULES}`;
-      while (this.results.has(idempotencyKey)) idempotencyKey += ':';
-      this.applyCommand({ at: this.world.now, idempotencyKey,
-        command: { type: 'activity', active: false, ...(this.world.paused ? { paused: true } : {}) } }, ABSENT_CALENDAR_RULES);
+      const prefix = `system:calendar:${ABSENT_CALENDAR_RULES}`;
+      let suffix = 0, idempotencyKey = prefix;
+      while (this.results.has(idempotencyKey)) idempotencyKey = `${prefix}:${++suffix}`;
+      const result = this.applyCommand({ at: this.world.now, idempotencyKey, command: { type: 'adoptCalendarRules' } }, ABSENT_CALENDAR_RULES);
+      if (!result.ok) throw Error('replay:calendarAdoption');
     }
     this.advance(now);
   }
@@ -597,6 +598,7 @@ export class Game {
   }
   /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
   replay(entry: LoggedCommand, config = this.config): Result {
+    if (entry.command.type === 'adoptCalendarRules' && entry.rulesVersion !== ABSENT_CALENDAR_RULES) throw Error('replay:rulesVersion');
     if (entry.command.type === 'connectionLost' && (entry.rulesVersion < DISCONNECT_RULES || entry.rulesVersion >= ABSENT_CALENDAR_RULES && !entry.command.lossId)) throw Error('replay:rulesVersion');
     if (entry.command.type === 'activity' && entry.command.paused !== undefined && entry.rulesVersion < MENU_PAUSE_RULES) throw Error('replay:rulesVersion');
     if (entry.configVersion !== config.version || config.version !== this.config.version && (entry.command.type !== 'startShift' || entry.rulesVersion < CONFIG_PIN_RULES)) throw Error('replay:configVersion');
@@ -642,6 +644,7 @@ export class Game {
     const w = this.world, c = this.config.values, s = w.shift;
     const fail = (reason: string): Result => ({ ok: false, reason });
     switch (cmd.type) {
+      case 'adoptCalendarRules': return { ok: true };
       case 'connectionLost': {
         if (!s || s.id !== cmd.shiftId || w.phase === 'resting') return fail('noShift');
         const grace = c.network.reconnectGraceMs;
@@ -915,7 +918,7 @@ export class Game {
 
 /** Runtime validation for local imports and HTTP. Reject unknown command variants. */
 export function validEnvelope(input: unknown): input is Envelope {
-  return validReplayEnvelope(input) && input.command.type !== 'connectionLost' && !input.idempotencyKey.startsWith('system:');
+  return validReplayEnvelope(input) && input.command.type !== 'connectionLost' && input.command.type !== 'adoptCalendarRules' && !input.idempotencyKey.startsWith('system:');
 }
 /** Historical logs may contain reserved keys; only the public ingress forbids them. */
 export function validReplayEnvelope(input: unknown): input is Envelope<Command | SystemCommand> {
@@ -924,6 +927,7 @@ export function validReplayEnvelope(input: unknown): input is Envelope<Command |
   if (typeof e.idempotencyKey !== 'string' || !e.idempotencyKey || e.idempotencyKey.length > 128 || !Number.isSafeInteger(e.at) || e.at < 0 || !e.command || typeof e.command !== 'object') return false; // config-exempt: protocol key length
   const c = e.command;
   switch (c.type) {
+    case 'adoptCalendarRules': return new RegExp(`^system:calendar:${ABSENT_CALENDAR_RULES}(?::[1-9][0-9]*)?$`).test(e.idempotencyKey);
     case 'connectionLost': return typeof c.shiftId === 'string' && c.shiftId.length > 0 && (c.lossId === undefined || typeof c.lossId === 'string' && c.lossId.length > 0) && e.idempotencyKey === `system:connectionLost:${c.shiftId}:${c.lossId ?? e.at}`;
     case 'startShift': case 'endShift': case 'buyTable': case 'emergencyPack': case 'installSignboard': case 'buyFlyer': return true;
     case 'claimQuest': return typeof c.day === 'string' && typeof c.questId === 'string' && c.questId.length > 0;

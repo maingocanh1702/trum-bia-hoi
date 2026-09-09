@@ -197,3 +197,7 @@ saves retain their original generated-day history and adopt this rule prospectiv
 | Date | Change |
 |---|---|
 | 2026-09-09 | Rules19 saves adopt rules20 at their saved frontier before live catch-up, through one replayable inactive activity record; historical replay still generates the originally recorded dates. Engine and SQLite restart/rollback regressions cover the first operation after1000days. |
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Current calendar adoption uses a neutral system record rather than an activity command, preserving a menu paused at disconnection; prior valid activity-adoption history still replays. |

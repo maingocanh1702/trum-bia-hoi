@@ -239,7 +239,7 @@ still process exact daily boundaries; only absent paused days are lazy. Explicit
 shift creation and actual timeout-closing events retain their calendar ownership.
 
 Live recovery uses `Game.catchUp(now)` after replaying the persisted frontier. For
-an inactive rules19 game, it first appends one rules20 activity record at that
+an inactive rules19 game, it first appends one neutral rules20 system record at that
 frontier, preserving inactive/menu state, then advances elapsed time. Public current
 commands and trusted disconnect calls share this boundary; GameStore invokes it
 inside its existing transaction before reads or actions. `advance()` remains the
@@ -250,3 +250,13 @@ loss identities are accepted only in historical rules19 records, never rules20.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Version-bound live catch-up before rules19 absent-time evaluation; preserve recorded history, atomically persist the adoption in SQLite, and restrict legacy missing lossId to rules19. |
+
+The current boundary record is `adoptCalendarRules`, valid only under rules20 and
+the reserved calendar key namespace. It has no activity/pause payload, so it can
+preserve a menu that was open when the connection disappeared. Historical activity
+adoption records remain readable. Numeric collision suffixes stay within the
+protocol key bound; catch-up checks adoption success before advancing.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Replaced the activity-based adoption attempt with a neutral system transition; retained inactive menu state, bounded historical-key collisions, and added open/closing menu-outage replay regressions. |

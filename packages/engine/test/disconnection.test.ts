@@ -254,6 +254,53 @@ test('an older log key cannot shadow the live calendar adoption receipt', () => 
   const g = decodeSave(readFileSync(new URL('./fixtures/legacy-v19-absence.json', import.meta.url), 'utf8'));
   assert.ok(g.replay({ at: g.world.now, idempotencyKey: 'system:calendar:20', command: { type: 'activity', active: false }, rulesVersion: 19, configVersion: g.config.version, result: { ok: true } }).ok);
   const before = count(g, 'quest_generated'); g.catchUp(g.world.now + 1000 * 86400000);
-  assert.equal(count(g, 'quest_generated'), before); assert.equal(g.log.at(-1)!.idempotencyKey, 'system:calendar:20:');
+  assert.equal(count(g, 'quest_generated'), before); assert.equal(g.log.at(-1)!.idempotencyKey, 'system:calendar:20:1');
   assert.equal(g.log.at(-1)!.rulesVersion, 20); roundtrip(g);
+});
+
+
+test('rules19 menu disconnections adopt without changing presence or pause in open and draining shifts', () => {
+  for (const paused of [false, true]) for (const closing of [false, true]) {
+    const g = new Game(config, 42, Date.parse('2026-09-09T10:00:00Z'));
+    const replay = (idempotencyKey: string, command: Command | { type: 'connectionLost'; shiftId: string; lossId: string }) => {
+      assert.ok(g.replay({ at: g.world.now, idempotencyKey, command, rulesVersion: 19, configVersion: g.config.version, result: { ok: true } }).ok);
+    };
+    replay('open-old-menu', { type: 'startShift' }); g.advance(g.world.now + 11100);
+    if (closing) replay('close-old-menu', { type: 'endShift' });
+    replay('pause-old-menu', { type: 'activity', active: true, paused });
+    replay(`system:connectionLost:${g.world.shift!.id}:menu`, { type: 'connectionLost', shiftId: g.world.shift!.id, lossId: 'menu' });
+    const prefix = structuredClone(g.world.events), frontier = g.world.now, deadline = g.world.disconnection!.expiresAt;
+    const old = roundtrip(g); g.catchUp(frontier + 1);
+    assert.equal(g.world.active, false); assert.equal(!!g.world.paused, paused);
+    assert.equal(g.world.disconnection!.expiresAt, deadline);
+    assert.deepEqual(g.log.at(-1)!.command, { type: 'adoptCalendarRules' });
+    assert.equal(g.log.at(-1)!.at, frontier); assert.equal(g.log.at(-1)!.rulesVersion, 20);
+    const end = frontier + 1000 * 86400000;
+    g.catchUp(end); old.catchUp(end); assert.deepEqual(g.world, old.world);
+    assert.equal(g.world.phase, 'resting'); assert.equal(g.world.active, false); assert.equal(!!g.world.paused, paused);
+    assert.equal(count(g, 'quest_generated'), prefix.filter(e => e.type === 'quest_generated').length);
+    assert.deepEqual(g.world.events.slice(0, prefix.length), prefix); roundtrip(g);
+  }
+});
+
+
+test('calendar adoption keys stay bounded even if historical keys occupy every colon length and numeric candidates', () => {
+  const g = decodeSave(readFileSync(new URL('./fixtures/legacy-v19-absence.json', import.meta.url), 'utf8'));
+  const prefix = 'system:calendar:20', keys = [prefix + ':1', prefix + ':2'];
+  for (let key = prefix; key.length <= 128; key += ':') keys.push(key);
+  for (const key of keys) assert.ok(g.replay({ at: g.world.now, idempotencyKey: key, command: { type: 'activity', active: false }, rulesVersion: 19, configVersion: g.config.version, result: { ok: true } }).ok);
+  const before = count(g, 'quest_generated'); g.catchUp(g.world.now + 1000 * 86400000);
+  assert.equal(count(g, 'quest_generated'), before); assert.equal(g.log.at(-1)!.idempotencyKey, prefix + ':3');
+  assert.deepEqual(g.log.at(-1)!.command, { type: 'adoptCalendarRules' }); roundtrip(g);
+});
+
+
+test('calendar adoption is a rules20 system record and cannot be submitted through public ingress', () => {
+  const g = readyOrder(), command = { type: 'adoptCalendarRules' } as const, before = encodeSave(g);
+  for (const key of ['player-calendar', 'system:calendar:20']) {
+    const envelope = { at: g.world.now, idempotencyKey: key, command };
+    assert.equal(validEnvelope(envelope), false); assert.equal(g.command(envelope as never).reason, 'invalidCommand');
+  }
+  assert.throws(() => g.replay({ at: g.world.now, idempotencyKey: 'system:calendar:20', command, rulesVersion: 19, configVersion: g.config.version, result: { ok: true } }), /replay:rulesVersion/);
+  assert.equal(encodeSave(g), before);
 });
