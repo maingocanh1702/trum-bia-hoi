@@ -139,3 +139,19 @@ test('registry reserialization may reorder object keys but cannot change same-ve
   assert.deepEqual(g.command(open(g), loadConfig(swapped)), { ok: false, reason: 'configVersionConflict' }); assert.equal(encodeSave(g), before);
   assert.deepEqual(decodeSave(before).world, g.world);
 });
+
+test('a candidate designed for larger initial tables cannot strand the first group at a preserved small stall', () => {
+  const candidate = pinConfig('large-onboarding', raw => { raw.runtime.initialTableLevel = 2; raw.onboarding.firstShift.firstGroupSize = 4; });
+  const g = new Game(pinConfig('pin-A'), 42, 0), before = structuredClone(g.world.tables);
+  assert.deepEqual(g.command(open(g), candidate), { ok: false, reason: 'configOnboardingTables' });
+  assert.equal(g.world.phase, 'resting'); assert.equal(g.config.version, 'pin-A'); assert.deepEqual(g.world.tables, before);
+  assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
+  const compatible = pinConfig('fits-owned-level', raw => {
+    raw.runtime.initialTableLevel = 2; raw.onboarding.firstShift.firstGroupSize = 3; raw.upgrades.table.levels[0].capacity = 3;
+  });
+  assert.ok(g.command(open(g), compatible).ok); assert.ok(g.world.tables.every(t => t.level === 1 && t.capacity === 3));
+  servePin(g); assert.equal(g.world.serves.length, 3); assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
+  const returning = mixedPinGame(); restPin(returning);
+  assert.ok(returning.command(open(returning), candidate).ok); assert.equal(returning.world.shift!.onboarding, false);
+  assert.deepEqual(decodeSave(encodeSave(returning)).world, returning.world);
+});

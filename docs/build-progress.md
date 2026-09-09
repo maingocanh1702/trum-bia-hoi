@@ -1310,3 +1310,26 @@ is queued next and takes precedence over earlier no-pause UI guidance.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Fixed both native review findings: reject orphaned location on config adoption; compare same-version snapshots independently of object-key order. Added two actual regression cases; final re-verification/review pending. |
+
+
+## 2026-09-09 — Retained onboarding capacity correction and owner pause steering
+
+Second full-base native review at667b5fa confirmed the previous two fixes but
+found a further preserved-state compatibility case: a candidate authored with
+larger initial tables could strand the first onboarding group at an older stall.
+The opening now checks candidate capacities at the actual retained table levels
+before adopting. It refuses without replacing assets; compatible capacity changes
+and returning non-onboarding players remain accepted. Eleven focused config pin
+cases pass, including actual service/replay after a compatible change. Round2
+forensics are .qa/review-config-pinning-round2.{txt,log}.
+
+The owner additionally requested auto-pause in stock/management/upgrade menus and
+explicitly chose to keep the stock menu open and paused after purchases until
+closing it. That UI change is the next writing scope in the same worktree; no
+reviewer remains live. Final full-base review will include the onboarding fix and
+owner-requested pause after their complete author verification. No review pass or
+full-game completion is claimed at this checkpoint.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Reject incompatible first-group capacity using retained table levels;11 focused tests pass. Preserved second review finding and queued the explicit owner menu-pause behavior for final combined review. |

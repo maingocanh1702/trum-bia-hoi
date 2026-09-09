@@ -340,3 +340,5 @@ remain M4 work. Local save validation is not an anti-cheat or authenticity proof
 
 
 | 2026-09-09 pin review correction | A candidate must retain the current owned location ID; otherwise opening refuses without relocation or adoption. Same-version equality ignores object-key order recursively, but array order and values remain immutable. |
+
+| 2026-09-09 onboarding compatibility | Before changed-config adoption during onboarding, the guaranteed first group must fit at least one retained table using its candidate capacity. InitialTableLevel defaults never replace owned table levels. |

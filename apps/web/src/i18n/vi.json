@@ -137,6 +137,7 @@
   "book.deliveryNet": "Tiền đơn sau chiết khấu",
   "book.deliveryMissed": "Đơn giao quá hạn",
   "error.configLocationMissing": "Cấu hình mới chưa hỗ trợ mặt bằng hiện tại. Ca chưa được mở.",
+  "error.configOnboardingTables": "Bàn hiện tại chưa đủ chỗ cho nhóm khách hướng dẫn của cấu hình mới.",
   "error.configClock": "Chưa mở được ca với cấu hình thời gian hiện tại.",
   "error.rushScheduleUnavailable": "Lịch Giờ Vàng không vừa ca. Kiểm tra cấu hình thời gian và số đợt.",
   "book.rushes": "Giờ Vàng trong ca",

@@ -137,6 +137,7 @@
   "book.deliveryNet": "Delivery payment after discount",
   "book.deliveryMissed": "Missed deliveries",
   "error.configLocationMissing": "The new configuration does not support your current location. The shift has not opened.",
+  "error.configOnboardingTables": "Your current tables cannot seat the new configuration’s tutorial group.",
   "error.configClock": "This shift cannot open with the current timing configuration.",
   "error.rushScheduleUnavailable": "The rush schedule does not fit this shift. Check its timing and slot count.",
   "book.rushes": "Rush results this shift",
