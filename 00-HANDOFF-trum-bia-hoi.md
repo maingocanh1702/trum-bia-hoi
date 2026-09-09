@@ -1,9 +1,11 @@
-# 🍺 HANDOFF — Trùm Bia Hơi — điểm vào cho Designer & Dev (v1.21)
+# 🍺 HANDOFF — Trùm Bia Hơi — điểm vào cho Designer & Dev (v1.22)
 
 > **Tương ứng với `00-TONG-HOP-trumviahe.md`** (bản nghiên cứu game gốc) — nhưng đây là bản **của Trùm Bia Hơi**: đọc file này trước mọi file khác. Mục tiêu: một designer (có Blender MCP) và một dev cầm bộ docs này là **tạo asset và code được game**, không cần hỏi lại lịch sử.
-> Ngày: 2026-09-09 (v1.21). **Cách đọc bộ docs (chốt founder 09/09):** ràng buộc là **luật chơi** (`02-GDD` + `03-SPEC`), **số** (`08-SPEC` + `docs/config/economy.tbh.json`), **không-hardcode/config admin** (`trum-bia-hoi-brd-admin.md` §5.2), **bất biến đo k** (`04-SPEC` §5), **server-authoritative + engine thuần** (`10-SPEC` §7/§1; thứ tự code: lưu localStorage trước, server sau — §4.2). Mọi thứ còn lại — kiến trúc, module, thư viện, **layout, màn hình, design** — do dev/designer **tự quyết**. `prototype/` là bản thử nghiệm lưu trữ, KHÔNG phải điểm xuất phát.
+> Ngày: 2026-09-09 (v1.22). **Cách đọc bộ docs (chốt founder 09/09):** ràng buộc là **luật chơi** (`02-GDD` + `03-SPEC`), **số** (`08-SPEC` + `docs/config/economy.tbh.json`), **không-hardcode/config admin** (`trum-bia-hoi-brd-admin.md` §5.2), **bất biến đo k** (`04-SPEC` §5), **server-authoritative + engine thuần** (`10-SPEC` §7/§1; thứ tự code: lưu localStorage trước, server sau — §4.2). Mọi thứ còn lại — kiến trúc, module, thư viện, **layout, màn hình, design** — do dev/designer **tự quyết**. `prototype/` là bản thử nghiệm lưu trữ, KHÔNG phải điểm xuất phát.
 >
 > Trạng thái dự án: prototype Phase 0 đã hoàn thành nhiệm vụ của nó — chứng minh "feel" và **đo được k = 2.24–2.34** (trong band 2.0–3.0), bản Alpha đã host và chủ dự án đã chơi, phản hồi đã đưa vào GDD/03-SPEC (rót & rửa tự động, phục vụ theo Order). Từ 09/09 `prototype/` chuyển sang **lưu trữ**; game viết mới từ đầu. Slice `feat/p0-ui-serve-popover--r2` và gate "Alpha playtest 3–5 người" chỉ còn liên quan tới prototype — merge hay bỏ tuỳ chủ dự án, **không chặn** việc bắt đầu game (xem `SESSION-TRACK-LOG.md`).
+
+**Update owner 09/09 mới nhất:** đã đối chiếu bản gốc đang sửa (`economy.tbh.json` 2.0.0 / `08-SPEC` v1.5.0 / `03-SPEC` v1.3). Hướng tích hợp hiện hành ở [latest-handoff-adoption](docs/latest-handoff-adoption.md): trạm theo mẻ + vòi riêng, bếp theo chảo, mua cốc tới40, gọi mồi theo kho, heavy/thiết bị theo LP và rent mới. Runtime đã kiểm tra vẫn là config1.7.3; bộ số mới đang tích hợp, không lấy kết quả19test/career của checkout gốc làm bằng chứng cho branch này. Giữ menu pause, nâng cấp trong ca và thông báo mất khách chỉ bằng số theo chỉ đạo trực tiếp.
 
 ---
 
@@ -200,3 +202,5 @@ Giao việc: `11-PROMPT-PACK` Phần A (designer) và Phần B (dev) — cả ha
 | v1.20 (2026-09-09 owner update) | Cho nâng cấp asset ngay trong ca, không phải đóng ca; menu vẫn pause đến khi đóng. Rules17 giữ replay1–16, giá/config của ca cũ và đơn khách đang chờ. Seed1.7.2 tắt flag Phase1 cũ (chỉ giữ để replay). F10§12 là contract cập nhật. |
 
 | v1.21 (2026-09-09) | Owner yêu cầu rót sẵn/rửa theo mẻ và capacity HUD; cơ chế cập nhật tại08§8.1 +03§8. JSON1.7.3/rules18 giữ replay/pause/upgrade; bia dự trữ và ly uống là hai kho riêng. |
+
+| v1.22 (2026-09-09) | Đối chiếu handoff mới ở checkout gốc, nhận mục tiêu economy2.0 và ghi rõ nguồn/precedence/việc tích hợp tại docs/latest-handoff-adoption.md. Header hai checkout phát triển riêng; dùng nội dung thực tế, không suy recency từ số phiên bản. Không ghi nhận kết quả engine gốc thành kết quả branch game hiện hành. |

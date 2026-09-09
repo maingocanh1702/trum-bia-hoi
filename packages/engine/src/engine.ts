@@ -118,6 +118,8 @@ export class Game {
   advance(now: number): void {
     const w = this.world, outage = w.disconnection;
     if (!Number.isSafeInteger(now) || now < w.now) throw Error('clock:non-monotonic');
+    // Validate the whole possible pause, including inactive rest after timeout/closing.
+    if (this.rulesVersion >= DISCONNECT_RULES && (!w.active || w.paused) && !this.shiftPauseTimers(now - w.now, false)) throw Error('clock:unsafePause');
     if (outage && !outage.timedOut && now >= outage.expiresAt) {
       this.advanceTime(outage.expiresAt);
       outage.timedOut = true;
@@ -134,7 +136,6 @@ export class Game {
   private advanceTime(now: number): void {
     const w = this.world, c = this.config.values;
     if (this.gameplayPaused()) {
-      if (this.rulesVersion >= DISCONNECT_RULES && !this.shiftPauseTimers(now - w.now, false)) throw Error('clock:unsafePause');
       do {
         // Calendar events must land at the same instant for live ticks and log replay.
         let next = now;
@@ -570,9 +571,10 @@ export class Game {
     if (!validEnvelope(envelope)) return { ok: false, reason: 'invalidCommand' };
     return this.applyCommand(envelope, DISCONNECT_RULES, openingConfig);
   }
-  /** Trusted connection lifecycle only; record loss before advancing past the loss time. */
-  disconnect(at: number, shiftId: string): Result {
-    return this.applyCommand({ at, idempotencyKey: `system:connectionLost:${shiftId}:${at}`, command: { type: 'connectionLost', shiftId } }, DISCONNECT_RULES);
+  /** Trusted adapter supplies one lossId per outage and reuses it only for retries. */
+  disconnect(at: number, shiftId: string, lossId: string): Result {
+    if (typeof lossId !== 'string' || !lossId) return { ok: false, reason: 'invalidCommand' };
+    return this.applyCommand({ at, idempotencyKey: `system:connectionLost:${shiftId}:${lossId}`, command: { type: 'connectionLost', shiftId, lossId } }, DISCONNECT_RULES);
   }
   /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
   replay(entry: LoggedCommand, config = this.config): Result {
@@ -902,7 +904,7 @@ export function validReplayEnvelope(input: unknown): input is Envelope<Command |
   if (typeof e.idempotencyKey !== 'string' || !e.idempotencyKey || e.idempotencyKey.length > 128 || !Number.isSafeInteger(e.at) || e.at < 0 || !e.command || typeof e.command !== 'object') return false; // config-exempt: protocol key length
   const c = e.command;
   switch (c.type) {
-    case 'connectionLost': return typeof c.shiftId === 'string' && c.shiftId.length > 0 && e.idempotencyKey === `system:connectionLost:${c.shiftId}:${e.at}`;
+    case 'connectionLost': return typeof c.shiftId === 'string' && c.shiftId.length > 0 && (c.lossId === undefined || typeof c.lossId === 'string' && c.lossId.length > 0) && e.idempotencyKey === `system:connectionLost:${c.shiftId}:${c.lossId ?? e.at}`;
     case 'startShift': case 'endShift': case 'buyTable': case 'emergencyPack': case 'installSignboard': case 'buyFlyer': return true;
     case 'claimQuest': return typeof c.day === 'string' && typeof c.questId === 'string' && c.questId.length > 0;
     case 'claimAttendance': case 'claimDailyBonus': return typeof c.day === 'string';

@@ -5,12 +5,22 @@
 
 ---
 
+## 🧭 Owner handoff update — 2026-09-09
+
+Read the actual updated original handoff, 03/08/10-SPEC, F08/F10/F11/F13/F14,
+config2.0.0 and corresponding reference code. Accepted delta/precedence and source
+hashes are recorded in `docs/latest-handoff-adoption.md`. After closing the rules19
+review, prioritize the new economy pipelines, glass purchases and capacity UI,
+in-stock demand, LP gates and lease lifecycle before the server liveness adapter.
+The original19-test/career results do not describe this branch. Config1.7.3 remains
+the verified runtime until the new mechanisms and their simulations pass.
+
 ## 🧭 Rules19 work in progress — 2026-09-09
 
 Pure disconnection grace/closing is implemented on base cc1aee5 in the isolated
 game worktree. Regressions cover exact deadlines, no absent attendance/stamina,
 retries/replay and true v18 compatibility. Verification and independent review are
-in progress; server liveness and browser buffer integration remain the next work.
+in progress; latest owner economy adoption is next, then server liveness/browser buffer.
 This is an engine prerequisite, not end-to-end network support or game completion.
 
 ## 🧭 Current build checkpoint — 2026-09-09

@@ -98,7 +98,7 @@ export type Command =
   | { type: 'setSignboard'; style: SignStyle }
   | { type: 'activity'; active: boolean; paused?: boolean }
   | { type: 'emergencyPack' };
-export type SystemCommand = { type: 'connectionLost'; shiftId: string };
+export type SystemCommand = { type: 'connectionLost'; shiftId: string; lossId?: string }; // absent only in early rules19 persisted logs
 export interface Envelope<C = Command> { idempotencyKey: string; at: number; command: C }
 export interface Result { ok: boolean; reason?: string; outcome?: 'early' | 'late' | 'grace' | 'expired' | 'stale'; amount?: number }
 export type RulesVersion = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19; // config-exempt: persisted replay protocol revisions, not economy tuning

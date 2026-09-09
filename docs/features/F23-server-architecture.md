@@ -202,7 +202,7 @@ pause. Real v18 menu/inactive-closing fixtures were captured before that next ch
 
 ## Pure engine disconnection prerequisite — rules19
 
-Trusted `Game.disconnect(at, shiftId)` records a connection loss before the engine
+Trusted `Game.disconnect(at, shiftId, lossId)` records a connection loss before the engine
 passes that authoritative timestamp. It is not a public player command; HTTP also
 rejects the reserved `system:` key namespace. The pinned config supplies the grace.
 Repeated loss does not extend it. Actual activity before expiry cancels the outage;
@@ -225,3 +225,8 @@ call disconnect late through a store action that already advanced past the loss.
 | Date | Change |
 |---|---|
 | 2026-09-09 rules19 implementation | Added trusted replayable disconnection grace and inactive normal closing; preserved local menu pause and historical saves. Verification/review in progress; no remote timeout capability claimed. |
+
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Adapter supplies a distinct lossId for each outage and reuses it only for retries, including same-millisecond flaps. Early rules19 timestamp-keyed records remain readable; new calls require identity. Full possible pause is checked before public advance crosses timeout, closure or calendar boundaries, refusing unsafe shifted timestamps before any mutation. |
