@@ -1,9 +1,11 @@
 import { DatabaseSync } from 'node:sqlite';
 import { createHash, randomBytes, randomInt, randomUUID } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
+import { validGoogleSubject, type GoogleIdentity } from './google';
 import { Game, config as seedConfig, configContent, decodeSave, loadConfig, validEnvelope, type Config, type Command, type DomainEvent, type LoggedCommand, type World } from '@tbh/engine';
 
-const SCHEMA_VERSION = 3, CACHE_SIZE = 64; // config-exempt: persistence format and bounded process cache, not game tuning
+const SCHEMA_VERSION = 4, CACHE_SIZE = 64; // config-exempt: persistence format and bounded process cache, not game tuning
+const GOOGLE_CHALLENGE_TTL_MS = 300000; // config-exempt: five-minute authentication nonce lifetime, not gameplay time
 const EVENT_PAGE_SIZE = 100; // config-exempt: transport history page bound, not gameplay tuning
 type PlayerRow = { id: string; seed: number; created_at: number; config_version: string; now: number; revision: number; projection: string };
 export type Snapshot = { world: World; configVersion: string; revision: number; lastEventSeq: number };
@@ -12,6 +14,11 @@ export type SequencedRequest = Request & { clientId: string; clientSeq: number }
 const sessionHash = (token: string) => typeof token === 'string' && /^[a-f0-9]{64}$/.test(token) ? createHash('sha256').update(token).digest('hex') : null; // config-exempt:256-bit random credential encoding
 const projection = (w: World) => JSON.stringify({ ...w, events: undefined });
 const validPlayerId = (id: string) => typeof id === 'string' && id.length > 0 && id.length <= 128; // config-exempt: internal identity protocol bound
+function sessionExpiry(now: number, ttlMs: number) {
+  const expiresAt = now + ttlMs;
+  if (!Number.isSafeInteger(ttlMs) || ttlMs <= 0 || !Number.isSafeInteger(expiresAt) || !Number.isFinite(new Date(expiresAt).getTime())) throw Error('store:invalidSessionTtl');
+  return expiresAt;
+}
 
 /** Internal trusted service boundary. The transport must resolve the authenticated owner;
  * never accept a client world, seed, clock or config here as authoritative state. */
@@ -27,7 +34,7 @@ export class GameStore {
       if (this.db.prepare('PRAGMA foreign_keys').get()?.foreign_keys !== 1) throw Error('store:foreignKeys');
       this.db.exec('BEGIN IMMEDIATE');
       const version = this.db.prepare('PRAGMA user_version').get()?.user_version;
-      if (version !== 0 && version !== 1 && version !== 2 && version !== SCHEMA_VERSION) throw Error('store:unsupportedSchema');
+      if (version !== 0 && version !== 1 && version !== 2 && version !== 3 && version !== SCHEMA_VERSION) throw Error('store:unsupportedSchema');
       if (version === 0) {
         this.db.exec(`
           CREATE TABLE configs (version TEXT PRIMARY KEY, snapshot TEXT NOT NULL) STRICT;
@@ -48,16 +55,28 @@ export class GameStore {
           created_at INTEGER NOT NULL, expires_at INTEGER NOT NULL, revoked_at INTEGER) STRICT;
           `);
       }
-      if (version !== SCHEMA_VERSION) {
+      if (version === 0 || version === 1 || version === 2) {
         this.db.exec(`CREATE TABLE client_streams (id TEXT PRIMARY KEY, player_id TEXT NOT NULL REFERENCES players(id),
           created_at INTEGER NOT NULL, UNIQUE(id,player_id)) STRICT;
           CREATE TABLE client_receipts (client_id TEXT NOT NULL, player_id TEXT NOT NULL, client_seq INTEGER NOT NULL CHECK(client_seq>0),
             idempotency_key TEXT NOT NULL, PRIMARY KEY(client_id,client_seq),
             FOREIGN KEY(client_id,player_id) REFERENCES client_streams(id,player_id),
-            FOREIGN KEY(player_id,idempotency_key) REFERENCES commands(player_id,idempotency_key) DEFERRABLE INITIALLY DEFERRED) STRICT;
-          PRAGMA user_version=${SCHEMA_VERSION};`);
+            FOREIGN KEY(player_id,idempotency_key) REFERENCES commands(player_id,idempotency_key) DEFERRABLE INITIALLY DEFERRED) STRICT;`);
         for (const action of ['UPDATE', 'DELETE']) this.db.exec(`CREATE TRIGGER client_receipts_${action.toLowerCase()}
           BEFORE ${action} ON client_receipts BEGIN SELECT RAISE(ABORT,'store:appendOnly'); END;`);
+      }
+      if (version !== SCHEMA_VERSION) {
+        this.db.exec(`CREATE TABLE google_accounts (subject TEXT PRIMARY KEY,
+          player_id TEXT NOT NULL UNIQUE REFERENCES players(id), created_at INTEGER NOT NULL) STRICT;
+          CREATE TABLE google_challenges (session_hash TEXT PRIMARY KEY REFERENCES sessions(token_hash),
+            nonce TEXT NOT NULL UNIQUE, expires_at INTEGER NOT NULL) STRICT;
+          CREATE TABLE account_logins (session_hash TEXT PRIMARY KEY REFERENCES sessions(token_hash),
+            previous_session_hash TEXT NOT NULL REFERENCES sessions(token_hash), action TEXT NOT NULL,
+            created_at INTEGER NOT NULL) STRICT;
+          CREATE INDEX sessions_player ON sessions(player_id);
+          PRAGMA user_version=${SCHEMA_VERSION};`);
+        for (const action of ['UPDATE', 'DELETE']) this.db.exec(`CREATE TRIGGER account_logins_${action.toLowerCase()}
+          BEFORE ${action} ON account_logins BEGIN SELECT RAISE(ABORT,'store:appendOnly'); END;`);
       }
       this.config = this.registerConfig(candidate);
       this.db.exec('COMMIT');
@@ -105,8 +124,7 @@ export class GameStore {
     return game;
   }
   createGuestSession(ttlMs: number) {
-    const now = this.now(), expiresAt = now + ttlMs;
-    if (!Number.isSafeInteger(ttlMs) || ttlMs <= 0 || !Number.isSafeInteger(expiresAt)) throw Error('store:invalidSessionTtl');
+    const now = this.now(), expiresAt = sessionExpiry(now, ttlMs);
     const token = randomBytes(32).toString('hex'), playerId = `guest-${randomUUID()}`; // config-exempt:256-bit credential, not gameplay RNG
     this.db.exec('BEGIN IMMEDIATE');
     try {
@@ -118,12 +136,58 @@ export class GameStore {
   }
   session(token: string) {
     const hash = sessionHash(token);
-    const row = hash && this.db.prepare('SELECT player_id,expires_at FROM sessions WHERE token_hash=? AND revoked_at IS NULL AND expires_at>?').get(hash, this.now());
-    return row ? { playerId: String(row.player_id), expiresAt: Number(row.expires_at) } : null;
+    const row = hash && this.db.prepare(`SELECT s.player_id,s.expires_at,a.subject FROM sessions s
+      LEFT JOIN google_accounts a ON a.player_id=s.player_id
+      WHERE token_hash=? AND revoked_at IS NULL AND expires_at>?`).get(hash, this.now());
+    return row ? { playerId: String(row.player_id), expiresAt: Number(row.expires_at), provider: row.subject === null ? 'guest' as const : 'google' as const } : null;
   }
   revokeSession(token: string) {
     const hash = sessionHash(token);
     if (hash) this.db.prepare('UPDATE sessions SET revoked_at=? WHERE token_hash=? AND revoked_at IS NULL').run(this.now(), hash);
+  }
+  issueGoogleChallenge(token: string) {
+    this.db.exec('BEGIN IMMEDIATE');
+    try {
+      const owner = this.session(token); if (!owner) throw Error('store:invalidSession');
+      const expiresAt = Math.min(owner.expiresAt, sessionExpiry(this.now(), GOOGLE_CHALLENGE_TTL_MS));
+      const nonce = randomBytes(32).toString('hex'); // config-exempt: 256-bit server-generated authentication nonce
+      this.db.prepare(`INSERT INTO google_challenges VALUES (?,?,?) ON CONFLICT(session_hash)
+        DO UPDATE SET nonce=excluded.nonce,expires_at=excluded.expires_at`).run(sessionHash(token)!, nonce, expiresAt);
+      this.db.exec('COMMIT'); return { nonce, expiresAt };
+    } catch (error) { if (this.db.isTransaction) this.db.exec('ROLLBACK'); throw error; }
+  }
+  googleChallenge(token: string) {
+    const hash = sessionHash(token), now = this.now();
+    const row = hash && this.db.prepare(`SELECT c.nonce,c.expires_at FROM google_challenges c
+      JOIN sessions s ON s.token_hash=c.session_hash
+      WHERE c.session_hash=? AND c.expires_at>? AND s.expires_at>? AND s.revoked_at IS NULL`).get(hash, now, now);
+    if (!row) throw Error('store:invalidGoogleChallenge');
+    return { nonce: String(row.nonce), expiresAt: Number(row.expires_at) };
+  }
+  /** Only call with a verified Google identity; recheck authorization after verifier IO.
+   * Linking a server guest retains its immutable engine/history ID, never imports local totals. */
+  signInGoogle(token: string, nonce: string, identity: GoogleIdentity, ttlMs: number, keepAccount = false) {
+    if (!validGoogleSubject(identity?.subject) || typeof keepAccount !== 'boolean') throw Error('store:invalidGoogleIdentity');
+    this.db.exec('BEGIN IMMEDIATE');
+    try {
+      const owner = this.session(token); if (!owner) throw Error('store:invalidSession');
+      if (this.googleChallenge(token).nonce !== nonce) throw Error('store:invalidGoogleChallenge');
+      const now = this.now(), expiresAt = sessionExpiry(now, ttlMs);
+      const existing = this.db.prepare('SELECT player_id FROM google_accounts WHERE subject=?').get(identity.subject);
+      const playerId = existing ? String(existing.player_id) : owner.playerId;
+      if (!existing && owner.provider === 'google') throw Error('store:signOutRequired');
+      if (playerId !== owner.playerId && !keepAccount) throw Error('store:accountConflict');
+      if (!existing) {
+        this.db.prepare('INSERT INTO google_accounts VALUES (?,?,?)').run(identity.subject, playerId, now);
+        this.db.prepare('UPDATE sessions SET revoked_at=? WHERE player_id=? AND revoked_at IS NULL').run(now, playerId);
+      } else this.revokeSession(token);
+      this.db.prepare('DELETE FROM google_challenges WHERE session_hash=?').run(sessionHash(token)!);
+      const nextToken = randomBytes(32).toString('hex'); // config-exempt: rotate the 256-bit credential on authentication
+      this.db.prepare('INSERT INTO sessions VALUES (?,?,?,?,NULL)').run(sessionHash(nextToken)!, playerId, now, expiresAt);
+      this.db.prepare('INSERT INTO account_logins VALUES (?,?,?,?)').run(sessionHash(nextToken)!, sessionHash(token)!,
+        !existing ? 'link' : playerId === owner.playerId ? 'login' : 'switch', now);
+      this.db.exec('COMMIT'); return { token: nextToken, playerId, expiresAt, provider: 'google' as const };
+    } catch (error) { if (this.db.isTransaction) this.db.exec('ROLLBACK'); throw error; }
   }
   // ponytail: replay the full stream on cache miss; add verified checkpoints if measured cold starts exceed the release budget.
   private hydrate(row: PlayerRow): Game {

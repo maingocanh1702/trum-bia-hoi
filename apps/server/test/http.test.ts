@@ -175,8 +175,8 @@ test('long-lived players catch up in bounded repeatable pages across restart wit
 test('v1 SQLite players and event history survive auth migration; failed guest creation leaves no orphan player', async t => {
   const f = await fixture(t); f.store.createPlayer('legacy', 42); f.store.command('legacy', command('startShift') as never); const before = f.store.read('legacy');
   await f.close(); f.store.close(); const db = new DatabaseSync(f.file); t.after(() => db.close());
-  db.exec('DROP TABLE client_receipts; DROP TABLE client_streams; DROP TABLE sessions; PRAGMA user_version=1');
-  const migrated = await f.open(); assert.deepEqual(migrated.store.read('legacy'), before); assert.equal(db.prepare('PRAGMA user_version').get()!.user_version, 3);
+  db.exec('DROP TABLE account_logins; DROP TABLE google_challenges; DROP TABLE google_accounts; DROP INDEX sessions_player; DROP TABLE client_receipts; DROP TABLE client_streams; DROP TABLE sessions; PRAGMA user_version=1');
+  const migrated = await f.open(); assert.deepEqual(migrated.store.read('legacy'), before); assert.equal(db.prepare('PRAGMA user_version').get()!.user_version, 4);
   db.exec("CREATE TRIGGER test_session_failure BEFORE INSERT ON sessions BEGIN SELECT RAISE(ABORT,'test:sessionFailure'); END");
   const fail = await migrated.request('/auth/session', {}); assert.equal(fail.status, 500); assert.deepEqual(await fail.json(), { error: 'serverError' }); assert.equal(fail.headers.get('set-cookie'), null);
   assert.equal(db.prepare('SELECT count(*) AS n FROM players').get()!.n, 1);

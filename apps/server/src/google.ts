@@ -3,6 +3,8 @@ import { OAuth2Client } from 'google-auth-library';
 // config-exempt: identity protocol and network bounds, not gameplay/economy tuning.
 const MAX_TOKEN_BYTES = 16384, CERT_TIMEOUT_MS = 5000;
 export type GoogleIdentity = { subject: string };
+export const validGoogleSubject = (value: unknown): value is string =>
+  typeof value === 'string' && /^[\x21-\x7e]{1,255}$/.test(value); // config-exempt: OIDC subject maximum length
 
 /** Server-only verifier. The caller must issue a session-bound nonce, then consume
  * it atomically with login. Verifying a token alone never grants a game session. */
@@ -18,7 +20,7 @@ export function googleVerifier(clientId: string | undefined, client = new OAuth2
           !/^[a-f0-9]{64}$/.test(expectedNonce)) throw Error(); // config-exempt: 256-bit server nonce encoding
       const ticket = await client.verifyIdToken({ idToken: credential, audience: clientId });
       const payload = ticket.getPayload();
-      if (!payload || typeof payload.sub !== 'string' || !/^[\x21-\x7e]{1,255}$/.test(payload.sub) || // config-exempt: OIDC subject maximum length
+      if (!payload || !validGoogleSubject(payload.sub) ||
           !['accounts.google.com', 'https://accounts.google.com'].includes(payload.iss) ||
           payload.nonce !== expectedNonce || payload.azp !== undefined && payload.azp !== clientId ||
           !Number.isSafeInteger(payload.iat) || !Number.isSafeInteger(payload.exp) ||

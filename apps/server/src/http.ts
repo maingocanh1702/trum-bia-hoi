@@ -1,10 +1,12 @@
 import { createServer, type IncomingMessage } from 'node:http';
+import type { OAuth2Client } from 'google-auth-library';
 import { validEnvelope, type Command, type DomainEvent } from '@tbh/engine';
 import { GameStore, type Snapshot } from './store';
+import { googleVerifier } from './google';
 
 // config-exempt: deployment security/resource limits, not gameplay or economic parameters
 const BODY_BYTES = 16384, RATE_KEYS = 4096, REQUEST_TIMEOUT_MS = 30000, HEADER_TIMEOUT_MS = 10000;
-export interface ServerOptions { origin: string; sessionTtlMs: number; rateWindowMs: number; rateMax: number }
+export interface ServerOptions { origin: string; sessionTtlMs: number; rateWindowMs: number; rateMax: number; googleClientId?: string }
 class HttpError extends Error { constructor(readonly status: number, message: string) { super(message); } }
 const record = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 // HTTP accepts only these fields; historical replay keeps the engine's existing decoder.
@@ -36,11 +38,12 @@ async function json(req: IncomingMessage): Promise<unknown> {
   }
   try { return JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { throw new HttpError(400, 'invalidJson'); }
 }
-export function createGameServer(store: GameStore, options: ServerOptions) {
+export function createGameServer(store: GameStore, options: ServerOptions, googleClient?: OAuth2Client) {
   const url = new URL(options.origin);
   if (url.origin !== options.origin || !['http:', 'https:'].includes(url.protocol) ||
       url.protocol === 'http:' && !['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname)) throw Error('http:invalidOrigin');
   for (const n of [options.sessionTtlMs, options.rateWindowMs, options.rateMax]) if (!Number.isSafeInteger(n) || n <= 0) throw Error('http:invalidLimits');
+  const verifyGoogle = googleVerifier(options.googleClientId, googleClient);
   const secure = url.protocol === 'https:', cookieName = secure ? '__Host-tbh-session' : 'tbh-session';
   const cookie = (token: string, expires: number) => `${cookieName}=${token}; Path=/; HttpOnly; SameSite=Lax; Expires=${new Date(expires).toUTCString()}${secure ? '; Secure' : ''}`;
   const credential = (req: IncomingMessage) => {
@@ -72,16 +75,31 @@ export function createGameServer(store: GameStore, options: ServerOptions) {
       const token = credential(req);
       if (req.method === 'POST' && path === '/auth/session') {
         const body = await json(req); if (!record(body) || Object.keys(body).length) throw new HttpError(400, 'invalidBody');
-        if (token !== undefined) { const owner = store.session(token); if (!owner) throw new HttpError(401, 'invalidSession'); reply(200, { ...owner, provider: 'guest' }); return; }
+        if (token !== undefined) { const owner = store.session(token); if (!owner) throw new HttpError(401, 'invalidSession'); reply(200, owner); return; }
         const created = store.createGuestSession(options.sessionTtlMs);
         res.setHeader('Set-Cookie', cookie(created.token, created.expiresAt)); reply(201, { playerId: created.playerId, expiresAt: created.expiresAt, provider: 'guest' }); return;
       }
       // Authenticate after body IO, immediately before synchronous storage access.
       const body = req.method === 'POST' ? await json(req) : undefined;
-      const owner = token && store.session(token); if (!owner) throw new HttpError(401, 'invalidSession');
       if (req.method === 'POST' && path === '/auth/logout') {
         if (!record(body) || Object.keys(body).length) throw new HttpError(400, 'invalidBody');
-        store.revokeSession(token!); res.setHeader('Set-Cookie', cookie('', 0)); reply(200, { ok: true }); return;
+        if (token) store.revokeSession(token); res.setHeader('Set-Cookie', cookie('', 0)); reply(200, { ok: true }); return;
+      }
+      const owner = token && store.session(token); if (!owner) throw new HttpError(401, 'invalidSession');
+      if (req.method === 'POST' && path === '/auth/google/challenge') {
+        if (!record(body) || Object.keys(body).length) throw new HttpError(400, 'invalidBody');
+        if (!verifyGoogle) throw new HttpError(503, 'googleUnavailable');
+        reply(200, { ...store.issueGoogleChallenge(token!), clientId: options.googleClientId }); return;
+      }
+      if (req.method === 'POST' && path === '/auth/google') {
+        if (!record(body) || Object.keys(body).some(k => !['credential', 'keepAccount'].includes(k)) ||
+            typeof body.credential !== 'string' || body.keepAccount !== undefined && typeof body.keepAccount !== 'boolean') throw new HttpError(400, 'invalidBody');
+        if (!verifyGoogle) throw new HttpError(503, 'googleUnavailable');
+        const { nonce } = store.googleChallenge(token!);
+        const identity = await verifyGoogle(body.credential, nonce);
+        const signed = store.signInGoogle(token!, nonce, identity, options.sessionTtlMs, body.keepAccount === true);
+        res.setHeader('Set-Cookie', cookie(signed.token, signed.expiresAt));
+        reply(200, { playerId: signed.playerId, expiresAt: signed.expiresAt, provider: signed.provider }); return;
       }
       if (req.method === 'POST' && path === '/player/connect') {
         if (!record(body) || Object.keys(body).some(k => k !== 'clientId') || body.clientId !== undefined && (typeof body.clientId !== 'string' || !body.clientId || body.clientId.length > 128)) throw new HttpError(400, 'invalidClient'); // config-exempt: transport identifier length bound
@@ -105,6 +123,12 @@ export function createGameServer(store: GameStore, options: ServerOptions) {
       }
       throw new HttpError(404, 'notFound');
     } catch (error) {
+      const auth = error instanceof Error && {
+        'store:invalidSession': [401, 'invalidSession'], 'store:invalidGoogleChallenge': [401, 'invalidGoogleChallenge'],
+        'auth:googleVerificationFailed': [401, 'googleVerificationFailed'],
+        'store:accountConflict': [409, 'accountConflict'], 'store:signOutRequired': [409, 'signOutRequired'],
+      }[error.message];
+      if (Array.isArray(auth)) { reply(Number(auth[0]), { error: auth[1] }); req.resume(); return; }
       const input = error instanceof Error && ['store:invalidCursor', 'store:invalidCommand', 'store:invalidClient'].includes(error.message);
       reply(error instanceof HttpError ? error.status : error instanceof Error && error.message === 'store:invalidClient' ? 403 : input ? 400 : 500,
         { error: error instanceof HttpError ? error.message : input ? error.message.slice(6) : 'serverError' });

@@ -1,7 +1,7 @@
 # Server persistence — Trùm Bia Hơi
 
 `@tbh/server` exports `GameStore`, the internal M4 persistence layer, and
-`@tbh/server/http` exports a Node HTTP server with durable guest-cookie ownership.
+`@tbh/server/http` exports a Node HTTP server with durable guest and Google account cookie ownership.
 It runs the existing pure engine against SQLite. The web app uses local IndexedDB career saves and localStorage settings;
 Google claim, client buffering/reconnect, registry and web cutover remain in progress.
 The API is locally runnable; it is not full M4 or a production release.
@@ -176,3 +176,45 @@ and sanitized errors. No Google account or live credential is simulated by these
 | 2026-09-10 | Added server-only Google verifier prerequisite with real SDK/signature/certificate tests; no login/claim endpoint or deployment enabled. |
 
 | 2026-09-10 verified | Verifier917f862 passes config/build/255tests and correction review; explicit Google Sign-In issuer allowlist fixes the SDK broader-default finding. Login/account transaction and web integration remain required. |
+
+
+## Google account HTTP and schema4
+
+Set optional `TBH_GOOGLE_CLIENT_ID` in the launcher's environment to enable Google
+challenge/login routes. The owner has not configured a real ID. With no ID both
+Google routes refuse authenticated requests with503googleUnavailable; malformed IDs
+fail startup. The launcher does not automatically load.env files. The frontend still
+runs local saves and has no GIS/cloud adapter; this API is not a release declaration.
+
+| Method | Path | Input / result |
+|---|---|---|
+| POST | `/auth/google/challenge` | `{}` + existing session cookie; returns public configured clientId, server nonce and expiry. Latest nonce replaces the previous one for this session. |
+| POST | `/auth/google` | `{credential, keepAccount?}` + same cookie. Actual verified token nonce must match. Commit returns playerId/provider/expiresAt and a rotated HttpOnly cookie. |
+
+Nonce lifetime is at most five minutes and never exceeds its cookie session. Verify
+Google outside the transaction; inside BEGIN IMMEDIATE recheck active cookie, nonce,
+expiry and provider mapping. A new subject links the current authoritative guest in
+place and revokes its former credentials. Returning login rotates the current cookie;
+other devices remain signed in. Existing-subject/different-player conflicts return409
+accountConflict with no mutation. Only explicit keepAccount:true switches to that
+account; neither player's history is merged or overwritten. An unregistered subject
+while already Google-authenticated returns409signOutRequired. Explicit logout now
+clears even an expired/revoked cookie, enabling a fresh challenge after a lost response.
+
+Schema4 adds google_accounts (unique subject/player), google_challenges and immutable
+account_logins (new/prior session hashes, action and time). All mapping, nonce consume,
+revocation, new session and audit operations commit atomically; a failed write restores
+the prior session/challenge. Player/world IDs, commands/events and receipt keys never
+change. Schema0–3 migrates without inventing accounts. Auth errors never include ID
+credentials or profiles; HTTP accepts no client subject, clock, totals or approval flag.
+
+`accounts.test.ts` covers real SQLite linking/rollback/conflicts/expiry/collisions and
+schema3 history migration. `google.test.ts` adds actual RSA/SDK/HTTP flows and async
+revocation races. Existing schema1/2 HTTP/sequence tests exercise migrations too.
+264engine/server tests, config/build and real launcher smoke pass; independent review
+pending. This does not import the local guest archive, approve it for ranking, provide
+profile/locale/GIS UI or establish live Google setup. See F25/F28 and the setup guide.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 account sessions | Added optional Google configuration and HTTP challenge/login with schema4 identity/audit/session transaction; local import and web integration remain required. |

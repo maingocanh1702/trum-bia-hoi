@@ -2033,3 +2033,19 @@ and web integration. Owner chose review of local history before ranking credit;
 retain progression, require server-recorded approval, credit once. Missing Client ID
 still means no real Google login. Advanced k policy remains pending; no economy
 retuning, invented prizes, completed full-game claim, merge or deploy.
+
+
+## Google account/session transaction — 2026-09-10
+
+Base b42c034: schema4 subject/player mappings, cookie-bound nonce, immutable login
+audit and credential rotation in one transaction. Existing authoritative guest ID,
+world, live shift, receipts and history remain unchanged. Default account conflicts
+refuse; explicit keep-account switches with no merge/overwrite. Async token verification
+revalidates cookie/nonce at consume. Optional TBH_GOOGLE_CLIENT_ID enables Google
+HTTP routes; owner has none. Logout clears stale cookies for explicit recovery.
+
+264engine/server tests and config/build pass; real CLI disabled/configured challenge
+and guest restart pass, with no live Google request. Focused tests use real SQLite and
+actual signed tokens/SDK/HTTP. Independent review pending. No engine/economy/browser
+changes, so completed91browser/80MB acceptance is retained. Local archive import and
+owner-required review before ranking, GIS/profile/locale and cloud cutover remain next.

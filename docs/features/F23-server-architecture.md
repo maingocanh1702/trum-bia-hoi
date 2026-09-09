@@ -262,3 +262,20 @@ protocol key bound; catch-up checks adoption success before advancing.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Replaced the activity-based adoption attempt with a neutral system transition; retained inactive menu state, bounded historical-key collisions, and added open/closing menu-outage replay regressions. |
+
+
+## Google account HTTP foundation — 2026-09-10
+
+Schema4 links verified Google subjects to immutable server player IDs. Session-bound
+one-use challenges and account/login audit rows commit with credential rotation;
+no engine history or balances are copied. Public Google challenge/login routes use
+the verified token boundary and revalidate ownership after external certificate IO.
+Conflicting saved accounts are refused until explicit keep-account selection, with
+no state merge/overwrite. Missing Client ID keeps Google unavailable.264engine/server
+checks, config/build and actual CLI configuration/restart smoke pass; review pending.
+Local import (owner requires approval before ranking credit), registry/admin, web
+cutover, outbox/reconnect and full server authority acceptance remain unfinished.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 Google HTTP | Added verified provider sessions, nonce and atomic audit/rotation/migration; preserved authoritative guest game IDs and current local frontend. |

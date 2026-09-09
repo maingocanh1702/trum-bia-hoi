@@ -168,3 +168,32 @@ still need implementation; this records the owner's decision, not delivered beha
 | 2026-09-10 verification correction | Native review found SDK11 also accepts googleapis.com as issuer. The wrapper now allows only accounts.google.com / https://accounts.google.com; a signed-token regression fails before the fix and passes after it. Config/build and255engine/server checks pass; final correction review pending. |
 
 | 2026-09-10 verified |917f862 passes config/build/255tests; independent correction review resolves issuer finding with no remaining introduced defect. Google verification prerequisite only; session/account/claim/UI still to implement. |
+
+
+## Server Google sessions — 2026-09-10 (review in progress)
+
+Schema4 adds unique Google-subject/player mappings, one-use session-bound challenges
+and append-only login audit rows. New Google subjects attach an existing authoritative
+server guest without renaming its player ID or replaying/copying progress. Linking
+revokes all former guest credentials; a successful transaction returns a fresh cookie.
+Existing accounts keep their immutable history. A different current player receives
+409accountConflict; explicit keepAccount switches to the existing account without
+merging or overwriting either history. Signing into a new Google subject while
+already in another account requires logout first. Revocation/expiry/nonce replacement
+while verification awaits cannot be bypassed at transaction commit.
+
+POST/auth/google/challenge and POST/auth/google are available only with configured
+TBH_GOOGLE_CLIENT_ID. POST/auth/session reports canonical provider; explicit logout
+also clears invalid/expired cookies. Auth transactions record previous/new hashed
+session and action, so links/switches remain auditable. The API does not accept local
+worlds, clocks, subjects or approval flags. Local import/review, profile/locale/cloud UI
+and uninterrupted web sign-in still need implementation. Owner has no real Client ID.
+
+264engine/server tests, config/build and actual launcher configuration/restart checks
+pass. Tests include real RSA/SDK/HTTP authentication, SQLite migration/rollback/two
+connections, preserved mid-shift receipts, conflicts, CSRF and in-flight logout/expiry.
+Independent code/security review is pending; this is not full F25 completion.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 server account | Implemented optional Google HTTP sessions and schema4 transactional identity/challenge/audit; local history approval and web cutover remain separate required work. |
