@@ -1,6 +1,6 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.18.0
+> **Version:** v0.18.1
 > **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-09 (layout/art theo ảnh owner)
 > **Trạng thái:** Active — **M0 qua verify; review sửa lỗi nền và layout/art đã CLEAN. M1–M3 tiếp tục triển khai; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.0** (1 phase, mốc M0–M9).
 > **Owner:** Team
@@ -64,7 +64,7 @@
 
 | PR | Wave | Feature | Status | Branch | Gates | Notes |
 |----|------|---------|:------:|--------|:-----:|-------|
-| F11 | 🎮 Code | Bếp & Mồi Nóng — bếp 4 cấp, 3 mồi nóng | 🟡 | `codex/game-build-isolated` | 🔒S 🔒B | Live bếp VI/EN đọc Item timestamps, slots0–4, hàng chờ/stock/ready và link phục vụ cả mâm;7 focused unit/7 browser, full133 unit/59 E2E/config/build và10 k rows2.2564–2.65 xanh.7 sprite bếp/mồi nóng mới giữ draft; review độc lập đang chờ. Per-dish waste/menu-mix analytics và demand/acceptance đầy đủ còn tiếp tục. |
+| F11 | 🎮 Code | Bếp & Mồi Nóng — bếp 4 cấp, 3 mồi nóng | 🟡 | `codex/game-build-isolated` | 🔒S 🔒B | Live bếp VI/EN đọc Item timestamps, slots0–4, hàng chờ/stock/ready và link phục vụ cả mâm;7 focused unit/7 browser, full133 unit/59 E2E/config/build và10 k rows2.2564–2.65 xanh.7 sprite bếp/mồi nóng mới giữ draft; full-base reviewf9fa82f..af16833 không phát hiện lỗi cần sửa, reviewer tự chạy133 unit/typecheck/assets. Per-dish waste/menu-mix analytics và demand/acceptance đầy đủ còn tiếp tục. |
 | F17 | 🎮 Code | Nhiệm Vụ Quán Nhậu — 7 nhánh (ngày/ca/gift/điểm danh/referral/ĐLT) | 🟡 | `codex/game-build-isolated` | 🔒S | Rules12 daily5: seed VN/tier, actual event progress, rollover, reward/bonus guards/UI VI-EN; đã sửa P1 review về mốc onboarding mở nhiệm vụ.118 unit/46 E2E/config/build,20 k rows2.3171–2.7312 qua; full-base review3f978ec..e551b40 không còn lỗi actionable. Rules13 thêm điểm danh theo ngày active, claim uy tín một lần, đổi vòng/reset/offline/replay và ladder VI-EN;126 unit/52 E2E/config/build và20 k rows2.2564–2.8277 xanh; full-base review483bb03..d232be5 không nêu lỗi cần sửa. Gift transfer/referral/season authority và full F17 còn tiếp tục. |
 
 ### Phase 3: Server + meta + risk (M4–M6 — server-authoritative từ M4)
@@ -191,3 +191,5 @@
 | v0.17.1 | Attendance rules13 qua full-base review483bb03..d232be5 không findings; reviewer tự chạy126 unit/config/build, author52 E2E/20 k rows xanh. Giữ17 feature đang làm và full M0–M9 active; tiếp theo bếp/mồi nóng. |
 
 | v0.18.0 | Bếp live dùng pipeline có sẵn, mở bàn/nhập hàng/nâng cấp đúng handler;7 unit/7 browser mới, full133 unit/59 E2E/10 k rows xanh.7 sprite mới có provenance, còn23 placeholders. Independent review pending; giữ17 feature đang làm, full M0–M9 active. |
+
+| v0.18.1 | Bếp live/art qua independent full-base reviewf9fa82f..af16833 không có lỗi actionable; reviewer tự chạy133 unit/typecheck/assets, author59 browser/10 k rows xanh. Giữ17 feature đang làm; full M0–M9 và F11 analytics tiếp tục. |

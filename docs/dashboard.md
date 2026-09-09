@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-09 09:48 · **Branch hiện tại:** `codex/game-build-isolated`
+> **Cập nhật:** 2026-09-09 09:56 · **Branch hiện tại:** `codex/game-build-isolated`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -209,7 +209,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S 🔒B
 - **Phase:** Phase 2
-- **Notes:** Live bếp VI/EN đọc Item timestamps, slots0–4, hàng chờ/stock/ready và link phục vụ cả mâm;7 focused unit/7 browser, full133 unit/59 E2E/config/build và10 k rows2.2564–2.65 xanh.7 sprite bếp/mồi nóng mới giữ draft; review độc lập đang chờ. Per-dish waste/menu-mix analytics và demand/acceptance đầy đủ còn tiếp tục.
+- **Notes:** Live bếp VI/EN đọc Item timestamps, slots0–4, hàng chờ/stock/ready và link phục vụ cả mâm;7 focused unit/7 browser, full133 unit/59 E2E/config/build và10 k rows2.2564–2.65 xanh.7 sprite bếp/mồi nóng mới giữ draft; full-base reviewf9fa82f..af16833 không phát hiện lỗi cần sửa, reviewer tự chạy133 unit/typecheck/assets. Per-dish waste/menu-mix analytics và demand/acceptance đầy đủ còn tiếp tục.
 
 ### F17 — Nhiệm Vụ Quán Nhậu — 7 nhánh (ngày/ca/gift/điểm danh/referral/ĐLT)
 

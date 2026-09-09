@@ -1126,3 +1126,40 @@ Root bc79af5/WIP preserved; no merge/push/hosted test. Full M0–M9 continues.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Added live kitchen UI and seven original sprites;133 unit/59 browser/10 k rows plus15 rush rows pass. Independent review pending; analytics/server/full-game work remains active. |
+
+
+## 2026-09-09 — Live kitchen independent review receipt
+
+Product af168338a9d85dfd276d34bb00ad9e288e281ce2, full immutable base
+f9fa82f3b667e54873d35ff7110945daba8576d1. Independent native Codex review
+exited0 and found no actionable defect. Its exact final output reports a pure
+config-backed projection, localized UI routing, regressions and documented draft
+art without changes to canonical state transitions or persistence. It independently
+ran typecheck, all133 engine tests and asset validation. No synthetic verdict or
+clean marker was added. Native output/prompt/log: .qa/review-kitchen.*.
+
+Browser execution was sandbox-blocked; reviewer inspected actual author final59
+browser evidence and focused code. The59-pass suite remains author-run, not an
+independent browser execution. Author config/build,133 unit,10 ordinary500+-serve
+k rows2.2564–2.65 and15 rush-pressure rows all passed. Runtime engine/rules/config/
+save sources and canonical economy JSON are byte-identical to the reviewed base;
+new kitchen.ts is read-only. All seven sprite hashes match committed provenance.
+Manifest128 entries/32paired SFX,23 placeholders/97draft files: release art still
+unfinished. Local5174 responded200; no root edit, merge, push or hosted test.
+
+Real rules13 captures from immutable af16833 cover queued/preparing dishes,
+closed expired orders and an actually served table. Entire decoded worlds compare
+with their played source: .qa/capture-kitchen-v13.mjs/.txt and
+legacy-kitchen-{queued,expired,served}-v13{,-expected}.json. These support the next
+analytics/replay slice; they are not a future-protocol claim. Read-only next intake
+.qa/kitchen-analytics-next-intake.md identifies both waste mutation sites and the
+existing ServeRecord value basis; no demand coefficients were fabricated.
+
+Tracker v0.18.1/dashboard retain17 in-progress features. This kitchen presentation
+slice is reviewed; full F11 per-dish analytics/demand and all M0–M9 server/meta/
+risk/events/art/release work remain active. Next bounded work is to preserve
+ordered/wasted dish provenance and expose a shared menu summary in Sổ ca.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Recorded independent kitchen review without actionable findings,133 unit/59 E2E/10 k rows and true v13 prep/expiry/service captures; full-game goal remains active. |
