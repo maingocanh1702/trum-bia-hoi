@@ -134,6 +134,7 @@ export class Game {
   private advanceTime(now: number): void {
     const w = this.world, c = this.config.values;
     if (this.gameplayPaused()) {
+      if (this.rulesVersion >= DISCONNECT_RULES && !this.shiftPauseTimers(now - w.now, false)) throw Error('clock:unsafePause');
       do {
         // Calendar events must land at the same instant for live ticks and log replay.
         let next = now;
@@ -157,7 +158,6 @@ export class Game {
   private advancePaused(now: number): void {
     const w = this.world;
     const elapsed = now - w.now;
-    if (this.rulesVersion >= DISCONNECT_RULES && !this.shiftPauseTimers(elapsed, false)) throw Error('clock:unsafePause');
     this.shiftPauseTimers(elapsed, true);
     w.now = now;
     if (this.rulesVersion >= MENU_PAUSE_RULES) this.observeAttendance();

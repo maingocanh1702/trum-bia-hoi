@@ -115,7 +115,14 @@ test('tapped order stays live, returns keyboard focus, and closes on customer ex
   await page.clock.runFor(3000);
   await expect(panel.getByRole('button', { name: 'Phục vụ cả mâm', exact: true })).toBeEnabled();
   expect(await page.locator('.energy strong').textContent()).not.toBe(timeBefore);
-  await page.clock.runFor(17900);
+  // Weather changes patience; exercise this actual order's deadline, not a sunny-day estimate.
+  const saved = await page.evaluate(() => ({ text: localStorage.getItem('tbh.save.v1')!, now: Date.now() }));
+  const current = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/pause.ts', 'inspect'], { encoding: 'utf8', input: JSON.stringify({ save: saved.text }) }));
+  const remaining = current.now + current.remaining + current.grace - saved.now;
+  expect(remaining).toBeGreaterThan(0);
+  await page.clock.runFor(remaining - 1);
+  await expect(panel).toBeVisible();
+  await page.clock.runFor(101);
   await expect(panel).toHaveCount(0);
   await expect(page.locator('.toast-loss')).toHaveText(/^[−\d\s.,]+$/);
   await expect(page.locator('.table-object').first()).toBeFocused();

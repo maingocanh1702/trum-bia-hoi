@@ -133,3 +133,15 @@ test('a safe shift deadline too close to the integer limit cannot be shifted by 
   assert.throws(() => g.advance(config.values.network.reconnectGraceMs), /clock:unsafePause/);
   assert.deepEqual(g.world, before); roundtrip(g);
 });
+
+
+test('a menu pause rejected across midnight leaves the entire world and calendar events untouched', () => {
+  const raw = structuredClone(config.raw); raw._meta.version = 'pause-overflow-after-midnight';
+  raw.shift.durationMs = Number.MAX_SAFE_INTEGER - 71_200_000;
+  const g = new Game(loadConfig(raw), 42, 0); assert.ok(send(g, { type: 'startShift' }).ok);
+  send(g, { type: 'activity', active: true, paused: true });
+  assert.ok(g.world.daily!.expiresAt < 81_200_000);
+  const before = structuredClone(g.world);
+  assert.throws(() => g.advance(81_200_000), /clock:unsafePause/);
+  assert.deepEqual(g.world, before); roundtrip(g);
+});
