@@ -1,8 +1,8 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.36.0
+> **Version:** v0.36.1
 > **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-09 (layout/art theo ảnh owner)
-> **Trạng thái:** Active — **M0 qua verify; review sửa lỗi nền và layout/art đã CLEAN. M1–M3 tiếp tục triển khai; M4 bắt đầu nền config pin/replay, server event store đã review; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.3** (1 phase, mốc M0–M9).
+> **Trạng thái:** Active — **M0 COMPLETE theo exit criteria; xem báo cáo closure M0–M5. M1–M3 tiếp tục triển khai; M4 bắt đầu nền config pin/replay, server event store đã review; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.3** (1 phase, mốc M0–M9).
 > **Owner:** Team
 > **Mục đích:** Master status board cho mọi feature F01–F28. Nhãn `Phase N` chỉ là **khoá parser** của dashboard-engine; mốc thật: P0 → M0 (nền) · P1 → M1–M2 · P2 → M3 · P3 → M4–M6 · P4 → M7–M8 · QA/release → M9. Là **input cho dashboard-engine** (`tools/dashboard-engine/build_dashboard.py`). Nguồn quyết định/scope = `02-GDD-trum-bia-hoi.md` + `06-ROADMAP-trum-bia-hoi.md`; tracker chỉ theo dõi **trạng thái build**.
 > **Cập nhật:** đổi status mỗi khi 1 feature chuyển trạng thái (bắt đầu code / review / merge).
@@ -32,6 +32,21 @@ Browser storage `c9db016`: IndexedDB delta/atomic revision, migration và raw re
 qua, archive80MB ghi/đọc/lưu tiếp/Appboot khớp hoàn toàn (~20,5giây khởi động).
 Google verifier917f862 cũng qua review và255engine/server tests; chưa bật login.
 Giữ nguyên config và full M0–M9 với20feature đang làm.
+
+## Milestone closure — 2026-09-10
+
+| Milestone | Status | Acceptance evidence / remaining |
+|---|---|---|
+| M0 | ✅ COMPLETE | check:config/build/281tests;10kcohorts2.4186–2.8738,5seeds; reviewed foundation/checkpoint. |
+| M1 | 🟡 OPEN | Core service/reload/pause pass; complete3-viewport shift, axe, recommendation and human feel evidence remain. |
+| M2 | 🟡 OPEN | Guest/guide pass; five-person study, integrated Google and admin/locale/prompt criteria remain. |
+| M3 | 🟡 OPEN | Standard k/kitchen/rush/quests/sign pass; advanced band/feel and equipment/customer assets remain. |
+| M4 | 🟡 OPEN — priority | Server core reviewed; web authority/reconnect/registry-admin and integrated account/eligibility remain. |
+| M5 | 🟡 OPEN | Local seasons/LP/lease/quest rules pass; community ranks/snapshot/rewards/referral/gift integration remains. |
+
+Full criterion list and named checks: [M0–M5 closure](milestone-closure-m0-m5.md).
+Feature rows below span milestones, so M0 completion does not close all Phase0 feature
+rows. Follow owner queue M4→M6→M7→M8→M9; defer extra M5 breadth/performance tuning.
 
 ## 0. How to use this tracker
 
@@ -81,7 +96,7 @@ Giữ nguyên config và full M0–M9 với20feature đang làm.
 | F07 | 🎮 Code | Các Kiểu Khách — 3 loại P1 (thường/vội/VIP) | 🟡 | `codex/game-build-isolated` | 🔒S 🔒B | 5 kiểu khách ngồi; shipper local v7 có timer riêng, giao cả đơn, cap/timeout/closing/replay và UI điện thoại. Review shipper CLEAN tại307a3b0; football và acceptance đầy đủ còn thiếu. |
 | F09 | ⚖️ Economy | Thời Tiết Quán — tối giản (hệ số độ hơi/tip/spawn) | 🟡 | `codex/game-build-isolated` | 🔒S | 5 thời tiết từ config; rules10 sửa thứ tự baseline để hot/humid thực sự tăng nhịp khách, giữ active-rush floor và replay v9. 100 unit/37 E2E +20 k rows đã qua; review độc lập full diff2959544..432626d không có lỗi actionable. Sprite/ambient và full statistical QA tiếp tục. |
 | F10 | 🎮 Code | Nâng Cấp Quán — bom/rửa/hầm/bàn cơ bản (×k) | 🟡 | `codex/game-build-isolated` | 🔒S 🔒B | Rules21 bom dự trữ + vòi timed riêng, mua cốc, gate LP và capacity UI đã qua221 unit/server+75 browser và native review. Cân bằng nâng cao đang chờ quyết định (k tới3.2074); art và full acceptance tiếp tục. Lịch sử: Bom/rửa/hầm/quầy/bếp + mua/nâng bàn có command/UI; phone/QR quote/gate/command/UI + boa qua review không còn findings tại598f66f; Biển rules9 lắp/đổi5 kiểu, gate uy tín, customer mix/Neon +5 sprite draft;95 unit/37 E2E xanh, full-diff review bdbb493..9239007 không còn findings sau3 sửa lỗi biên. Tờ rơi rules11 có mua bằng uy tín, LP2, kho/timer/báo cáo/UI VI-EN;108 unit/40 E2E +30 k rows qua; full-diff review360453e..d5be3e0 không có lỗi actionable, nghi vấn nhân k đã bị bác bằng thực thi. Free flyer daily5/5 đã được producer claimDailyBonus + quests.test xác nhận; cốc mua và full F10 tiếp tục. Owner rules17: nâng cấp asset trong ca, giữ pause đến khi đóng menu; save v16 replay + mobile purchase đã qua config/build/166 unit/69 E2E và native review3ff21df không còn findings. Owner batch/HUD rules18/config1.7.3 đã qua174 unit/72 browser, config/build,20 canonical1000-serve k rows2.5821–2.9601 và15 rush; native reviewfe59758..7897bdd không còn lỗi actionable sau2 sửa HUD. Bia dự trữ tách kho thô, refill khi lấy lên mâm; save cũ nhận config ở ca kế tiếp. F10 đầy đủ/art từng cấp tiếp tục. |
-| F25 | 🎮 Code | Ngôn Ngữ / Tài Khoản — chọn vi/en, guest play, Google login (kể cả giữa ca) | 🟡 | `codex/game-build-isolated` | 🔒S | Guest local + vi/en + backup/replay v1–v3 + import/reset giữ bản cũ đã có; M4 guest-cookie auth backend đã qua kiểm tra/review; chủ dự án chưa có Google Client ID (09/09), hướng dẫn ở docs/google-signin-setup.md. Verifier Google917f862 đã qua review,255engine/server tests/config/build;5ca dùng chữ ký/chứng thư thật. Owner chốt lịch sử local phải duyệt trước khi tính BXH. Schema4 account/nonce/audit và Google HTTP đã có,264tests/config/build/CLI smoke qua; review độc lập ebe820c không tìm thấy lỗi mới, tự chạy6storechecks qua. Core nhập local một lần, gzip giữ bản gốc và provenance chờ duyệt đã có;271tests/config/build +80MB probe qua; native review51a0734 không tìm thấy lỗi mới. HTTP upload/approval/cloud UI và live Google chưa hoàn tất. Schema6 checkpoint giảm cold read80MB29,36s→2,23s;281tests/config/build qua, review đang chạy. Theo owner, upload/tuning tiếp theo sang M9; ưu tiên closure M0–M5 rồi M4 web/reconnect/admin. |
+| F25 | 🎮 Code | Ngôn Ngữ / Tài Khoản — chọn vi/en, guest play, Google login (kể cả giữa ca) | 🟡 | `codex/game-build-isolated` | 🔒S | Guest local + vi/en + backup/replay v1–v3 + import/reset giữ bản cũ đã có; M4 guest-cookie auth backend đã qua kiểm tra/review; chủ dự án chưa có Google Client ID (09/09), hướng dẫn ở docs/google-signin-setup.md. Verifier Google917f862 đã qua review,255engine/server tests/config/build;5ca dùng chữ ký/chứng thư thật. Owner chốt lịch sử local phải duyệt trước khi tính BXH. Schema4 account/nonce/audit và Google HTTP đã có,264tests/config/build/CLI smoke qua; review độc lập ebe820c không tìm thấy lỗi mới, tự chạy6storechecks qua. Core nhập local một lần, gzip giữ bản gốc và provenance chờ duyệt đã có;271tests/config/build +80MB probe qua; native review51a0734 không tìm thấy lỗi mới. HTTP upload/approval/cloud UI và live Google chưa hoàn tất. Schema6 checkpoint giảm cold read80MB29,36s→2,23s;281tests/config/build,10kcohorts/15rush qua; reviewf86e2b3 không có lỗi mới và tự chạy17tests qua. Theo owner, upload/tuning tiếp theo sang M9; ưu tiên closure M0–M5 rồi M4 web/reconnect/admin. |
 | F27 | 🎮 Code | Onboarding — ca 1 = 1 khách 1 bia, thông báo mất khách, step guide (lần đầu + sau 3 lần mất khách) | 🟡 | `codex/game-build-isolated` | 🔒S | Guide theo events/config, skip/persist + giới hạn chạy lại. Browser/unit pass; Google giữa ca + playtest 5 người chưa có. |
 
 ### Phase 2: Đủ demand-mix (M3)
@@ -281,3 +296,5 @@ Giữ nguyên config và full M0–M9 với20feature đang làm.
 | 2026-09-10 | v0.35.1: local claim core51a0734 independently reviewed with no introduced findings;271tests/config/build and80MB integrity pass. Imported history remains pending approval. Measured cold-read/upload latency is next;20features in progress,0complete. |
 
 | 2026-09-10 | v0.36.0: schema6 trusted checkpoint implemented;281tests/config/build and exact80MB restore pass, review and final k/rush running. Owner timeboxes performance here and requests criterion-level M0–M5 closure, then M4 cutover/reconnect/admin before M6–M9. |
+
+| 2026-09-10 | v0.36.1: f86e2b3 independently verified;281tests/config/build,10kcohorts,15rush,17reviewer checks pass. M0 marked COMPLETE from explicit exit criteria; M1–M5 criterion-level gaps published. Owner prioritizes M4 cutover/reconnect/admin then M6–M9; no additional performance work now. |

@@ -301,3 +301,16 @@ Public upload isolation/recovery and approved-history eligibility remain separat
 | Date | Change |
 |---|---|
 | 2026-09-10 trusted checkpoints | Added schema6 integrity-bound engine checkpoints to avoid cold server resimulation; preserve canonical projection, immutable history and mandatory full replay for local imports. Verification/review in progress. |
+
+
+Verified at `f86e2b3`:281engine/server tests, config/build/typecheck,10ordinary
+kcohorts and15rush PASS; native review found no actionable defect and independently
+passed17focused cases. `.qa/server-checkpoint-verification.json` binds evidence.
+Actual80MB cold read2.23s vs29.36s, exact world/history/retry; import49.47s and3.53s
+loop gap remain open. Owner ends performance work here; see
+[M9 history-volume follow-up](../../docs/m9-history-volume-followup.md). Next is
+M4 web cutover/reconnect/registry-admin; no public upload was introduced.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 verified checkpoint | f86e2b3 passes full verify and independent17-test review; performance work timeboxed, M9 follow-up recorded. |

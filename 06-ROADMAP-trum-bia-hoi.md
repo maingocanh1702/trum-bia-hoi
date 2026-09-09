@@ -9,16 +9,16 @@
 
 ## 📊 Lộ trình 1 phase — mốc M0–M9 (v3.0)
 
-> Game mới có bản local chạy được: **14/28 feature đang triển khai, 0/28 hoàn tất**; M0 qua kiểm tra tự động, đang chờ review độc lập. Bằng chứng và phần còn lại: `docs/build-progress.md`. `prototype/` là lưu trữ, không tính. Không gán ngày — team chốt ước lượng khi có capacity; mỗi mốc có **exit criteria** đo được, không có mốc nào là cổng scope. Ba track chạy song song: **Game** (dev), **Art** (Blender MCP, checklist A/B), **Audio** (checklist B7), **Admin** (BRD §11).
+> **Closure 2026-09-10: M0 COMPLETE; M1–M5 OPEN.** Từng exit criterion có PASS/FAIL và tên kiểm tra tại [báo cáo closure](docs/milestone-closure-m0-m5.md). Feature trải qua nhiều mốc, không dùng tổng feature đang làm để thay trạng thái milestone. M0: config/build/281tests,5seed×2profile k2.4186–2.8738 và review qua. Owner ưu tiên M4 web/server authority, reconnect, registry/admin → M6 → M7 → M8 → M9; chưa mở thêm bề rộng M5 hoặc tuning80MB.
 
 | Mốc | Nội dung | Exit criteria (đo được) | Trạng thái |
 |---|---|---|---|
-| **M0 · Nền** | Workspaces `packages/engine` + `apps/web` trong repo này (HANDOFF §4.4); config loader từ `economy.tbh.json` + schema; engine thuần + shift loop; sim headless đo k; port `check:config`; skeleton `analytics-events.md`, `vi.json/en.json`, `assets/manifest.json`; placeholder convention | `npm run check:config` xanh trên repo mới; sim 5 seed k ∈ 2.0–3.0; build + test xanh | 🟡 |
+| **M0 · Nền** | Workspaces `packages/engine` + `apps/web` trong repo này (HANDOFF §4.4); config loader từ `economy.tbh.json` + schema; engine thuần + shift loop; sim headless đo k; port `check:config`; skeleton `analytics-events.md`, `vi.json/en.json`, `assets/manifest.json`; placeholder convention | `npm run check:config` xanh trên repo mới; sim 5 seed k ∈ 2.0–3.0; build + test xanh | ✅ COMPLETE |
 | **M1 · Vòng phục vụ lõi** | Bàn/Order/serve 1 chạm + 4 kết cục + grace; cốc/freshness; rót & rửa tự động; kho + nâng cấp thiết bị; **UI do dev thiết kế** theo `docs/reference/`; **lưu localStorage** versioned + `eventLog`; audio nhóm ui/shift/serve/beer | Chơi trọn ca 12 phút trên 3 viewport; 09 §11 mục P1; k giữ band; reload không mất tiến độ | 🟡 |
 | **M2 · Onboarding + guest** | F27 (1 khách 1 bia, thông báo mất khách, step guide lần đầu + sau 3 lần mất khách); F25 ngôn ngữ + guest local; nút khuyến khích đăng nhập (chưa cần server) | 5 người mới: ≥ 4/5 phục vụ khách đầu ≤ 30 s, ≥ 4/5 đóng ca 1; F27 §6 | 🟡 |
 | **M3 · Đủ demand-mix** | 6 món + bếp; 7 loại khách; 5 thời tiết; Giờ Vàng đủ mức + lịch; đợt gọi 2+; tip/uy tín/phạt đầy đủ; biển hiệu, mở khoá một lần | Sim: k band + loss theo 04 §5/§6; 09 §11 mục P2; asset batch thiết bị/khách/món đã thay placeholder | 🟡 |
 | **M4 · Server + tài khoản + admin** | Server event store (đổi adapter `SaveStore`), Google login + guest claim (kể cả giữa ca), config service + pin `configVersion`, admin B1–B3, reconnect/resync, anti-cheat, rollover ngày VN | F23 §8 + F25 §10 acceptance; đổi 1 key ở admin → hiệu lực đúng `effectiveAt`; replay event log = state | 🟡 |
-| **M5 · Meta** | Giải Nhậu/Vụ Bia, **F28 bảng xếp hạng + Bàn Thờ**, Đường Lên Trùm, 9 mặt bằng, nhiệm vụ/điểm danh, referral + huy hiệu, Két Bia Bí Ẩn, cosmetic | Kết Vụ tự động + snapshot bất biến; F12/F13/F14/F16/F17/F28 acceptance | ⚪ |
+| **M5 · Meta** | Giải Nhậu/Vụ Bia, **F28 bảng xếp hạng + Bàn Thờ**, Đường Lên Trùm, 9 mặt bằng, nhiệm vụ/điểm danh, referral + huy hiệu, Két Bia Bí Ẩn, cosmetic | Kết Vụ tự động + snapshot bất biến; F12/F13/F14/F16/F17/F28 acceptance | 🟡 |
 | **M6 · Risk** | Côn đồ/bảo kê, kiểm tra (câu hỏi từ `docs/content/`), trật tự đô thị, đánh nhau, trộm offline, chó, Thùng Cấp Cứu | F15/F18 acceptance; dialog no-pause; sim k không lệch band khi bật risk | ⚪ |
 | **M7 · Donate + pháp lý** | **Mời Bia Hơi (F20) = monetization duy nhất**: cổng nhận donate adapter (mặc định QR chuyển khoản + admin xác nhận), quà cosmetic, refund policy; age gate + disclaimer (config); en đầy đủ. **Không có Vé Mở Ca** (F26 bỏ) | F20 acceptance với luồng xác nhận tay; không dark pattern, không paywall (09 §11 P3); admin BRD §7 thấy donate | ⚪ |
 | **M8 · Sự kiện** | Cúp Bóng Đá (admin nhập tay, API là adapter + flag), shop Vụ Bia (xu); vé số **off** (`lottery.legalGate`) | F19/F20/07-SPEC acceptance; flag tắt = không dấu vết trong UI | ⚪ |
@@ -513,3 +513,5 @@ League/Life Path tạo mục tiêu dài hạn rõ; server-auth chặn gian lận
 | 2026-09-09 M4 checkpoint | M4 đã bắt đầu: config pin và server event store có code/tests; auth/registry/transport/cutover còn thiếu, không phải M4 hoàn tất. |
 
 | v3.3 (2026-09-09) | Native review f2e85f8..3ff21df xác nhận không còn lỗi actionable ở SQLite store và nâng cấp trong ca; còn auth/transport trước cutover. Đồng bộ version header với checkpoint hiện hành. |
+
+| 2026-09-10 milestone closure | M0 COMPLETE theo3exit criteria đã qua; M1–M5 giữ OPEN với bảng PASS/FAIL có bằng chứng. Cập nhật M5 đã có local core; owner ưu tiên M4 cutover/reconnect/admin rồi M6–M9, tuning lịch sử sang M9. |

@@ -5,6 +5,30 @@
 
 ---
 
+## 🧭 Checkpoint closed; M0 complete; M4 integration next — 2026-09-10
+
+Product `f86e2b3`, base `89c7263`: schema6 trusted checkpoints preserve exact
+history/projection/config/private engine state without cold resimulation.281tests,
+config/build/typecheck,10kcohorts2.4186–2.8738 and15rush pass. Native independent
+review found no actionable correctness/security defect and passed17focused checks.
+`.qa/server-checkpoint-verification.json`. Original20sourcehashes unchanged.
+Actual80MB cold2.23s vs29.36s, exact world/events/original/retry; import49.47s and
+3.53s loop gap remain. Owner explicitly timeboxes performance: stop here; no public
+upload/further80MB tuning/host-sleep reruns. `docs/m9-history-volume-followup.md`.
+
+Milestone closure: M0 COMPLETE from all3explicit exit criteria. M1–M5 remain OPEN
+with criterion-by-criterion PASS/FAIL and named evidence in
+`docs/milestone-closure-m0-m5.md`; feature totals no longer substitute milestone state.
+F13's local acceptance rules pass, but social/cosmetic/full-career integration does
+not become complete by assertion. No fake human playtest, Google setup or art QA.
+
+Next fixed queue: M4 web uses server SaveStore as sole authority, reconnect F23§8,
+config registry+admin BRD§5.2 → M6 → M7 → M8 → M9. Do not add more M5 breadth now.
+Owner approval policy: keep local progress, review history before competitive credit,
+credit once. ClientID absent, advancedk/prizes unresolved. Keep menu pause/in-shift
+upgrades/batch capacity/numeric loss decisions. Original checkout/owner5174 untouched;
+keep unrelated.dashboard/events.jsonl. No merge/push/deploy; full game goal stays active.
+
 ## 🧭 Local claim core verified; server cold-state loading next — 2026-09-10
 
 Product `51a0734`, base `c9bd6e8`: schema5 internal `GameStore.claimLocal` validates

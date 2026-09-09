@@ -6,7 +6,7 @@ complete-game goal; milestones below are implementation order, not scope cuts.
 
 | Milestone | Status | Evidence / remaining |
 |---|---|---|
-| M0 — config, pure engine, deterministic replay, k sim, workspaces | Verification passed; correction review CLEAN | Config/schema + workspaces + pure engine + replay + actual 5-seed k sim; 27 unit checks pass; review evidence below |
+| M0 — config, pure engine, deterministic replay, k sim, workspaces | COMPLETE — exit criteria PASS | Config/schema + workspaces + pure engine + replay + actual 5-seed k sim; 27 unit checks pass; review evidence below |
 | M1 — serve loop, glasses, stock, upgrades, local save, spatial UI, core audio | In progress | Playable loop, local save/replay, stock/equipment/table UI, core SFX wired; final sprites and listening QA pending |
 | M2 — guest, vi/en, onboarding | In progress | Local guest + matching vi/en keys + event-driven guide with skip/repeat cap; Google account linking and 5-person evidence pending |
 | M3 — full menu, customer mix, weather, rush, business unlocks | In progress | 6 menu entries and hot prep, 5 seated types, 5 weather states, basic scheduled rush. Local phone/QR progression reviewed; shipper local reviewed CLEAN at307a3b0. Football, remaining business upgrades and exhaustive balance/edge QA remain |
@@ -16,6 +16,13 @@ complete-game goal; milestones below are implementation order, not scope cuts.
 | M7 — voluntary donations, cosmetic gifts, age notice | Pending | |
 | M8 — football events, season shop, legal-gated lottery | Pending | |
 | M9 — complete art/audio, accessibility, replay/security/performance QA, release | Pending | |
+
+Current milestone closure (2026-09-10): **M0 COMPLETE; M1–M5 OPEN**. Every ROADMAP
+exit criterion is evaluated in [M0–M5 closure report](milestone-closure-m0-m5.md).
+Verified engine sub-rules, missing implementation and missing human/UI evidence are
+separate. Feature rows span milestones; their count is not milestone completion.
+Owner queue: M4 web server authority/reconnect/registry-admin → M6 → M7 → M8 → M9.
+No additional M5 breadth or history-volume tuning before those dependencies.
 
 ## Decisions and boundaries
 
@@ -2108,3 +2115,21 @@ then M4 web server authority/reconnect/registry+admin before M6→M7→M8→M9.
 | Date | Change |
 |---|---|
 | 2026-09-10 server checkpoints | Added trusted schema6 restore and corruption/rollback/legacy tests; performance measured once, further work moved to M9. Review pending; next is milestone closure rather than more M5 breadth. |
+
+
+## Verified checkpoint and milestone closure — 2026-09-10
+
+Slice: schema6 trusted server checkpoints; product `f86e2b3`, base `89c7263`.
+Files: engine metadata/restore, SQLite store/import, regression tests and server guide.
+Verification: config/build/typecheck,281tests,17focused,10kcohorts2.4186–2.8738,15rush PASS.
+Review: no actionable correctness/security defects; reviewer independently passed17tests.
+80MB integrity: exact world/events/original/retry; cold2.23s versus29.36s. No further tuning.
+Numeric warnings:7technical/protocol/grammar literals annotated; no business numbers changed.
+Receipt: `.qa/server-checkpoint-verification.json`; M9 follow-up records history volume.
+Closure: M0 COMPLETE; M1–M5 explicit PASS/FAIL in linked report, no fabricated acceptance.
+Next: M4 server-authoritative web, reconnect F23§8 and registry/admin BRD§5.2.
+No merge/push/deploy. Owner gameplay decisions remain; no public upload added.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 verified checkpoint/closure | Closed reviewed f86e2b3 and M0 acceptance; published exact M0–M5 closure gaps and fixed owner dependency queue. |
