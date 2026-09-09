@@ -131,3 +131,21 @@ an opening snapshot directly from an untrusted client when building the server.
 | 2026-09-09 review correction | Refuse a candidate that removes the owned location before adoption. Compare immutable snapshot content independently of JSON object-key ordering; preserve array/value distinctions. Server registry/auth remains unfinished. |
 
 | 2026-09-09 verified checkpoint | Combined full-base review at7c60c70 found no actionable defects after all3 config corrections. Author config/build156engine67browser and20 k/15 rush rows passed; reviewer browser rerun was sandbox-blocked. This verifies config pin/savev3 prerequisite only, not server authority. |
+
+
+## Event store implementation checkpoint — 2026-09-09
+
+The earlier no-server-implementation checkpoint is superseded for persistence:
+`apps/server/src/store.ts` now runs the shared engine behind an atomic SQLite/WAL
+event store. It stores immutable config snapshots, command keys and ordered domain
+events, plus a replay-derived projection and server-time frontier. Real-file and
+separate-process restart, competing connections, forced mid-write rollback,
+idempotency, pause/calendar and mixed-config checks exist in `apps/server/test`.
+
+The public API/auth/Google claim, registry approval/override service, WebSocket
+transport, client reconnect and anti-cheat remain outstanding. This internal store
+accepts only trusted server identity/seed/config/time inputs; a future transport
+must enforce authenticated ownership. The current web adapter is still localStorage.
+This is progress toward §8, not proof of full F23/M4 completion.
+
+| 2026-09-09 event store | Implemented server persistence using native SQLite and the same pure engine; exact config/event replay, atomic commands and durable revision invalidation. Full verification/native review in progress; HTTP/auth/client cutover remain next. |

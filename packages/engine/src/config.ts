@@ -323,4 +323,7 @@ export function loadConfig(input: unknown = seed) {
   });
 }
 export type Config = ReturnType<typeof loadConfig>;
+/** Immutable snapshot identity ignores object-key order, while array order remains meaningful. */
+export const configContent = (c: Config) => JSON.stringify(c.raw, (_, value) => value && typeof value === 'object' && !Array.isArray(value)
+  ? Object.fromEntries(Object.keys(value).sort().map(key => [key, value[key]])) : value);
 export const config = loadConfig();

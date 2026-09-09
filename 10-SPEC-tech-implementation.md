@@ -367,3 +367,29 @@ yard for customer drain, and the actual close event may open the final report.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Rules16 preserves player presence during management pause, reuses deadline shifting and logs menu lifecycle; old replay versions remain fixed. Added engine and real-browser regressions for actions, clock hold, visibility, reload and calendar behavior. |
+
+
+## M4 event store implementation — 2026-09-09
+
+`apps/server` now contains the trusted internal `GameStore`. Initial storage uses
+Node22.22.1 native SQLite/WAL rather than the suggested PostgreSQL. This changes
+the implementation choice, not event sourcing, server-owned time/state or config
+pinning. It is not yet the web transport or a complete server-authoritative cutover.
+
+Commands, domain events, original config snapshots and the player time frontier/
+projection commit together under an immediate transaction. Each player's command
+key and event sequence are unique. Replays use the existing engine/save decoder
+and reject projection drift. Cache entries are bounded and tied to durable revision;
+a different connection or failed write invalidates stale in-memory state. Config
+identity reuses the shared semantic helper, while persistence retains the first
+exact snapshot's dictionary order for old seeded sampling. A changed server config
+only takes effect at the next successful shift opening.
+
+Future authenticated adapters must resolve player ownership themselves and never
+forward client state, clocks, seed or opening config. Guest claim, public/private
+config projections, scheduled publish/approval, HTTP/WS sequencing, reconnect grace
+and production deployment remain unfinished. The web keeps localStorage meanwhile.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Added real SQLite transactional event-store workspace as M4 persistence foundation; PostgreSQL remains an optional deployment evolution. Registered replay, retry/rollback and ownership-boundary expectations; no transport/auth completion claimed. |

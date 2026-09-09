@@ -1402,3 +1402,41 @@ no-pause rule and regenerates the dashboard; it does not change reviewed product
 | Date | Change |
 |---|---|
 | 2026-09-09 | Recorded author verification and completed native independent review for config pinning and owner pause-until-close; preserved native browser limitation and full-game incompleteness. |
+
+
+## 2026-09-09 — M4 durable server event store in progress
+
+Starting from f2e85f8 in the existing isolated worktree. `apps/server` is now an npm
+workspace with native Node SQLite persistence. The core engine and config numbers
+are reused; semantic config-content comparison moved into the shared config module
+for both consumers. Snapshot serialization preserves original dictionary order to
+retain historical seeded outcomes. New server configs do not alter ongoing shifts.
+
+Commands/events/frontier/projection commit atomically with append-only constraints,
+server clock and per-player idempotency. Cache is bounded and revalidated against
+durable revision; real DB failure rolls back and evicts a mutated cache. Eight
+focused tests initially passed, covering two connections, real files, retries,
+rollback, corrupted state, mixed config, pause and calendar. Added a separate-process
+restart check to the integrated suite. Full config/build/engine+server/browser/sim
+verification and independent native review are still in progress.
+
+Web stays localStorage. HTTP/session ownership/Google migration, admin registry,
+WebSocket/reconnect and live release are not implemented by this persistence slice.
+No original-checkout edits, merge or external deployment. Full M0–M9 remains active.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Implemented real M4 SQLite event store and regression suite; shared config identity, kept original snapshots for deterministic replay, and documented pending transport/auth cutover. |
+
+### Author verification — server persistence
+
+Config validation, build/typecheck, all164 engine/server tests and67 browser tests
+passed. The eight server cases include a separate Node process reopening the real
+SQLite file. Normal plus combined headless profiles passed20 rows with at least500
+serves per row and k2.3125–2.7562;15 controlled rush rows passed. Evidence is under
+`.qa/server-store-{config,build,tests,e2e,sim,combined,rush}.txt`.
+Independent native review is next; this is not full M4 or release acceptance.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Recorded completed author checks for the server persistence slice; independent review remains pending. |

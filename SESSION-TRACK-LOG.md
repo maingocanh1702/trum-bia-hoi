@@ -5,6 +5,29 @@
 
 ---
 
+## 🧭 Current build checkpoint — 2026-09-09
+
+The current source is the isolated worktree `/Users/maingocanh/.codex/worktrees/trum-bia-hoi-game`
+on `codex/game-build-isolated`; original checkout remains atbc79af5. The historical
+zero-percent snapshot below is not current implementation truth.
+
+Config pinning plus owner menu pause were verified at7c60c70 (receipt f2e85f8):
+156 engine/67 browser checks,20 k rows2.3125–2.7562,15 rush rows and native review
+without actionable defects. Stock purchases keep the menu open/paused until closing.
+
+Now building the M4 SQLite event store in `apps/server`; it persists the same engine
+atomically and survives retries/restarts. Config/build,164 engine/server and67 browser
+checks passed;20 economy/15 rush rows passed. Independent review is next.
+Next: authenticated transport and real registry/account/reconnect integration; web
+remains local until cutover is ready. Full game/art/server/release are unfinished.
+Current evidence and requirements: `docs/build-progress.md`, tracker and roadmap.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Added current isolated-worktree checkpoint and durable-store work; preserved the historical snapshot below as history. |
+
+---
+
 ## 🧭 Trạng thái dự án (snapshot 2026-09-08, cuối ngày)
 
 **Là gì:** Game idle/tycoon **phục vụ khách theo ca 12 phút** ở quán bia hơi vỉa hè Hà Nội 2000s, mobile-first web; re-skin từ trumviahe.com (trà đá), giữ 5 lớp economy, thêm hệ bàn + bia mất hơi.

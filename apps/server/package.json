@@ -1,0 +1,13 @@
+{
+  "name": "@tbh/server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": "./src/store.ts",
+  "dependencies": {
+    "@tbh/engine": "*"
+  },
+  "engines": {
+    "node": ">=22.22.1"
+  }
+}

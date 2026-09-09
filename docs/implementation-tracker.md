@@ -1,6 +1,6 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.21.1
+> **Version:** v0.22.0
 > **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-09 (layout/art theo ảnh owner)
 > **Trạng thái:** Active — **M0 qua verify; review sửa lỗi nền và layout/art đã CLEAN. M1–M3 tiếp tục triển khai; M4 bắt đầu nền config pin/replay, server chưa có; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.0** (1 phase, mốc M0–M9).
 > **Owner:** Team
@@ -71,7 +71,7 @@
 
 | PR | Wave | Feature | Status | Branch | Gates | Notes |
 |----|------|---------|:------:|--------|:-----:|-------|
-| F23 | 🎮 Code | Kiến Trúc Server Quán — server-auth, websocket, CAPTCHA | 🟡 | `codex/game-build-isolated` | 🔒S | Rules15 nền ghim config theo ca + savev3 nhiều snapshot; ca cũ và tài sản giữ nguyên, retry/replay/import có kiểm thử. Registry/API/auth/guest claim/WebSocket/reconnect/anti-cheat chưa có. 156 engine/67 browser pass; native full-base review tại `7c60c70` không nêu lỗi cần sửa, k2.3125–2.7562; chi tiết ở `docs/build-progress.md`. |
+| F23 | 🎮 Code | Kiến Trúc Server Quán — server-auth, websocket, CAPTCHA | 🟡 | `codex/game-build-isolated` | 🔒S | Rules15 nền ghim config theo ca + savev3 nhiều snapshot; ca cũ và tài sản giữ nguyên, retry/replay/import có kiểm thử. Đã có workspace server với SQLite event store, append-only history, server clock, retry/rollback và cache theo revision;164 engine/server +67 browser pass, đang review. Registry/API/auth/guest claim/WebSocket/reconnect/anti-cheat chưa có. 156 engine/67 browser pass; native full-base review tại `7c60c70` không nêu lỗi cần sửa, k2.3125–2.7562; chi tiết ở `docs/build-progress.md`. |
 | F12 | 🎮 Code | Giải Nhậu & Vụ Bia — 8 bậc, 2 Vụ Bia song song | ⬜ | `—` | 🔒S 🔒B | Spec `docs/features/F12-league-seasons.md`. Phân Hạng 7d / Tranh Bá 14d. |
 | F13 | 🎮 Code | Đường Lên Trùm — LP0–LP7, gate tính năng & mặt bằng | 🟡 | `codex/game-build-isolated` | 🔒S | V6 projection đủ requirements/rewards, level tăng bền + claim một lần; ladder VI/EN và phone/QR. 67 unit/30 E2E +40 sim rows k2.3249–2.7688; review d2918e9..598f66f không còn findings. Flyer/signboard ownership đã có producer; season/peak/location/server và full acceptance còn tiếp tục. |
 | F14 | 🎮 Code | Mặt Bằng Quán — 9 mặt bằng, rent/cọc 7 ngày | ⬜ | `—` | 🔒S 🔒B | Spec `docs/features/F14-locations.md`. |
@@ -203,3 +203,5 @@
 | v0.21.0 | Owner auto-pause trong menu/quản lý thiết bị, giữ menu Nhập hàng sau mua đến khi đóng; rules16 giữ thao tác menu và lịch VN.18 feature vẫn in progress, combined config/pause verification và review chưa hoàn tất. |
 
 | v0.21.1 | Chốt checkpoint config pin + owner menu pause tại7c60c70: config/build156unit67browser,5 mobile checks sau CSS,20 k rows và15 rush rows pass. Native full-base review không nêu actionable defects (reviewer sandbox không bind được browser; author đã chạy67).18 feature/full game vẫn chưa hoàn tất. |
+
+| v0.22.0 | F23/M4 thêm server event store SQLite thật, dùng chung engine, lưu nguyên snapshot và transaction commands/events/projection; tests restart/2 kết nối/retry/rollback/pause đã có, đang verify/review. Web vẫn local;18 feature chưa hoàn tất. |

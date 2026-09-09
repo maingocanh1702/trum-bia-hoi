@@ -1,4 +1,4 @@
-import { config as defaultConfig, BUSINESS_UNLOCKS, SIGN_STYLES, signWeightMult, DISHES, EQUIPMENT, WEATHER, deliveryBundles, arrivalIntervalMs, type Config, type SeatedType, type Rush } from './config';
+import { config as defaultConfig, configContent, BUSINESS_UNLOCKS, SIGN_STYLES, signWeightMult, DISHES, EQUIPMENT, WEATHER, deliveryBundles, arrivalIntervalMs, type Config, type SeatedType, type Rush } from './config';
 import { integer, random, weighted } from './rng';
 import { addStock, credit, currentGuests, customerValue, dayKey, deliveryInterval, deliveryQuote, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
 import { lifePathStatus, lifePathRewardQuote, unlockQuote } from './progression';
@@ -22,9 +22,6 @@ const MENU_RULES: RulesVersion = 14; // config-exempt: fixed replay protocol rev
 const CONFIG_PIN_RULES: RulesVersion = 15; // config-exempt: fixed replay protocol revision
 const MENU_PAUSE_RULES: RulesVersion = 16; // config-exempt: fixed replay protocol revision
 const emptyStats = (): Stats => ({ arrived: 0, served: 0, lost: 0, rejected: 0, orders: 0, payment: 0, tip: 0, credited: 0, penalty: 0, spent: 0, rep: 0, wellRestedBonus: 0 });
-// Registry storage may reorder object keys; arrays retain their meaningful order.
-const snapshotContent = (c: Config) => JSON.stringify(c.raw, (_, value) => value && typeof value === 'object' && !Array.isArray(value)
-  ? Object.fromEntries(Object.keys(value).sort().map(key => [key, value[key]])) : value);
 
 /** No wall clock, IO or renderer: only config, seed, explicit time and commands. */
 export class Game {
@@ -509,7 +506,7 @@ export class Game {
     if (envelope.at < this.world.now) return { ok: false, reason: 'staleCommand' };
     if (openingConfig && envelope.command.type !== 'startShift') return { ok: false, reason: 'configOnlyOnStart' };
     const selected = openingConfig ?? this.config, known = this.snapshots.get(selected.version);
-    if (known && known !== selected && snapshotContent(known) !== snapshotContent(selected)) return { ok: false, reason: 'configVersionConflict' };
+    if (known && known !== selected && configContent(known) !== configContent(selected)) return { ok: false, reason: 'configVersionConflict' };
     // Old logs switched before advancing; v10+ keeps elapsed autonomous history under its preceding rules.
     if (rulesVersion < ARRIVAL_INTERVAL_RULES) this.rulesVersion = rulesVersion;
     this.advance(envelope.at);

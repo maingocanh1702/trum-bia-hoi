@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-09 11:52 · **Branch hiện tại:** `codex/game-build-isolated`
+> **Cập nhật:** 2026-09-09 12:15 · **Branch hiện tại:** `codex/game-build-isolated`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -227,7 +227,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 3
-- **Notes:** Rules15 nền ghim config theo ca + savev3 nhiều snapshot; ca cũ và tài sản giữ nguyên, retry/replay/import có kiểm thử. Registry/API/auth/guest claim/WebSocket/reconnect/anti-cheat chưa có. 156 engine/67 browser pass; native full-base review tại `7c60c70` không nêu lỗi cần sửa, k2.3125–2.7562; chi tiết ở `docs/build-progress.md`.
+- **Notes:** Rules15 nền ghim config theo ca + savev3 nhiều snapshot; ca cũ và tài sản giữ nguyên, retry/replay/import có kiểm thử. Đã có workspace server với SQLite event store, append-only history, server clock, retry/rollback và cache theo revision;164 engine/server +67 browser pass, đang review. Registry/API/auth/guest claim/WebSocket/reconnect/anti-cheat chưa có. 156 engine/67 browser pass; native full-base review tại `7c60c70` không nêu lỗi cần sửa, k2.3125–2.7562; chi tiết ở `docs/build-progress.md`.
 
 ### F13 — Đường Lên Trùm — LP0–LP7, gate tính năng & mặt bằng
 
