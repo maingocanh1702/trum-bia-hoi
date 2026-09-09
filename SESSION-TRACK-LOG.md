@@ -5,6 +5,14 @@
 
 ---
 
+## 🧭 Seasons rules23 implemented; verification in progress — 2026-09-09
+
+Core dual-season accounting and a real peakLeague producer now exist, plus the
+VI/EN personal season panel after3closed shifts. See F12 §10 and
+`.qa/seasons-contract.md`. Focused browser tests pass; full checks/native review
+are still pending. Do not call full F12/F28 complete: global ranks/mailbox remain.
+Next after this checkpoint: actual career using the real season producer.
+
 ## 🧭 Lease verified; season producer next — 2026-09-09
 
 Rules22 lease productce7564b reviewed with both config findings resolved.234 engine/

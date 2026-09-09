@@ -47,7 +47,7 @@ test('early switch and departure forfeit old deposit and rent; expiry at the exa
   const result = g.command({ command: { type: 'leaveLocation', leaseId: lease.id }, at: lease.expiresAt, idempotencyKey: 'at-expiry' });
   assert.equal(result.reason, 'leaseChanged'); assert.equal(w.coins, coins + lease.deposit);
   assert.equal(leaseEvents(g).filter(e => e.type === 'lease_deposit_refunded').length, 1);
-  assert.equal(w.seasonEarned, w.serves[0].credited); assert.equal(w.lifetimeEarned, w.serves[0].credited); assert.equal(Object.values(w.dayEarned).reduce((a, b) => a + b, 0), w.serves[0].credited); replay(g);
+  assert.equal(w.seasonEarned, 0); assert.equal(w.seasons!.results.find(r => r.kind === 'ranking')!.earned, w.serves[0].credited); assert.equal(w.lifetimeEarned, w.serves[0].credited); assert.equal(Object.values(w.dayEarned).reduce((a, b) => a + b, 0), w.serves[0].credited); replay(g);
 });
 
 test('calendar expiry is identical under fine/coarse ticks while a customer menu or offline save pauses the shift', () => {
@@ -128,7 +128,7 @@ test('the captured actual rules21 save replays unchanged and adopts leasing only
   const save = readFileSync(new URL('./fixtures/pre-lease-v21.json', import.meta.url), 'utf8');
   const g = decodeSave(save), expected = JSON.parse(readFileSync(new URL('./fixtures/pre-lease-v21-expected.json', import.meta.url), 'utf8'));
   assert.deepEqual(g.world, expected); assert.equal(g.log.at(-1)!.rulesVersion, 21); assert.equal(g.world.lease, undefined);
-  send(g, { type: 'activity', active: true, paused: true }); assert.equal(g.log.at(-1)!.rulesVersion, 22); replay(g);
+  send(g, { type: 'activity', active: true, paused: true }); assert.equal(g.log.at(-1)!.rulesVersion, 23); replay(g);
   const modern = game(); rent(modern); const entry = structuredClone(modern.log.at(-1)!); entry.rulesVersion = 21;
   assert.throws(() => game().replay(entry), /replay:rulesVersion/);
 });

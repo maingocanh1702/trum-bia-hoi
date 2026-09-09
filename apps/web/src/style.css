@@ -245,3 +245,12 @@ progress::-webkit-progress-value { background: var(--beerAmber); border-radius: 
 .location-options small { display: block; margin-top: 8px; }
 
 .locations-panel p { margin: 8px 0; line-height: 1.45; }
+
+.seasons-panel { max-width: 650px; margin: auto; }
+.seasons-panel p { line-height: 1.5; }
+.seasons-panel .journey-summary { margin: 18px 0; }
+.seasons-panel .journey-summary progress { display: block; width: 100%; margin-top: 12px; }
+.season-peak { color: var(--coinGold); font-weight: 800; }
+.season-history { list-style: none; padding: 0; }
+.season-history li { display: flex; flex-direction: column; gap: 6px; padding: 14px 0; border-bottom: 1px solid var(--panelBorder); }
+.season-history span { font-size: 13px; color: var(--creamMuted); }

@@ -81,8 +81,8 @@ test('reputation and active-shift overflow refuse before claim mutation, with a 
 
 test('invalid, wrong-day and inactive first claims neither create attendance nor change balances', () => {
   const g = new Game(config, 42, ORIGIN), before = structuredClone(g.world);
-  assert.equal(send(g, { type: 'claimAttendance', day: 'not-today' }).reason, 'attendanceExpired'); assert.deepEqual(g.world, before);
-  assert.equal(send(g, { type: 'claimAttendance', day: 12 } as unknown as Command).reason, 'invalidCommand'); assert.deepEqual(g.world, before);
+  assert.equal(send(g, { type: 'claimAttendance', day: 'not-today' }).reason, 'attendanceExpired'); assert.deepEqual(g.world, { ...before, seasons: g.world.seasons });
+  assert.equal(send(g, { type: 'claimAttendance', day: 12 } as unknown as Command).reason, 'invalidCommand'); assert.deepEqual(g.world, { ...before, seasons: g.world.seasons });
   send(g, { type: 'activity', active: false }); assert.equal(claim(g).reason, 'attendanceInactive'); assert.equal(g.world.attendance, undefined);
   for (const value of [-1, 0.5, Number.MAX_SAFE_INTEGER]) { const raw = structuredClone(config.raw); raw.quests.loginTrackRepBase[0] = value; assert.throws(() => loadConfig(raw), /config:/); }
   send(g, { type: 'activity', active: true }); assert.equal(g.world.attendance!.cycleDay, 1);

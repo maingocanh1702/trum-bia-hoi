@@ -1,4 +1,4 @@
-import type { Dish, Equipment, SeatedType, Weather, Rush, BusinessUnlock, SignStyle } from './config';
+import type { Config, Dish, Equipment, SeatedType, Weather, Rush, BusinessUnlock, SignStyle } from './config';
 
 export interface Customer { id: string; type: SeatedType; patienceMs: number; enjoyMs: number }
 export interface Item {
@@ -59,6 +59,15 @@ export interface Attendance {
   cycleDay: number; lastActiveDateKey: string; lastClaimDateKey: string | null;
   expiresAt: number; claimedDays: number[];
 }
+export type SeasonKind = 'ranking' | 'contest';
+export interface SeasonPeriod {
+  id: string; kind: SeasonKind; startsAt: number; endsAt: number; trackingFromAt: number; configVersion: string;
+  tiers: Config['values']['league']['tiers']; countedSources: string[];
+  closedShifts: number; firstReachedCurrentSeasonEarnedAt: number | null;
+}
+export interface SeasonResult extends Pick<SeasonPeriod, 'id' | 'kind' | 'startsAt' | 'endsAt' | 'trackingFromAt' | 'configVersion' | 'closedShifts' | 'firstReachedCurrentSeasonEarnedAt'> {
+  earned: number; tierId: string; tierName: string;
+}
 export interface World {
   now: number; rng: number; nextId: number; phase: 'resting' | 'open' | 'closing';
   playerId: string; coins: number; reputation: number; seasonEarned: number; lifetimeEarned: number;
@@ -76,6 +85,8 @@ export interface World {
   signStyle?: SignStyle; flyers?: number; daily?: DailyQuests; attendance?: Attendance;
   lease?: { id: string; locationId: string; fallback: string; startedAt: number; expiresAt: number;
     rent: number; deposit: number; forfeitOnEarlyLeave: boolean; expired?: boolean };
+  seasons?: { ranking: SeasonPeriod; contest: SeasonPeriod; contestEarned: number; results: SeasonResult[];
+    legacy: { earned: number; throughAt: number } };
   location: string; lifePath: number; unlocks: string[]; badges: string[];
 }
 export type Command =
@@ -106,5 +117,5 @@ export type Command =
 export type SystemCommand = { type: 'connectionLost'; shiftId: string; lossId?: string } | { type: 'adoptCalendarRules' }; // absent only in early rules19 persisted logs
 export interface Envelope<C = Command> { idempotencyKey: string; at: number; command: C }
 export interface Result { ok: boolean; reason?: string; outcome?: 'early' | 'late' | 'grace' | 'expired' | 'stale'; amount?: number }
-export type RulesVersion = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22; // config-exempt: persisted replay protocol revisions, not economy tuning
+export type RulesVersion = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23; // config-exempt: persisted replay protocol revisions, not economy tuning
 export interface LoggedCommand extends Envelope<Command | SystemCommand> { result: Result; configVersion: string; rulesVersion: RulesVersion }

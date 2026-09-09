@@ -1,3 +1,4 @@
+import { SEASON_KINDS, compatibleSeasonTiers, nextSeasonEnd, syncSeasons } from './seasons';
 import { leaseQuote, leaveLocationQuote } from './locations';
 import { kitchenStatus } from './kitchen';
 import { isEconomy2, config as defaultConfig, configContent, BUSINESS_UNLOCKS, SIGN_STYLES, signWeightMult, DISHES, EQUIPMENT, WEATHER, deliveryBundles, arrivalIntervalMs, type Config, type SeatedType, type Rush } from './config';
@@ -27,6 +28,7 @@ const MENU_PAUSE_RULES: RulesVersion = 16; // config-exempt: fixed replay protoc
 const LIVE_UPGRADE_RULES: RulesVersion = 17; // config-exempt: fixed replay protocol revision for owner live-upgrade policy
 const BATCH_RULES: RulesVersion = 18; // config-exempt: fixed replay protocol revision for stocked beer and wash batches
 const DISCONNECT_RULES: RulesVersion = 19; // config-exempt: replay protocol for trusted disconnection deadlines
+const SEASON_RULES: RulesVersion = 23; // config-exempt: replay protocol for real seasonal earnings
 const LEASE_RULES: RulesVersion = 22; // config-exempt: replay protocol for rental contracts
 const ECONOMY_RULES: RulesVersion = 21; // config-exempt: replay protocol for economy 2.0 mechanics
 const ABSENT_CALENDAR_RULES: RulesVersion = 20; // config-exempt: replay protocol for lazy absent-day calendars
@@ -97,6 +99,7 @@ export class Game {
         }
       }
     }
+    times.push(nextSeasonEnd(w));
     if (w.lease && !w.lease.expired) times.push(w.lease.expiresAt);
     if (w.shift?.flyer) times.push(w.shift.flyer.end);
     if (w.attendance) times.push(w.attendance.expiresAt);
@@ -167,6 +170,7 @@ export class Game {
           if (expiry !== undefined && expiry > w.now) next = Math.min(next, expiry);
         }
         if (w.lease && !w.lease.expired && w.lease.expiresAt > w.now) next = Math.min(next, w.lease.expiresAt);
+        next = Math.min(next, nextSeasonEnd(w));
         this.advancePaused(next);
       } while (w.now < now);
       return;
@@ -186,6 +190,7 @@ export class Game {
     const elapsed = now - w.now;
     this.shiftPauseTimers(elapsed, true);
     w.now = now;
+    if (this.rulesVersion >= SEASON_RULES) syncSeasons(w, this.config);
     this.settleLease();
     if (this.rulesVersion >= MENU_PAUSE_RULES) this.observeAttendance();
     if (this.rulesVersion >= QUEST_RULES) this.ensureDailyQuests();
@@ -308,6 +313,7 @@ export class Game {
   }
   private processDue(): void {
     const w = this.world, c = this.config.values, s = w.shift;
+    if (this.rulesVersion >= SEASON_RULES) syncSeasons(w, this.config);
     this.settleLease();
     if (this.gameplayPaused()) return;
     if (this.rulesVersion >= QUEST_RULES) this.ensureDailyQuests();
@@ -387,6 +393,7 @@ export class Game {
     if (this.rulesVersion >= QUEST_RULES) this.tickQuests();
     if (w.phase === 'closing' && !w.delivery && w.queue.length === 0 && w.tables.every(t => ['empty', 'cleaning', 'broken'].includes(t.state))) {
       w.phase = 'resting'; w.completedShifts++;
+      if (w.seasons) for (const kind of SEASON_KINDS) w.seasons[kind].closedShifts++;
       w.staminaAnchorMs = w.staminaMs; w.staminaAnchorAt = w.now;
       w.restStartedAt = w.now;
       const key = dayKey(w.now, this.config);
@@ -635,15 +642,16 @@ export class Game {
   /** Opening config is supplied by a trusted registry adapter, never by a player command payload. */
   command(envelope: Envelope, openingConfig?: Config): Result {
     if (!validEnvelope(envelope)) return { ok: false, reason: 'invalidCommand' };
-    return this.applyCommand(envelope, LEASE_RULES, openingConfig, true);
+    return this.applyCommand(envelope, SEASON_RULES, openingConfig, true);
   }
   /** Trusted adapter supplies one lossId per outage and reuses it only for retries. */
   disconnect(at: number, shiftId: string, lossId: string): Result {
     if (typeof lossId !== 'string' || !lossId) return { ok: false, reason: 'invalidCommand' };
-    return this.applyCommand({ at, idempotencyKey: `system:connectionLost:${shiftId}:${lossId}`, command: { type: 'connectionLost', shiftId, lossId } }, LEASE_RULES, undefined, true);
+    return this.applyCommand({ at, idempotencyKey: `system:connectionLost:${shiftId}:${lossId}`, command: { type: 'connectionLost', shiftId, lossId } }, SEASON_RULES, undefined, true);
   }
   /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
   replay(entry: LoggedCommand, config = this.config): Result {
+    if (this.world.seasons && entry.rulesVersion < SEASON_RULES) throw Error('replay:rulesVersion');
     if (['rentLocation', 'leaveLocation'].includes(entry.command.type) && entry.rulesVersion < LEASE_RULES) throw Error('replay:rulesVersion');
     if (entry.command.type === 'buyGlass' && entry.rulesVersion < ECONOMY_RULES) throw Error('replay:rulesVersion');
     if (entry.command.type === 'adoptCalendarRules' && entry.rulesVersion !== ABSENT_CALENDAR_RULES) throw Error('replay:rulesVersion');
@@ -667,6 +675,7 @@ export class Game {
     this.snapshots.set(selected.version, selected);
     this.commandKey = envelope.idempotencyKey;
     try {
+      if (rulesVersion >= SEASON_RULES && (this.world.seasons || envelope.command.type !== 'startShift')) syncSeasons(this.world, this.config);
       this.startMenu();
       if (rulesVersion >= QUEST_RULES) this.ensureDailyQuests();
       if (rulesVersion >= ATTENDANCE_RULES) this.observeAttendance();
@@ -715,6 +724,7 @@ export class Game {
       case 'startShift': {
         const c = openingConfig.values, changed = openingConfig.version !== this.config.version, previousVersion = this.config.version;
         if (w.phase !== 'resting') return fail('shiftRunning');
+        if (changed && !compatibleSeasonTiers(w, openingConfig)) return fail('configSeasonTiers');
         const location = changed && this.rulesVersion >= LEASE_RULES && isEconomy2(c) && !w.lease ? c.locations.fallback : w.location;
         if (changed && w.lease && (!isEconomy2(c) || c.locations.fallback !== w.lease.fallback)) return fail('configLocationMissing');
         if (changed && !c.locations.list.some(row => row.id === location)) return fail('configLocationMissing');
@@ -734,6 +744,7 @@ export class Game {
           this.currentConfig = openingConfig; w.location = location;
           for (const table of w.tables) table.capacity = c.upgrades.table.levels[table.level - 1].capacity;
         }
+        if (this.rulesVersion >= SEASON_RULES) syncSeasons(w, this.config);
         const weather = weighted(w, WEATHER.map(k => [k, c.weather[k].weight]));
         const rushes: NonNullable<World['shift']>['rushes'] = plan?.rushes ?? [];
         if (this.rulesVersion < RUSH_SCHEDULE_RULES && scheduled) {

@@ -173,9 +173,24 @@ test('a paid lease survives SQLite restart; offline expiry refunds the stored de
   f.now = rented.world.lease.expiresAt + 1000; const expired = b.read('tenant');
   assert.equal(expired.world.location, 'hem_nho'); assert.equal(expired.world.lease, undefined);
   assert.equal(expired.world.coins, before.world.coins + rented.world.lease.deposit);
-  assert.equal(expired.world.lifetimeEarned, before.world.lifetimeEarned); assert.equal(expired.world.seasonEarned, before.world.seasonEarned);
+  assert.equal(expired.world.lifetimeEarned, before.world.lifetimeEarned); assert.equal(expired.world.seasonEarned, 0); assert.equal(expired.world.seasons!.results.find(r => r.kind === 'ranking')!.earned, before.world.seasonEarned);
   assert.deepEqual(expired.world.dayEarned, before.world.dayEarned);
   b.close(); const c = f.open(pin); assert.deepEqual(c.read('tenant'), expired);
   assert.equal(send(c, 'tenant', 'rent', action).world.coins, expired.world.coins);
   assert.equal(c.eventsAfter('tenant', before.lastEventSeq).events.filter(row => row.event.type === 'lease_deposit_refunded').length, 1);
+});
+
+test('season rollover and old service retries survive SQLite restart without moving revenue into the next season', t => {
+  const f = fixture(t); f.now = Date.parse(config.values.league.seasons.epochUtc) + 86400000;
+  const a = f.open(); a.createPlayer('season-player', 42);
+  send(a, 'season-player', 'open', { type: 'startShift' }); f.now += 11000;
+  const action = ready(a, 'season-player'), first = send(a, 'season-player', 'serve', action);
+  const end = first.world.seasons!.ranking.endsAt, amount = first.world.seasonEarned;
+  send(a, 'season-player', 'pause', { type: 'activity', active: true, paused: true }); a.close();
+  f.now = end; const b = f.open(), rolled = b.read('season-player');
+  assert.equal(rolled.world.seasonEarned, 0); assert.equal(rolled.world.seasons!.ranking.startsAt, end);
+  assert.equal(rolled.world.seasons!.results.find(r => r.kind === 'ranking')!.earned, amount);
+  const retry = send(b, 'season-player', 'serve', action); assert.deepEqual(retry.result, first.result);
+  assert.deepEqual(retry.world, rolled.world); assert.equal(retry.world.seasons!.contestEarned, amount);
+  b.close(); const c = f.open(); assert.deepEqual(c.read('season-player'), rolled);
 });

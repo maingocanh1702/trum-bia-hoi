@@ -206,7 +206,7 @@ test('genuine cb389e0 rules19 absent-day history survives rules20 adoption witho
   const expected = JSON.parse(readFileSync(new URL('./fixtures/legacy-v19-absence-expected.json', import.meta.url), 'utf8'));
   assert.equal(expected.source, 'cb389e088fadd05f77b6ed20e1f96de34833ac2b');
   const g = decodeSave(saved); assert.deepEqual(g.world, expected.world); roundtrip(g);
-  send(g, { type: 'activity', active: false }); assert.equal(g.log.at(-1)!.rulesVersion, 22);
+  send(g, { type: 'activity', active: false }); assert.equal(g.log.at(-1)!.rulesVersion, 23);
   const countBefore = count(g, 'quest_generated');
   g.advance(g.world.now + 1000 * 86400000); assert.equal(count(g, 'quest_generated'), countBefore); roundtrip(g);
 });

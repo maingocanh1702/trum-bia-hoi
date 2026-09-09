@@ -90,3 +90,42 @@ Base thresholds are multiplied by `k`.
 - Vụ Bia rollover is deterministic around VN midnight/epoch.
 - Tie-break remains stable after pagination.
 - Rewards can be claimed exactly once.
+
+## 10. Implementation checkpoint — 2026-09-09 (rules23)
+
+The pure engine now records two real epoch windows, with the existing
+`world.seasonEarned` as the single ranking balance and a separate contest balance.
+The canonical credit path applies the daily cap before season attribution. Each
+period pins its thresholds and source list until expiry; the ranking period also
+owns the day/lifetime ledger source classification. Changing gameplay config at
+opening cannot reclassify an active season. Permanent tier IDs/order cannot change
+through an ordinary opening config.
+
+`peakLeague` records the highest tier earned in either actual season and survives
+rollover. Zero-income adoption does not invent a peak. Prior unwindowed save income
+is preserved under `seasons.legacy` with its cutoff, while lifetime earnings and
+all original rules1–22 results/events remain unchanged. Rules23 adoption is an
+explicit recorded command boundary, including a valid command refused by gameplay
+eligibility; malformed/idempotent/stale envelopes do not adopt. Downgrading replay
+rules after adoption is refused.
+
+Season time remains real during menus and absence. At the exact deadline, completed
+personal results freeze before the next service/shift close. Empty absent periods
+are skipped without creating thousands of empty records. If a new config changes
+an epoch/duration, the old period finishes first; `trackingFromAt` records where
+tracking starts within the next configured epoch window. Both windows count closed
+shifts at their close timestamp. Results are retained for later reward processing;
+the configured history limit applies only to the own-progress view.
+
+The VI/EN own-progress panel opens from Journey after the configured three closed
+shifts. It shows each season's tier, revenue, next threshold, deadline, personal
+history and permanent peak. It follows the owner's all-menu pause policy.
+
+**Still pending:** authoritative community ranks/ties across players, season-end
+server snapshots, prize mapping and exactly-once mailbox claims. The current JSON
+has descriptive reward strings but no by-tier material/shard/token quantities;
+this implementation does not invent or grant those rewards. F12/F28 are not complete.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Rules23 season accounting/peak producer and personal progress panel implemented; preserves legacy unwindowed income explicitly. Community ranking and configured mailbox rewards remain pending. |

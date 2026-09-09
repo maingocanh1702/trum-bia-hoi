@@ -310,6 +310,14 @@ function validate(c: Economy): void {
   for (const row of [...daily.buckets, ...daily.fixed]) for (const amount of [row.rewardCoinBase, row.rewardRepBase]) { whole(amount, 'quest.reward'); whole(Math.round(amount * c.k.value), 'quest.scaledReward'); }
   whole(daily.bonusAll5.flyer, 'quest.bonusFlyer'); whole(daily.bonusAll5.badgeShard, 'quest.bonusShard');
   if (daily.bonusAll5.flyer > c.unlocks.flyer.stockCap || c.unlocks.flyer.freeOnDaily5of5 !== (daily.bonusAll5.flyer > 0)) throw Error('config:questBonusCapacity');
+  const seasons = c.league.seasons, epoch = Date.parse(seasons.epochUtc);
+  if (!Number.isSafeInteger(epoch) || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(seasons.epochUtc) || new Date(epoch).toISOString().replace('.000Z', 'Z') !== seasons.epochUtc || seasons.tz !== seed.league.seasons.tz) throw Error('config:seasonEpoch');
+  for (const kind of ['ranking', 'contest'] as const) {
+    whole(seasons[kind].days, 'season.days', 1);
+    const duration = seasons[kind].days * 86400000; // config-exempt: milliseconds in a VN calendar day
+    whole(duration, 'season.duration', 1);
+    if (!Number.isSafeInteger(epoch + duration) || !Number.isSafeInteger(epoch - duration)) throw Error('config:seasonDuration');
+  }
   c.league.tiers.forEach((tier, index) => {
     whole(tier.minSeasonEarnedBase, 'league.threshold'); whole(Math.round(tier.minSeasonEarnedBase * c.k.value), 'league.scaledThreshold');
     if (index === 0 ? tier.minSeasonEarnedBase !== 0 : tier.minSeasonEarnedBase <= c.league.tiers[index - 1].minSeasonEarnedBase) throw Error('config:leagueOrder');

@@ -1,3 +1,4 @@
+import { seasonTier } from './seasons';
 import { dailyTargetCurve, type Config } from './config';
 import { integer, seededRng } from './rng';
 import { dayKey } from './rules';
@@ -12,7 +13,7 @@ export function nextDayAt(now: number, c: Config) {
 }
 export function planDailyQuests(w: World, c: Config): DailyQuests {
   const day = dayKey(w.now, c), definition = c.values.quests.daily;
-  const tier = c.values.league.tiers.filter(t => w.seasonEarned >= t.minSeasonEarnedBase).length;
+  const tier = seasonTier(w, c).index + 1;
   const seed = JSON.stringify([day, tier]), rng = seededRng(seed), curve = dailyTargetCurve(c.values);
   const factor = ((Math.min(curve.max, Math.max(curve.min, tier)) - curve.min) / curve.divisor) ** curve.exponent;
   const rows: DailyQuest[] = definition.buckets.map(bucket => {

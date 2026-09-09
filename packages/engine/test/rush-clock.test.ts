@@ -85,7 +85,7 @@ test('real v4 closing rush replay preserves old earnings, then a same-timestamp 
   assert.ok(g.log.every(e => e.rulesVersion === 4));
   send(g, { type: 'activity', active: true });
   assert.equal(g.world.coins, expected.coins); assert.equal(g.world.shift!.rush, 'none');
-  assert.equal(g.world.events.at(-2)!.type, 'rush_ended'); assert.equal(g.world.events.at(-1)!.type, 'attendance_day_opened'); assert.equal(g.log.at(-1)!.rulesVersion, 22);
+  assert.equal(g.world.events.at(-2)!.type, 'rush_ended'); assert.equal(g.world.events.at(-1)!.type, 'attendance_day_opened'); assert.equal(g.log.at(-1)!.rulesVersion, 23);
   assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
 });
 

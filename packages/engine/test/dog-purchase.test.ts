@@ -32,10 +32,10 @@ test('an LP0 stall buys and grows the same dog with scaled coins and unscaled in
 
 test('short stock or coins never causes a partial debit and no level can be skipped or bought twice', () => {
   const g = create(); const initial = structuredClone(g.world);
-  assert.deepEqual(send(g, { type: 'upgradeDog', level: 1 }), { ok: false, reason: 'dogMaterials' }); assert.deepEqual(g.world, initial);
+  assert.deepEqual(send(g, { type: 'upgradeDog', level: 1 }), { ok: false, reason: 'dogMaterials' }); assert.deepEqual(g.world, { ...initial, seasons: g.world.seasons });
   stock(g, 3);
   for (const level of [0, -1, 1.5, NaN, Infinity, 3]) {
-    const before = structuredClone(g.world); assert.equal(send(g, { type: 'upgradeDog', level }).ok, false); assert.deepEqual(g.world, before);
+    const before: Game['world'] = structuredClone(g.world); assert.equal(send(g, { type: 'upgradeDog', level }).ok, false); assert.deepEqual(g.world, before);
   }
   g.world.coins = 4999; const poor = structuredClone(g.world);
   assert.deepEqual(send(g, { type: 'upgradeDog', level: 1 }), { ok: false, reason: 'notEnoughCoins' }); assert.deepEqual(g.world, poor);

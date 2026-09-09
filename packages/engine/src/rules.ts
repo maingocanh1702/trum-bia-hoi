@@ -1,3 +1,4 @@
+import { creditSeasons, seasonCreditSafe } from './seasons';
 import { signboardStyle } from './signboard';
 import { isEconomy2, DISHES, type Config, type Dish, type Equipment, type Rush } from './config';
 import type { Customer, Order, Table, World } from './types';
@@ -101,7 +102,7 @@ export function kickAllQuote(w: World, c: Config) {
 /** All credit consumers use the same day cap before mutation. */
 export function creditQuote(w: World, c: Config, amount: number, source: string) {
   if (!Number.isSafeInteger(amount) || amount < 0) throw Error('ledger:invalid-credit');
-  const counted = c.values.ledgers.countedSources.includes(source);
+  const counted = (w.seasons?.ranking.countedSources ?? c.values.ledgers.countedSources).includes(source);
   const day = dayKey(w.now, c);
   const credited = counted ? Math.min(amount, Math.max(0, c.values.shift.dailyEarnCapBase - (w.dayEarned[day] ?? 0))) : amount;
   return { credited, counted, day };
@@ -109,12 +110,14 @@ export function creditQuote(w: World, c: Config, amount: number, source: string)
 /** The only faucet entry point. Spending/rewards cannot accidentally inflate league scores. */
 export function credit(w: World, c: Config, amount: number, source: string): number {
   const { credited, counted, day } = creditQuote(w, c, amount, source);
+  if (!seasonCreditSafe(w, credited, source)) throw Error('ledger:unsafe-season-credit');
   w.coins += credited;
   if (counted) {
     w.dayEarned[day] = (w.dayEarned[day] ?? 0) + credited;
-    w.seasonEarned += credited;
+    if (!w.seasons) w.seasonEarned += credited;
     w.lifetimeEarned += credited;
   }
+  creditSeasons(w, c, credited, source);
   return credited;
 }
 export function deliveryInterval(w: World, c: Config) {
@@ -129,7 +132,7 @@ export function deliveryQuote(w: World, c: Config) {
   const net = Math.round(gross * c.values.customerTypes.shipper.netRate), bonus = wellRestedBonus(w, c, net, 0);
   const { credited, counted, day } = creditQuote(w, c, net + bonus, 'shipperNet');
   const creditedBonus = credited - creditQuote(w, c, net, 'shipperNet').credited, stats = w.shift?.stats;
-  const safe = [gross, net, bonus, credited, w.coins + credited, ...(counted ? [(w.dayEarned[day] ?? 0) + credited, w.seasonEarned + credited, w.lifetimeEarned + credited] : []),
+  const safe = seasonCreditSafe(w, credited, 'shipperNet') && [gross, net, bonus, credited, w.coins + credited, ...(counted ? [(w.dayEarned[day] ?? 0) + credited, w.seasonEarned + credited, w.lifetimeEarned + credited] : []),
     (stats?.deliveryNet ?? 0) + net, (stats?.deliveryBonus ?? 0) + creditedBonus, (stats?.wellRestedBonus ?? 0) + creditedBonus, (stats?.credited ?? 0) + credited].every(n => Number.isSafeInteger(n) && n >= 0);
   return { order, lines, gross, net, bonus, credited, creditedBonus, safe, penalty: Math.round(gross * c.values.customerTypes.shipper.missPenaltyRate),
     ready: lines.every(line => line.have >= line.quantity), remainingMs: Math.max(0, order.expiresAt - w.now) };

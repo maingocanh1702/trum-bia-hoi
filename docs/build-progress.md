@@ -1868,3 +1868,15 @@ remain ongoing. Do not rerun the closed lease review without new code or finding
 | Date | Change |
 |---|---|
 | 2026-09-09 | Closed lease correction verification throughce7564b; preserved advanced-band question and recorded actual first-day progression probe. |
+
+## Season accounting and real peak producer — 2026-09-09
+
+Rules23 adds ranking/contest epoch windows, post-cap source attribution, immutable
+participated outcomes, permanent earned peak and the own-progress VI/EN panel.
+Current period thresholds/source lists stay pinned across opening config changes.
+Old unwindowed revenue is archived explicitly; original replay events stay intact.
+Menus pause customer deadlines while seasons continue on the real calendar.
+
+The focused mobile tests pass at360/390px. Full verification and native review are
+in progress. No new economy values or reward quantities were invented. Community
+ranking/mailbox and actual long career remain unfinished. See F12 §10 for decisions.

@@ -47,7 +47,7 @@ test('an impossible or unbounded schedule refuses opening before any state or RN
     (c: Economy) => { c.rush.schedule.seed = 'invented'; },
   ]) {
     const g = create(patch), before = structuredClone(g.world);
-    assert.deepEqual(send(g, { type: 'startShift' }), { ok: false, reason: 'rushScheduleUnavailable' }); assert.deepEqual(g.world, before);
+    assert.deepEqual(send(g, { type: 'startShift' }), { ok: false, reason: 'rushScheduleUnavailable' }); assert.deepEqual(g.world, { ...before, seasons: g.world.seasons });
   }
   const noSlots = open(c => { c.rush.schedule.perShift = 0; }); noSlots.advance(noSlots.world.shift!.endsAt);
   assert.equal(noSlots.world.events.filter(e => e.type.startsWith('rush_')).length, 0);
@@ -61,7 +61,7 @@ test('genuine active v7 schedule and identifiers survive a same-time v8 command 
   for (const key of ['now', 'coins', 'reputation', 'rng', 'nextId'] as const) assert.equal(w[key], expected[key]);
   assert.deepEqual(w.shift!.rushes, expected.rushes); assert.deepEqual(w.shift!.stats, expected.stats); assert.deepEqual(w.events, JSON.parse(text).events);
   assert.deepEqual(g.log.at(-1)!.result, expected.result); send(g, { type: 'activity', active: true });
-  assert.equal(g.log.at(-1)!.rulesVersion, 22); assert.deepEqual(w.shift!.rushes, expected.rushes); assert.equal(w.shift!.rushScheduleSeed, undefined);
+  assert.equal(g.log.at(-1)!.rulesVersion, 23); assert.deepEqual(w.shift!.rushes, expected.rushes); assert.equal(w.shift!.rushScheduleSeed, undefined);
   assert.equal(w.events.filter(e => e.type === 'rush_scheduled').length, 0);
   send(g, { type: 'endShift' }); g.advance(w.shift!.rushes[0].end);
   const ended = w.events.find(e => e.type === 'rush_ended')!; assert.deepEqual(ended.data, { kind: expected.rushes[0].kind });
