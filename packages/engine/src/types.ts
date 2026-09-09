@@ -39,6 +39,7 @@ export interface Shift {
   id: string; startedAt: number; pausedMs: number; endsAt: number; closedAt: number | null; configVersion: string;
   weather: Weather; rush: Rush; rushes: { kind: Rush; start: number; end: number; warned?: boolean; eventStart?: number }[];
   rushScheduleSeed?: string;
+  menu?: { eventStart: number; serveStart: number; complete: boolean };
   flyersUsed?: number; flyer?: { start: number; end: number; eventStart: number };
   nextSpawnAt: number; firstGroup: boolean; onboarding: boolean; stats: Stats;
   wellRestedUntil: number | null; rushUntil?: number | null;
@@ -97,5 +98,5 @@ export type Command =
   | { type: 'emergencyPack' };
 export interface Envelope { idempotencyKey: string; at: number; command: Command }
 export interface Result { ok: boolean; reason?: string; outcome?: 'early' | 'late' | 'grace' | 'expired' | 'stale'; amount?: number }
-export type RulesVersion = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13; // config-exempt: persisted replay protocol revisions, not economy tuning
+export type RulesVersion = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14; // config-exempt: persisted replay protocol revisions, not economy tuning
 export interface LoggedCommand extends Envelope { result: Result; configVersion: string; rulesVersion: RulesVersion }

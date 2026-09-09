@@ -1,0 +1,906 @@
+{
+  "source": "af168338a9d85dfd276d34bb00ad9e288e281ce2",
+  "world": {
+    "now": 1788948033200,
+    "rng": 2271577934,
+    "nextId": 75,
+    "playerId": "guest",
+    "phase": "resting",
+    "coins": 2476998,
+    "reputation": 0,
+    "seasonEarned": 0,
+    "lifetimeEarned": 0,
+    "staminaMs": 701320,
+    "staminaAnchorMs": 701300,
+    "staminaAnchorAt": 1788948033150,
+    "completedShifts": 1,
+    "active": true,
+    "lastServedAt": null,
+    "dayEarned": {},
+    "dayShifts": {
+      "2026-09-09": 1
+    },
+    "restStartedAt": 1788948033150,
+    "wellRestedDays": {},
+    "inventory": {
+      "bia": 12,
+      "lac": 15,
+      "nem": 15,
+      "dau": 14,
+      "topmo": 14,
+      "long": 0
+    },
+    "equipment": {
+      "keg": 1,
+      "washer": 1,
+      "cooler": 1,
+      "stall": 1,
+      "kitchen": 1
+    },
+    "tables": [
+      {
+        "id": "table-1",
+        "level": 1,
+        "capacity": 2,
+        "state": "empty",
+        "group": null,
+        "order": null,
+        "until": null,
+        "roundsServed": 0
+      },
+      {
+        "id": "table-2",
+        "level": 1,
+        "capacity": 2,
+        "state": "cleaning",
+        "group": {
+          "id": "group-43",
+          "customers": [
+            {
+              "id": "customer-41",
+              "type": "thuong",
+              "patienceMs": 12000,
+              "enjoyMs": 6249
+            },
+            {
+              "id": "customer-42",
+              "type": "thuong",
+              "patienceMs": 12000,
+              "enjoyMs": 8729
+            }
+          ],
+          "rounds": 2,
+          "arrivedAt": 1788948017850
+        },
+        "order": {
+          "id": "order-50",
+          "placedAt": 1788948018650,
+          "patienceMs": 12000,
+          "items": [
+            {
+              "id": "item-46",
+              "customerId": "customer-41",
+              "dish": "bia",
+              "state": "wasted",
+              "readyAt": 1788948023600,
+              "glassId": null
+            },
+            {
+              "id": "item-47",
+              "customerId": "customer-41",
+              "dish": "topmo",
+              "state": "wasted",
+              "readyAt": 1788948035600,
+              "glassId": null
+            },
+            {
+              "id": "item-48",
+              "customerId": "customer-42",
+              "dish": "bia",
+              "state": "wasted",
+              "readyAt": 1788948026600,
+              "glassId": null
+            },
+            {
+              "id": "item-49",
+              "customerId": "customer-42",
+              "dish": "dau",
+              "state": "pending",
+              "readyAt": null,
+              "glassId": null
+            }
+          ],
+          "state": "expired",
+          "readyEmitted": false
+        },
+        "until": 1788948034150,
+        "roundsServed": 0
+      },
+      {
+        "id": "table-3",
+        "level": 1,
+        "capacity": 2,
+        "state": "empty",
+        "group": null,
+        "order": null,
+        "until": null,
+        "roundsServed": 0
+      }
+    ],
+    "glasses": [
+      {
+        "id": "glass-4",
+        "state": "washing",
+        "itemId": null,
+        "readyAt": 1788948039100,
+        "staleEmitted": true
+      },
+      {
+        "id": "glass-5",
+        "state": "dirty",
+        "itemId": null,
+        "readyAt": null,
+        "staleEmitted": true
+      },
+      {
+        "id": "glass-6",
+        "state": "dirty",
+        "itemId": null,
+        "readyAt": null,
+        "staleEmitted": false
+      },
+      {
+        "id": "glass-7",
+        "state": "clean",
+        "itemId": null,
+        "readyAt": null,
+        "staleEmitted": false
+      },
+      {
+        "id": "glass-8",
+        "state": "clean",
+        "itemId": null,
+        "readyAt": null,
+        "staleEmitted": false
+      },
+      {
+        "id": "glass-9",
+        "state": "clean",
+        "itemId": null,
+        "readyAt": null,
+        "staleEmitted": false
+      },
+      {
+        "id": "glass-10",
+        "state": "clean",
+        "itemId": null,
+        "readyAt": null,
+        "staleEmitted": false
+      },
+      {
+        "id": "glass-11",
+        "state": "clean",
+        "itemId": null,
+        "readyAt": null,
+        "staleEmitted": false
+      },
+      {
+        "id": "glass-12",
+        "state": "clean",
+        "itemId": null,
+        "readyAt": null,
+        "staleEmitted": false
+      },
+      {
+        "id": "glass-13",
+        "state": "clean",
+        "itemId": null,
+        "readyAt": null,
+        "staleEmitted": false
+      }
+    ],
+    "queue": [],
+    "shift": {
+      "id": "shift-20",
+      "startedAt": 1788948000000,
+      "pausedMs": 0,
+      "endsAt": 1788948720000,
+      "closedAt": 1788948033150,
+      "configVersion": "1.7.1",
+      "weather": "hot",
+      "rush": "none",
+      "rushes": [
+        {
+          "kind": "light",
+          "start": 1788948221972,
+          "end": 1788948311972
+        },
+        {
+          "kind": "heavy",
+          "start": 1788948555893,
+          "end": 1788948705893
+        }
+      ],
+      "nextSpawnAt": 1788948019950,
+      "firstGroup": false,
+      "onboarding": false,
+      "stats": {
+        "arrived": 3,
+        "served": 0,
+        "lost": 3,
+        "rejected": 0,
+        "orders": 2,
+        "payment": 0,
+        "tip": 0,
+        "credited": 0,
+        "penalty": 52,
+        "spent": 0,
+        "rep": 0,
+        "wellRestedBonus": 0
+      },
+      "wellRestedUntil": null,
+      "rushScheduleSeed": "[\"hem_nho\",\"shift-20\",\"2026-09-09\"]",
+      "rushUntil": null
+    },
+    "serves": [],
+    "events": [
+      {
+        "id": "event-14",
+        "type": "upgrade_bought",
+        "at": 1788948000000,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "kitchen-0",
+        "data": {
+          "kind": "kitchen",
+          "level": 1,
+          "cost": 20000
+        }
+      },
+      {
+        "id": "event-15",
+        "type": "restocked",
+        "at": 1788948000000,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "kitchen-1",
+        "data": {
+          "dish": "bia",
+          "quantity": 5,
+          "cost": 60
+        }
+      },
+      {
+        "id": "event-16",
+        "type": "restocked",
+        "at": 1788948000000,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "kitchen-2",
+        "data": {
+          "dish": "lac",
+          "quantity": 10,
+          "cost": 260
+        }
+      },
+      {
+        "id": "event-17",
+        "type": "restocked",
+        "at": 1788948000000,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "kitchen-3",
+        "data": {
+          "dish": "nem",
+          "quantity": 10,
+          "cost": 600
+        }
+      },
+      {
+        "id": "event-18",
+        "type": "restocked",
+        "at": 1788948000000,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "kitchen-4",
+        "data": {
+          "dish": "dau",
+          "quantity": 15,
+          "cost": 720
+        }
+      },
+      {
+        "id": "event-19",
+        "type": "restocked",
+        "at": 1788948000000,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "kitchen-5",
+        "data": {
+          "dish": "topmo",
+          "quantity": 15,
+          "cost": 1310
+        }
+      },
+      {
+        "id": "event-21",
+        "type": "quest_generated",
+        "at": 1788948000000,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "kitchen-6",
+        "data": {
+          "questId": "2026-09-09:service:serve_customers",
+          "kind": "serve_customers",
+          "target": 21,
+          "day": "2026-09-09",
+          "tier": 1,
+          "seed": "[\"2026-09-09\",1]"
+        }
+      },
+      {
+        "id": "event-22",
+        "type": "quest_generated",
+        "at": 1788948000000,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "kitchen-6",
+        "data": {
+          "questId": "2026-09-09:quality:perfect_tip",
+          "kind": "perfect_tip",
+          "target": 9,
+          "day": "2026-09-09",
+          "tier": 1,
+          "seed": "[\"2026-09-09\",1]"
+        }
+      },
+      {
+        "id": "event-23",
+        "type": "quest_generated",
+        "at": 1788948000000,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "kitchen-6",
+        "data": {
+          "questId": "2026-09-09:risk:survive_rush",
+          "kind": "survive_rush",
+          "target": 1,
+          "day": "2026-09-09",
+          "tier": 1,
+          "seed": "[\"2026-09-09\",1]"
+        }
+      },
+      {
+        "id": "event-24",
+        "type": "quest_generated",
+        "at": 1788948000000,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "kitchen-6",
+        "data": {
+          "questId": "2026-09-09:shift_3",
+          "kind": "shift_3",
+          "target": 3,
+          "day": "2026-09-09",
+          "tier": 1,
+          "seed": "[\"2026-09-09\",1]"
+        }
+      },
+      {
+        "id": "event-25",
+        "type": "quest_generated",
+        "at": 1788948000000,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "kitchen-6",
+        "data": {
+          "questId": "2026-09-09:gift_3",
+          "kind": "gift_3",
+          "target": 3,
+          "day": "2026-09-09",
+          "tier": 1,
+          "seed": "[\"2026-09-09\",1]"
+        }
+      },
+      {
+        "id": "event-26",
+        "type": "attendance_day_opened",
+        "at": 1788948000000,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "kitchen-6",
+        "data": {
+          "day": "2026-09-09",
+          "cycleDay": 1,
+          "expiresAt": 1788973200000,
+          "transition": "first"
+        }
+      },
+      {
+        "id": "event-27",
+        "type": "shift_opened",
+        "at": 1788948000000,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "kitchen-6",
+        "data": {
+          "shiftId": "shift-20"
+        }
+      },
+      {
+        "id": "event-28",
+        "type": "weather_rolled",
+        "at": 1788948000000,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "kitchen-6",
+        "data": {
+          "weather": "hot"
+        }
+      },
+      {
+        "id": "event-29",
+        "type": "rush_scheduled",
+        "at": 1788948000000,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "kitchen-6",
+        "data": {
+          "shiftId": "shift-20",
+          "slot": 0,
+          "seed": "[\"hem_nho\",\"shift-20\",\"2026-09-09\"]",
+          "kind": "light",
+          "startsAt": 1788948221972,
+          "duration": 90000
+        }
+      },
+      {
+        "id": "event-30",
+        "type": "rush_scheduled",
+        "at": 1788948000000,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "kitchen-6",
+        "data": {
+          "shiftId": "shift-20",
+          "slot": 1,
+          "seed": "[\"hem_nho\",\"shift-20\",\"2026-09-09\"]",
+          "kind": "heavy",
+          "startsAt": 1788948555893,
+          "duration": 150000
+        }
+      },
+      {
+        "id": "event-33",
+        "type": "customer_spawned",
+        "at": 1788948016800,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-33",
+        "data": {
+          "groupId": "group-32",
+          "size": 1,
+          "weather": "hot",
+          "rush": "none"
+        }
+      },
+      {
+        "id": "event-34",
+        "type": "group_seated",
+        "at": 1788948016800,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-34",
+        "data": {
+          "tableId": "table-1",
+          "groupId": "group-32",
+          "size": 1
+        }
+      },
+      {
+        "id": "event-38",
+        "type": "order_placed",
+        "at": 1788948017600,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-38",
+        "data": {
+          "tableId": "table-1",
+          "orderId": "order-37",
+          "items": 2
+        }
+      },
+      {
+        "id": "event-39",
+        "type": "beer_pouring",
+        "at": 1788948017600,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-39",
+        "data": {
+          "itemId": "item-35",
+          "dish": "bia"
+        }
+      },
+      {
+        "id": "event-40",
+        "type": "dish_preparing",
+        "at": 1788948017600,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-40",
+        "data": {
+          "itemId": "item-36",
+          "dish": "dau"
+        }
+      },
+      {
+        "id": "event-44",
+        "type": "customer_spawned",
+        "at": 1788948017850,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-44",
+        "data": {
+          "groupId": "group-43",
+          "size": 2,
+          "weather": "hot",
+          "rush": "none"
+        }
+      },
+      {
+        "id": "event-45",
+        "type": "group_seated",
+        "at": 1788948017850,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-45",
+        "data": {
+          "tableId": "table-2",
+          "groupId": "group-43",
+          "size": 2
+        }
+      },
+      {
+        "id": "event-51",
+        "type": "order_placed",
+        "at": 1788948018650,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-51",
+        "data": {
+          "tableId": "table-2",
+          "orderId": "order-50",
+          "items": 4
+        }
+      },
+      {
+        "id": "event-52",
+        "type": "shift_closing",
+        "at": 1788948018700,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "kitchen-7",
+        "data": {}
+      },
+      {
+        "id": "event-53",
+        "type": "beer_poured",
+        "at": 1788948020600,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-53",
+        "data": {
+          "itemId": "item-35"
+        }
+      },
+      {
+        "id": "event-54",
+        "type": "beer_pouring",
+        "at": 1788948020600,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-54",
+        "data": {
+          "itemId": "item-46",
+          "dish": "bia"
+        }
+      },
+      {
+        "id": "event-55",
+        "type": "beer_poured",
+        "at": 1788948023600,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-55",
+        "data": {
+          "itemId": "item-46"
+        }
+      },
+      {
+        "id": "event-56",
+        "type": "beer_pouring",
+        "at": 1788948023600,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-56",
+        "data": {
+          "itemId": "item-48",
+          "dish": "bia"
+        }
+      },
+      {
+        "id": "event-57",
+        "type": "dish_ready",
+        "at": 1788948025600,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-57",
+        "data": {
+          "itemId": "item-36"
+        }
+      },
+      {
+        "id": "event-58",
+        "type": "dish_preparing",
+        "at": 1788948025600,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-58",
+        "data": {
+          "itemId": "item-47",
+          "dish": "topmo"
+        }
+      },
+      {
+        "id": "event-59",
+        "type": "order_ready",
+        "at": 1788948025600,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-59",
+        "data": {
+          "tableId": "table-1",
+          "orderId": "order-37"
+        }
+      },
+      {
+        "id": "event-60",
+        "type": "beer_poured",
+        "at": 1788948026600,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-60",
+        "data": {
+          "itemId": "item-48"
+        }
+      },
+      {
+        "id": "event-61",
+        "type": "glass_stale",
+        "at": 1788948028640,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-61",
+        "data": {
+          "glassId": "glass-4"
+        }
+      },
+      {
+        "id": "event-62",
+        "type": "order_grace",
+        "at": 1788948029600,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-62",
+        "data": {
+          "tableId": "table-1",
+          "orderId": "order-37"
+        }
+      },
+      {
+        "id": "event-63",
+        "type": "order_grace",
+        "at": 1788948030650,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-63",
+        "data": {
+          "tableId": "table-2",
+          "orderId": "order-50"
+        }
+      },
+      {
+        "id": "event-64",
+        "type": "glass_stale",
+        "at": 1788948031640,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-64",
+        "data": {
+          "glassId": "glass-5"
+        }
+      },
+      {
+        "id": "event-65",
+        "type": "customer_left",
+        "at": 1788948032100,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-65",
+        "data": {
+          "customerId": "customer-31",
+          "tableId": "table-1",
+          "reason": "expired",
+          "penalty": 15
+        }
+      },
+      {
+        "id": "event-66",
+        "type": "order_expired",
+        "at": 1788948032100,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-66",
+        "data": {
+          "tableId": "table-1",
+          "orderId": "order-37",
+          "penalty": 15,
+          "reputation": 0,
+          "count": 1
+        }
+      },
+      {
+        "id": "event-67",
+        "type": "table_cleaning",
+        "at": 1788948032100,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-67",
+        "data": {
+          "tableId": "table-1"
+        }
+      },
+      {
+        "id": "event-68",
+        "type": "glass_washing",
+        "at": 1788948032100,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-68",
+        "data": {
+          "glassId": "glass-4"
+        }
+      },
+      {
+        "id": "event-69",
+        "type": "table_cleaned",
+        "at": 1788948033100,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-69",
+        "data": {
+          "tableId": "table-1"
+        }
+      },
+      {
+        "id": "event-70",
+        "type": "customer_left",
+        "at": 1788948033150,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-70",
+        "data": {
+          "customerId": "customer-41",
+          "tableId": "table-2",
+          "reason": "expired",
+          "penalty": 22
+        }
+      },
+      {
+        "id": "event-71",
+        "type": "customer_left",
+        "at": 1788948033150,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-71",
+        "data": {
+          "customerId": "customer-42",
+          "tableId": "table-2",
+          "reason": "expired",
+          "penalty": 15
+        }
+      },
+      {
+        "id": "event-72",
+        "type": "order_expired",
+        "at": 1788948033150,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-72",
+        "data": {
+          "tableId": "table-2",
+          "orderId": "order-50",
+          "penalty": 37,
+          "reputation": 0,
+          "count": 2
+        }
+      },
+      {
+        "id": "event-73",
+        "type": "table_cleaning",
+        "at": 1788948033150,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-73",
+        "data": {
+          "tableId": "table-2"
+        }
+      },
+      {
+        "id": "event-74",
+        "type": "shift_closed",
+        "at": 1788948033150,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-74",
+        "data": {
+          "shiftId": "shift-20",
+          "credited": 0
+        }
+      },
+      {
+        "id": "event-75",
+        "type": "quest_progressed",
+        "at": 1788948033150,
+        "configVersion": "1.7.1",
+        "idempotencyKey": "tick:event-75",
+        "data": {
+          "questId": "2026-09-09:shift_3",
+          "progress": 1,
+          "target": 3
+        }
+      }
+    ],
+    "lostStreak": 2,
+    "delivery": null,
+    "nextDeliveryAt": null,
+    "dogLevel": 0,
+    "claimedLifePaths": [],
+    "badgeShards": 0,
+    "cosmeticTokens": 0,
+    "peakLeague": null,
+    "location": "hem_nho",
+    "lifePath": 0,
+    "unlocks": [],
+    "badges": [],
+    "daily": {
+      "day": "2026-09-09",
+      "tier": 1,
+      "seed": "[\"2026-09-09\",1]",
+      "expiresAt": 1788973200000,
+      "rows": [
+        {
+          "id": "2026-09-09:service:serve_customers",
+          "kind": "serve_customers",
+          "bucket": "service",
+          "target": 21,
+          "progress": 0,
+          "coin": 300,
+          "reputation": 13,
+          "claimed": false
+        },
+        {
+          "id": "2026-09-09:quality:perfect_tip",
+          "kind": "perfect_tip",
+          "bucket": "quality",
+          "target": 9,
+          "progress": 0,
+          "coin": 550,
+          "reputation": 13,
+          "claimed": false
+        },
+        {
+          "id": "2026-09-09:risk:survive_rush",
+          "kind": "survive_rush",
+          "bucket": "risk",
+          "target": 1,
+          "progress": 0,
+          "coin": 800,
+          "reputation": 13,
+          "claimed": false
+        },
+        {
+          "id": "2026-09-09:shift_3",
+          "kind": "shift_3",
+          "bucket": "shift_3",
+          "target": 3,
+          "progress": 1,
+          "coin": 2500,
+          "reputation": 250,
+          "claimed": false
+        },
+        {
+          "id": "2026-09-09:gift_3",
+          "kind": "gift_3",
+          "bucket": "gift_3",
+          "target": 3,
+          "progress": 0,
+          "coin": 750,
+          "reputation": 38,
+          "claimed": false
+        }
+      ],
+      "bonusClaimed": false,
+      "recipients": [],
+      "lossFreeSince": null,
+      "lossFreeServed": false,
+      "vipShift": null,
+      "vipServed": false,
+      "vipLost": false,
+      "rushSlot": null,
+      "rushShift": null,
+      "rushServed": false
+    },
+    "attendance": {
+      "cycleDay": 1,
+      "lastActiveDateKey": "2026-09-09",
+      "lastClaimDateKey": null,
+      "expiresAt": 1788973200000,
+      "claimedDays": []
+    }
+  }
+}

@@ -86,7 +86,7 @@ type KitchenJob = {
 - Expired order wastes prepared food exactly once.
 - Adding 6 món triggers a balance report with `kValue`.
 
-## 10. Local implementation — 2026-09-09
+## 10. Local kitchen presentation — rules13 baseline, 2026-09-09
 
 `packages/engine/src/kitchen.ts` projects the existing pipeline without changing
 commands, RNG, save format or rules13 replay. Burner counts and preparation
@@ -103,13 +103,11 @@ Hidden local time follows the existing pause rule; opening a sheet does not paus
 Ready/preparing food on expiry becomes wasted once, without inventory refunds;
 untouched pending food never consumes stock.
 
-Current event mapping: `dish_preparing {itemId,dish}` at the actual start and
-`dish_ready {itemId}` at the actual completion represent the two kitchen job
-events above. `order_placed`/`order_expired` are table events, not the proposed
-per-dish ordered/wasted telemetry. Per-dish waste/menu-mix analytics and future
-customer-specific hot-dish demand remain in full F11 scope. Do not claim those
-are shipped merely because prep and UI work. Current k sim covers both cold and
-six-dish menus; its report is value per served customer, never throughput.
+The original rules13 presentation used `dish_preparing`/`dish_ready` aliases.
+Rules14 below adds the dedicated per-dish provenance and report. Future
+customer-specific hot-dish demand remains in full F11 scope; canonical config
+currently has no dedicated coefficients for those preferences. No coefficients
+were invented to close the feature prematurely.
 
 Focused checks live in `packages/engine/test/kitchen.test.ts` and
 `apps/web/test/kitchen.spec.ts`, using real command-created saves. They cover all
@@ -118,8 +116,36 @@ partial-mâm refusal, stale-mâm service and mobile/short-landscape navigation.
 The seven kitchen/hot-dish images have native-alpha provenance in
 `docs/reference/assets-owner-2026-09-08/kitchen-art.json`; they remain art drafts.
 
+## 11. Local menu analytics and shift book — rules14, 2026-09-09
+
+The five event names in §8 now exist, with identities, timestamps and coverage
+specified in `../analytics-events.md`. One shared discard handler emits waste
+for preparing/ready food on expiry or confirmed dismissal; pending items consume
+nothing and served rounds never become waste. Instant configured kitchen jobs
+emit start and ready at the same timestamp. The Item pipeline remains canonical.
+
+`menuReport` reads current-shift event/serve cursors. `serveValueStats`, also used
+by the headless sim, computes nominal payment+tip per served customer for k, and
+separately per distinct served mâm for avgTicket. Caps, Tỉnh Táo bonus, delivery
+and throughput are excluded. No serves or unsafe value produces an unavailable
+average, not a fabricated zero. New shifts have full coverage; legacy adoption
+is explicitly partial, and already-closed legacy shifts stay unavailable.
+
+The VI/EN Sổ ca displays six dish rows (ordered/sold/discarded), mâm count and
+average, updating without pausing play. Its rest-screen button reopens the last
+shift after reload. Chunky raised metric surfaces follow the latest F24 owner
+brief. No prices, demand weights or config values changed. Art remains draft;
+server analytics, customer-specific demand and full F11 acceptance remain open.
+
+Focused engine/browser checks are `menu.test.ts` and `menu.spec.ts`. They use
+actual commands and genuine captured v13 saves from product af16833, covering
+all six dishes, repeated rounds, cap/bonus/delivery exclusions, zero-duration
+cooking, disposal/retry/refusal, frame drops, hidden time, replay and mobile UI.
+See `../build-progress.md` for final verification and independent review status.
+
 ## Changelog (append-only)
 
 | Date | Change |
 |---|---|
 | 2026-09-09 | Added live kitchen projection/UI and focused actual pipeline checks. Documented reuse of Item timestamps, automatic prep and GDD/03 stale soft service instead of a duplicate queue or freshness rejection; mapped current events and retained missing analytics/demand work. |
+| 2026-09-09 | Implemented rules14 per-dish analytics, shared nominal value helper and localized Sổ ca report; documented partial legacy data, zero-duration jobs and last-shift access. Customer-specific demand/server/art remain open. |

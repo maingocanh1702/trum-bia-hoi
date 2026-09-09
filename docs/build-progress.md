@@ -1163,3 +1163,53 @@ ordered/wasted dish provenance and expose a shared menu summary in Sổ ca.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Recorded independent kitchen review without actionable findings,133 unit/59 E2E/10 k rows and true v13 prep/expiry/service captures; full-game goal remains active. |
+
+
+## 2026-09-09 — Rules14 menu provenance and Sổ ca (review intake)
+
+Immutable base80ee489475443af7be0cfd617b42d6ebec650720. One writer remains in
+codex/game-build-isolated; no root edit, merge, push or hosted release. This is
+progress toward the complete M0–M9 goal, not completion of the game or full F11.
+
+The pure engine records each actual ordered dish, hot-job start/completion and
+prepared-food disposal. Expiry and confirmed dismissal share the same discard
+handler; never-started items and served rounds are excluded. Instant configured
+hot jobs have an immediate completion event. The shared menu/value helper reads
+shift cursors and ServeRecords; average per mâm is distinct from per-customer k.
+Cap, rested bonus, delivery and throughput do not alter nominal service value.
+Empty or unrepresentable values remain unavailable, including non-finite k.
+
+Current shifts have complete coverage. Active legacy shifts start partial
+coverage at current adoption; closed legacy shifts remain unavailable. Genuine
+v13 queued/expired/served fixtures came from af16833, with exact captured worlds.
+Existing v1–12 replay tests retain historical assertions and explicitly expect
+current v14 adoption events. The v12→v13 attendance-specific test stays pinned
+at v13; menu adoption has its own current-version coverage. Protocol event IDs
+advance normally; no promise is made about unchanged future shift-ID schedules.
+
+The VI/EN Sổ ca reports six rows, served mâm count and nominal average. Browser
+QA found the prior last-shift book became unreachable after reload while resting;
+a compact button now reuses the existing book handler beside rest status. Live
+expiry updates, reload, empty/partial/unavailable coverage, focus return, loaded
+sprites and 360/390 portrait plus1280×400 landscape checks pass. Screenshots:
+.qa/menu-live-{360,390,1280}.png and menu-en-{360,390,1280}.png.
+
+Owner designer direction is recorded verbatim in F24 and aligned in design tokens
+and the reference archive: portrait casual-management, edge-anchored HUD, rounded
+skeuomorphic panels, chunky pill controls, bold rounded sans-serif, soft shadows,
+compact contextual actions and Vietnamese street-game visual language. New metric
+surfaces and rest-book control follow it; this is not a claim of finished art.
+Whole-table service and numeric/icon-only departure feedback remain intact.
+
+Author config/build/typecheck and143 engine tests pass; full63 browser tests pass.
+Asset check remains128 entries/32paired SFX,23 placeholders/97draft files. Earlier
+20 normal/combined500+-serve k rows passed2.3125–2.7562 and15 rush rows passed;
+final rerun after the zero-duration/non-finite edge checks is in progress.
+Logs: .qa/menu-config-final.txt, menu-build-final.txt, menu-units-complete.txt,
+menu-e2e-final.txt, menu-assets.txt, menu-sim*-final.txt, menu-rush-final.txt.
+Independent full-base review pending. Tracker v0.19.0/dashboard retain17 features
+in progress; customer-specific demand, server/meta/risk/events/art/release remain.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Added rules14 local menu provenance/value report, legacy adoption coverage and persistent access to the last shift;143 unit/63 E2E/config/build pass. Updated owner designer brief; final balance rerun and independent review pending. |

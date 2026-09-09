@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-09 09:56 · **Branch hiện tại:** `codex/game-build-isolated`
+> **Cập nhật:** 2026-09-09 10:26 · **Branch hiện tại:** `codex/game-build-isolated`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -155,7 +155,7 @@
 - **Wave:** 🎨 Design
 - **Gates:** 🔒S
 - **Phase:** Phase 1
-- **Notes:** Sân xanh/cảnh phố, HUD gọn, quầy trên, kho dọc, thẻ mâm khi chạm bàn. 12 E2E pass; review CLEAN tại `2d80437`. Bếp/mồi nóng thêm7 sprite native RGBA; manifest hiện23 sprite placeholders và97 draft files gồm audio. Chưa đủ art/release.
+- **Notes:** Sân xanh/cảnh phố, HUD gọn, quầy trên, kho dọc, thẻ mâm khi chạm bàn. 12 E2E pass; review CLEAN tại `2d80437`. Bếp/mồi nóng thêm7 sprite native RGBA; manifest hiện23 sprite placeholders và97 draft files gồm audio. Đã cập nhật brief owner: portrait casual-management, HUD bám mép, panel skeuomorphic bo tròn, pill dày, chữ tròn đậm, bóng mềm và game vỉa hè Việt Nam. Chưa đủ art/release.
 
 ### F07 — Các Kiểu Khách — 3 loại P1 (thường/vội/VIP)
 
@@ -209,7 +209,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S 🔒B
 - **Phase:** Phase 2
-- **Notes:** Live bếp VI/EN đọc Item timestamps, slots0–4, hàng chờ/stock/ready và link phục vụ cả mâm;7 focused unit/7 browser, full133 unit/59 E2E/config/build và10 k rows2.2564–2.65 xanh.7 sprite bếp/mồi nóng mới giữ draft; full-base reviewf9fa82f..af16833 không phát hiện lỗi cần sửa, reviewer tự chạy133 unit/typecheck/assets. Per-dish waste/menu-mix analytics và demand/acceptance đầy đủ còn tiếp tục.
+- **Notes:** Live bếp và7 sprite đã qua reviewaf16833. Rules14 thêm dish/job/waste events, cursor ca/legacy partial, shared nominal-value helper và Sổ ca VI/EN gọi/bán/bỏ/TB mỗi mâm;143 unit/63 E2E/config/build xanh. Independent review menu đang chờ; demand theo loại khách, art/server và acceptance đầy đủ tiếp tục.
 
 ### F17 — Nhiệm Vụ Quán Nhậu — 7 nhánh (ngày/ca/gift/điểm danh/referral/ĐLT)
 

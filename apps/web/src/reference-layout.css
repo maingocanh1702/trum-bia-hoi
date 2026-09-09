@@ -302,3 +302,21 @@
 }
 /* A short landscape viewport scrolls the navigation with the yard instead of covering equipment. */
 @media (max-height: 500px) { .bottom-nav { position: static; } }
+
+.menu-report { margin: 24px 0; padding: 16px 0; border-block: 1px solid var(--panelBorder); }
+.menu-report h3 { margin: 0 0 12px; font-size: 18px; font-weight: 800; }
+.menu-report p { font-size: 12px; color: var(--creamMuted); line-height: 1.6; }
+.menu-report .menu-partial { color: #ffe19a; }
+.menu-report table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+.menu-report thead th { color: var(--creamMuted); font-weight: 700; padding: 8px 4px; }
+.menu-report th:first-child { text-align: left; }
+.menu-report tbody th { display: flex; align-items: center; gap: 6px; font-weight: 700; min-height: 44px; }
+.menu-report .sprite { width: 30px; height: 30px; flex-shrink: 0; }
+.menu-report td { text-align: center; padding: 8px 4px; border-top: 1px solid var(--panelBorder); }
+.menu-report dl { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; margin-top: 16px; }
+.menu-report dl > div { flex: 1; padding: 12px; border-radius: 20px; background: linear-gradient(#456760, #31534b); box-shadow: inset 0 1px #a7b9a84d, 0 3px 6px #06170f40; }
+.menu-report dt { color: var(--creamMuted); font-weight: 700; }.menu-report dd { margin: 6px 0; font-size: 20px; font-weight: 800; color: var(--coinGold); }
+
+.rest-summary { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.rest-summary button { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px 14px; border-radius: 24px; background: var(--panelRaised); color: var(--cream); box-shadow: inset 0 1px #a7b9a84d, 0 2px 5px #06170f30; font-weight: 700; }
+.rest-summary svg { width: 18px; height: 18px; }

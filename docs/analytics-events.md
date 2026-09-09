@@ -30,7 +30,7 @@ guide. Onboarding state is currently local; its remote analytics funnel is pendi
 ## Remaining feature catalog
 
 Canonical payloads remain in each feature's Analytics section until implemented:
-F07 chairman and remaining customer behaviors; F08 lunch/football/event arbitration; F10 business unlocks; F11 kitchen details;
+F07 chairman and remaining customer behaviors; F08 lunch/football/event arbitration; F10 remaining business unlocks; F11 customer-specific hot-dish demand;
 F12 season/rank; F13 life path; F14 leases; F15 risks; F16 referral; F17 quests;
 F18 dog; F19 football; F20 donation; F21 lottery (legal hold); F22 assistant;
 F23 reconnect/security; F25 identity; F27 onboarding funnel; F28 leaderboard/shrine.
@@ -79,3 +79,54 @@ remote collection is added.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Added actual local business-sign purchase/equip payloads; prices and gate use the canonical snapshot. |
+
+## Local menu provenance — rules v14
+
+The engine keeps local deterministic events; no network collector is introduced.
+Common envelope fields include `id`, `at`, `type`, `configVersion` and
+`idempotencyKey`. IDs below are generated game identities, not personal data.
+
+| Event | Payload |
+|---|---|
+| `menu_tracking_started` | shiftId, complete |
+| `dish_ordered` | shiftId, tableId, orderId, itemId, dish, customerId, customerType, tableSize |
+| `kitchen_job_started` | shiftId, itemId, dish, prepMs, readyAt |
+| `kitchen_job_ready` | shiftId, itemId, dish |
+| `dish_wasted` | shiftId, tableId, orderId, itemId, dish, reason (`expired` or `cancelled`), previousState (`preparing` or `ready`) |
+| `menu_mix_summary` | shiftId, complete, served, orders, totalValue, mean, avgTicket, kValue; ordered_*, sold_* and wasted_* for each of the six dish IDs |
+
+`dish_ordered` records each actual item at order placement. Hot-job events follow
+Item transitions and the configured duration, including a duration rounded to
+zero: start and ready share that timestamp. Existing preparation aliases remain
+for UI/audio consumers. Waiting for stock or a burner does not start a job.
+`dish_wasted` is emitted once when prepared food is discarded by expiry or a
+confirmed paid dismissal. Never-started items and already-served rounds are not
+waste. Neither cleanup, retries nor hidden time duplicate waste or refund stock.
+
+`Shift.menu` holds event/serve cursors, not duplicated counters. A new v14 shift
+has complete coverage. An active legacy shift begins partial coverage at its
+first current command, without backfilling unrecorded orders or waste; an already
+closed legacy shift has no report. The UI labels partial/unavailable data. Sold
+counts can exceed observed orders in a partial window when an older order is
+served after adoption. New shifts reset both cursors. Closure emits one summary.
+
+`menuReport` derives counts from that window and the canonical `ServeRecord`s.
+`serveValueStats` is shared with the headless balance simulation:
+
+- totalValue = seated service payment + tip before credited caps/bonuses.
+- mean = totalValue / served-customer records (repeat rounds remain service records).
+- kValue = mean / configured `k.anchorValuePerServe`.
+- orders = distinct served order IDs; avgTicket = totalValue / orders, per mâm/round.
+- Delivery, throughput, rest bonuses and credit caps never enter these values.
+- Without serves, mean/avgTicket/kValue are null. An unsafe nominal sum makes all
+  value fields null. The UI uses a dash for an unavailable average.
+
+Sổ ca displays six dish rows and the per-mâm average, with explicit units/value
+basis. It remains accessible while resting after reload. It does not expose k
+as a player score. Protocol v1–13 histories replay unchanged; v14 consumes the
+existing event-ID sequence, so future shift IDs/schedules are not claimed to
+match earlier protocol runs. The autonomous adoption frontier remains rules10.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Added rules14 local dish/job/waste provenance, cursor coverage, shared nominal service-value definition and Sổ ca report. Recorded partial legacy semantics, zero-duration completion, exactly-once disposal and absence of remote collection. |

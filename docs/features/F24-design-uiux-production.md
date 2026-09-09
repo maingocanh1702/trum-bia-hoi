@@ -2,6 +2,32 @@
 
 > Production supplement for `../../05-SPEC-design-uiux.md`. This file fills the pieces marked `TUNE`/wireframe/asset convention enough for implementation to start.
 
+## Owner direction — 2026-09-09 (current designer brief)
+
+> Portrait casual-management game UI with edge-anchored HUD, rounded skeuomorphic panels, chunky pill controls, bold rounded sans-serif typography, soft shadows, compact contextual actions, and Vietnamese street-game visual language.
+
+This supersedes the earlier same-day wording "Portrait mobile casual-game HUD
+with edge-anchored resource bars, contextual pop-up panels, chunky rounded buttons,
+and bold rounded sans-serif typography." Treat the owner's supplied service
+screenshots in `../reference/assets-owner-2026-09-08/` as visual references.
+
+- Compose for portrait mobile: resource pills at the top, stock/status rail at the
+  side and primary actions at the bottom; keep the center free for tables/guests.
+- Rounded panels suggest painted metal/wood and raised controls through borders,
+  soft shadows and a visible pressed state. Use chunky pill-shaped controls and
+  compact contextual actions close to the selected table or equipment.
+- Use a bold rounded sans-serif for HUD, values and actions, with clear Vietnamese
+  diacritics and stable-width digits. Keep supporting text readable at mobile size.
+- Preserve Hanoi sidewalk cues: blue/red plastic furniture, recycled green glass,
+  inox equipment, warm food and illustrated street context. Keep labels/counters
+  live in code; art must not bake game values or foreign branding into the UI.
+- Serving stays one tap for the entire table. Departure feedback is only the
+  actual numeric/icon coin and reputation loss. Motion respects reduced-motion;
+  contextual surfaces and shadows must not obscure actionable objects.
+
+Older typography/shape suggestions below are historical baselines where they
+conflict with this brief; gameplay rules, config and 44px minimum targets remain.
+
 ## 1. Token baseline
 
 > ⚠️ **NGUỒN SỰ THẬT = `../design-tokens.md` v1.0.** Không định nghĩa hex riêng ở đây. `colors`/`weatherTint`/`type`/`space` lấy nguyên từ `tokens.ts` trong file đó. Vibe chốt: nền nắng gắt + panel **nâu ấm** (đổi từ navy cũ) + overlay thời tiết/tan tầm.
@@ -104,3 +130,9 @@ All gameplay icons must pass legibility at 24px, 40px, and 72px.
 - No UI card nested inside another card for main surfaces.
 - All core actions reachable in one thumb zone on mobile.
 - Gameplay warnings beat decorative colors in visual priority.
+
+## Changelog (append-only)
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Recorded the owner's two successive HUD descriptions; latest portrait casual-management/rounded skeuomorphic/pill-control direction is the current designer brief. |

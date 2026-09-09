@@ -93,6 +93,12 @@ Nền sân **KHÔNG vẽ nhiều bản** — dùng **1 nền `streetBg` + 1 lớ
 ---
 
 ## 5. Typography
+> **Owner update 2026-09-09:** HUD, values and controls use bold rounded sans-serif
+> typography with Vietnamese glyph support. The older named-font suggestions below
+> are fallback history, not a requirement to retain angular numerals. Panel/control
+> shape follows the current designer brief in `features/F24-design-uiux-production.md`:
+> rounded skeuomorphic panels, chunky pills, soft shadows and compact actions.
+
 - **Body:** Be Vietnam Pro — 14/20 mặc định.
 - **Số / HUD:** Chakra Petch — 14/18 mặc định.
 - **Nút (button):** Chakra Petch 15/18, **min-height 52px**.
@@ -186,3 +192,4 @@ Khi gen asset bằng AI, dùng **đúng hex §2** trong prompt. Ngoài ra:
 *Nguồn: GDD v1.5 §17; reconcile từ `05-SPEC-design-uiux.md`, `docs/asset-list-designer.md`, `docs/features/F24-design-uiux-production.md`.*
 
 | 2026-09-09 owner layout | Áp dụng ảnh tham khảo mới `docs/reference/assets-owner-2026-09-08/layout-owner.png`: sân `#aed0d8`, bóng sân `#90b6c2`, panel `#173c30`, panel sâu `#10291f`, nút `#456760`, viền `#748273`. Override tại `apps/web/src/reference-layout.css`; màu cốc/bia, semantic feedback và luật chơi giữ nguyên. |
+| 2026-09-09 owner HUD refinement | Portrait casual-management UI: HUD bám mép, panel skeuomorphic bo tròn, nút pill dày, sans-serif tròn đậm, bóng mềm, thao tác ngữ cảnh gọn và hình ảnh game vỉa hè Việt Nam. Brief hiện hành tại F24; không thay đổi kinh tế hoặc luật phục vụ cả mâm. |

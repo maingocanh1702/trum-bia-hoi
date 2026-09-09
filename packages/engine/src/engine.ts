@@ -6,6 +6,7 @@ import { signboardQuote, signboardStyle } from './signboard';
 import { attendanceDay, attendanceRewardQuote, applyQuestEvent, planDailyQuests, questRewardQuote, zeroLossWindow } from './quests';
 import { flyerQuote } from './flyer';
 import { planRushes, summarizeRush } from './rush';
+import { menuReport } from './menu';
 import type { Command, Customer, Envelope, Group, Item, LoggedCommand, Order, Result, RulesVersion, Stats, Table, World } from './types';
 
 const RUSH_CLOCK_RULES: RulesVersion = 5; // config-exempt: fixed replay protocol revision
@@ -17,6 +18,7 @@ const ARRIVAL_INTERVAL_RULES: RulesVersion = 10; // config-exempt: fixed replay 
 const FLYER_RULES: RulesVersion = 11; // config-exempt: fixed replay protocol revision
 const QUEST_RULES: RulesVersion = 12; // config-exempt: fixed replay protocol revision
 const ATTENDANCE_RULES: RulesVersion = 13; // config-exempt: fixed replay protocol revision
+const MENU_RULES: RulesVersion = 14; // config-exempt: fixed replay protocol revision
 const emptyStats = (): Stats => ({ arrived: 0, served: 0, lost: 0, rejected: 0, orders: 0, payment: 0, tip: 0, credited: 0, penalty: 0, spent: 0, rep: 0, wellRestedBonus: 0 });
 
 /** No wall clock, IO or renderer: only config, seed, explicit time and commands. */
@@ -26,7 +28,7 @@ export class Game {
   private readonly results = new Map<string, LoggedCommand>();
   private commandKey: string | null = null;
   private activeRushIndex: number | null = null;
-  private rulesVersion: RulesVersion = ATTENDANCE_RULES;
+  private rulesVersion: RulesVersion = MENU_RULES;
   constructor(readonly config: Config = defaultConfig, readonly seed = 1, readonly createdAt = 0, readonly playerId = 'guest') {
     if (!Number.isSafeInteger(seed) || !Number.isSafeInteger(createdAt) || createdAt < 0) throw Error('game:invalid-origin');
     const c = config.values;
@@ -223,6 +225,7 @@ export class Game {
     for (const item of this.items()) {
       if (item.state === 'preparing' && item.readyAt !== null && w.now >= item.readyAt) {
         item.state = 'ready'; this.emit(item.dish === 'bia' ? 'beer_poured' : 'dish_ready', { itemId: item.id });
+        if (this.rulesVersion >= MENU_RULES && c.menu[item.dish].station === 'kitchen') this.emit('kitchen_job_ready', { shiftId: s!.id, itemId: item.id, dish: item.dish });
       }
       if (item.state === 'ready' && item.glassId) {
         const glass = w.glasses.find(g => g.id === item.glassId)!;
@@ -279,6 +282,13 @@ export class Game {
       if (this.rulesVersion >= RUSH_CLOCK_RULES) this.updateRush();
       this.endFlyer('shiftClosed');
       this.emit('shift_closed', { shiftId: s?.id ?? '', credited: s?.stats.credited ?? 0 });
+      if (this.rulesVersion >= MENU_RULES) {
+        const report = menuReport(w, this.config);
+        if (report) {
+          const { rows, ...values } = report;
+          this.emit('menu_mix_summary', { ...values, ...Object.fromEntries(rows.flatMap(row => (['ordered', 'sold', 'wasted'] as const).map(key => [`${key}_${row.dish}`, row[key]]))) });
+        }
+      }
     }
   }
   private processDelivery() {
@@ -345,10 +355,24 @@ export class Game {
     const charged = Math.min(w.coins, penalty);
     const loss = this.penalize(penalty, t.group.customers.length); s.stats.lost += t.group.customers.length;
     order.state = 'expired';
-    order.items.forEach(i => { if (i.state !== 'pending') i.state = 'wasted'; });
+    this.waste(t, 'expired');
     w.lostStreak++;
     this.emit('order_expired', { tableId: t.id, orderId: order.id, penalty: charged, reputation: loss.reputation, count: t.group.customers.length });
     this.clean(t);
+  }
+  private waste(table: Table, reason: 'expired' | 'cancelled') {
+    for (const item of table.order!.items) {
+      if (this.rulesVersion < MENU_RULES) { if (item.state !== 'pending') item.state = 'wasted'; continue; }
+      if (!['preparing', 'ready'].includes(item.state)) continue;
+      const previousState = item.state; item.state = 'wasted';
+      this.emit('dish_wasted', { shiftId: this.world.shift!.id, tableId: table.id, orderId: table.order!.id, itemId: item.id, dish: item.dish, reason, previousState });
+    }
+  }
+  private startMenu(complete = false) {
+    const w = this.world, shift = w.shift;
+    if (this.rulesVersion < MENU_RULES || !shift || shift.menu || w.phase === 'resting') return;
+    shift.menu = { eventStart: w.events.length, serveStart: w.serves.length, complete };
+    this.emit('menu_tracking_started', { shiftId: shift.id, complete });
   }
   private seatQueue(): void {
     for (const group of [...this.world.queue]) {
@@ -416,6 +440,7 @@ export class Game {
     t.order = { id: this.id('order'), placedAt: w.now, patienceMs: Math.min(...group.customers.map(x => x.patienceMs)), items, state: 'pending', readyEmitted: false };
     t.state = 'waiting'; t.until = null; s.stats.orders++;
     this.emit('order_placed', { tableId: t.id, orderId: t.order.id, items: items.length });
+    if (this.rulesVersion >= MENU_RULES) for (const item of items) this.emit('dish_ordered', { shiftId: s.id, tableId: t.id, orderId: t.order.id, itemId: item.id, dish: item.dish, customerId: item.customerId, customerType: group.customers.find(customer => customer.id === item.customerId)!.type, tableSize: group.customers.length });
   }
   private prepare(): void {
     const w = this.world, c = this.config.values;
@@ -441,6 +466,10 @@ export class Game {
       }
       w.inventory[item.dish]--; item.state = duration > 0 ? 'preparing' : 'ready'; item.readyAt = w.now + duration;
       this.emit(menu.needsGlass ? 'beer_pouring' : 'dish_preparing', { itemId: item.id, dish: item.dish });
+      if (this.rulesVersion >= MENU_RULES && menu.station === 'kitchen') {
+        this.emit('kitchen_job_started', { shiftId: w.shift!.id, itemId: item.id, dish: item.dish, prepMs: duration, readyAt: item.readyAt });
+        if (item.state === 'ready') this.emit('kitchen_job_ready', { shiftId: w.shift!.id, itemId: item.id, dish: item.dish });
+      }
     }
     for (const t of w.tables) if (t.order && ['pending', 'grace'].includes(t.order.state) && !t.order.readyEmitted && t.order.items.every(i => i.state === 'ready')) {
       t.order.readyEmitted = true; this.emit('order_ready', { tableId: t.id, orderId: t.order.id });
@@ -454,7 +483,7 @@ export class Game {
       this.emit('glass_washing', { glassId: glass.id });
     }
   }
-  command(envelope: Envelope): Result { return this.applyCommand(envelope, ATTENDANCE_RULES); }
+  command(envelope: Envelope): Result { return this.applyCommand(envelope, MENU_RULES); }
   /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
   replay(entry: LoggedCommand): Result { return this.applyCommand(entry, entry.rulesVersion); }
   private applyCommand(envelope: Envelope, rulesVersion: RulesVersion): Result {
@@ -468,6 +497,7 @@ export class Game {
     this.rulesVersion = rulesVersion;
     this.commandKey = envelope.idempotencyKey;
     try {
+      this.startMenu();
       if (rulesVersion >= QUEST_RULES) this.ensureDailyQuests();
       if (rulesVersion >= ATTENDANCE_RULES) this.observeAttendance();
       if (rulesVersion >= RUSH_CLOCK_RULES) this.updateRush();
@@ -521,6 +551,7 @@ export class Game {
         w.shift = { id: this.id('shift'), startedAt: w.now, pausedMs: 0, endsAt: w.now + c.shift.durationMs, closedAt: null, configVersion: this.config.version, weather, rush: 'none', rushes, nextSpawnAt: w.now + Math.round(onboarding ? c.onboarding.firstShift.guaranteedFirstGroupWithinMs - c.runtime.tableSeatingMs : c.spawn.baseMs * c.spawn.warmupMult), firstGroup: true, onboarding, stats: emptyStats(), wellRestedUntil: wellRested ? w.now + rested.durationMs : null };
         if (plan) w.shift.rushScheduleSeed = plan.seed;
         w.phase = 'open'; w.lastServedAt = null; w.lostStreak = 0;
+        this.startMenu(true);
         if (this.rulesVersion >= QUEST_RULES) this.ensureDailyQuests(true);
         if (this.rulesVersion >= ATTENDANCE_RULES) this.observeAttendance(true);
         this.emit('shift_opened', { shiftId: w.shift.id }); this.emit('weather_rolled', { weather });
@@ -546,7 +577,7 @@ export class Game {
           for (const table of w.tables) if (currentGuests(table).length) {
             if (table.order && ['pending', 'grace'].includes(table.order.state)) {
               table.order.state = 'cancelled';
-              for (const item of table.order.items) if (item.state !== 'pending') item.state = 'wasted';
+              this.waste(table, 'cancelled');
             }
             this.clean(table);
           }

@@ -241,5 +241,16 @@
   "kitchen.stock": "Out of ingredients",
   "kitchen.ready": "✓ Ready",
   "kitchen.seconds": "{n}s",
-  "kitchen.late": "! This dish will finish after the patience deadline."
+  "kitchen.late": "! This dish will finish after the patience deadline.",
+  "menu.title": "Dishes this shift",
+  "menu.dish": "Dish",
+  "menu.ordered": "Ordered",
+  "menu.sold": "Sold",
+  "menu.wasted": "Wasted",
+  "menu.tables": "Table orders served",
+  "menu.average": "Average/table · coins",
+  "menu.noValue": "—",
+  "menu.unavailable": "Dish data is unavailable for this older shift. Tracking starts with a new shift.",
+  "menu.partial": "Partial shift: only data recorded since the update is included.",
+  "menu.note": "Value includes food and tips before the daily cap, excluding bonuses and deliveries. Prepared dishes that are discarded count as wasted; ingredients are not refunded."
 }

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { Game, config as seedConfig, loadConfig, DISHES, flyerQuote, SIGN_STYLES, type SignStyle, dayKey, deliveryQuote, restockQuote, type Command } from '../src/index';
+import { Game, config as seedConfig, loadConfig, DISHES, flyerQuote, SIGN_STYLES, type SignStyle, dayKey, deliveryQuote, restockQuote, serveValueStats, type Command } from '../src/index';
 
 // config-exempt: measurement protocol and bot sampling, never production economy.
 const SEEDS = [20260611, 42, 20260908, 7, 99], MIN_SERVED = 500, STEP_MS = 100, MAX_STEPS = 500000;
@@ -52,8 +52,8 @@ for (const seed of SEEDS) {
     game.advance(w.now + STEP_MS);
   }
   assert.ok(w.serves.length >= MIN_SERVED, `seed ${seed}: insufficient serves`);
-  const mean = w.serves.reduce((sum, e) => sum + e.payment + e.tip, 0) / w.serves.length;
-  const k = mean / config.values.k.anchorValuePerServe;
+  const { mean, kValue: k } = serveValueStats(w.serves, config);
+  assert.ok(mean !== null && k !== null, 'measured service value must be representable');
   const bonus = w.serves.reduce((sum, serve) => sum + (serve.wellRestedBonus ?? 0), 0);
   if (restedStart) assert.ok(bonus > 0, `seed ${seed}: the rested profile must exercise actual bonus credit`);
   const deliveries = w.events.filter(e => e.type === 'shipper_completed').length;

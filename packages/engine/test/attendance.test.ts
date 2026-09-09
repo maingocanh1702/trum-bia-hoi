@@ -88,7 +88,7 @@ test('invalid, wrong-day and inactive first claims neither create attendance nor
   send(g, { type: 'activity', active: true }); assert.equal(g.world.attendance!.cycleDay, 1);
 });
 
-test('genuine rules12 daily claim and hidden-rollover saves preserve all history, then add only the first current attendance stamp', () => {
+test('genuine rules12 daily claim and hidden-rollover saves preserve their original rules13 attendance adoption', () => {
   for (const name of ['claimed', 'hidden-rollover']) {
     const file = readFileSync(new URL(`./fixtures/legacy-daily-${name}-v12.json`, import.meta.url), 'utf8');
     const expected = JSON.parse(readFileSync(new URL(`./fixtures/legacy-daily-${name}-v12-expected.json`, import.meta.url), 'utf8'));
@@ -97,7 +97,8 @@ test('genuine rules12 daily claim and hidden-rollover saves preserve all history
     const before = structuredClone(g.world), track = attendanceDay(g.world, g.config).track, key = `attendance-${g.log.length}`;
     // Existing v12 return also resumes the daily zero-loss clock; compare that full legacy projection.
     const legacy = decodeSave(file); legacy.replay({ command: { type: 'activity', active: true }, at: legacy.world.now, idempotencyKey: key, rulesVersion: 12, configVersion: legacy.config.version, result: { ok: true } });
-    assert.ok(send(g, { type: 'activity', active: true }).ok);
+    // Pin the historical v12→v13 transition; current menu adoption has its own genuine-save checks.
+    assert.ok(g.replay({ command: { type: 'activity', active: true }, at: g.world.now, idempotencyKey: key, rulesVersion: 13, configVersion: g.config.version, result: { ok: true } }).ok);
     assert.deepEqual(g.world, { ...legacy.world, attendance: track, nextId: before.nextId + 1, events: [...before.events, { id: `event-${before.nextId + 1}`, type: 'attendance_day_opened', at: before.now, configVersion: g.config.version, idempotencyKey: key, data: { day: track.lastActiveDateKey, cycleDay: 1, expiresAt: track.expiresAt, transition: 'first' } }] });
     assert.ok(claim(g).ok); assert.equal(g.world.coins, before.coins); assert.deepEqual(g.world.daily, legacy.world.daily);
     assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);

@@ -9,3 +9,4 @@ export * from './signboard';
 export * from './flyer';
 export * from './quests';
 export * from './kitchen';
+export * from './menu';

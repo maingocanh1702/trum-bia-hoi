@@ -241,5 +241,16 @@
   "kitchen.stock": "Hết nguyên liệu",
   "kitchen.ready": "✓ Đã xong",
   "kitchen.seconds": "{n}s",
-  "kitchen.late": "! Món sẽ xong sau khi khách hết kiên nhẫn."
+  "kitchen.late": "! Món sẽ xong sau khi khách hết kiên nhẫn.",
+  "menu.title": "Món trong ca",
+  "menu.dish": "Món",
+  "menu.ordered": "Gọi",
+  "menu.sold": "Bán",
+  "menu.wasted": "Bỏ",
+  "menu.tables": "Mâm đã phục vụ",
+  "menu.average": "Giá trị TB/mâm · xu",
+  "menu.noValue": "—",
+  "menu.unavailable": "Ca cũ chưa có thống kê món. Dữ liệu được ghi từ ca mới.",
+  "menu.partial": "Một phần ca: chỉ tính dữ liệu ghi nhận từ lần cập nhật.",
+  "menu.note": "Giá trị gồm tiền món và boa trước trần ngày; không gồm thưởng và đơn giao hàng. Món đã làm nhưng phải bỏ tính vào cột Bỏ, không hoàn nguyên liệu."
 }

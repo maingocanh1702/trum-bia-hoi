@@ -3,6 +3,12 @@
 User direction: "tham khảo assets theo style này". These seven boards guide the ongoing game build.
 `assets/glass-clean.png` remains the exact no-handle Hanoi recycled-glass anchor.
 
+Latest designer direction (2026-09-09): "Portrait casual-management game UI with
+edge-anchored HUD, rounded skeuomorphic panels, chunky pill controls, bold rounded
+sans-serif typography, soft shadows, compact contextual actions, and Vietnamese
+street-game visual language." See `../../features/F24-design-uiux-production.md`
+for the current brief and constraints inherited from the service references.
+
 - Use recognizable individual objects, a consistent three-quarter view, dark outlines, warm illustrated materials and expressive compact characters.
 - Progress equipment through distinct silhouettes/materials. Keep detail readable at gameplay size, with transparent individual exports.
 - Match the supplied glass closely; use the boards for tables, equipment, food, customers and environment atmosphere.
@@ -63,3 +69,4 @@ actual ledger amounts and the owner's numeric-only departure feedback.
 | Date | Change |
 |---|---|
 | 2026-09-09 mobile service | Added the five owner screenshots and adapted the service sequence: actual dish bubbles, per-customer result emotions, serving readiness, table-level selection, numeric gain near HUD and consumption timer. Static-image motion interpretations are explicit; game/economy rules unchanged. |
+| 2026-09-09 designer refinement | Recorded the owner’s latest portrait casual-management direction: edge HUD, rounded skeuomorphic panels, chunky pills, bold rounded sans-serif, soft shadows, compact contextual actions and Vietnamese street-game visual language. Supersedes the earlier concise HUD wording; menu and economy remain authoritative. |
