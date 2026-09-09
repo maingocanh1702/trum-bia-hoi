@@ -2,13 +2,16 @@ import { DatabaseSync } from 'node:sqlite';
 import { createHash, randomBytes, randomInt, randomUUID } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import { validGoogleSubject, type GoogleIdentity } from './google';
+import { LOCAL_ARCHIVE_BYTES, validateLocalArchive } from './local-archive';
 import { Game, config as seedConfig, configContent, decodeSave, loadConfig, validEnvelope, type Config, type Command, type DomainEvent, type LoggedCommand, type World } from '@tbh/engine';
 
-const SCHEMA_VERSION = 4, CACHE_SIZE = 64; // config-exempt: persistence format and bounded process cache, not game tuning
+const SCHEMA_VERSION = 5, CACHE_SIZE = 64; // config-exempt: persistence format and bounded process cache, not game tuning
 const GOOGLE_CHALLENGE_TTL_MS = 300000; // config-exempt: five-minute authentication nonce lifetime, not gameplay time
 const EVENT_PAGE_SIZE = 100; // config-exempt: transport history page bound, not gameplay tuning
 type PlayerRow = { id: string; seed: number; created_at: number; config_version: string; now: number; revision: number; projection: string };
 export type Snapshot = { world: World; configVersion: string; revision: number; lastEventSeq: number };
+export type ImportReceipt = { playerId: string; digest: string; importedAt: number; sourceNow: number;
+  commandSeq: number; eventSeq: number; review: 'pending' };
 type Request = { idempotencyKey: string; command: Command };
 export type SequencedRequest = Request & { clientId: string; clientSeq: number };
 const sessionHash = (token: string) => typeof token === 'string' && /^[a-f0-9]{64}$/.test(token) ? createHash('sha256').update(token).digest('hex') : null; // config-exempt:256-bit random credential encoding
@@ -34,7 +37,7 @@ export class GameStore {
       if (this.db.prepare('PRAGMA foreign_keys').get()?.foreign_keys !== 1) throw Error('store:foreignKeys');
       this.db.exec('BEGIN IMMEDIATE');
       const version = this.db.prepare('PRAGMA user_version').get()?.user_version;
-      if (version !== 0 && version !== 1 && version !== 2 && version !== 3 && version !== SCHEMA_VERSION) throw Error('store:unsupportedSchema');
+      if (version !== 0 && version !== 1 && version !== 2 && version !== 3 && version !== 4 && version !== SCHEMA_VERSION) throw Error('store:unsupportedSchema');
       if (version === 0) {
         this.db.exec(`
           CREATE TABLE configs (version TEXT PRIMARY KEY, snapshot TEXT NOT NULL) STRICT;
@@ -65,7 +68,7 @@ export class GameStore {
         for (const action of ['UPDATE', 'DELETE']) this.db.exec(`CREATE TRIGGER client_receipts_${action.toLowerCase()}
           BEFORE ${action} ON client_receipts BEGIN SELECT RAISE(ABORT,'store:appendOnly'); END;`);
       }
-      if (version !== SCHEMA_VERSION) {
+      if (Number(version) < 4) {
         this.db.exec(`CREATE TABLE google_accounts (subject TEXT PRIMARY KEY,
           player_id TEXT NOT NULL UNIQUE REFERENCES players(id), created_at INTEGER NOT NULL) STRICT;
           CREATE TABLE google_challenges (session_hash TEXT PRIMARY KEY REFERENCES sessions(token_hash),
@@ -73,10 +76,19 @@ export class GameStore {
           CREATE TABLE account_logins (session_hash TEXT PRIMARY KEY REFERENCES sessions(token_hash),
             previous_session_hash TEXT NOT NULL REFERENCES sessions(token_hash), action TEXT NOT NULL,
             created_at INTEGER NOT NULL) STRICT;
-          CREATE INDEX sessions_player ON sessions(player_id);
-          PRAGMA user_version=${SCHEMA_VERSION};`);
+          CREATE INDEX sessions_player ON sessions(player_id);`);
         for (const action of ['UPDATE', 'DELETE']) this.db.exec(`CREATE TRIGGER account_logins_${action.toLowerCase()}
           BEFORE ${action} ON account_logins BEGIN SELECT RAISE(ABORT,'store:appendOnly'); END;`);
+      }
+      if (version !== SCHEMA_VERSION) {
+        this.db.exec(`CREATE TABLE local_imports (player_id TEXT PRIMARY KEY REFERENCES players(id),
+          subject TEXT NOT NULL UNIQUE REFERENCES google_accounts(subject),
+          previous_player_id TEXT NOT NULL REFERENCES players(id), digest TEXT NOT NULL UNIQUE,
+          imported_at INTEGER NOT NULL, source_now INTEGER NOT NULL, command_seq INTEGER NOT NULL,
+          event_seq INTEGER NOT NULL, original_gzip BLOB NOT NULL) STRICT;
+          PRAGMA user_version=${SCHEMA_VERSION};`);
+        for (const action of ['UPDATE', 'DELETE']) this.db.exec(`CREATE TRIGGER local_imports_${action.toLowerCase()}
+          BEFORE ${action} ON local_imports BEGIN SELECT RAISE(ABORT,'store:appendOnly'); END;`);
       }
       this.config = this.registerConfig(candidate);
       this.db.exec('COMMIT');
@@ -189,6 +201,58 @@ export class GameStore {
       this.db.exec('COMMIT'); return { token: nextToken, playerId, expiresAt, provider: 'google' as const };
     } catch (error) { if (this.db.isTransaction) this.db.exec('ROLLBACK'); throw error; }
   }
+  private googleOwner(token: string) {
+    const owner = this.session(token); if (!owner) throw Error('store:invalidSession');
+    if (owner.provider !== 'google') throw Error('store:googleRequired');
+    const row = this.db.prepare('SELECT subject FROM google_accounts WHERE player_id=?').get(owner.playerId)!;
+    return { ...owner, subject: String(row.subject) };
+  }
+  localImport(token: string): ImportReceipt | undefined {
+    const owner = this.googleOwner(token);
+    const row = this.db.prepare('SELECT player_id,digest,imported_at,source_now,command_seq,event_seq FROM local_imports WHERE subject=?').get(owner.subject);
+    if (!row) return;
+    if (row.player_id !== owner.playerId) throw Error('store:importOwnerChanged');
+    return { playerId: String(row.player_id), digest: String(row.digest), importedAt: Number(row.imported_at),
+      sourceNow: Number(row.source_now), commandSeq: Number(row.command_seq), eventSeq: Number(row.event_seq), review: 'pending' };
+  }
+  private requireEmptyClaimTarget(id: string) {
+    const row = this.db.prepare('SELECT * FROM players WHERE id=?').get(id) as PlayerRow;
+    const game = this.hydrate(row);
+    if (game.log.some(e => e.result.ok && !['activity', 'adoptCalendarRules'].includes(e.command.type))) throw Error('store:accountConflict');
+  }
+  /** Internal claim boundary; no public upload route until its transport and recovery are ready.
+   * A replay-consistent import is preserved, but has no approved competitive provenance. */
+  async claimLocal(token: string, text: string): Promise<ImportReceipt & { token?: string; expiresAt?: number }> {
+    const owner = this.googleOwner(token);
+    if (typeof text !== 'string' || !text.length || Buffer.byteLength(text) > LOCAL_ARCHIVE_BYTES) throw Error('store:localArchiveSize');
+    const digest = createHash('sha256').update(text).digest('hex'), existing = this.localImport(token);
+    if (existing) { if (existing.digest !== digest) throw Error('store:importConflict'); return existing; }
+    this.requireEmptyClaimTarget(owner.playerId);
+    const snapshots = this.db.prepare('SELECT snapshot FROM configs').all().map(row => String(row.snapshot));
+    const archive = await validateLocalArchive(text, snapshots, this.now());
+    this.db.exec('BEGIN IMMEDIATE');
+    try {
+      const current = this.googleOwner(token), now = this.now();
+      if (current.playerId !== owner.playerId || current.subject !== owner.subject) throw Error('store:importOwnerChanged');
+      if (archive.world.now > now) throw Error('store:invalidLocalArchive');
+      this.requireEmptyClaimTarget(owner.playerId);
+      if (this.db.prepare('SELECT player_id FROM local_imports WHERE subject=? OR digest=?').get(owner.subject, digest) ||
+          this.db.prepare('SELECT id FROM players WHERE id=?').get(archive.playerId)) throw Error('store:importConflict');
+      this.db.prepare('INSERT INTO players VALUES (?,?,?,?,?,?,?)').run(archive.playerId, archive.seed, archive.createdAt,
+        archive.initialConfigVersion, archive.world.now, 1, projection(archive.world));
+      this.appendHistory(archive.playerId, archive.log, archive.world.events);
+      this.db.prepare('INSERT INTO local_imports VALUES (?,?,?,?,?,?,?,?,?)').run(archive.playerId, owner.subject, owner.playerId,
+        digest, now, archive.world.now, archive.log.length, archive.world.events.length, Buffer.from(archive.original));
+      this.db.prepare('UPDATE google_accounts SET player_id=? WHERE subject=?').run(archive.playerId, owner.subject);
+      this.db.prepare('UPDATE sessions SET revoked_at=? WHERE player_id=? AND revoked_at IS NULL').run(now, owner.playerId);
+      const nextToken = randomBytes(32).toString('hex'); // config-exempt: rotate credential when adopting a different game aggregate
+      this.db.prepare('INSERT INTO sessions VALUES (?,?,?,?,NULL)').run(sessionHash(nextToken)!, archive.playerId, now, current.expiresAt);
+      this.db.prepare('INSERT INTO account_logins VALUES (?,?,?,?)').run(sessionHash(nextToken)!, sessionHash(token)!, 'claim', now);
+      this.db.exec('COMMIT'); this.cache.delete(owner.playerId);
+      return { playerId: archive.playerId, digest, importedAt: now, sourceNow: archive.world.now,
+        commandSeq: archive.log.length, eventSeq: archive.world.events.length, review: 'pending', token: nextToken, expiresAt: current.expiresAt };
+    } catch (error) { if (this.db.isTransaction) this.db.exec('ROLLBACK'); throw error; }
+  }
   // ponytail: replay the full stream on cache miss; add verified checkpoints if measured cold starts exceed the release budget.
   private hydrate(row: PlayerRow): Game {
     const cached = this.cache.get(row.id);
@@ -212,6 +276,12 @@ export class GameStore {
     if (projection(game.world) !== row.projection) throw Error('store:projectionMismatch');
     return game;
   }
+  private appendHistory(id: string, log: readonly LoggedCommand[], events: readonly DomainEvent[], logStart = 0, eventStart = 0) {
+    const command = this.db.prepare('INSERT INTO commands VALUES (?,?,?,?)');
+    for (let i = logStart; i < log.length; i++) command.run(id, i + 1, log[i].idempotencyKey, JSON.stringify(log[i]));
+    const event = this.db.prepare('INSERT INTO events VALUES (?,?,?,?)');
+    for (let i = eventStart; i < events.length; i++) event.run(id, i + 1, events[i].id, JSON.stringify(events[i]));
+  }
   private operate<T>(id: string, action: (game: Game, now: number) => T): Snapshot & { result: T } {
     if (!validPlayerId(id)) throw Error('store:invalidPlayer');
     this.db.exec('BEGIN IMMEDIATE');
@@ -228,10 +298,7 @@ export class GameStore {
       if (!Number.isSafeInteger(revision)) throw Error('store:revisionOverflow');
       if (changed) {
         for (const config of game.configs) this.registerConfig(config);
-        const command = this.db.prepare('INSERT INTO commands VALUES (?,?,?,?)');
-        for (let i = logStart; i < game.log.length; i++) command.run(id, i + 1, game.log[i].idempotencyKey, JSON.stringify(game.log[i]));
-        const event = this.db.prepare('INSERT INTO events VALUES (?,?,?,?)');
-        for (let i = eventStart; i < game.world.events.length; i++) event.run(id, i + 1, game.world.events[i].id, JSON.stringify(game.world.events[i]));
+        this.appendHistory(id, game.log, game.world.events, logStart, eventStart);
         this.db.prepare('UPDATE players SET now=?,revision=?,projection=? WHERE id=?').run(game.world.now, revision, projection(game.world), id);
       }
       this.db.exec('COMMIT'); this.remember(id, revision, game);

@@ -213,3 +213,17 @@ not change. Full game remains20features in progress,0complete.
 | Date | Change |
 |---|---|
 | 2026-09-10 verified Google sessions | Closed code/security review for ebe820c with no introduced findings;264tests/config/build/CLI pass. Local import, owner-required review eligibility and web integration remain required. |
+
+
+## Local archive claim core — 2026-09-10 (review pending)
+
+Schema5 internal `GameStore.claimLocal` preserves source IDs, the live shift and
+full original archive. Known-config worker replay, one import/account, conflict refusal
+and atomic cookie/account transition are implemented. Exact retries return a receipt;
+logout/expiry/new gameplay during validation refuse. History remains pending review.
+No HTTP upload, approval or cloud UI is active. Details: [server guide](../../apps/server/README.md).
+271tests/config/build and80MB exact import/reopen/continuation pass; native review pending.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 local claim core | Added worker-validated one-time archive import with immutable pending provenance and atomic identity/session transition;271tests/config/build and80MB probe pass. No public upload/review approval/web cutover yet; performance limits are measured and remain open. |

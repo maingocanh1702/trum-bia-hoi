@@ -60,3 +60,17 @@ review/approval or community leaderboard implementation is finished.
 | Date | Change |
 |---|---|
 | 2026-09-10 owner | Imported local history must be reviewed before competitive credit; preserve progress and prevent duplicate credit. |
+
+
+## Imported history boundary implemented — 2026-09-10 (review pending)
+
+The internal server claim core now records immutable archive provenance and the
+imported command/event cutoff. Its receipt reports `pending`; there is still no
+approval operation or community ranking projection. A future ranking consumer must
+read server eligibility for these exact recorded results, not trust raw imported
+world.seasonEarned or a client flag. Preserve the owner's decision: approved local
+history may count once; pending history cannot count. No compensation credit is added.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 provenance | Schema5 records pending local-history origin/cutoffs for the later review and ranking boundary; approval and rank projection remain required work. |

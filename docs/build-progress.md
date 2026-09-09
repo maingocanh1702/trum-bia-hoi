@@ -2065,3 +2065,17 @@ not change. Full game remains20features in progress,0complete.
 | Date | Change |
 |---|---|
 | 2026-09-10 verified Google sessions | Closed code/security review for ebe820c with no introduced findings;264tests/config/build/CLI pass. Local import, owner-required review eligibility and web integration remain required. |
+
+
+## Local archive claim core — 2026-09-10 (review pending)
+
+Schema5 internal claim and worker validation preserve exact local history, source
+IDs and unfinished shift, with immutable pending provenance and atomic cookie rotation.
+271tests/config/build and80MB import/reopen/retry pass (16,567commands/388,986events).
+Measured48.38s import/29.36s cold read/2.65s loop gap remain open for public transport.
+Native review pending. HTTP upload/approval/web remain required;20features in progress.
+See [server guide](../apps/server/README.md) and `.qa/local-import-month.json`.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 local claim core | Added worker-validated one-time archive import with immutable pending provenance and atomic identity/session transition;271tests/config/build and80MB probe pass. No public upload/review approval/web cutover yet; performance limits are measured and remain open. |

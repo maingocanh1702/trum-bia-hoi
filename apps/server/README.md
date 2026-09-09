@@ -234,3 +234,35 @@ not change. Full game remains20features in progress,0complete.
 | Date | Change |
 |---|---|
 | 2026-09-10 verified Google sessions | Closed code/security review for ebe820c with no introduced findings;264tests/config/build/CLI pass. Local import, owner-required review eligibility and web integration remain required. |
+
+
+## Local archive claim core — 2026-09-10 (review pending)
+
+Schema5 adds immutable local-import provenance: source/player IDs, prior server
+player, digest, full original gzip archive and command/event sequence cutoffs.
+`GameStore.claimLocal` is an internal authenticated Google-account operation.
+A native worker validates/replays the archive against known server config snapshots;
+uploaded config cannot register itself. Original sampling order, live shift, source
+IDs and all history are preserved. One import per account/source; exact same archive
+returns the durable receipt, while conflicts refuse without overwriting either game.
+Successful gameplay in the destination blocks replacement; presence/calendar setup
+alone does not. Session and destination are rechecked after worker IO.
+
+Import/history/provenance, account mapping, cookie revocation/rotation and login audit
+commit atomically. The previous server player remains stored. Every imported history
+is **pending review**; replay does not approve ranking. No arbitrary credit field or
+public approval/upload route is added. If a success response is lost, keep the local
+source, reauthenticate and inspect the durable receipt rather than repeat a new import.
+
+271engine/server tests, config/build and real80MB import/reopen/continuation pass.
+Actual month:16,567commands/388,986events,1,582,365xu,LP4,240shifts and exact compressed
+original. Measured import48.38s, cold read29.36s, request-loop pulse gap2.65s during
+result/SQLite persistence; this is **not** evidence of responsive public cloud import.
+Transport isolation/recovery and cold-read performance must be addressed before web
+cutover. Resource bounds:128MiB archive,120s replay timeout,1GiB worker heap, one replay
+per process; deployment limits, not economy constants. `.qa/local-import-month.json`.
+Native independent review is pending. F25/F23 and the full game remain unfinished.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 local claim core | Added worker-validated one-time archive import with immutable pending provenance and atomic identity/session transition;271tests/config/build and80MB probe pass. No public upload/review approval/web cutover yet; performance limits are measured and remain open. |
