@@ -859,3 +859,40 @@ endpoint; server/social and full M4–M9 remain active scope. Tracker v0.15.0 re
 | Date | Change |
 |---|---|
 | 2026-09-09 | Implemented local flyer producer, original sprite/UI and config/replay/campaign checks; final review pending. |
+
+
+## 2026-09-09 — Flyer rules11 independent review receipt
+
+Immutable base360453e through productd5be3e06c7e6b6a8c1d9b5ccfd94603fa598cc90.
+First review exited0 and reported only a P1 claiming raw repBase300 was being charged
+instead of750. Direct runtime evidence disproved it: config.ts260–277 already scales
+all Base fields once into c.values; flyer.ts7 reads that scaled value. Actual quotes
+and commands at k2/2.5/3 charge600/750/900 and reduce exactly that much reputation
+(.qa/flyer-scaling-proof.txt). Multiplying again would overcharge. No product patch
+was made in response to this false positive.
+
+Second independent full-base review exited0 (.qa/review-flyer2.txt/.log):
+"No introduced actionable defects found." It explicitly withdrew the scaling claim
+after executing raw300→values750→quote750→rep750-to-zero, and independently passed
+13 focused flyer/arrival tests. Native verdicts from both rounds are preserved;
+no synthetic gate marker or fabricated clean round. Product remained immutable during
+both reviews. Final config/build/108 unit/40 browser tests and30 k rows remain green:
+all>=500 served, k2.2417–2.8783.20 controlled90s campaign windows verify higher demand
+and zero automatic earnings;15 existing rush-pressure windows remain green.
+
+Original sprite SHA matches native generation; canonical economy seed is identical
+to360453e. Real active/ended rules11 save captures fromd5be3e0, including hidden time,
+are prepared for the next protocol revision at.qa/legacy-flyer-{active,ended}-v11*.json
+with full expected worlds (.qa/capture-flyer-v11.mjs). Next F17 diagnosis is indexed
+in.qa/f17-next-intake.md; no F17 writer started before this review closed. The real
+daily5/5/social reward path and all M4–M9 work remain required. Do not raise the glass
+buyCap merely to make purchasing available: canonical start equals buyCap10 and
+extra storage is for chairman gifts.
+
+Tracker v0.15.1/dashboard retain16 in progress, zero complete full features. Preview
+http://127.0.0.1:5174/ responds200. Root unchanged; no merge/push or hosted-release
+claim. Full-game goal remains active.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Recorded full-diff no-finding follow-up review, runtime dismissal of false scaling report,108 unit/40 E2E/30 k-row evidence and preserved next F17 scope. |

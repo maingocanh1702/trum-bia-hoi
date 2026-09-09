@@ -177,3 +177,6 @@ and final art/release QA are still required later milestones.
 | Date | Change |
 |---|---|
 | 2026-09-09 rules11 | Added local flyer purchase/use/stock/clock/event reports and native sheet, with canonical rep debit, LP gate, demand-only effects and exact historical replay. Daily5/5 producer remains dependent F17 work. |
+
+
+| 2026-09-09 review | Full diff360453e..d5be3e0 reviewed with no introduced actionable defects. Scaling suspicion disproved by existing Config.values producer and real purchase300base→750charged at k2.5; no second multiplier added.108 unit/40 E2E and30 k rows passed; daily5/5/server/full F10 acceptance still open. |
