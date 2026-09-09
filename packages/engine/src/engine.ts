@@ -715,8 +715,9 @@ export class Game {
       case 'startShift': {
         const c = openingConfig.values, changed = openingConfig.version !== this.config.version, previousVersion = this.config.version;
         if (w.phase !== 'resting') return fail('shiftRunning');
-        if (changed && w.lease && (!isEconomy2(c) || !c.locations.list.some(location => location.id === w.lease!.fallback))) return fail('configLocationMissing');
-        if (changed && !c.locations.list.some(location => location.id === w.location)) return fail('configLocationMissing');
+        const location = changed && this.rulesVersion >= LEASE_RULES && isEconomy2(c) && !w.lease ? c.locations.fallback : w.location;
+        if (changed && w.lease && (!isEconomy2(c) || c.locations.fallback !== w.lease.fallback)) return fail('configLocationMissing');
+        if (changed && !c.locations.list.some(row => row.id === location)) return fail('configLocationMissing');
         if (c.shift.openRequiresFullStamina && w.staminaMs < this.config.values.shift.durationMs) return fail('restFirst');
         if (this.rulesVersion >= CONFIG_PIN_RULES && !Number.isSafeInteger(w.now + c.shift.durationMs)) return fail('configClock');
         const day = dayKey(w.now, openingConfig);
@@ -725,12 +726,12 @@ export class Game {
         const onboarding = c.onboarding.enabled && w.completedShifts === 0;
         if (changed && onboarding && !w.tables.some(table => c.upgrades.table.levels[table.level - 1].capacity >= c.onboarding.firstShift.firstGroupSize)) return fail('configOnboardingTables');
         const scheduled = !(onboarding && c.onboarding.firstShift.rushDisabled);
-        const plan = this.rulesVersion >= RUSH_SCHEDULE_RULES && scheduled ? planRushes(openingConfig, w.location, this.id('shift', false), day, w.now, this.rulesVersion >= ECONOMY_RULES ? w.lifePath : Infinity) : null;
+        const plan = this.rulesVersion >= RUSH_SCHEDULE_RULES && scheduled ? planRushes(openingConfig, location, this.id('shift', false), day, w.now, this.rulesVersion >= ECONOMY_RULES ? w.lifePath : Infinity) : null;
         if (this.rulesVersion >= RUSH_SCHEDULE_RULES && scheduled && !plan) return fail('rushScheduleUnavailable');
         if (changed) {
           w.staminaMs = Math.round(w.staminaMs / this.config.values.shift.durationMs * c.shift.durationMs);
           w.staminaAnchorAt = w.now; w.staminaAnchorMs = w.staminaMs;
-          this.currentConfig = openingConfig;
+          this.currentConfig = openingConfig; w.location = location;
           for (const table of w.tables) table.capacity = c.upgrades.table.levels[table.level - 1].capacity;
         }
         const weather = weighted(w, WEATHER.map(k => [k, c.weather[k].weight]));

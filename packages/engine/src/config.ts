@@ -122,7 +122,14 @@ function validate(c: Economy): void {
     }
     if (new Set(c.locations.list.map(row => row.id)).size !== c.locations.list.length ||
       !c.locations.list.some(row => row.id === c.locations.fallback && row.rentPerDayBase === 0 && row.gateLifePath === 0)) throw Error('config:locationIdentity');
+    // Conservative whole-order bound: include onboarding, every customer/rush/weather, QR and rest bonus.
+    const gross = Math.max(c.menu.bia.price + Math.max(...DISHES.map(d => c.menu[d].price)), c.onboarding.firstShift.firstOrder.reduce((sum, d) => sum + c.menu[d as Dish].price, 0));
+    const customers = Object.values(c.customerTypes).filter(t => 'paymentMult' in t);
+    const payMult = Math.max(...customers.map(t => t.paymentMult)) * Math.max(...RUSH_TYPES.map(r => c.rush[r].paymentMult));
+    const tipMult = Math.max(...customers.map(t => t.tipMult)) * Math.max(...RUSH_TYPES.map(r => c.rush[r].tipMult)) * Math.max(...WEATHER.map(w => c.weather[w].tipMult)) * Math.max(1, c.tip.qrMult);
     for (const location of c.locations.list) {
+      const payment = Math.ceil(gross * payMult * location.mult), tip = Math.ceil(Math.ceil(payment * c.tip.rate) * tipMult);
+      whole(Math.ceil((payment + tip) * c.shift.wellRested.mult) * Math.max(...c.upgrades.table.levels.map(t => t.capacity)), 'locations.maximumService');
       if (!location.id.trim() || location.mult <= 0) throw Error('config:locationIdentity');
       whole(location.rentPerDayBase, 'locations.rent');
       const rent = Math.round(location.rentPerDayBase * c.k.value) * c.locations.leaseDays;

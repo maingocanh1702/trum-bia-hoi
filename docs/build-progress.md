@@ -1826,3 +1826,15 @@ Approved2.0.1 numbers and the existing advanced-band failure stay unchanged pend
 | Date | Change |
 |---|---|
 | 2026-09-09 | Implemented lease mechanism and UI;232 engine/server checks pass. Full verification/review in progress; full game unfinished. |
+
+
+### Lease correction after review of4600410
+
+Native review found two configuration edges: reusing the free-location ID for a
+paid row left an unleased player with its multiplier, and a huge finite multiplier
+could overflow a service. Corrected successful-pin migration to the new free
+fallback (before planning rushes), rejected changes to a signed fallback, and
+validated the maximum configured whole-order calculation including customer/rush/
+weather/QR/rest boosts. Failed openings preserve location/config.12 focused tests
+and build pass; full engine/server/browser/config/sim are rerunning. Native final
+review follows the fixed commit. Prior4600410 was not review-clean.

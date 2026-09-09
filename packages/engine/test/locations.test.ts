@@ -132,3 +132,28 @@ test('the captured actual rules21 save replays unchanged and adopts leasing only
   const modern = game(); rent(modern); const entry = structuredClone(modern.log.at(-1)!); entry.rulesVersion = 21;
   assert.throws(() => game().replay(entry), /replay:rulesVersion/);
 });
+
+
+test('a successful new pin moves an unleased player to its free fallback; failed opening never moves them', () => {
+  const raw = structuredClone(config.raw); assert.ok(isEconomy2(raw)); raw._meta.version = 'fallback-move';
+  raw.locations.fallback = raw.locations.list[0].id = 'other'; raw.locations.list[1].id = 'hem_nho';
+  const pin = loadConfig(raw), g = new Game(config, 42, Date.parse('2026-09-09T04:00:00Z'));
+  assert.ok(g.command({ at: g.world.now, idempotencyKey: 'pin', command: { type: 'startShift' } }, pin).ok);
+  assert.equal(g.world.location, 'other'); assert.equal(g.world.lease, undefined); assert.equal(g.world.lifePath, 0); replay(g);
+  const h = game(), before = structuredClone(h.world); h.world.staminaMs = 0;
+  assert.equal(h.command({ at: h.world.now, idempotencyKey: 'failed-pin', command: { type: 'startShift' } }, pin).reason, 'restFirst');
+  assert.equal(h.world.location, before.location); assert.notEqual(h.config.version, pin.version);
+});
+
+test('a pin cannot turn the signed fallback into a paid location or accept an overflowing service multiplier', () => {
+  const g = game(); rent(g); const raw = structuredClone(g.config.raw); assert.ok(isEconomy2(raw)); raw._meta.version = 'fallback-reused';
+  raw.locations.fallback = raw.locations.list[0].id = 'other'; raw.locations.list[2].id = 'hem_nho';
+  const before = structuredClone(g.world);
+  assert.equal(g.command({ at: g.world.now, idempotencyKey: 'reuse-fallback', command: { type: 'startShift' } }, loadConfig(raw)).reason, 'configLocationMissing');
+  assert.deepEqual(g.world, before); replay(g);
+  for (const mult of [Number.MAX_VALUE, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER / 1000]) {
+    const unsafe = structuredClone(config.raw); unsafe.locations.list[1].mult = mult;
+    assert.throws(() => loadConfig(unsafe), /config:locations.maximumService/);
+  }
+  const large = structuredClone(config.raw); large.locations.list[1].mult = 1000000; assert.ok(loadConfig(large));
+});
