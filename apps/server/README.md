@@ -26,9 +26,9 @@ const page = store.eventsAfter(playerId, response.lastEventSeq);
 store.close();
 ```
 
-Every operation uses server time, replays the latest durable revision when needed,
+Every operation uses server time, restores the latest durable revision when needed,
 and atomically appends new command/domain-event rows plus the derived player
-projection/frontier. SQLite serializes competing writers; foreign keys and
+projection/frontier and matching checkpoint. SQLite serializes competing writers; foreign keys and
 append-only triggers protect historical rows. Failed transactions evict mutated
 cache so retry starts from committed state. Command retries retain the first
 result while synchronizing current autonomous events. Returned state is detached.
@@ -39,9 +39,11 @@ new shift adopts the new version. The first snapshot of each version stays exact
 including dictionary order needed by historical seeded sampling; equivalent JSON
 key reordering reuses that snapshot. This is not the admin approval/override service.
 
-The process cache is bounded. A miss replays the full player stream and checks its
-projection, so long-history cold-start performance needs measurement before
-release. SQLite/WAL is the current single-host implementation; multi-host database
+The process cache is bounded and invalidated by durable revision. A miss verifies
+full history integrity and restores a trusted checkpoint without resimulation.
+Legacy rows without a checkpoint still replay and compare their projection once;
+rows needing additive replay enrichment keep replaying without rewriting history.
+Cold-load history parsing and detached response cloning still need release sizing. SQLite/WAL is the current single-host implementation; multi-host database
 operations and deployment remain M4/M9 work. Protect the database directory using
 the host's filesystem permissions; never expose its files or this internal owner-id
 argument directly to unauthenticated clients.
@@ -104,8 +106,8 @@ without creating another player. Event catch-up queries bounded SQLite rows dire
 it does not hydrate history or advance simulation. Use state/command responses for
 current simulation state; page through events using the returned cursor. Repeating a
 page is safe; clients deduplicate by sequence. Later appends are picked up by subsequent
-polls, including after `hasMore:false`. State/command cold starts still have the full
-replay ceiling documented above; pagination does not claim to remove that limit.
+polls, including after `hasMore:false`. State/command cold starts still load and
+validate full history; pagination does not remove that memory and I/O cost.
 
 Google setup status: owner has no Web Client ID yet (2026-09-09). See the
 [setup guide](../../docs/google-signin-setup.md); no Google environment variable is
@@ -271,3 +273,31 @@ Native independent review is pending. F25/F23 and the full game remain unfinishe
 | Date | Change |
 |---|---|
 | 2026-09-10 verified local claim core |51a0734 passes271tests/config/build and80MB exact import/reopen/retry; native independent code/security review found no actionable introduced defect. `.qa/local-import-verification.json`. Imported history remains pending approval; public upload, cold-read performance and web cutover remain unfinished. |
+
+
+## Trusted engine checkpoints — 2026-09-10 (verification in progress)
+
+Schema6 keeps the canonical world in `players.projection` and stores only versioned
+engine bookkeeping alongside it: replay rules, active rush index, exact ordered
+config pins and history counts. Chained hashes bind raw immutable command/event
+rows; a digest binds them to metadata, player origin, revision, frontier, projection
+and exact registered snapshots. Corrupt or unsupported checkpoints fail closed.
+These hashes detect server-storage inconsistency; they do not authenticate a save
+uploaded by a player or defend against an attacker who controls the database host.
+
+New players, successful commands and validated imports write their checkpoint in
+the existing SQLite transaction. SQL failure rolls back history/state/checkpoint
+and evicts the cache. Schema5 histories get a checkpoint after one verified replay,
+including a read with no new game time. Legacy additive-enrichment histories retain
+full replay rather than changing immutable historical rows. All history remains.
+
+Untrusted local imports always go through full worker replay against known configs.
+`Game.restoreTrusted` is for integrity-checked, server-owned data only; any uploaded
+checkpoint or world fields are ignored and cannot skip replay. Ranking review stays
+pending. Tests cover every archived save, rules1–23, rush/closing/batches, mixed pins,
+retry, migration, corruption, cross-connection revision and transaction rollback.
+Public upload isolation/recovery and approved-history eligibility remain separate.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 trusted checkpoints | Added schema6 integrity-bound engine checkpoints to avoid cold server resimulation; preserve canonical projection, immutable history and mandatory full replay for local imports. Verification/review in progress. |

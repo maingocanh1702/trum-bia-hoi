@@ -130,8 +130,8 @@ test('one worker admission and SQLite rollback preserve both accounts and allow 
 
 test('schema4 migration and approved legacy configuration retain the original v1 archive without inventing approval', async t => {
   const f = fixture(t), account = f.login(), s = f.store;
-  s.close(); f.db.exec('DROP TABLE local_imports; PRAGMA user_version=4');
-  const migrated = f.open(); assert.equal(f.db.prepare('PRAGMA user_version').get()!.user_version, 5);
+  s.close(); f.db.exec('DROP TABLE engine_checkpoints; DROP TABLE local_imports; PRAGMA user_version=4');
+  const migrated = f.open(); assert.equal(f.db.prepare('PRAGMA user_version').get()!.user_version, 6);
   assert.equal(migrated.session(account.token)!.provider, 'google');
   const text = readFileSync('packages/engine/test/fixtures/legacy-save-v1.json', 'utf8'), raw = JSON.parse(text);
   await assert.rejects(migrated.claimLocal(account.token, text), /unknownLocalConfig/);
@@ -155,4 +155,18 @@ test('a local career spanning two registered configurations retains its opening 
   assert.deepEqual(reopened.world, game.world); assert.equal(reopened.configVersion, 'pin-B');
   assert.deepEqual([...new Set(f.db.prepare('SELECT entry FROM commands WHERE player_id=? ORDER BY seq').all(imported.playerId)
     .map(row => JSON.parse(String(row.entry)).configVersion))], ['pin-A', 'pin-B']);
+});
+
+
+test('uploaded checkpoint and projection fields never bypass full local replay or become trusted server state', async t => {
+  const f = fixture(t), account = f.login(), local = localGame(), uploaded = JSON.parse(local.text);
+  uploaded.checkpoint = { ...local.game.checkpoint(), rulesVersion: 1, activeRushIndex: 999 };
+  uploaded.world = { ...local.game.world, coins: 999999999 };
+  const receipt = await f.store.claimLocal(account.token, JSON.stringify(uploaded));
+  assert.deepEqual(f.open().read(receipt.playerId).world, local.game.world);
+  assert.deepEqual(JSON.parse(String(f.db.prepare('SELECT metadata FROM engine_checkpoints WHERE player_id=?').get(receipt.playerId)!.metadata)), local.game.checkpoint());
+  const invalid = structuredClone(uploaded); invalid.playerId = 'forged-history'; invalid.events.pop();
+  const other = f.login('other');
+  await assert.rejects(f.store.claimLocal(other.token, JSON.stringify(invalid)), /invalidLocalArchive/);
+  assert.equal(f.db.prepare('SELECT id FROM players WHERE id=?').get(invalid.playerId), undefined);
 });

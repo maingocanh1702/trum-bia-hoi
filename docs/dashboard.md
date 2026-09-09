@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-10 02:35 · **Branch hiện tại:** `codex/game-build-isolated`
+> **Cập nhật:** 2026-09-10 03:06 · **Branch hiện tại:** `codex/game-build-isolated`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -191,7 +191,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 1
-- **Notes:** Guest local + vi/en + backup/replay v1–v3 + import/reset giữ bản cũ đã có; M4 guest-cookie auth backend đã qua kiểm tra/review; chủ dự án chưa có Google Client ID (09/09), hướng dẫn ở docs/google-signin-setup.md. Verifier Google917f862 đã qua review,255engine/server tests/config/build;5ca dùng chữ ký/chứng thư thật. Owner chốt lịch sử local phải duyệt trước khi tính BXH. Schema4 account/nonce/audit và Google HTTP đã có,264tests/config/build/CLI smoke qua; review độc lập ebe820c không tìm thấy lỗi mới, tự chạy6storechecks qua. Core nhập local một lần, gzip giữ bản gốc và provenance chờ duyệt đã có;271tests/config/build +80MB probe qua; native review51a0734 không tìm thấy lỗi mới. HTTP upload/approval/cloud UI và live Google chưa hoàn tất; import48s/cold read29s còn cần xử lý.
+- **Notes:** Guest local + vi/en + backup/replay v1–v3 + import/reset giữ bản cũ đã có; M4 guest-cookie auth backend đã qua kiểm tra/review; chủ dự án chưa có Google Client ID (09/09), hướng dẫn ở docs/google-signin-setup.md. Verifier Google917f862 đã qua review,255engine/server tests/config/build;5ca dùng chữ ký/chứng thư thật. Owner chốt lịch sử local phải duyệt trước khi tính BXH. Schema4 account/nonce/audit và Google HTTP đã có,264tests/config/build/CLI smoke qua; review độc lập ebe820c không tìm thấy lỗi mới, tự chạy6storechecks qua. Core nhập local một lần, gzip giữ bản gốc và provenance chờ duyệt đã có;271tests/config/build +80MB probe qua; native review51a0734 không tìm thấy lỗi mới. HTTP upload/approval/cloud UI và live Google chưa hoàn tất. Schema6 checkpoint giảm cold read80MB29,36s→2,23s;281tests/config/build qua, review đang chạy. Theo owner, upload/tuning tiếp theo sang M9; ưu tiên closure M0–M5 rồi M4 web/reconnect/admin.
 
 ### F27 — Onboarding — ca 1 = 1 khách 1 bia, thông báo mất khách, step guide (lần đầu + sau 3 lần mất khách)
 

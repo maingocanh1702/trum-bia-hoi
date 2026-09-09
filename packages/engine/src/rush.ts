@@ -7,8 +7,7 @@ export function planRushes(c: Config, locationId: string, shiftId: string, day: 
   const { schedule, light, heavy } = c.values.rush, count = schedule.perShift;
   const seed = JSON.stringify([locationId, shiftId, day]);
   if (schedule.seed !== 'locationId+shiftId+dayBucket' || !Number.isSafeInteger(now + c.values.shift.durationMs)) return null;
-  // config-exempt: bounded allocation for untrusted snapshots, not gameplay tuning.
-  if (count > 10000) return null;
+  if (count > 10000) return null; // config-exempt: untrusted snapshot allocation bound, not gameplay tuning
   const firstMs = Math.max(schedule.noRushFirstMs, schedule.warningMs);
   const lightOnly = isEconomy2(c.values) && lifePath < c.values.rush.schedule.heavyFromLifePath;
   const maximumMs = lightOnly ? count * light.durationMs : Math.floor(count / 2) * (light.durationMs + heavy.durationMs) + count % 2 * Math.max(light.durationMs, heavy.durationMs);

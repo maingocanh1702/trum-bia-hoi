@@ -1,12 +1,12 @@
 import { Worker } from 'node:worker_threads';
 import { gzipSync } from 'node:zlib';
-import { configContent, decodeSave, loadConfig, type LoggedCommand, type World } from '@tbh/engine';
+import { configContent, decodeSave, loadConfig, type EngineCheckpoint, type LoggedCommand, type World } from '@tbh/engine';
 
 // config-exempt: upload/worker resource bounds, not gameplay limits or economy tuning.
 export const LOCAL_ARCHIVE_BYTES = 128 * 1024 * 1024;
 const WORKER_TIMEOUT_MS = 120000, WORKER_HEAP_MB = 1024;
 export type LocalArchive = { playerId: string; seed: number; createdAt: number; initialConfigVersion: string;
-  world: World; log: LoggedCommand[]; original: Uint8Array };
+  world: World; log: LoggedCommand[]; original: Uint8Array; checkpoint: EngineCheckpoint };
 // ponytail: one replay per process; use a bounded shared queue before multi-host uploads.
 let validating = false;
 
@@ -31,7 +31,7 @@ export function replayLocalArchive(text: string, snapshots: string[], now: numbe
   const game = decodeSave(JSON.stringify(save));
   if (game.log.length !== save.log.length) throw Error('store:invalidLocalArchive');
   return { playerId: game.playerId, seed: game.seed, createdAt: game.createdAt,
-    initialConfigVersion: game.initialConfig.version, world: game.world, log: game.log, original: gzipSync(text) };
+    initialConfigVersion: game.initialConfig.version, world: game.world, log: game.log, original: gzipSync(text), checkpoint: game.checkpoint() };
 }
 
 /** Do not block request handling while replaying a real career archive. */

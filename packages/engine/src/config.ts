@@ -37,8 +37,7 @@ export function deliveryBundles(c: Economy, kitchen: number, grossRange: readonl
   const lines: { dish: Dish; quantity: number }[] = [];
   let work = 0;
   const walk = (index: number, remaining: number, gross: number) => {
-    // config-exempt: CPU/memory ceiling for untrusted configuration validation, not game tuning.
-    if (++work > 100000) throw Error('config:deliveryCatalogTooLarge');
+    if (++work > 100000) throw Error('config:deliveryCatalogTooLarge'); // config-exempt: validation CPU/memory ceiling, not game tuning
     if (index === dishes.length) {
       if (remaining === 0 && gross >= grossRange[0] && gross <= grossRange[1]) bundles.push({ lines: lines.map(line => ({ ...line })), gross });
       return;
@@ -71,7 +70,7 @@ export type ProgressRequirement =
 export function parseProgressRequirement(token: string, c: Economy): ProgressRequirement {
   const seats = /^(\d+) seats$/.exec(token), gear = /^(equipment|stall)(>=|=)(\d+)$/.exec(token);
   if (seats || gear) {
-    const need = Number(seats?.[1] ?? gear![3]);
+    const need = Number(seats?.[1] ?? gear![3]); // config-exempt: numbered regex capture groups
     if (!Number.isSafeInteger(need) || need < 1) throw Error('config:progressRequirementNumber');
     return { kind: seats ? 'seats' : gear![1] as 'equipment' | 'stall', need, exact: gear?.[2] === '=' };
   }
@@ -311,7 +310,7 @@ function validate(c: Economy): void {
   whole(daily.bonusAll5.flyer, 'quest.bonusFlyer'); whole(daily.bonusAll5.badgeShard, 'quest.bonusShard');
   if (daily.bonusAll5.flyer > c.unlocks.flyer.stockCap || c.unlocks.flyer.freeOnDaily5of5 !== (daily.bonusAll5.flyer > 0)) throw Error('config:questBonusCapacity');
   const seasons = c.league.seasons, epoch = Date.parse(seasons.epochUtc);
-  if (!Number.isSafeInteger(epoch) || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(seasons.epochUtc) || new Date(epoch).toISOString().replace('.000Z', 'Z') !== seasons.epochUtc || seasons.tz !== seed.league.seasons.tz) throw Error('config:seasonEpoch');
+  if (!Number.isSafeInteger(epoch) || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(seasons.epochUtc) || new Date(epoch).toISOString().replace('.000Z', 'Z') !== seasons.epochUtc || seasons.tz !== seed.league.seasons.tz) throw Error('config:seasonEpoch'); // config-exempt: ISO UTC date grammar and precision
   for (const kind of ['ranking', 'contest'] as const) {
     whole(seasons[kind].days, 'season.days', 1);
     const duration = seasons[kind].days * 86400000; // config-exempt: milliseconds in a VN calendar day

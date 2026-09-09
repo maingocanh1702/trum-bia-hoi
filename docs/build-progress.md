@@ -2089,3 +2089,22 @@ The measured48s import/29s cold read/2.65s main-loop gap remain explicit perform
 work before public upload/cloud UI. Next: server cold-state loading while preserving
 replay validation at the untrusted import boundary. No browser/economy change or
 completed full-game claim. Receipt: `.qa/local-import-verification.json`.
+
+
+## Trusted server checkpoint — 2026-09-10 (review pending)
+
+Base89c7263: schema6 restores verified server state without resimulating history;
+legacy migrations replay once, integrity failures refuse, imported saves still fully
+replay in the worker.281engine/server tests,17focused checks, config/build pass.
+All7 advisory numeric matches now explicitly document grammar/protocol/technical
+bounds; gameplay numbers unchanged. Ordinary k/rush final run is in progress.
+Existing80MB probe: cold read29.36s →2.23s with exact projection/events and retry;
+import49.47s/main-loop gap3.53s remain M9 follow-up, not public responsiveness.
+
+Owner steering: finish review/commit, stop this performance slice. No public upload,
+new80MB tuning or host-sleep reruns now. Next deliver M0–M5 criterion closure report,
+then M4 web server authority/reconnect/registry+admin before M6→M7→M8→M9.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 server checkpoints | Added trusted schema6 restore and corruption/rollback/legacy tests; performance measured once, further work moved to M9. Review pending; next is milestone closure rather than more M5 breadth. |

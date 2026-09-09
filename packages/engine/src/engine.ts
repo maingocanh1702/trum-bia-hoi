@@ -33,6 +33,10 @@ const LEASE_RULES: RulesVersion = 22; // config-exempt: replay protocol for rent
 const ECONOMY_RULES: RulesVersion = 21; // config-exempt: replay protocol for economy 2.0 mechanics
 const ABSENT_CALENDAR_RULES: RulesVersion = 20; // config-exempt: replay protocol for lazy absent-day calendars
 const emptyStats = (): Stats => ({ arrived: 0, served: 0, lost: 0, rejected: 0, orders: 0, payment: 0, tip: 0, credited: 0, penalty: 0, spent: 0, rep: 0, wellRestedBonus: 0 });
+export interface EngineCheckpoint {
+  version: 1; rulesVersion: RulesVersion; activeRushIndex: number | null;
+  configVersions: string[]; currentConfigVersion: string; commandCount: number; eventCount: number;
+}
 
 /** No wall clock, IO or renderer: only config, seed, explicit time and commands. */
 export class Game {
@@ -64,6 +68,32 @@ export class Game {
     };
     for (let i = 0; i < c.upgrades.table.startingTables; i++) this.world.tables.push(this.newTable());
     for (let i = 0; i < c.glasses.start; i++) this.world.glasses.push(this.newGlass());
+  }
+  /** Server checkpoint metadata; the canonical world and complete history are stored separately. */
+  checkpoint(): EngineCheckpoint {
+    if (this.commandKey !== null) throw Error('checkpoint:inCommand');
+    return { version: 1, rulesVersion: this.rulesVersion, activeRushIndex: this.activeRushIndex, // config-exempt: checkpoint serialization revision
+      configVersions: [...this.snapshots.keys()], currentConfigVersion: this.config.version,
+      commandCount: this.log.length, eventCount: this.world.events.length };
+  }
+  /** Takes ownership of integrity-checked server data. Untrusted saves MUST use decodeSave replay. */
+  static restoreTrusted(configs: readonly Config[], snapshot: { seed: number; createdAt: number; world: World; log: LoggedCommand[] }, state: EngineCheckpoint): Game {
+    if (state.version !== 1 || !Number.isInteger(state.rulesVersion) || state.rulesVersion < 1 || state.rulesVersion > SEASON_RULES || // config-exempt: supported checkpoint/replay protocol revisions
+        state.activeRushIndex !== null && (!Number.isSafeInteger(state.activeRushIndex) || state.activeRushIndex < 0) ||
+        !Array.isArray(state.configVersions) || !configs.length || configs.length !== state.configVersions.length ||
+        new Set(state.configVersions).size !== configs.length || configs.some((c, i) => c.version !== state.configVersions[i]) ||
+        state.commandCount !== snapshot.log.length || state.eventCount !== snapshot.world.events.length ||
+        !Number.isSafeInteger(snapshot.world.now) || snapshot.world.now < snapshot.createdAt) throw Error('checkpoint:invalid');
+    const current = configs.find(c => c.version === state.currentConfigVersion); if (!current) throw Error('checkpoint:invalid');
+    const game = new Game(configs[0], snapshot.seed, snapshot.createdAt, snapshot.world.playerId);
+    Object.assign(game.world, snapshot.world);
+    for (const entry of snapshot.log) {
+      if (game.results.has(entry.idempotencyKey)) throw Error('checkpoint:invalid');
+      game.log.push(entry); game.results.set(entry.idempotencyKey, entry);
+    }
+    game.snapshots.clear(); for (const c of configs) game.snapshots.set(c.version, c);
+    game.currentConfig = current; game.rulesVersion = state.rulesVersion; game.activeRushIndex = state.activeRushIndex;
+    return game;
   }
   private id(kind: string, consume = true) { const next = this.world.nextId + 1; if (consume) this.world.nextId = next; return `${kind}-${next}`; }
   private emit(type: string, data: World['events'][number]['data'] = {}) {
@@ -782,7 +812,7 @@ export class Game {
       case 'kickAll':
         if (w.phase === 'resting' || !c.shift.kickAllAllowed) return fail('noShift');
         if (w.delivery) return fail('deliveryPending');
-        if (this.rulesVersion >= 4) {
+        if (this.rulesVersion >= 4) { // config-exempt: immutable replay protocol version for confirmed kick-all
           if (cmd.shiftId !== s?.id) return fail('shiftChanged');
           const quote = kickAllQuote(w, this.config);
           if (cmd.maxCost === undefined || quote.cost > cmd.maxCost) return fail('closeCostChanged');
@@ -820,7 +850,7 @@ export class Game {
         const grace = o.state === 'grace';
         const values = t.group!.customers.map(customer => {
           const value = customerValue(w, this.config, o, customer);
-          const nominalBonus = this.rulesVersion >= 3 ? wellRestedBonus(w, this.config, value.payment, value.tip) : 0;
+          const nominalBonus = this.rulesVersion >= 3 ? wellRestedBonus(w, this.config, value.payment, value.tip) : 0; // config-exempt: replay version 3 introduced well-rested bonuses
           return { customer, value, nominalBonus };
         });
         if (this.rulesVersion >= SEASON_RULES && !creditBatchSafe(w, this.config, values.flatMap(({ value, nominalBonus }) => [
@@ -835,7 +865,7 @@ export class Game {
           anyEarly ||= value.ratio >= c.tip.patienceThreshold;
           s.stats.payment += value.payment; s.stats.tip += value.tip; s.stats.credited += credited; s.stats.served++;
           s.stats.wellRestedBonus += bonus;
-          w.serves.push({ t: w.now, customerId: customer.id, customerType: customer.type, orderId: o.id, dishes: value.dishes, payment: value.payment, tip: value.tip, credited, hadMoi: value.dishes.some(d => d !== 'bia'), stale: value.stale, patienceRatio: value.ratio, ...(this.rulesVersion >= 3 ? { wellRestedBonus: bonus } : {}) });
+          w.serves.push({ t: w.now, customerId: customer.id, customerType: customer.type, orderId: o.id, dishes: value.dishes, payment: value.payment, tip: value.tip, credited, hadMoi: value.dishes.some(d => d !== 'bia'), stale: value.stale, patienceRatio: value.ratio, ...(this.rulesVersion >= 3 ? { wellRestedBonus: bonus } : {}) }); // config-exempt: replay version 3 provenance
           this.emit('customer_served', { customerId: customer.id, type: customer.type, payment: value.payment, tip: value.tip, stale: value.stale });
           if (nominalBonus) this.emit('well_rested_bonus', { customerId: customer.id, orderId: o.id, nominal: nominalBonus, credited: bonus });
         }

@@ -82,7 +82,7 @@ test('history and configs are append-only, foreign keys are enforced, and damage
   for (const sql of ['DELETE FROM events', "UPDATE commands SET entry='{}'", "UPDATE configs SET snapshot='{}'"]) assert.throws(() => db.exec(sql), /appendOnly/);
   assert.throws(() => db.prepare('INSERT INTO commands VALUES (?,?,?,?)').run('missing', 1, 'bad', '{}'), /FOREIGN KEY/);
   db.prepare('UPDATE players SET projection=? WHERE id=?').run('{}', 'one'); a.close();
-  assert.throws(() => f.open().read('one'), /projectionMismatch/);
+  assert.throws(() => f.open().read('one'), /projectionMismatch|checkpointMismatch/);
   db.exec('PRAGMA user_version=999'); assert.throws(() => f.open(), /unsupportedSchema/);
 });
 
