@@ -157,3 +157,25 @@ test('a rules19 database resumes without backfilling absent quests and atomicall
   assert.equal(db.prepare('SELECT count(*) AS n FROM commands').get()!.n, data.log.length + 1);
   s.close(); assert.deepEqual(f.open().read(data.playerId), state);
 });
+
+test('a paid lease survives SQLite restart; offline expiry refunds the stored deposit once without earning credit', t => {
+  const f = fixture(t), raw = structuredClone(config.raw); raw.shift.startingCoinsBase = 1000000;
+  raw.lifePath[1].lifetimeBase = 1; raw.lifePath[1].requires = raw.lifePath[1].requires!.map(() => 'LP0');
+  const pin = loadConfig(raw), a = f.open(pin); a.createPlayer('tenant', 42);
+  send(a, 'tenant', 'open', { type: 'startShift' }); f.now += 11000; send(a, 'tenant', 'serve', ready(a, 'tenant'));
+  send(a, 'tenant', 'close', { type: 'endShift' }); f.now += 3600000;
+  assert.equal(a.read('tenant').world.lifePath, 1);
+  const action = { type: 'rentLocation', locationId: 'ngo_cho', leaseId: null, maxCost: 87500 } as const;
+  const rented = send(a, 'tenant', 'rent', action); assert.ok(rented.result.ok); assert.ok(rented.world.lease);
+  send(a, 'tenant', 'away', { type: 'activity', active: false }); a.close();
+  const b = f.open(pin), before = b.read('tenant'); assert.deepEqual(before.world.lease, rented.world.lease);
+  assert.equal(send(b, 'tenant', 'rent', action).world.coins, before.world.coins);
+  f.now = rented.world.lease.expiresAt + 1000; const expired = b.read('tenant');
+  assert.equal(expired.world.location, 'hem_nho'); assert.equal(expired.world.lease, undefined);
+  assert.equal(expired.world.coins, before.world.coins + rented.world.lease.deposit);
+  assert.equal(expired.world.lifetimeEarned, before.world.lifetimeEarned); assert.equal(expired.world.seasonEarned, before.world.seasonEarned);
+  assert.deepEqual(expired.world.dayEarned, before.world.dayEarned);
+  b.close(); const c = f.open(pin); assert.deepEqual(c.read('tenant'), expired);
+  assert.equal(send(c, 'tenant', 'rent', action).world.coins, expired.world.coins);
+  assert.equal(c.eventsAfter('tenant', before.lastEventSeq).events.filter(row => row.event.type === 'lease_deposit_refunded').length, 1);
+});

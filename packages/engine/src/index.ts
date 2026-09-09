@@ -11,3 +11,4 @@ export * from './quests';
 export * from './kitchen';
 export * from './menu';
 export * from './production';
+export * from './locations';

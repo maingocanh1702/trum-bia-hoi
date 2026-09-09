@@ -2,7 +2,7 @@
 
 Owner requested checking and following the latest handoff. Compared the actual uncommitted original checkout against the isolated game's current source, using common ancestor bc79af5a34f95f408242653ca3e745fbb6f56d94. The original handoff header v1.16 contains newer economy content than this worktree's v1.21: version counters from separate edits do not establish recency.
 
-The accepted target is original `economy.tbh.json`2.0.0, `08-SPEC`v1.5.0 and `03-SPEC`v1.3. The working implementation now uses reconciled config2.0.1/rules21 for new games and successful new openings. Prior1.7.3 evidence is historical; new integration is being verified. Source engine 19-test results and career estimates describe the original checkout, not this game branch. Current evidence remains in build-progress and the implementation tracker.
+The accepted target is original `economy.tbh.json`2.0.0, `08-SPEC`v1.5.0 and `03-SPEC`v1.3. The working implementation now uses reconciled config2.0.1/rules22 for new games and successful new openings. Prior1.7.3 evidence is historical; new integration is being verified. Source engine 19-test results and career estimates describe the original checkout, not this game branch. Current evidence remains in build-progress and the implementation tracker.
 
 | Mechanism | Accepted rule / config |
 |---|---|
@@ -24,7 +24,7 @@ F13§5 still specifies eligible/unclaimed/claimed rewards and gates independent 
 
 Confirmed reference defect: counting cooking pans by `(dish,readyAt)` merges two same-dish pans started together. A production-shaped probe admits 6 portions while2 pans × 2 portions allow 4. Use one stable identity per actual pan batch in the integrated engine and a regression for this case.
 
-Work order: disconnection verification completed through1fa6b14; station/demand/glass/LP-gate mechanics and HUD implemented, verification in progress; then lease lifecycle/UI and actual career simulation. Server liveness/outbox/remote cutover follows; missing Google Client ID does not block this work. Full M0–M9 remains unfinished.
+Work order: disconnection verification completed through1fa6b14; station/demand/glass/LP-gate mechanics and HUD verified at9c2870a; lease lifecycle/UI now implemented with232 engine/server checks, final browser/sim/review running; actual career simulation follows. Server liveness/outbox/remote cutover follows; missing Google Client ID does not block this work. Full M0–M9 remains unfinished.
 
 Source SHA256: handoff 8849b0ecd37f6a0ee6833f1f3b9e10876d3fafbae7ff2f196c8408ca774a1814; JSON ff10ee2e3ef913c9215acf0bb9dbe8be8aea9ace9c2ba9065fbc70c3028c8c55. Full intake snapshot and merge/probe evidence are retained under `.qa/`.
 
@@ -37,3 +37,5 @@ Source SHA256: handoff 8849b0ecd37f6a0ee6833f1f3b9e10876d3fafbae7ff2f196c8408ca7
 | 2026-09-09 | Integrated complete versioned schemas, station/tap/pan pipeline, stock-aware demand, glass purchases, LP gates and VI/EN capacity UI;217 engine/server checks pass. Browser/simulation/review still in progress; lease and career remain next. |
 
 | 2026-09-09 | At9c2870a, config/build221 engine/server +75 browser and native review pass; ordinary k2.4186–2.8738,15rush pass. Combined full-menu k3.0416–3.2074 fails existing band; exact numbers/formula retained pending owner interpretation. Lease/career/full game remain unfinished. |
+
+| 2026-09-09 | Implemented rules22 lease lifecycle/UI;232 engine/server checks pass, full browser/sim/review in progress. Owner advanced-band question remains pending; no approved numbers changed. |

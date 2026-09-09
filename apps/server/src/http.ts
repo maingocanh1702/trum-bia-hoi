@@ -11,6 +11,7 @@ const record = (v: unknown): v is Record<string, unknown> => !!v && typeof v ===
 const commandFields = {
   startShift: [], endShift: [], kickAll: ['shiftId', 'maxCost'], serve: ['tableId', 'orderId'],
   serveDelivery: ['deliveryId'], restock: ['dish', 'mode'], upgrade: ['kind'], upgradeTable: ['tableId'],
+  rentLocation: ['locationId', 'leaseId', 'maxCost'], leaveLocation: ['leaseId'],
   buyTable: [], buyGlass: ['count'], upgradeDog: ['level'], claimLifePath: ['level'], buyUnlock: ['item'],
   claimAttendance: ['day'], claimQuest: ['day', 'questId'], claimDailyBonus: ['day'], buyFlyer: [],
   activateFlyer: ['shiftId'], installSignboard: [], setSignboard: ['style'], activity: ['active', 'paused'], emergencyPack: [],

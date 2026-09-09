@@ -1,3 +1,4 @@
+import { leaseQuote, leaveLocationQuote } from './locations';
 import { kitchenStatus } from './kitchen';
 import { isEconomy2, config as defaultConfig, configContent, BUSINESS_UNLOCKS, SIGN_STYLES, signWeightMult, DISHES, EQUIPMENT, WEATHER, deliveryBundles, arrivalIntervalMs, type Config, type SeatedType, type Rush } from './config';
 import { integer, random, weighted } from './rng';
@@ -26,6 +27,7 @@ const MENU_PAUSE_RULES: RulesVersion = 16; // config-exempt: fixed replay protoc
 const LIVE_UPGRADE_RULES: RulesVersion = 17; // config-exempt: fixed replay protocol revision for owner live-upgrade policy
 const BATCH_RULES: RulesVersion = 18; // config-exempt: fixed replay protocol revision for stocked beer and wash batches
 const DISCONNECT_RULES: RulesVersion = 19; // config-exempt: replay protocol for trusted disconnection deadlines
+const LEASE_RULES: RulesVersion = 22; // config-exempt: replay protocol for rental contracts
 const ECONOMY_RULES: RulesVersion = 21; // config-exempt: replay protocol for economy 2.0 mechanics
 const ABSENT_CALENDAR_RULES: RulesVersion = 20; // config-exempt: replay protocol for lazy absent-day calendars
 const emptyStats = (): Stats => ({ arrived: 0, served: 0, lost: 0, rejected: 0, orders: 0, payment: 0, tip: 0, credited: 0, penalty: 0, spent: 0, rep: 0, wellRestedBonus: 0 });
@@ -95,6 +97,7 @@ export class Game {
         }
       }
     }
+    if (w.lease && !w.lease.expired) times.push(w.lease.expiresAt);
     if (w.shift?.flyer) times.push(w.shift.flyer.end);
     if (w.attendance) times.push(w.attendance.expiresAt);
     if (w.daily) {
@@ -163,6 +166,7 @@ export class Game {
         if (this.rulesVersion >= DISCONNECT_RULES && (this.rulesVersion < ABSENT_CALENDAR_RULES || w.active)) for (const expiry of [w.daily?.expiresAt, w.active ? w.attendance?.expiresAt : undefined]) {
           if (expiry !== undefined && expiry > w.now) next = Math.min(next, expiry);
         }
+        if (w.lease && !w.lease.expired && w.lease.expiresAt > w.now) next = Math.min(next, w.lease.expiresAt);
         this.advancePaused(next);
       } while (w.now < now);
       return;
@@ -182,6 +186,7 @@ export class Game {
     const elapsed = now - w.now;
     this.shiftPauseTimers(elapsed, true);
     w.now = now;
+    this.settleLease();
     if (this.rulesVersion >= MENU_PAUSE_RULES) this.observeAttendance();
     if (this.rulesVersion >= QUEST_RULES) this.ensureDailyQuests();
   }
@@ -281,8 +286,29 @@ export class Game {
     this.emit('flyer_ended', { shiftId: s.id, reason, startedAt: w.events[campaign.eventStart].at, endedAt: w.now, activeMs: Math.max(0, w.now - campaign.start), ...summarizeRush(w.events, campaign.eventStart) });
     delete s.flyer;
   }
+  private settleLease(): void {
+    const w = this.world, lease = w.lease;
+    if (!lease || w.now < lease.expiresAt) return;
+    if (!lease.expired) {
+      lease.expired = true; w.location = lease.fallback;
+      this.emit('lease_expired', { leaseId: lease.id, locationId: lease.locationId, deposit: lease.deposit, expiresAt: lease.expiresAt });
+    }
+    // Keep the owed deposit until the wallet has room; expiry never retains the location benefit.
+    if (!Number.isSafeInteger(w.coins + lease.deposit)) return;
+    const amount = credit(w, this.config, lease.deposit, 'depositRefund');
+    this.emit('lease_deposit_refunded', { leaseId: lease.id, amount });
+    delete w.lease;
+  }
+  private leaveLease(): void {
+    const w = this.world, lease = w.lease!;
+    const q = leaveLocationQuote(w);
+    if (q.refund) credit(w, this.config, q.refund, 'depositRefund');
+    w.location = lease.fallback; delete w.lease;
+    this.emit('lease_left', { leaseId: lease.id, locationId: lease.locationId, depositForfeited: q.forfeitedDeposit, refund: q.refund, rent: lease.rent });
+  }
   private processDue(): void {
     const w = this.world, c = this.config.values, s = w.shift;
+    this.settleLease();
     if (this.gameplayPaused()) return;
     if (this.rulesVersion >= QUEST_RULES) this.ensureDailyQuests();
     if (this.rulesVersion >= ATTENDANCE_RULES) this.observeAttendance();
@@ -609,15 +635,16 @@ export class Game {
   /** Opening config is supplied by a trusted registry adapter, never by a player command payload. */
   command(envelope: Envelope, openingConfig?: Config): Result {
     if (!validEnvelope(envelope)) return { ok: false, reason: 'invalidCommand' };
-    return this.applyCommand(envelope, ECONOMY_RULES, openingConfig, true);
+    return this.applyCommand(envelope, LEASE_RULES, openingConfig, true);
   }
   /** Trusted adapter supplies one lossId per outage and reuses it only for retries. */
   disconnect(at: number, shiftId: string, lossId: string): Result {
     if (typeof lossId !== 'string' || !lossId) return { ok: false, reason: 'invalidCommand' };
-    return this.applyCommand({ at, idempotencyKey: `system:connectionLost:${shiftId}:${lossId}`, command: { type: 'connectionLost', shiftId, lossId } }, ECONOMY_RULES, undefined, true);
+    return this.applyCommand({ at, idempotencyKey: `system:connectionLost:${shiftId}:${lossId}`, command: { type: 'connectionLost', shiftId, lossId } }, LEASE_RULES, undefined, true);
   }
   /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
   replay(entry: LoggedCommand, config = this.config): Result {
+    if (['rentLocation', 'leaveLocation'].includes(entry.command.type) && entry.rulesVersion < LEASE_RULES) throw Error('replay:rulesVersion');
     if (entry.command.type === 'buyGlass' && entry.rulesVersion < ECONOMY_RULES) throw Error('replay:rulesVersion');
     if (entry.command.type === 'adoptCalendarRules' && entry.rulesVersion !== ABSENT_CALENDAR_RULES) throw Error('replay:rulesVersion');
     if (entry.command.type === 'connectionLost' && (entry.rulesVersion < DISCONNECT_RULES || entry.rulesVersion >= ABSENT_CALENDAR_RULES && !entry.command.lossId)) throw Error('replay:rulesVersion');
@@ -688,6 +715,7 @@ export class Game {
       case 'startShift': {
         const c = openingConfig.values, changed = openingConfig.version !== this.config.version, previousVersion = this.config.version;
         if (w.phase !== 'resting') return fail('shiftRunning');
+        if (changed && w.lease && (!isEconomy2(c) || !c.locations.list.some(location => location.id === w.lease!.fallback))) return fail('configLocationMissing');
         if (changed && !c.locations.list.some(location => location.id === w.location)) return fail('configLocationMissing');
         if (c.shift.openRequiresFullStamina && w.staminaMs < this.config.values.shift.durationMs) return fail('restFirst');
         if (this.rulesVersion >= CONFIG_PIN_RULES && !Number.isSafeInteger(w.now + c.shift.durationMs)) return fail('configClock');
@@ -925,6 +953,24 @@ export class Game {
         this.spend(level.priceBase); t.level = level.level; t.capacity = level.capacity;
         this.emit('table_upgraded', { tableId: t.id, level: t.level }); return { ok: true, amount: level.priceBase };
       }
+      case 'rentLocation': {
+        const q = leaseQuote(w, this.config, cmd.locationId);
+        if (cmd.leaseId !== q.leaseId || cmd.maxCost < q.cost) return fail('leaseChanged');
+        if (!q.ok) return fail(q.reason!);
+        this.spend(q.cost);
+        if (w.lease) this.leaveLease();
+        w.lease = { id: this.id('lease'), locationId: cmd.locationId, fallback: c.locations.fallback,
+          startedAt: w.now, expiresAt: q.expiresAt, rent: q.rent, deposit: q.deposit, forfeitOnEarlyLeave: c.locations.earlyLeaveLosesDeposit };
+        w.location = cmd.locationId;
+        this.emit('lease_started', { leaseId: w.lease.id, locationId: w.location, rent: q.rent, deposit: q.deposit, cost: q.cost, expiresAt: q.expiresAt });
+        return { ok: true, amount: q.cost };
+      }
+      case 'leaveLocation': {
+        const q = leaveLocationQuote(w);
+        if (cmd.leaseId !== q.leaseId) return fail('leaseChanged');
+        if (!q.ok) return fail(q.reason!);
+        this.leaveLease(); return { ok: true, amount: q.refund };
+      }
       case 'buyGlass': {
         const q = buyGlassQuote(w, this.config, cmd.count);
         if (!q.ok) return fail(q.reason!);
@@ -965,6 +1011,8 @@ export function validReplayEnvelope(input: unknown): input is Envelope<Command |
     case 'adoptCalendarRules': return new RegExp(`^system:calendar:${ABSENT_CALENDAR_RULES}(?::[1-9][0-9]*)?$`).test(e.idempotencyKey);
     case 'connectionLost': return typeof c.shiftId === 'string' && c.shiftId.length > 0 && (c.lossId === undefined || typeof c.lossId === 'string' && c.lossId.length > 0) && e.idempotencyKey === `system:connectionLost:${c.shiftId}:${c.lossId ?? e.at}`;
     case 'startShift': case 'endShift': case 'buyTable': case 'emergencyPack': case 'installSignboard': case 'buyFlyer': return true;
+    case 'rentLocation': return typeof c.locationId === 'string' && !!c.locationId && (c.leaseId === null || typeof c.leaseId === 'string' && !!c.leaseId) && Number.isSafeInteger(c.maxCost) && c.maxCost >= 0;
+    case 'leaveLocation': return typeof c.leaseId === 'string' && !!c.leaseId;
     case 'buyGlass': return Number.isSafeInteger(c.count) && c.count > 0;
     case 'claimQuest': return typeof c.day === 'string' && typeof c.questId === 'string' && c.questId.length > 0;
     case 'claimAttendance': case 'claimDailyBonus': return typeof c.day === 'string';

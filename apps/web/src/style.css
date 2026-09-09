@@ -230,3 +230,18 @@ progress::-webkit-progress-value { background: var(--beerAmber); border-radius: 
 .buy-glasses { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
 .buy-glasses strong { flex-basis: 100%; }
 .buy-glasses button { min-height: 44px; }
+
+.locations-panel { max-width: 650px; margin: auto; }
+.location-current { padding-bottom: 18px; border-bottom: 1px solid var(--panelBorder); }
+.location-current h3 { margin: 6px 0; }
+.location-options { list-style: none; padding: 0; margin: 0; }
+.location-options li { padding: 20px 0; border-bottom: 1px solid var(--panelBorder); }
+.location-options header, .location-options dl div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.location-options h3 { margin: 0; }
+.location-options b, .lease-warning { color: var(--coinGold); }
+.location-options dl { margin: 12px 0; }
+.location-options dd { text-align: right; margin: 0; flex-shrink: 0; }
+.location-options button, .location-current button { white-space: normal; line-height: 1.35; padding: 14px; }
+.location-options small { display: block; margin-top: 8px; }
+
+.locations-panel p { margin: 8px 0; line-height: 1.45; }

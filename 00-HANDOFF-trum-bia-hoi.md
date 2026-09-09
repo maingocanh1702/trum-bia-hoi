@@ -1,7 +1,7 @@
-# 🍺 HANDOFF — Trùm Bia Hơi — điểm vào cho Designer & Dev (v1.22)
+# 🍺 HANDOFF — Trùm Bia Hơi — điểm vào cho Designer & Dev (v1.24)
 
 > **Tương ứng với `00-TONG-HOP-trumviahe.md`** (bản nghiên cứu game gốc) — nhưng đây là bản **của Trùm Bia Hơi**: đọc file này trước mọi file khác. Mục tiêu: một designer (có Blender MCP) và một dev cầm bộ docs này là **tạo asset và code được game**, không cần hỏi lại lịch sử.
-> Ngày: 2026-09-09 (v1.22). **Cách đọc bộ docs (chốt founder 09/09):** ràng buộc là **luật chơi** (`02-GDD` + `03-SPEC`), **số** (`08-SPEC` + `docs/config/economy.tbh.json`), **không-hardcode/config admin** (`trum-bia-hoi-brd-admin.md` §5.2), **bất biến đo k** (`04-SPEC` §5), **server-authoritative + engine thuần** (`10-SPEC` §7/§1; thứ tự code: lưu localStorage trước, server sau — §4.2). Mọi thứ còn lại — kiến trúc, module, thư viện, **layout, màn hình, design** — do dev/designer **tự quyết**. `prototype/` là bản thử nghiệm lưu trữ, KHÔNG phải điểm xuất phát.
+> Ngày: 2026-09-09 (v1.24). **Cách đọc bộ docs (chốt founder 09/09):** ràng buộc là **luật chơi** (`02-GDD` + `03-SPEC`), **số** (`08-SPEC` + `docs/config/economy.tbh.json`), **không-hardcode/config admin** (`trum-bia-hoi-brd-admin.md` §5.2), **bất biến đo k** (`04-SPEC` §5), **server-authoritative + engine thuần** (`10-SPEC` §7/§1; thứ tự code: lưu localStorage trước, server sau — §4.2). Mọi thứ còn lại — kiến trúc, module, thư viện, **layout, màn hình, design** — do dev/designer **tự quyết**. `prototype/` là bản thử nghiệm lưu trữ, KHÔNG phải điểm xuất phát.
 >
 > Trạng thái dự án: prototype Phase 0 đã hoàn thành nhiệm vụ của nó — chứng minh "feel" và **đo được k = 2.24–2.34** (trong band 2.0–3.0), bản Alpha đã host và chủ dự án đã chơi, phản hồi đã đưa vào GDD/03-SPEC (rót & rửa tự động, phục vụ theo Order). Từ 09/09 `prototype/` chuyển sang **lưu trữ**; game viết mới từ đầu. Slice `feat/p0-ui-serve-popover--r2` và gate "Alpha playtest 3–5 người" chỉ còn liên quan tới prototype — merge hay bỏ tuỳ chủ dự án, **không chặn** việc bắt đầu game (xem `SESSION-TRACK-LOG.md`).
 
@@ -206,3 +206,5 @@ Giao việc: `11-PROMPT-PACK` Phần A (designer) và Phần B (dev) — cả ha
 | v1.22 (2026-09-09) | Đối chiếu handoff mới ở checkout gốc, nhận mục tiêu economy2.0 và ghi rõ nguồn/precedence/việc tích hợp tại docs/latest-handoff-adoption.md. Header hai checkout phát triển riêng; dùng nội dung thực tế, không suy recency từ số phiên bản. Không ghi nhận kết quả engine gốc thành kết quả branch game hiện hành. |
 
 | v1.23 (2026-09-09) | Ghi nhận checkpoint9c2870a economy2.0.1/rules21 và kết quả kiểm tra; công khai band nâng cao chưa qua, giữ số/formula chờ owner, tiếp tục lease/career. |
+
+| v1.24 (2026-09-09) | Rules22 triển khai hợp đồng mặt bằng/cọc/hết hạn lịch thực và menu mobile;232 engine/server pass, verification/review cuối đang chạy. Giữ nguyên band nâng cao chờ owner; F14/career/full game chưa hoàn tất. |

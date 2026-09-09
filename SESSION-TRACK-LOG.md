@@ -5,6 +5,14 @@
 
 ---
 
+## 🧭 Lease calendar/UI — 2026-09-09
+
+Rules22 lease purchase/early move/departure/calendar expiry/refund and VI/EN menu
+implemented after0fc8c4f.232 engine/server checks pass; full browser/sim/review running.
+Contract expiry stays real during menu/offline customer pause. Current `.qa/lease-*`
+evidence; full F14 and career still pending. Advanced-economy band interpretation
+question remains unanswered; preserve2.0.1 prices/formula and failure evidence.
+
 ## 🧭 Economy2.0.1 checkpoint — 2026-09-09
 
 Implemented/reviewed at9c2870a: versioned schema, tank/tap/pan pipelines, stock-aware

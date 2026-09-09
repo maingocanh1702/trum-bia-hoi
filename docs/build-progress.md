@@ -11,7 +11,7 @@ complete-game goal; milestones below are implementation order, not scope cuts.
 | M2 — guest, vi/en, onboarding | In progress | Local guest + matching vi/en keys + event-driven guide with skip/repeat cap; Google account linking and 5-person evidence pending |
 | M3 — full menu, customer mix, weather, rush, business unlocks | In progress | 6 menu entries and hot prep, 5 seated types, 5 weather states, basic scheduled rush. Local phone/QR progression reviewed; shipper local reviewed CLEAN at307a3b0. Football, remaining business upgrades and exhaustive balance/edge QA remain |
 | M4 — server authority, accounts, reconnect, config registry/admin | In progress | Config pinning/savev3, SQLite event store and guest HTTP verified locally; Google/claim/registry/admin/reconnect and web cutover remain |
-| M5 — seasons, leaderboard/shrine, life path, leases, quests/referrals | Pending | |
+| M5 — seasons, leaderboard/shrine, life path, leases, quests/referrals | In progress | Local LP/quests/attendance and lease calendar/UI implemented; season/peak/referrals/social and full acceptance remain |
 | M6 — risks, dog, emergency supplies | Pending | |
 | M7 — voluntary donations, cosmetic gifts, age notice | Pending | |
 | M8 — football events, season shop, legal-gated lottery | Pending | |
@@ -1802,3 +1802,27 @@ Full M0–M9 remains unfinished.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Recorded functional verification/native review at9c2870a and the concrete advanced-economy band failure; retained numbers and requested owner clarification. |
+
+
+## Latest-handoff lease implementation — 2026-09-09
+
+Rules22 adds seven-calendar-day rental quotes, prepaid rent/deposit, early departure
+and atomic move, exact expiry/fallback/refund. Contract financial terms are snapshots;
+new config cannot remove its fallback. Pending overflow refunds remain owed without
+retaining the location multiplier. Refunds use the canonical credit helper and do
+not raise daily/season/lifetime earnings. Current lease ID and cost ceiling reject
+stale destructive actions. Moves require rest, while owner in-shift equipment upgrades
+and persistent menu pause remain intact.
+
+The same engine serves local saves and exact HTTP actions. Real rules21 history is
+captured in test fixtures and replays unchanged.232 engine/server checks pass,
+including active/paused/offline fine/coarse clock, early loss, malformed/gated/funded
+quotes, immutable terms across config pin and a real file-backed SQLite restart/retry.
+VI/EN rental panels show gates, current period, deposit and total cost; focused360/390px
+checks pass. Full77 browser checks pass, including expiry while the rental sheet is open. Sim and native review are running. Full F14 retains
+break-even/art/neighborhood/report work; league peak producer precedes actual career.
+Approved2.0.1 numbers and the existing advanced-band failure stay unchanged pending owner.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Implemented lease mechanism and UI;232 engine/server checks pass. Full verification/review in progress; full game unfinished. |

@@ -127,6 +127,7 @@ test('every public action refuses injected authority fields before durable comma
     serve: { type: 'serve', tableId: 'old', orderId: 'old' }, serveDelivery: { type: 'serveDelivery', deliveryId: 'old' },
     restock: { type: 'restock', dish: 'bia', mode: 'one' }, upgrade: { type: 'upgrade', kind: 'keg' },
     upgradeTable: { type: 'upgradeTable', tableId: 'old' }, buyTable: { type: 'buyTable' }, buyGlass: { type: 'buyGlass', count: 1 }, upgradeDog: { type: 'upgradeDog', level: 1 },
+    rentLocation: { type: 'rentLocation', locationId: 'ngo_cho', leaseId: null, maxCost: 0 }, leaveLocation: { type: 'leaveLocation', leaseId: 'old' },
     claimLifePath: { type: 'claimLifePath', level: 1 }, buyUnlock: { type: 'buyUnlock', item: 'phone' },
     claimAttendance: { type: 'claimAttendance', day: '2026-09-09' }, claimQuest: { type: 'claimQuest', day: '2026-09-09', questId: 'old' },
     claimDailyBonus: { type: 'claimDailyBonus', day: '2026-09-09' }, buyFlyer: { type: 'buyFlyer' },

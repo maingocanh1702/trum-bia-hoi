@@ -1,6 +1,6 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.28.1
+> **Version:** v0.29.0
 > **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-09 (layout/art theo ảnh owner)
 > **Trạng thái:** Active — **M0 qua verify; review sửa lỗi nền và layout/art đã CLEAN. M1–M3 tiếp tục triển khai; M4 bắt đầu nền config pin/replay, server event store đã review; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.3** (1 phase, mốc M0–M9).
 > **Owner:** Team
@@ -12,7 +12,7 @@
 Owner latest handoff intake (09/09): new economy2.0 rules/numbers accepted and prioritized;
 see `docs/latest-handoff-adoption.md`. Existing config1.7.3 evidence below remains
 historical verified behavior, not proof of the new pipelines/demand/gates/lease rules.
-Working config2.0.1/rules21 now implements tank/tap/pan pipelines, glass purchases, stock-aware side dishes, heavy/equipment LP gates and capacity UI.221 engine/server +75 browser/config/build checks pass; native review9c2870a found no actionable introduced defect. Ordinary k2.4186–2.8738 and15rush pass; advanced full-menu k3.0416–3.2074 fails band, owner interpretation pending. Lease lifecycle and career simulation remain pending. Full M0–M9 is still in progress.
+Working config2.0.1/rules21 now implements tank/tap/pan pipelines, glass purchases, stock-aware side dishes, heavy/equipment LP gates and capacity UI.221 engine/server +75 browser/config/build checks pass; native review9c2870a found no actionable introduced defect. Ordinary k2.4186–2.8738 and15rush pass; advanced full-menu k3.0416–3.2074 fails band, owner interpretation pending. Rules22 lease lifecycle and mobile rental UI now pass232 engine/server checks; full browser/sim/review are running. Career simulation remains pending. Full M0–M9 is still in progress.
 
 ## 0. How to use this tracker
 
@@ -79,7 +79,7 @@ Working config2.0.1/rules21 now implements tank/tap/pan pipelines, glass purchas
 | F23 | 🎮 Code | Kiến Trúc Server Quán — server-auth, websocket, CAPTCHA | 🟡 | `codex/game-build-isolated` | 🔒S | Đã có config pin/savev3, SQLite append-only event store và guest HTTP/session schema2. Config/build182 engine/server + actual CLI/Chromium smoke pass tại62b4445;3 findings cookie/command fields/event paging đã sửa, native full-range review090d920..62b4445 không còn lỗi actionable (reviewer socket rerun bị sandbox chặn). Schema3 clientSeq/owned stream/atomic receipts đã qua config/build187 tests và CLI/Chromium tại e390a1c; native review794d75c..e390a1c không có lỗi mới,12 storage tests độc lập pass. Rules19–20 timeout-close/replay/live adoption verified tại1fa6b14: config/build211 tests; review sửa cuối xác nhận hết2 findings và34 checks độc lập pass.72 browser/20 k cohorts/15rush pass tại3ed1e19; server liveness chưa nối. Registry/Google claim/WebSocket/client buffer/reconnect/anti-cheat và web cutover còn thiếu; web vẫn local. Xem docs/build-progress.md. |
 | F12 | 🎮 Code | Giải Nhậu & Vụ Bia — 8 bậc, 2 Vụ Bia song song | ⬜ | `—` | 🔒S 🔒B | Spec `docs/features/F12-league-seasons.md`. Phân Hạng 7d / Tranh Bá 14d. |
 | F13 | 🎮 Code | Đường Lên Trùm — LP0–LP7, gate tính năng & mặt bằng | 🟡 | `codex/game-build-isolated` | 🔒S | V6 projection đủ requirements/rewards, level tăng bền + claim một lần; ladder VI/EN và phone/QR. 67 unit/30 E2E +40 sim rows k2.3249–2.7688; review d2918e9..598f66f không còn findings. Flyer/signboard ownership đã có producer; season/peak/location/server và full acceptance còn tiếp tục. |
-| F14 | 🎮 Code | Mặt Bằng Quán — 9 mặt bằng, rent/cọc 7 ngày | ⬜ | `—` | 🔒S 🔒B | Spec `docs/features/F14-locations.md`. |
+| F14 | 🎮 Code | Mặt Bằng Quán — 9 mặt bằng, rent/cọc 7 ngày | 🟡 | `codex/game-build-isolated` | 🔒S | Rules22 quote/purchase/early move/expiry/refund, real-calendar pause/offline, config/replay/SQLite và menu VI/EN.232 engine/server pass; full browser/sim/review đang chạy. Break-even/art/neighborhood/shift-report còn tiếp tục. |
 | F15 | 🎮 Code | Sự Cố Quán Nhậu — bảo kê, trộm offline, đánh nhau (kiểm tra ATTP ⏸ pending) | ⬜ | `—` | 🔒S | Spec `docs/features/F15-risk-events.md`; §4 kiểm tra pending, `risk.inspection.enabled=false`. |
 | F16 | 🎮 Code | Rủ Bạn & Huy Hiệu — 3 mốc, huy hiệu Kết Nối | ⬜ | `—` | 🔒S | Spec `docs/features/F16-referral-badges.md`. |
 | F28 | 🎮 Code | Bảng Xếp Hạng & Bàn Thờ Ông Địa — top N, hàng của tôi, snapshot kết Vụ | ⬜ | `—` | 🔒S 🔒B | Spec `docs/features/F28-leaderboard.md`; config `leaderboard` tier A. Mốc M5. |
@@ -232,3 +232,5 @@ Working config2.0.1/rules21 now implements tank/tap/pan pipelines, glass purchas
 | 2026-09-09 | v0.27.1: accepted latest owner handoff/economy2.0 delta and reprioritized integration; no feature promoted complete from original-checkout engine claims. |
 
 | v0.27.2 | Verified disconnection/recovery through1fa6b14 with211 tests and final correction review; preserved18 active/zero complete features. Owner economy2.0 integration is next, before server liveness. |
+
+| 2026-09-09 | v0.29.0 | F14 bắt đầu triển khai: hợp đồng thuê7ngày/cọc, hết hạn theo lịch thực, menu VI/EN, immutable rules21 replay;232 engine/server pass, review/verification cuối đang chạy. Không coi full F14 hoặc full economy hoàn tất. |

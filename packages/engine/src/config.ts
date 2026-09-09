@@ -120,6 +120,15 @@ function validate(c: Economy): void {
       level(location.gateLifePath);
       if (location.gate !== (location.gateLifePath ? c.lifePath[location.gateLifePath].id : null)) throw Error('config:locationGateAlias');
     }
+    if (new Set(c.locations.list.map(row => row.id)).size !== c.locations.list.length ||
+      !c.locations.list.some(row => row.id === c.locations.fallback && row.rentPerDayBase === 0 && row.gateLifePath === 0)) throw Error('config:locationIdentity');
+    for (const location of c.locations.list) {
+      if (!location.id.trim() || location.mult <= 0) throw Error('config:locationIdentity');
+      whole(location.rentPerDayBase, 'locations.rent');
+      const rent = Math.round(location.rentPerDayBase * c.k.value) * c.locations.leaseDays;
+      whole(rent + Math.round(rent * c.locations.depositRate), 'locations.total');
+    }
+    whole(c.locations.leaseDays * 86400000, 'locations.duration', 1); // config-exempt: calendar days to milliseconds
     whole(c.locations.leaseDays, 'locations.leaseDays', 1);
     if (c.locations.depositRate < 0 || c.locations.depositRate > 1) throw Error('config:depositRate');
   }

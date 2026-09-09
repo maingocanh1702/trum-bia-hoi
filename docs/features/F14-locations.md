@@ -85,9 +85,15 @@ Audit rows imported from the original checkout describe its reference engine and
 
 ## Current game implementation status — 2026-09-09
 
-The updated lease contract above is accepted. This isolated game has not yet implemented the lease purchase/expiry/refund lifecycle or rental UI. Original-checkout implementation and career claims below/above are reference evidence only. Follow docs/latest-handoff-adoption.md for integration order.
+Rules22 implements lease quotes, purchase/move/leave, real-calendar expiry and exactly-once deposit refunds in the shared engine, local save and SQLite/HTTP. A signed lease snapshots resolved total rent, deposit, fallback, deadline and early-refund policy; later config pins cannot reprice it or remove its fallback. Gameplay/menu pause never shifts the lease deadline. A wallet that cannot safely receive its deposit keeps an expired contract with the liability, loses the location benefit, and settles when spending makes room; replacement is blocked until then.
+
+Moves/early departure require a resting shift, a current lease ID and an affordable quote; equipment upgrades remain available in shift. The rental menu shows current location/deadline/days-hours left, upfront rent, deposit, multiplier and LP gates in VI/EN, preserving menu pause after purchases. Runtime events are `lease_started`, `lease_left`, `lease_expired` and `lease_deposit_refunded`, with lease IDs and stored financial terms. The data-model sketch above describes the contract concept; exact persisted fields are in packages/engine/src/types.ts.
+
+Focused behavior and full232 engine/server checks pass, including actual rules21 replay and a real SQLite restart. Full browser/simulation checks and independent review are running. Full F14 is still in progress: break-even guidance, location art/neighborhood integration and location-specific shift reporting remain; full career/balance is not certified. Original-checkout career claims remain reference only.
 
 
 | Date | Reconciled game update |
 |---|---|
 | 2026-09-09 | Adopted latest handoff numbers as config2.0.1, preserving owner pause/live-upgrade policy and immutable1.x snapshots. Rules21 station/demand/glass/LP-gate implementation is under verification; lease lifecycle and actual career measurements remain pending. Current evidence: docs/build-progress.md. |
+
+| 2026-09-09 | Implemented rules22 lease calendar, safe financial lifecycle, replay/HTTP/local UI and VI/EN mobile coverage; full F14 remains in progress as detailed above. |
