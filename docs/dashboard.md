@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-09 13:59 · **Branch hiện tại:** `codex/game-build-isolated`
+> **Cập nhật:** 2026-09-09 14:14 · **Branch hiện tại:** `codex/game-build-isolated`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -191,7 +191,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 1
-- **Notes:** Guest local + vi/en + backup/replay v1–v3 + import/reset giữ bản cũ đã có; Google/claim/cloud ở M4 chưa có.
+- **Notes:** Guest local + vi/en + backup/replay v1–v3 + import/reset giữ bản cũ đã có; M4 đã có guest-cookie auth backend; Google/claim/cloud UI chưa có.
 
 ### F27 — Onboarding — ca 1 = 1 khách 1 bia, thông báo mất khách, step guide (lần đầu + sau 3 lần mất khách)
 
@@ -227,7 +227,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 3
-- **Notes:** Rules15 nền ghim config theo ca + savev3 nhiều snapshot; ca cũ và tài sản giữ nguyên, retry/replay/import có kiểm thử. Đã có workspace server với SQLite event store, append-only history, server clock, retry/rollback và cache theo revision;166 engine/server +69 browser pass, đã sửa2 findings retry/cursor; native reviewf2e85f8..3ff21df không còn lỗi actionable. Registry/API/auth/guest claim/WebSocket/reconnect/anti-cheat chưa có. 156 engine/67 browser pass; native full-base review tại `7c60c70` không nêu lỗi cần sửa, k2.3125–2.7562; chi tiết ở `docs/build-progress.md`.
+- **Notes:** Rules15 nền ghim config theo ca + savev3 nhiều snapshot; ca cũ và tài sản giữ nguyên, retry/replay/import có kiểm thử. Đã có workspace server với SQLite event store, append-only history, server clock, retry/rollback và cache theo revision;166 engine/server +69 browser pass, đã sửa2 findings retry/cursor; native reviewf2e85f8..3ff21df không còn lỗi actionable. Guest session cookie + HTTP state/command/events đã có, SQLite schema2; kiểm tra ownership/CSRF/input/retry/migration thật đang verify/review. Registry/Google claim/WebSocket/clientSeq/reconnect/anti-cheat đầy đủ còn thiếu. 156 engine/67 browser pass; native full-base review tại `7c60c70` không nêu lỗi cần sửa, k2.3125–2.7562; chi tiết ở `docs/build-progress.md`.
 
 ### F13 — Đường Lên Trùm — LP0–LP7, gate tính năng & mặt bằng
 

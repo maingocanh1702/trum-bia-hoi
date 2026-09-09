@@ -1568,3 +1568,23 @@ when the owner answers; current defaults are specified in08§8.1.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Verified batch production/HUD at7897bdd:174 engine/server,72 browser,20 canonical k cohorts and15 rush rows. Fixed both native-review HUD findings and removed redundant fake-clock installs; full game remains active. |
+
+
+## M4 guest sessions and native HTTP — 2026-09-09
+
+Base090d920, same isolated worktree. Added guest credentials hashed in SQLite schema2,
+atomic guest/player creation, durable expiry/revoke and authenticated HTTP projection,
+command and catch-up endpoints. A single generic command route reuses the existing
+engine; inputs cannot select another player or supply authoritative time/config/totals.
+Public state strips replay RNG/seeds and private config; security limits are deployment
+settings. Real socket tests cover ownership, idempotency, stock/pause, restart, v1
+migration, forced insert rollback, input/Origin/body limits and secure cookies.
+
+No engine/config/economy rule changed. Existing canonical20 k rows2.5821–2.9601 and15
+rush evidence therefore remains applicable. Config/build/full tests are running;
+native independent review follows. The web/UI is unchanged and remains on its verified
+local adapter until Google claim, sequencing/reconnect and registry cutover are ready.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Implemented M4 guest sessions and HTTP service dependency with real integration checks; full M0–M9 goal remains active. |

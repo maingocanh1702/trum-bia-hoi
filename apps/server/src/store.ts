@@ -1,10 +1,12 @@
 import { DatabaseSync } from 'node:sqlite';
+import { createHash, randomBytes, randomInt, randomUUID } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import { Game, config as seedConfig, configContent, decodeSave, loadConfig, validEnvelope, type Config, type Command, type DomainEvent, type LoggedCommand, type World } from '@tbh/engine';
 
-const SCHEMA_VERSION = 1, CACHE_SIZE = 64; // config-exempt: persistence format and bounded process cache, not game tuning
+const SCHEMA_VERSION = 2, CACHE_SIZE = 64; // config-exempt: persistence format and bounded process cache, not game tuning
 type PlayerRow = { id: string; seed: number; created_at: number; config_version: string; now: number; revision: number; projection: string };
-type Snapshot = { world: World; revision: number; lastEventSeq: number };
+export type Snapshot = { world: World; configVersion: string; revision: number; lastEventSeq: number };
+const sessionHash = (token: string) => typeof token === 'string' && /^[a-f0-9]{64}$/.test(token) ? createHash('sha256').update(token).digest('hex') : null; // config-exempt:256-bit random credential encoding
 const projection = (w: World) => JSON.stringify({ ...w, events: undefined });
 const validPlayerId = (id: string) => typeof id === 'string' && id.length > 0 && id.length <= 128; // config-exempt: internal identity protocol bound
 
@@ -22,7 +24,7 @@ export class GameStore {
       if (this.db.prepare('PRAGMA foreign_keys').get()?.foreign_keys !== 1) throw Error('store:foreignKeys');
       this.db.exec('BEGIN IMMEDIATE');
       const version = this.db.prepare('PRAGMA user_version').get()?.user_version;
-      if (version !== 0 && version !== SCHEMA_VERSION) throw Error('store:unsupportedSchema');
+      if (version !== 0 && version !== 1 && version !== SCHEMA_VERSION) throw Error('store:unsupportedSchema');
       if (version === 0) {
         this.db.exec(`
           CREATE TABLE configs (version TEXT PRIMARY KEY, snapshot TEXT NOT NULL) STRICT;
@@ -37,7 +39,11 @@ export class GameStore {
         for (const table of ['configs', 'commands', 'events']) for (const action of ['UPDATE', 'DELETE']) {
           this.db.exec(`CREATE TRIGGER ${table}_${action.toLowerCase()} BEFORE ${action} ON ${table} BEGIN SELECT RAISE(ABORT,'store:appendOnly'); END;`);
         }
-        this.db.exec(`PRAGMA user_version=${SCHEMA_VERSION}`);
+      }
+      if (version === 0 || version === 1) {
+        this.db.exec(`CREATE TABLE sessions (token_hash TEXT PRIMARY KEY, player_id TEXT NOT NULL REFERENCES players(id),
+          created_at INTEGER NOT NULL, expires_at INTEGER NOT NULL, revoked_at INTEGER) STRICT;
+          PRAGMA user_version=${SCHEMA_VERSION};`);
       }
       this.config = this.registerConfig(candidate);
       this.db.exec('COMMIT');
@@ -68,17 +74,42 @@ export class GameStore {
     if (this.cache.size > CACHE_SIZE) this.cache.delete(this.cache.keys().next().value!);
   }
   private snapshot(game: Game, revision: number): Snapshot {
-    return { world: structuredClone(game.world), revision, lastEventSeq: game.world.events.length };
+    return { world: structuredClone(game.world), configVersion: game.config.version, revision, lastEventSeq: game.world.events.length };
   }
   createPlayer(id: string, seed: number): Snapshot {
     if (!validPlayerId(id)) throw Error('store:invalidPlayer');
     this.db.exec('BEGIN IMMEDIATE');
     try {
       if (this.db.prepare('SELECT id FROM players WHERE id=?').get(id)) throw Error('store:playerExists');
-      const game = new Game(this.config, seed, this.now(), id);
-      this.db.prepare('INSERT INTO players VALUES (?,?,?,?,?,?,?)').run(id, seed, game.createdAt, this.config.version, game.world.now, 0, projection(game.world));
+      const game = this.insertPlayer(id, seed, this.now());
       this.db.exec('COMMIT'); this.remember(id, 0, game); return this.snapshot(game, 0);
     } catch (error) { if (this.db.isTransaction) this.db.exec('ROLLBACK'); throw error; }
+  }
+  private insertPlayer(id: string, seed: number, now: number) {
+    const game = new Game(this.config, seed, now, id);
+    this.db.prepare('INSERT INTO players VALUES (?,?,?,?,?,?,?)').run(id, seed, now, this.config.version, now, 0, projection(game.world));
+    return game;
+  }
+  createGuestSession(ttlMs: number) {
+    const now = this.now(), expiresAt = now + ttlMs;
+    if (!Number.isSafeInteger(ttlMs) || ttlMs <= 0 || !Number.isSafeInteger(expiresAt)) throw Error('store:invalidSessionTtl');
+    const token = randomBytes(32).toString('hex'), playerId = `guest-${randomUUID()}`; // config-exempt:256-bit credential, not gameplay RNG
+    this.db.exec('BEGIN IMMEDIATE');
+    try {
+      const game = this.insertPlayer(playerId, randomInt(0x100000000), now); // config-exempt:32-bit engine seed range
+      this.db.prepare('INSERT INTO sessions VALUES (?,?,?,?,NULL)').run(sessionHash(token)!, playerId, now, expiresAt);
+      this.db.exec('COMMIT'); this.remember(playerId, 0, game);
+      return { token, playerId, expiresAt };
+    } catch (error) { if (this.db.isTransaction) this.db.exec('ROLLBACK'); throw error; }
+  }
+  session(token: string) {
+    const hash = sessionHash(token);
+    const row = hash && this.db.prepare('SELECT player_id,expires_at FROM sessions WHERE token_hash=? AND revoked_at IS NULL AND expires_at>?').get(hash, this.now());
+    return row ? { playerId: String(row.player_id), expiresAt: Number(row.expires_at) } : null;
+  }
+  revokeSession(token: string) {
+    const hash = sessionHash(token);
+    if (hash) this.db.prepare('UPDATE sessions SET revoked_at=? WHERE token_hash=? AND revoked_at IS NULL').run(this.now(), hash);
   }
   // ponytail: replay the full stream on cache miss; add verified checkpoints if measured cold starts exceed the release budget.
   private hydrate(row: PlayerRow): Game {

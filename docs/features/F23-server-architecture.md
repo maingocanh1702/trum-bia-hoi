@@ -151,3 +151,22 @@ This is progress toward §8, not proof of full F23/M4 completion.
 | 2026-09-09 event store | Implemented server persistence using native SQLite and the same pure engine; exact config/event replay, atomic commands and durable revision invalidation. Full verification/native review in progress; HTTP/auth/client cutover remain next. |
 
 | 2026-09-09 reviewed | Native review f2e85f8..3ff21df found no confirmed actionable defects after both retry/cursor corrections. Reviewer independently ran 8 store +2 live-upgrade cases via direct Node (tsx IPC was sandbox-blocked); author canonical config/build/166 engine+server checks passed. This clears the bounded internal-store change, not full M4. |
+
+
+## Guest session/HTTP implementation — 2026-09-09
+
+The owned HTTP boundary now exists in `apps/server/src/http.ts`: durable expiring
+and revocable guest cookies, exact Origin/JSON checks, bounded input/abuse limits,
+owned state/event reads and a generic command endpoint using the shared engine.
+The server chooses identity/seed/time; arbitrary local totals/owner IDs cannot be
+uploaded. SQLite schema2 creates player and hashed session atomically and upgrades
+v1 history. Public views remove private RNG and generation seeds. Full API details
+and remaining deployment constraints are in `apps/server/README.md`.
+
+Client sequence buffering, reconnectGraceMs closure, WebSocket push, Google claim,
+registry/admin, account eligibility/CAPTCHA/appeals and the web authority switch
+are still required. Current HTTP tests prove this boundary only; §8 remains open.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Added real guest HTTP transport and SQLite session ownership; verified socket scenarios added, final config/build/tests/native review in progress. |

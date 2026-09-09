@@ -429,3 +429,23 @@ production until existing reserve drains; a disabled future refill config retain
 reserve for re-enablement and uses legacy pouring in the interim.
 
 | 2026-09-09 protocol18 | Added stocked beer/load timing and shared live capacity read models; old config/replay preserved, no server/client protocol split. |
+
+
+## M4 guest HTTP transport — 2026-09-09
+
+`apps/server/src/http.ts` exposes cookie-authenticated state/events and one generic
+`/player/command` route to the existing engine. This replaces the suggested per-action
+HTTP aliases for the current implementation; game rules, idempotency and server time
+remain in GameStore/engine. SQLite schema2 adds hashed, expiring/revocable guest
+sessions with atomic guest+player creation and preserves v1 replay history. New API
+responses include the current pinned configVersion; raw config/private RNG/generation
+seeds are withheld. See `apps/server/README.md` for exact routes/deployment options.
+
+This is a dependency toward M4, not the web authority switch. Google link/claim,
+clientSeq and reconnect-grace lifecycle, public registry/RBAC/config, WebSocket push
+and remote web integration remain in the original full-game scope. The existing
+5174 local save stays active until that integration can satisfy F23§8 and F25§10.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 HTTP/session | Implemented native HTTP guest authentication/state/command/event boundary and schema2 session migration. Real socket/security/persistence checks added; full verification/review in progress. |

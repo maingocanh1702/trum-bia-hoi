@@ -1,9 +1,10 @@
 # Server persistence — Trùm Bia Hơi
 
-`@tbh/server` currently exports `GameStore`, the internal M4 persistence layer.
-It runs the existing pure engine against a SQLite event store. The web app still
-uses localStorage; HTTP/auth/Google claim/registry UI/WebSocket cutover are next.
-This module is not an unauthenticated public API or a complete production server.
+`@tbh/server` exports `GameStore`, the internal M4 persistence layer, and
+`@tbh/server/http` exports a Node HTTP server with durable guest-cookie ownership.
+It runs the existing pure engine against SQLite. The web app still uses localStorage;
+Google claim, client sequencing/reconnect, registry and web cutover remain in progress.
+The API is locally runnable; it is not full M4 or a production release.
 
 Tested runtime: Node22.22.1 with native `node:sqlite` (SQLite3.51.2). The server
 workspace requires at least22.22.1. SQLite remains marked experimental by Node.
@@ -47,3 +48,54 @@ argument directly to unauthenticated clients.
 Run `npm run test:server` for file/process restart, two connections, retry isolation,
 mid-write rollback, history guards, config pinning, calendar/pause and corruption
 checks. `npm test` includes this suite along with all engine regressions.
+
+
+## Guest HTTP API
+
+The launcher binds loopback only. Set an explicit database path and exact frontend
+origin; the database parent directory must already exist. For an isolated local run:
+
+```sh
+TBH_DB="$PWD/.qa/game-api.sqlite" TBH_ORIGIN=http://127.0.0.1:5174 npm run dev:server
+```
+
+Default API port5175 (`TBH_PORT`). Deployment security settings are
+`TBH_SESSION_TTL_MS` (default7days), `TBH_RATE_MAX` (120requests per IP/window),
+`TBH_RATE_WINDOW_MS` (60seconds). These are not economic/game tuning. New database
+files use process umask077. Production HTTPS must terminate at a trusted same-site
+reverse proxy; do not expose this development listener directly. IP throttling uses
+socket addresses, never untrusted forwarded headers; a shared proxy/multi-host rollout
+must supply edge rate limits. Session credentials are not accepted in URLs or bodies.
+
+| Method | Path | Input / result |
+|---|---|---|
+| POST | `/auth/session` | Empty JSON; new random guest + HttpOnly cookie, or resume current valid cookie. An invalid/expired supplied credential is refused, never silently replaced. |
+| POST | `/auth/logout` | Empty JSON; revoke credential and expire cookie. Player history remains. |
+| GET | `/player/state` | Owned projection, `configVersion`, `serverNow`, `revision`, `lastEventSeq`. |
+| GET | `/player/events?after=N` | Owned events after a validated contiguous cursor. |
+| POST | `/player/command` | `{idempotencyKey, command}`; existing engine handler, authoritative projection/result. No client clock, player ID, seed or totals. |
+
+Clients send `credentials: 'include'`. POST requests require the configured Origin
+and JSON; CORS allows only that origin. HTTPS uses `__Host-tbh-session` with Secure;
+loopback HTTP uses `tbh-session`. Cookies are HttpOnly/SameSite=Lax/Path=/, responses
+are no-store, and database sessions retain only SHA-256 hashes of256-bit random
+credentials. Session and new player creation share one transaction. Schema2 adds
+sessions without altering v1 players, command/event history or projections.
+
+Public projections omit RNG, generation seeds and the full event array; catch-up
+redacts seed fields too. No raw/private config snapshot is served yet. The public
+config projection/registry is still required before web cutover. The generic command
+route deliberately reuses the engine; domain-specific HTTP aliases are not required
+by the architecture guide. There is no remote save-upload authority bypass.
+
+Current tests use real HTTP sockets and SQLite, not mocked request handlers. They
+cover session isolation/restart/expiry/revocation, CSRF/CORS, secure cookies, invalid
+input/body limits, atomic rollback/migration, idempotent service, pause and event
+catch-up. Request/header timeouts and bounded per-process abuse limiting protect
+this service boundary; full CAPTCHA/flags/appeal and production observability remain.
+Google account linking/one-time local claim, per-client sequence and offline replay,
+reconnectGraceMs closure, WebSocket push and the web adapter remain explicit M4 work.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Added hashed guest sessions and locally runnable authenticated HTTP transport around GameStore; full M4/client cutover remains pending. |

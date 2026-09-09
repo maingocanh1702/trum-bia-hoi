@@ -1,0 +1,129 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, mkdirSync, rmSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
+import type { AddressInfo } from 'node:net';
+import { config } from '@tbh/engine';
+import { GameStore } from '../src/store';
+import { createGameServer, type ServerOptions } from '../src/http';
+const ORIGIN = 'http://127.0.0.1:5174', NOW = Date.parse('2026-09-09T10:00:00Z');
+async function fixture(t: { after(fn: () => unknown): void }, limits: Partial<ServerOptions> = {}) {
+  mkdirSync('.qa', { recursive: true }); const dir = mkdtempSync(resolve('.qa/http-')), file = resolve(dir, 'game.db');
+  let now = NOW; const instances: { store: GameStore; close: () => Promise<void> }[] = [];
+  t.after(async () => { for (const i of instances) { await i.close(); i.store.close(); } rmSync(dir, { force: true, recursive: true }); });
+  const open = async () => {
+    const store = new GameStore(file, config, () => now), server = createGameServer(store,
+      { origin: ORIGIN, sessionTtlMs: 86400000, rateWindowMs: 60000, rateMax: 1000, ...limits });
+    await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+    const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+    const close = async () => { if (server.listening) { server.closeAllConnections(); await new Promise<void>((resolve, reject) => server.close(e => e ? reject(e) : resolve())); } };
+    instances.push({ store, close });
+    const request = (path: string, body?: unknown, cookie?: string, headers?: Record<string, string>) => fetch(url + path, {
+      method: body === undefined ? 'GET' : 'POST', headers: { Origin: ORIGIN, 'Content-Type': 'application/json', ...(cookie ? { Cookie: cookie } : {}), ...headers },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    return { store, request, close, url };
+  };
+  return { file, open, get now() { return now; }, set now(v: number) { now = v; }, ...await open() };
+}
+async function guest(api: Awaited<ReturnType<typeof fixture>>) {
+  const response = await api.request('/auth/session', {}); assert.equal(response.status, 201);
+  const set = response.headers.get('set-cookie')!; assert.match(set, /HttpOnly; SameSite=Lax/); assert.match(set, /Path=\//);
+  const data = await response.json(); assert.equal(data.provider, 'guest'); assert.equal(data.token, undefined);
+  return { cookie: set.split(';')[0], ...data };
+}
+const command = (type: string) => ({ idempotencyKey: type, command: { type } });
+
+test('real HTTP guests own separate state; serving retries, paused stock purchases and event catch-up survive restart', async t => {
+  const f = await fixture(t), a = await guest(f), b = await guest(f);
+  assert.notEqual(a.playerId, b.playerId); assert.notEqual(a.cookie, b.cookie);
+  const resume = await f.request('/auth/session', {}, a.cookie); assert.equal(resume.status, 200); assert.equal((await resume.json()).playerId, a.playerId);
+  const opened = await (await f.request('/player/command', command('startShift'), a.cookie)).json(); assert.ok(opened.result.ok);
+  assert.equal(opened.world.now, f.now); assert.equal(opened.configVersion, config.version);
+  assert.equal(opened.world.rng, undefined); assert.equal(opened.world.nextId, undefined); assert.equal(opened.world.events, undefined);
+  assert.equal(opened.world.shift.rushScheduleSeed, undefined); assert.equal(opened.config, undefined);
+  f.now += 11100;
+  const ready = await (await f.request('/player/state', undefined, a.cookie)).json(), table = ready.world.tables.find((t: any) => t.order?.items.every((i: any) => i.state === 'ready'));
+  const payload = { idempotencyKey: 'serve-one', command: { type: 'serve', tableId: table.id, orderId: table.order.id } };
+  const served = await (await f.request('/player/command', payload, a.cookie)).json(); assert.ok(served.result.ok);
+  const retry = await (await f.request('/player/command', { command: { orderId: table.order.id, tableId: table.id, type: 'serve' }, idempotencyKey: 'serve-one' }, a.cookie)).json();
+  assert.deepEqual(retry, served);
+  const other = await (await f.request('/player/state', undefined, b.cookie)).json(); assert.equal(other.world.coins, config.values.shift.startingCoinsBase); assert.equal(other.world.phase, 'resting');
+  assert.equal((await (await f.request('/player/command', payload, b.cookie)).json()).result.ok, false);
+  const changes = await (await f.request(`/player/events?after=${opened.lastEventSeq}`, undefined, a.cookie)).json();
+  assert.equal(changes.events.filter((e: any) => e.event.type === 'order_served').length, 1);
+  assert.ok(changes.events.every((e: any, i: number) => e.seq === opened.lastEventSeq + i + 1 && e.event.data.seed === undefined));
+  const paused = await (await f.request('/player/command', { idempotencyKey: 'pause', command: { type: 'activity', active: true, paused: true } }, a.cookie)).json();
+  const stock = await (await f.request('/player/command', { idempotencyKey: 'stock', command: { type: 'restock', dish: 'bia', mode: 'one' } }, a.cookie)).json(); assert.ok(stock.result.ok);
+  f.now += 40000; await f.close(); f.store.close(); const restarted = await f.open();
+  const restored = await (await restarted.request('/player/state', undefined, a.cookie)).json();
+  assert.equal(restored.world.paused, true); assert.equal(restored.world.shift.endsAt - restored.serverNow, paused.world.shift.endsAt - paused.serverNow);
+  assert.equal(restored.world.coins, stock.world.coins); assert.equal(restored.world.inventory.bia, stock.world.inventory.bia);
+  assert.equal((await restarted.request('/player/state', undefined, b.cookie)).status, 200);
+});
+
+test('identity, clock and totals cannot be supplied by clients; malformed JSON, query cursors and oversized bodies cannot mutate state', async t => {
+  const f = await fixture(t), a = await guest(f), before = f.store.read(a.playerId);
+  assert.equal((await f.request('/player/state')).status, 401);
+  assert.equal((await f.request('/player/state', undefined, 'tbh-session=forged')).status, 401);
+  assert.equal((await f.request('/player/state', undefined, `${a.cookie}; ${a.cookie}`)).status, 401);
+  for (const body of [{ ...command('startShift'), at: Number.MAX_SAFE_INTEGER }, { ...command('startShift'), playerId: 'someone' },
+    { ...command('startShift'), world: { coins: 1e12 } }, { idempotencyKey: 'bad', command: { type: 'activity', active: false, paused: true } }, null]) {
+    assert.equal((await f.request('/player/command', body, a.cookie)).status, 400);
+  }
+  assert.equal((await f.request('/auth/session', { playerId: a.playerId })).status, 400);
+  for (const q of ['after=-1', 'after=1.5', 'after=999', 'after=0&after=0', 'after=0&playerId=someone', ''])
+    assert.equal((await f.request(`/player/events?${q}`, undefined, a.cookie)).status, 400);
+  assert.equal((await f.request('/player/state?playerId=someone', undefined, a.cookie)).status, 400);
+  const bad = await fetch(f.url + '/player/command', { method: 'POST', headers: { Origin: ORIGIN, Cookie: a.cookie, 'Content-Type': 'application/json' }, body: '{bad' }); assert.equal(bad.status, 400);
+  const large = await f.request('/player/command', { padding: 'x'.repeat(17000) }, a.cookie); assert.equal(large.status, 413);
+  assert.equal((await f.request('/player/command', {}, a.cookie, { 'Content-Type': 'text/plain' })).status, 415);
+  assert.deepEqual(f.store.read(a.playerId), before);
+});
+
+test('cookie sessions expire and revoke durably, store only hashes and refuse CSRF, cross-origin reads and hostile preflights', async t => {
+  const f = await fixture(t, { sessionTtlMs: 10000 }), a = await guest(f);
+  const db = new DatabaseSync(f.file); t.after(() => db.close()); const row = db.prepare('SELECT * FROM sessions').get()!;
+  assert.notEqual(row.token_hash, a.cookie.split('=')[1]); assert.equal(row.player_id, a.playerId);
+  const foreign = await f.request('/player/command', command('startShift'), a.cookie, { Origin: 'https://attacker.invalid' }); assert.equal(foreign.status, 403); assert.equal(foreign.headers.get('access-control-allow-origin'), null);
+  assert.equal((await f.request('/player/state', undefined, a.cookie, { Origin: 'null' })).status, 403);
+  assert.equal((await f.request('/player/state', undefined, a.cookie, { 'Sec-Fetch-Site': 'cross-site' })).status, 403);
+  assert.equal((await fetch(f.url + '/auth/session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).status, 403);
+  const preflight = await fetch(f.url + '/player/command', { method: 'OPTIONS', headers: { Origin: ORIGIN } }); assert.equal(preflight.status, 204); assert.equal(preflight.headers.get('access-control-allow-origin'), ORIGIN);
+  const logout = await f.request('/auth/logout', {}, a.cookie); assert.equal(logout.status, 200); assert.match(logout.headers.get('set-cookie')!, /1970/);
+  await f.close(); f.store.close(); const reopened = await f.open(); assert.equal((await reopened.request('/player/state', undefined, a.cookie)).status, 401);
+  const b = await guest({ ...f, ...reopened }); f.now += 10000;
+  assert.equal((await reopened.request('/player/state', undefined, b.cookie)).status, 401);
+  assert.equal((await reopened.request('/auth/session', {}, b.cookie)).status, 401);
+  assert.equal(db.prepare('SELECT count(*) AS n FROM players').get()!.n, 2);
+});
+
+test('v1 SQLite players and event history survive auth migration; failed guest creation leaves no orphan player', async t => {
+  const f = await fixture(t); f.store.createPlayer('legacy', 42); f.store.command('legacy', command('startShift') as never); const before = f.store.read('legacy');
+  await f.close(); f.store.close(); const db = new DatabaseSync(f.file); t.after(() => db.close());
+  db.exec('DROP TABLE sessions; PRAGMA user_version=1');
+  const migrated = await f.open(); assert.deepEqual(migrated.store.read('legacy'), before); assert.equal(db.prepare('PRAGMA user_version').get()!.user_version, 2);
+  db.exec("CREATE TRIGGER test_session_failure BEFORE INSERT ON sessions BEGIN SELECT RAISE(ABORT,'test:sessionFailure'); END");
+  const fail = await migrated.request('/auth/session', {}); assert.equal(fail.status, 500); assert.deepEqual(await fail.json(), { error: 'serverError' }); assert.equal(fail.headers.get('set-cookie'), null);
+  assert.equal(db.prepare('SELECT count(*) AS n FROM players').get()!.n, 1);
+  db.exec('DROP TRIGGER test_session_failure'); assert.equal((await migrated.request('/auth/session', {})).status, 201);
+});
+
+test('configured HTTP rate limits apply before allocating players and invalid server options fail closed', async t => {
+  const f = await fixture(t, { rateMax: 2 }); assert.equal((await f.request('/auth/session', {})).status, 201); assert.equal((await f.request('/auth/session', {})).status, 201);
+  const refused = await f.request('/auth/session', {}); assert.equal(refused.status, 429); assert.ok(Number(refused.headers.get('retry-after')) > 0);
+  const db = new DatabaseSync(f.file); t.after(() => db.close()); assert.equal(db.prepare('SELECT count(*) AS n FROM players').get()!.n, 2);
+  for (const change of [{ origin: 'http://example.com' }, { origin: ORIGIN + '/' }, { rateMax: 0 }, { sessionTtlMs: NaN }])
+    assert.throws(() => createGameServer(f.store, { origin: ORIGIN, sessionTtlMs: 1000, rateMax: 100, rateWindowMs: 1000, ...change }));
+});
+
+
+test('HTTPS deployment uses host-only Secure cookies and never exposes credentials in cached JSON', async t => {
+  const origin = 'https://play.example.test', f = await fixture(t, { origin });
+  const response = await f.request('/auth/session', {}, undefined, { Origin: origin });
+  assert.equal(response.status, 201); assert.match(response.headers.get('set-cookie')!, /^__Host-tbh-session=[a-f0-9]{64}; Path=\//);
+  assert.match(response.headers.get('set-cookie')!, /; Secure$/); assert.doesNotMatch(response.headers.get('set-cookie')!, /Domain=/);
+  assert.equal(response.headers.get('cache-control'), 'no-store'); assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
+  const payload = await response.json(); assert.deepEqual(Object.keys(payload).sort(), ['expiresAt', 'playerId', 'provider']);
+});
