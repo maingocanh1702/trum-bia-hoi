@@ -3,8 +3,8 @@
 Authority: BRD §2/§5.2/§9, JSON `_meta.governance`, 08-SPEC §22 and 10-SPEC §7.
 Base `732f860`. This slice implements the default registry's immutable proposal,
 approval/publication log and actual GameStore opening resolver. It does not close M4.
-The next slices add scoped overrides/compensation, authenticated admin transport and
-editor, impact forecasts and emergency review. Public archive upload remains deferred.
+Schema9 adds authenticated admin transport at6f42575. The next slices add the browser
+editor, scoped overrides/compensation, impact forecasts and emergency review. Public archive upload remains deferred.
 
 | Interaction | Decision |
 |---|---|
@@ -12,7 +12,7 @@ editor, impact forecasts and emergency review. Public archive upload remains def
 | Draft/import | Validate the complete snapshot with the shared loader. Governance/metadata and prototype-only values cannot be edited. League/Life Path/location IDs and the lease fallback retain their persisted meanings; renaming requires an explicit career migration, not balance tuning. Compare actual changed paths; the most restrictive matching JSON tier wins. |
 | Tier A | Economy proposes; legal/money/feature flags require Super. Distinct Super approves. No self-approval, including Super proposing. |
 | Tier B/C | Economy/Game respectively (or Super), single approval. Support/Viewer cannot mutate. |
-| Identity boundary | Core accepts only a trusted server-authenticated actor, never HTTP role/subject fields. Super/Game require MFA; sessions expire. No admin endpoint is exposed by this slice. |
+| Identity boundary | Core accepts only a trusted server-authenticated actor, never HTTP role/subject fields. Schema9 Google/TOTP sessions protect admin endpoints; Super/Game require independent MFA. Sessions expire; private directory changes invalidate their old authority. |
 | Publish | Approved exact snapshot, current published base, atomic config/audit/publication. Exact retries return the original publication. Daily change limit is charged to the proposal author; changing the publisher cannot reset it. Audit records both author and publisher. |
 | Schedule | Default A next VN day; league/Life Path/ledgers next common season boundary. B next shift except risk/locations next day; C immediate. Explicit delay may be later, never earlier. |
 | Queued versions | Default versions form one optimistic-concurrency chain. Stale base or activation before its predecessor is rejected; rebase the draft explicitly. |
@@ -34,3 +34,5 @@ No new gameplay numbers, seed changes, engine formulas or performance work in th
 | 2026-09-10 verified | Productc1e953c:310engine/server (12registry cases),10remote browser, config/build zero warnings,10ordinary kcohorts2.4186–2.8738 and15rush PASS. Independent correction review CLEAN after fixing the author limit and catalog identity protection. Receipt `.qa/registry-verification.json`; internal default service complete, full admin/M4 remains open. |
 
 | 2026-09-10 admin transport | Trusted actors now come from the schema9 Google/TOTP admin session boundary; registry read/approval/publication routes are protected. No request actor claims are accepted. See admin-auth.md. Editor/scopes still open; verification/review in progress. |
+
+| 2026-09-10 authenticated boundary verified |6f42575 protects registry read/propose/approve/publish/audit via server-derived admin actors.320tests,10remote browser, config/build and review PASS; editor/scopes remain open. Historical internal-only rows above describe the prior slice. |

@@ -5,6 +5,19 @@
 
 ---
 
+## 🧭 Admin identity/registry API verified; editor next — 2026-09-10
+
+Product6f42575, base291264c; schema9/config2.0.1/rules24.
+Google SDK + independent TOTP, private immutable-sub roles, eight-hour cookie,
+durable OTP replay/lockout and atomic audit now protect default registry HTTP routes.
+Player cookies and live shifts remain separate.320full tests (10admin cases),10remote
+browser, config zero warnings/build PASS. Independent review CLEAN; typecheck PASS,
+reviewer HTTP rerun blocked by sandbox EPERM. Receipt `.qa/admin-auth-verification.json`.
+Next: /admin Google/Authenticator browser flow and actual editor using these APIs,
+then scopes/account/eligibility/locale and M6–M9. M4 remains10/18 OPEN; no live Google
+ClientID/directory configured, no enrollment UI, public upload or80MB tuning.
+Original20sourcehashes unchanged; no merge/push/deploy. Full-game goal active.
+
 ## 🧭 Admin authentication/registry transport implemented — 2026-09-10
 
 Base291264c, schema9/config2.0.1/rules24. Google signed identity + independent TOTP

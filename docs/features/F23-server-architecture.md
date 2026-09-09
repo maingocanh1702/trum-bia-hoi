@@ -414,3 +414,5 @@ or local credit into competitive state. See `apps/web/README.md` for startup and
 | 2026-09-10 default registry verified | c1e953c passes310engine/server,10remote browser, config/build,10ordinary kcohorts2.4186–2.8738/15rush; correction review CLEAN. Immutable default publication now drives real opening pins. Public admin authentication/editor/scopes and account integration remain; M4 stays10/18 OPEN. Receipt `.qa/registry-verification.json`. |
 
 | 2026-09-10 admin auth boundary | Schema9 adds durable admin challenge/session/factor state and protected registry API. Google verification plus independent MFA establishes the trusted actor; player cookie/liveness remains separate.320full tests/config/build pass, final focused/browser/review pending; M4 remains10/18 OPEN. |
+
+| 2026-09-10 admin API verified |6f42575:Google/TOTP server identity + RBAC protects the default registry API;320tests/10remote browser/config/build PASS, independent review CLEAN/typecheck PASS. M4 remains10/18 OPEN pending browser editor and account/scoped integration. No gameplay rule change or live OAuth setup. |

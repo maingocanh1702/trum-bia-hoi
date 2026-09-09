@@ -1,6 +1,6 @@
 # Milestone closure report — M0–M5
 
-2026-09-10 · implementation `c1e953c` · config2.0.1/rules24/schema8.
+2026-09-10 · implementation `6f42575` · config2.0.1/rules24/schema9.
 Authority: [ROADMAP §mốc M0–M9](../06-ROADMAP-trum-bia-hoi.md), including the
 acceptance sections it references. PASS means the whole stated criterion has
 supporting evidence; FAIL includes missing implementation or missing acceptance
@@ -53,6 +53,15 @@ append-only history, legacy migration and backup preservation remain required.
   with catalog identity protection. `.qa/review-registry-correction.txt`: CLEAN.
   Actual opening/replay/scheduling and authenticated player HTTP checks pass;
   trusted admin actor tests do not prove real SSO/MFA or editor integration.
+- **E9** admin authentication/registry API `6f42575`:
+  `.qa/admin-auth-tests-final.txt`320engine/server (10admin cases with signed Google
+  SDK verification, RFC vectors, independent MFA, roles/expiry/replay/lockout,
+  real publication and schema8migration). `.qa/admin-auth-config.txt`zero warnings;
+  `.qa/admin-auth-build.txt`build/typecheck PASS. `.qa/admin-auth-remote-e2e.txt`
+  10real browser/player API PASS. Engine/config unchanged; E8 k/rush evidence reused.
+  `.qa/review-admin-auth.txt`: CLEAN, independent typecheck PASS. Reviewer socket
+  checks hit sandbox EPERM; host full320/HTTP checks PASS. Authenticated transport
+  now exists; live Google ClientID and browser GIS/MFA/editor acceptance do not.
 - **E6** `.qa/checkpoint-month.json`: exact server projection/388986events/original
   archive/retry, cold2.23s. This is integrity evidence, not a release latency pass.
 
@@ -64,20 +73,20 @@ No new gameplay test or80MB run was added solely to make this report green.
 
 | Milestone | Exit verdict | Closure | Remaining acceptance |
 |---|---|---|---|
-| M0 | PASS (3/3) | COMPLETE | All three explicit exit criteria met; E8 config/build/tests/sim pass. Foundation/checkpoint reviews also passed. |
+| M0 | PASS (3/3) | COMPLETE | All three explicit exit criteria met; E9 config/build/tests and unchanged E8 sim pass. Foundation/checkpoint reviews also passed. |
 | M1 | FAIL (6/12 PASS) | OPEN | Full12min proof at all3viewports, complete7-screen coverage, measured upgrade recommendation, axe and new-player feel evidence. |
 | M2 | FAIL (4/9 PASS) | OPEN | Five-person test, real mid-shift Google browser flow and admin-editable onboarding; locale/login-prompt gaps below. |
 | M3 | FAIL (5/12 PASS) | OPEN | Advanced economy band/feel,32px badge acceptance and remaining equipment/football placeholders. |
-| M4 | FAIL (10/18 PASS) | OPEN — next implementation priority | Remote web authority/reconnect verified in E7; internal default registry/pins/scheduling verified in E8. Admin auth/editor/scopes and integrated account/import/eligibility/locale remain. |
+| M4 | FAIL (10/18 PASS) | OPEN — next implementation priority | Remote web authority/reconnect verified in E7; internal default registry/pins/scheduling verified in E8. Admin auth/API verified in E9; browser editor/scopes and integrated account/import/eligibility/locale remain. |
 | M5 | FAIL (9/25 PASS) | OPEN | Public seasons/ranking/shrine, rewards/referral/gifts and full integration; local LP acceptance rules pass. |
 
 ## M0 — foundation
 
 | Criterion (ROADMAP) | Verdict | Evidence |
 |---|---|---|
-| check:config green in new workspaces | PASS | E8 current config check;40sections,39governed tiers, runtime seed/schema matched. |
+| check:config green in new workspaces | PASS | E9 current config check;40sections,39governed tiers, runtime seed/schema matched. |
 | Five-seed sim k in2.0–3.0 | PASS | E8 current10cohorts/5seeds, range2.4186–2.8738,≥1000serves/cohort. |
-| Build and tests green | PASS | E8 current Vite production build/typecheck and310tests, no prototype code used. |
+| Build and tests green | PASS | E9 current Vite production build/typecheck and320tests, no prototype code used. |
 
 ## M1 — serving loop
 
@@ -144,7 +153,7 @@ No new gameplay test or80MB run was added solely to make this report green.
 | Locale switch preserves save | PASS | E2 “guest serves, reloads…switches locale” at4viewports. |
 | Guest progress migrates exactly once to Google | FAIL | Server account/import tests pass E5; end-to-end web claim remains absent. |
 | Guest cannot rank-write or claim donation gift | FAIL | These product paths are absent, not an exercised access-control acceptance. |
-| Admin changes1key, activates at effectiveAt | FAIL | E8 internal default proposal/approval/publication and real opening at effectiveAt pass. Authenticated admin editor and full protected workflow are not yet integrated; this end-to-end criterion remains FAIL. |
+| Admin changes1key, activates at effectiveAt | FAIL | E8 default registry/pinning/scheduling and E9 authenticated Google/TOTP/RBAC HTTP workflow pass. Browser login/editor are not integrated and live ClientID is absent; this end-to-end criterion remains FAIL. |
 | Replay event log equals state | PASS | Engine legacy/mixed-pin/replay tests, E4 month replay, E5 imported replay and E6 checkpoint exactness. |
 
 ## M5 — meta
@@ -184,8 +193,8 @@ are not milestone rows, so completing M0 does not incorrectly close all Phase0 r
 
 ## Next queue fixed by owner
 
-1. M4 authenticated admin transport/editor and scoped Config Registry per BRD§5.2;
-   default service/effectiveAt/pinned replay verified in E8.
+1. M4 browser Google/Authenticator flow and editor, then scoped Config Registry per
+   BRD§5.2; default service/pins and authenticated transport verified in E8/E9.
 2. Integrated accounts/eligibility/locale remain explicit M4 exit gaps; preserve
    server authority and the owner-deferred public import boundary. No fabricated Google setup.
 3. M6 → M7 → M8 → M9; defer additional M5 breadth until hard dependencies are met.
@@ -203,3 +212,5 @@ are not milestone rows, so completing M0 does not incorrectly close all Phase0 r
 | 2026-09-10 web cutover acceptance |936e9d5 reviewed and verified:298engine/server +91legacy/10remote browser, config/build and k/rush pass. Five M4 criteria move to PASS; M4 is10/18, still OPEN. Corrupt local recovery preserves originals; public upload remains deferred. |
 
 | 2026-09-10 default registry evidence | c1e953c:310engine/server,10remote browser, config/build,10ordinary kcohorts/15rush PASS; correction review CLEAN. Internal default registry/scheduling verified, authenticated editor still missing. Counts unchanged: M0 3/3, M1 6/12, M2 4/9, M3 5/12, M4 10/18, M5 9/25. |
+
+| 2026-09-10 admin API evidence |6f42575:320engine/server,10remote browser, config/build and review CLEAN. Server-side Google/TOTP/RBAC/registry transport verified; browser editor/login absent. Counts unchanged: M0 3/3, M1 6/12, M2 4/9, M3 5/12, M4 10/18, M5 9/25. |

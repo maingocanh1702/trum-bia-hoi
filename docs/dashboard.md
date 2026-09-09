@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-10 06:34 · **Branch hiện tại:** `codex/game-build-isolated`
+> **Cập nhật:** 2026-09-10 06:44 · **Branch hiện tại:** `codex/game-build-isolated`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -227,7 +227,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 3
-- **Notes:** Web server authority/outbox/reconnect936e9d5 đã kiểm chứng. Schema8 default registry c1e953c: immutable proposal/approval/audit, role/tier decisions, VN day/season activation và pin khi mở ca; seed mới không tự kích hoạt.310engine/server,10remote browser, config/build,10kcohorts2.4186–2.8738/15rush qua. Review P2 giới hạn tác giả đã sửa; catalog rename bị chặn trước khi ảnh hưởng career; correction CLEAN. Schema9 admin Google/TOTP API đã thêm,320tests/config/build và10remote browser qua; review đang chạy. Editor/scopes và account/import/eligibility/locale còn thiếu. M4 vẫn10/18 OPEN. Xem docs/config-registry.md và .qa/registry-verification.json.
+- **Notes:** Web server authority/outbox/reconnect936e9d5 đã kiểm chứng. Schema8 default registry c1e953c: immutable proposal/approval/audit, role/tier decisions, VN day/season activation và pin khi mở ca; seed mới không tự kích hoạt.310engine/server,10remote browser, config/build,10kcohorts2.4186–2.8738/15rush qua. Review P2 giới hạn tác giả đã sửa; catalog rename bị chặn trước khi ảnh hưởng career; correction CLEAN. Schema9 admin Google/TOTP API6f42575 đã qua320tests/config/build và10remote browser; review CLEAN, typecheck độc lập qua. Editor/scopes và account/import/eligibility/locale còn thiếu. M4 vẫn10/18 OPEN. Xem docs/config-registry.md và .qa/registry-verification.json.
 
 ### F12 — Giải Nhậu & Vụ Bia — 8 bậc, 2 Vụ Bia song song
 

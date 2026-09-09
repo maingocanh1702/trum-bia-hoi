@@ -393,8 +393,8 @@ historical validation but never activate themselves; registry publications decid
 player/opening configuration. Live shifts and replay keep their immutable original pins.
 `registry.ts` contains the internal default proposal/approval/publication service,
 using the same database/transactions and shared schema validation. `AdminActor` is a
-trusted authenticated server context, never client JSON. No admin HTTP route is exposed
-yet; the follow-up admin boundary must supply SSO identity, role and MFA/session proof.
+trusted authenticated server context, never client JSON. Schema9 admin HTTP routes
+below now derive it from Google identity, private server roles and independent TOTP/session proof.
 Tier A needs a distinct Super approver, B/C use the prescribed role. Default versions
 form a linear chain with explicit stale-base rejection. Rollback is a new publication;
 ops events are stored only, with no external notification delivery.
@@ -439,3 +439,5 @@ Schema8→9 adds only admin session/factor tables, preserving player/config hist
 Browser editor, enrollment/account recovery and scoped registry UI are subsequent slices.
 
 | 2026-09-10 admin transport implementation | Google SSO + independent TOTP/RBAC/session boundary and protected default registry routes implemented;320full tests/config/build pass, final role/HTTP checks and independent review underway. Real Client ID/directory remain unconfigured. |
+
+| 2026-09-10 admin API verified |6f42575:320engine/server (10admin),10remote browser, config zero warnings/build PASS. Native review CLEAN and independent typecheck PASS; reviewer socket checks blocked, host HTTP checks pass. Editor/GIS browser, enrollment/recovery and scopes remain. Receipt `.qa/admin-auth-verification.json`. |

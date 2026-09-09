@@ -6,11 +6,11 @@ complete-game goal; milestones below are implementation order, not scope cuts.
 
 | Milestone | Status | Evidence / remaining |
 |---|---|---|
-| M0 — config, pure engine, deterministic replay, k sim, workspaces | COMPLETE — exit criteria PASS | All3exit criteria PASS: current config/build/310tests,5seeds×2profiles k2.4186–2.8738; reviewed foundation/checkpoint/web. |
+| M0 — config, pure engine, deterministic replay, k sim, workspaces | COMPLETE — exit criteria PASS | All3exit criteria PASS: current config/build/320tests,5seeds×2profiles k2.4186–2.8738; reviewed foundation/checkpoint/web. |
 | M1 — serve loop, glasses, stock, upgrades, local save, spatial UI, core audio | In progress | Playable loop, local save/replay, stock/equipment/table UI, core SFX wired; final sprites and listening QA pending |
 | M2 — guest, vi/en, onboarding | In progress | Local guest + matching vi/en keys + event-driven guide with skip/repeat cap; Google account linking and 5-person evidence pending |
 | M3 — full menu, customer mix, weather, rush, business unlocks | In progress | 6 menu entries and hot prep, 5 seated types, 5 weather states, basic scheduled rush. Local phone/QR progression reviewed; shipper local reviewed CLEAN at307a3b0. Football, remaining business upgrades and exhaustive balance/edge QA remain |
-| M4 — server authority, accounts, reconnect, config registry/admin | In progress | 10/18 exit criteria PASS; web server authority/pinned config/outbox/reconnect verified936e9d5. Default registry verifiedc1e953c; authenticated admin/editor/scopes and integrated account/import/eligibility/locale remain. |
+| M4 — server authority, accounts, reconnect, config registry/admin | In progress | 10/18 exit criteria PASS; web server authority/pinned config/outbox/reconnect verified936e9d5. Default registry verifiedc1e953c; admin auth/API verified6f42575; browser editor/scopes and integrated account/import/eligibility/locale remain. |
 | M5 — seasons, leaderboard/shrine, life path, leases, quests/referrals | In progress | Local LP/quests/attendance and lease calendar/UI implemented; season/peak/referrals/social and full acceptance remain |
 | M6 — risks, dog, emergency supplies | Pending | |
 | M7 — voluntary donations, cosmetic gifts, age notice | Pending | |
@@ -2210,3 +2210,10 @@ registry read/propose/approve/publish endpoints. No browser-supplied actor field
 no player session mutation.320tests/config/build pass; final positive TierC check,
 remote browser regression and independent review underway. Editor/enrollment and
 scoped config are next; no live Client ID, public archive upload or M9 tuning.
+
+Final admin auth/registry API6f42575:320engine/server (10admin cases),10remote
+browser, config with zero literal warnings/build/typecheck PASS. Independent code/
+security review CLEAN with independent typecheck; reviewer socket tests blocked by
+sandbox EPERM, all host HTTP tests passed. Prior registry10kcohorts2.4186–2.8738 and
+15rush evidence retained; no engine/config changes. Receipt `.qa/admin-auth-verification.json`.
+Next browser editor/GIS/MFA on this API, then remaining M4 and M6–M9. M4 still10/18 OPEN.

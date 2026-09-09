@@ -476,3 +476,5 @@ type AuditEntry = {
 | 2026-09-10 default registry verified | c1e953c:310tests/config/build and10remote browser PASS; final correction review CLEAN. Author daily limits cannot be bypassed through publisher rotation; persisted catalog identities require migration. This closes the internal default service slice only; SSO/MFA transport, editor, scoped overrides/compensation/preview/emergency remain. |
 
 | 2026-09-10 admin authentication transport | BRD§2/§9.2 implemented via existing Google verifier + separate Authenticator factor, private server sub-to-role directory, eight-hour admin cookie, durable OTP replay/lockout and audit. Protected registry routes reuse canonical handlers. No live OAuth setup or editor/enrollment UI claim; verify/review pending. |
+
+| 2026-09-10 admin authentication verified |6f42575 passes320tests (10actual admin cases),10remote browser, config/build; review CLEAN with independent typecheck. Admin identity/MFA/RBAC/registry transport complete at server API layer. Browser login/editor, admin management/enrollment/recovery, scopes and broader BRD remain open. |

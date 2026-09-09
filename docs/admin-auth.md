@@ -37,3 +37,5 @@ No gameplay numbers, engine rules, public save upload or history tuning in this 
 | Date | Change |
 |---|---|
 | 2026-09-10 | Authentication/transport decision table before implementation; editor remains next. |
+
+| 2026-09-10 verified |6f42575:320full engine/server tests (10admin cases),10remote browser, config zero warnings/build PASS. Independent review CLEAN; independent typecheck PASS. Reviewer HTTP rerun blocked by sandbox EPERM; actual host tests passed. Receipt `.qa/admin-auth-verification.json`. Browser integration/editor remains next; real ClientID/directory absent. |
