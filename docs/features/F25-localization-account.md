@@ -149,3 +149,20 @@ wrong claims, timeout and safe error output. Full checks/review are in progress.
 | Date | Change |
 |---|---|
 | 2026-09-10 | Added bounded Google token verifier prerequisite and real-signature checks; no session/claim/UI activation or change to F25 acceptance. |
+
+## Owner decision — reviewed local history for ranking (2026-09-10)
+
+Owner selected **“Duyệt lịch sử local rồi mới tính”**. Local progress must be
+preserved on account migration. Imported local history is not automatically trusted
+for competitive credit just because deterministic replay succeeds: it stays pending
+review. Only server-recorded approval may make that history count toward ranking;
+a reviewed archive must be credited at most once. Do not silently replace this policy
+with counting only income after sign-in, discard the guest's history, or grant ranking
+credit from a client-supplied approval flag. The review/approval and migration paths
+still need implementation; this records the owner's decision, not delivered behavior.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 owner | Chose review of imported local history before ranking credit, while preserving all local progress; approval and exactly-once credit remain required implementation. |
+
+| 2026-09-10 verification correction | Native review found SDK11 also accepts googleapis.com as issuer. The wrapper now allows only accounts.google.com / https://accounts.google.com; a signed-token regression fails before the fix and passes after it. Config/build and255engine/server checks pass; final correction review pending. |

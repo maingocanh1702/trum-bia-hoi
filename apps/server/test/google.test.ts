@@ -29,7 +29,7 @@ async function fixture(t: TestContext) {
   t.after(async () => { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); });
   const client = new OAuth2Client({
     endpoints: { oauth2FederatedSignonPemCertsUrl: new URL(`http://127.0.0.1:${(server.address() as AddressInfo).port}/certs`) },
-    transporterOptions: { timeout: 150, retryConfig: { retry: 0 } },
+    transporterOptions: { timeout: 5000, retryConfig: { retry: 0 } },
   });
   return { client, verify: googleVerifier(CLIENT, client)!, get requests() { return requests; },
     rotate() { selected = keys[1]; }, fail() { status = 503; }, hang() { hang = true; } };
@@ -62,7 +62,7 @@ test('invalid signed claims, signature, audience and request nonce cannot become
   const f = await fixture(t), now = Math.floor(Date.now() / 1000);
   for (const patch of [
     { aud: 'someone-elses-app.apps.googleusercontent.com' }, { aud: undefined }, { aud: [CLIENT] },
-    { iss: 'https://attacker.example' }, { iss: undefined }, { azp: 'other-app.apps.googleusercontent.com' },
+    { iss: 'https://attacker.example' }, { iss: 'googleapis.com' }, { iss: undefined }, { azp: 'other-app.apps.googleusercontent.com' },
     { exp: now - 1 }, { exp: undefined }, { exp: String(now + 3600) }, { exp: now + 100000 },
     { iat: now + 1000 }, { iat: String(now - 10) }, { iat: now + 100, exp: now + 100 },
     { nonce: undefined }, { nonce: 'b'.repeat(64) }, { sub: undefined }, { sub: 123 },

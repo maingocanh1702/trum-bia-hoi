@@ -48,3 +48,15 @@
 | Ver | Thay đổi |
 |---|---|
 | v1.0 | Bản đầu 2026-09-08 — tách từ F12 §6 theo yêu cầu chủ dự án; ảnh tham khảo Bàn Thờ. |
+
+## Owner update — imported local history (2026-09-10)
+
+After sign-in, retain the player's local progress. The owner chose **review local
+history before it counts**: imported local results remain excluded from ranking until
+server-recorded approval, then receive credit once. Replay consistency alone is not
+approval. This supplements F25's migration/conflict rules and does not claim the
+review/approval or community leaderboard implementation is finished.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 owner | Imported local history must be reviewed before competitive credit; preserve progress and prevent duplicate credit. |

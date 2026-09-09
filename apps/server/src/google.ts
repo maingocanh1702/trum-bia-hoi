@@ -19,6 +19,7 @@ export function googleVerifier(clientId: string | undefined, client = new OAuth2
       const ticket = await client.verifyIdToken({ idToken: credential, audience: clientId });
       const payload = ticket.getPayload();
       if (!payload || typeof payload.sub !== 'string' || !/^[\x21-\x7e]{1,255}$/.test(payload.sub) || // config-exempt: OIDC subject maximum length
+          !['accounts.google.com', 'https://accounts.google.com'].includes(payload.iss) ||
           payload.nonce !== expectedNonce || payload.azp !== undefined && payload.azp !== clientId ||
           !Number.isSafeInteger(payload.iat) || !Number.isSafeInteger(payload.exp) ||
           payload.iat < 0 || payload.exp <= payload.iat || payload.exp * 1000 <= Date.now()) throw Error(); // config-exempt: JWT NumericDate seconds to milliseconds
