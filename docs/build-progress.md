@@ -958,3 +958,40 @@ Original reviewer output retained at.qa/review-quests.txt/.log; no synthetic ver
 | Date | Change |
 |---|---|
 | 2026-09-09 | Fixed confirmed quest-reveal P1 from independent review; enabled-onboarding regressions cover configured2/3 shift thresholds. |
+
+
+## 2026-09-09 — Daily rules12 independent review receipt
+
+Immutable full-base review3f978eccefeab6208f5ba39262119952aaee11a6 through
+producte551b409bb6348dcf557ef5e16ad85621a7c1ef9. First round found one real P1:
+progressive onboarding reveal was missing. Corrected yard/book/panel with one
+configured predicate and actual2/3-finalized-shift browser checks. Follow-up review
+exited0 and reported: "no introduced actionable defect was found." It independently
+ran all118 engine tests, focused quests, typecheck and production build. Native
+outputs preserved in.qa/review-quests.txt and.qa/review-quests2.txt with full logs;
+no fabricated clean-tail marker. Product was immutable during each review.
+
+Final author evidence: config/build green,118 unit tests,46 E2E in47.6s;
+20>=500-serve economy rows k2.3171–2.7312 (normal and combined flyer/Golden/QR/
+shipper/well-rested),15 rush-pressure rows. Follow-up correction was UI-only;
+engine and canonical JSON are byte-identical toa22fa90. Complete scrolling bonus
+area was also visibly checked at390×844 and1280×400 with44px button reachability
+(.qa/quests-bonus-scroll.txt/.png); normal quest sheets at360/390/low1280 are readable.
+
+Canonical current-rules captures froma22fa90 (unchanged engine) are ready for the
+next protocol: actual6 table-order service claim and hidden midnight rollover, with
+full expected worlds and source SHA (.qa/capture-daily-v12.mjs/.txt and
+legacy-daily-{claimed,hidden-rollover}-v12*.json). Attendance diagnosis in
+.qa/attendance-next-intake.md separates observed attendance from claiming; no
+attendance implementation/reward is claimed yet. M4 authority orientation also
+exists in.qa/server-next-intake.md; no server product was written in this slice.
+
+Tracker v0.16.2/dashboard retain17 in progress, zero complete full features. Daily
+quests are playable after configured onboarding reveal; real social gift producer,
+attendance/referral, server seasons and all remaining M0–M9 scope continue. Root
+read-only refresh still showsbc79af5 and pre-existing WIP preserved. Local5174
+responds200; no root merge/push, hosted release or complete-game claim.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Recorded clean full-base daily review after onboarding correction,118 unit/46 E2E/20 k rows, genuine v12 saves and next attendance intake. Full-game goal remains active. |
