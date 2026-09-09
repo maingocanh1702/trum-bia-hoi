@@ -11,6 +11,7 @@ const ORIGIN = 'http://127.0.0.1:5174', NOW = Date.parse('2026-09-09T10:00:00Z')
 async function fixture(t: { after(fn: () => unknown): void }, limits: Partial<ServerOptions> = {}) {
   mkdirSync('.qa', { recursive: true }); const dir = mkdtempSync(resolve('.qa/http-')), file = resolve(dir, 'game.db');
   let now = NOW; const instances: { store: GameStore; close: () => Promise<void> }[] = [];
+  const clients = new Map<string, { id: string; next: number; keys: Map<string, number> }>();
   t.after(async () => { for (const i of instances) { await i.close(); i.store.close(); } rmSync(dir, { force: true, recursive: true }); });
   const open = async () => {
     const store = new GameStore(file, config, () => now), server = createGameServer(store,
@@ -19,11 +20,24 @@ async function fixture(t: { after(fn: () => unknown): void }, limits: Partial<Se
     const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
     const close = async () => { if (server.listening) { server.closeAllConnections(); await new Promise<void>((resolve, reject) => server.close(e => e ? reject(e) : resolve())); } };
     instances.push({ store, close });
-    const request = (path: string, body?: unknown, cookie?: string, headers?: Record<string, string>) => fetch(url + path, {
-      method: body === undefined ? 'GET' : 'POST', headers: { Origin: ORIGIN, 'Content-Type': 'application/json', ...(cookie ? { Cookie: cookie } : {}), ...headers },
-      body: body === undefined ? undefined : JSON.stringify(body),
-    });
-    return { store, request, close, url };
+    const request = (path: string, body?: unknown, cookie?: string, headers?: Record<string, string>) => {
+      const client = cookie && clients.get(cookie);
+      // Existing scenarios use a real handshake and stable retry sequence; explicit protocol tests supply their own fields.
+      if (client && path === '/player/command' && body && typeof body === 'object' && 'idempotencyKey' in body &&
+          typeof body.idempotencyKey === 'string' && !('clientId' in body) && !('clientSeq' in body)) {
+        if (!client.keys.has(body.idempotencyKey)) client.keys.set(body.idempotencyKey, client.next++);
+        body = { ...body, clientId: client.id, clientSeq: client.keys.get(body.idempotencyKey) };
+      }
+      return fetch(url + path, {
+        method: body === undefined ? 'GET' : 'POST', headers: { Origin: ORIGIN, 'Content-Type': 'application/json', ...(cookie ? { Cookie: cookie } : {}), ...headers },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      });
+    };
+    const registerClient = async (cookie: string) => {
+      const r = await request('/player/connect', {}, cookie); assert.equal(r.status, 200); const data = await r.json();
+      clients.set(cookie, { id: data.clientId, next: 1, keys: new Map() }); return data.clientId as string;
+    };
+    return { store, request, close, url, registerClient };
   };
   return { file, open, get now() { return now; }, set now(v: number) { now = v; }, ...await open() };
 }
@@ -31,7 +45,8 @@ async function guest(api: Awaited<ReturnType<typeof fixture>>) {
   const response = await api.request('/auth/session', {}); assert.equal(response.status, 201);
   const set = response.headers.get('set-cookie')!; assert.match(set, /HttpOnly; SameSite=Lax/); assert.match(set, /Path=\//);
   const data = await response.json(); assert.equal(data.provider, 'guest'); assert.equal(data.token, undefined);
-  return { cookie: set.split(';')[0], ...data };
+  const cookie = set.split(';')[0], clientId = await api.registerClient(cookie);
+  return { cookie, clientId, ...data };
 }
 const command = (type: string) => ({ idempotencyKey: type, command: { type } });
 
@@ -157,8 +172,8 @@ test('long-lived players catch up in bounded repeatable pages across restart wit
 test('v1 SQLite players and event history survive auth migration; failed guest creation leaves no orphan player', async t => {
   const f = await fixture(t); f.store.createPlayer('legacy', 42); f.store.command('legacy', command('startShift') as never); const before = f.store.read('legacy');
   await f.close(); f.store.close(); const db = new DatabaseSync(f.file); t.after(() => db.close());
-  db.exec('DROP TABLE sessions; PRAGMA user_version=1');
-  const migrated = await f.open(); assert.deepEqual(migrated.store.read('legacy'), before); assert.equal(db.prepare('PRAGMA user_version').get()!.user_version, 2);
+  db.exec('DROP TABLE client_receipts; DROP TABLE client_streams; DROP TABLE sessions; PRAGMA user_version=1');
+  const migrated = await f.open(); assert.deepEqual(migrated.store.read('legacy'), before); assert.equal(db.prepare('PRAGMA user_version').get()!.user_version, 3);
   db.exec("CREATE TRIGGER test_session_failure BEFORE INSERT ON sessions BEGIN SELECT RAISE(ABORT,'test:sessionFailure'); END");
   const fail = await migrated.request('/auth/session', {}); assert.equal(fail.status, 500); assert.deepEqual(await fail.json(), { error: 'serverError' }); assert.equal(fail.headers.get('set-cookie'), null);
   assert.equal(db.prepare('SELECT count(*) AS n FROM players').get()!.n, 1);
@@ -181,4 +196,32 @@ test('HTTPS deployment uses host-only Secure cookies and never exposes credentia
   assert.match(response.headers.get('set-cookie')!, /; Secure$/); assert.doesNotMatch(response.headers.get('set-cookie')!, /Domain=/);
   assert.equal(response.headers.get('cache-control'), 'no-store'); assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
   const payload = await response.json(); assert.deepEqual(Object.keys(payload).sort(), ['expiresAt', 'playerId', 'provider']);
+});
+
+test('HTTP requires owned stream sequencing, returns recoverable gap/conflict acknowledgements and resumes the exact cursor after restart', async t => {
+  const f = await fixture(t), a = await guest(f), b = await guest(f);
+  const send = (seq: number, key: string, action: Command, clientId = a.clientId) => f.request('/player/command', { clientId, clientSeq: seq, idempotencyKey: key, command: action }, a.cookie);
+  const noSequence = await fetch(f.url + '/player/command', { method: 'POST', headers: { Origin: ORIGIN, 'Content-Type': 'application/json', Cookie: a.cookie }, body: JSON.stringify(command('startShift')) });
+  assert.equal(noSequence.status, 400);
+  const gap = await send(2, 'stock', { type: 'restock', dish: 'bia', mode: 'one' }); assert.equal(gap.status, 409);
+  assert.equal((await gap.json()).acknowledgedSeq, 0);
+  const opened = await send(1, 'start', { type: 'startShift' }); assert.equal(opened.status, 200); const accepted = await opened.json();
+  assert.ok(accepted.result.ok); assert.equal(accepted.acknowledgedSeq, 1);
+  assert.deepEqual(await (await send(1, 'start', { type: 'startShift' })).json(), accepted);
+  for (const response of [await send(1, 'different', { type: 'startShift' }), await send(2, 'start', { type: 'endShift' })]) {
+    assert.equal(response.status, 409); assert.equal((await response.json()).acknowledgedSeq, 1);
+  }
+  const foreign = await send(2, 'foreign', { type: 'endShift' }, b.clientId); assert.equal(foreign.status, 403); assert.deepEqual(await foreign.json(), { error: 'invalidClient' });
+  assert.equal((await f.request('/player/connect', { clientId: a.clientId }, b.cookie)).status, 403);
+  for (const body of [{ clientId: '' }, { clientId: null }, { clientId: a.clientId, at: NOW }, { clientSeq: 5 }]) assert.equal((await f.request('/player/connect', body, a.cookie)).status, 400);
+  for (const clientSeq of [0, -1, 1.5, null, '2']) assert.equal((await f.request('/player/command', { ...command('startShift'), clientId: a.clientId, clientSeq }, a.cookie)).status, 400);
+  await f.close(); f.store.close(); const reopened = await f.open();
+  const resumed = await (await reopened.request('/player/connect', { clientId: a.clientId }, a.cookie)).json();
+  assert.equal(resumed.clientId, a.clientId); assert.equal(resumed.acknowledgedSeq, 1); assert.deepEqual(resumed.world, accepted.world);
+  const stock = { clientId: a.clientId, clientSeq: 2, idempotencyKey: 'stock', command: { type: 'restock', dish: 'bia', mode: 'one' } };
+  const bought = await (await reopened.request('/player/command', stock, a.cookie)).json(); assert.ok(bought.result.ok); assert.equal(bought.acknowledgedSeq, 2);
+  assert.deepEqual(await (await reopened.request('/player/command', stock, a.cookie)).json(), bought);
+  assert.equal((await reopened.request('/player/command', { ...stock, clientSeq: 3 }, a.cookie, { Origin: 'https://attacker.invalid' })).status, 403);
+  await reopened.request('/auth/logout', {}, a.cookie);
+  assert.equal((await reopened.request('/player/command', stock, a.cookie)).status, 401);
 });

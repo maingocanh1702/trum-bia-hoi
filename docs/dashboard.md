@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-09 14:36 · **Branch hiện tại:** `codex/game-build-isolated`
+> **Cập nhật:** 2026-09-09 14:51 · **Branch hiện tại:** `codex/game-build-isolated`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -227,7 +227,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 3
-- **Notes:** Đã có config pin/savev3, SQLite append-only event store và guest HTTP/session schema2. Config/build182 engine/server + actual CLI/Chromium smoke pass tại62b4445;3 findings cookie/command fields/event paging đã sửa, native full-range review090d920..62b4445 không còn lỗi actionable (reviewer socket rerun bị sandbox chặn). Registry/Google claim/WebSocket/clientSeq/reconnect/anti-cheat và web cutover còn thiếu; web vẫn local. Xem docs/build-progress.md.
+- **Notes:** Đã có config pin/savev3, SQLite append-only event store và guest HTTP/session schema2. Config/build182 engine/server + actual CLI/Chromium smoke pass tại62b4445;3 findings cookie/command fields/event paging đã sửa, native full-range review090d920..62b4445 không còn lỗi actionable (reviewer socket rerun bị sandbox chặn). Schema3 clientSeq/owned stream/atomic receipts đã có, đang verify/review. Registry/Google claim/WebSocket/client buffer/reconnect/anti-cheat và web cutover còn thiếu; web vẫn local. Xem docs/build-progress.md.
 
 ### F13 — Đường Lên Trùm — LP0–LP7, gate tính năng & mặt bằng
 

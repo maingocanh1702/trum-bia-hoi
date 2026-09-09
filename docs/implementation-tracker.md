@@ -1,6 +1,6 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.25.1
+> **Version:** v0.26.0
 > **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-09 (layout/art theo ảnh owner)
 > **Trạng thái:** Active — **M0 qua verify; review sửa lỗi nền và layout/art đã CLEAN. M1–M3 tiếp tục triển khai; M4 bắt đầu nền config pin/replay, server event store đã review; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.3** (1 phase, mốc M0–M9).
 > **Owner:** Team
@@ -71,7 +71,7 @@
 
 | PR | Wave | Feature | Status | Branch | Gates | Notes |
 |----|------|---------|:------:|--------|:-----:|-------|
-| F23 | 🎮 Code | Kiến Trúc Server Quán — server-auth, websocket, CAPTCHA | 🟡 | `codex/game-build-isolated` | 🔒S | Đã có config pin/savev3, SQLite append-only event store và guest HTTP/session schema2. Config/build182 engine/server + actual CLI/Chromium smoke pass tại62b4445;3 findings cookie/command fields/event paging đã sửa, native full-range review090d920..62b4445 không còn lỗi actionable (reviewer socket rerun bị sandbox chặn). Registry/Google claim/WebSocket/clientSeq/reconnect/anti-cheat và web cutover còn thiếu; web vẫn local. Xem docs/build-progress.md. |
+| F23 | 🎮 Code | Kiến Trúc Server Quán — server-auth, websocket, CAPTCHA | 🟡 | `codex/game-build-isolated` | 🔒S | Đã có config pin/savev3, SQLite append-only event store và guest HTTP/session schema2. Config/build182 engine/server + actual CLI/Chromium smoke pass tại62b4445;3 findings cookie/command fields/event paging đã sửa, native full-range review090d920..62b4445 không còn lỗi actionable (reviewer socket rerun bị sandbox chặn). Schema3 clientSeq/owned stream/atomic receipts đã có, đang verify/review. Registry/Google claim/WebSocket/client buffer/reconnect/anti-cheat và web cutover còn thiếu; web vẫn local. Xem docs/build-progress.md. |
 | F12 | 🎮 Code | Giải Nhậu & Vụ Bia — 8 bậc, 2 Vụ Bia song song | ⬜ | `—` | 🔒S 🔒B | Spec `docs/features/F12-league-seasons.md`. Phân Hạng 7d / Tranh Bá 14d. |
 | F13 | 🎮 Code | Đường Lên Trùm — LP0–LP7, gate tính năng & mặt bằng | 🟡 | `codex/game-build-isolated` | 🔒S | V6 projection đủ requirements/rewards, level tăng bền + claim một lần; ladder VI/EN và phone/QR. 67 unit/30 E2E +40 sim rows k2.3249–2.7688; review d2918e9..598f66f không còn findings. Flyer/signboard ownership đã có producer; season/peak/location/server và full acceptance còn tiếp tục. |
 | F14 | 🎮 Code | Mặt Bằng Quán — 9 mặt bằng, rent/cọc 7 ngày | ⬜ | `—` | 🔒S 🔒B | Spec `docs/features/F14-locations.md`. |
@@ -217,3 +217,5 @@
 | v0.25.0 | M4 guest HTTP/session implementation: hashed expiring/revocable cookies, owned state/command/events, real socket tests and SQLite schema2 migration. Final verify/review in progress.18 features in progress, zero complete. |
 
 | v0.25.1 | Verified guest HTTP at62b4445: config/build182 engine/server, actual CLI/Chromium, full-range native review without remaining introduced defects after3 fixes. Google ID absent per owner; setup guide ready.18 features in progress, zero complete; full M0–M9 active. |
+
+| v0.26.0 | M4 server ordered ingress: owned client streams, mandatory clientSeq and atomic receipt acknowledgements; schema3 migration and retry/order/rollback/HTTP tests implemented. Verification/review in progress;18 features remain active. |

@@ -173,3 +173,19 @@ are still required. Current HTTP tests prove this boundary only; §8 remains ope
 | 2026-09-09 review corrections | Exact nested command fields, empty/malformed-cookie rejection and100-event durable pages; continuation/retry/restart tests added. Event polling no longer replays or advances the game; state/command operations advance server time. |
 
 | 2026-09-09 verified | Config/build182 engine/server and actual CLI/Chromium pass at62b4445. Full-range independent review090d920..62b4445 has no confirmed actionable introduced defects; reviewer socket reruns blocked by sandbox. Google ID absent per owner; F23§8 still requires sequencing/reconnect/registry/account/web integration. |
+
+
+## Ordered ingress checkpoint — 2026-09-09
+
+GameStore.clientCommand and POST /player/connect provide owned durable input streams;
+HTTP requires clientSeq and returns acknowledgedSeq. SQLite receipts reference the
+canonical command log, so result identity/spends cannot diverge between per-tab order
+and player-wide retries. v1/v2 data migrate to schema3. Real-file/multi-connection and
+HTTP checks cover gaps, response loss, reordering, restart and atomic failure.
+
+F23§8 remains open: client buffering/reconnecting UI, expiry by reconnectGraceMs and
+normal closing, WebSocket, registry/Google claim and web cutover are still required.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 ordered ingress | Implemented atomic server clientSeq acceptance/resume without an unsequenced HTTP bypass; final verification and native review in progress. |

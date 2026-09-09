@@ -1628,3 +1628,23 @@ Tracker v0.25.1/dashboard keep18 features in progress and zero complete.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Verified guest HTTP through62b4445, resolved all3 native-review findings, added Google setup guide after owner confirmed no Client ID. No full-game or release completion. |
+
+
+## M4 ordered command ingress — 2026-09-09
+
+Base794d75c, same isolated worktree. Server-issued client streams and append-only
+receipts add contiguous clientSeq acceptance to the existing command transaction.
+The HTTP boundary now requires sequence/stream ownership; gaps/changed retries cannot
+consume a sequence, while domain refusals are acknowledged as processed. Receipts
+reference the canonical player command log; response loss or another tab never
+reapplies the original spend/serve. Schema0–2 migration preserves history/sessions.
+
+Tests exercise exact whole-table payment retries, reordered JSON, stream isolation,
+acknowledgements after restart, errors at each write boundary and actual HTTP input.
+No engine/economy/web behavior changes. Config/build/full tests and review in progress.
+Client durable outbox/reconnecting UI, reconnectGraceMs closing, registry/Google claim
+and remote cutover remain required; owner5174 stays on the verified local adapter.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Added M4 server ordering prerequisite and focused persistence/HTTP regression checks; full M0–M9 goal remains active. |

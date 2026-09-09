@@ -82,6 +82,11 @@ export function createGameServer(store: GameStore, options: ServerOptions) {
         if (!record(body) || Object.keys(body).length) throw new HttpError(400, 'invalidBody');
         store.revokeSession(token!); res.setHeader('Set-Cookie', cookie('', 0)); reply(200, { ok: true }); return;
       }
+      if (req.method === 'POST' && path === '/player/connect') {
+        if (!record(body) || Object.keys(body).some(k => k !== 'clientId') || body.clientId !== undefined && (typeof body.clientId !== 'string' || !body.clientId || body.clientId.length > 128)) throw new HttpError(400, 'invalidClient'); // config-exempt: transport identifier length bound
+        const connected = store.connect(owner.playerId, body.clientId as string | undefined);
+        reply(200, { ...publicState(connected), clientId: connected.clientId, acknowledgedSeq: connected.acknowledgedSeq }); return;
+      }
       if (req.method === 'GET' && path === '/player/state') { reply(200, publicState(store.read(owner.playerId))); return; }
       if (req.method === 'GET' && path === '/player/events') {
         const after = route.searchParams.get('after');
@@ -91,15 +96,16 @@ export function createGameServer(store: GameStore, options: ServerOptions) {
       }
       if (req.method === 'POST' && path === '/player/command') {
         const envelope = record(body) ? { ...body, at: 0 } : undefined;
-        if (!record(body) || Object.keys(body).some(k => !['command', 'idempotencyKey'].includes(k)) || !validEnvelope(envelope) ||
+        if (!record(body) || Object.keys(body).some(k => !['command', 'idempotencyKey', 'clientId', 'clientSeq'].includes(k)) ||
+            typeof body.clientId !== 'string' || !body.clientId || body.clientId.length > 128 || !Number.isSafeInteger(body.clientSeq) || Number(body.clientSeq) < 1 || !validEnvelope(envelope) || // config-exempt: transport identifier length bound
             Object.keys(envelope.command).some(k => k !== 'type' && !(commandFields[envelope.command.type] as readonly string[]).includes(k))) throw new HttpError(400, 'invalidCommand');
-        const response = store.command(owner.playerId, { command: envelope.command, idempotencyKey: envelope.idempotencyKey });
-        reply(200, { ...publicState(response), result: response.result }); return;
+        const response = store.clientCommand(owner.playerId, { command: envelope.command, idempotencyKey: envelope.idempotencyKey, clientId: body.clientId, clientSeq: Number(body.clientSeq) });
+        reply(response.error ? 409 : 200, { ...publicState(response), clientId: response.clientId, acknowledgedSeq: response.acknowledgedSeq, result: response.result, error: response.error }); return;
       }
       throw new HttpError(404, 'notFound');
     } catch (error) {
-      const input = error instanceof Error && ['store:invalidCursor', 'store:invalidCommand'].includes(error.message);
-      reply(error instanceof HttpError ? error.status : input ? 400 : 500,
+      const input = error instanceof Error && ['store:invalidCursor', 'store:invalidCommand', 'store:invalidClient'].includes(error.message);
+      reply(error instanceof HttpError ? error.status : error instanceof Error && error.message === 'store:invalidClient' ? 403 : input ? 400 : 500,
         { error: error instanceof HttpError ? error.message : input ? error.message.slice(6) : 'serverError' });
       req.resume();
     }

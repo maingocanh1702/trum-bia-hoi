@@ -3,7 +3,7 @@
 `@tbh/server` exports `GameStore`, the internal M4 persistence layer, and
 `@tbh/server/http` exports a Node HTTP server with durable guest-cookie ownership.
 It runs the existing pure engine against SQLite. The web app still uses localStorage;
-Google claim, client sequencing/reconnect, registry and web cutover remain in progress.
+Google claim, client buffering/reconnect, registry and web cutover remain in progress.
 The API is locally runnable; it is not full M4 or a production release.
 
 Tested runtime: Node22.22.1 with native `node:sqlite` (SQLite3.51.2). The server
@@ -74,7 +74,8 @@ must supply edge rate limits. Session credentials are not accepted in URLs or bo
 | POST | `/auth/logout` | Empty JSON; revoke credential and expire cookie. Player history remains. |
 | GET | `/player/state` | Owned projection, `configVersion`, `serverNow`, `revision`, `lastEventSeq`. |
 | GET | `/player/events?after=N` | Up to100 owned durable events after a validated cursor; `lastEventSeq` is this page's continuation cursor, `hasMore` reports remaining rows at its read frontier. |
-| POST | `/player/command` | `{idempotencyKey, command}`; existing engine handler, authoritative projection/result. No client clock, player ID, seed or totals. |
+| POST | `/player/connect` | `{}` opens a server-issued owned client stream; `{clientId}` resumes it. Returns current projection, `clientId` and `acknowledgedSeq`. |
+| POST | `/player/command` | `{clientId, clientSeq, idempotencyKey, command}`; contiguous sequence plus existing engine handler, authoritative projection/result/ack. No client clock, player ID, seed or totals. |
 
 Clients send `credentials: 'include'`. POST requests require the configured Origin
 and JSON; CORS allows only that origin. HTTPS uses `__Host-tbh-session` with Secure;
@@ -94,7 +95,7 @@ cover session isolation/restart/expiry/revocation, CSRF/CORS, secure cookies, in
 input/body limits, atomic rollback/migration, idempotent service, pause and event
 catch-up. Request/header timeouts and bounded per-process abuse limiting protect
 this service boundary; full CAPTCHA/flags/appeal and production observability remain.
-Google account linking/one-time local claim, per-client sequence and offline replay,
+Google account linking/one-time local claim, client buffering and offline replay,
 reconnectGraceMs closure, WebSocket push and the web adapter remain explicit M4 work.
 
 Command properties are allowlisted per action at the HTTP boundary, in addition to
@@ -116,3 +117,32 @@ consumed by the current launcher and no real Google login/cloud claim is enabled
 | 2026-09-09 | Addressed HTTP review: exact command properties, explicit invalid-cookie refusal, and bounded durable event pages with continuation; catch-up no longer advances simulation. |
 
 | 2026-09-09 verification | Config/build182 engine/server checks and actual CLI/Chromium smoke pass at62b4445. Independent full-range review090d920..62b4445 reports no remaining introduced defects; reviewer socket reruns were blocked by sandbox listen EPERM. |
+
+
+## Ordered client input
+
+Schema3 adds owned client streams and append-only receipts referencing canonical
+command keys. Each tab/device creates its own stream, persists its ID and outgoing
+commands before transmission, then resumes that ID after reload. Send clientSeq1,
+then2, etc.; a successful HTTP200 acknowledges processing even if the engine result
+is a domain refusal. HTTP409 returns `acknowledgedSeq` with `sequenceGap`,
+`sequenceConflict` or `idempotencyConflict`; it never consumes that command sequence.
+Process the missing sequence before later ones. Reuse the exact command/key/seq when
+a response is lost. Reads may advance autonomous gameplay independently of input.
+
+Player-wide idempotency remains the source of results across streams. Same key with
+an identical payload can be acknowledged on another sequence/stream without replaying
+its effects. Different payload under the same key is refused. Command/event/projection
+and receipt commits are atomic; acknowledgement is the last durable receipt sequence,
+not a separate writable counter. Deferred foreign keys prevent an orphan receipt.
+Cookie ownership applies to connect/resume/command; knowing a stream ID grants no
+access. HTTP no longer accepts unsequenced commands. The internal GameStore.command
+entry point remains trusted; the public route uses GameStore.clientCommand.
+
+This completes server ordering, not F23 reconnect acceptance. Connection expiry and
+normal timeout closing, the durable browser outbox/reconnecting UI, public registry,
+Google guest claim and remote web integration remain mandatory follow-on work.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 sequence | Added transactional per-client receipts, ordered HTTP commands and owned stream resume; schema0/1/2 migrate to3 preserving accounts/history. Tests cover lost response, multiple tabs, gaps/conflicts, failure acknowledgement, rollback and session isolation. Verification/review in progress. |

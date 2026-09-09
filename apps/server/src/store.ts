@@ -3,10 +3,12 @@ import { createHash, randomBytes, randomInt, randomUUID } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import { Game, config as seedConfig, configContent, decodeSave, loadConfig, validEnvelope, type Config, type Command, type DomainEvent, type LoggedCommand, type World } from '@tbh/engine';
 
-const SCHEMA_VERSION = 2, CACHE_SIZE = 64; // config-exempt: persistence format and bounded process cache, not game tuning
+const SCHEMA_VERSION = 3, CACHE_SIZE = 64; // config-exempt: persistence format and bounded process cache, not game tuning
 const EVENT_PAGE_SIZE = 100; // config-exempt: transport history page bound, not gameplay tuning
 type PlayerRow = { id: string; seed: number; created_at: number; config_version: string; now: number; revision: number; projection: string };
 export type Snapshot = { world: World; configVersion: string; revision: number; lastEventSeq: number };
+type Request = { idempotencyKey: string; command: Command };
+export type SequencedRequest = Request & { clientId: string; clientSeq: number };
 const sessionHash = (token: string) => typeof token === 'string' && /^[a-f0-9]{64}$/.test(token) ? createHash('sha256').update(token).digest('hex') : null; // config-exempt:256-bit random credential encoding
 const projection = (w: World) => JSON.stringify({ ...w, events: undefined });
 const validPlayerId = (id: string) => typeof id === 'string' && id.length > 0 && id.length <= 128; // config-exempt: internal identity protocol bound
@@ -25,7 +27,7 @@ export class GameStore {
       if (this.db.prepare('PRAGMA foreign_keys').get()?.foreign_keys !== 1) throw Error('store:foreignKeys');
       this.db.exec('BEGIN IMMEDIATE');
       const version = this.db.prepare('PRAGMA user_version').get()?.user_version;
-      if (version !== 0 && version !== 1 && version !== SCHEMA_VERSION) throw Error('store:unsupportedSchema');
+      if (version !== 0 && version !== 1 && version !== 2 && version !== SCHEMA_VERSION) throw Error('store:unsupportedSchema');
       if (version === 0) {
         this.db.exec(`
           CREATE TABLE configs (version TEXT PRIMARY KEY, snapshot TEXT NOT NULL) STRICT;
@@ -44,7 +46,18 @@ export class GameStore {
       if (version === 0 || version === 1) {
         this.db.exec(`CREATE TABLE sessions (token_hash TEXT PRIMARY KEY, player_id TEXT NOT NULL REFERENCES players(id),
           created_at INTEGER NOT NULL, expires_at INTEGER NOT NULL, revoked_at INTEGER) STRICT;
+          `);
+      }
+      if (version !== SCHEMA_VERSION) {
+        this.db.exec(`CREATE TABLE client_streams (id TEXT PRIMARY KEY, player_id TEXT NOT NULL REFERENCES players(id),
+          created_at INTEGER NOT NULL, UNIQUE(id,player_id)) STRICT;
+          CREATE TABLE client_receipts (client_id TEXT NOT NULL, player_id TEXT NOT NULL, client_seq INTEGER NOT NULL CHECK(client_seq>0),
+            idempotency_key TEXT NOT NULL, PRIMARY KEY(client_id,client_seq),
+            FOREIGN KEY(client_id,player_id) REFERENCES client_streams(id,player_id),
+            FOREIGN KEY(player_id,idempotency_key) REFERENCES commands(player_id,idempotency_key) DEFERRABLE INITIALLY DEFERRED) STRICT;
           PRAGMA user_version=${SCHEMA_VERSION};`);
+        for (const action of ['UPDATE', 'DELETE']) this.db.exec(`CREATE TRIGGER client_receipts_${action.toLowerCase()}
+          BEFORE ${action} ON client_receipts BEGIN SELECT RAISE(ABORT,'store:appendOnly'); END;`);
       }
       this.config = this.registerConfig(candidate);
       this.db.exec('COMMIT');
@@ -166,15 +179,49 @@ export class GameStore {
     }
   }
   read(id: string): Snapshot { const { result: _, ...state } = this.operate(id, () => undefined); return state; }
-  command(id: string, request: { idempotencyKey: string; command: Command }) {
+  private commandEntry(id: string, key: string) {
+    const row = this.db.prepare('SELECT entry FROM commands WHERE player_id=? AND idempotency_key=?').get(id, key);
+    return row ? JSON.parse(String(row.entry)) as LoggedCommand : undefined;
+  }
+  private execute(game: Game, id: string, request: Request, now: number) {
+    const previous = this.commandEntry(id, request.idempotencyKey)?.command;
+    // JSON member order is not command identity; retain the original engine payload on an equal retry.
+    const command = previous && isDeepStrictEqual(previous, request.command) ? previous : request.command;
+    return game.command({ idempotencyKey: request.idempotencyKey, command, at: now }, request.command.type === 'startShift' ? this.config : undefined);
+  }
+  command(id: string, request: Request) {
     if (!validEnvelope({ ...request, at: 0 })) throw Error('store:invalidCommand');
-    return this.operate(id, (game, now) => {
-      const row = this.db.prepare('SELECT entry FROM commands WHERE player_id=? AND idempotency_key=?').get(id, request.idempotencyKey);
-      const previous = row && (JSON.parse(String(row.entry)) as LoggedCommand).command;
-      // JSON member order is not command identity; retain the original engine payload on an equal retry.
-      const command = previous && isDeepStrictEqual(previous, request.command) ? previous : request.command;
-      return game.command({ idempotencyKey: request.idempotencyKey, command, at: now }, request.command.type === 'startShift' ? this.config : undefined);
+    return this.operate(id, (game, now) => this.execute(game, id, request, now));
+  }
+  private stream(id: string, clientId: string) {
+    if (typeof clientId !== 'string' || !this.db.prepare('SELECT id FROM client_streams WHERE id=? AND player_id=?').get(clientId, id)) throw Error('store:invalidClient');
+    return Number(this.db.prepare('SELECT COALESCE(MAX(client_seq),0) AS seq FROM client_receipts WHERE client_id=?').get(clientId)!.seq);
+  }
+  connect(id: string, clientId?: string) {
+    const { result, ...state } = this.operate(id, (_, now) => {
+      if (clientId !== undefined) return { clientId, acknowledgedSeq: this.stream(id, clientId) };
+      const created = randomUUID();
+      this.db.prepare('INSERT INTO client_streams VALUES (?,?,?)').run(created, id, now);
+      return { clientId: created, acknowledgedSeq: 0 };
     });
+    return { ...state, ...result };
+  }
+  clientCommand(id: string, request: SequencedRequest) {
+    if (!validEnvelope({ ...request, at: 0 }) || !Number.isSafeInteger(request.clientSeq) || request.clientSeq < 1) throw Error('store:invalidCommand');
+    const { result, ...state } = this.operate(id, (game, now) => {
+      const acknowledgedSeq = this.stream(id, request.clientId), previous = this.commandEntry(id, request.idempotencyKey);
+      const receipt = this.db.prepare('SELECT idempotency_key FROM client_receipts WHERE client_id=? AND client_seq=?').get(request.clientId, request.clientSeq);
+      const conflict = request.clientSeq > acknowledgedSeq + 1 ? 'sequenceGap'
+        : request.clientSeq <= acknowledgedSeq && !receipt ? 'sequenceConflict'
+        : receipt && receipt.idempotency_key !== request.idempotencyKey ? 'sequenceConflict'
+        : previous && !isDeepStrictEqual(previous.command, request.command) ? 'idempotencyConflict' : null;
+      if (conflict) return { clientId: request.clientId, acknowledgedSeq, error: conflict };
+      const result = this.execute(game, id, request, now);
+      // The FK is deferred until operate() has appended the canonical engine command log.
+      if (!receipt) this.db.prepare('INSERT INTO client_receipts VALUES (?,?,?,?)').run(request.clientId, id, request.clientSeq, request.idempotencyKey);
+      return { clientId: request.clientId, acknowledgedSeq: this.stream(id, request.clientId), result };
+    });
+    return { ...state, ...result };
   }
   /** Bounded durable history only. State reads/commands advance simulation; catch-up does not replay it. */
   eventsAfter(id: string, after: number) {

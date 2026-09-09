@@ -450,3 +450,22 @@ and remote web integration remain in the original full-game scope. The existing
 |---|---|
 | 2026-09-09 HTTP/session | Implemented native HTTP guest authentication/state/command/event boundary and schema2 session migration. Real socket/security/persistence checks added; full verification/review in progress. |
 | 2026-09-09 HTTP review | Strict action-field allowlists and invalid-cookie refusal precede mutation. Catch-up now reads at most100 durable events directly from SQLite, with lastEventSeq/hasMore continuation; it does not advance simulation. State/command operations remain the simulation clock boundary. |
+
+
+## M4 ordered ingress — 2026-09-09
+
+POST `/player/connect` creates/resumes an owned client stream. POST `/player/command`
+requires clientId/clientSeq/idempotencyKey/command. SQLite schema3 stores stream IDs
+and append-only receipts linked to the existing command log in the same transaction;
+acknowledgedSeq is derived from those receipts. Gaps or altered retries return409;
+processed domain failures return200/result and consume their sequence. Same-key same
+payload retries return the original result without another mutation. Distinct tabs
+keep separate sequences, sharing player-wide idempotency and serialized game state.
+
+This is the server half of ordered replay; network grace closing and browser durable
+buffer/reconnecting UI remain unfinished. No engine-only-client rules or alternate
+money reducer are added; the owner's local5174 adapter is not switched yet.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 ordered ingress | Added mandatory HTTP client sequencing and atomic durable receipts around the shared engine. Server now refuses unsequenced HTTP commands; full reconnect/remote cutover remains in progress. |
