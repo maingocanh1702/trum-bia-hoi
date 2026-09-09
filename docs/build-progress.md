@@ -801,3 +801,23 @@ outside runtime. Root untouched, no merge/push.
 | Date | Change |
 |---|---|
 | 2026-09-09 rules10 | Corrected ordinary floor order and mixed-version elapsed-time adoption, verified100 unit/37 E2E +20 k/15 pressure rows; independent review pending. |
+
+
+## 2026-09-09 — Arrival rules10 independent review receipt
+
+Product432626dc11b4ce9ba8311b02a2541fcc48cd735c; immutable base
+29595446c9e9b64b1e3dbb2ec4ff01dafd113cb8. Codex exec review exited0 with
+no introduced actionable correctness or binding defects in the full diff
+(.qa/review-arrival.txt, .qa/review-arrival.log). It independently passed
+100 unit tests, config validation and typecheck. Native prose verdict retained;
+no manufactured review marker. No product changes during review. Author build/
+37 E2E/20 economy rows k2.2417–2.8097 and15 pressure windows remain applicable.
+
+Tracker v0.14.1/dashboard retain16 in progress and zero full features complete.
+Full M0–M9 goal remains active. Next: flyer producer using the now-reviewed
+arrival helper, real reputation spending and event-derived campaign reports.
+Root untouched; preview5174 remains local, no merge/push or hosted-release claim.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Recorded independent no-finding arrival review2959544..432626d and continued full-game backlog. |
