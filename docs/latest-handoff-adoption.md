@@ -24,10 +24,12 @@ F13§5 still specifies eligible/unclaimed/claimed rewards and gates independent 
 
 Confirmed reference defect: counting cooking pans by `(dish,readyAt)` merges two same-dish pans started together. A production-shaped probe admits 6 portions while2 pans × 2 portions allow 4. Use one stable identity per actual pan batch in the integrated engine and a regression for this case.
 
-Work order: finish rules19 disconnection verification; integrate versioned station/demand/glass/LP-gate mechanics and HUD; then lease lifecycle/UI and actual career simulation. Server liveness/outbox/remote cutover follows; missing Google Client ID does not block this work. Full M0–M9 remains unfinished.
+Work order: disconnection verification completed through1fa6b14; next integrate versioned station/demand/glass/LP-gate mechanics and HUD; then lease lifecycle/UI and actual career simulation. Server liveness/outbox/remote cutover follows; missing Google Client ID does not block this work. Full M0–M9 remains unfinished.
 
 Source SHA256: handoff 8849b0ecd37f6a0ee6833f1f3b9e10876d3fafbae7ff2f196c8408ca774a1814; JSON ff10ee2e3ef913c9215acf0bb9dbe8be8aea9ace9c2ba9065fbc70c3028c8c55. Full intake snapshot and merge/probe evidence are retained under `.qa/`.
 
 | Date | Change |
 |---|---|
 | 2026-09-09 | Accepted latest owner handoff/economy delta, pinned source content, recorded precedence and integration order without claiming unimplemented or unverified behavior. |
+
+| 2026-09-09 | Disconnection prerequisite verified through1fa6b14. Economy2.0.1 candidate/schema and reconciled-doc probes prepared; runtime activation and gameplay/UI integration are next, not yet claimed complete. |

@@ -243,8 +243,10 @@ an inactive rules19 game, it first appends one neutral rules20 system record at 
 frontier, preserving inactive/menu state, then advances elapsed time. Public current
 commands and trusted disconnect calls share this boundary; GameStore invokes it
 inside its existing transaction before reads or actions. `advance()` remains the
-pinned-history primitive used by save replay. Failed clocks and duplicate/stale
-commands cannot insert the boundary; a failed database write rolls it back. Missing
+pinned-history primitive used by save replay. Failed clocks and direct engine duplicate/stale
+commands cannot insert the boundary. Server reads/requests catch up first, including
+retries, while preserving the original command result; a failed database write rolls
+the catch-up transaction back. Missing
 loss identities are accepted only in historical rules19 records, never rules20.
 
 | Date | Change |

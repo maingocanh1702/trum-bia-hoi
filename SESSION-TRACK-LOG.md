@@ -9,19 +9,23 @@
 
 Read the actual updated original handoff, 03/08/10-SPEC, F08/F10/F11/F13/F14,
 config2.0.0 and corresponding reference code. Accepted delta/precedence and source
-hashes are recorded in `docs/latest-handoff-adoption.md`. After closing the rules19
+hashes are recorded in `docs/latest-handoff-adoption.md`. After closing the disconnection
 review, prioritize the new economy pipelines, glass purchases and capacity UI,
 in-stock demand, LP gates and lease lifecycle before the server liveness adapter.
 The original19-test/career results do not describe this branch. Config1.7.3 remains
 the verified runtime until the new mechanisms and their simulations pass.
 
-## 🧭 Rules19–20 work in progress — 2026-09-09
+## 🧭 Rules19–20 checkpoint verified — 2026-09-09
 
-Pure disconnection grace/closing is implemented on base cc1aee5 in the isolated
-game worktree. Regressions cover exact deadlines, no absent attendance/stamina,
-retries/replay and true v18 compatibility. Verification and independent review are
-in progress; latest owner economy adoption is next, then server liveness/browser buffer.
-This is an engine prerequisite, not end-to-end network support or game completion.
+Pure disconnection grace/closing and inactive calendar migration are verified at
+1fa6b14 on base cc1aee5. Config/build and211 engine/server checks pass. Final correction
+review3ed1e19..1fa6b14 resolves the last full-review findings and independently passes34
+checks.72 browser checks and20 canonical1000-serve k cohorts2.5821–2.9601 plus15rush
+checks passed at3ed1e19; the final correction only affects old19 recovery. Receipt:
+`.qa/disconnection-verification.json`. Saved history remains pinned; live catch-up
+writes a neutral20 boundary and does not backfill absent quests or invent attendance.
+Server liveness/outbox/web remote cutover remain unfinished. NEXT: accepted economy2.0
+pipelines, glass purchases, demand/LP gates and capacity UI, then leases/career sim.
 
 ## 🧭 Current build checkpoint — 2026-09-09
 

@@ -1709,3 +1709,34 @@ outbox/resync; engine API alone does not complete F23§8 or the full M0–M9 goa
 | Date | Change |
 |---|---|
 | 2026-09-09 | Implemented pure rules19 timeout-close prerequisite and replay/calendar regression checks; complete game remains in progress. |
+
+## Disconnection verification and latest-handoff priority — 2026-09-09
+
+Product1fa6b14 on basecc1aee5: trusted outage identities/grace/normal inactive closing,
+complete pause-clock preflight, lazy absent calendars, and a neutral live rules20
+adoption at the saved frontier. Original18/19 histories remain replayable; first
+live recovery of19 cannot backfill1000 missed dates. Menu-disconnection and key-bound
+cases are covered, including a real SQLite migration write failure/restart.
+
+- Config/build/typecheck and211 engine/server tests pass at1fa6b14.
+- Final native correction review3ed1e19..1fa6b14 confirms both last full-review
+  findings resolved and independently passes34 focused tests. This is a correction
+  verdict following the full-review history, not a claim that a full-range clean
+  verdict was issued for1fa6b14. Logs: `.qa/review-disconnect-*.txt`.
+-72 browser tests,20 canonical1000-serve cold/full/combined economy cohorts
+  (k2.5821–2.9601), and15rush checks passed at3ed1e19. The subsequent correction changes
+  only old19 recovery; normal current gameplay and all numbers are unchanged.
+  Evidence: `.qa/disconnect-frontier-{browser,sim,combined,rush}.txt`.
+- Receipt: `.qa/disconnection-verification.json`. Prior500-serve combined excursion
+  remains disclosed above; it is not replaced by these longer cohorts.
+
+Next implementation follows the accepted owner handoff2.0, recorded in
+`docs/latest-handoff-adoption.md`. A reconciled2.0.1 candidate and complete old/new
+schema probe are prepared, not activated. New station/tap/pan mechanics, glass buying,
+in-stock demand, LP gates/capacity UI, leases and actual career simulations take
+priority over the server liveness adapter. Google ClientID remains absent per owner.
+The complete M0–M9 goal and F23 remain unfinished; web is still local.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Verified disconnection/recovery prerequisite through1fa6b14, recorded correction-review scope and exact evidence, and prioritized accepted economy2.0 integration. |
