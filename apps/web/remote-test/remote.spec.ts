@@ -191,3 +191,23 @@ test('a silent hung transport shows reconnecting at the configured deadline with
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: '.qa/m4-remote-offline-desktop.png' });
 });
+
+
+test('a visible returning player keeps the yard accessible before heartbeat recovery', async ({ page, context }) => {
+  await enter(page); await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
+  await expect.poll(async () => (await journal(page)).pending.length).toBe(0);
+  await page.close();
+  const back = await context.newPage();
+  await back.request.post(`/api/__test/advance?ms=${config.network.reconnectingUiDelayMs + 1}`);
+  await back.route('**/api/player/heartbeat', route => route.abort());
+  await back.goto('/');
+  await expect(back.locator('.network-status')).toContainText('Đang kết nối lại');
+  await expect(back.locator('.paused-overlay')).toHaveCount(0);
+  await expect(back.locator('.yard')).toBeVisible();
+  await expect(back.getByRole('button', { name: 'Nhập hàng', exact: true })).toBeEnabled();
+  await back.getByRole('button', { name: 'Nhập hàng', exact: true }).click();
+  await expect(back.getByRole('dialog', { name: 'Nhập hàng', exact: true })).toBeVisible();
+  await back.unroute('**/api/player/heartbeat'); await back.evaluate(() => dispatchEvent(new Event('online')));
+  await expect.poll(async () => (await snapshot(back)).world.active).toBe(true);
+  expect((await snapshot(back)).world.paused).toBe(true);
+});

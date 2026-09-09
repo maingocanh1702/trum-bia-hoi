@@ -280,7 +280,7 @@ function GameView({ session }: { session: Session }) {
   }
 
   return <div className="game-shell" data-save-state={saveError ? 'error' : saving ? 'saving' : 'saved'} data-frame={frame}>
-    {!w.active && !menuPaused && <div className="paused-overlay" role="status">{t('pause.hidden')}</div>}
+    {!remote && !w.active && !menuPaused && <div className="paused-overlay" role="status">{t('pause.hidden')}</div>}
     <div className="street-backdrop" aria-hidden="true"><Sprite id="bg-street" /></div>
     <main className={`game weather-${shift?.weather ?? 'sunny'}${!w.active || w.paused ? ' is-paused' : ''}`}>
       <header className="hud">

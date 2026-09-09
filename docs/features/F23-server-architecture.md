@@ -402,3 +402,5 @@ owner-deferred public upload/review flow remains absent. No automatic blank repl
 or local credit into competitive state. See `apps/web/README.md` for startup and tests.
 
 | 2026-09-10 web cutover implementation |298server/engine +91legacy browser +7remote scenarios pass; final hidden presence/sim/review in progress. Registry/admin, real Google and import/eligibility UI remain open; no full M4 closure yet. |
+
+| 2026-09-10 visible reconnect correction | Initial60f9090 native review found no actionable defect and independent typecheck passed. A subsequent author browser probe reproduced the legacy inactive overlay covering a returning online player's yard before heartbeat recovery. Online UI now uses the edge reconnect status; legacy hidden-tab overlay stays confined to explicit local play. Regression test added; correction verification/review pending. |
