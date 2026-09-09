@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
-const fixture = (save?: string) => JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/production.ts', ...(save ? ['inspect'] : [])], { encoding: 'utf8', input: save ? JSON.stringify({ save }) : undefined }));
+const fixture = (save?: string, legacy = false) => JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/production.ts', ...(save ? ['inspect'] : legacy ? ['legacy'] : [])], { encoding: 'utf8', input: save ? JSON.stringify({ save }) : undefined }));
 for (const width of [360, 390]) test(`stocked beer capacity and upgrade comparison update live, with frozen batch progress in menus at ${width}px`, async ({ page }) => {
   const f = fixture(); await page.setViewportSize({ width, height: 844 });
   await page.clock.install({ time: new Date(f.now) }); await page.clock.pauseAt(new Date(f.now));
@@ -8,6 +8,13 @@ for (const width of [360, 390]) test(`stocked beer capacity and upgrade comparis
   await page.goto('/');
   const keg = page.getByRole('button', { name: 'Bom bia', exact: true }), washer = page.getByRole('button', { name: 'Bồn rửa', exact: true });
   const snapshot = async () => fixture(await page.evaluate(() => localStorage.getItem('tbh.save.v1')!));
+  await expect(washer.locator('.capacity-badge')).toHaveText('0/1');
+  const cooler = page.locator('.equipment-object.cooler');
+  await expect(cooler.locator('.capacity-badge')).toHaveText('8.04s');
+  await cooler.click(); const coldPanel = page.getByRole('dialog');
+  await expect(coldPanel.getByText('Giữ tươi 8.04s', { exact: true })).toBeVisible();
+  await expect(coldPanel.getByText('Giữ tươi 13.4s', { exact: true })).toBeVisible();
+  await coldPanel.getByRole('button', { name: /×$/ }).click();
   await expect(keg.locator('.capacity-badge')).toHaveText('0/5'); await expect(keg.getByRole('progressbar')).toBeVisible();
   await page.screenshot({ path: `.qa/batch-yard-${width}.png` });
   await keg.click(); const panel = page.getByRole('dialog', { name: 'Bom bia', exact: true });
@@ -29,4 +36,22 @@ for (const width of [360, 390]) test(`stocked beer capacity and upgrade comparis
   await expect(washPanel.getByText('1 ly/mẻ · 7s', { exact: true })).toBeVisible();
   await expect(washPanel.getByText('1 ly/mẻ · 5s', { exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+
+test('legacy washing shows an indeterminate bar in the yard and paused equipment panel', async ({ page }) => {
+  const f = fixture(undefined, true);
+  await page.clock.install({ time: new Date(f.now) }); await page.clock.pauseAt(new Date(f.now));
+  await page.addInitScript(save => { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('tbh.settings.v1', JSON.stringify({ welcomed: true, guideDone: true })); }, f.save);
+  await page.goto('/');
+  const washer = page.getByRole('button', { name: 'Bồn rửa', exact: true });
+  await expect(washer.locator('.capacity-badge')).toHaveText('1/1');
+  await expect(washer.getByRole('progressbar')).not.toHaveAttribute('value');
+  await washer.click(); const panel = page.getByRole('dialog', { name: 'Bồn rửa', exact: true });
+  await expect(panel.getByRole('progressbar')).not.toHaveAttribute('value');
+  await expect(panel.getByText('Đang làm 1 ly · còn 5s', { exact: true })).toBeVisible();
+  await panel.getByRole('button', { name: 'Bồn rửa ×', exact: true }).click();
+  await page.clock.runFor(2431); await washer.click();
+  await expect(panel.getByRole('progressbar')).not.toHaveAttribute('value');
+  await expect(panel.getByText('Đang làm 1 ly · còn 3s', { exact: true })).toBeVisible();
 });

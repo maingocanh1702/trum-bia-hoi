@@ -258,6 +258,7 @@
   "menu.partial": "Partial shift: only data recorded since the update is included.",
   "menu.note": "Value includes food and tips before the daily cap, excluding bonuses and deliveries. Prepared dishes that are discarded count as wasted; ingredients are not refunded.",
   "production.ready": "Ready beer {count}",
+  "production.washing": "Washing {count}",
   "production.clean": "Clean glasses {count}",
   "production.freshness": "Fresh for {count}",
   "production.busy": "Cooking {count}",

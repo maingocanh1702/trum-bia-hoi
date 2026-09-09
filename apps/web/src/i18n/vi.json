@@ -258,6 +258,7 @@
   "menu.partial": "Một phần ca: chỉ tính dữ liệu ghi nhận từ lần cập nhật.",
   "menu.note": "Giá trị gồm tiền món và boa trước trần ngày; không gồm thưởng và đơn giao hàng. Món đã làm nhưng phải bỏ tính vào cột Bỏ, không hoàn nguyên liệu.",
   "production.ready": "Bia sẵn sàng {count}",
+  "production.washing": "Đang rửa {count}",
   "production.clean": "Ly sạch {count}",
   "production.freshness": "Giữ tươi {count}",
   "production.busy": "Đang nấu {count}",

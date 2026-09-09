@@ -110,3 +110,14 @@ test('an upgraded tank holds forty servings independently of the reusable glass 
   assert.equal(w.beer!.batch!.quantity, 1); assert.ok(send(g, { type: 'serve', tableId: table.id, orderId: table.order!.id }).ok);
   assert.equal(w.serves[0].stale, false); assert.deepEqual(decodeSave(encodeSave(g)).world, w);
 });
+
+
+test('a legacy wash without a start timestamp keeps its real deadline and reports indeterminate progress', () => {
+  const g = decodeSave(readFileSync(new URL('./fixtures/legacy-daily-claimed-v12.json', import.meta.url), 'utf8'));
+  const before = washerStatus(g.world, g.config);
+  assert.equal(before.busy, 1); assert.equal(before.progress, undefined);
+  g.advance(g.world.now + before.remainingMs / 2);
+  const after = washerStatus(g.world, g.config);
+  assert.equal(after.remainingMs, before.remainingMs / 2); assert.equal(after.progress, undefined);
+  assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
+});

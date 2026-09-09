@@ -212,10 +212,10 @@ export function App() {
   }
   function equipmentButton(kind: Equipment) {
     const production = kind === 'keg' ? beer : kind === 'washer' ? washer : null;
-    const cold = c.upgrades.cooler.freshnessMs[w.equipment.cooler - 1];
-    const count = kind === 'keg' ? `${beer.stored}/${beer.capacity}` : kind === 'washer' ? `${washer.clean}/${washer.capacity}` : kind === 'kitchen' ? `${kitchen.busy}/${kitchen.slots}` : cold === null ? '∞' : `${cold / 1000}s`;
+    const cold = freshnessMs(w, game.config);
+    const count = kind === 'keg' ? `${beer.stored}/${beer.capacity}` : kind === 'washer' ? `${washer.busy}/${washer.batchSize}` : kind === 'kitchen' ? `${kitchen.busy}/${kitchen.slots}` : Number.isFinite(cold) ? `${Math.round(cold) / 1000}s` : '∞';
     return <button className={`equipment-object ${kind} ${kind === 'kitchen' && kitchen.busy ? 'is-cooking' : ''}`} key={kind} onClick={() => { setSelectedTable(null); setSelectedEquipment(kind); }} aria-label={t(`equipment.${kind}`)}>
-      <Sprite id={`${kind}-lv${Math.max(1, w.equipment[kind])}`} /><span>{t(`equipment.${kind}`)}</span><b className="capacity-badge" aria-label={t(`production.${kind === 'washer' ? 'clean' : kind === 'keg' ? 'ready' : kind === 'cooler' ? 'freshness' : 'busy'}`, { count })}>{count}</b>
+      <Sprite id={`${kind}-lv${Math.max(1, w.equipment[kind])}`} /><span>{t(`equipment.${kind}`)}</span><b className="capacity-badge" aria-label={t(`production.${kind === 'washer' ? 'washing' : kind === 'keg' ? 'ready' : kind === 'cooler' ? 'freshness' : 'busy'}`, { count })}>{count}</b>
       {production && production.busy > 0 && <progress className="equipment-progress" aria-label={t('production.batchProgress', { n: production.busy })} value={production.progress} max={1} />}
     </button>;
   }
@@ -239,7 +239,10 @@ export function App() {
       const i = level - 1;
       if (kind === 'keg') return <><p>{t('production.capacity', { n: c.upgrades.keg.refillEnabled ? c.upgrades.keg.kegStorage[i] : c.upgrades.keg.pourSlots[i] })}</p><p>{t('production.batch', { n: c.upgrades.keg.refillEnabled ? c.upgrades.keg.kegBatch[i] : c.upgrades.keg.pourSlots[i], seconds: (c.upgrades.keg.refillEnabled ? c.upgrades.keg.refillMs[i] : c.upgrades.keg.pourMs[i]) / 1000 })}</p></>;
       if (kind === 'washer') return <p>{t('production.batch', { n: c.upgrades.washer.slots[i], seconds: c.upgrades.washer.washMs[i] / 1000 })}</p>;
-      if (kind === 'cooler') return <p>{t('production.freshness', { count: c.upgrades.cooler.freshnessMs[i] === null ? '∞' : `${c.upgrades.cooler.freshnessMs[i]! / 1000}s` })}</p>;
+      if (kind === 'cooler') {
+        const cold = freshnessMs({ ...w, equipment: { ...w.equipment, cooler: level } }, game.config);
+        return <p>{t('production.freshness', { count: Number.isFinite(cold) ? `${Math.round(cold) / 1000}s` : '∞' })}</p>;
+      }
       if (kind === 'stall') return <p>{t('production.stockCap', { n: c.upgrades.stall.stockCap[i] })}</p>;
       return <p>{t('production.kitchenSlots', { n: c.upgrades.kitchen.slots[level] })}</p>;
     };

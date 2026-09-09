@@ -22,5 +22,5 @@ export function washerStatus(w: World, c: Config) {
     batchSize: c.values.upgrades.washer.slots[w.equipment.washer - 1],
     durationMs: c.values.upgrades.washer.washMs[w.equipment.washer - 1],
     remainingMs: first?.readyAt == null ? 0 : Math.max(0, first.readyAt - w.now),
-    progress: first?.readyAt == null || first.startedAt == null ? 0 : Math.min(1, Math.max(0, (w.now - first.startedAt) / (first.readyAt - first.startedAt))) };
+    progress: first?.readyAt == null || first.startedAt == null ? undefined : Math.min(1, Math.max(0, (w.now - first.startedAt) / (first.readyAt - first.startedAt))) };
 }
