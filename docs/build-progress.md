@@ -1648,3 +1648,42 @@ and remote cutover remain required; owner5174 stays on the verified local adapte
 | Date | Change |
 |---|---|
 | 2026-09-09 | Added M4 server ordering prerequisite and focused persistence/HTTP regression checks; full M0–M9 goal remains active. |
+
+
+## Ordered ingress verification receipt — 2026-09-09
+
+Producte390a1c on base794d75c. Config/build/typecheck and all187 engine/server tests
+pass, including21 server checks. Actual CLI + isolated Chromium also passes owned
+stream create/resume, mandatory sequencing, gap acknowledgement, same-operation
+retry, invalid-field refusal, bounded history, HttpOnly cookies and revoked-session
+refusal. Test API5175 stopped; owner browser/save and original checkout untouched.
+
+Independent native review794d75c..e390a1c found no introduced actionable defects.
+It independently ran12 storage/sequence checks successfully; real HTTP/browser proof
+is the author run. Receipts: `.qa/sequence-{config,build,tests,server}.txt`,
+`.qa/sequence-cli-browser-smoke.json`, `.qa/review-sequence.txt`,
+`.qa/sequence-verification.json`. No engine/config/web/sim source changed; preceding
+72 full browser,20 canonical k rows2.5821–2.9601 and15 rush evidence remains applicable,
+not rerun or newly claimed by this server-only receipt.
+
+Next-boundary probe found why timeout cannot simply call endShift + activity:true:
+normal closing remains frozen while inactive, and forcing active across VN midnight
+opens an attendance day without a real reconnect. Reproduced at e390a1c in
+`.qa/probe-offline-closing.{ts,json}`. Implement a trusted replayable engine timeout
+close that finishes normal guest cleanup while inactive without attendance/active-rest
+rewards, then server liveness/expiry and client buffer integration. Full detail:
+`.qa/connection-expiry-design-probe.md`.
+
+Genuine v18 compatibility fixtures were captured before any next engine edit from
+exacte390a1c: menu stock fill and inactive closing across midnight, each round-trips
+identically. Files `.qa/legacy-v18-e390a1c-{menu,inactive-closing}.json` plus matching
+`-expected.json`; producer `.qa/capture-sequence-v18.ts` refuses another HEAD.
+
+Full M0–M9 remains active. Server sequencing is now verified; disconnect expiry,
+normal timeout closing, durable browser outbox/reconnecting UI, registry/Google
+claim/remote cutover and later roadmap/art/release work remain. Tracker v0.26.1 keeps
+18 features in progress, zero complete. Google Client ID is still absent per owner.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Verified ordered ingress at e390a1c with187 tests, CLI/Chromium and independent review. Captured real v18 saves and proved the inactive-closing/attendance boundary before the next timeout implementation. |

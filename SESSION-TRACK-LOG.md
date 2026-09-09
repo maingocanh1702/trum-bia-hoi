@@ -29,12 +29,20 @@ checks and actual CLI/Chromium smoke pass. Full-range native review090d920..62b4
 has no remaining introduced defects after command-field/cookie/pagination fixes;
 reviewer socket reruns were sandbox-blocked. Test API5175 is stopped, web5174 stays local.
 Owner has no Google Client ID yet; setup guide: `docs/google-signin-setup.md`.
-Next: client sequencing/reconnect, registry/account claim and remote web integration.
+Server client sequencing is verified ate390a1c: config/build187 engine/server,
+actual CLI/Chromium; independent review794d75c..e390a1c found no introduced defects
+and independently passed12 storage tests. Schema3 receipts preserve exact-once
+results and per-tab ordering. `.qa/sequence-verification.json` contains the receipt.
+Next: trusted engine timeout-close + server liveness, browser buffer/reconnecting UI,
+registry/account claim and remote web integration. A real probe shows normal endShift
+stalls when inactive and activity:true invents an attendance day across midnight;
+see `.qa/connection-expiry-design-probe.md`. Genuine e390a1c v18 fixtures captured.
 Full game/art/server/release are unfinished; lack of Google ID does not block other work.
 Current evidence and requirements: `docs/build-progress.md`, tracker and roadmap.
 
 | Date | Change |
 |---|---|
+| 2026-09-09 | Verified schema3 server input ordering at e390a1c; captured compatibility saves and timeout-close design probe. Full M0–M9 remains active. |
 | 2026-09-09 | Verified guest HTTP/server boundary at62b4445, added Google setup guide after owner confirmed missing Client ID; continue M4 without switching the local save. |
 | 2026-09-09 | Verified batch beer/washer production and realtime capacity HUD; refreshed current evidence and remaining M4 work. |
 | 2026-09-09 | Updated verified SQLite/live-upgrade receipt and owner batch priority. |

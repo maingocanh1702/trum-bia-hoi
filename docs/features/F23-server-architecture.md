@@ -189,3 +189,13 @@ normal closing, WebSocket, registry/Google claim and web cutover are still requi
 | Date | Change |
 |---|---|
 | 2026-09-09 ordered ingress | Implemented atomic server clientSeq acceptance/resume without an unsequenced HTTP bypass; final verification and native review in progress. |
+
+| 2026-09-09 ordered ingress verified | e390a1c passes config/build187 engine/server and CLI/Chromium; independent review794d75c..e390a1c found no introduced defects and passed12 storage checks. F23§8 still requires timeout-close/liveness, browser buffer/reconnecting UI and complete remote integration. |
+
+Timeout-close design requirement from the e390a1c probe: normal endShift alone stalls
+when inactive, but an artificial activity:true command can open the next attendance
+day. Use a trusted replayable engine transition that completes normal closing while
+inactive, with no fake attendance or active-rest reward; preserve ordinary management
+pause. Real v18 menu/inactive-closing fixtures were captured before that next change.
+
+| 2026-09-09 next-boundary probe | Recorded inactive-closing and midnight attendance behavior to guide server timeout implementation; no timeout behavior is implemented or claimed by the sequencing checkpoint. |

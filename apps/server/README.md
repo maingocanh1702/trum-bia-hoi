@@ -146,3 +146,5 @@ Google guest claim and remote web integration remain mandatory follow-on work.
 | Date | Change |
 |---|---|
 | 2026-09-09 sequence | Added transactional per-client receipts, ordered HTTP commands and owned stream resume; schema0/1/2 migrate to3 preserving accounts/history. Tests cover lost response, multiple tabs, gaps/conflicts, failure acknowledgement, rollback and session isolation. Verification/review in progress. |
+
+| 2026-09-09 sequence verification | e390a1c: config/build187 engine/server,21 server checks, actual CLI/Chromium pass. Native review794d75c..e390a1c found no introduced actionable defects and independently passed12 storage checks. Client buffer/timeout closing and remote cutover remain pending. |
