@@ -20,7 +20,8 @@
     "test:e2e": "playwright test",
     "check:assets": "python3 scripts/check_assets.py",
     "sim:rush": "tsx packages/engine/sim/rush-pressure.ts",
-    "dev:server": "tsx apps/server/src/main.ts"
+    "dev:server": "tsx apps/server/src/main.ts",
+    "sim:career": "tsx packages/engine/sim/career.ts"
   },
   "type": "module",
   "engines": {

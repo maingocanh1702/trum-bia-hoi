@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-09 20:19 · **Branch hiện tại:** `codex/game-build-isolated`
+> **Cập nhật:** 2026-09-09 20:40 · **Branch hiện tại:** `codex/game-build-isolated`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -245,7 +245,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 3
-- **Notes:** V6 projection đủ requirements/rewards, level tăng bền + claim một lần; ladder VI/EN và phone/QR. 67 unit/30 E2E +40 sim rows k2.3249–2.7688; review d2918e9..598f66f không còn findings. Flyer/signboard ownership đã có producer; season/peak/location/server và full acceptance còn tiếp tục.
+- **Notes:** Requirements/claim-once, phone/QR/flyer/sign/lease và peak mùa thật đã có. Harness career30ngày không gán state đạtLP4; đối soát xu/ngày và test replay2ngày qua. Đang hoàn tất nhiều seed/review; fullLP0–LP7 và cân bằng nâng cao chưa chứng nhận.
 
 ### F14 — Mặt Bằng Quán — 9 mặt bằng, rent/cọc 7 ngày
 

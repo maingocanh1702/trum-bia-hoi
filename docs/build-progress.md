@@ -1903,3 +1903,14 @@ Receipt `.qa/seasons-verification.json` binds artifacts/SHAs. Full career, globa
 leaderboards and configured prize/mailbox processing remain open. The advanced
 combined k failure remains preserved pending owner interpretation; no number,
 formula or assertion was weakened. Source20files remain unchanged.
+
+## Actual career harness — 2026-09-09
+
+Base `ca0df8b`. `packages/engine/sim/career.ts` buys with actual earned coins and
+checks daily wallet conservation, shift/earn caps and command acceptance. A two-day
+save replay proves the complete state is reproduced without injected money,
+assets or LP. Initial30-day seed42 reachesLP4 and9054324lifetime earned.
+See [career-simulation](career-simulation.md) for policy and reproducible commands.
+250engine/server tests plus config/build pass; second seed, ordinary/rush checks
+and independent review are in progress. Production engine/UI/config are unchanged.
+Advanced k scope remains pending; no balance values/assertions were altered.

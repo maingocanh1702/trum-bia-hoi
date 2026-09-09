@@ -142,3 +142,16 @@ yet tables/sign/flyer/leases; it does not certify the full LP0–LP7 career.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Real season peak producer integrated and independently reviewed. Three-day diagnostic reaches LP2/Bom Bạc without injected progression; full career verification remains open. |
+
+## Career command harness — 2026-09-09
+
+`npm run sim:career` now runs a fresh game through real purchases, claims, leases
+and seasonal peaks. Daily wallet reconciliation and a two-day full save replay
+check guard against injected progression. Initial30-day seed42 run reachesLP4;
+full verification/review is in progress. See [career-simulation](../career-simulation.md)
+for the explicit non-optimal policy, missing LP requirements and pending advanced
+k-band scope. No numeric thresholds or subsidiary gates were changed.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Added actual-command multi-day career harness; early30-day diagnosis reachesLP4, not allLP0–LP7 or balance certification. |

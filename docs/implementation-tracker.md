@@ -1,6 +1,6 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.30.1
+> **Version:** v0.31.0
 > **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-09 (layout/art theo ảnh owner)
 > **Trạng thái:** Active — **M0 qua verify; review sửa lỗi nền và layout/art đã CLEAN. M1–M3 tiếp tục triển khai; M4 bắt đầu nền config pin/replay, server event store đã review; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.3** (1 phase, mốc M0–M9).
 > **Owner:** Team
@@ -85,7 +85,7 @@ diagnostic reaches LP2 and peak bach_kim (492295 earned), without injected progr
 |----|------|---------|:------:|--------|:-----:|-------|
 | F23 | 🎮 Code | Kiến Trúc Server Quán — server-auth, websocket, CAPTCHA | 🟡 | `codex/game-build-isolated` | 🔒S | Đã có config pin/savev3, SQLite append-only event store và guest HTTP/session schema2. Config/build182 engine/server + actual CLI/Chromium smoke pass tại62b4445;3 findings cookie/command fields/event paging đã sửa, native full-range review090d920..62b4445 không còn lỗi actionable (reviewer socket rerun bị sandbox chặn). Schema3 clientSeq/owned stream/atomic receipts đã qua config/build187 tests và CLI/Chromium tại e390a1c; native review794d75c..e390a1c không có lỗi mới,12 storage tests độc lập pass. Rules19–20 timeout-close/replay/live adoption verified tại1fa6b14: config/build211 tests; review sửa cuối xác nhận hết2 findings và34 checks độc lập pass.72 browser/20 k cohorts/15rush pass tại3ed1e19; server liveness chưa nối. Registry/Google claim/WebSocket/client buffer/reconnect/anti-cheat và web cutover còn thiếu; web vẫn local. Xem docs/build-progress.md. |
 | F12 | 🎮 Code | Giải Nhậu & Vụ Bia — 8 bậc, 2 Vụ Bia song song | 🟡 | `packages/engine/src/seasons.ts` | 🔒S 🔒B | Rules23: hai mùa theo lịch, thu nhập sau daily cap, peak thật, lịch sử cá nhân và panel VI/EN. Đã verify/review tại faece69: 248 engine/server, 79 browser + 6 kiểm tra lại, config/build/k nền/rush qua. Community ranks và mailbox chưa xong. |
-| F13 | 🎮 Code | Đường Lên Trùm — LP0–LP7, gate tính năng & mặt bằng | 🟡 | `codex/game-build-isolated` | 🔒S | V6 projection đủ requirements/rewards, level tăng bền + claim một lần; ladder VI/EN và phone/QR. 67 unit/30 E2E +40 sim rows k2.3249–2.7688; review d2918e9..598f66f không còn findings. Flyer/signboard ownership đã có producer; season/peak/location/server và full acceptance còn tiếp tục. |
+| F13 | 🎮 Code | Đường Lên Trùm — LP0–LP7, gate tính năng & mặt bằng | 🟡 | `codex/game-build-isolated` | 🔒S | Requirements/claim-once, phone/QR/flyer/sign/lease và peak mùa thật đã có. Harness career30ngày không gán state đạtLP4; đối soát xu/ngày và test replay2ngày qua. Đang hoàn tất nhiều seed/review; fullLP0–LP7 và cân bằng nâng cao chưa chứng nhận. |
 | F14 | 🎮 Code | Mặt Bằng Quán — 9 mặt bằng, rent/cọc 7 ngày | 🟡 | `codex/game-build-isolated` | 🔒S | Rules22 quote/purchase/early move/expiry/refund, real-calendar pause/offline, config/replay/SQLite và menu VI/EN.234 engine/server,77browser,config/build,10kcohorts+15rush pass; native review fixes verified atce7564b. Break-even/art/neighborhood/shift-report còn tiếp tục. |
 | F15 | 🎮 Code | Sự Cố Quán Nhậu — bảo kê, trộm offline, đánh nhau (kiểm tra ATTP ⏸ pending) | ⬜ | `—` | 🔒S | Spec `docs/features/F15-risk-events.md`; §4 kiểm tra pending, `risk.inspection.enabled=false`. |
 | F16 | 🎮 Code | Rủ Bạn & Huy Hiệu — 3 mốc, huy hiệu Kết Nối | ⬜ | `—` | 🔒S | Spec `docs/features/F16-referral-badges.md`. |
@@ -247,3 +247,5 @@ diagnostic reaches LP2 and peak bach_kim (492295 earned), without injected progr
 | 2026-09-09 | v0.30.0 | F12 bắt đầu: core mùa 7/14 ngày, peak từ doanh thu thật, pin luật theo mùa, replay rules22 và panel cá nhân VI/EN. 20 feature đang triển khai; bộ verify/review cuối đang chạy. |
 
 | 2026-09-09 | v0.30.1 | Seasons checkpoint faece69 verified: 248 engine/server, 79 browser + 6 targeted correction checks, config/build, 10 k cohorts and 15 rush. Native review closes all 3 findings. Real 3-day diagnostic reaches LP2/Bom Bạc; 20 features in progress, 0 complete. |
+
+| 2026-09-09 | v0.31.0 | Thêm sim:career thực hiện mua sắm, LP, mặt bằng và mùa qua lệnh thật; seed42 chạy30ngày tớiLP4. Đối soát tiền và replay2ngày qua; kiểm tra nhiều seed/review đang chạy. F13 vẫn đang triển khai. |
