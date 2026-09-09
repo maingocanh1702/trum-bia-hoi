@@ -5,6 +5,35 @@
 
 ---
 
+## 🧭 Google server accounts verified; local import/review next — 2026-09-10
+
+Product `ebe820c`, base `b42c034`: schema4 canonical Google subject/player mapping,
+session-bound one-use nonce, transactional cookie rotation and append-only auth audit.
+Server guest history/live shift/receipts keep their exact immutable player ID. Existing
+account conflicts refuse by default; explicit keep-account switches without merging.
+Auth revalidates session/nonce after SDK IO; stale-cookie logout supports recovery.
+
+264 engine/server tests, config/build/typecheck and real CLI configuration/restart
+checks pass. Native independent review found no actionable introduced defect and
+independently passed all6 account/store tests; reviewer socket tests hit sandbox EPERM,
+author actual signed-token SDK/HTTP tests pass. `.qa/google-session-verification.json`.
+Missing owner Client ID keeps Google disabled; no live Google login was tested.
+Web remains local; no claim/import/review approval or cloud cutover is implied.
+
+Next: protected one-time local import preserving the full archive and live shift,
+then server-recorded review eligibility before ranking. Read
+`.qa/local-import-next-boundary.md` before choosing the writing scope. Source IDs,
+known config snapshots, player conflicts, replay cost and import retry ownership are
+part of the boundary. Approval must derive credit from recorded history, never accept
+an arbitrary amount. User chose “Duyệt lịch sử local rồi mới tính”; no question remains
+on that policy. Advanced k scope and concrete season rewards remain unresolved.
+
+Prior91browser/80MB acceptance remains valid: no web/storage/engine changes this slice.
+Do not rerun completed checks without new changes/failures. Original20sourcehashes
+still match; original checkout/owner5174 profile untouched. Keep unrelated
+`.dashboard/events.jsonl`. No tests/review processes remain, no merge/push/deploy.
+Full M0–M9 goal remains active:20features in progress,0complete.
+
 ## 🧭 Storage verified; Google verifier reviewed; local-history policy answered — 2026-09-10
 
 Product917f862; server Google prerequisite baseb5101f0. Official SDK verifier,

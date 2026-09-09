@@ -85,8 +85,13 @@ và chứng thư HTTP cục bộ không thay cho đăng nhập bằng Client ID 
 Mọi POST yêu cầu Origin chính xác và JSON. Nonce/cookie/token không được log hoặc
 nhận từ query string. Luồng trên chỉ nối tiến độ guest **do server quản lý**; save
 local vẫn cần import/review riêng theo F25/F28. Chưa có live Google login vì owner
-chưa có Client ID.264engine/server tests, config/build và CLI smoke qua; review đang chạy.
+chưa có Client ID.264engine/server tests, config/build và CLI smoke qua; independent review tại `ebe820c` không tìm thấy lỗi mới.
 
 | Ngày | Thay đổi |
 |---|---|
 | 2026-09-10 account API | Nối cấu hình Client ID, nonce/cookie/account transaction và xung đột qua HTTP; giữ web/local import tách rõ ở trạng thái chưa hoàn tất. |
+
+
+| Ngày | Thay đổi |
+|---|---|
+| 2026-09-10 xác minh | Server account/session ebe820c qua264tests/config/build/CLI và independent review; reviewer tự chạy6kiểm thử store, HTTP bị sandbox EPERM. Chưa có Client ID thật, chưa nối GIS/web/local claim. `.qa/google-session-verification.json`. |

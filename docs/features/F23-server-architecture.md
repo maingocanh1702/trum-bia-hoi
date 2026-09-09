@@ -279,3 +279,19 @@ cutover, outbox/reconnect and full server authority acceptance remain unfinished
 | Date | Change |
 |---|---|
 | 2026-09-10 Google HTTP | Added verified provider sessions, nonce and atomic audit/rotation/migration; preserved authoritative guest game IDs and current local frontend. |
+
+
+## Verified Google server account checkpoint — 2026-09-10
+
+`ebe820c` (base `b42c034`) passes config/build/typecheck,264engine/server tests,
+14focused auth checks and actual CLI disabled/configured challenge/restart smoke.
+Native independent code/security review found no actionable introduced defect and
+passed6account/store tests; reviewer HTTP reruns were sandbox-blocked, while author
+actual signed-token SDK/HTTP checks pass. Receipt: `.qa/google-session-verification.json`.
+No real Google Client ID or live login, local archive import/review, cloud UI or web
+cutover is claimed. Preserve completed91browser/80MB verification; those files did
+not change. Full game remains20features in progress,0complete.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 verified Google sessions | Closed code/security review for ebe820c with no introduced findings;264tests/config/build/CLI pass. Local import, owner-required review eligibility and web integration remain required. |

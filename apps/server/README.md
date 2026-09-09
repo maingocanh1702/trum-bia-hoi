@@ -218,3 +218,19 @@ profile/locale/GIS UI or establish live Google setup. See F25/F28 and the setup 
 | Date | Change |
 |---|---|
 | 2026-09-10 account sessions | Added optional Google configuration and HTTP challenge/login with schema4 identity/audit/session transaction; local import and web integration remain required. |
+
+
+## Verified Google server account checkpoint — 2026-09-10
+
+`ebe820c` (base `b42c034`) passes config/build/typecheck,264engine/server tests,
+14focused auth checks and actual CLI disabled/configured challenge/restart smoke.
+Native independent code/security review found no actionable introduced defect and
+passed6account/store tests; reviewer HTTP reruns were sandbox-blocked, while author
+actual signed-token SDK/HTTP checks pass. Receipt: `.qa/google-session-verification.json`.
+No real Google Client ID or live login, local archive import/review, cloud UI or web
+cutover is claimed. Preserve completed91browser/80MB verification; those files did
+not change. Full game remains20features in progress,0complete.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 verified Google sessions | Closed code/security review for ebe820c with no introduced findings;264tests/config/build/CLI pass. Local import, owner-required review eligibility and web integration remain required. |
