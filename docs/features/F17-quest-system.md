@@ -193,3 +193,7 @@ saves retain their original generated-day history and adopt this rule prospectiv
 | Date | Change |
 |---|---|
 | 2026-09-09 (rules20) | Skip inactive paused calendar backfill; refresh current quests once on return. Regression covers 1000 absent days, chunked/one-jump equality, expired claims, and a genuine rules19 save. |
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Rules19 saves adopt rules20 at their saved frontier before live catch-up, through one replayable inactive activity record; historical replay still generates the originally recorded dates. Engine and SQLite restart/rollback regressions cover the first operation after1000days. |

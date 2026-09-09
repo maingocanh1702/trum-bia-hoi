@@ -237,3 +237,16 @@ Rules20 preserves recorded rules19 calendars when replaying old logs. A genuine
 cb389e0 inactive-day save is tested before and after rules20 adoption. Active menus
 still process exact daily boundaries; only absent paused days are lazy. Explicit
 shift creation and actual timeout-closing events retain their calendar ownership.
+
+Live recovery uses `Game.catchUp(now)` after replaying the persisted frontier. For
+an inactive rules19 game, it first appends one rules20 activity record at that
+frontier, preserving inactive/menu state, then advances elapsed time. Public current
+commands and trusted disconnect calls share this boundary; GameStore invokes it
+inside its existing transaction before reads or actions. `advance()` remains the
+pinned-history primitive used by save replay. Failed clocks and duplicate/stale
+commands cannot insert the boundary; a failed database write rolls it back. Missing
+loss identities are accepted only in historical rules19 records, never rules20.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Version-bound live catch-up before rules19 absent-time evaluation; preserve recorded history, atomically persist the adoption in SQLite, and restrict legacy missing lossId to rules19. |

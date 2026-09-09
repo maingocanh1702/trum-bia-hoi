@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { execFileSync } from 'node:child_process';
-import { config, loadConfig, dayKey, type Config, type Command } from '@tbh/engine';
+import { config, loadConfig, decodeSave, dayKey, type Config, type Command } from '@tbh/engine';
 import { GameStore } from '../src/store';
 const ORIGIN = Date.parse('2026-09-09T10:00:00Z');
 function fixture(t: { after(fn: () => void): void }) {
@@ -131,4 +131,28 @@ test('invalid commands, missing players and a regressing server clock never repl
   assert.throws(() => send(a, 'one', 'bad', { type: 'activity', active: false, paused: true }), /invalidCommand/);
   f.now--; assert.throws(() => a.read('one'), /clockBackwards/); f.now++;
   assert.deepEqual(a.read('one'), before); a.close(); assert.deepEqual(f.open().read('one'), before);
+});
+
+
+test('a rules19 database resumes without backfilling absent quests and atomically persists its rules20 boundary across restart', t => {
+  const f = fixture(t); f.open().close();
+  const saved = readFileSync(new URL('../../../packages/engine/test/fixtures/legacy-v19-absence.json', import.meta.url), 'utf8');
+  const data = JSON.parse(saved), old = decodeSave(saved), db = new DatabaseSync(f.file); t.after(() => db.close());
+  db.prepare('INSERT INTO players VALUES (?,?,?,?,?,?,?)').run(data.playerId, data.seed, data.createdAt, old.config.version, data.now, 0, JSON.stringify({ ...old.world, events: undefined }));
+  data.log.forEach((entry: { idempotencyKey: string }, i: number) => db.prepare('INSERT INTO commands VALUES (?,?,?,?)').run(data.playerId, i + 1, entry.idempotencyKey, JSON.stringify(entry)));
+  data.events.forEach((event: { id: string }, i: number) => db.prepare('INSERT INTO events VALUES (?,?,?,?)').run(data.playerId, i + 1, event.id, JSON.stringify(event)));
+  f.now = data.now + 1000 * 86400000;
+  const s = f.open(), before = db.prepare('SELECT * FROM players').get();
+  db.exec("CREATE TRIGGER fail_calendar_adoption BEFORE INSERT ON commands BEGIN SELECT RAISE(ABORT,'test:adoptionFailure'); END");
+  assert.throws(() => s.read(data.playerId), /test:adoptionFailure/);
+  assert.deepEqual(db.prepare('SELECT * FROM players').get(), before);
+  assert.equal(db.prepare('SELECT count(*) AS n FROM commands').get()!.n, data.log.length);
+  db.exec('DROP TRIGGER fail_calendar_adoption');
+  const state = s.read(data.playerId);
+  assert.equal(state.world.now, f.now); assert.equal(state.world.active, false);
+  assert.deepEqual(state.world.events, old.world.events); assert.deepEqual(state.world.daily, old.world.daily);
+  const entry = JSON.parse(String(db.prepare('SELECT entry FROM commands ORDER BY seq DESC LIMIT 1').get()!.entry));
+  assert.equal(entry.at, data.now); assert.equal(entry.rulesVersion, 20); assert.equal(entry.idempotencyKey, 'system:calendar:20');
+  assert.equal(db.prepare('SELECT count(*) AS n FROM commands').get()!.n, data.log.length + 1);
+  s.close(); assert.deepEqual(f.open().read(data.playerId), state);
 });

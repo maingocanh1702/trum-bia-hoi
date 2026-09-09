@@ -116,11 +116,27 @@ export class Game {
     if (w.beer?.batch) times.push(w.beer.batch.readyAt);
     return Math.min(...times.filter(t => t > w.now));
   }
-  advance(now: number): void {
-    const w = this.world, outage = w.disconnection;
+  private validateAdvance(now: number): void {
+    const w = this.world;
     if (!Number.isSafeInteger(now) || now < w.now) throw Error('clock:non-monotonic');
     // Validate the whole possible pause, including inactive rest after timeout/closing.
     if (this.rulesVersion >= DISCONNECT_RULES && (!w.active || w.paused) && !this.shiftPauseTimers(now - w.now, false)) throw Error('clock:unsafePause');
+  }
+  /** Live adapter boundary; recorded history continues to use advance(). */
+  catchUp(now: number): void {
+    this.validateAdvance(now);
+    if (this.rulesVersion === DISCONNECT_RULES && !this.world.active && now > this.world.now) {
+      let idempotencyKey = `system:calendar:${ABSENT_CALENDAR_RULES}`;
+      while (this.results.has(idempotencyKey)) idempotencyKey += ':';
+      this.applyCommand({ at: this.world.now, idempotencyKey,
+        command: { type: 'activity', active: false, ...(this.world.paused ? { paused: true } : {}) } }, ABSENT_CALENDAR_RULES);
+    }
+    this.advance(now);
+  }
+  /** Advance the currently pinned replay rules without inventing a version boundary. */
+  advance(now: number): void {
+    this.validateAdvance(now);
+    const w = this.world, outage = w.disconnection;
     if (outage && !outage.timedOut && now >= outage.expiresAt) {
       this.advanceTime(outage.expiresAt);
       outage.timedOut = true;
@@ -572,21 +588,21 @@ export class Game {
   /** Opening config is supplied by a trusted registry adapter, never by a player command payload. */
   command(envelope: Envelope, openingConfig?: Config): Result {
     if (!validEnvelope(envelope)) return { ok: false, reason: 'invalidCommand' };
-    return this.applyCommand(envelope, ABSENT_CALENDAR_RULES, openingConfig);
+    return this.applyCommand(envelope, ABSENT_CALENDAR_RULES, openingConfig, true);
   }
   /** Trusted adapter supplies one lossId per outage and reuses it only for retries. */
   disconnect(at: number, shiftId: string, lossId: string): Result {
     if (typeof lossId !== 'string' || !lossId) return { ok: false, reason: 'invalidCommand' };
-    return this.applyCommand({ at, idempotencyKey: `system:connectionLost:${shiftId}:${lossId}`, command: { type: 'connectionLost', shiftId, lossId } }, ABSENT_CALENDAR_RULES);
+    return this.applyCommand({ at, idempotencyKey: `system:connectionLost:${shiftId}:${lossId}`, command: { type: 'connectionLost', shiftId, lossId } }, ABSENT_CALENDAR_RULES, undefined, true);
   }
   /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
   replay(entry: LoggedCommand, config = this.config): Result {
-    if (entry.command.type === 'connectionLost' && entry.rulesVersion < DISCONNECT_RULES) throw Error('replay:rulesVersion');
+    if (entry.command.type === 'connectionLost' && (entry.rulesVersion < DISCONNECT_RULES || entry.rulesVersion >= ABSENT_CALENDAR_RULES && !entry.command.lossId)) throw Error('replay:rulesVersion');
     if (entry.command.type === 'activity' && entry.command.paused !== undefined && entry.rulesVersion < MENU_PAUSE_RULES) throw Error('replay:rulesVersion');
     if (entry.configVersion !== config.version || config.version !== this.config.version && (entry.command.type !== 'startShift' || entry.rulesVersion < CONFIG_PIN_RULES)) throw Error('replay:configVersion');
     return this.applyCommand(entry, entry.rulesVersion, entry.command.type === 'startShift' ? config : undefined);
   }
-  private applyCommand(envelope: Envelope<Command | SystemCommand>, rulesVersion: RulesVersion, openingConfig?: Config): Result {
+  private applyCommand(envelope: Envelope<Command | SystemCommand>, rulesVersion: RulesVersion, openingConfig?: Config, live = false): Result {
     if (!validReplayEnvelope(envelope)) return { ok: false, reason: 'invalidCommand' };
     const previous = this.results.get(envelope.idempotencyKey);
     if (previous) return JSON.stringify(previous.command) === JSON.stringify(envelope.command) ? { ...previous.result } : { ok: false, reason: 'idempotencyConflict' };
@@ -596,7 +612,7 @@ export class Game {
     if (known && known !== selected && configContent(known) !== configContent(selected)) return { ok: false, reason: 'configVersionConflict' };
     // Old logs switched before advancing; v10+ keeps elapsed autonomous history under its preceding rules.
     if (rulesVersion < ARRIVAL_INTERVAL_RULES) this.rulesVersion = rulesVersion;
-    this.advance(envelope.at);
+    if (live) this.catchUp(envelope.at); else this.advance(envelope.at);
     this.rulesVersion = rulesVersion;
     this.snapshots.set(selected.version, selected);
     this.commandKey = envelope.idempotencyKey;

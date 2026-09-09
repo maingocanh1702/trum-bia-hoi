@@ -157,7 +157,7 @@ export class GameStore {
       const game = this.hydrate(row), logStart = game.log.length, eventStart = game.world.events.length, now = this.now();
       if (now < game.world.now) throw Error('store:clockBackwards');
       // Even a retry returns the latest autonomous state, but its original command result.
-      game.advance(now);
+      game.catchUp(now);
       const result = action(game, now);
       const changed = now !== row.now || game.log.length !== logStart || game.world.events.length !== eventStart;
       const revision = row.revision + Number(changed);

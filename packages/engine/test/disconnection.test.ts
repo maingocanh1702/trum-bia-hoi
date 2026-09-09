@@ -210,3 +210,50 @@ test('genuine cb389e0 rules19 absent-day history survives rules20 adoption witho
   const countBefore = count(g, 'quest_generated');
   g.advance(g.world.now + 1000 * 86400000); assert.equal(count(g, 'quest_generated'), countBefore); roundtrip(g);
 });
+
+
+test('the first live catch-up or command after loading rules19 adopts at the saved frontier, never across missed days', () => {
+  const text = readFileSync(new URL('./fixtures/legacy-v19-absence.json', import.meta.url), 'utf8');
+  for (const commandFirst of [false, true]) {
+    const g = decodeSave(text), prefix = structuredClone(g.world.events), log = structuredClone(g.log), frontier = g.world.now;
+    const end = frontier + 1000 * 86400000;
+    if (commandFirst) assert.ok(g.command({ at: end, idempotencyKey: 'return-after-update', command: { type: 'activity', active: true, paused: true } }).ok);
+    else g.catchUp(end);
+    assert.deepEqual(g.log.slice(0, log.length), log);
+    assert.equal(g.log[log.length].at, frontier); assert.equal(g.log[log.length].rulesVersion, 20);
+    assert.equal(g.log[log.length].idempotencyKey, 'system:calendar:20');
+    assert.deepEqual(g.world.events.slice(0, prefix.length), prefix);
+    assert.equal(count(g, 'quest_generated') - prefix.filter(e => e.type === 'quest_generated').length, commandFirst ? g.config.values.quests.daily.count : 0);
+    const before = encodeSave(g); g.catchUp(end); assert.equal(encodeSave(g), before); roundtrip(g);
+  }
+  const historical = decodeSave(text), before = count(historical, 'quest_generated');
+  historical.advance(historical.world.now + 86400000);
+  assert.equal(count(historical, 'quest_generated') - before, historical.config.values.quests.daily.count); roundtrip(historical);
+});
+
+
+test('invalid, stale, duplicate and unsafe first live operations cannot write a calendar adoption record', () => {
+  const g = decodeSave(readFileSync(new URL('./fixtures/legacy-v19-absence.json', import.meta.url), 'utf8')), before = encodeSave(g);
+  assert.equal(g.command({ at: g.world.now - 1, idempotencyKey: 'stale', command: { type: 'activity', active: true } }).reason, 'staleCommand');
+  assert.equal(g.command({ at: g.world.now + 1, idempotencyKey: 'system:calendar:20', command: { type: 'activity', active: false } }).reason, 'invalidCommand');
+  assert.deepEqual(g.command(g.log[0] as never), g.log[0].result);
+  assert.throws(() => g.catchUp(Number.MAX_SAFE_INTEGER), /clock:unsafePause/);
+  assert.throws(() => g.catchUp(NaN), /clock:non-monotonic/);
+  assert.equal(encodeSave(g), before);
+});
+
+
+test('rules20 loss records cannot borrow the legacy rules19 missing-identity exception', () => {
+  const g = readyOrder(), before = encodeSave(g), at = g.world.now, shiftId = g.world.shift!.id;
+  assert.throws(() => g.replay({ at, idempotencyKey: `system:connectionLost:${shiftId}:${at}`, command: { type: 'connectionLost', shiftId }, rulesVersion: 20, configVersion: g.config.version, result: { ok: true } }), /replay:rulesVersion/);
+  assert.equal(encodeSave(g), before);
+});
+
+
+test('an older log key cannot shadow the live calendar adoption receipt', () => {
+  const g = decodeSave(readFileSync(new URL('./fixtures/legacy-v19-absence.json', import.meta.url), 'utf8'));
+  assert.ok(g.replay({ at: g.world.now, idempotencyKey: 'system:calendar:20', command: { type: 'activity', active: false }, rulesVersion: 19, configVersion: g.config.version, result: { ok: true } }).ok);
+  const before = count(g, 'quest_generated'); g.catchUp(g.world.now + 1000 * 86400000);
+  assert.equal(count(g, 'quest_generated'), before); assert.equal(g.log.at(-1)!.idempotencyKey, 'system:calendar:20:');
+  assert.equal(g.log.at(-1)!.rulesVersion, 20); roundtrip(g);
+});
