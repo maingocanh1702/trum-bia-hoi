@@ -1,6 +1,6 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.16.2
+> **Version:** v0.17.0
 > **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-09 (layout/art theo ảnh owner)
 > **Trạng thái:** Active — **M0 qua verify; review sửa lỗi nền và layout/art đã CLEAN. M1–M3 tiếp tục triển khai; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.0** (1 phase, mốc M0–M9).
 > **Owner:** Team
@@ -65,7 +65,7 @@
 | PR | Wave | Feature | Status | Branch | Gates | Notes |
 |----|------|---------|:------:|--------|:-----:|-------|
 | F11 | 🎮 Code | Bếp & Mồi Nóng — bếp 4 cấp, 3 mồi nóng | 🟡 | `codex/game-build-isolated` | 🔒S 🔒B | Cấu hình 3 mồi nóng + prep/slot bếp đã có. Chưa đủ acceptance test bếp nâng hết và cân bằng menu. |
-| F17 | 🎮 Code | Nhiệm Vụ Quán Nhậu — 7 nhánh (ngày/ca/gift/điểm danh/referral/ĐLT) | 🟡 | `codex/game-build-isolated` | 🔒S | Rules12 daily5: seed VN/tier, actual event progress, rollover, reward/bonus guards/UI VI-EN; đã sửa P1 review về mốc onboarding mở nhiệm vụ.118 unit/46 E2E/config/build,20 k rows2.3171–2.7312 qua; full-base review3f978ec..e551b40 không còn lỗi actionable. Gift transfer/attendance/referral/season authority và full F17 còn tiếp tục. |
+| F17 | 🎮 Code | Nhiệm Vụ Quán Nhậu — 7 nhánh (ngày/ca/gift/điểm danh/referral/ĐLT) | 🟡 | `codex/game-build-isolated` | 🔒S | Rules12 daily5: seed VN/tier, actual event progress, rollover, reward/bonus guards/UI VI-EN; đã sửa P1 review về mốc onboarding mở nhiệm vụ.118 unit/46 E2E/config/build,20 k rows2.3171–2.7312 qua; full-base review3f978ec..e551b40 không còn lỗi actionable. Rules13 thêm điểm danh theo ngày active, claim uy tín một lần, đổi vòng/reset/offline/replay và ladder VI-EN;126 unit/52 E2E/config/build và20 k rows2.2564–2.8277 xanh, review độc lập đang chuẩn bị. Gift transfer/referral/season authority và full F17 còn tiếp tục. |
 
 ### Phase 3: Server + meta + risk (M4–M6 — server-authoritative từ M4)
 
@@ -98,10 +98,10 @@
 |-------|:-----:|:--------:|:----------------:|:-------:|:--------:|:-:|
 | 0 — Nền (M0) | 7 | 0 | 7 | 0 | 0 | 0% |
 | 1 — Lõi + onboarding (M1–M2) | 6 | 0 | 6 | 0 | 0 | 0% |
-| 2 — Demand-mix (M3) | 2 | 0 | 1 | 0 | 0 | 0% |
+| 2 — Demand-mix (M3) | 2 | 0 | 2 | 0 | 0 | 0% |
 | 3 — Server + meta + risk (M4–M6) | 10 | 0 | 2 | 0 | 1 | 0% |
 | 4 — Vé Mở Ca + sự kiện (M7–M8) | 3 | 0 | 0 | 0 | 0 | 0% |
-| **MVP total** | **28** | **0** | **16** | **0** | **1** | **0%** |
+| **MVP total** | **28** | **0** | **17** | **0** | **1** | **0%** |
 
 > **Reset 2026-09-08 theo `06-ROADMAP` v3.0:** game viết lại từ đầu, chưa mở M0 → mọi feature ⬜. Prototype (`prototype/`) là lưu trữ, không tính. Thêm F27 (onboarding, M2) và F28 (bảng xếp hạng, M5) → 28 feature. Cột "Phase" giữ tên để dashboard-engine parse; mốc thật xem ROADMAP.
 
@@ -185,3 +185,5 @@
 | v0.16.1 | Sửa P1 onboarding reveal từ review a22fa90: dùng chung ngưỡng cấu hình cho cả hai lối vào nhiệm vụ;46 browser/config/build qua. Full-base follow-up pending,17 feature vẫn đang làm. |
 
 | v0.16.2 | Ghi nhận full-base review3f978ec..e551b40 không còn lỗi actionable sau sửa mốc reveal;118 unit/46 E2E/config/build/20 k rows xanh.17 feature đang làm; gift/social, attendance/referral/server và full game chưa xong. |
+
+| v0.17.0 | Rules13 thêm attendance theo ngày active và claim uy tín, giữ lịch sử rules1–12;126 unit/52 browser/config/build xanh, review còn chờ. Sửa tổng status thành17 để khớp17 dòng feature đang làm; full game vẫn chưa xong. |

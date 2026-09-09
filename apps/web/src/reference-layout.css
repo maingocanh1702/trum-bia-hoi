@@ -259,3 +259,14 @@
 .quest-bonus > .sprite { width: 72px; height: 72px; }
 .quest-bonus h3 { margin: 0; }
 .quest-bonus p { font-size: 13px; }
+
+.attendance-panel { border-top: 1px solid var(--panelBorder); margin-top: 14px; padding: 14px 0 20px; }
+.attendance-panel h3 { margin: 0 0 12px; font-size: 17px; }
+.attendance-panel p { color: var(--creamMuted); font-size: 12px; line-height: 1.5; margin: 12px 0; }
+.attendance-track { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; padding: 0; list-style: none; }
+.attendance-track li { display: grid; gap: 5px; padding: 9px 4px; border: 1px solid var(--panelBorder); border-radius: 6px; text-align: center; font-size: 11px; }
+.attendance-track b { font-size: 15px; color: var(--coinGold); }
+.attendance-track small { font-size: 10px; color: var(--creamMuted); }
+.attendance-track [aria-current] { border-color: var(--coinGold); background: #ffffff0a; }
+.attendance-track [data-state="claimed"] small { color: #a9eac0; }
+@media (min-width: 640px) { .attendance-track { grid-template-columns: repeat(7, minmax(0, 1fr)); } }

@@ -54,6 +54,10 @@ export interface DailyQuests {
   vipShift: string | null; vipServed: boolean; vipLost: boolean;
   rushSlot: number | null; rushShift: string | null; rushServed: boolean;
 }
+export interface Attendance {
+  cycleDay: number; lastActiveDateKey: string; lastClaimDateKey: string | null;
+  expiresAt: number; claimedDays: number[];
+}
 export interface World {
   now: number; rng: number; nextId: number; phase: 'resting' | 'open' | 'closing';
   playerId: string; coins: number; reputation: number; seasonEarned: number; lifetimeEarned: number;
@@ -66,7 +70,7 @@ export interface World {
   events: DomainEvent[]; lostStreak: number;
   delivery: DeliveryOrder | null; nextDeliveryAt: number | null;
   dogLevel: number; claimedLifePaths: number[]; badgeShards: number; cosmeticTokens: number; peakLeague: string | null;
-  signStyle?: SignStyle; flyers?: number; daily?: DailyQuests;
+  signStyle?: SignStyle; flyers?: number; daily?: DailyQuests; attendance?: Attendance;
   location: string; lifePath: number; unlocks: string[]; badges: string[];
 }
 export type Command =
@@ -82,6 +86,7 @@ export type Command =
   | { type: 'upgradeDog'; level: number }
   | { type: 'claimLifePath'; level: number }
   | { type: 'buyUnlock'; item: BusinessUnlock }
+  | { type: 'claimAttendance'; day: string }
   | { type: 'claimQuest'; day: string; questId: string }
   | { type: 'claimDailyBonus'; day: string }
   | { type: 'buyFlyer' }
@@ -92,5 +97,5 @@ export type Command =
   | { type: 'emergencyPack' };
 export interface Envelope { idempotencyKey: string; at: number; command: Command }
 export interface Result { ok: boolean; reason?: string; outcome?: 'early' | 'late' | 'grace' | 'expired' | 'stale'; amount?: number }
-export type RulesVersion = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12; // config-exempt: persisted replay protocol revisions, not economy tuning
+export type RulesVersion = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13; // config-exempt: persisted replay protocol revisions, not economy tuning
 export interface LoggedCommand extends Envelope { result: Result; configVersion: string; rulesVersion: RulesVersion }

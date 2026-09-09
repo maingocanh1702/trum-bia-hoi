@@ -25,7 +25,9 @@ export function boot(): { game: Game; original: string | null; error: boolean } 
     }
   } catch { return { game: new Game(), original, error: true }; }
   const seed = crypto.getRandomValues(new Uint32Array(1))[0];
-  return { game: new Game(undefined, seed, Date.now(), `guest-${crypto.randomUUID()}`), original, error: false };
+  const game = new Game(undefined, seed, Date.now(), `guest-${crypto.randomUUID()}`);
+  game.command({ idempotencyKey: crypto.randomUUID(), at: game.world.now, command: { type: 'activity', active: !document.hidden } });
+  return { game, original, error: false };
 }
 export function persist(game: Game): void { localStorage.setItem(SAVE_KEY, encodeSave(game)); }
 /** Validate before replacing; keep the original under a separate key even if import/reset fails. */

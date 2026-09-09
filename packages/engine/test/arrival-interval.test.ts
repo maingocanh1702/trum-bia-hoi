@@ -71,8 +71,8 @@ test('genuine v9 hot and humid histories keep their old cadence until a new inte
     assert.equal(w.shift!.nextSpawnAt - latestArrival(g).at, 10500 * Number(latestArrival(g).data.size));
     const pending = w.shift!.nextSpawnAt;
     assert.ok(send(g, { type: 'activity', active: true }).ok);
-    assert.equal(g.log.at(-1)!.rulesVersion, 12);
-    assert.deepEqual(w, { ...historical, staminaAnchorAt: w.now, staminaAnchorMs: w.staminaMs });
+    assert.equal(g.log.at(-1)!.rulesVersion, 13);
+    assert.deepEqual(w, { ...historical, staminaAnchorAt: w.now, staminaAnchorMs: w.staminaMs, attendance: w.attendance, nextId: historical.nextId + 1, events: [...historical.events, w.events.at(-1)!] }); assert.equal(w.events.at(-1)!.type, 'attendance_day_opened');
     assert.equal(w.shift!.nextSpawnAt, pending);
     g.advance(pending);
     assert.equal(w.shift!.nextSpawnAt - pending, Math.round((weather === 'hot' ? 9975 : 9450) * Number(latestArrival(g).data.size)));

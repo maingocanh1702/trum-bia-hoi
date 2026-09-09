@@ -216,5 +216,19 @@
   "error.questExpired": "Nhiệm vụ này đã hết ngày.",
   "error.questClaimed": "Bạn đã nhận thưởng này.",
   "error.questIncomplete": "Chưa hoàn thành nhiệm vụ.",
-  "error.questGone": "Không tìm thấy nhiệm vụ."
+  "error.questGone": "Không tìm thấy nhiệm vụ.",
+  "attendance.title": "Điểm danh {n} ngày",
+  "attendance.day": "Ngày {n}",
+  "attendance.claimed": "Đã nhận",
+  "attendance.today": "Hôm nay",
+  "attendance.passed": "Đã qua",
+  "attendance.next": "Sắp tới",
+  "attendance.copy": "Ngày mở game được tính vào chuỗi. Quà chưa nhận hết hạn lúc 00:00 giờ Việt Nam.",
+  "attendance.reset": "Vắng một ngày sẽ bắt đầu lại ngày 1.",
+  "attendance.claimedToday": "Đã nhận hôm nay",
+  "attendance.claim": "Nhận +{n} uy tín",
+  "attendance.received": "+{n} uy tín",
+  "error.attendanceExpired": "Quà điểm danh này đã hết ngày.",
+  "error.attendanceClaimed": "Bạn đã nhận quà hôm nay.",
+  "error.attendanceInactive": "Quay lại quán để nhận quà hôm nay."
 }

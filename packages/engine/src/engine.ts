@@ -3,7 +3,7 @@ import { integer, random, weighted } from './rng';
 import { addStock, credit, currentGuests, customerValue, dayKey, deliveryInterval, deliveryQuote, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
 import { lifePathStatus, lifePathRewardQuote, unlockQuote } from './progression';
 import { signboardQuote, signboardStyle } from './signboard';
-import { applyQuestEvent, planDailyQuests, questRewardQuote, zeroLossWindow } from './quests';
+import { attendanceDay, attendanceRewardQuote, applyQuestEvent, planDailyQuests, questRewardQuote, zeroLossWindow } from './quests';
 import { flyerQuote } from './flyer';
 import { planRushes, summarizeRush } from './rush';
 import type { Command, Customer, Envelope, Group, Item, LoggedCommand, Order, Result, RulesVersion, Stats, Table, World } from './types';
@@ -16,6 +16,7 @@ const RUSH_SCHEDULE_RULES: RulesVersion = 8; // config-exempt: fixed replay prot
 const ARRIVAL_INTERVAL_RULES: RulesVersion = 10; // config-exempt: fixed replay protocol revision
 const FLYER_RULES: RulesVersion = 11; // config-exempt: fixed replay protocol revision
 const QUEST_RULES: RulesVersion = 12; // config-exempt: fixed replay protocol revision
+const ATTENDANCE_RULES: RulesVersion = 13; // config-exempt: fixed replay protocol revision
 const emptyStats = (): Stats => ({ arrived: 0, served: 0, lost: 0, rejected: 0, orders: 0, payment: 0, tip: 0, credited: 0, penalty: 0, spent: 0, rep: 0, wellRestedBonus: 0 });
 
 /** No wall clock, IO or renderer: only config, seed, explicit time and commands. */
@@ -25,7 +26,7 @@ export class Game {
   private readonly results = new Map<string, LoggedCommand>();
   private commandKey: string | null = null;
   private activeRushIndex: number | null = null;
-  private rulesVersion: RulesVersion = QUEST_RULES;
+  private rulesVersion: RulesVersion = ATTENDANCE_RULES;
   constructor(readonly config: Config = defaultConfig, readonly seed = 1, readonly createdAt = 0, readonly playerId = 'guest') {
     if (!Number.isSafeInteger(seed) || !Number.isSafeInteger(createdAt) || createdAt < 0) throw Error('game:invalid-origin');
     const c = config.values;
@@ -78,6 +79,7 @@ export class Game {
       }
     }
     if (w.shift?.flyer) times.push(w.shift.flyer.end);
+    if (w.attendance) times.push(w.attendance.expiresAt);
     if (w.daily) {
       times.push(w.daily.expiresAt);
       const row = w.daily.rows.find(r => r.kind === 'zero_loss_window');
@@ -166,6 +168,14 @@ export class Game {
       }
     }
   }
+  private observeAttendance(create = false) {
+    const w = this.world;
+    if (!w.active || !w.attendance && !create) return;
+    const { track, transition } = attendanceDay(w, this.config);
+    if (transition === 'same') return;
+    w.attendance = track;
+    this.emit('attendance_day_opened', { day: track.lastActiveDateKey, cycleDay: track.cycleDay, expiresAt: track.expiresAt, transition });
+  }
   private ensureDailyQuests(create = false) {
     const w = this.world;
     if (!w.daily && !create || w.daily && w.now < w.daily.expiresAt) return;
@@ -192,6 +202,7 @@ export class Game {
     const w = this.world, c = this.config.values, s = w.shift;
     if (!w.active && this.rulesVersion !== 1) return;
     if (this.rulesVersion >= QUEST_RULES) this.ensureDailyQuests();
+    if (this.rulesVersion >= ATTENDANCE_RULES) this.observeAttendance();
     if (s?.flyer && w.now >= s.flyer.end) this.endFlyer('expired');
     if (this.rulesVersion >= RUSH_CLOCK_RULES) {
       if (w.phase === 'open' && s && w.now >= s.endsAt) { w.phase = 'closing'; this.emit('shift_closing'); }
@@ -443,7 +454,7 @@ export class Game {
       this.emit('glass_washing', { glassId: glass.id });
     }
   }
-  command(envelope: Envelope): Result { return this.applyCommand(envelope, QUEST_RULES); }
+  command(envelope: Envelope): Result { return this.applyCommand(envelope, ATTENDANCE_RULES); }
   /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
   replay(entry: LoggedCommand): Result { return this.applyCommand(entry, entry.rulesVersion); }
   private applyCommand(envelope: Envelope, rulesVersion: RulesVersion): Result {
@@ -458,6 +469,7 @@ export class Game {
     this.commandKey = envelope.idempotencyKey;
     try {
       if (rulesVersion >= QUEST_RULES) this.ensureDailyQuests();
+      if (rulesVersion >= ATTENDANCE_RULES) this.observeAttendance();
       if (rulesVersion >= RUSH_CLOCK_RULES) this.updateRush();
       if (rulesVersion >= PROGRESSION_RULES) this.updateProgression();
       const result = this.execute(envelope.command);
@@ -482,6 +494,7 @@ export class Game {
     switch (cmd.type) {
       case 'activity':
         w.staminaAnchorAt = w.now; w.staminaAnchorMs = w.staminaMs; w.active = cmd.active;
+        if (this.rulesVersion >= ATTENDANCE_RULES && cmd.active) this.observeAttendance(true);
         return { ok: true };
       case 'startShift': {
         if (w.phase !== 'resting') return fail('shiftRunning');
@@ -509,6 +522,7 @@ export class Game {
         if (plan) w.shift.rushScheduleSeed = plan.seed;
         w.phase = 'open'; w.lastServedAt = null; w.lostStreak = 0;
         if (this.rulesVersion >= QUEST_RULES) this.ensureDailyQuests(true);
+        if (this.rulesVersion >= ATTENDANCE_RULES) this.observeAttendance(true);
         this.emit('shift_opened', { shiftId: w.shift.id }); this.emit('weather_rolled', { weather });
         if (plan) for (const [slot, r] of rushes.entries()) this.emit('rush_scheduled', { shiftId: w.shift.id, slot, seed: plan.seed, kind: r.kind, startsAt: r.start, duration: r.end - r.start });
         if (wellRested) { w.wellRestedDays[day] = true; this.emit('well_rested_started', { shiftId: w.shift.id, day, until: w.shift.wellRestedUntil, mult: rested.mult }); }
@@ -628,6 +642,15 @@ export class Game {
         this.spend(q.cost); w.unlocks.push(cmd.item);
         this.emit('unlock_bought', { item: cmd.item, cost: q.cost }); return { ok: true, amount: q.cost };
       }
+      case 'claimAttendance': {
+        const q = attendanceRewardQuote(w, this.config, cmd.day);
+        if (q.reason) return fail(q.reason);
+        this.observeAttendance(true);
+        this.changeRep(q.reputation);
+        w.attendance!.lastClaimDateKey = cmd.day; w.attendance!.claimedDays.push(q.track.cycleDay);
+        this.emit('attendance_claimed', { day: cmd.day, cycleDay: q.track.cycleDay, reputation: q.reputation });
+        return { ok: true, amount: q.reputation };
+      }
       case 'claimQuest': case 'claimDailyBonus': {
         const q = questRewardQuote(w, this.config, cmd.day, cmd.type === 'claimQuest' ? cmd.questId : null);
         if (q.reason) return fail(q.reason);
@@ -721,7 +744,7 @@ export function validEnvelope(input: unknown): input is Envelope {
   switch (c.type) {
     case 'startShift': case 'endShift': case 'buyTable': case 'emergencyPack': case 'installSignboard': case 'buyFlyer': return true;
     case 'claimQuest': return typeof c.day === 'string' && typeof c.questId === 'string' && c.questId.length > 0;
-    case 'claimDailyBonus': return typeof c.day === 'string';
+    case 'claimAttendance': case 'claimDailyBonus': return typeof c.day === 'string';
     case 'activateFlyer': return typeof c.shiftId === 'string' && c.shiftId.length > 0;
     case 'kickAll': return (c.shiftId === undefined || typeof c.shiftId === 'string') && (c.maxCost === undefined || Number.isSafeInteger(c.maxCost) && c.maxCost >= 0);
     case 'activity': return typeof c.active === 'boolean';

@@ -1,10 +1,10 @@
 import { dailyTargetCurve, type Config } from './config';
 import { integer, seededRng } from './rng';
 import { dayKey } from './rules';
-import type { DailyQuest, DailyQuests, DomainEvent, World } from './types';
+import type { Attendance, DailyQuest, DailyQuests, DomainEvent, World } from './types';
 
 /** Calendar boundary from the configured VN day formatter; no wall-clock dependency. */
-function nextDayAt(now: number, c: Config) {
+export function nextDayAt(now: number, c: Config) {
   const day = dayKey(now, c);
   let low = now, high = now + 86400000; // config-exempt: one calendar day in milliseconds (VN has no DST).
   while (high - low > 1) { const mid = low + Math.floor((high - low) / 2); if (dayKey(mid, c) === day) low = mid; else high = mid; }
@@ -74,7 +74,26 @@ export function questRewardQuote(w: World, c: Config, day: string, questId: stri
   let reason = !daily || daily.day !== day || w.now >= daily.expiresAt ? 'questExpired' : questId === null ? daily.bonusClaimed ? 'questClaimed' : daily.rows.some(r => r.progress < r.target) ? 'questIncomplete' : null : !row ? 'questGone' : row.claimed ? 'questClaimed' : row.progress < row.target ? 'questIncomplete' : null;
   const coin = questId === null ? 0 : row?.coin ?? 0, reputation = questId === null ? 0 : row?.reputation ?? 0;
   const flyers = questId === null ? c.values.quests.daily.bonusAll5.flyer : 0, shards = questId === null ? c.values.quests.daily.bonusAll5.badgeShard : 0;
-  if (!reason && (!Number.isSafeInteger(w.coins + coin) || !Number.isSafeInteger(w.reputation + reputation) || w.coins < 0 || w.reputation < 0 || (w.shift && w.phase !== 'resting' && !Number.isSafeInteger(w.shift.stats.rep + reputation)) || !Number.isSafeInteger(w.badgeShards + shards) || w.badgeShards < 0)) reason = 'rewardOverflow';
+  if (!reason && (!Number.isSafeInteger(w.coins + coin) || !reputationRewardFits(w, reputation) || w.coins < 0 || !Number.isSafeInteger(w.badgeShards + shards) || w.badgeShards < 0)) reason = 'rewardOverflow';
   if (!reason && flyers && (!Number.isSafeInteger(w.flyers ?? 0) || (w.flyers ?? 0) < 0 || (w.flyers ?? 0) + flyers > c.values.unlocks.flyer.stockCap)) reason = 'flyerStockFull';
   return { row, coin, reputation, flyers, shards, reason };
+}
+
+/** Shared preflight for the two reputation-reward claims; changeRep owns the mutation. */
+function reputationRewardFits(w: World, amount: number) {
+  return Number.isSafeInteger(amount) && amount >= 0 && Number.isSafeInteger(w.reputation + amount) && w.reputation >= 0 && (!w.shift || w.phase === 'resting' || Number.isSafeInteger(w.shift.stats.rep + amount));
+}
+/** Preview an observed day without mutating state or backfilling hidden dates. */
+export function attendanceDay(w: World, c: Config): { track: Attendance; transition: string } {
+  const day = dayKey(w.now, c), previous = w.attendance;
+  if (previous?.lastActiveDateKey === day) return { track: previous, transition: 'same' };
+  const missed = !!previous && dayKey(previous.expiresAt, c) !== day;
+  const reset = !previous || missed && c.values.quests.loginMissResets;
+  const cycleDay = reset ? 1 : previous.cycleDay % c.values.quests.loginTrackRepBase.length + 1;
+  return { track: { cycleDay, lastActiveDateKey: day, lastClaimDateKey: previous?.lastClaimDateKey ?? null, expiresAt: nextDayAt(w.now, c), claimedDays: cycleDay === 1 ? [] : [...previous!.claimedDays] }, transition: !previous ? 'first' : reset ? 'reset' : cycleDay === 1 ? 'wrap' : 'next' };
+}
+export function attendanceRewardQuote(w: World, c: Config, day: string) {
+  const { track } = attendanceDay(w, c), reputation = c.values.quests.loginTrackRepBase[track.cycleDay - 1];
+  const reason = day !== track.lastActiveDateKey ? 'attendanceExpired' : !w.active ? 'attendanceInactive' : track.lastClaimDateKey === day ? 'attendanceClaimed' : !reputationRewardFits(w, reputation) ? 'rewardOverflow' : null;
+  return { track, reputation, reason };
 }

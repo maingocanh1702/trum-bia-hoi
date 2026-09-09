@@ -1,10 +1,21 @@
-import { planDailyQuests, questRewardQuote, zeroLossWindow, type World, type Config, type Command } from '../../../packages/engine/src';
+import { attendanceRewardQuote, planDailyQuests, questRewardQuote, zeroLossWindow, type World, type Config, type Command } from '../../../packages/engine/src';
 import { Sprite } from './assets';
 export function Quests({ world: w, config: c, run, t, num }: { world: World; config: Config; run: (command: Command) => unknown; t: (key: string, params?: Record<string, string | number>) => string; num: (n: number) => string }) {
   const daily = w.daily && w.now < w.daily.expiresAt ? w.daily : planDailyQuests(w, c);
+  const attendance = attendanceRewardQuote(w, c, daily.day), track = attendance.track;
   const completed = daily.rows.filter(r => r.progress >= r.target).length, bonus = questRewardQuote(w, c, daily.day, null);
   return <div className="quest-panel">
     <header className="quest-summary"><div><strong>{daily.day}</strong><p>{t('quests.reset')}</p></div><b>{completed} / {daily.rows.length}</b></header>
+    <section className="attendance-panel" aria-label={t('attendance.title', { n: c.values.quests.loginTrackRepBase.length })}>
+      <h3>{t('attendance.title', { n: c.values.quests.loginTrackRepBase.length })}</h3>
+      <ol className="attendance-track">{c.values.quests.loginTrackRepBase.map((reputation, index) => {
+        const n = index + 1, state = track.claimedDays.includes(n) ? 'claimed' : n === track.cycleDay ? 'today' : n < track.cycleDay ? 'passed' : 'next';
+        return <li key={n} data-state={state} aria-current={n === track.cycleDay ? 'step' : undefined}><span>{t('attendance.day', { n })}</span><b>+{num(reputation)} <span aria-hidden="true">★</span><span className="sr-only">{t('reputation')}</span></b><small>{t(`attendance.${state}`)}</small></li>;
+      })}</ol>
+      <p>{t('attendance.copy')} {c.values.quests.loginMissResets && t('attendance.reset')}</p>
+      <button className="primary full" disabled={!!attendance.reason} onClick={() => run({ type: 'claimAttendance', day: daily.day })}>{attendance.reason === 'attendanceClaimed' ? t('attendance.claimedToday') : t('attendance.claim', { n: num(attendance.reputation) })}</button>
+      {attendance.reason === 'rewardOverflow' && <small>{t('error.rewardOverflow')}</small>}
+    </section>
     {!w.daily && <p>{t('quests.start')}</p>}
     <ol className="quest-list">{daily.rows.map(row => {
       const q = questRewardQuote(w, c, daily.day, row.id);

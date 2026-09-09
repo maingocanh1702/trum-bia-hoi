@@ -133,3 +133,51 @@ Focused checks: `packages/engine/test/quests.test.ts`, genuine rules11 flyer sna
 | 2026-09-09 | Reconciled all3 bonus/pool descriptions with canonical daily5 JSON; added local rules12 calendar, event, integer rounding and atomic-claim contract. Social/attendance/full F17 remain unfinished. |
 
 | 2026-09-09 (review correction) | Gate both quest entry points with the shared configured onboarding reveal; browser checks enabled onboarding at canonical2 and retuned3 completed shifts. |
+
+
+## 11. Local attendance rules13 contract (2026-09-09)
+
+Attendance counts observed active dates in Asia/Ho_Chi_Minh, independently of
+reward collection. This follows the separate `lastActiveDateKey` and
+`lastClaimDateKey` in the researched login track. A visit records day one even
+before opening a shift; the existing onboarding threshold still controls access to
+the daily sheet. The reward ladder comes from `quests.loginTrackRepBase`, scaled
+once by the shared loader, with safe nonnegative integer rewards. Its array length
+sets the cycle; no reward or duration has been added to the JSON.
+
+| Observed state / action | Result |
+|---|---|
+| First active visit | Open cycle day one, no automatic reward. |
+| Another visit or reload on the same VN date | Keep the same slot and claim status. |
+| Next consecutive active VN date | Advance one slot; an unclaimed previous reward expires. |
+| Missed active date(s), `loginMissResets=true` | Reset to day one. |
+| Missed dates, `loginMissResets=false` | Advance one observed slot; never backfill missing dates. |
+| End of configured reward array | Wrap to day one and clear the previous cycle's claimed cells. |
+| Hidden/offline calendar advance | Do not record attendance or pay rewards; resolve the gap on return. |
+| Claim exact current date, active, unclaimed, safe balances | Award reputation once through `changeRep`; stamp claim and audit event. |
+| Wrong/expired date, inactive, duplicate or overflow | Refuse without granting rewards or stamping a claim. |
+
+Optional `World.attendance` stores cycleDay, lastActiveDateKey, lastClaimDateKey,
+expiresAt and bounded claimedDays for the current cycle. Claimed cells distinguish
+paid rewards from observed-but-unclaimed days. While active, the next date is
+observed at exact VN midnight, using the daily quests' existing calendar helper.
+Claims change reputation and the active shift's reputation report only: coins,
+dayEarned, seasonEarned and lifetimeEarned remain untouched.
+
+Protocol13 adds `attendance_day_opened` and `attendance_claimed` audit events with
+exact date, cycle slot and transition/reward, plus the standard command/config/time
+fields. Rules1–12 replay preserves the full historical world. Current active
+adoption adds the first attendance stamp; it does not insert attendance into past
+commands or hidden dates. Genuine rules12 served/claimed and hidden-rollover saves
+exercise the complete old projection, current adoption and another replay.
+
+The VI/EN ladder shows today, claimed, passed and upcoming states with text as well
+as colour. Its claim uses the existing reward toast and paired reward sound.
+Focused checks: `packages/engine/test/attendance.test.ts` and
+`apps/web/test/attendance.spec.ts` (mobile, short desktop, real midnight, offline
+return, reload). Social transfers, referral, sign-in linkage and end-shift mission
+recommendations remain in full F17 scope.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 (rules13) | Implemented the observed-active-day attendance ladder and explicit reputation claim; documented missed/unclaimed-day distinction, configured wrap/reset, no offline backfill and historical replay. No JSON numbers changed. |

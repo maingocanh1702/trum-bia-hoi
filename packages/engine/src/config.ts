@@ -244,6 +244,7 @@ function validate(c: Economy): void {
       if (!Number.isFinite(total) || total <= 0 || (capCanExclude && postCap <= 0)) throw Error('config:signboardWeights');
     }
   }
+  for (const amount of c.quests.loginTrackRepBase) { whole(amount, 'attendance.reward'); whole(Math.round(amount * c.k.value), 'attendance.scaledReward'); }
   dailyTargetCurve(c);
   const daily = c.quests.daily;
   if (daily.seed !== seed.quests.daily.seed || daily.count !== daily.buckets.length + daily.fixed.length || c.shift.dayRollover.tz !== seed.shift.dayRollover.tz) throw Error('config:dailyShape');

@@ -70,6 +70,7 @@ export function App() {
         loss ??= { coins: 0, reputation: 0 };
         loss.coins += Number(e.data.penalty); loss.reputation += Number(e.data.reputation);
       }
+      if (e.type === 'attendance_claimed') setToast({ text: translate(prefs.current.locale, 'attendance.received', { n: Number(e.data.reputation) }), kind: 'early' });
       if (e.type === 'quest_claimed') setToast({ text: translate(prefs.current.locale, 'quests.received', { coin: Number(e.data.coin), rep: Number(e.data.reputation) }), kind: 'early' });
       if (e.type === 'daily_bonus_claimed') setToast({ text: translate(prefs.current.locale, 'quests.bonusReceived'), kind: 'early' });
       if (e.type === 'shipper_arrived') setToast({ text: translate(prefs.current.locale, 'delivery.arrived'), kind: 'early' });

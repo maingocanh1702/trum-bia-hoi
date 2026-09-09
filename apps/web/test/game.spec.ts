@@ -79,7 +79,7 @@ test('a neglected first shift closes after remaining guests expire and shows onl
   await expect(page.getByRole('heading', { name: 'Sổ ca hôm nay' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Ngừng đón khách' })).toHaveCount(0);
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));
-  expect(saved.version).toBe(2); expect(saved.log[0].command.type).toBe('startShift');
+  expect(saved.version).toBe(2); expect(saved.log[0].command.type).toBe('activity'); expect(saved.log.some((e: { command: { type: string } }) => e.command.type === 'startShift')).toBe(true);
 });
 
 test('tapped order stays live, returns keyboard focus, and closes on customer expiry', async ({ page }) => {
@@ -490,7 +490,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 
     await expect(qr.getByRole('button')).toBeDisabled();
     await page.locator('.upgrade-card').filter({ has: page.getByRole('heading', { name: 'Quầy hàng', exact: true }) }).getByRole('button').click();
     await expect(qr.getByRole('button')).toBeEnabled(); await qr.getByRole('button', { name: 'Mua · 20.000 xu', exact: true }).click();
-    for (const img of await page.locator('.business-card img').all()) expect(await img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0)).toBe(true);
+    for (const img of await page.locator('.business-card img').all()) await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0)).toBe(true);
     await page.keyboard.press('Escape'); await expect(page.locator('.business-props button')).toHaveCount(2);
     await page.getByRole('button', { name: 'Đường lên Trùm', exact: true }).click();
     await expect(page.locator('.journey-summary h3')).toHaveText('Tay Ngang');
@@ -536,7 +536,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 
     await page.emulateMedia({ reducedMotion: 'reduce' }); expect(await phone.locator('img').evaluate(el => getComputedStyle(el).animationName)).toBe('none');
     await phone.click(); const panel = page.getByRole('dialog', { name: 'Đơn giao hàng', exact: true });
     await expect(panel.getByRole('button', { name: /^Giao cả đơn/ })).toBeDisabled(); await expect(panel.locator('.delivery-lines li')).toHaveCount(fixture.lines.length);
-    expect(await panel.locator('.delivery-summary img').evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 1024)).toBe(true);
+    await expect.poll(() => panel.locator('.delivery-summary img').evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 1024)).toBe(true);
     await page.clock.runFor(1000); await expect(panel.getByRole('timer')).toHaveText('00:44');
     await panel.getByRole('button', { name: 'Nhập nguyên liệu còn thiếu', exact: true }).click();
     let cost = 0;
@@ -592,7 +592,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
   await expect(wood.getByRole('button')).toHaveText('Đang treo'); await expect(golden.getByRole('button')).toBeDisabled();
   await expect(golden).toContainText('Không trừ uy tín');
   await neon.getByRole('button').click(); await expect(neon.getByRole('button')).toHaveText('Đang treo');
-  for (const img of await panel.locator('.sign-card > img').all()) expect(await img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth === 1536)).toBe(true);
+  for (const img of await panel.locator('.sign-card > img').all()) await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth === 1536)).toBe(true);
   await wood.getByRole('button').click(); await expect(neon.getByRole('button')).toHaveText('Treo biển này'); await neon.getByRole('button').click();
   await page.keyboard.press('Escape'); const prop = page.getByRole('button', { name: 'Biển Neon · đổi kiểu', exact: true });
   const b = (await prop.boundingBox())!; expect(b.width).toBeGreaterThanOrEqual(44); expect(b.height).toBeGreaterThanOrEqual(44);
@@ -631,7 +631,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
   await expect(page.locator('.stock-strip .reputation')).toHaveText(new Intl.NumberFormat('vi-VN').format(fixture.reputation - fixture.cost));
   await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(fixture.coins));
   await expect(panel.getByRole('button', { name: /^Mua 1 tờ/ })).toBeDisabled();
-  expect(await panel.locator('.flyer-summary img').evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth === 1254)).toBe(true);
+  await expect.poll(() => panel.locator('.flyer-summary img').evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth === 1254)).toBe(true);
   await panel.getByRole('button', { name: 'Phát tờ rơi', exact: true }).click(); await expect(panel).toHaveCount(0);
   const trigger = page.getByRole('button', { name: 'Tờ rơi · còn 0', exact: true }); await expect(trigger).toHaveText('01:30');
   const box = (await trigger.boundingBox())!; expect(box.width).toBeGreaterThanOrEqual(44); expect(box.height).toBeGreaterThanOrEqual(44);

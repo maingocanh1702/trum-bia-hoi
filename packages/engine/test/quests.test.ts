@@ -158,7 +158,7 @@ test('genuine rules11 campaign snapshots preserve history and begin daily quests
     const expected = JSON.parse(readFileSync(new URL(`./fixtures/legacy-flyer-${state}-v11-expected.json`, import.meta.url), 'utf8'));
     const g = decodeSave(text); assert.deepEqual(g.world, expected.world); assert.equal(g.world.daily, undefined);
     const prior = structuredClone(g.world); send(g, { type: 'activity', active: true });
-    assert.deepEqual(g.world, { ...prior, staminaAnchorAt: prior.now, staminaAnchorMs: prior.staminaMs }); assert.equal(g.log.at(-1)!.rulesVersion, 12);
+    assert.deepEqual(g.world, { ...prior, staminaAnchorAt: prior.now, staminaAnchorMs: prior.staminaMs, attendance: g.world.attendance, nextId: prior.nextId + 1, events: [...prior.events, g.world.events.at(-1)!] }); assert.equal(g.world.events.at(-1)!.type, 'attendance_day_opened'); assert.equal(g.log.at(-1)!.rulesVersion, 13);
     assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
     send(g, { type: 'endShift' }); g.advance(g.world.now + g.config.values.shift.durationMs);
     assert.equal(g.world.phase, 'resting'); assert.equal(g.world.daily, undefined);

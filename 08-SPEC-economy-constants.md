@@ -355,6 +355,7 @@ Gốc dùng "20 đá / 20 kẹo / 40 kẹo" — bia hơi không có đá/kẹo �
 - Runtime rules12: `target = ceil(curve)`; earnings target = `ceil(curve ×k)`. Các reward Base qua loader `round(Base ×k)` đúng một lần. Claim thưởng không cộng dayEarned/seasonEarned/lifetimeEarned; bonus yêu cầu đủ5 và còn kho tờ rơi. Bảng điều kiện event/đổi ngày/replay tại `docs/features/F17-quest-system.md` §10.
 - Uy tín thưởng lẻ (⭐12.5) → **làm tròn lên** trong JSON (`⭐13`) hoặc giữ base ⭐5 không ×k — **chốt: uy tín-thưởng nhiệm vụ ×k rồi làm tròn** (GDD §11 quy ước ⭐ ×k).
 - **Điểm danh 7 ngày** (uy tín, không ×k? — chốt **×k**): base 2/4/8/16/32/64/128 → ×k 5/10/20/40/80/160/320 (tổng 635 ⭐); lỡ 1 ngày reset về ngày 1.
+- Runtime rules13: chuỗi điểm danh tính ngày **có mở game/active**, tách riêng ngày nhận quà; chơi nhưng chưa nhận vẫn giữ chuỗi, quà cũ hết hạn lúc 00:00 VN. Vắng ngày reset khi `loginMissResets=true`; nếu false chỉ tiến một ngày quan sát được. Hết mảng thưởng quay về ngày 1; không nhận bù ngày offline. Thưởng qua loader `round(Base ×k)` một lần và không cộng các ledger xếp hạng. Bảng trạng thái/claim/replay: F17 §11.
 - **Referral:** mốc 1 (1 bạn qualified) ⭐250 base → ⭐625 + **huy hiệu Kết Nối** · mốc 2 (3 bạn) ⭐1.000 → ⭐2.500 · mốc 3 (bạn đạt LP2) ⭐3.000 → ⭐7.500. Người được mời: thưởng chào mừng 2 giai đoạn (server) 🟡.
 - **Gửi quà** = transfer nguyên liệu P2P (≤5 mỗi loại + xu 🟡), 4 tầng chống farm (1 tin chưa đọc/người, trần gửi/nhận ngày, unique recipients, kiểm duyệt).
 - **Thùng hàng (crate) ánh xạ:** small {bia 4, lac 2, nem 2} · medium {8, 4, 4} · large {15, 8, 8} (+ mồi nóng 0/2/4 khi đã mở bếp) 🟡.
@@ -570,3 +571,5 @@ Mọi section của `docs/config/economy.tbh.json` đều nằm trong registry. 
 | v1.3.7 (2026-09-09) | Clarified ordinary-vs-active arrival floor order: none.floorMs is the baseline before weather/marketing, active rush floors remain absolute. Fixes hot/humid/flyer modifiers being clamped away by a10500ms ordinary floor. JSON1.7.1 changes formula metadata only; every gameplay number unchanged. Rules10 preserves historical1–9 scheduling during replay; live marketing producer still pending. |
 
 | v1.3.8 (2026-09-09) | Rules12 nối daily5 bằng JSON1.7.1 hiện hành, giữ nguyên mọi số; làm rõ ceil target, scale reward một lần,5/5 bonus và ledger không tính xếp hạng. Contract F17§10 phân biệt ca hoàn tất, full rush/VIP, hidden/midnight và trusted gift. |
+
+| v1.3.9 (2026-09-09) | Rules13 nối điểm danh bằng mảng thưởng hiện hành; làm rõ ngày active khác ngày claim, hết hạn/đổi vòng/reset cấu hình và không backfill offline. Không đổi JSON hay số cân bằng; lịch sử rules1–12 giữ nguyên. |

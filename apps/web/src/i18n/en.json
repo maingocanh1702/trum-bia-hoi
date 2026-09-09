@@ -216,5 +216,19 @@
   "error.questExpired": "This quest day has expired.",
   "error.questClaimed": "You already claimed this reward.",
   "error.questIncomplete": "Complete the quest first.",
-  "error.questGone": "Quest not found."
+  "error.questGone": "Quest not found.",
+  "attendance.title": "{n}-day check-in",
+  "attendance.day": "Day {n}",
+  "attendance.claimed": "Claimed",
+  "attendance.today": "Today",
+  "attendance.passed": "Passed",
+  "attendance.next": "Upcoming",
+  "attendance.copy": "Visits count toward the cycle. Unclaimed rewards expire at midnight Vietnam time.",
+  "attendance.reset": "Missing a day restarts at day 1.",
+  "attendance.claimedToday": "Claimed today",
+  "attendance.claim": "Claim +{n} reputation",
+  "attendance.received": "+{n} reputation",
+  "error.attendanceExpired": "This check-in reward has expired.",
+  "error.attendanceClaimed": "Today’s reward has already been claimed.",
+  "error.attendanceInactive": "Return to the stall to claim today’s reward."
 }

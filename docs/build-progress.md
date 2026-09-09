@@ -995,3 +995,46 @@ responds200; no root merge/push, hosted release or complete-game claim.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Recorded clean full-base daily review after onboarding correction,118 unit/46 E2E/20 k rows, genuine v12 saves and next attendance intake. Full-game goal remains active. |
+
+
+## 2026-09-09 — Attendance rules13 local implementation
+
+Base483bb03a75b0f767a2554a8a9e0caf75b6d2da68; isolated game worktree only.
+Attendance now observes active VN dates, independently of reward collection. The
+existing configured reputation array drives the ladder, wrap and reward amounts;
+loginMissResets controls gaps. Missed collection expires without breaking an
+observed-day streak. Hidden time records no visits/rewards; return resolves today's
+slot. Explicit current-date claim uses the shared reputation preflight/changeRep,
+with exact-once claim audit. No coins or earning ledgers are credited.
+
+Local boot records an active visit before a shift. Existing daily sheet hosts the
+VI/EN ladder with claimed/passed/current/future text, one claim action and reward
+sound/toast. It retains the configured onboarding reveal. Rules1–12 full history
+remains replayable; genuine a22fa90 daily-claim/hidden-rollover fixtures compare the
+entire old world and the single additive current attendance stamp. Fixed arrival
+adoption boundary remains10. No canonical JSON or balance number changed.
+
+Author verification: npm run verify green (config, production build,126 unit,
+10 ordinary >=500-serve k rows and15 controlled rush-pressure rows). Combined
+flyer/Golden/QR/shipper/well-rested adds10>=500-serve rows, actual deliveries,
+campaigns and bonus credits. Combined20-row k range2.2564–2.8277, within2–3.
+All52 browser tests pass after correcting an old eager image-load assertion:
+52-test first run had51 pass/one sign-image decode race; all four existing image
+checks now poll the same complete/naturalWidth condition, no relaxed assertion.
+Final typecheck green. Dedicated attendance8 unit/6 browser checks cover claim
+retries, real-midnight wrap, missed/skip-claim days, configurable no-reset, inactive
+return, safe overflow, genuine legacy replay, new visit without shift, VI/EN and
+360×740/390×844/1280×400 scrolling and44px actions.
+
+Native logs: .qa/attendance-verify.txt,attendance-combined-sim.txt,
+attendance-e2e.txt/attendance-e2e2.txt,attendance-assets.txt. All128 assets and32
+paired SFX pass manifest checks;30 placeholders/90drafts remain release work.
+Attendance screenshots at.qa/attendance-{360,390,1280}.png visibly checked.
+Tracker v0.17.0/dashboard retain17 in progress; corrected the stale summary count
+to match actual rows. Independent full-base review is next. Social/referral,
+authoritative server and every remaining M0–M9 deliverable remain in scope.
+Read-only root stillbc79af5 with original WIP; no merge/push/hosted release.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Added rules13 attendance, explicit reputation claim, old-save adoption and VI/EN ladder;126 unit/52 browser/20 k rows pass. Independent review pending; full-game goal remains active. |

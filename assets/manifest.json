@@ -1750,7 +1750,8 @@
         "flyer_bought",
         "flyer_started",
         "quest_claimed",
-        "daily_bonus_claimed"
+        "daily_bonus_claimed",
+        "attendance_claimed"
       ],
       "loop": false,
       "status": "draft",
@@ -1780,7 +1781,8 @@
         "flyer_bought",
         "flyer_started",
         "quest_claimed",
-        "daily_bonus_claimed"
+        "daily_bonus_claimed",
+        "attendance_claimed"
       ],
       "loop": false,
       "status": "draft",
