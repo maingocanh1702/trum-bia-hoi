@@ -10,7 +10,7 @@ complete-game goal; milestones below are implementation order, not scope cuts.
 | M1 — serve loop, glasses, stock, upgrades, local save, spatial UI, core audio | In progress | Playable loop, local save/replay, stock/equipment/table UI, core SFX wired; final sprites and listening QA pending |
 | M2 — guest, vi/en, onboarding | In progress | Local guest + matching vi/en keys + event-driven guide with skip/repeat cap; Google account linking and 5-person evidence pending |
 | M3 — full menu, customer mix, weather, rush, business unlocks | In progress | 6 menu entries and hot prep, 5 seated types, 5 weather states, basic scheduled rush. Local phone/QR progression reviewed; shipper local reviewed CLEAN at307a3b0. Football, remaining business upgrades and exhaustive balance/edge QA remain |
-| M4 — server authority, accounts, reconnect, config registry/admin | In progress | Engine config pinning/savev3 + durable SQLite event store verified locally; HTTP/auth/registry/admin/reconnect cutover remain |
+| M4 — server authority, accounts, reconnect, config registry/admin | In progress | Config pinning/savev3, SQLite event store and guest HTTP verified locally; Google/claim/registry/admin/reconnect and web cutover remain |
 | M5 — seasons, leaderboard/shrine, life path, leases, quests/referrals | Pending | |
 | M6 — risks, dog, emergency supplies | Pending | |
 | M7 — voluntary donations, cosmetic gifts, age notice | Pending | |
@@ -1588,3 +1588,43 @@ local adapter until Google claim, sequencing/reconnect and registry cutover are 
 | Date | Change |
 |---|---|
 | 2026-09-09 | Implemented M4 guest sessions and HTTP service dependency with real integration checks; full M0–M9 goal remains active. |
+
+
+## M4 guest HTTP verification receipt — 2026-09-09
+
+Product commits3f1805a +62b4445 (base090d920), isolated game worktree only. Author
+`npm run check:config`, `npm run build` (including typecheck) and all182 engine/server
+tests pass. Eight HTTP tests use real sockets/SQLite; eight persistence tests remain
+passing. Actual CLI + isolated Chromium on5174/5175 passes credentialed guest creation,
+owned state/start, private cookies/RNG, injected-command refusal, bounded event history,
+logout/reuse denial and private0600 database permissions. The test API was stopped;
+no owner browser profile/save was touched or switched to server authority.
+
+Initial native review identified3 P2 issues: unknown nested fields retained in command
+history, empty-cookie guest allocation, and unbounded event catch-up.62b4445 fixes
+all3. Exhaustive HTTP action tests reject injected/unknown fields before logging;
+invalid cookies create no new player. Catch-up reads100-row SQL pages with cursor and
+hasMore, survives restart/retry without duplicates, and no longer replays or advances
+the simulation. State/command operations still advance trusted server time. This does
+not remove the pre-existing full-history replay ceiling on state/command cache misses.
+
+Independent `codex exec review` of the full090d920..62b4445 range reports no confirmed
+actionable introduced defects. It independently passed store tests; its socket tests
+were blocked by sandbox listen EPERM, so runtime HTTP proof is the author run above.
+Evidence: `.qa/http-{config,build,tests}.txt`, `.qa/http-cli-browser-smoke.json`,
+`.qa/review-http.txt`, `.qa/review-http-followup.txt`, `.qa/http-verification.json`.
+
+No engine/config/web gameplay changed in this slice. The previous72 full browser,
+20 canonical1000-serve k rows2.5821–2.9601 and15 rush checks remain the evidence for
+those unchanged files; they were not rerun as part of this HTTP-only change.
+
+The owner answered “chưa có” to the Google Client ID request. Prepared
+`docs/google-signin-setup.md` with official setup sources and exact local test origins;
+no runtime Google config, fake sign-in or cloud claim is enabled. Full M0–M9 stays
+active: next M4 work is client sequencing/reconnect and registry/Google claim/remote
+web integration; distinct level art and later roadmap features remain unfinished.
+Tracker v0.25.1/dashboard keep18 features in progress and zero complete.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Verified guest HTTP through62b4445, resolved all3 native-review findings, added Google setup guide after owner confirmed no Client ID. No full-game or release completion. |

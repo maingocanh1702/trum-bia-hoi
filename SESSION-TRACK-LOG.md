@@ -24,12 +24,18 @@ Owner beer/washer batches and capacity HUD are now verified at7897bdd: rules18/c
 15 rush rows. Native review has no remaining introduced defects after cooler/legacy
 progress fixes. A500-serve combined excursion remains disclosed in build-progress.
 Menus still pause until close; old pinned shifts adopt batches at their next start.
-Next: authenticated transport and real registry/account/reconnect integration; web
-remains local until cutover is ready. Full game/art/server/release are unfinished.
+Guest HTTP/session ownership is verified through62b4445: config/build182 engine/server
+checks and actual CLI/Chromium smoke pass. Full-range native review090d920..62b4445
+has no remaining introduced defects after command-field/cookie/pagination fixes;
+reviewer socket reruns were sandbox-blocked. Test API5175 is stopped, web5174 stays local.
+Owner has no Google Client ID yet; setup guide: `docs/google-signin-setup.md`.
+Next: client sequencing/reconnect, registry/account claim and remote web integration.
+Full game/art/server/release are unfinished; lack of Google ID does not block other work.
 Current evidence and requirements: `docs/build-progress.md`, tracker and roadmap.
 
 | Date | Change |
 |---|---|
+| 2026-09-09 | Verified guest HTTP/server boundary at62b4445, added Google setup guide after owner confirmed missing Client ID; continue M4 without switching the local save. |
 | 2026-09-09 | Verified batch beer/washer production and realtime capacity HUD; refreshed current evidence and remaining M4 work. |
 | 2026-09-09 | Updated verified SQLite/live-upgrade receipt and owner batch priority. |
 | 2026-09-09 | Added current isolated-worktree checkpoint and durable-store work; preserved the historical snapshot below as history. |

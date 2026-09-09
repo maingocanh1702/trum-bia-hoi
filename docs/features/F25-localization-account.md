@@ -115,3 +115,16 @@ Logged-in account can:
 - Locale switch updates UI without corrupting save.
 - Guest progress migrates once into Google account.
 - Guest cannot enter Giải Nhậu ranking write path or claim a donation gift.
+
+
+## Implementation checkpoint — 2026-09-09
+
+The owner confirmed there is no Google Web Client ID yet. Configuration preparation
+is documented in [Google setup](../google-signin-setup.md). Guest-cookie ownership is
+implemented in the M4 HTTP backend, but the web app still uses local saves. Google
+verification, one-time guest claim, conflict handling and cloud UI are unfinished;
+no account/login success is simulated. Other server/registry/reconnect work continues.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Recorded missing Google Client ID and setup guide; reviewed guest HTTP foundation exists, full F25 acceptance remains open. |

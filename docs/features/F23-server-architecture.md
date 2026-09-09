@@ -171,3 +171,5 @@ are still required. Current HTTP tests prove this boundary only; §8 remains ope
 |---|---|
 | 2026-09-09 | Added real guest HTTP transport and SQLite session ownership; verified socket scenarios added, final config/build/tests/native review in progress. |
 | 2026-09-09 review corrections | Exact nested command fields, empty/malformed-cookie rejection and100-event durable pages; continuation/retry/restart tests added. Event polling no longer replays or advances the game; state/command operations advance server time. |
+
+| 2026-09-09 verified | Config/build182 engine/server and actual CLI/Chromium pass at62b4445. Full-range independent review090d920..62b4445 has no confirmed actionable introduced defects; reviewer socket reruns blocked by sandbox. Google ID absent per owner; F23§8 still requires sequencing/reconnect/registry/account/web integration. |

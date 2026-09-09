@@ -106,7 +106,13 @@ page is safe; clients deduplicate by sequence. Later appends are picked up by su
 polls, including after `hasMore:false`. State/command cold starts still have the full
 replay ceiling documented above; pagination does not claim to remove that limit.
 
+Google setup status: owner has no Web Client ID yet (2026-09-09). See the
+[setup guide](../../docs/google-signin-setup.md); no Google environment variable is
+consumed by the current launcher and no real Google login/cloud claim is enabled.
+
 | Date | Change |
 |---|---|
 | 2026-09-09 | Added hashed guest sessions and locally runnable authenticated HTTP transport around GameStore; full M4/client cutover remains pending. |
 | 2026-09-09 | Addressed HTTP review: exact command properties, explicit invalid-cookie refusal, and bounded durable event pages with continuation; catch-up no longer advances simulation. |
+
+| 2026-09-09 verification | Config/build182 engine/server checks and actual CLI/Chromium smoke pass at62b4445. Independent full-range review090d920..62b4445 reports no remaining introduced defects; reviewer socket reruns were blocked by sandbox listen EPERM. |
