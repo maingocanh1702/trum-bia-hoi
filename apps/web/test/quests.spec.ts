@@ -47,3 +47,28 @@ test('open daily sheet expires an unclaimed reward at VN midnight', async ({ pag
   await page.clock.runFor(1000); const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));
   expect(saved.events.filter((e: { type: string }) => e.type === 'quest_claimed')).toHaveLength(0);
 });
+
+for (const threshold of [2, 3]) {
+  test(`onboarding reveals both quest entries only after ${threshold} finalized shifts`, async ({ page }) => {
+    const f = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/quests.ts', `--onboarding=${threshold}`], { encoding: 'utf8' }));
+    await page.setViewportSize({ width: 390, height: 844 }); await page.clock.install({ time: new Date(f.now) }); await page.clock.pauseAt(new Date(f.now));
+    await page.addInitScript(save => { if (!localStorage.getItem('quest-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('quest-seeded', '1'); } }, f.save);
+    await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Nhiệm vụ ngày', exact: true })).toHaveCount(0);
+    for (let completed = 0; completed < threshold; completed++) {
+      await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
+      const skip = page.getByRole('button', { name: 'Bỏ qua', exact: true }); if (await skip.count()) await skip.click();
+      await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
+      const book = page.getByRole('dialog', { name: 'Sổ ca hôm nay', exact: true });
+      await expect(book.getByRole('button', { name: 'Nhiệm vụ ngày', exact: true })).toHaveCount(0);
+      await book.getByRole('button', { name: 'Ngừng đón khách', exact: true }).click();
+      await expect(book.getByRole('button', { name: 'Ngừng đón khách', exact: true })).toHaveCount(0);
+      await expect(book.getByRole('button', { name: 'Nhiệm vụ ngày', exact: true })).toHaveCount(completed + 1 === threshold ? 1 : 0);
+      if (completed + 1 < threshold) { await page.keyboard.press('Escape'); await expect(page.locator('.quest-trigger')).toHaveCount(0); }
+    }
+    await page.getByRole('dialog', { name: 'Sổ ca hôm nay', exact: true }).getByRole('button', { name: 'Nhiệm vụ ngày', exact: true }).click();
+    await expect(page.locator('.quest-list li')).toHaveCount(5); await page.keyboard.press('Escape');
+    await expect(page.locator('.quest-trigger')).toBeVisible(); await page.reload(); await expect(page.locator('.quest-trigger')).toBeVisible();
+    await page.locator('.quest-trigger').click(); await expect(page.locator('.quest-list li')).toHaveCount(5);
+  });
+}

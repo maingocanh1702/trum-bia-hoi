@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-09 08:19 · **Branch hiện tại:** `codex/game-build-isolated`
+> **Cập nhật:** 2026-09-09 08:34 · **Branch hiện tại:** `codex/game-build-isolated`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -218,7 +218,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 2
-- **Notes:** Rules12 daily5: seed VN/tier, actual event progress, rollover, reward/bonus guards và UI VI/EN.118 unit/44 E2E/config/build,20 k rows2.3171–2.7312 qua; independent review pending. Gift transfer/attendance/referral/season authority và full F17 còn tiếp tục.
+- **Notes:** Rules12 daily5: seed VN/tier, actual event progress, rollover, reward/bonus guards/UI VI-EN; đã sửa P1 review về mốc onboarding mở nhiệm vụ.118 unit/46 E2E/config/build,20 k rows2.3171–2.7312 qua; full-base review lại pending. Gift transfer/attendance/referral/season authority và full F17 còn tiếp tục.
 
 ### F13 — Đường Lên Trùm — LP0–LP7, gate tính năng & mặt bằng
 

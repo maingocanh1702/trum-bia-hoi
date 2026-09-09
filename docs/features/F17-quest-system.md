@@ -118,6 +118,9 @@ Acquiring the free flyer stamps persistent ownership for the existing LP conditi
 Four local rows cannot unlock the five-of-five bonus without actual gift completion.
 
 Native VI/EN daily sheet shows all five rows, progress, claims, rollover and bonus.
+When onboarding is enabled, both yard/book entries appear only after the configured
+`onboarding.featureReveal.questsAfterShifts` number of finalized shifts. Generation
+and progress can already run in the engine; this is progressive UI reveal.
 Gift availability is stated plainly. Attendance, referral, social transfer, end-shift
 recommendations and full F17 acceptance remain in the complete-game scope.
 Focused checks: `packages/engine/test/quests.test.ts`, genuine rules11 flyer snapshots,
@@ -128,3 +131,5 @@ Focused checks: `packages/engine/test/quests.test.ts`, genuine rules11 flyer sna
 | Date | Change |
 |---|---|
 | 2026-09-09 | Reconciled all3 bonus/pool descriptions with canonical daily5 JSON; added local rules12 calendar, event, integer rounding and atomic-claim contract. Social/attendance/full F17 remain unfinished. |
+
+| 2026-09-09 (review correction) | Gate both quest entry points with the shared configured onboarding reveal; browser checks enabled onboarding at canonical2 and retuned3 completed shifts. |

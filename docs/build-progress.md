@@ -939,3 +939,22 @@ progress. Root untouched, no merge/push/hosted release.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Implemented local daily generation/progress/claims/UI and preserved rules11 replay, with118 unit/44 browser/20 k rows; final independent review pending. |
+
+
+### Daily review correction — onboarding reveal
+
+Independent first review of3f978ec..a22fa90 exited0, with one actionable P1:
+quest yard/book buttons appeared before `onboarding.featureReveal.questsAfterShifts`.
+Confirmed against F27 section2. Fixed both entries and panel rendering with one
+shared presentation predicate reading the loaded threshold, bypassed only when
+onboarding is disabled. Engine generation/progress/claims remain unchanged.
+Two new browser regressions use actual opened/finalized shifts with onboarding on:
+canonical threshold2 and retuned3, both entry points and reload. Both passed; focused
+build/config passed. Full46 browser rerun passed in47.6s (.qa/quests-browser-full2.txt); independent
+full-base follow-up pending. Existing118 unit/20 k-row evidence is unchanged because
+this correction only affects UI reveal and browser tests.
+Original reviewer output retained at.qa/review-quests.txt/.log; no synthetic verdict.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Fixed confirmed quest-reveal P1 from independent review; enabled-onboarding regressions cover configured2/3 shift thresholds. |
