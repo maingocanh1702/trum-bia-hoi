@@ -367,3 +367,10 @@ this does not complete F23/M4. No public local-save upload was introduced.
 | 2026-09-10 heartbeat implementation | Schema7 session-bound presence, pre-catchUp expiry, authenticated heartbeat and restart scheduler; legacy pre-activation adapters retained. Verification/review in progress. |
 
 | 2026-09-10 mandatory public admission | Removed the temporary public pre-heartbeat bypass before web cutover: cookie-authenticated commands now always require their own lease from the first action. HTTP fixtures perform real heartbeats, presence changes and virtual-time keepalive. Native listen failures reject test startup instead of hanging. Final verification/review in progress. |
+
+Verified `9f38166`: final config/build/typecheck and298 engine/server tests pass;
+19 final real HTTP/presence checks pass. Full-range independent review found no
+actionable defect and independently passed9 SQLite/presence checks. Evidence:
+`.qa/m4-heartbeat-verification.json`. F23/M4 remains open for remote web and admin.
+
+| 2026-09-10 heartbeat verified |9f38166 full-range code/security review and final298tests pass. Required heartbeat applies from the first public command. No merge, push or deployment performed. |

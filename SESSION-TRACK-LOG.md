@@ -5,6 +5,24 @@
 
 ---
 
+## 🧭 Server liveness verified; remote web next — 2026-09-10
+
+Base `3f1d2bc`, final product `9f38166` (foundation `85cbb5d`). Schema7 persists
+session-bound heartbeat leases and applies exact expiry before server catch-up.
+Every public action now requires a live heartbeat from its first command. Actual
+hidden/menu presence, token rotation, multi-view expiry, normal closing after restart,
+transaction rollback and same-key action retry are verified. Final config/build and
+298full tests +19 final real HTTP/presence checks pass; full-range native review
+found no actionable defect and independently passed9 SQLite/presence checks.
+`.qa/m4-heartbeat-verification.json`; original20sourcehashes unchanged. No engine/
+config values changed; prior0bcbcde ordinary k/rush evidence retained, no80MB tuning.
+
+M4 remains OPEN: web still uses local Game/IndexedDB. Next implement remote web
+controller, durable action outbox, reconnect UI, pinned public config/report delivery;
+then registry/admin, M6→M7→M8→M9. Keep exact local backups and owner's deferred public
+upload boundary; ClientID absent, local history review-before-credit policy settled.
+No merge/push/deploy. See `.qa/m4-web-next-contract-notes.md` for current entry points.
+
 ## 🧭 Mandatory public heartbeat admission — 2026-09-10
 
 Product `85cbb5d` received independent review with no actionable defect. Tightened

@@ -2164,3 +2164,9 @@ Follow-up in the same boundary: public command admission now requires heartbeat
 from the very first action; trusted internal fixture/import adapters are separate.
 19 real HTTP/presence checks pass after strengthening the gate; final full checks
 and full-range review are in progress. Web implementation remains next.
+
+Final `9f38166` verified: config/build/typecheck and298 full tests pass;19 final
+real HTTP/presence checks pass. Full-range native review found no actionable defect,
+with9 independent SQLite/presence checks passing. Receipt
+`.qa/m4-heartbeat-verification.json`. No engine/config changes or M9 tuning.
+Server liveness portion is complete; remote web/outbox and registry/admin remain.

@@ -377,3 +377,5 @@ No public upload or M9 history optimization is included.
 | 2026-09-10 durable heartbeat | Added authenticated durable liveness and autonomous restart/timeout closing; native HTTP and SQLite regressions pass, final verification/review pending. F23§8 remains open pending web integration. |
 
 | 2026-09-10 admission tightened | All public cookie-authenticated commands, including the first startShift, require a live session-bound heartbeat. Internal legacy adapters remain separate. Updated HTTP clients test real heartbeat and pause protocol; no compatibility exception in the public action route. |
+
+| 2026-09-10 heartbeat verified | Final `9f38166` passes config/build/typecheck and298 engine/server tests;19 final HTTP/presence checks pass. Full-range native review found no actionable defect;9 non-socket presence checks independently pass. `.qa/m4-heartbeat-verification.json`. Mandatory public heartbeat, durable timeout/restart and hidden/menu recovery implemented; web outbox/authority/reconnect UI and registry/admin remain open. |

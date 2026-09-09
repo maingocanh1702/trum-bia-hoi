@@ -47,7 +47,7 @@ No new gameplay test or80MB run was added solely to make this report green.
 | M1 | FAIL | OPEN | Full12min proof at all3viewports, complete7-screen coverage, measured upgrade recommendation, axe and new-player feel evidence. |
 | M2 | FAIL | OPEN | Five-person test, real mid-shift Google browser flow and admin-editable onboarding; locale/login-prompt gaps below. |
 | M3 | FAIL | OPEN | Advanced economy band/feel,32px badge acceptance and remaining equipment/football placeholders. |
-| M4 | FAIL | OPEN — next implementation priority | Web server authority, reconnect/liveness, registry/admin effectiveAt and integrated account/eligibility. |
+| M4 | FAIL | OPEN — next implementation priority | Web server authority/reconnect UI, registry/admin effectiveAt and integrated account/eligibility; backend liveness verified9f38166. |
 | M5 | FAIL | OPEN | Public seasons/ranking/shrine, rewards/referral/gifts and full integration; local LP acceptance rules pass. |
 
 ## M0 — foundation
@@ -114,7 +114,7 @@ No new gameplay test or80MB run was added solely to make this report green.
 | Reconnecting within2s with yard visible | FAIL | No remote browser adapter/network-state UI. |
 | Offline commands buffer key+clientSeq within reconnectGraceMs, no loss/duplicate | FAIL | Ordered server receipts pass E1; browser durable queue/reconnect replay missing. |
 | Reconnect resync from lastSeq; server wins | FAIL | Server paginated cursor/owned-stream tests pass; no integrated browser resync. |
-| Beyond grace: server normally closes and returns ShiftClosed; no client-only ticking | FAIL | Engine `disconnection.test.ts` covers deadline/closing; server liveness scheduling + remote web timeout handling missing. |
+| Beyond grace: server normally closes and returns ShiftClosed; no client-only ticking | FAIL | Backend PASS at9f38166: `presence.test.ts` real HTTP startup/restart scheduler, exact lease/grace closure and replay; remote web still ticks local Game, so client timeout/server-authority acceptance remains missing. |
 | Local-first history replays at import; no client-only rules after cutover | FAIL | Shared engine and E5 full import replay PASS; after-cutover browser authority still missing. |
 | Google mid-shift without reload/lost tick; attach history once | FAIL | E5 transaction core PASS; public upload/GIS integration and live credential absent. |
 | Unrestricted guest core; exactly3login benefits and cooldown | FAIL | Guest core PASS E2; login-benefit prompt/cooldown UI not implemented. |
@@ -176,3 +176,5 @@ are not milestone rows, so completing M0 does not incorrectly close all Phase0 r
 | 2026-09-10 | Owner-requested criterion-by-criterion M0–M5 closure. Closed M0 from current config/build/tests/sim evidence; retained explicit FAILs and split engine proofs from missing product flows. |
 
 | 2026-09-10 review correction | Split the four04§6 feel criteria into separate FAIL rows with their own evidence gaps; M0–M5 closure verdicts unchanged. |
+
+| 2026-09-10 server-liveness evidence update |9f38166 completes the backend timeout/restart portion of M4/F23; full-range review and298tests pass. The combined exit criterion stays FAIL because remote web/outbox/reconnect handling is not yet implemented. Milestone PASS/FAIL counts unchanged. |
