@@ -166,3 +166,5 @@ still need implementation; this records the owner's decision, not delivered beha
 | 2026-09-10 owner | Chose review of imported local history before ranking credit, while preserving all local progress; approval and exactly-once credit remain required implementation. |
 
 | 2026-09-10 verification correction | Native review found SDK11 also accepts googleapis.com as issuer. The wrapper now allows only accounts.google.com / https://accounts.google.com; a signed-token regression fails before the fix and passes after it. Config/build and255engine/server checks pass; final correction review pending. |
+
+| 2026-09-10 verified |917f862 passes config/build/255tests; independent correction review resolves issuer finding with no remaining introduced defect. Google verification prerequisite only; session/account/claim/UI still to implement. |

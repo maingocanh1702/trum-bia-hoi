@@ -103,11 +103,15 @@ nới assertion. Chưa tuyên bố bản chơi hiện tại sẵn sàng lưu car
 ## Cập nhật lưu trữ — 2026-09-10
 
 Adapter IndexedDB tại `c9db016` ghi lịch sử theo phần mới và bảo vệ backup/migration;
-review mã không còn lỗi được xác nhận. Archive80MB đã lưu/đọc/mở game đúng ở542784d,
-giữ240ca,LP4 và1.582.365xu; thời gian mở khoảng19.5giây vì còn replay toàn bộ.
-Bản sửa cuối vẫn chờ91browser +80MB acceptance khi máy thức;86/91pass trong lượt
-bị ClamshellSleep không được tính là fullpass. Chưa chứng nhận career dài ngày.
+review mã không còn lỗi được xác nhận. Lượt verify cuối tại917f862 (storage/engine
+không đổi sau c9db016) đã qua91browser và archive80MB:16567lệnh/388986sự kiện
+ghi rồi mở lại khớp hoàn toàn; chỉ thêm1lệnh khi lưu tiếp. Appboot giữ240ca,LP4 và
+1.582.365xu, không có pageerror. Replay17,5giây, ghi đầu308ms, ghi tiếp98ms,
+khởi động20,5giây. Đã xem ảnh mobile390×844. Lượt86/91timeout do sleep được giữ
+làm lịch sử, không coi là pass. Khởi động dài/bộ nhớ và toànLP0–LP7 vẫn cần tiếp tục.
 
 | Ngày | Thay đổi |
 |---|---|
 | 2026-09-10 | Recorded reviewed IndexedDB implementation and earlier80MB acceptance, separating pending final runtime checks from code-review closure. |
+
+| 2026-09-10 final storage |91/91browser and80MB real HTTP acceptance passed; exact full history/continuation/Appboot, latest20.458s boot. Storage code unchanged from reviewed c9db016. Full-career balance and LP0–LP7 still open. |

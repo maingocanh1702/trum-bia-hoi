@@ -5,6 +5,35 @@
 
 ---
 
+## 🧭 Storage verified; Google verifier reviewed; local-history policy answered — 2026-09-10
+
+Product917f862; server Google prerequisite baseb5101f0. Official SDK verifier,
+strict Google Sign-In issuer/audience/signature/nonce/azp/expiry/subject, safe errors.
+Native correction review resolves the SDK extra-issuer P1, no remaining introduced
+defect.255engine/server +config/build/typecheck pass. No real Google Client ID,
+no login/account/claim endpoint or web cutover yet. `.qa/google-verifier-verification.json`.
+
+Storage/engine unchanged from reviewedc9db016. All91browser tests passed in2.6min
+once host was actually awake; physical lid state alone was not sufficient evidence
+of current sleep (display/user activity established wake). Actual80MB HTTP fixture
+acceptance passed:16567commands/388986events exactreopen and one-command delta,
+Appboot20.458s,1.582.365xu/LP4/240shifts,no pageerrors;390×844 image inspected.
+`.qa/browser-save-verification.json`. Do not rerun completed career or storage checks
+without new code/failure evidence. Long startup/memory remains a measured limit.
+
+OWNER ANSWER: “Duyệt lịch sử local rồi mới tính”. Preserve all local progress;
+imported history requires server-recorded review before ranking and credits once.
+F25/F28 updated. That policy question is resolved; advanced k-band question remains.
+Next bounded slice: read `.qa/google-account-boundary.md`, implement durable
+one-use nonce/account mapping/cookie transaction while preserving immutable player
+IDs/history; then protected claim/review and HTTP/web integration. Schema3 currently
+has no accounts. Revalidate cookie/nonce at consume after asynchronous verification,
+refuse progressed-account conflict, preserve old history. No fake login/prizes.
+
+Original checkout/owner5174 profile untouched by tests; source20hashes unchanged.
+No tests/reviews running after final receipt. Keep unrelated.dashboard/events.jsonl.
+No merge/push. Full goal stays active,20features in progress,0complete.
+
 ## 🧭 Storage code reviewed; browser verification awaits awake host — 2026-09-10
 
 Code `c9db016`, base310c94e. Native final correction review found no introduced

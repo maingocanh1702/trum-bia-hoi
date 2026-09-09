@@ -2,7 +2,7 @@
 
 `@tbh/server` exports `GameStore`, the internal M4 persistence layer, and
 `@tbh/server/http` exports a Node HTTP server with durable guest-cookie ownership.
-It runs the existing pure engine against SQLite. The web app still uses localStorage;
+It runs the existing pure engine against SQLite. The web app uses local IndexedDB career saves and localStorage settings;
 Google claim, client buffering/reconnect, registry and web cutover remain in progress.
 The API is locally runnable; it is not full M4 or a production release.
 
@@ -174,3 +174,5 @@ and sanitized errors. No Google account or live credential is simulated by these
 | Date | Change |
 |---|---|
 | 2026-09-10 | Added server-only Google verifier prerequisite with real SDK/signature/certificate tests; no login/claim endpoint or deployment enabled. |
+
+| 2026-09-10 verified | Verifier917f862 passes config/build/255tests and correction review; explicit Google Sign-In issuer allowlist fixes the SDK broader-default finding. Login/account transaction and web integration remain required. |

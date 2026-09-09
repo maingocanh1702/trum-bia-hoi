@@ -2011,3 +2011,25 @@ Full config/build/tests and independent review in progress. No login endpoint or
 account session/guest claim yet; no real Google Client ID. Continue with the durable
 nonce/account transaction, then provenance/conflict-safe claim and web cutover.
 Storage final91-case/80MB browser verification separately awaits an awake host.
+
+
+## Verified storage and Google prerequisite — 2026-09-10
+
+Current917f862: config/build/typecheck and255engine/server tests pass. Native
+Google correction review found no remaining introduced actionable defect after
+explicitly excluding SDK11's extra googleapis.com issuer; independent typecheck
+passed, reviewer sockets were sandbox-blocked. Actual signed-token regression
+was red before the fix. Receipt: `.qa/google-verifier-verification.json`.
+
+Storage/engine code is unchanged from reviewedc9db016. With the host demonstrably
+awake, all91browser checks passed in2.6minutes. Actual80MB acceptance passed:
+16567commands/388986events reopen exactly, one-command delta saves exactly,
+full Appboot20.458s with1.582.365xu/LP4/240shifts and no pageerrors. Mobile390×844
+screenshot inspected. Receipt: `.qa/browser-save-verification.json`; earlier
+sleep-related failures retained. No need to repeat this acceptance without changes.
+
+Next: durable session-bound one-use Google nonce/account transaction, then claim
+and web integration. Owner chose review of local history before ranking credit;
+retain progression, require server-recorded approval, credit once. Missing Client ID
+still means no real Google login. Advanced k policy remains pending; no economy
+retuning, invented prizes, completed full-game claim, merge or deploy.

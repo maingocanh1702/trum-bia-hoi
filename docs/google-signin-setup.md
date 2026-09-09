@@ -61,3 +61,5 @@ và chứng thư HTTP cục bộ không thay cho đăng nhập bằng Client ID 
 | Ngày | Thay đổi |
 |---|---|
 | 2026-09-10 | Thêm module xác minh token và kiểm thử chữ ký thật; phân biệt rõ prerequisite với đăng nhập/claim thực tế chưa bật. |
+
+| 2026-09-10 verified | Verifier917f862 qua review sau khi siết issuer đúng Google Sign-In;255tests/config/build qua. Chưa có Client ID/nonce transaction/login endpoint/cloud UI. |
