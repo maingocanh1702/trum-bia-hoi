@@ -186,7 +186,7 @@ test('v1 save migrates without changing prior fines, identifiers or an in-progre
   assert.ok(data.events.every((e: { idempotencyKey: string; configVersion: string }) => e.idempotencyKey && e.configVersion === g.config.version));
   assert.deepEqual(decodeSave(migrated).world, g.world);
   assert.equal(send(g, { type: 'activity', active: true }).ok, true);
-  assert.equal(g.log.at(-1)!.rulesVersion, 19);
+  assert.equal(g.log.at(-1)!.rulesVersion, 20);
   assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
   data.events[0].configVersion = 'tampered';
   assert.throws(() => decodeSave(JSON.stringify(data)), /event-mismatch/);
@@ -268,14 +268,16 @@ test('hidden time freezes pending orders and freshness while preserving real cal
   b.advance(b.world.now + hiddenMs);
   assert.equal(b.world.staminaMs, snapshot.staminaMs);
   assert.deepEqual(b.world.events.slice(0, snapshot.events.length), snapshot.events);
-  const calendarEvents = b.world.events.slice(snapshot.events.length);
-  assert.equal(calendarEvents.length, b.config.values.quests.daily.count);
-  assert.ok(calendarEvents.every(e => e.type === 'quest_generated' && e.data.day === '1970-01-02'));
+  assert.equal(b.world.events.length, snapshot.events.length);
+  assert.equal(b.world.daily!.day, snapshot.daily!.day);
   assert.ok(b.world.daily!.rows.every(q => q.progress === 0));
   assert.equal(b.world.shift!.pausedMs, hiddenMs);
   assert.equal(dayKey(b.world.now, b.config), '1970-01-02');
   assert.deepEqual(decodeSave(encodeSave(b)).world, b.world);
   send(b, { type: 'activity', active: true });
+  const calendarEvents = b.world.events.slice(snapshot.events.length).filter(e => e.type === 'quest_generated');
+  assert.equal(calendarEvents.length, b.config.values.quests.daily.count);
+  assert.ok(calendarEvents.every(e => e.data.day === '1970-01-02'));
   for (const g of [a, b]) {
     const table = g.world.tables.find(t => t.order)!;
     assert.deepEqual(send(g, { type: 'serve', tableId: table.id, orderId: table.order!.id }), { ok: true, outcome: 'early', amount: 65 });

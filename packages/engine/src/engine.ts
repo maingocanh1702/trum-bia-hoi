@@ -25,6 +25,7 @@ const MENU_PAUSE_RULES: RulesVersion = 16; // config-exempt: fixed replay protoc
 const LIVE_UPGRADE_RULES: RulesVersion = 17; // config-exempt: fixed replay protocol revision for owner live-upgrade policy
 const BATCH_RULES: RulesVersion = 18; // config-exempt: fixed replay protocol revision for stocked beer and wash batches
 const DISCONNECT_RULES: RulesVersion = 19; // config-exempt: replay protocol for trusted disconnection deadlines
+const ABSENT_CALENDAR_RULES: RulesVersion = 20; // config-exempt: replay protocol for lazy absent-day calendars
 const emptyStats = (): Stats => ({ arrived: 0, served: 0, lost: 0, rejected: 0, orders: 0, payment: 0, tip: 0, credited: 0, penalty: 0, spent: 0, rep: 0, wellRestedBonus: 0 });
 
 /** No wall clock, IO or renderer: only config, seed, explicit time and commands. */
@@ -139,7 +140,7 @@ export class Game {
       do {
         // Calendar events must land at the same instant for live ticks and log replay.
         let next = now;
-        if (this.rulesVersion >= DISCONNECT_RULES) for (const expiry of [w.daily?.expiresAt, w.active ? w.attendance?.expiresAt : undefined]) {
+        if (this.rulesVersion >= DISCONNECT_RULES && (this.rulesVersion < ABSENT_CALENDAR_RULES || w.active)) for (const expiry of [w.daily?.expiresAt, w.active ? w.attendance?.expiresAt : undefined]) {
           if (expiry !== undefined && expiry > w.now) next = Math.min(next, expiry);
         }
         this.advancePaused(next);
@@ -238,6 +239,8 @@ export class Game {
   }
   private ensureDailyQuests(create = false) {
     const w = this.world;
+    // Absent paused days have no gameplay events; refresh once on the next real visit.
+    if (this.rulesVersion >= ABSENT_CALENDAR_RULES && !w.active && !create && this.gameplayPaused()) return;
     if (!w.daily && !create || w.daily && w.now < w.daily.expiresAt) return;
     w.daily = planDailyQuests(w, this.config);
     for (const row of w.daily.rows) this.emit('quest_generated', { questId: row.id, kind: row.kind, target: row.target, day: w.daily.day, tier: w.daily.tier, seed: w.daily.seed });
@@ -569,12 +572,12 @@ export class Game {
   /** Opening config is supplied by a trusted registry adapter, never by a player command payload. */
   command(envelope: Envelope, openingConfig?: Config): Result {
     if (!validEnvelope(envelope)) return { ok: false, reason: 'invalidCommand' };
-    return this.applyCommand(envelope, DISCONNECT_RULES, openingConfig);
+    return this.applyCommand(envelope, ABSENT_CALENDAR_RULES, openingConfig);
   }
   /** Trusted adapter supplies one lossId per outage and reuses it only for retries. */
   disconnect(at: number, shiftId: string, lossId: string): Result {
     if (typeof lossId !== 'string' || !lossId) return { ok: false, reason: 'invalidCommand' };
-    return this.applyCommand({ at, idempotencyKey: `system:connectionLost:${shiftId}:${lossId}`, command: { type: 'connectionLost', shiftId, lossId } }, DISCONNECT_RULES);
+    return this.applyCommand({ at, idempotencyKey: `system:connectionLost:${shiftId}:${lossId}`, command: { type: 'connectionLost', shiftId, lossId } }, ABSENT_CALENDAR_RULES);
   }
   /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
   replay(entry: LoggedCommand, config = this.config): Result {
@@ -639,6 +642,7 @@ export class Game {
         w.staminaAnchorAt = w.now; w.staminaAnchorMs = w.staminaMs; w.active = cmd.active;
         if (this.rulesVersion >= MENU_PAUSE_RULES && cmd.paused) w.paused = true;
         else delete w.paused;
+        if (this.rulesVersion >= ABSENT_CALENDAR_RULES && cmd.active) this.ensureDailyQuests();
         if (this.rulesVersion >= ATTENDANCE_RULES && cmd.active) this.observeAttendance(true);
         return { ok: true };
       case 'startShift': {

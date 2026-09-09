@@ -15,7 +15,7 @@ in-stock demand, LP gates and lease lifecycle before the server liveness adapter
 The original19-test/career results do not describe this branch. Config1.7.3 remains
 the verified runtime until the new mechanisms and their simulations pass.
 
-## 🧭 Rules19 work in progress — 2026-09-09
+## 🧭 Rules19–20 work in progress — 2026-09-09
 
 Pure disconnection grace/closing is implemented on base cc1aee5 in the isolated
 game worktree. Regressions cover exact deadlines, no absent attendance/stamina,

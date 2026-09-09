@@ -230,3 +230,10 @@ call disconnect late through a store action that already advanced past the loss.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Adapter supplies a distinct lossId for each outage and reuses it only for retries, including same-millisecond flaps. Early rules19 timestamp-keyed records remain readable; new calls require identity. Full possible pause is checked before public advance crosses timeout, closure or calendar boundaries, refusing unsafe shifted timestamps before any mutation. |
+
+| 2026-09-09 rules20 | Inactive paused/resting time skips missed daily quest sets; current quests refresh on real return. Active management menus retain exact calendar rollover, and actual timeout-closing events still belong to their real day. Long-absence regression checks bounded event count, stale-claim refusal and replay/chunk equality. |
+
+Rules20 preserves recorded rules19 calendars when replaying old logs. A genuine
+cb389e0 inactive-day save is tested before and after rules20 adoption. Active menus
+still process exact daily boundaries; only absent paused days are lazy. Explicit
+shift creation and actual timeout-closing events retain their calendar ownership.

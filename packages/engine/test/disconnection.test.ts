@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { Game, config, loadConfig, encodeSave, decodeSave, validEnvelope, type Command } from '../src';
+import { Game, config, loadConfig, encodeSave, decodeSave, validEnvelope, dayKey, type Command } from '../src';
 const start = Date.parse('2026-09-09T16:59:30Z');
 const send = (g: Game, command: Command) => g.command({ command, at: g.world.now, idempotencyKey: `disconnect-test-${g.log.length}` });
 function readyOrder() {
@@ -180,4 +180,33 @@ test('early rules19 timestamp-keyed loss logs remain readable but new trusted ca
   assert.ok(g.replay({ at, idempotencyKey: `system:connectionLost:${shiftId}:${at}`, command: { type: 'connectionLost', shiftId }, rulesVersion: 19, configVersion: g.config.version, result: { ok: true } }).ok);
   assert.equal(g.world.active, false); roundtrip(g);
   assert.equal(g.disconnect(at, shiftId, undefined as never).reason, 'invalidCommand');
+});
+
+
+test('returning after a thousand absent days skips missed quest sets and opens only the current day', () => {
+  const g = readyOrder(), w = g.world;
+  send(g, { type: 'endShift' }); g.advance(w.now + 300000); assert.equal(w.phase, 'resting');
+  send(g, { type: 'activity', active: false });
+  const before = structuredClone(w.daily), events = w.events.length, generated = count(g, 'quest_generated');
+  const chunks = roundtrip(g), end = w.now + 1000 * 86400000;
+  g.advance(end);
+  for (let i = 0; i < 1000; i++) chunks.advance(chunks.world.now + 86400000);
+  assert.deepEqual(chunks.world, w); assert.equal(w.events.length, events); assert.deepEqual(w.daily, before);
+  roundtrip(g);
+  assert.equal(send(g, { type: 'claimQuest', day: before!.day, questId: before!.rows[0].id }).reason, 'questExpired');
+  send(g, { type: 'activity', active: true, paused: true });
+  assert.equal(w.daily!.day, dayKey(w.now, g.config));
+  assert.equal(count(g, 'quest_generated') - generated, g.config.values.quests.daily.count);
+  assert.ok(w.daily!.rows.every(row => !row.claimed && row.progress === 0)); roundtrip(g);
+});
+
+
+test('genuine cb389e0 rules19 absent-day history survives rules20 adoption without rewriting its past', () => {
+  const saved = readFileSync(new URL('./fixtures/legacy-v19-absence.json', import.meta.url), 'utf8');
+  const expected = JSON.parse(readFileSync(new URL('./fixtures/legacy-v19-absence-expected.json', import.meta.url), 'utf8'));
+  assert.equal(expected.source, 'cb389e088fadd05f77b6ed20e1f96de34833ac2b');
+  const g = decodeSave(saved); assert.deepEqual(g.world, expected.world); roundtrip(g);
+  send(g, { type: 'activity', active: false }); assert.equal(g.log.at(-1)!.rulesVersion, 20);
+  const countBefore = count(g, 'quest_generated');
+  g.advance(g.world.now + 1000 * 86400000); assert.equal(count(g, 'quest_generated'), countBefore); roundtrip(g);
 });

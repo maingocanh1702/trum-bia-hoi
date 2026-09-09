@@ -181,3 +181,15 @@ recommendations remain in full F17 scope.
 | Date | Change |
 |---|---|
 | 2026-09-09 (rules13) | Implemented the observed-active-day attendance ladder and explicit reputation claim; documented missed/unclaimed-day distinction, configured wrap/reset, no offline backfill and historical replay. No JSON numbers changed. |
+
+## Rules20 — refresh absent-day quests on return
+
+Inactive, paused days do not generate missed daily quest sets. The next active visit
+refreshes only the current VN date, including a visit with a management menu open.
+Active menus still observe exact midnight boundaries. Disconnection timeout cleanup
+continues to record actual closing events on their real date. Historical rules19
+saves retain their original generated-day history and adopt this rule prospectively.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 (rules20) | Skip inactive paused calendar backfill; refresh current quests once on return. Regression covers 1000 absent days, chunked/one-jump equality, expired claims, and a genuine rules19 save. |

@@ -121,7 +121,9 @@ test('VN midnight expires claims exactly, pins the new set and credits bridge fi
   g.advance(old.expiresAt); assert.equal(g.world.daily!.day, '2026-09-10'); assert.equal(g.world.daily!.rows.every(r => r.progress === 0), true);
   assert.equal(send(g, { type: 'claimQuest', day: old.day, questId: old.rows[0].id }).reason, 'questExpired');
   send(g, { type: 'endShift' }); g.advance(g.world.now + 120000); assert.equal(row(g, 'shift_3').progress, 1);
-  send(g, { type: 'activity', active: false }); g.advance(g.world.now + DAY * 2);
+  send(g, { type: 'activity', active: false }); const absent = structuredClone(g.world.daily);
+  g.advance(g.world.now + DAY * 2); assert.deepEqual(g.world.daily, absent);
+  send(g, { type: 'activity', active: true });
   assert.equal(g.world.daily!.day, dayKey(g.world.now, c)); assert.equal(g.world.daily!.rows.every(r => r.progress === 0), true);
   assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
 });
@@ -158,7 +160,7 @@ test('genuine rules11 campaign snapshots preserve history and begin daily quests
     const expected = JSON.parse(readFileSync(new URL(`./fixtures/legacy-flyer-${state}-v11-expected.json`, import.meta.url), 'utf8'));
     const g = decodeSave(text); assert.deepEqual(g.world, expected.world); assert.equal(g.world.daily, undefined);
     const prior = structuredClone(g.world); send(g, { type: 'activity', active: true });
-    assert.deepEqual(g.world, { ...prior, staminaAnchorAt: prior.now, staminaAnchorMs: prior.staminaMs, attendance: g.world.attendance, shift: { ...prior.shift!, menu: { eventStart: prior.events.length, serveStart: prior.serves.length, complete: false } }, nextId: prior.nextId + 2, events: [...prior.events, { id: `event-${prior.nextId + 1}`, type: 'menu_tracking_started', at: prior.now, configVersion: g.config.version, idempotencyKey: g.log.at(-1)!.idempotencyKey, data: { shiftId: prior.shift!.id, complete: false } }, g.world.events.at(-1)!] }); assert.equal(g.world.events.at(-1)!.type, 'attendance_day_opened'); assert.equal(g.log.at(-1)!.rulesVersion, 19);
+    assert.deepEqual(g.world, { ...prior, staminaAnchorAt: prior.now, staminaAnchorMs: prior.staminaMs, attendance: g.world.attendance, shift: { ...prior.shift!, menu: { eventStart: prior.events.length, serveStart: prior.serves.length, complete: false } }, nextId: prior.nextId + 2, events: [...prior.events, { id: `event-${prior.nextId + 1}`, type: 'menu_tracking_started', at: prior.now, configVersion: g.config.version, idempotencyKey: g.log.at(-1)!.idempotencyKey, data: { shiftId: prior.shift!.id, complete: false } }, g.world.events.at(-1)!] }); assert.equal(g.world.events.at(-1)!.type, 'attendance_day_opened'); assert.equal(g.log.at(-1)!.rulesVersion, 20);
     assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
     send(g, { type: 'endShift' }); g.advance(g.world.now + g.config.values.shift.durationMs);
     assert.equal(g.world.phase, 'resting'); assert.equal(g.world.daily, undefined);

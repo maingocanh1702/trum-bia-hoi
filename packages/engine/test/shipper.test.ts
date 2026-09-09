@@ -54,7 +54,7 @@ test('actual v6 phone-owned history stays inert until a current command arms a f
   assert.equal(w.now, expected.now); assert.equal(w.coins, expected.coins); assert.equal(w.lifetimeEarned, expected.lifetime); assert.equal(w.nextId, expected.nextId);
   assert.deepEqual(w.inventory, expected.inventory); assert.deepEqual(w.events, JSON.parse(saved).events); assert.deepEqual(g.log.at(-1)!.result, expected.result);
   assert.equal(w.delivery, null); assert.equal(w.nextDeliveryAt, null);
-  send(g, { type: 'activity', active: true }); assert.equal(g.log.at(-1)!.rulesVersion, 19);
+  send(g, { type: 'activity', active: true }); assert.equal(g.log.at(-1)!.rulesVersion, 20);
   assert.equal(w.nextDeliveryAt, w.now + deliveryInterval(w, g.config));
   const end = w.nextDeliveryAt!, small = decodeSave(encodeSave(g));
   while (small.world.now < end) small.advance(Math.min(end, small.world.now + 1000));
