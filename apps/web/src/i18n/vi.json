@@ -334,5 +334,6 @@
   "error.configSeasonTiers": "Cấu hình mới chưa tương thích với bậc Giải Nhậu đã lưu. Ca chưa được mở.",
   "save.loading": "Đang mở quán…",
   "save.storageUnavailable": "Chưa mở được dữ liệu đã lưu. Thử tải lại; tiến trình cũ vẫn được giữ.",
-  "save.conflict": "Bản chơi đã được cập nhật ở tab khác. Tải bản sao của tab này trước khi tải lại."
+  "save.conflict": "Bản chơi đã được cập nhật ở tab khác. Tải bản sao của tab này trước khi tải lại.",
+  "save.downloadLegacy": "Tải bản lưu localStorage cũ"
 }

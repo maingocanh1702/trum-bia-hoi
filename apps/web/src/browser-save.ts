@@ -3,7 +3,7 @@ import { saveMetadata, type Game } from '../../../packages/engine/src';
 // config-exempt: browser persistence schema and IO chunk size, not economy parameters.
 const DATABASE = 'tbh.career.v1', VERSION = 1, CHUNK = 1000;
 const STORES = ['head', 'commands', 'events', 'backups'];
-type Head = { revision: number; metadata: ReturnType<typeof saveMetadata>; now: number; commands: number; events: number };
+type Head = { revision: number | string; metadata: ReturnType<typeof saveMetadata>; now: number; commands: number; events: number };
 const request = <T>(req: IDBRequest<T>) => new Promise<T>((resolve, reject) => { req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); });
 function complete(tx: IDBTransaction) {
   return new Promise<void>((resolve, reject) => { tx.oncomplete = () => resolve(); tx.onabort = () => reject(tx.error ?? Error('storage:aborted')); });
@@ -27,6 +27,7 @@ export class BrowserSave {
   private again = false;
   private replacing = false;
   private legacy: string | null = null;
+  recoveryText: string | null = null;
   private constructor(private db: IDBDatabase) { db.onversionchange = () => db.close(); }
   static async open() {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
@@ -47,15 +48,22 @@ export class BrowserSave {
     const commands = request<unknown[][]>(tx.objectStore('commands').getAll()), commandKeys = request(tx.objectStore('commands').getAllKeys());
     const events = request<unknown[][]>(tx.objectStore('events').getAll()), eventKeys = request(tx.objectStore('events').getAllKeys());
     const [h, cs, ck, es, ek] = await Promise.all([head, commands, commandKeys, events, eventKeys, done]);
-    if (!h) { if (cs.length || es.length) throw Error('storage:corrupt'); this.head = null; return null; }
-    if (!Number.isSafeInteger(h.revision) || h.revision < 1) throw Error('storage:corrupt');
-    this.head = h;
-    return JSON.stringify({ ...h.metadata, log: unpack(ck, cs, h.commands), events: unpack(ek, es, h.events), now: h.now });
+    this.head = h ?? null;
+    try {
+      if (h === undefined) { if (cs.length || es.length) throw Error('storage:corrupt'); return null; }
+      if (!(typeof h.revision === 'number' && Number.isSafeInteger(h.revision) && h.revision > 0) && !(typeof h.revision === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(h.revision))) throw Error('storage:corrupt');
+      return JSON.stringify({ ...h.metadata, log: unpack(ck, cs, h.commands), events: unpack(ek, es, h.events), now: h.now });
+    } catch {
+      // Keep all surviving raw rows before exposing recovery; this is forensic data, not a trusted game.
+      this.recoveryText = JSON.stringify({ format: 'tbh.indexeddb-backup.v1', head: h ?? null, commandKeys: ck, commands: cs, eventKeys: ek, events: es });
+      throw Error('storage:corrupt');
+    }
   }
   migrateLegacy(text: string) { if (this.head) throw Error('storage:alreadyMigrated'); this.legacy = text; }
   get saving() { return this.pending !== null || this.replacing; }
   save(game: Game): Promise<void> {
     if (this.replacing) return Promise.reject(Error('storage:replacing'));
+    if (this.recoveryText !== null) return Promise.reject(Error('storage:corrupt'));
     if (!this.game && this.head && (this.head.metadata.seed !== game.seed || this.head.metadata.createdAt !== game.createdAt || this.head.metadata.playerId !== game.playerId)) return Promise.reject(Error('storage:wrongGame'));
     if (this.game && this.game !== game) return Promise.reject(Error('storage:wrongGame'));
     this.game = game; this.again = true;
@@ -75,8 +83,7 @@ export class BrowserSave {
     const previous = this.head;
     const commandsFrom = replacing ? 0 : previous?.commands ?? 0, eventsFrom = replacing ? 0 : previous?.events ?? 0;
     if (game.log.length < commandsFrom || game.world.events.length < eventsFrom) throw Error('storage:historyTruncated');
-    const next: Head = { revision: (previous?.revision ?? 0) + 1, metadata: saveMetadata(game), now: game.world.now, commands: game.log.length, events: game.world.events.length };
-    if (!Number.isSafeInteger(next.revision)) throw Error('storage:revisionOverflow');
+    const next: Head = { revision: crypto.randomUUID(), metadata: saveMetadata(game), now: game.world.now, commands: game.log.length, events: game.world.events.length };
     const commands = game.log.slice(commandsFrom), events = game.world.events.slice(eventsFrom);
     // Copy only new immutable log/event rows; do not serialize the whole career for autosave.
     const tx = this.db.transaction(STORES, 'readwrite', { durability: 'strict' }), done = complete(tx);
@@ -84,7 +91,8 @@ export class BrowserSave {
     const check = tx.objectStore('head').get('current');
     check.onsuccess = () => {
       try {
-        if ((check.result?.revision ?? 0) !== (previous?.revision ?? 0)) throw Error('storage:conflict');
+        const unchanged = this.recoveryText !== null ? JSON.stringify(check.result ?? null) === JSON.stringify(previous) : (check.result?.revision ?? 0) === (previous?.revision ?? 0);
+        if (!unchanged) throw Error('storage:conflict');
         if (replacing) { tx.objectStore('commands').clear(); tx.objectStore('events').clear(); }
         const original = replacing ? backup : this.legacy;
         if (original !== null) tx.objectStore('backups').add(original, crypto.randomUUID());
@@ -94,7 +102,7 @@ export class BrowserSave {
       } catch (error) { failure = error; tx.abort(); }
     };
     try { await done; } catch (error) { throw failure ?? error; }
-    this.head = next; this.legacy = null;
+    this.head = next; this.legacy = null; this.recoveryText = null;
   }
 }
 

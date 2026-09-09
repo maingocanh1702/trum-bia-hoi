@@ -12,7 +12,7 @@ export function readSettings(): Settings {
   } catch { return fallback; }
 }
 export function writeSettings(settings: Settings): void { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
-export interface BootSession { game: Game; storage: BrowserSave | null; original: string | null; error: 'corrupt' | 'storage' | 'conflict' | null }
+export interface BootSession { game: Game; storage: BrowserSave | null; original: string | null; legacy?: string | null; error: 'corrupt' | 'storage' | 'conflict' | null }
 export async function boot(): Promise<BootSession> {
   let original: string | null = null, storage: BrowserSave | null = null, failure: BootSession['error'] = 'storage';
   try {
@@ -31,7 +31,14 @@ export async function boot(): Promise<BootSession> {
     await storage.save(game);
     // Keep the legacy localStorage item and its transactional backup; never erase the recovery source.
     return { game, storage, original: null, error: null };
-  } catch (error) { return { game: new Game(), storage, original, error: error instanceof Error && error.message === 'storage:conflict' ? 'conflict' : failure }; }
+  } catch (error) {
+    let legacy: string | null = null;
+    if (storage?.recoveryText !== null && storage?.recoveryText !== undefined) {
+      failure = 'corrupt'; original = storage.recoveryText;
+      try { legacy = localStorage.getItem(SAVE_KEY); } catch { /* IndexedDB recovery is still available. */ }
+    }
+    return { game: new Game(), storage, original, legacy, error: error instanceof Error && error.message === 'storage:conflict' ? 'conflict' : failure };
+  }
 }
 /** Validate before the atomic backup/replacement. A failed transaction retains the old archive. */
 export async function replaceSave(text: string | null, session: BootSession): Promise<void> {

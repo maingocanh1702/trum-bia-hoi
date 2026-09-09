@@ -174,6 +174,7 @@ function GameView({ session }: { session: BootSession }) {
 
   if (session.error) return <main className="recovery"><h1>{t('brand')}</h1><p role="alert">{t(session.error === 'corrupt' ? 'save.corrupt' : session.error === 'conflict' ? 'save.conflict' : 'save.storageUnavailable')}</p>
     {session.original !== null && <button onClick={() => download(session.original!, 'tbh-original-save.json')}>{t('save.downloadOriginal')}</button>}
+    {session.legacy != null && <button onClick={() => download(session.legacy!, 'tbh-legacy-save.json')}>{t('save.downloadLegacy')}</button>}
     {session.error === 'corrupt' && <><label>{t('save.import')}<input type="file" accept="application/json,.json" onChange={async e => {
       const file = e.currentTarget.files?.[0]; if (!file) return;
       try { await replaceSave(await file.text(), session); location.reload(); } catch { setRecoveryError(true); }

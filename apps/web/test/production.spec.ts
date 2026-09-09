@@ -56,3 +56,33 @@ test('legacy washing shows an indeterminate bar in the yard and paused equipment
   await expect(panel.getByRole('progressbar')).not.toHaveAttribute('value');
   await expect(panel.getByText('Đang làm 1 ly · còn 3s', { exact: true })).toBeVisible();
 });
+
+test('reload immediately after a completed beer batch warns while its save is pending and preserves the batch', async ({ page }) => {
+  const f = fixture(); await page.clock.pauseAt(new Date(f.now));
+  await page.addInitScript(save => { if (!localStorage.getItem('batch-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('tbh.settings.v1', JSON.stringify({ welcomed: true, guideDone: true })); localStorage.setItem('batch-seeded', '1'); } }, f.save);
+  await page.goto('/'); await waitSaved(page);
+  const keg = page.getByRole('button', { name: 'Bom bia', exact: true });
+  await expect(keg.locator('.capacity-badge')).toHaveText('0/5');
+  // A real user gesture makes the browser's beforeunload protection eligible.
+  await page.locator('.money').click();
+  await page.evaluate(async () => {
+    await new Promise<void>((resolve, reject) => {
+      const open = indexedDB.open('tbh.career.v1'); open.onerror = () => reject(open.error);
+      open.onsuccess = () => {
+        const db = open.result, tx = db.transaction('head', 'readwrite'); let held = true;
+        // Hold a real competing transaction so the event write cannot commit before reload.
+        (window as unknown as { releaseTestWrite: () => void }).releaseTestWrite = () => { held = false; };
+        const keep = () => { const row = tx.objectStore('head').get('current'); row.onsuccess = () => { if (held) keep(); }; };
+        keep(); tx.oncomplete = () => db.close(); resolve();
+      };
+    });
+  });
+  await page.clock.runFor(3000); await expect(keg.locator('.capacity-badge')).toHaveText('5/5');
+  await expect(page.locator('.game-shell')).toHaveAttribute('data-save-state', 'saving');
+  const dialog = page.waitForEvent('dialog'); const reload = page.evaluate(() => location.reload());
+  const warning = await dialog; expect(warning.type()).toBe('beforeunload'); await warning.dismiss();
+  await reload;
+  await expect(keg.locator('.capacity-badge')).toHaveText('5/5');
+  await page.evaluate(() => (window as unknown as { releaseTestWrite: () => void }).releaseTestWrite());
+  await waitSaved(page); await page.reload(); await expect(keg.locator('.capacity-badge')).toHaveText('5/5');
+});

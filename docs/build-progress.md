@@ -1959,3 +1959,14 @@ history on the main thread; startup/memory ceilings remain explicit follow-up wo
 | Date | Change |
 |---|---|
 | 2026-09-09 | Added atomic IndexedDB local archive and browser recovery/race/delta coverage; final verification pending. |
+
+### Browser storage review corrections
+
+Native review of310c94e..542784d requested corruption recovery and an immediate
+pending-write reload check. Both are implemented: preserve raw surviving chunks,
+expose legacy download/import/reset, and use fresh revision tokens across recovery.
+An actual blocked IDB transaction exercises the browser beforeunload warning;
+cancelling reload keeps the completed beer batch, then successful save/reload retains it.
+Test-only HMR is disabled after traces proved dev websocket disconnect/reconnect
+navigated controlled-clock tests. Machine-sleep timeouts are retained as failed runs;
+no timeout or gameplay assertion was relaxed. Final checks/review are in progress.

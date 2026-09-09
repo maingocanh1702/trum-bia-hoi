@@ -482,3 +482,5 @@ money reducer are added; the owner's local5174 adapter is not switched yet.
 | 2026-09-09 ordered ingress | Added mandatory HTTP client sequencing and atomic durable receipts around the shared engine. Server now refuses unsequenced HTTP commands; full reconnect/remote cutover remains in progress. |
 
 | 2026-09-09 browser save | Bước local dùng IndexedDB sau khi career80MB vượt localStorage: append delta, atomic header/history/backup, compare revision, async boot và migration giữ nguồn cũ. Không đổi schema replay/rules/economy hay tuyên bố cloud sync. |
+
+| 2026-09-09 browser recovery | Integrity failures now expose import/reset and the retained legacy download. Before replacement, preserve the complete surviving raw IndexedDB header/chunks in an atomic forensic backup. Fresh UUID revision prevents a stale pre-recovery writer from regaining ownership; prior numeric revisions remain readable. Pending-reload protection has a real blocked-transaction browser test. Playwright-only HMR is disabled so developer websocket reconnect cannot navigate timed tests. |

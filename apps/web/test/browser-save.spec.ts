@@ -71,12 +71,15 @@ test('two loaded revisions cannot overwrite each other and damaged chunks fail c
     game.command({ at: game.world.now, idempotencyKey: 'a', command: { type: 'startShift' } }); await a.save(game);
     copy.command({ at: copy.world.now, idempotencyKey: 'b', command: { type: 'activity', active: false } });
     const conflict = await b.save(copy).then(() => '', (e: Error) => e.message), retained = await readBrowserSave() === encodeSave(game);
-    a.close(); b.close();
     await new Promise<void>((resolve, reject) => { const req = indexedDB.open('tbh.career.v1'); req.onsuccess = () => { const db = req.result, tx = db.transaction('events', 'readwrite'); tx.objectStore('events').delete(0); tx.oncomplete = () => { db.close(); resolve(); }; tx.onabort = () => reject(tx.error); }; });
     const damaged = await readBrowserSave().then(() => '', (e: Error) => e.message);
-    return { conflict, retained, damaged };
+    const recovery = await BrowserSave.open(); await recovery.read().catch(() => {});
+    await recovery.replace(new Game(undefined, 99), recovery.recoveryText);
+    const staleAfterRecovery = await b.save(copy).then(() => '', (e: Error) => e.message);
+    a.close(); b.close(); recovery.close();
+    return { conflict, retained, damaged, staleAfterRecovery };
   });
-  expect(result).toEqual({ conflict: 'storage:conflict', retained: true, damaged: 'storage:corrupt' });
+  expect(result).toEqual({ conflict: 'storage:conflict', retained: true, damaged: 'storage:corrupt', staleAfterRecovery: 'storage:conflict' });
 });
 
 test('unavailable storage never boots a fresh playable game over the old save', async ({ page }) => {
@@ -107,4 +110,36 @@ test('a real three-day career larger than localStorage survives IndexedDB close 
     return { exact: persisted === source, continued: continued === encodeSave(game), commands: game.log.length, events: game.world.events.length, shifts: game.world.completedShifts };
   });
   expect(result).toMatchObject({ exact: true, continued: true, shifts: 24 });
+});
+
+for (const damage of ['missing chunk', 'invalid revision']) test(`${damage} exposes recovery and preserves raw rows before importing the legacy archive`, async ({ page }) => {
+  const legacy = await page.evaluate(async damage => {
+    const path = '/test/fixtures/browser-save.ts';
+    const { BrowserSave, Game, encodeSave } = await import(path) as typeof import('./fixtures/browser-save');
+    const store = await BrowserSave.open(); await store.read(); const game = new Game(undefined, 42);
+    game.command({ at: game.world.now, idempotencyKey: 'original-start', command: { type: 'startShift' } });
+    await store.save(game); store.close(); const legacy = encodeSave(new Game(undefined, 99)); localStorage.setItem('tbh.save.v1', legacy);
+    await new Promise<void>((resolve, reject) => {
+      const open = indexedDB.open('tbh.career.v1'); open.onsuccess = () => {
+        const db = open.result, tx = db.transaction(['head', 'events'], 'readwrite');
+        if (damage === 'missing chunk') tx.objectStore('events').delete(0);
+        else { const row = tx.objectStore('head').get('current'); row.onsuccess = () => tx.objectStore('head').put({ ...row.result, revision: -3 }, 'current'); }
+        tx.oncomplete = () => { db.close(); resolve(); }; tx.onabort = () => reject(tx.error);
+      };
+    });
+    return legacy;
+  }, damage);
+  await page.goto('/');
+  await expect(page.getByRole('alert')).toContainText('Bản lưu chưa đọc được');
+  await expect(page.getByRole('button', { name: 'Tải bản lưu localStorage cũ', exact: true })).toBeVisible();
+  await page.locator('input[type=file]').setInputFiles({ name: 'legacy.json', mimeType: 'application/json', buffer: Buffer.from(legacy) });
+  await expect(page.locator('.game-shell')).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('tbh.save.v1'))).toBe(legacy);
+  const { readBackups, readSave } = await import('./storage');
+  const backups = (await readBackups(page)).map(text => JSON.parse(text));
+  expect(backups).toHaveLength(1); expect(backups[0].format).toBe('tbh.indexeddb-backup.v1');
+  expect(backups[0].commands[0][0].idempotencyKey).toBe('original-start');
+  if (damage === 'invalid revision') expect(backups[0].head.revision).toBe(-3);
+  else expect(backups[0].eventKeys).toEqual([]);
+  expect(JSON.parse(await readSave(page)).seed).toBe(99);
 });
