@@ -196,3 +196,5 @@ Giao việc: `11-PROMPT-PACK` Phần A (designer) và Phần B (dev) — cả ha
 | v1.18 | Owner 2026-09-09 gửi IMG_5002–5006: tham khảo chuỗi UI phục vụ (bubble món, panel xanh/nút đỏ, cảm xúc và +xu, đồng hồ nhâm nhi). Ảnh và diễn giải motion ở `docs/reference/assets-owner-2026-09-08/README.md`. Không đổi luật món/bàn/ledger; phản hồi khách bỏ đi vẫn chỉ số/icon. |
 
 | v1.19 | Owner 2026-09-09: menu Nhập hàng/quản lý/nâng thiết bị tạm dừng gameplay; mua xong giữ menu mở và pause đến khi đóng. §4 UI invariants cập nhật thay no-pause sheet; thẻ mâm và toast phạt giữ live. Rules16 tách presence khỏi pause để điểm danh/thao tác menu vẫn hoạt động. |
+
+| v1.20 (2026-09-09 owner update) | Cho nâng cấp asset ngay trong ca, không phải đóng ca; menu vẫn pause đến khi đóng. Rules17 giữ replay1–16, giá/config của ca cũ và đơn khách đang chờ. Seed1.7.2 tắt flag Phase1 cũ (chỉ giữ để replay). F10§12 là contract cập nhật. |

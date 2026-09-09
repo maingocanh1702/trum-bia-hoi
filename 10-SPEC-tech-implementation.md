@@ -393,3 +393,18 @@ and production deployment remain unfinished. The web keeps localStorage meanwhil
 | Date | Change |
 |---|---|
 | 2026-09-09 | Added real SQLite transactional event-store workspace as M4 persistence foundation; PostgreSQL remains an optional deployment evolution. Registered replay, retry/rollback and ownership-boundary expectations; no transport/auth completion claimed. |
+
+## Live upgrade protocol — owner 2026-09-09
+
+Rules17 permits current equipment, kitchen and table purchases during open/closing
+shifts, with the same quote/command/ledger and management pause. Historical1–16
+retain their outsideShiftOnly gate and result strings. The retired phase1 flag stays
+in old snapshots; seed1.7.2 sets it false. Quotes/UI use the current policy even for
+a running shift pinned to an older config. No mid-shift price/config adoption occurs.
+Existing prep deadlines, people, orders and balances are not reset by an upgrade.
+An empty table is required to increase that table's level/capacity. Server uses the
+same engine; no special transport-only upgrade rule exists.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 rules17 | Allowed in-shift upgrades per owner; legacy gate retained only for exact old replay, current UI removes close-shift restriction and reports actual shortage. Added real v16 migration and mobile purchase/pause checks. |

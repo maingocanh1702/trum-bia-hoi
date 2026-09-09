@@ -21,6 +21,7 @@ const ATTENDANCE_RULES: RulesVersion = 13; // config-exempt: fixed replay protoc
 const MENU_RULES: RulesVersion = 14; // config-exempt: fixed replay protocol revision
 const CONFIG_PIN_RULES: RulesVersion = 15; // config-exempt: fixed replay protocol revision
 const MENU_PAUSE_RULES: RulesVersion = 16; // config-exempt: fixed replay protocol revision
+const LIVE_UPGRADE_RULES: RulesVersion = 17; // config-exempt: fixed replay protocol revision for owner live-upgrade policy
 const emptyStats = (): Stats => ({ arrived: 0, served: 0, lost: 0, rejected: 0, orders: 0, payment: 0, tip: 0, credited: 0, penalty: 0, spent: 0, rep: 0, wellRestedBonus: 0 });
 
 /** No wall clock, IO or renderer: only config, seed, explicit time and commands. */
@@ -492,7 +493,7 @@ export class Game {
     }
   }
   /** Opening config is supplied by a trusted registry adapter, never by a player command payload. */
-  command(envelope: Envelope, openingConfig?: Config): Result { return this.applyCommand(envelope, MENU_PAUSE_RULES, openingConfig); }
+  command(envelope: Envelope, openingConfig?: Config): Result { return this.applyCommand(envelope, LIVE_UPGRADE_RULES, openingConfig); }
   /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
   replay(entry: LoggedCommand, config = this.config): Result {
     if (entry.command.type === 'activity' && entry.command.paused !== undefined && entry.rulesVersion < MENU_PAUSE_RULES) throw Error('replay:rulesVersion');
@@ -677,8 +678,9 @@ export class Game {
         this.emit('restocked', { dish: cmd.dish, quantity: q.quantity, cost: q.cost }); return { ok: true, amount: q.cost };
       }
       case 'upgrade': {
-        const q = upgradeQuote(w, this.config, cmd.kind);
-        if (!q.ok || q.cost === null) return fail(w.phase !== 'resting' ? 'outsideShiftOnly' : 'upgradeUnavailable');
+        const legacy = this.rulesVersion < LIVE_UPGRADE_RULES;
+        const q = upgradeQuote(w, this.config, cmd.kind, legacy && c.upgrades.phase1UpgradesOutsideShiftOnly);
+        if (!q.ok || q.cost === null) return fail(legacy ? w.phase !== 'resting' ? 'outsideShiftOnly' : 'upgradeUnavailable' : q.reason!);
         this.spend(q.cost); w.equipment[cmd.kind] = q.next;
         this.emit('upgrade_bought', { kind: cmd.kind, level: q.next, cost: q.cost }); return { ok: true, amount: q.cost };
       }
@@ -767,7 +769,7 @@ export class Game {
         return { ok: true, amount: q.cost };
       }
       case 'upgradeTable': {
-        if (w.phase !== 'resting' && c.upgrades.phase1UpgradesOutsideShiftOnly) return fail('outsideShiftOnly');
+        if (this.rulesVersion < LIVE_UPGRADE_RULES && w.phase !== 'resting' && c.upgrades.phase1UpgradesOutsideShiftOnly) return fail('outsideShiftOnly');
         const t = w.tables.find(t => t.id === cmd.tableId);
         if (!t || t.state !== 'empty') return fail('tableBusy');
         const level = c.upgrades.table.levels[t.level];
@@ -779,7 +781,7 @@ export class Game {
         this.emit('table_upgraded', { tableId: t.id, level: t.level }); return { ok: true, amount: level.priceBase };
       }
       case 'buyTable': {
-        if (w.phase !== 'resting' && c.upgrades.phase1UpgradesOutsideShiftOnly) return fail('outsideShiftOnly');
+        if (this.rulesVersion < LIVE_UPGRADE_RULES && w.phase !== 'resting' && c.upgrades.phase1UpgradesOutsideShiftOnly) return fail('outsideShiftOnly');
         if (w.tables.length >= c.upgrades.table.maxTables) return fail('maxTables');
         const seats = w.tables.reduce((sum, t) => sum + t.capacity, 0);
         const capacity = c.upgrades.table.levels[c.runtime.initialTableLevel - 1].capacity;

@@ -386,7 +386,9 @@
       "human_status": "IN_PROGRESS",
       "progress": 30,
       "runtime_urgency": "normal",
-      "overlays": [],
+      "overlays": [
+        "tracker-modified"
+      ],
       "signals": {
         "spec_exists": false,
         "tech_exists": false,
@@ -412,7 +414,7 @@
         "spec_modified_at": null,
         "tech_hash": null,
         "tech_modified_at": null,
-        "tracker_row_hash": "de398e10f060da12a41d0b48b717b2a10ba2301a2753af543ab526c1b037cdaa",
+        "tracker_row_hash": "e9977e4a8c21a4f642174cc6d1889687232908de9983b6b3611203af5db010cc",
         "foundation_codex_approved": null,
         "foundation_founder_signoff": null
       },
@@ -604,7 +606,7 @@
         "spec_modified_at": null,
         "tech_hash": null,
         "tech_modified_at": null,
-        "tracker_row_hash": "f3d07608c5226ecb20fe940c69fdbbd2ef410a0e296f0c43775ab9a80f709a73",
+        "tracker_row_hash": "92d4fa84016b84c1aecafe256e72604cd55cba53a94cb9d6c7b5bae815aa0cb8",
         "foundation_codex_approved": null,
         "foundation_founder_signoff": null
       },

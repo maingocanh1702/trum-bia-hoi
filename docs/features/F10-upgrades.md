@@ -42,7 +42,7 @@ Displayed price = `round(priceBaseXu * k)`.
 - Server validates `coins`, current level, prerequisites, inventory requirements.
 - Upgrade increments one level only; no skip.
 - Buying upgrade spends `coins`, not `seasonEarned`.
-- If upgrade changes capacity, rerun layout safely after current shift or apply only when shop is closed. Phase 1: upgrades only outside active shift.
+- Owner update 2026-09-09: equipment, kitchen and table purchases are allowed during a shift. Management stays paused until the menu closes. Empty-table upgrades retain badge/reputation gates; existing guests/orders are not reset.
 
 ## 5. Effects
 
@@ -58,7 +58,7 @@ Displayed price = `round(priceBaseXu * k)`.
 - Upgrade cards show current stat -> next stat, price, lock reason.
 - Recommendation badge can point to observed bottleneck: no clean glasses, stale beer, stock full.
 - Sprite changes after each level (checklist A3–A7: the countable stat — taps/basins/burners — must read at 64 px).
-- Reference flows (owner, 2026-09-08, not a contract): `docs/reference/trumviahe-sheet-upgrade-equipment.png` / `-business.png` (sheet with tabs, card grid, MAX/lock states, location row with Expired · Renew) and `docs/reference/trumviahe-popover-upgrade-inplace.png` (tap the equipment on the yard → anchored popover: current sprite → next sprite with stat under each, price button, no pause). Either entry point must lead to the same purchase command.
+- Reference flows (owner, 2026-09-08, not a contract): `docs/reference/trumviahe-sheet-upgrade-equipment.png` / `-business.png` (sheet with tabs, card grid, MAX/lock states, location row with Expired · Renew) and `docs/reference/trumviahe-popover-upgrade-inplace.png` (tap equipment on the yard → contextual detail panel with price and state; management pauses until closed). Either entry point must lead to the same purchase command.
 
 ## 7. Analytics
 
@@ -180,3 +180,26 @@ and final art/release QA are still required later milestones.
 
 
 | 2026-09-09 review | Full diff360453e..d5be3e0 reviewed with no introduced actionable defects. Scaling suspicion disproved by existing Config.values producer and real purchase300base→750charged at k2.5; no second multiplier added.108 unit/40 E2E and30 k rows passed; daily5/5/server/full F10 acceptance still open. |
+
+## 12. In-shift asset upgrades — owner update, rules17
+
+Both equipment entry points use upgradeQuote and the same upgrade command. Current
+commands may upgrade any equipment or buy another table without finalizing the
+shift. Table upgrades require an empty table and retain badge/reputation/cost gates.
+New level/sprite/capacity and unlocked menu items appear immediately. Existing prep
+and wash jobs retain their deadlines; newly scheduled work uses the upgraded
+capacity/speed after the menu closes. Menu purchases do not close or resume it.
+
+Prices still come from the pinned config. A failed purchase reports insufficient
+coins or maximum level, not a request to close the shift. Active purchases debit
+coins once and contribute to the current shift's existing spent ledger, without
+season/lifetime earnings. No customer/order is rebuilt.
+
+The old phase1UpgradesOutsideShiftOnly flag is retired for rules17, with seed1.7.2
+setting it false. It remains in historical config snapshots and is honored only by
+replay rules1–16. A real v16 paused save with four outsideShiftOnly refusals is a
+regression fixture: old results remain exact, new commands work in that same shift.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 owner update | Allowed asset upgrades during an active shift; retained pause-until-close, prices, prerequisites, in-flight jobs and exact v16 replay. Removed close-shift UI lock and surfaced real insufficient-coin condition. Verification/review in progress. |

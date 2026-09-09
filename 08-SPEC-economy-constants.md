@@ -162,7 +162,7 @@ Runtime rules v8: lịch thường light/heavy cân bằng và xáo bằng seed 
 
 ## 8. Nâng cấp (sink chính) — F10 + item-list
 
-Giá hiển thị = `round(priceBase × k)`. Mua bằng `coins`, không giảm `seasonEarned`. **Phase 1: nâng cấp chỉ ngoài ca** (F10 §4). Mỗi cấp đổi sprite (Phase 2).
+Giá hiển thị = `round(priceBase × k)`. Mua bằng `coins`, không giảm `seasonEarned`. **Owner 2026-09-09: được nâng cấp ngay trong ca**, menu giữ tạm dừng đến khi đóng (F10 §12). Mỗi cấp đổi sprite (Phase 2).
 
 ### 8.1 Bom bia + vòi rót (`keg`) — thay Ấm tích 🟡
 
@@ -573,3 +573,5 @@ Mọi section của `docs/config/economy.tbh.json` đều nằm trong registry. 
 | v1.3.8 (2026-09-09) | Rules12 nối daily5 bằng JSON1.7.1 hiện hành, giữ nguyên mọi số; làm rõ ceil target, scale reward một lần,5/5 bonus và ledger không tính xếp hạng. Contract F17§10 phân biệt ca hoàn tất, full rush/VIP, hidden/midnight và trusted gift. |
 
 | v1.3.9 (2026-09-09) | Rules13 nối điểm danh bằng mảng thưởng hiện hành; làm rõ ngày active khác ngày claim, hết hạn/đổi vòng/reset cấu hình và không backfill offline. Không đổi JSON hay số cân bằng; lịch sử rules1–12 giữ nguyên. |
+
+| v1.3.9 (2026-09-09) | Owner cho nâng cấp asset ngay trong ca. JSON1.7.2 đặt phase1UpgradesOutsideShiftOnly=false; key chỉ còn phục vụ replay lịch sử1–16, không còn là toggle của luật hiện tại17. Mọi giá, thời gian và mức giới hạn giữ nguyên; ca cũ giữ config/giá đã ghim, chỉ bỏ gate ngoài ca cho lệnh mới. |

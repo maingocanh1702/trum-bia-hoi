@@ -17,7 +17,8 @@ without actionable defects. Stock purchases keep the menu open/paused until clos
 
 Now building the M4 SQLite event store in `apps/server`; it persists the same engine
 atomically and survives retries/restarts. Config/build,164 engine/server and67 browser
-checks passed;20 economy/15 rush rows passed. Independent review is next.
+checks passed;20 economy/15 rush rows passed. Native review found retry-order and invalid-cursor issues; both fixed, final review pending.
+Owner live-upgrade update is now implemented in rules17; verify/review in progress.
 Next: authenticated transport and real registry/account/reconnect integration; web
 remains local until cutover is ready. Full game/art/server/release are unfinished.
 Current evidence and requirements: `docs/build-progress.md`, tracker and roadmap.

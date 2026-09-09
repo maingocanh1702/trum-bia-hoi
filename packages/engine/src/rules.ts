@@ -37,12 +37,13 @@ export function restockQuote(w: World, c: Config, dish: Dish, mode: 'bulk' | 'fu
   const cost = Math.floor(quantity / batch) * batch * menu.bulkCost + quantity % batch * menu.unitCost;
   return { quantity, cost, ok: dishUnlocked(w, c, dish) && quantity > 0 && quantity <= missing && w.coins >= cost };
 }
-export function upgradeQuote(w: World, c: Config, kind: Equipment) {
+export function upgradeQuote(w: World, c: Config, kind: Equipment, outsideShiftOnly = false) {
   const prices = c.values.upgrades[kind].priceBase;
   const next = w.equipment[kind] + 1;
   const index = kind === 'kitchen' ? next : next - 1;
   const cost = prices[index];
-  return { next, cost: cost ?? null, ok: cost != null && w.coins >= cost && (w.phase === 'resting' || !c.values.upgrades.phase1UpgradesOutsideShiftOnly) };
+  const reason = cost == null ? 'maxLevel' : w.coins < cost ? 'notEnoughCoins' : outsideShiftOnly && w.phase !== 'resting' ? 'outsideShiftOnly' : null;
+  return { next, cost: cost ?? null, ok: reason === null, reason };
 }
 /** One level owns purchase state; dog stats and requirements remain in the config. */
 export function dogUpgradeQuote(w: World, c: Config) {

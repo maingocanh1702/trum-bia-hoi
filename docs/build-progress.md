@@ -1440,3 +1440,30 @@ Independent native review is next; this is not full M4 or release acceptance.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Recorded completed author checks for the server persistence slice; independent review remains pending. |
+
+## 2026-09-09 — Server review corrections and owner live upgrades
+
+Server first native review found equivalent JSON member order could cause retry
+conflict. e96322f uses native structural comparison and the indexed durable command
+to route equivalent retries through the original engine payload. Second review
+found invalid event cursors could advance/commit elapsed gameplay before refusal.
+6a6977d validates integer/range against durable append-only history before read.
+Eight real server tests passed after each correction. Full-base final review remains
+pending; neither findings round is counted clean.
+
+Owner then requested asset upgrades immediately during a shift. Rules17 removes the
+retired phase1 gate from current commands; seed1.7.2 changes only this flag. Old
+snapshots/prices and rules1–16 remain replayable. Actual e96322f v16 saved failures
+are captured in live-upgrade-v16.json; new commands can buy all device families,
+buy a table and upgrade an empty table in the same paused shift. Existing order,
+prep/glass state and customer wait are preserved, retry charges once and costs use
+the shift's pinned config. Two focused engine cases and typecheck passed. Full
+config/build/unit/browser/sim and independent combined review are running.
+
+Both UI entries remove closing-shift copy. The same quote controls availability
+and shows insufficient coins; menus stay open and paused through purchase. No price
+reduction or wallet grant is part of this owner request.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Fixed both server review findings, then implemented owner in-shift asset upgrades with replay17 and real v16/browser regression coverage; final verification/review pending. |

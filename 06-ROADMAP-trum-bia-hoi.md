@@ -17,7 +17,7 @@
 | **M1 · Vòng phục vụ lõi** | Bàn/Order/serve 1 chạm + 4 kết cục + grace; cốc/freshness; rót & rửa tự động; kho + nâng cấp thiết bị; **UI do dev thiết kế** theo `docs/reference/`; **lưu localStorage** versioned + `eventLog`; audio nhóm ui/shift/serve/beer | Chơi trọn ca 12 phút trên 3 viewport; 09 §11 mục P1; k giữ band; reload không mất tiến độ | 🟡 |
 | **M2 · Onboarding + guest** | F27 (1 khách 1 bia, thông báo mất khách, step guide lần đầu + sau 3 lần mất khách); F25 ngôn ngữ + guest local; nút khuyến khích đăng nhập (chưa cần server) | 5 người mới: ≥ 4/5 phục vụ khách đầu ≤ 30 s, ≥ 4/5 đóng ca 1; F27 §6 | 🟡 |
 | **M3 · Đủ demand-mix** | 6 món + bếp; 7 loại khách; 5 thời tiết; Giờ Vàng đủ mức + lịch; đợt gọi 2+; tip/uy tín/phạt đầy đủ; biển hiệu, mở khoá một lần | Sim: k band + loss theo 04 §5/§6; 09 §11 mục P2; asset batch thiết bị/khách/món đã thay placeholder | 🟡 |
-| **M4 · Server + tài khoản + admin** | Server event store (đổi adapter `SaveStore`), Google login + guest claim (kể cả giữa ca), config service + pin `configVersion`, admin B1–B3, reconnect/resync, anti-cheat, rollover ngày VN | F23 §8 + F25 §10 acceptance; đổi 1 key ở admin → hiệu lực đúng `effectiveAt`; replay event log = state | ⚪ |
+| **M4 · Server + tài khoản + admin** | Server event store (đổi adapter `SaveStore`), Google login + guest claim (kể cả giữa ca), config service + pin `configVersion`, admin B1–B3, reconnect/resync, anti-cheat, rollover ngày VN | F23 §8 + F25 §10 acceptance; đổi 1 key ở admin → hiệu lực đúng `effectiveAt`; replay event log = state | 🟡 |
 | **M5 · Meta** | Giải Nhậu/Vụ Bia, **F28 bảng xếp hạng + Bàn Thờ**, Đường Lên Trùm, 9 mặt bằng, nhiệm vụ/điểm danh, referral + huy hiệu, Két Bia Bí Ẩn, cosmetic | Kết Vụ tự động + snapshot bất biến; F12/F13/F14/F16/F17/F28 acceptance | ⚪ |
 | **M6 · Risk** | Côn đồ/bảo kê, kiểm tra (câu hỏi từ `docs/content/`), trật tự đô thị, đánh nhau, trộm offline, chó, Thùng Cấp Cứu | F15/F18 acceptance; dialog no-pause; sim k không lệch band khi bật risk | ⚪ |
 | **M7 · Donate + pháp lý** | **Mời Bia Hơi (F20) = monetization duy nhất**: cổng nhận donate adapter (mặc định QR chuyển khoản + admin xác nhận), quà cosmetic, refund policy; age gate + disclaimer (config); en đầy đủ. **Không có Vé Mở Ca** (F26 bỏ) | F20 acceptance với luồng xác nhận tay; không dark pattern, không paywall (09 §11 P3); admin BRD §7 thấy donate | ⚪ |
@@ -509,3 +509,5 @@ League/Life Path tạo mục tiêu dài hạn rõ; server-auth chặn gian lận
 *Nguồn: `02-GDD-trum-bia-hoi.md` §19, `03-SPEC-he-ban.md`, `04-SPEC-prototype-phase0.md`, `05-SPEC-design-uiux.md`.*
 
 | v3.2 | 2026-09-08: cập nhật M0–M3 đang triển khai trong worktree game mới; snapshot prototype không còn là tiến độ hiện hành. |
+
+| 2026-09-09 M4 checkpoint | M4 đã bắt đầu: config pin và server event store có code/tests; auth/registry/transport/cutover còn thiếu, không phải M4 hoàn tất. |
