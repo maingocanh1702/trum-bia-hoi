@@ -1,8 +1,8 @@
 {
   "_meta": {
     "name": "Trùm Bia Hơi — economy config",
-    "version": "1.7.0",
-    "date": "2026-09-08",
+    "version": "1.7.1",
+    "date": "2026-09-09",
     "spec": "08-SPEC-economy-constants.md (cùng số, cùng tên trường)",
     "rules": [
       "Trường kết thúc bằng 'Base' = xu/uy tín gốc, NHÂN k lúc load: displayed = round(valueBase * k).",
@@ -252,7 +252,7 @@
     "baseMs": 10500,
     "warmupMult": 1.6,
     "perCustomer": true,
-    "formula": "max(baseMs * weather.spawnIntervalMult * rush.spawnIntervalMult * marketing.spawnMult, rush.floorMs)",
+    "formula": "rush == none ? max(baseMs, rush.floorMs) * weather.spawnIntervalMult * rush.spawnIntervalMult * marketing.spawnMult : max(baseMs * weather.spawnIntervalMult * rush.spawnIntervalMult * marketing.spawnMult, rush.floorMs)",
     "groupSizePhase0": [
       1,
       2

@@ -19,7 +19,7 @@ test('actual v5 history stays unchanged; current progression unlocks phone and L
   send(g, { type: 'activity', active: true }); assert.equal(g.world.lifePath, 1);
   const reached = g.world.events.filter(e => e.type === 'life_path_level_reached'); assert.equal(reached.length, 1); assert.equal(reached[0].data.level, 'LP1');
   const lp2 = reachLP2(); assert.deepEqual(lp2.world.claimedLifePaths, []); assert.equal(unlockQuote(lp2.world, lp2.config, 'qr').ok, true);
-  assert.deepEqual(decodeSave(encodeSave(lp2)).world, lp2.world); assert.equal(lp2.log.at(-1)!.rulesVersion, 9);
+  assert.deepEqual(decodeSave(encodeSave(lp2)).world, lp2.world); assert.equal(lp2.log.at(-1)!.rulesVersion, 10);
   assert.deepEqual(lifePathStatus(lp2.world, lp2.config).rows.filter(r => r.claimable).map(r => r.id), ['LP1', 'LP2']);
   const lifetime = lp2.world.lifetimeEarned, season = lp2.world.seasonEarned, day = structuredClone(lp2.world.dayEarned);
   assert.equal(send(lp2, { type: 'claimLifePath', level: 2 }).ok, true); assert.equal(lp2.world.badgeShards, 1);

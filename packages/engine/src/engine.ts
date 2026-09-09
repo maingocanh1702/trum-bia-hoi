@@ -1,4 +1,4 @@
-import { config as defaultConfig, BUSINESS_UNLOCKS, SIGN_STYLES, signWeightMult, DISHES, EQUIPMENT, WEATHER, deliveryBundles, type Config, type SeatedType, type Rush } from './config';
+import { config as defaultConfig, BUSINESS_UNLOCKS, SIGN_STYLES, signWeightMult, DISHES, EQUIPMENT, WEATHER, deliveryBundles, arrivalIntervalMs, type Config, type SeatedType, type Rush } from './config';
 import { integer, random, weighted } from './rng';
 import { addStock, credit, currentGuests, customerValue, dayKey, deliveryInterval, deliveryQuote, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
 import { lifePathStatus, lifePathRewardQuote, unlockQuote } from './progression';
@@ -11,6 +11,7 @@ const PROGRESSION_RULES: RulesVersion = 6; // config-exempt: fixed replay protoc
 const DELIVERY_RULES: RulesVersion = 7; // config-exempt: fixed replay protocol revision
 const SIGNBOARD_RULES: RulesVersion = 9; // config-exempt: fixed replay protocol revision
 const RUSH_SCHEDULE_RULES: RulesVersion = 8; // config-exempt: fixed replay protocol revision
+const ARRIVAL_INTERVAL_RULES: RulesVersion = 10; // config-exempt: fixed replay protocol revision
 const emptyStats = (): Stats => ({ arrived: 0, served: 0, lost: 0, rejected: 0, orders: 0, payment: 0, tip: 0, credited: 0, penalty: 0, spent: 0, rep: 0, wellRestedBonus: 0 });
 
 /** No wall clock, IO or renderer: only config, seed, explicit time and commands. */
@@ -20,7 +21,7 @@ export class Game {
   private readonly results = new Map<string, LoggedCommand>();
   private commandKey: string | null = null;
   private activeRushIndex: number | null = null;
-  private rulesVersion: RulesVersion = SIGNBOARD_RULES;
+  private rulesVersion: RulesVersion = ARRIVAL_INTERVAL_RULES;
   constructor(readonly config: Config = defaultConfig, readonly seed = 1, readonly createdAt = 0, readonly playerId = 'guest') {
     if (!Number.isSafeInteger(seed) || !Number.isSafeInteger(createdAt) || createdAt < 0) throw Error('game:invalid-origin');
     const c = config.values;
@@ -342,7 +343,7 @@ export class Game {
       this.seatQueue();
     }
     const rush = rushConfig(this.config, s.rush);
-    const interval = Math.max(c.spawn.baseMs * c.weather[s.weather].spawnIntervalMult * rush.spawnIntervalMult, rush.floorMs);
+    const interval = this.rulesVersion >= ARRIVAL_INTERVAL_RULES ? arrivalIntervalMs(c, s.weather, s.rush) : Math.max(c.spawn.baseMs * c.weather[s.weather].spawnIntervalMult * rush.spawnIntervalMult, rush.floorMs);
     s.nextSpawnAt = w.now + Math.round(interval * (c.spawn.perCustomer ? size : 1));
     s.firstGroup = false;
   }
@@ -401,7 +402,7 @@ export class Game {
       this.emit('glass_washing', { glassId: glass.id });
     }
   }
-  command(envelope: Envelope): Result { return this.applyCommand(envelope, SIGNBOARD_RULES); }
+  command(envelope: Envelope): Result { return this.applyCommand(envelope, ARRIVAL_INTERVAL_RULES); }
   /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
   replay(entry: LoggedCommand): Result { return this.applyCommand(entry, entry.rulesVersion); }
   private applyCommand(envelope: Envelope, rulesVersion: RulesVersion): Result {
@@ -409,8 +410,10 @@ export class Game {
     const previous = this.results.get(envelope.idempotencyKey);
     if (previous) return JSON.stringify(previous.command) === JSON.stringify(envelope.command) ? { ...previous.result } : { ok: false, reason: 'idempotencyConflict' };
     if (envelope.at < this.world.now) return { ok: false, reason: 'staleCommand' };
-    this.rulesVersion = rulesVersion;
+    // Old logs switched before advancing; v10+ keeps elapsed autonomous history under its preceding rules.
+    if (rulesVersion < ARRIVAL_INTERVAL_RULES) this.rulesVersion = rulesVersion;
     this.advance(envelope.at);
+    this.rulesVersion = rulesVersion;
     this.commandKey = envelope.idempotencyKey;
     try {
       if (rulesVersion >= RUSH_CLOCK_RULES) this.updateRush();

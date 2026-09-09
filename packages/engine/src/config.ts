@@ -10,6 +10,14 @@ export type Rush = 'none' | 'peak' | 'light' | 'heavy' | 'lunch_light' | 'footba
 export const DISHES = Object.keys(seed.menu) as Dish[];
 export const EQUIPMENT: Equipment[] = ['keg', 'washer', 'cooler', 'stall', 'kitchen'];
 export const WEATHER: Weather[] = ['sunny', 'hot', 'humid', 'rain', 'cold'];
+export const RUSH_TYPES = Object.entries(seed.rush).filter(([, r]) => typeof r === 'object' && 'floorMs' in r).map(([kind]) => kind) as Rush[];
+
+/** Unrounded per-customer cadence: ordinary baseline precedes weather; active rush keeps its hard floor. */
+export function arrivalIntervalMs(c: Economy, weather: Weather, kind: Rush): number {
+  const rush = c.rush[kind];
+  const interval = (kind === 'none' ? Math.max(c.spawn.baseMs, rush.floorMs) : c.spawn.baseMs) * c.weather[weather].spawnIntervalMult * rush.spawnIntervalMult;
+  return kind === 'none' ? interval : Math.max(interval, rush.floorMs);
+}
 
 /** Final dish prices; only the gross range supplied by the caller is Base-scaled. */
 export function deliveryBundles(c: Economy, kitchen: number, grossRange: readonly number[]) {
@@ -175,6 +183,11 @@ function validate(c: Economy): void {
     whole(table.capacity, 'table.capacity', 1); whole(table.priceBase, 'table.priceBase');
     if (index > 0 && table.capacity <= c.upgrades.table.levels[index - 1].capacity) throw Error('config:tableCapacityOrder');
   });
+  for (const weather of WEATHER) for (const kind of RUSH_TYPES) {
+    const interval = arrivalIntervalMs(c, weather, kind);
+    whole(Math.round(interval), 'spawn.interval', 1);
+    for (const table of c.upgrades.table.levels) whole(Math.round(interval * (c.spawn.perCustomer ? table.capacity : 1)), 'spawn.groupInterval', 1);
+  }
   for (const [dish, stock] of Object.entries(c.inventory.startingStock)) {
     stock.forEach(n => whole(n, `startingStock.${dish}`));
     if (stock[0] > c.upgrades.stall.stockCap[c.runtime.initialEquipmentLevel - 1]) throw Error('config:initialStockCap');

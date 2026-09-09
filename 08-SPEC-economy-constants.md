@@ -1,4 +1,4 @@
-# 🧮 SPEC — Economy Constants & Formulas — Trùm Bia Hơi (v1.2.7)
+# 🧮 SPEC — Economy Constants & Formulas — Trùm Bia Hơi (v1.3.7)
 
 > **Tương ứng với `economy-spec-from-bundle.md` của game gốc**, nhưng cho Trùm Bia Hơi: **mọi hằng số & công thức gom về một chỗ**, dev cầm là code được. Bản máy đọc: **`docs/config/economy.tbh.json`** (cùng số, cùng tên trường). Script kiểm số Phase 0 khớp prototype: `python3 scripts/check_economy_config.py`.
 > Ngày: 2026-09-08. Nguồn: `02-GDD-trum-bia-hoi.md` v1.8 (thắng khi mâu thuẫn) · `03-SPEC-he-ban.md` · `04-SPEC-prototype-phase0.md` · `07-SPEC-shop-mua-giai-worldcup.md` · `docs/features/F07–F26` · `docs/item-list-upgrade-levels.md` v1.4 · `economy-spec-from-bundle.md` (số gốc trumviahe) · `prototype/src/engine/constants.ts` (số đang chạy).
@@ -68,7 +68,7 @@ Giá **xu bia hơi đã chốt** (neo 1 xu ≈ 300 VND; bia cốc 50 xu ≈ 15k)
 |---|--:|--:|---|---|
 | `SPAWN_BASE_MS` | **10.500** | 10.500 | 04 §4 | nhịp **mỗi khách**; nhóm N người tiêu N nhịp (fix 2026-07-15) |
 | `SPAWN_WARMUP_MULT` | 1.6 | 1.6 | 04 §4 | lượt đầu ca = 16.800ms |
-| `spawnEffective` | `max(base × weather.spawnMult × rush.spawnMult × marketing.spawnMult, rush.floorMs)` | — | F08 §5 | |
+| `spawnEffective` | `none: max(base, floor) × weather × rush × marketing; active: max(base × weather × rush × marketing, floor)` | — | F08 §5 | Nhịp thường áp hệ số sau baseline; sàn Giờ Vàng là giới hạn tuyệt đối. |
 | `PATIENCE_THUONG_MS` | **18.000** | 18.000 | 04 §4 | × weather.patienceMult × type.patienceMult |
 | `PATIENCE_RUSH_MULT` (vội/VIP) | 0.611 | 0.611 | F07 | ≈ 11.000ms |
 | `ENJOY_MIN/MAX_MS` | 5.000–10.000 | 5–10s | 04 §4 | × type.enjoyMult (ngồi lỳ ×10 → 50–100s) |
@@ -564,3 +564,6 @@ Mọi section của `docs/config/economy.tbh.json` đều nằm trong registry. 
 | v1.3.5 | Rules v8 nối seeded ordinary rush planning, fit preflight, heavy enjoyMult và báo cáo cuối slot. Dùng nguyên JSON 1.7.0; không thêm số cân bằng, không đổi k denominator. Lịch v1–v7 và config lịch sử giữ replay được; chỉ mở ca mới từ chối lịch không vừa. |
 
 | v1.3.6 | Rules v9 nối biển kinh doanh theo JSON hiện hành: lắp Gỗ, sở hữu/đổi5 kiểu, customer weight cho khách mới và Neon cho interval shipper mới. Làm rõ golden.repBase là ngưỡng mua, không debit uy tín (GDD §8/original §7); bảng §10 ghi rõ gate. Phí xu qua spend, không đổi JSON/k, không reset timer/khách đang có; donation cosmetic không cấp hiệu ứng này. |
+
+
+| v1.3.7 (2026-09-09) | Clarified ordinary-vs-active arrival floor order: none.floorMs is the baseline before weather/marketing, active rush floors remain absolute. Fixes hot/humid/flyer modifiers being clamped away by a10500ms ordinary floor. JSON1.7.1 changes formula metadata only; every gameplay number unchanged. Rules10 preserves historical1–9 scheduling during replay; live marketing producer still pending. |

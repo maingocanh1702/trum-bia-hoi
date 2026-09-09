@@ -52,7 +52,7 @@ type WeatherState = {
 
 ## 5. Apply order
 
-- Spawn: `base * weather.spawnIntervalMult * rush.spawnIntervalMult`.
+- Spawn: outside Rush, `max(base, none.floorMs) * weather.spawnIntervalMult * none.spawnIntervalMult`; active Rush retains `max(base * weather.spawnIntervalMult * rush.spawnIntervalMult, rush.floorMs)`. Marketing multiplies demand when its producer is available (F08 §5).
 - Patience: `basePatience * weather.patienceMult * customer.patienceMult`.
 - Tip: `baseTip * weather.tipMult * rush.tipMult * customer.tipMult`.
 - Freshness: `baseFreshness * weather.beerFreshnessMult * upgrade.freshnessMult`.
@@ -74,3 +74,10 @@ type WeatherState = {
 - Distribution trong 10.000 roll lệch <5 điểm phần trăm so weight.
 - Humid/hot tăng staleRate nếu người chơi giữ chiến thuật cũ.
 - Rain tăng shipper rõ nhưng không phá cap ngày.
+
+
+## Changelog (append-only)
+
+| Date | Change |
+|---|---|
+| 2026-09-09 rules10 | Ordinary hot/humid speedup now applies after the configured baseline, so10500ms no longer clamps9975/9450ms back to normal. Cold/rain cadence and active Rush remain correctly composed. Genuine v9 hot/humid histories preserve recorded events/world and their pending next arrival. No numeric config edits; tests/sim and independent review required. |

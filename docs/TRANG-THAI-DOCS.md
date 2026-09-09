@@ -15,7 +15,7 @@ Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **2 việc nh�
 |---|---|---|
 | Gameplay lõi (ca, hệ bàn, Order, freshness, rót/rửa tự động) | ✅ | GDD §1–§10, 03-SPEC §1–§9 |
 | Gameplay lớp 3–5 (khách, thời tiết, rush, meta, risk) | ✅ | GDD §7–§16, F07–F22 |
-| Economy | ✅ | 08-SPEC v1.2.7 + `economy.tbh.json` 1.7.0 (`_meta.governance` tier A/B/C) |
+| Economy | ✅ | 08-SPEC v1.3.7 + `economy.tbh.json` 1.7.1 (`_meta.governance` tier A/B/C) |
 | Asset | ✅ | 11-PROMPT-PACK Phần A v1.11, checklist v1.4 (**~550** = ~475 sprite/icon + 75 audio id; 8 đã có), naming §11, design-tokens |
 | Âm thanh | ✅ | Checklist §B7: **75 id** (mỗi id `.ogg` + `.m4a`), thư mục theo nhóm, phát theo event id → manifest |
 | UI / component / motion | ✅ | UI invariants HANDOFF §6 + brief B binding 10; 09-SPEC/05-SPEC/F24 = tham khảo |
@@ -28,7 +28,7 @@ Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **2 việc nh�
 | Hướng dẫn agent (đọc trước HANDOFF) | ✅ | `CLAUDE.md`/`AGENTS.md` dòng verify → `check:config` ở root + build/test/sim của game mới (prototype chỉ khi đụng `prototype/`); `SESSION-TRACK-LOG` block build mới nhất + checkpoint hiện tại; 11-PROMPT-PACK §0.2 thứ tự = config → engine + local save → server M4 |
 | Content bank | ⏸ pending | `docs/content/` mới là đề xuất schema + 5 ví dụ |
 | Tính năng kiểm tra (policy check) | ⏸ pending | F15 §4; ship `risk.inspection.enabled=false` |
-| Monetization | ✅ | **Chơi FREE hoàn toàn; nguồn thu duy nhất = donate cho admin** (F20 Mời Bia Hơi, cosmetic thank-you, không P2W, không paywall). F26 ⛔ bỏ. JSON 1.7.0 `entitlements.mode=free` + `donation` (tier A); BRD v0.5 §7 Donation |
+| Monetization | ✅ | **Chơi FREE hoàn toàn; nguồn thu duy nhất = donate cho admin** (F20 Mời Bia Hơi, cosmetic thank-you, không P2W, không paywall). F26 ⛔ bỏ. JSON 1.7.1 `entitlements.mode=free` + `donation` (tier A); BRD v0.5 §7 Donation |
 
 ## 3. Quyết định chủ dự án đang có hiệu lực (08/09)
 
@@ -71,7 +71,7 @@ Ba mục item-list (hành phi, đá lạnh, giá cosmetic) đã **chốt theo đ
 
 ## 6. Bản đồ nhanh — đọc gì trước
 
-`00-HANDOFF` v1.15 (điểm vào, §4 scope + §6 quy ước) → **`12-PROMPT-claude-build.md`** (dev kickoff + Codex review) · `11-PROMPT-PACK` v1.14 Phần A (designer) / Phần B (chi tiết dev) → `02-GDD` v1.12 + `03-SPEC` (luật chơi) → `08-SPEC` v1.2.7 + `economy.tbh.json` 1.7.0 (số) → `06-ROADMAP` v3.1 (mốc M0–M9) + `implementation-tracker` v0.8.0 (14 đang triển khai, 0/28 hoàn tất) → `docs/features/F07–F28` → `docs/reference/` (layout) → `trum-bia-hoi-brd-admin.md` §5.2 (config admin).
+`00-HANDOFF` v1.15 (điểm vào, §4 scope + §6 quy ước) → **`12-PROMPT-claude-build.md`** (dev kickoff + Codex review) · `11-PROMPT-PACK` v1.14 Phần A (designer) / Phần B (chi tiết dev) → `02-GDD` v1.12 + `03-SPEC` (luật chơi) → `08-SPEC` v1.3.7 + `economy.tbh.json` 1.7.1 (số) → `06-ROADMAP` v3.1 (mốc M0–M9) + `implementation-tracker` v0.8.0 (14 đang triển khai, 0/28 hoàn tất) → `docs/features/F07–F28` → `docs/reference/` (layout) → `trum-bia-hoi-brd-admin.md` §5.2 (config admin).
 
 ## Changelog
 
@@ -82,3 +82,5 @@ Ba mục item-list (hành phi, đá lạnh, giá cosmetic) đã **chốt theo đ
 | 2026-09-08 owner UI/art | Tham khảo 7 asset boards mới, cốc xanh không quai là anchor; khách bỏ đi chỉ hiện toast số xu/uy tín thực trừ. |
 
 | 2026-09-08 local history/time | Tracker v0.8.1: save v2 đọc v1, pause hidden/offline, recovery import/reset; 26 unit + 9 E2E, 10-row cold/full sim pass. Review corrections đang chờ re-review độc lập, không nâng trạng thái hoàn tất. |
+
+| 2026-09-09 rules10 | Local config seed1.7.1 records ordinary-vs-active spawn-floor semantics; numeric values unchanged. See F08/F09 and build-progress for implementation/review evidence. |

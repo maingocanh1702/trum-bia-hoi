@@ -274,3 +274,23 @@ CI: `lint → typecheck → test → probe → sim → check:config (economy + c
 | 2026-09-09 rules v8 | Container v2 nhận rules1–8. New openings dùng planRushes với RNG riêng từ location/shift/day; peek shift id để preflight trước mutation. Optional schedule seed và start event index phân biệt slot mới với lịch v7 thật, không replan/retroactive report. summarizeRush đọc một interval event duy nhất tại end; báo cáo giữ actual credit khác nominal payment/tips, excludes shipper/reward. Heavy enjoy chụp khi arrival. npm run verify thêm sim:rush (pressure experiment), unit vẫn node:test/tsx của runtime hiện hành. |
 
 | 2026-09-09 rules v9 | Savev2 accepts rules1–9. SignStyle is optional for historical worlds; signboard/signboard:style ownership reuses unlocks and LP projection. Two commands use one quote and existing spend; config validates scaled cost/rep and effective weights/cadence. Future spawn weight and deliveryInterval consume selected effects without rewriting current customers/timers. Genuine v8 delivery/rush snapshots assert original events/money/IDs and current continuation. |
+
+
+| 2026-09-09 rules10 | One arrivalIntervalMs helper owns unrounded current cadence and config intake validation; none baseline precedes weather, active floors remain absolute. Spawn rounds once after group-size factor. Container v2 accepts1–10; genuine v9 hot/humid snapshots retain every recorded world/event value, existing pending deadline and pinned configVersion. A current command selects10; newly scheduled intervals use current semantics. Seed1.7.1 updates formula text only. |
+
+
+### Rules10 transition boundary
+
+| Incoming recorded/current command | Advance elapsed time | Execute command |
+|---|---|---|
+| Historical rules1–9 | Select incoming version before advance, preserving original replay semantics | Same incoming version |
+| Rules10+ | Advance under the previously active version, including autonomous ticks already played since the last command | Then select incoming version at its timestamp |
+
+The distinction matters for a live legacy instance that advanced between commands:
+replay has only the commands/time frontier, so selecting10 before that interval would
+rewrite earlier arrivals. Idempotency/conflict/stale checks still happen first. This
+is one pre-dispatch transition in applyCommand, not a per-command workaround. Real
+v9 hot/humid tests now advance additional legacy ticks before current input; existing
+v7 rush-clock and v6 shipper replay tests also exercise the boundary unchanged.
+
+| 2026-09-09 transition correction | Preserve pre-command autonomous history when adopting rules10; retain historical1–9 switch-before-advance behavior. Fixes replay mismatches exposed by full legacy clock/delivery tests. |

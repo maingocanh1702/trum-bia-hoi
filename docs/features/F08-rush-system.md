@@ -59,10 +59,11 @@ P0 `peak` dùng `spawnIntervalMult=0.66` để test feel nhẹ hơn production h
 Effective spawn:
 
 ```ts
-effectiveInterval = max(
-  baseSpawnMs * weather.spawnMult * rush.spawnIntervalMult * marketing.spawnMult,
-  rush.minSpawnIntervalMs
-)
+effectiveInterval = rush.type === 'none'
+  ? max(baseSpawnMs, rush.minSpawnIntervalMs)
+      * weather.spawnMult * rush.spawnIntervalMult * marketing.spawnMult
+  : max(baseSpawnMs * weather.spawnMult * rush.spawnIntervalMult * marketing.spawnMult,
+      rush.minSpawnIntervalMs)
 ```
 
 - Payment/tip/penalty nhân theo chuỗi: base -> location -> rush -> weather -> customer type.
@@ -85,7 +86,7 @@ effectiveInterval = max(
 
 ## 8. Acceptance
 
-- Không có interval thấp hơn floor.
+- Không có interval Giờ Vàng thấp hơn hard floor; nhịp thường dùng baseline floor trước hệ số demand.
 - Rush heavy làm tăng áp lực rõ: served/lost ratio thay đổi so normal trong simulation.
 - Rush warning xuất hiện trước, không che bàn đang cần phục vụ.
 - Không double-apply multipliers khi football rush active.
@@ -135,3 +136,24 @@ review pending; lunch/football/event priority and full F08 acceptance remain in 
 | 2026-09-09 rules v8 | Implemented seeded ordinary slots, full warning/fit preflight, heavy enjoy and canonical end reports; preserved actual v7 schedules/replay, added pressure sim and VI/EN book rows. No config-number changes; review pending. |
 
 | 2026-09-09 review receipt | Independent full-diff6535484..5e46cf1 found no actionable introduced defects. Author85 unit/34 E2E, config/build/assets and50 k+15 pressure rows pass. Ordinary schedule/reports verified locally; remaining F08/full game still in progress. |
+
+
+## Ordinary demand correction — rules10
+
+The none floor is a baseline cadence before demand modifiers; active-rush floors
+remain absolute. This makes configured hot/humid speedups effective outside Rush
+and allows the upcoming flyer producer to affect ordinary demand. No numeric tuning
+changed. Keep first-group warmup and already scheduled nextSpawnAt; after an actual
+group arrives, round the interval times its perCustomer size factor exactly once.
+Existing guests and rush deadlines are unchanged. Historical rules1–9 use their
+original max-of-everything formula; old snapshots retain their configVersion.
+Seed1.7.1 records the clarified formula; marketing currently has its identity value
+because its producer is the next slice. Config intake rejects zero rounded ticks
+and unrepresentable single/group intervals across all weather/rush modes.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 rules10 | Reconciled baseline floor with GDD9 demand behavior while retaining active-rush hard floors, warmup, perCustomer rounding and true v9 replay. Numeric seed unchanged; independent review pending. |
+
+
+| 2026-09-09 transition correction | Current rules10 commands advance elapsed time under the previous active version before switching, so previously played legacy arrivals are not recomputed. Historical1–9 commands retain original switching order. Pending arrivals keep their existing deadline. |

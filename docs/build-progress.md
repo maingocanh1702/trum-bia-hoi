@@ -762,3 +762,42 @@ with the flyer producer after the arrival correction, not this frozen signboard 
 | Date | Change |
 |---|---|
 | 2026-09-09 | Recorded full-base independent no-finding review bdbb493..9239007, final95 unit/37 browser verification and preserved the full-game backlog. |
+
+
+## 2026-09-09 — Ordinary arrival cadence rules10
+
+Base2959544. Reconciled GDD9 weather demand with the generic floor formula: ordinary
+cadence now applies weather to max(baseMs, none.floorMs), while active Rush still
+clamps after its multipliers. Per-customer group size is applied once before one
+rounding step; first-group warmup and pending nextSpawnAt stay intact. One pure
+arrivalIntervalMs helper is used by scheduling and config intake. Import validation
+rejects rounded-zero and unrepresentable single/group intervals for every mode.
+Config1.7.1 changes only version/date/formula text; all645 numeric leaves match the
+base (.qa/arrival-numeric-parity.txt). No new gameplay tuning values or state fields.
+
+Full suite exposed four mixed-version replay mismatches: prior code switched to
+new rules before replaying elapsed time already played under the old version.
+Incoming rules10+ now advances with the previous version first, then switches at
+its command timestamp. Historical1–9 retain their original ordering. Real v9
+hot/humid captures fromf861417, augmented with actual legacy ticks before the new
+command, preserve every world/event field and next deadline through exact replay.
+Existing old rush/shipper tests pass unchanged except latest protocol assertions.
+An additional real v9 installed-Neon capture from6e390be also passes projection,
+free re-equip/pending shipper+arrival continuity and replay (.qa/arrival-legacy-sign-check.txt).
+
+Author verification: npm run verify passed config/build/100 unit tests, normal
+10-row sim and15 controlled pressure windows (.qa/arrival-verify.txt);37 E2E passed
+in33.8s (.qa/arrival-e2e.txt). Five focused tests exercise75 actual ordinary groups
+across five weather/five seeds,12 controlled rush/perCustomer cases, retuned baseline
+knobs, invalid interval imports and historical/current replay.20 total economy rows
+(normal plus Golden/QR/shipper/rested combined), all>=500 served each, k2.2417–2.8097
+(.qa/arrival-combined-sim.txt). Controlled sunny pressure retains its demand/loss
+ordering, floors and service ceiling. These are local checks, not final hosted
+release evidence. Full independent review pending; tracker v0.14.0/dashboard stay
+16 in progress, zero full features complete. Full M0–M9 remains active. Next is
+actual flyer stock/purchase/use/timer/report; its original draft is already staged
+outside runtime. Root untouched, no merge/push.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 rules10 | Corrected ordinary floor order and mixed-version elapsed-time adoption, verified100 unit/37 E2E +20 k/15 pressure rows; independent review pending. |
