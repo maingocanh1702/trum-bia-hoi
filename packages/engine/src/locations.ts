@@ -1,8 +1,8 @@
 import { isEconomy2, type Config } from './config';
-import type { World } from './types';
+import type { WorldView } from './types';
 
 /** Stored contract terms survive config changes; deposit refunds are not earnings. */
-export function leaveLocationQuote(w: World) {
+export function leaveLocationQuote(w: WorldView) {
   const lease = w.lease;
   const refund = lease && !lease.forfeitOnEarlyLeave ? lease.deposit : 0;
   const reason = !lease ? 'leaseChanged' : lease.expired ? 'leaseRefundPending' : w.phase !== 'resting' ? 'locationOutsideShift' :
@@ -10,7 +10,7 @@ export function leaveLocationQuote(w: World) {
   return { leaseId: lease?.id ?? null, refund, forfeitedDeposit: lease ? lease.deposit - refund : 0, reason, ok: reason === null };
 }
 
-export function leaseQuote(w: World, config: Config, locationId: string) {
+export function leaseQuote(w: WorldView, config: Config, locationId: string) {
   const c = config.values, modern = isEconomy2(c);
   const location = modern ? c.locations.list.find(row => row.id === locationId) : undefined;
   const days = c.locations.leaseDays;

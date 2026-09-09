@@ -1,13 +1,14 @@
 import { Seasons } from './Seasons';
 import { Locations } from './Locations';
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { buyGlassQuote, isEconomy2, BUSINESS_UNLOCKS, menuReport, beerStatus, washerStatus, kitchenStatus, flyerQuote, SIGN_STYLES, signboardQuote, DISHES, EQUIPMENT, currentGuests, deliveryQuote, dogUpgradeQuote, encodeSave, freshnessMs, kickAllQuote, lifePathStatus, restockQuote, rushStatus, stockCap, unlockQuote, upgradeQuote, wellRestedRemaining, type Command, type Equipment, type Order, type RequirementStatus, type Table } from '../../../packages/engine/src';
+import { buyGlassQuote, isEconomy2, BUSINESS_UNLOCKS, menuReport, beerStatus, washerStatus, kitchenStatus, flyerQuote, SIGN_STYLES, signboardQuote, DISHES, EQUIPMENT, currentGuests, deliveryQuote, dogUpgradeQuote, encodeSave, freshnessMs, kickAllQuote, lifePathStatus, restockQuote, rushStatus, stockCap, unlockQuote, upgradeQuote, wellRestedRemaining, type Command, type Equipment, type Order, type RequirementStatus, type Table, type DomainEvent, type Game } from '../../../packages/engine/src';
 import { Sprite, TableSeats, menuAsset, reactions } from './assets';
 import { translate } from './i18n';
-import { advanceGuide, boot, dispatch, download, readSettings, writeSettings, replaceSave, type BootSession } from './local';
+import { advanceGuide, dispatch, download, readSettings, writeSettings, replaceSave, type BootSession } from './local';
 import { Quests } from './Quests';
 import { Kitchen } from './Kitchen';
 import { MenuReport } from './MenuReport';
+import { start, type StartState, type Session } from './start';
 import { createSound } from './audio';
 
 type Sheet = 'seasons' | 'locations' | 'stock' | 'upgrades' | 'book' | 'close' | 'journey' | 'settings' | 'config' | 'dog' | 'delivery' | 'signboard' | 'flyer' | 'quests' | null;
@@ -38,11 +39,20 @@ function SheetDialog({ title, close, children, view, pausedLabel }: { title: str
 }
 
 export function App() {
-  const [session, setSession] = useState<BootSession | null>(null);
-  useEffect(() => { let active = true; void boot().then(value => { if (active) setSession(value); else value.storage?.close(); }); return () => { active = false; }; }, []);
-  return session ? <GameView session={session} /> : <main className="recovery"><h1>{translate(readSettings().locale, 'brand')}</h1><p role="status">{translate(readSettings().locale, 'save.loading')}</p></main>;
+  const [state, setState] = useState<StartState | null>(null);
+  const t = (key: string) => translate(readSettings().locale, key);
+  useEffect(() => { let active = true; void start().then(value => { if (active) setState(value); else if ('session' in value) { value.session.storage?.close(); if ('remote' in value.session) value.session.remote.close(); } }); return () => { active = false; }; }, []);
+  const choose = async (mode: 'local' | 'remote') => { setState(null); setState(await start(mode)); };
+  if (state && 'session' in state) return <GameView session={state.session} />;
+  return <main className="recovery"><h1>{t('brand')}</h1>{!state ? <p role="status">{t('save.loading')}</p> : 'local' in state ? <>
+    <h2>{t('network.localTitle')}</h2><p>{t('network.localCopy')}</p>
+    <button onClick={() => download(state.local, 'tbh-original-save.json')}>{t('save.downloadOriginal')}</button>
+    {state.legacy && state.local !== state.legacy && <button onClick={() => download(state.legacy!, 'tbh-legacy-save.json')}>{t('save.downloadLegacy')}</button>}
+    <button onClick={() => void choose('local')}>{t('network.keepLocal')}</button><button onClick={() => void choose('remote')}>{t('network.newServer')}</button>
+  </> : <><p role="alert">{t(`network.${['otherTab', 'invalidSession', 'conflict', 'storage'].includes(state.error) ? state.error : 'unavailable'}`)}</p><button onClick={() => location.reload()}>{t('save.retry')}</button></>}</main>;
 }
-function GameView({ session }: { session: BootSession }) {
+function GameView({ session }: { session: Session }) {
+  const remote = 'remote' in session ? session.remote : null;
   const game = session.game, w = game.world, c = game.config.values;
   const questsRevealed = !c.onboarding.enabled || w.completedShifts >= c.onboarding.featureReveal.questsAfterShifts;
   const prefs = useRef(readSettings());
@@ -72,12 +82,12 @@ function GameView({ session }: { session: BootSession }) {
   const orderTime = (o: Order) => t('order.time', { s: Math.ceil(Math.max(0, o.placedAt + o.patienceMs + (o.state === 'grace' ? c.patience.graceMs : 0) - w.now) / 1000) });
   const save = async () => {
     const sequence = ++saveSequence.current; setSaving(true);
-    try { await session.storage!.save(game); writeSettings(prefs.current); if (sequence === saveSequence.current) setSaveError(false); }
+    try { if (!remote) await session.storage!.save(game as Game); writeSettings(prefs.current); if (sequence === saveSequence.current) setSaveError(false); }
     catch (error) { if (sequence === saveSequence.current) setSaveError(error instanceof Error && error.message === 'storage:conflict' ? 'conflict' : true); }
     finally { if (sequence === saveSequence.current) setSaving(false); }
   };
-  const processEvents = () => {
-    const events = w.events.slice(cursor.current); cursor.current = w.events.length;
+  const processEvents = (incoming?: DomainEvent[]) => {
+    const events = incoming ?? game.world.events.slice(cursor.current); cursor.current = game.world.events.length;
     advanceGuide(prefs.current, game, events);
     let loss: { coins: number; reputation: number } | undefined;
     for (const e of events) {
@@ -102,21 +112,22 @@ function GameView({ session }: { session: BootSession }) {
     if (loss) setToast({ text: '', kind: 'loss', loss });
     return events.length;
   };
-  const run = (cmd: Command) => {
-    const result = dispatch(game, cmd);
+  const run = async (cmd: Command) => {
+    const result = remote ? await remote.command(cmd) : dispatch(game as Game, cmd);
     if (!result.ok) { sound.play('ui:denied'); setToast({ text: t(`error.${result.reason}`), kind: 'error' }); }
     else if (cmd.type === 'restock' || cmd.type === 'upgrade') setToast({ text: t(cmd.type === 'restock' ? 'stock.success' : 'upgrade.success'), kind: 'early' });
-    if (result.ok && cmd.type === 'upgradeDog') { setSheet(null); setToast({ text: t('dog.success', { n: w.dogLevel }), kind: 'early' }); }
+    if (result.ok && cmd.type === 'upgradeDog') { setSheet(null); setToast({ text: t('dog.success', { n: game.world.dogLevel }), kind: 'early' }); }
     if (result.ok && cmd.type === 'activateFlyer') { setSheet(null); setToast({ text: t('flyer.started'), kind: 'early' }); }
     if (result.ok && cmd.type === 'buyUnlock') setToast({ text: t('business.success', { name: t(`business.${cmd.item}`) }), kind: 'early' });
     if (result.ok && cmd.type === 'claimLifePath') setToast({ text: t('journey.received', { n: num(result.amount ?? 0) }), kind: 'early', gain: result.amount });
     if (result.ok && (cmd.type === 'endShift' || cmd.type === 'kickAll')) setSheet(null);
-    processEvents(); save(); setFrame(x => x + 1);
+    if (!remote) processEvents(); void save(); setFrame(x => x + 1);
     return result;
   };
   const syncActivity = () => {
-    const active = !document.hidden, paused = active && menuPause.current;
-    if (w.active !== active || Boolean(w.paused) !== paused) run({ type: 'activity', active, paused });
+    const active = !document.hidden, paused = menuPause.current;
+    if (remote) { remote.setPresence(active, paused); return; }
+    if (w.active !== active || Boolean(w.paused) !== (active && paused)) void run({ type: 'activity', active, paused: active && paused });
   };
   useLayoutEffect(() => {
     menuPause.current = menuPaused;
@@ -154,17 +165,20 @@ function GameView({ session }: { session: BootSession }) {
   }, [locale]);
   useEffect(() => {
     if (session.error) return;
-    const tick = setInterval(() => { game.advance(Math.max(Date.now(), w.now)); if (processEvents()) void save(); setFrame(x => x + 1); }, 100); // config-exempt: UI refresh cadence
-    const checkpoint = setInterval(save, 1000); // config-exempt: local IO batching cadence
+    if (remote) { remote.onChange = events => { if (events.length) { processEvents(events); void save(); } setFrame(x => x + 1); }; remote.start(); }
+    const tick = remote ? undefined : setInterval(() => { (game as Game).advance(Math.max(Date.now(), w.now)); if (processEvents()) void save(); setFrame(x => x + 1); }, 100); // config-exempt: UI refresh cadence
+    const checkpoint = remote ? undefined : setInterval(save, 1000); // config-exempt: local IO batching cadence
     const visibility = () => syncActivity();
-    const pagehide = () => { dispatch(game, { type: 'activity', active: false }); void save(); };
+    const pagehide = () => { if (remote) remote.setPresence(false, menuPause.current); else { dispatch(game as Game, { type: 'activity', active: false }); void save(); } };
+    const online = () => remote?.setPresence(!document.hidden, menuPause.current);
+    window.addEventListener('online', online);
     const beforeUnload = (event: BeforeUnloadEvent) => { if (session.storage?.saving) { event.preventDefault(); event.returnValue = ''; } };
     const click = (e: MouseEvent) => { if ((e.target as Element).closest('button,select')) sound.play('ui:tap'); };
     const escape = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelectedTable(null); };
     document.addEventListener('keydown', escape);
     document.addEventListener('click', click, true);
     document.addEventListener('visibilitychange', visibility); window.addEventListener('pagehide', pagehide); window.addEventListener('beforeunload', beforeUnload);
-    return () => { clearInterval(tick); clearInterval(checkpoint); document.removeEventListener('keydown', escape); document.removeEventListener('visibilitychange', visibility); document.removeEventListener('click', click, true); window.removeEventListener('pagehide', pagehide); window.removeEventListener('beforeunload', beforeUnload); sound.mute(true); };
+    return () => { remote?.close(); window.removeEventListener('online', online); clearInterval(tick); clearInterval(checkpoint); document.removeEventListener('keydown', escape); document.removeEventListener('visibilitychange', visibility); document.removeEventListener('click', click, true); window.removeEventListener('pagehide', pagehide); window.removeEventListener('beforeunload', beforeUnload); sound.mute(true); };
   }, []);
   useEffect(() => {
     if (!toast) return;
@@ -177,10 +191,10 @@ function GameView({ session }: { session: BootSession }) {
     {session.legacy != null && <button onClick={() => download(session.legacy!, 'tbh-legacy-save.json')}>{t('save.downloadLegacy')}</button>}
     {session.error === 'corrupt' && <><label>{t('save.import')}<input type="file" accept="application/json,.json" onChange={async e => {
       const file = e.currentTarget.files?.[0]; if (!file) return;
-      try { await replaceSave(await file.text(), session); location.reload(); } catch { setRecoveryError(true); }
+      try { await replaceSave(await file.text(), session as BootSession); location.reload(); } catch { setRecoveryError(true); }
     }} /></label>
     {recoveryError && <p role="alert">{t('save.importError')}</p>}
-    {confirmReset ? <><p>{t('save.resetConfirm')}</p><button onClick={async () => { try { await replaceSave(null, session); location.reload(); } catch { setRecoveryError(true); } }}>{t('save.resetYes')}</button><button onClick={() => setConfirmReset(false)}>{t('save.cancel')}</button></> : <button onClick={() => setConfirmReset(true)}>{t('save.reset')}</button>}</>}
+    {confirmReset ? <><p>{t('save.resetConfirm')}</p><button onClick={async () => { try { await replaceSave(null, session as BootSession); location.reload(); } catch { setRecoveryError(true); } }}>{t('save.resetYes')}</button><button onClick={() => setConfirmReset(false)}>{t('save.cancel')}</button></> : <button onClick={() => setConfirmReset(true)}>{t('save.reset')}</button>}</>}
     <button onClick={() => location.reload()}>{t('save.retry')}</button></main>;
 
   const shift = w.shift, inShift = w.phase !== 'resting';
@@ -283,6 +297,7 @@ function GameView({ session }: { session: BootSession }) {
         <div className="business-props">{BUSINESS_UNLOCKS.filter(item => w.unlocks.includes(item)).map(item => <button key={item} className={item === 'phone' && delivery ? `has-delivery ${deliveryUrgent ? 'is-urgent' : ''}` : ''} onClick={() => open(item === 'phone' ? 'delivery' : 'upgrades')} aria-label={t(item === 'phone' ? 'delivery.open' : `business.${item}`)} aria-describedby={item === 'phone' && delivery ? 'delivery-clock' : undefined}><Sprite id={item === 'qr' ? 'qr-payment' : item === 'phone' && delivery ? 'customer-shipper' : 'phone'} />{item === 'phone' && delivery && <span id="delivery-clock" className="delivery-clock"><span className="sr-only">{t(deliveryUrgent ? 'delivery.urgent' : 'delivery.deadline')}</span>{deliveryUrgent && <b aria-hidden="true">! </b>}{time(Math.ceil(delivery.remainingMs / 1000) * 1000)}</span>}</button>)}</div>
         {w.dogLevel > 0 && <button className="dog-object" aria-label={t('dog.open', { n: w.dogLevel })} aria-haspopup="dialog" onClick={() => open('dog')}><Sprite id={`dog-idle-lv${w.dogLevel}`} /><span>{t('level', { n: w.dogLevel })}</span></button>}
       </section>
+      {remote && <div className={`network-status is-${remote.state}`} role="status" aria-live="polite"><span>{t(`network.${remote.state}`)}</span>{remote.pending > 0 && <strong>{t('network.pending', { n: remote.pending })}</strong>}</div>}
       <section className="yard" aria-label={t(`location.${w.location}`)}>
         {w.tables.map(renderTable)}
         {w.queue.length > 0 && <span className="queue-badge">{t('queue', { n: w.queue.length })}</span>}
@@ -304,7 +319,7 @@ function GameView({ session }: { session: BootSession }) {
       </div> : toast?.gain !== undefined ? <div key={toast.id} className={`toast toast-gain gain-${toast.kind}`} role="status" aria-label={toast.text}>
         <span className="gain-reaction" aria-hidden="true">{reactions[toast.kind]}</span><strong aria-hidden="true">+{num(toast.gain)}</strong><Icon name="coin" />
       </div> : toast && <button className={`toast toast-${toast.kind}`} role="status" onClick={() => setToast(null)}>{toast.text}<span aria-hidden="true">×</span></button>}
-      {saveError && <button className="save-error" role="alert" onClick={() => download(encodeSave(game), 'tbh-backup.json')}>{t(saveError === 'conflict' ? 'save.conflict' : 'save.error')}</button>}
+      {saveError && !remote && <button className="save-error" role="alert" onClick={() => download(encodeSave(game as Game), 'tbh-backup.json')}>{t(saveError === 'conflict' ? 'save.conflict' : 'save.error')}</button>}
     </main>
 
 
@@ -358,7 +373,7 @@ function GameView({ session }: { session: BootSession }) {
       {sheet === 'seasons' && <Seasons world={w} config={game.config} t={t} locale={locale} num={num} />}
       {sheet === 'locations' && <Locations world={w} config={game.config} run={run} t={t} locale={locale} />}
       {sheet === 'upgrades' && <><button className="sign-entry full" onClick={() => open('locations')}><Icon name="star" /><span><strong>{t('nav.locations')}</strong><small>{t(`location.${w.location}`)}</small></span><span aria-hidden="true">›</span></button><button className="sign-entry full kitchen-entry" onClick={() => { setSheet(null); setSelectedEquipment('kitchen'); }}><Sprite id={`kitchen-lv${Math.max(1, kitchen.level)}`} /><span><strong>{t('kitchen.live')}</strong><small>{t('kitchen.slots', { busy: kitchen.busy, total: kitchen.slots })}</small></span><span aria-hidden="true">›</span></button><button className="sign-entry full" onClick={() => open('flyer')}><Sprite id="flyer-bundle" /><span><strong>{t('flyer.title')}</strong><small>{t('flyer.stock', { n: flyers.stock, cap: c.unlocks.flyer.stockCap })}</small></span><span aria-hidden="true">›</span></button><button className="sign-entry full" onClick={() => open('signboard')}><Sprite id={`sign-${w.signStyle ?? 'wood'}`} /><span><strong>{t('sign.title')}</strong><small>{w.signStyle ? t(`sign.${w.signStyle}`) : t('sign.notInstalled')}</small></span><span aria-hidden="true">›</span></button><button className="dog-entry full" onClick={() => open('dog')}><Sprite id={`dog-idle-lv${w.dogLevel || 1}`} /><span><strong>{t('dog.title')}</strong><small>{t(`dog.level${w.dogLevel}`)}</small></span><span aria-hidden="true">›</span></button><h3>{t('business.title')}</h3>{businessCards()}<p className="sheet-intro">{t('upgrade.copy')}</p><div className="upgrade-grid">{EQUIPMENT.map(upgradeCard)}</div><h3>{t('upgrade.tables')}</h3><div className="upgrade-grid">{w.tables.map((table, i) => { const next = c.upgrades.table.levels[table.level]; return <div className="upgrade-card" key={table.id}><Sprite id={`table-lv${table.level}-empty`} /><h3>{t('table', { n: i + 1 })}</h3><p>{t('table.seats', { n: table.capacity })}</p><button disabled={!next || table.state !== 'empty' || w.coins < next.priceBase} onClick={() => run({ type: 'upgradeTable', tableId: table.id })}>{next ? t('upgrade.buy', { cost: num(next.priceBase) }) : t('upgrade.max')}</button></div>; })}</div><button className="secondary full" onClick={() => run({ type: 'buyTable' })}>{t('upgrade.addTable')}</button></>}
-      {sheet === 'book' && (shift ? <>{questsRevealed && <button className="secondary full" onClick={() => open('quests')}>{t('quests.title')}</button>}<p className="sheet-intro">{t('shift')} · {time(Math.min(shift.closedAt ?? w.now, shift.endsAt) - shift.startedAt - shift.pausedMs)}<b>{t(`weather.${shift.weather}`)}</b></p><dl className="ledger">{(['served', 'lost', 'payment', 'tip', 'penalty', 'spent'] as const).map(key => <div key={key}><dt>{t(`book.${key}`)}</dt><dd>{num(shift.stats[key])}</dd></div>)}{(shift.stats.deliveryCompleted ?? 0) > 0 && <><div><dt>{t('book.deliveryCompleted')}</dt><dd>{shift.stats.deliveryCompleted}</dd></div><div><dt>{t('book.deliveryNet')}</dt><dd>{num(shift.stats.deliveryNet ?? 0)}</dd></div></>}{(shift.stats.deliveryMissed ?? 0) > 0 && <div><dt>{t('book.deliveryMissed')}</dt><dd>{shift.stats.deliveryMissed}</dd></div>}{shift.stats.wellRestedBonus > 0 && <div><dt>{t('book.wellRestedBonus')}</dt><dd>{num(shift.stats.wellRestedBonus)}</dd></div>}<div className="ledger-total"><dt>{t('book.net')}</dt><dd>{num(shift.stats.credited - shift.stats.penalty - shift.stats.spent)}</dd></div></dl><MenuReport report={menuReport(w, game.config)} t={t} num={num} /><button className="secondary full" onClick={() => open('flyer')}>{t('flyer.title')}</button>{rushReports.length > 0 && <table className="rush-report"><caption>{t('book.rushes')}</caption><thead><tr><th scope="col">{t('book.rushKind')}</th><th scope="col">{t('book.rushServed')}</th><th scope="col">{t('book.rushLost')}</th><th scope="col">{t('book.rushRevenue')}</th></tr></thead><tbody>{rushReports.map(e => <tr key={e.id}><th scope="row">{t(`rush.${e.data.kind}`)}</th><td>{num(Number(e.data.served))}</td><td>{num(Number(e.data.lost))}</td><td>{num(Number(e.data.revenue))}</td></tr>)}</tbody></table>}{inShift && <div className="button-stack"><button className="primary" onClick={() => run({ type: 'endShift' })}>{t('book.end')}</button><button className="secondary" disabled={!c.shift.kickAllAllowed} onClick={() => { setCloseShift(shift.id); open('close'); }}>{t('book.kick', { cost: num(closeQuote.cost) })}</button></div>}</> : <p>{t('book.none')}</p>)}
+      {sheet === 'book' && (shift ? <>{questsRevealed && <button className="secondary full" onClick={() => open('quests')}>{t('quests.title')}</button>}<p className="sheet-intro">{t('shift')} · {time(Math.min(shift.closedAt ?? w.now, shift.endsAt) - shift.startedAt - shift.pausedMs)}<b>{t(`weather.${shift.weather}`)}</b></p><dl className="ledger">{(['served', 'lost', 'payment', 'tip', 'penalty', 'spent'] as const).map(key => <div key={key}><dt>{t(`book.${key}`)}</dt><dd>{num(shift.stats[key])}</dd></div>)}{(shift.stats.deliveryCompleted ?? 0) > 0 && <><div><dt>{t('book.deliveryCompleted')}</dt><dd>{shift.stats.deliveryCompleted}</dd></div><div><dt>{t('book.deliveryNet')}</dt><dd>{num(shift.stats.deliveryNet ?? 0)}</dd></div></>}{(shift.stats.deliveryMissed ?? 0) > 0 && <div><dt>{t('book.deliveryMissed')}</dt><dd>{shift.stats.deliveryMissed}</dd></div>}{shift.stats.wellRestedBonus > 0 && <div><dt>{t('book.wellRestedBonus')}</dt><dd>{num(shift.stats.wellRestedBonus)}</dd></div>}<div className="ledger-total"><dt>{t('book.net')}</dt><dd>{num(shift.stats.credited - shift.stats.penalty - shift.stats.spent)}</dd></div></dl><MenuReport report={remote ? remote.menu : menuReport((game as Game).world, game.config)} t={t} num={num} /><button className="secondary full" onClick={() => open('flyer')}>{t('flyer.title')}</button>{rushReports.length > 0 && <table className="rush-report"><caption>{t('book.rushes')}</caption><thead><tr><th scope="col">{t('book.rushKind')}</th><th scope="col">{t('book.rushServed')}</th><th scope="col">{t('book.rushLost')}</th><th scope="col">{t('book.rushRevenue')}</th></tr></thead><tbody>{rushReports.map(e => <tr key={e.id}><th scope="row">{t(`rush.${e.data.kind}`)}</th><td>{num(Number(e.data.served))}</td><td>{num(Number(e.data.lost))}</td><td>{num(Number(e.data.revenue))}</td></tr>)}</tbody></table>}{inShift && <div className="button-stack"><button className="primary" onClick={() => run({ type: 'endShift' })}>{t('book.end')}</button><button className="secondary" disabled={!c.shift.kickAllAllowed} onClick={() => { setCloseShift(shift.id); open('close'); }}>{t('book.kick', { cost: num(closeQuote.cost) })}</button></div>}</> : <p>{t('book.none')}</p>)}
       {sheet === 'journey' && <>
         {w.completedShifts >= c.onboarding.featureReveal.leagueAfterShifts && <button className="sign-entry full" onClick={() => open('seasons')}><Icon name="star" /><strong>{t('nav.seasons')}</strong><span aria-hidden="true">›</span></button>}
         <div className="journey-summary"><span>{t('journey.current')}</span><h3>{levelName(w.lifePath)}</h3><p>{num(w.lifetimeEarned)} {t('journey.earned')}</p>{nextMilestone && <><progress aria-label={t('journey.next', { name: levelName(nextMilestone.index) })} max={nextMilestone.lifetimeBase} value={Math.min(w.lifetimeEarned, nextMilestone.lifetimeBase)} /><p>{t('journey.next', { name: levelName(nextMilestone.index) })}</p></>}</div>
@@ -370,7 +385,7 @@ function GameView({ session }: { session: BootSession }) {
           {row.claimable && <button className="primary" onClick={() => run({ type: 'claimLifePath', level: row.index })}>{t('journey.claim', { name: levelName(row.index) })}</button>}
         </li>)}</ol><button className="secondary full" onClick={() => open('locations')}>{t('nav.locations')}</button><button className="secondary full" onClick={() => open('upgrades')}>{t('journey.upgrades')}</button>
       </>}
-      {sheet === 'settings' && <div className="settings-list"><label>{t('settings.language')}<select value={locale} onChange={e => setPrefs({ locale: e.target.value as 'vi' | 'en' })}><option value="vi">Tiếng Việt</option><option value="en">English</option></select></label><button className="setting-row" onClick={() => setPrefs({ muted: !settings.muted })}><span>{t('settings.sound')}</span><b>{t(settings.muted ? 'settings.soundOff' : 'settings.soundOn')}</b></button><p>{t('settings.saved')}</p><button onClick={() => download(encodeSave(game), 'tbh-backup.json')}>{t('settings.export')}</button><button onClick={() => { setPrefs({ guideDone: false, guideIndex: 0 }); setSheet(null); }}>{t('settings.guide')}</button><button onClick={() => open('config')}>{t('settings.config')}</button></div>}
+      {sheet === 'settings' && <div className="settings-list"><label>{t('settings.language')}<select value={locale} onChange={e => setPrefs({ locale: e.target.value as 'vi' | 'en' })}><option value="vi">Tiếng Việt</option><option value="en">English</option></select></label><button className="setting-row" onClick={() => setPrefs({ muted: !settings.muted })}><span>{t('settings.sound')}</span><b>{t(settings.muted ? 'settings.soundOff' : 'settings.soundOn')}</b></button><p>{t('settings.saved')}</p>{!remote && <button onClick={() => download(encodeSave(game as Game), 'tbh-backup.json')}>{t('settings.export')}</button>}{remote && <p>{t('network.serverSaved')}</p>}<button onClick={() => { setPrefs({ guideDone: false, guideIndex: 0 }); setSheet(null); }}>{t('settings.guide')}</button><button onClick={() => open('config')}>{t('settings.config')}</button></div>}
       {sheet === 'config' && <><p>{t('config.pinned', { version: game.config.version })}</p><pre className="config-json">{JSON.stringify(game.config.raw, null, 2)}</pre></>}
     </SheetDialog>}
     {selectedEquipment && <SheetDialog pausedLabel={t('pause.menu')} title={t(`equipment.${selectedEquipment}`)} close={() => setSelectedEquipment(null)}><div className="equipment-detail">{(selectedEquipment === 'keg' || selectedEquipment === 'washer') && <section className="production-detail" aria-label={t('production.status')}><strong>{t(selectedEquipment === 'keg' ? 'production.ready' : 'production.clean', { count: selectedEquipment === 'keg' ? `${beer.stored}/${beer.capacity}` : `${washer.clean}/${washer.capacity}` })}</strong>{(() => { const p = selectedEquipment === 'keg' ? beer : washer; return p.busy ? <><p>{t('production.running', { n: p.busy, seconds: Math.ceil(p.remainingMs / 1000) })}</p><progress value={p.progress} max={1} aria-label={t('production.batchProgress', { n: p.busy })} /></> : <p>{t(selectedEquipment === 'keg' && !w.inventory.bia && beer.stored < beer.capacity ? 'production.noStock' : 'production.idle')}</p>; })()}{selectedEquipment === 'washer' && <><p>{t('production.washQueue', { n: washer.queued, capacity: washer.batchSize })}</p><div className="buy-glasses"><strong>{t('production.glassOwned', { n: w.glasses.length, max: Math.min(c.glasses.buyCap, c.glasses.storageCap) })}</strong>{[1, Math.max(0, Math.min(c.glasses.buyCap, c.glasses.storageCap) - w.glasses.length)].filter((count, i, counts) => counts.indexOf(count) === i && count > 0).map(count => { const q = buyGlassQuote(w, game.config, count); return <button key={count} disabled={!q.ok} onClick={() => run({ type: 'buyGlass', count })}>{t('production.buyGlass', { n: count, cost: num(q.cost) })}</button>; })}</div></>}{selectedEquipment === 'keg' && <><p>{t('production.pouring', { busy: beer.pouring, total: beer.tapSlots })}</p><p>{t(beer.enabled ? 'production.reserveHint' : 'production.legacy')}</p></>}</section>}{selectedEquipment === 'kitchen' && <Kitchen status={kitchen} t={t} onTable={tableId => { setSelectedEquipment(null); const button = document.querySelector<HTMLButtonElement>(`[data-table-id="${CSS.escape(tableId)}"] .table-object`); if (button) showTable(tableId, button); }} onStock={() => { setSelectedEquipment(null); open('stock'); }} />}{upgradeCard(selectedEquipment)}</div></SheetDialog>}
@@ -388,7 +403,7 @@ function GameView({ session }: { session: BootSession }) {
           <div className="order-dishes">{dishes.map(({ dish, items }) => <div key={dish} className={items.every(i => i.state === 'ready') ? 'dish-ready' : ''}><Sprite id={menuAsset[dish]} /><strong>{t(`dish.${dish}`)}</strong>{items.every(i => i.state === 'ready') && <Icon name="check" />}<span>{items.filter(i => i.state === 'ready').length}/{items.length}</span></div>)}</div>
           {kitchen.jobs.some(job => job.orderId === o.id && job.state !== 'ready') && <button className="secondary full kitchen-link" onClick={() => { setSelectedTable(null); setSelectedEquipment('kitchen'); }}>{t('kitchen.live')}</button>}
           {(stale || o.state === 'grace') && <p className="order-warning">{t(stale ? 'order.stale' : 'order.grace')}</p>}
-          <button className="primary full" disabled={!ready} onClick={() => { if (run({ type: 'serve', tableId: table.id, orderId: o.id }).ok) setSelectedTable(null); }}><Icon name="check" />{t('order.serve')}</button>
+          <button className="primary full" disabled={!ready} onClick={async () => { if ((await run({ type: 'serve', tableId: table.id, orderId: o.id })).ok) setSelectedTable(current => current === table.id ? null : current); }}><Icon name="check" />{t('order.serve')}</button>
         </> : <p className="idle-table-info">{t(`table.${table.state}`)} · {t('table.seats', { n: table.capacity })}</p>}
       </section>;
     })()}

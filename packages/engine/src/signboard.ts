@@ -1,11 +1,11 @@
 import type { Config, SignStyle } from './config';
-import type { World } from './types';
+import type { WorldView } from './types';
 
-export function signboardStyle(w: World, c: Config) {
+export function signboardStyle(w: WorldView, c: Config) {
   return w.signStyle && w.unlocks.includes('signboard') ? c.values.signboard.styles[w.signStyle] : undefined;
 }
 /** Null means initial installation; styles are owned once and may then be equipped free. */
-export function signboardQuote(w: World, c: Config, style: SignStyle | null = null) {
+export function signboardQuote(w: WorldView, c: Config, style: SignStyle | null = null) {
   const installed = w.unlocks.includes('signboard'), target = style ?? 'wood', definition = c.values.signboard.styles[target];
   const owned = installed && (target === 'wood' || w.unlocks.includes(`signboard:${target}`));
   const cost = style === null ? c.values.signboard.installFeeBase + definition.priceBase : owned ? 0 : definition.priceBase;

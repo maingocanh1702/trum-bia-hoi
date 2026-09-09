@@ -1,9 +1,9 @@
 import type { Config } from './config';
 import { requirementStatus } from './progression';
-import type { World } from './types';
+import type { WorldView } from './types';
 
 /** One quote feeds buttons and commands; stock ownership outlives consumption. */
-export function flyerQuote(w: World, c: Config) {
+export function flyerQuote(w: WorldView, c: Config) {
   const definition = c.values.unlocks.flyer, stock = w.flyers ?? 0, cost = definition.repBase;
   const used = w.shift?.flyersUsed ?? 0, campaign = w.shift?.flyer;
   const requirement = requirementStatus(w, c, definition.gate);

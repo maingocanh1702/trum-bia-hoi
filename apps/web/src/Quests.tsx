@@ -1,6 +1,6 @@
-import { attendanceRewardQuote, planDailyQuests, questRewardQuote, zeroLossWindow, type World, type Config, type Command } from '../../../packages/engine/src';
+import { attendanceRewardQuote, planDailyQuests, questRewardQuote, zeroLossWindow, type WorldView, type Config, type Command } from '../../../packages/engine/src';
 import { Sprite } from './assets';
-export function Quests({ world: w, config: c, run, t, num }: { world: World; config: Config; run: (command: Command) => unknown; t: (key: string, params?: Record<string, string | number>) => string; num: (n: number) => string }) {
+export function Quests({ world: w, config: c, run, t, num }: { world: WorldView; config: Config; run: (command: Command) => unknown; t: (key: string, params?: Record<string, string | number>) => string; num: (n: number) => string }) {
   const daily = w.daily && w.now < w.daily.expiresAt ? w.daily : planDailyQuests(w, c);
   const attendance = attendanceRewardQuote(w, c, daily.day), track = attendance.track;
   const completed = daily.rows.filter(r => r.progress >= r.target).length, bonus = questRewardQuote(w, c, daily.day, null);

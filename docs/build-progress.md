@@ -2170,3 +2170,14 @@ real HTTP/presence checks pass. Full-range native review found no actionable def
 with9 independent SQLite/presence checks passing. Receipt
 `.qa/m4-heartbeat-verification.json`. No engine/config changes or M9 tuning.
 Server liveness portion is complete; remote web/outbox and registry/admin remain.
+
+## Web server authority/outbox — 2026-09-10
+
+Base8e25c19: default online web renders server snapshots and pinned rules, with authoritative
+reports. Bounded durable commands retry exactly after response loss/reload. Current menu/
+visibility heartbeat precedes replay, hung requests show reconnecting without client ticks,
+and unsafe account/storage transitions preserve pending actions. Explicit local archive
+choice protects existing progress while public upload is deferred.298unit/server,91legacy
+browser and7remote scenarios pass; final hidden/menu check, sim and review in progress.
+M4 remains open for registry/admin and integrated account/import/eligibility. Next work is
+registry/admin, followed by M6–M9. Full game goal remains unchanged.

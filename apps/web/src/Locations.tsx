@@ -1,6 +1,6 @@
-import { isEconomy2, leaseQuote, leaveLocationQuote, type World, type Config, type Command } from '../../../packages/engine/src';
+import { isEconomy2, leaseQuote, leaveLocationQuote, type WorldView, type Config, type Command } from '../../../packages/engine/src';
 
-export function Locations({ world: w, config, run, t, locale }: { world: World; config: Config; run: (command: Command) => void; t: (key: string, params?: Record<string, string | number>) => string; locale: string }) {
+export function Locations({ world: w, config, run, t, locale }: { world: WorldView; config: Config; run: (command: Command) => void; t: (key: string, params?: Record<string, string | number>) => string; locale: string }) {
   const num = (n: number) => n.toLocaleString(locale === 'vi' ? 'vi-VN' : 'en-US');
   const end = (at: number) => new Date(at).toLocaleString(locale === 'vi' ? 'vi-VN' : 'en-US');
   const leave = leaveLocationQuote(w), c = config.values;

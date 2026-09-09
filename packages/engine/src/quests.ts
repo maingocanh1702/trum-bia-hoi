@@ -2,7 +2,7 @@ import { seasonTier } from './seasons';
 import { dailyTargetCurve, type Config } from './config';
 import { integer, seededRng } from './rng';
 import { dayKey } from './rules';
-import type { Attendance, DailyQuest, DailyQuests, DomainEvent, World } from './types';
+import type { WorldView, Attendance, DailyQuest, DailyQuests, DomainEvent, World } from './types';
 
 /** Calendar boundary from the configured VN day formatter; no wall-clock dependency. */
 export function nextDayAt(now: number, c: Config) {
@@ -11,7 +11,7 @@ export function nextDayAt(now: number, c: Config) {
   while (high - low > 1) { const mid = low + Math.floor((high - low) / 2); if (dayKey(mid, c) === day) low = mid; else high = mid; }
   return high;
 }
-export function planDailyQuests(w: World, c: Config): DailyQuests {
+export function planDailyQuests(w: WorldView, c: Config): DailyQuests {
   const day = dayKey(w.now, c), definition = c.values.quests.daily;
   const tier = seasonTier(w, c).index + 1;
   const seed = JSON.stringify([day, tier]), rng = seededRng(seed), curve = dailyTargetCurve(c.values);
@@ -70,7 +70,7 @@ export function applyQuestEvent(w: World, c: Config, e: DomainEvent): DailyQuest
   }
   return changed;
 }
-export function questRewardQuote(w: World, c: Config, day: string, questId: string | null) {
+export function questRewardQuote(w: WorldView, c: Config, day: string, questId: string | null) {
   const daily = w.daily, row = daily?.rows.find(r => r.id === questId);
   let reason = !daily || daily.day !== day || w.now >= daily.expiresAt ? 'questExpired' : questId === null ? daily.bonusClaimed ? 'questClaimed' : daily.rows.some(r => r.progress < r.target) ? 'questIncomplete' : null : !row ? 'questGone' : row.claimed ? 'questClaimed' : row.progress < row.target ? 'questIncomplete' : null;
   const coin = questId === null ? 0 : row?.coin ?? 0, reputation = questId === null ? 0 : row?.reputation ?? 0;
@@ -81,11 +81,11 @@ export function questRewardQuote(w: World, c: Config, day: string, questId: stri
 }
 
 /** Shared preflight for the two reputation-reward claims; changeRep owns the mutation. */
-function reputationRewardFits(w: World, amount: number) {
+function reputationRewardFits(w: WorldView, amount: number) {
   return Number.isSafeInteger(amount) && amount >= 0 && Number.isSafeInteger(w.reputation + amount) && w.reputation >= 0 && (!w.shift || w.phase === 'resting' || Number.isSafeInteger(w.shift.stats.rep + amount));
 }
 /** Preview an observed day without mutating state or backfilling hidden dates. */
-export function attendanceDay(w: World, c: Config): { track: Attendance; transition: string } {
+export function attendanceDay(w: WorldView, c: Config): { track: Attendance; transition: string } {
   const day = dayKey(w.now, c), previous = w.attendance;
   if (previous?.lastActiveDateKey === day) return { track: previous, transition: 'same' };
   const missed = !!previous && dayKey(previous.expiresAt, c) !== day;
@@ -93,7 +93,7 @@ export function attendanceDay(w: World, c: Config): { track: Attendance; transit
   const cycleDay = reset ? 1 : previous.cycleDay % c.values.quests.loginTrackRepBase.length + 1;
   return { track: { cycleDay, lastActiveDateKey: day, lastClaimDateKey: previous?.lastClaimDateKey ?? null, expiresAt: nextDayAt(w.now, c), claimedDays: cycleDay === 1 ? [] : [...previous!.claimedDays] }, transition: !previous ? 'first' : reset ? 'reset' : cycleDay === 1 ? 'wrap' : 'next' };
 }
-export function attendanceRewardQuote(w: World, c: Config, day: string) {
+export function attendanceRewardQuote(w: WorldView, c: Config, day: string) {
   const { track } = attendanceDay(w, c), reputation = c.values.quests.loginTrackRepBase[track.cycleDay - 1];
   const reason = day !== track.lastActiveDateKey ? 'attendanceExpired' : !w.active ? 'attendanceInactive' : track.lastClaimDateKey === day ? 'attendanceClaimed' : !reputationRewardFits(w, reputation) ? 'rewardOverflow' : null;
   return { track, reputation, reason };

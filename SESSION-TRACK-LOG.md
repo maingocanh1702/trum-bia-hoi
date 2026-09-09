@@ -5,6 +5,18 @@
 
 ---
 
+## 🧭 Web server cutover implemented; independent review next — 2026-09-10
+
+Base8e25c19. Web defaults to server authority with a native-lock single-writer journal,
+current visibility/menu heartbeat, exact retry after lost ACK/reload, bounded queue,
+account mismatch/storage failure stop, and reconnect status with frozen yard. Exact
+pinned public config and server menu/presentation reports are delivered. Existing local
+archive remains intact with explicit legacy/new-server choice; no public upload or M9
+performance work.298engine/server tests,91legacy browser and7remote scenarios pass;
+final hidden/menu addition, sim and independent review in progress. Config2.0.1/rules24
+unchanged; engine edits narrow read-helper types only. M4 remains OPEN for registry/admin
+and account/import/eligibility UI. Next registry/admin, then M6→M7→M8→M9. No merge/push/deploy.
+
 ## 🧭 Server liveness verified; remote web next — 2026-09-10
 
 Base `3f1d2bc`, final product `9f38166` (foundation `85cbb5d`). Schema7 persists

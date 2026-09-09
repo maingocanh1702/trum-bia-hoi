@@ -75,6 +75,13 @@ test('real HTTP guests own separate state; serving retries, paused stock purchas
   const ready = await (await f.request('/player/state', undefined, a.cookie)).json(), table = ready.world.tables.find((t: any) => t.order?.items.every((i: any) => i.state === 'ready'));
   const payload = { idempotencyKey: 'serve-one', command: { type: 'serve', tableId: table.id, orderId: table.order.id } };
   const served = await (await f.request('/player/command', payload, a.cookie)).json(); assert.ok(served.result.ok);
+  const publicConfig = await (await f.request(`/player/config?version=${served.configVersion}`, undefined, a.cookie)).json();
+  assert.deepEqual(publicConfig, config.raw);
+  assert.equal((await f.request(`/player/config?version=${served.configVersion}`)).status, 401);
+  assert.equal((await f.request('/player/config?version=missing', undefined, a.cookie)).status, 404);
+  assert.equal((await f.request('/player/config?version=x&extra=y', undefined, a.cookie)).status, 400);
+  assert.equal(served.menu.rows.find((r: { dish: string }) => r.dish === 'bia').sold, 1);
+  assert.ok(served.presentation.some((e: any) => e.type === 'order_served' && e.data.orderId === table.order.id));
   const retry = await (await f.request('/player/command', { command: { orderId: table.order.id, tableId: table.id, type: 'serve' }, idempotencyKey: 'serve-one' }, a.cookie)).json();
   assert.deepEqual(retry, served);
   const other = await (await f.request('/player/state', undefined, b.cookie)).json(); assert.equal(other.world.coins, config.values.shift.startingCoinsBase); assert.equal(other.world.phase, 'resting');
@@ -188,7 +195,7 @@ test('long-lived players catch up in bounded repeatable pages across restart wit
   assert.equal(cursor, last); assert.equal(events.length, last);
   assert.ok(events.every((row, i) => row.seq === i + 1 && row.event.data.seed === undefined));
   assert.equal(new Set(events.map(row => row.event.id)).size, last);
-  assert.deepEqual(await page(last), { events: [], lastEventSeq: last, hasMore: false });
+  assert.deepEqual(await page(last), { playerId: a.playerId, events: [], lastEventSeq: last, hasMore: false });
   const other = await (await reopened.request('/player/events?after=0', undefined, b.cookie)).json(); assert.deepEqual(other.events, []);
   assert.deepEqual(durable(), before);
 });

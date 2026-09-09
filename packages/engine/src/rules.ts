@@ -1,13 +1,13 @@
 import { creditSeasons, seasonCreditSafe } from './seasons';
 import { signboardStyle } from './signboard';
 import { isEconomy2, DISHES, type Config, type Dish, type Equipment, type Rush } from './config';
-import type { Customer, Order, Table, World } from './types';
+import type { WorldView, Customer, Order, Table, World } from './types';
 
 export function dayKey(now: number, c: Config): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: c.values.shift.dayRollover.tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
 }
 /** Project the current rush first; upcoming slots are only relevant while accepting guests. */
-export function rushStatus(w: World, c: Config) {
+export function rushStatus(w: WorldView, c: Config) {
   const s = w.shift;
   const active = w.phase !== 'resting' && s && s.rush !== 'none' && s.rushUntil != null && s.rushUntil > w.now ? { kind: s.rush, remainingMs: s.rushUntil - w.now } : null;
   const next = w.phase === 'open' ? s?.rushes.find(r => r.start > w.now) : undefined;
@@ -16,21 +16,21 @@ export function rushStatus(w: World, c: Config) {
     next: next ? { kind: next.kind, remainingMs: next.start - w.now, warning: next.start - w.now <= c.values.rush.schedule.warningMs } : null,
   };
 }
-export function wellRestedRemaining(w: World): number {
+export function wellRestedRemaining(w: WorldView): number {
   return w.phase === 'resting' || w.shift?.wellRestedUntil == null ? 0 : Math.max(0, w.shift.wellRestedUntil - w.now);
 }
 /** Base payment/tip remain the k measurement; the service boost is a separate counted credit. */
-export function wellRestedBonus(w: World, c: Config, payment: number, tip: number): number {
+export function wellRestedBonus(w: WorldView, c: Config, payment: number, tip: number): number {
   const bonus = wellRestedRemaining(w) > 0 ? Math.round((payment + tip) * c.values.shift.wellRested.mult) - payment - tip : 0;
   if (!Number.isSafeInteger(bonus) || bonus < 0) throw Error('ledger:invalid-bonus');
   return bonus;
 }
-export function stockCap(w: World, c: Config): number { return c.values.upgrades.stall.stockCap[w.equipment.stall - 1]; }
-export function queueSlots(w: World, c: Config): number {
+export function stockCap(w: WorldView, c: Config): number { return c.values.upgrades.stall.stockCap[w.equipment.stall - 1]; }
+export function queueSlots(w: WorldView, c: Config): number {
   return c.values.runtime.queueBaseSlots + Math.floor(w.tables.reduce((s, t) => s + t.capacity, 0) / c.values.runtime.queueSeatsPerSlot);
 }
-export function dishUnlocked(w: World, c: Config, dish: Dish): boolean { return w.equipment.kitchen >= c.values.menu[dish].unlock.kitchenLevel; }
-export function restockQuote(w: World, c: Config, dish: Dish, mode: 'bulk' | 'full' | 'one') {
+export function dishUnlocked(w: WorldView, c: Config, dish: Dish): boolean { return w.equipment.kitchen >= c.values.menu[dish].unlock.kitchenLevel; }
+export function restockQuote(w: WorldView, c: Config, dish: Dish, mode: 'bulk' | 'full' | 'one') {
   const missing = stockCap(w, c) - w.inventory[dish];
   const batch = c.values.inventory.bulkSize;
   const quantity = mode === 'full' ? missing : mode === 'bulk' ? batch : 1;
@@ -38,7 +38,7 @@ export function restockQuote(w: World, c: Config, dish: Dish, mode: 'bulk' | 'fu
   const cost = Math.floor(quantity / batch) * batch * menu.bulkCost + quantity % batch * menu.unitCost;
   return { quantity, cost, ok: dishUnlocked(w, c, dish) && quantity > 0 && quantity <= missing && w.coins >= cost };
 }
-export function upgradeQuote(w: World, c: Config, kind: Equipment, outsideShiftOnly = false, lifePathGate = true) {
+export function upgradeQuote(w: WorldView, c: Config, kind: Equipment, outsideShiftOnly = false, lifePathGate = true) {
   const prices = c.values.upgrades[kind].priceBase;
   const next = w.equipment[kind] + 1;
   const index = kind === 'kitchen' ? next : next - 1;
@@ -48,25 +48,25 @@ export function upgradeQuote(w: World, c: Config, kind: Equipment, outsideShiftO
   return { next, cost: cost ?? null, requiredLifePath, ok: reason === null, reason };
 }
 /** Owned glasses are the purchase ceiling; there is no second lifetime purchase counter. */
-export function buyGlassQuote(w: World, c: Config, count: number) {
+export function buyGlassQuote(w: WorldView, c: Config, count: number) {
   const capacity = Math.min(c.values.glasses.buyCap, c.values.glasses.storageCap);
   const cost = count * c.values.glasses.priceBase;
   const reason = !Number.isSafeInteger(count) || count <= 0 ? 'invalidQuantity' : count > capacity - w.glasses.length ? 'glassCapacity' : !Number.isSafeInteger(cost) || cost < 0 ? 'invalidCost' : w.coins < cost ? 'notEnoughCoins' : null;
   return { count, cost, capacity, owned: w.glasses.length, ok: reason === null, reason };
 }
 /** One level owns purchase state; dog stats and requirements remain in the config. */
-export function dogUpgradeQuote(w: World, c: Config) {
+export function dogUpgradeQuote(w: WorldView, c: Config) {
   const next = c.values.dog.levels.find(level => level.level === w.dogLevel + 1) ?? null;
   const materials = Object.entries(next?.materials ?? {}).map(([dish, quantity]) => ({ dish: dish as Dish, quantity, have: w.inventory[dish as Dish] }));
   const cost = next?.coinBase ?? null;
   return { next, materials, cost, ok: cost !== null && Number.isSafeInteger(cost) && cost >= 0 && w.coins >= cost && materials.every(m => m.have >= m.quantity) };
 }
-export function freshnessMs(w: World, c: Config): number {
+export function freshnessMs(w: WorldView, c: Config): number {
   const base = c.values.upgrades.cooler.freshnessMs[w.equipment.cooler - 1];
   return base === null ? Infinity : base * c.values.weather[w.shift?.weather ?? 'sunny'].freshnessMult;
 }
 export function rushConfig(c: Config, rush: Rush) { return c.values.rush[rush]; }
-export function customerValue(w: World, c: Config, order: Order, customer: Customer) {
+export function customerValue(w: WorldView, c: Config, order: Order, customer: Customer) {
   const items = order.items.filter(i => i.customerId === customer.id);
   const type = c.values.customerTypes[customer.type];
   const rush = rushConfig(c, w.shift?.rush ?? 'none');
@@ -89,7 +89,7 @@ export function currentGuests(table: Table): Customer[] {
   return table.state === 'occupied' ? table.group.customers.filter(c => c.type === 'chipheo') : table.group.customers;
 }
 /** Quote assigned orders only: guests still queueing/seating have not ordered or spent stock. */
-export function kickAllQuote(w: World, c: Config) {
+export function kickAllQuote(w: WorldView, c: Config) {
   const guests = w.tables.flatMap(table => currentGuests(table).map(customer => ({
     customerId: customer.id, tableId: table.id as string | null, orderId: table.order?.id ?? null,
     fee: table.order ? customerValue(w, c, table.order, customer).penalty : 0,
@@ -100,7 +100,7 @@ export function kickAllQuote(w: World, c: Config) {
   return { guests, cost, deliveryBlocked: w.delivery !== null, ok: w.phase !== 'resting' && c.values.shift.kickAllAllowed && w.coins >= cost && !w.delivery };
 }
 /** All credit consumers use the same day cap before mutation. */
-export function creditQuote(w: World, c: Config, amount: number, source: string) {
+export function creditQuote(w: WorldView, c: Config, amount: number, source: string) {
   if (!Number.isSafeInteger(amount) || amount < 0) throw Error('ledger:invalid-credit');
   const counted = (w.seasons?.ranking.countedSources ?? c.values.ledgers.countedSources).includes(source);
   const day = dayKey(w.now, c);
@@ -134,11 +134,11 @@ export function creditBatchSafe(w: World, c: Config, credits: { amount: number; 
   }
   return true;
 }
-export function deliveryInterval(w: World, c: Config) {
+export function deliveryInterval(w: WorldView, c: Config) {
   const style = signboardStyle(w, c), mult = style && 'shipperMult' in style ? Number(style.shipperMult) : 1;
   return Math.round(c.values.customerTypes.shipper.spawnIntervalMs / c.values.weather[w.shift?.weather ?? 'sunny'].shipperMult / mult);
 }
-export function deliveryQuote(w: World, c: Config) {
+export function deliveryQuote(w: WorldView, c: Config) {
   const order = w.delivery;
   if (!order) return null;
   const lines = order.lines.map(line => ({ ...line, have: w.inventory[line.dish] }));
@@ -152,7 +152,7 @@ export function deliveryQuote(w: World, c: Config) {
     ready: lines.every(line => line.have >= line.quantity), remainingMs: Math.max(0, order.expiresAt - w.now) };
 }
 /** Project a complete gift before applying it; reward consumers share this overflow calculation. */
-export function stockGiftQuote(w: World, c: Config, stock: Partial<Record<Dish, number>>) {
+export function stockGiftQuote(w: WorldView, c: Config, stock: Partial<Record<Dish, number>>) {
   let overflow = 0;
   const added = {} as Record<Dish, number>;
   for (const dish of DISHES) {

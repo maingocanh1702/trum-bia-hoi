@@ -1,6 +1,6 @@
-import { seasonTier, type World, type Config } from '../../../packages/engine/src';
+import { seasonTier, type WorldView, type Config } from '../../../packages/engine/src';
 
-export function Seasons({ world: w, config, t, locale, num }: { world: World; config: Config; t: (key: string, params?: Record<string, string | number>) => string; locale: string; num: (n: number) => string }) {
+export function Seasons({ world: w, config, t, locale, num }: { world: WorldView; config: Config; t: (key: string, params?: Record<string, string | number>) => string; locale: string; num: (n: number) => string }) {
   const seasons = w.seasons;
   if (!seasons) return <p>{t('season.start')}</p>;
   const date = (at: number) => new Date(at).toLocaleString(locale === 'vi' ? 'vi-VN' : 'en-US', { timeZone: config.values.league.seasons.tz, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });

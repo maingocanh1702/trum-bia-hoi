@@ -1,8 +1,8 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.38.2
+> **Version:** v0.39.0
 > **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-09 (layout/art theo ảnh owner)
-> **Trạng thái:** Active — **M0 COMPLETE theo exit criteria; xem báo cáo closure M0–M5. M1–M3 tiếp tục triển khai; M4 server store/auth/liveness đã review; web cutover và registry/admin còn thiếu; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.3** (1 phase, mốc M0–M9).
+> **Trạng thái:** Active — **M0 COMPLETE theo exit criteria; xem báo cáo closure M0–M5. M1–M3 tiếp tục triển khai; M4 web server/outbox đã triển khai, đang review; registry/admin và account/import UI còn thiếu; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.3** (1 phase, mốc M0–M9).
 > **Owner:** Team
 > **Mục đích:** Master status board cho mọi feature F01–F28. Nhãn `Phase N` chỉ là **khoá parser** của dashboard-engine; mốc thật: P0 → M0 (nền) · P1 → M1–M2 · P2 → M3 · P3 → M4–M6 · P4 → M7–M8 · QA/release → M9. Là **input cho dashboard-engine** (`tools/dashboard-engine/build_dashboard.py`). Nguồn quyết định/scope = `02-GDD-trum-bia-hoi.md` + `06-ROADMAP-trum-bia-hoi.md`; tracker chỉ theo dõi **trạng thái build**.
 > **Cập nhật:** đổi status mỗi khi 1 feature chuyển trạng thái (bắt đầu code / review / merge).
@@ -41,7 +41,7 @@ Giữ nguyên config và full M0–M9 với20feature đang làm.
 | M1 | 🟡 OPEN | Core service/reload/pause pass; complete3-viewport shift, axe, recommendation and human feel evidence remain. |
 | M2 | 🟡 OPEN | Guest/guide pass; five-person study, integrated Google and admin/locale/prompt criteria remain. |
 | M3 | 🟡 OPEN | Standard k/kitchen/rush/quests/sign pass; advanced band/feel and equipment/customer assets remain. |
-| M4 | 🟡 OPEN — priority | Server core reviewed; web authority/reconnect/registry-admin and integrated account/eligibility remain. |
+| M4 | 🟡 OPEN — priority | Server core reviewed; web authority/reconnect in verification; registry/admin and integrated account/eligibility remain. |
 | M5 | 🟡 OPEN | Local seasons/LP/lease/quest rules pass; community ranks/snapshot/rewards/referral/gift integration remains. |
 
 Full criterion list and named checks: [M0–M5 closure](milestone-closure-m0-m5.md).
@@ -308,3 +308,5 @@ rows. Follow owner queue M4→M6→M7→M8→M9; defer extra M5 breadth/performa
 | 2026-09-10 | v0.38.1 | Full-range heartbeat review85cbb5d found no actionable defects; tightened public admission to require heartbeat from first action before web cutover.19 HTTP/presence checks pass; final full verify/review in progress. F23/M4 remains open. |
 
 | 2026-09-10 | v0.38.2 | Heartbeat9f38166 verified: config/build298 full tests +19 final HTTP/presence checks pass; full-range native review no actionable defects and9 independent SQLite/presence checks pass. Schema7 persistent liveness and mandatory public admission complete; remote web/outbox/registry-admin remain. M4 OPEN. |
+
+| 2026-09-10 | v0.39.0 | Web defaults to server snapshots/pinned public rules and authoritative reports. Durable bounded journal, current-presence heartbeat, reconnect status and exact command retry; explicit local preservation boundary.298tests,91legacy browser and7remote scenarios pass; final hidden-presence check/sim/review in progress. M4 remains open for registry/admin/account integration. |

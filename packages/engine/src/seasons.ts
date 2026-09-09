@@ -1,5 +1,5 @@
 import type { Config } from './config';
-import type { SeasonKind, SeasonPeriod, World } from './types';
+import type { WorldView, SeasonKind, SeasonPeriod, World } from './types';
 
 export const SEASON_KINDS: readonly SeasonKind[] = ['ranking', 'contest'];
 const DAY_MS = 86400000; // config-exempt: milliseconds in a VN calendar day (no DST)
@@ -16,11 +16,11 @@ function newPeriod(now: number, trackingFromAt: number, c: Config, kind: SeasonK
     tiers: structuredClone(c.values.league.tiers), countedSources: [...c.values.ledgers.countedSources],
     closedShifts: 0, firstReachedCurrentSeasonEarnedAt: null };
 }
-export function seasonEarned(w: World, kind: SeasonKind): number {
+export function seasonEarned(w: WorldView, kind: SeasonKind): number {
   return kind === 'ranking' ? w.seasonEarned : w.seasons?.contestEarned ?? 0;
 }
 /** Ranking has one canonical balance; every tier consumer uses the active period's terms. */
-export function seasonTier(w: World, c: Config, kind: SeasonKind = 'ranking') {
+export function seasonTier(w: WorldView, c: Config, kind: SeasonKind = 'ranking') {
   const tiers = w.seasons?.[kind].tiers ?? c.values.league.tiers, earned = seasonEarned(w, kind);
   const index = tiers.filter(tier => earned >= tier.minSeasonEarnedBase).length - 1;
   return { index, tier: tiers[index], next: tiers[index + 1] ?? null, earned };
@@ -54,7 +54,7 @@ export function syncSeasons(w: World, c: Config): void {
   // Stable ordering whether two windows close in one catch-up or several ticks.
   if (w.seasons.results.length > resultCount) w.seasons.results.sort((a, b) => a.endsAt - b.endsAt || a.kind.localeCompare(b.kind));
 }
-export function seasonCreditSafe(w: World, credited: number, source: string): boolean {
+export function seasonCreditSafe(w: WorldView, credited: number, source: string): boolean {
   return !w.seasons || SEASON_KINDS.every(kind => !w.seasons![kind].countedSources.includes(source) || Number.isSafeInteger(seasonEarned(w, kind) + credited));
 }
 /** Called once by the canonical credit path, after the daily cap. Rewards never pass its pinned source filter. */

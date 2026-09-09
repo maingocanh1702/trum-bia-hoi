@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage } from 'node:http';
 import type { OAuth2Client } from 'google-auth-library';
-import { validEnvelope, type Command, type DomainEvent } from '@tbh/engine';
+import { validEnvelope, loadConfig, menuReport, type Config, type Command, type DomainEvent, type WorldView } from '@tbh/engine';
 import { GameStore, type Snapshot } from './store';
 import { googleVerifier } from './google';
 
@@ -20,11 +20,16 @@ const commandFields = {
 } satisfies { [T in Command['type']]: readonly (keyof Extract<Command, { type: T }>)[] };
 const publicEvent = (event: DomainEvent) => ({ ...event, data: Object.fromEntries(Object.entries(event.data).filter(([key]) => key !== 'seed')) });
 /** Never ship replay RNG, generation seeds or a private config snapshot to a client. */
-function publicState(state: Snapshot) {
+function publicState(state: Snapshot, config: Config) {
   const { rng: _, nextId: __, events: ___, ...world } = state.world;
-  const { rushScheduleSeed: ____, ...shift } = world.shift ?? {};
-  const { seed: _____, ...daily } = world.daily ?? {};
-  return { world: { ...world, shift: world.shift ? shift : null, ...(world.daily ? { daily } : {}) },
+  const shift = world.shift && (({ rushScheduleSeed: _, ...visible }) => visible)(world.shift);
+  const daily = world.daily && (({ seed: _, ...visible }) => visible)(world.daily);
+  const view: WorldView = { ...world, shift, ...(daily ? { daily } : {}) };
+  const orders = new Set(world.tables.map(t => t.order?.id));
+  const presentation = state.world.events.filter(e => e.type === 'order_served' && orders.has(String(e.data.orderId)) || e.type === 'rush_ended' && e.data.shiftId === world.shift?.id);
+  const flyer = state.world.events.filter(e => e.type === 'flyer_ended').at(-1);
+  if (flyer) presentation.push(flyer);
+  return { world: view, presentation: presentation.map(publicEvent), menu: menuReport(state.world, config),
     configVersion: state.configVersion, serverNow: world.now, revision: state.revision, lastEventSeq: state.lastEventSeq };
 }
 async function json(req: IncomingMessage): Promise<unknown> {
@@ -52,6 +57,13 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
     return values[0]?.slice(cookieName.length + 1);
   };
   // ponytail: bounded process-local limiter; enforce at a shared edge before multi-host deployment.
+  const configs = new Map<string, Config>();
+  const configAt = (version: string) => {
+    let config = configs.get(version);
+    if (!config) { config = loadConfig(JSON.parse(store.configSnapshot(version))); configs.set(version, config); }
+    return config;
+  };
+  const present = (state: Snapshot) => publicState(state, configAt(state.configVersion));
   const requests = new Map<string, { until: number; count: number }>();
   const server = createServer({ maxHeaderSize: BODY_BYTES, requestTimeout: REQUEST_TIMEOUT_MS, headersTimeout: HEADER_TIMEOUT_MS }, async (req, res) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8'); res.setHeader('Cache-Control', 'no-store');
@@ -71,7 +83,7 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
       }
       if (!req.url?.startsWith('/') || req.url.startsWith('//')) throw new HttpError(400, 'invalidUrl');
       const route = new URL(req.url, options.origin), path = route.pathname;
-      if (route.search && path !== '/player/events') throw new HttpError(400, 'invalidQuery');
+      if (route.search && path !== '/player/events' && path !== '/player/config') throw new HttpError(400, 'invalidQuery');
       const token = credential(req);
       if (req.method === 'POST' && path === '/auth/session') {
         const body = await json(req); if (!record(body) || Object.keys(body).length) throw new HttpError(400, 'invalidBody');
@@ -104,22 +116,29 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
       if (req.method === 'POST' && path === '/player/connect') {
         if (!record(body) || Object.keys(body).some(k => k !== 'clientId') || body.clientId !== undefined && (typeof body.clientId !== 'string' || !body.clientId || body.clientId.length > 128)) throw new HttpError(400, 'invalidClient'); // config-exempt: transport identifier length bound
         const connected = store.connect(owner.playerId, body.clientId as string | undefined);
-        reply(200, { ...publicState(connected), clientId: connected.clientId, acknowledgedSeq: connected.acknowledgedSeq, heartbeatSeq: connected.heartbeatSeq }); return;
+        reply(200, { ...present(connected), clientId: connected.clientId, acknowledgedSeq: connected.acknowledgedSeq, heartbeatSeq: connected.heartbeatSeq }); return;
       }
       if (req.method === 'POST' && path === '/player/heartbeat') {
         if (!record(body) || Object.keys(body).some(k => !['clientId', 'beatSeq', 'active', 'paused'].includes(k)) ||
             typeof body.clientId !== 'string' || !Number.isSafeInteger(body.beatSeq) || typeof body.active !== 'boolean' || typeof body.paused !== 'boolean') throw new HttpError(400, 'invalidHeartbeat');
         const beat = store.heartbeat(token!, { clientId: body.clientId, beatSeq: Number(body.beatSeq), active: body.active, paused: body.paused });
-        reply(beat.error ? 409 : 200, { ...publicState(beat), clientId: beat.clientId, heartbeatSeq: beat.heartbeatSeq,
+        reply(beat.error ? 409 : 200, { ...present(beat), clientId: beat.clientId, heartbeatSeq: beat.heartbeatSeq,
           heartbeatUntil: beat.heartbeatUntil, heartbeatIntervalMs: beat.heartbeatIntervalMs, heartbeatTimeoutMs: beat.heartbeatTimeoutMs,
           duplicate: beat.duplicate, error: beat.error }); return;
       }
-      if (req.method === 'GET' && path === '/player/state') { reply(200, publicState(store.read(owner.playerId))); return; }
+      if (req.method === 'GET' && path === '/player/config') {
+        const version = route.searchParams.get('version');
+        if (route.searchParams.size !== 1 || !version || version.length > 128) throw new HttpError(400, 'invalidVersion'); // config-exempt: transport string bound
+        // The strict economy schema contains public game rules only; deployment credentials live outside it.
+        try { reply(200, configAt(version).raw); } catch { throw new HttpError(404, 'configMissing'); }
+        return;
+      }
+      if (req.method === 'GET' && path === '/player/state') { reply(200, present(store.read(owner.playerId))); return; }
       if (req.method === 'GET' && path === '/player/events') {
         const after = route.searchParams.get('after');
         if (route.searchParams.size !== 1 || after === null || !/^(0|[1-9]\d*)$/.test(after) || !Number.isSafeInteger(Number(after))) throw new HttpError(400, 'invalidCursor');
         const page = store.eventsAfter(owner.playerId, Number(after));
-        reply(200, { ...page, events: page.events.map(row => ({ ...row, event: publicEvent(row.event) })) }); return;
+        reply(200, { ...page, playerId: owner.playerId, events: page.events.map(row => ({ ...row, event: publicEvent(row.event) })) }); return;
       }
       if (req.method === 'POST' && path === '/player/command') {
         const envelope = record(body) ? { ...body, at: 0 } : undefined;
@@ -127,7 +146,7 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
             typeof body.clientId !== 'string' || !body.clientId || body.clientId.length > 128 || !Number.isSafeInteger(body.clientSeq) || Number(body.clientSeq) < 1 || !validEnvelope(envelope) || // config-exempt: transport identifier length bound
             Object.keys(envelope.command).some(k => k !== 'type' && !(commandFields[envelope.command.type] as readonly string[]).includes(k))) throw new HttpError(400, 'invalidCommand');
         const response = store.clientCommand(owner.playerId, { command: envelope.command, idempotencyKey: envelope.idempotencyKey, clientId: body.clientId, clientSeq: Number(body.clientSeq) }, token);
-        reply(response.error ? 409 : 200, { ...publicState(response), clientId: response.clientId, acknowledgedSeq: response.acknowledgedSeq, result: response.result, error: response.error }); return;
+        reply(response.error ? 409 : 200, { ...present(response), clientId: response.clientId, acknowledgedSeq: response.acknowledgedSeq, result: response.result, error: response.error }); return;
       }
       throw new HttpError(404, 'notFound');
     } catch (error) {

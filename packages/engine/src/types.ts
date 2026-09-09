@@ -89,6 +89,11 @@ export interface World {
     legacy: { earned: number; throughAt: number } };
   location: string; lifePath: number; unlocks: string[]; badges: string[];
 }
+/** Read-only consumers need no replay RNG, identifiers or private planning seeds. */
+export type WorldView = Omit<World, 'rng' | 'nextId' | 'events' | 'daily' | 'shift'> & {
+  daily?: Omit<DailyQuests, 'seed'>;
+  shift: Omit<Shift, 'rushScheduleSeed'> | null;
+};
 export type Command =
   | { type: 'startShift' }
   | { type: 'endShift' }

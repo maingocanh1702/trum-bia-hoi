@@ -374,3 +374,14 @@ actionable defect and independently passed9 SQLite/presence checks. Evidence:
 `.qa/m4-heartbeat-verification.json`. F23/M4 remains open for remote web and admin.
 
 | 2026-09-10 heartbeat verified |9f38166 full-range code/security review and final298tests pass. Required heartbeat applies from the first public command. No merge, push or deployment performed. |
+
+## Web projection delivery — 2026-09-10
+
+The web adapter now uses this API by default through a same-origin `/api` proxy.
+Authenticated `GET /player/config?version=...` returns a registered strict public economy
+schema; deployment credentials are outside it. Snapshots include server-computed `menu`
+and bounded `presentation` events for current table reactions/rushes/latest flyer report.
+`GET /player/events` now also returns `playerId` for response/account binding. No private
+RNG/checkpoint/world event archive is added to snapshots. See `../web/README.md`.
+
+| 2026-09-10 web projection | Added pinned config/presentation/report delivery and event-page owner binding for actual web cutover. Verification/review in progress; no public local upload or admin endpoint added. |

@@ -1,8 +1,8 @@
 import type { Config } from './config';
-import type { World } from './types';
+import type { WorldView } from './types';
 
 /** Beer already on a tray lives outside the tank, so a large table can assemble across batches. */
-export function beerStatus(w: World, c: Config) {
+export function beerStatus(w: WorldView, c: Config) {
   const keg = c.values.upgrades.keg, level = w.equipment.keg - 1;
   const reserved = w.tables.filter(t => t.order && ['pending', 'grace'].includes(t.order.state))
     .flatMap(t => t.order!.items).filter(i => i.dish === 'bia' && i.glassId && ['preparing', 'ready'].includes(i.state)).length;
@@ -16,7 +16,7 @@ export function beerStatus(w: World, c: Config) {
     progress: batch ? Math.min(1, Math.max(0, (w.now - batch.startedAt) / (batch.readyAt - batch.startedAt))) : 0 };
 }
 
-export function washerStatus(w: World, c: Config) {
+export function washerStatus(w: WorldView, c: Config) {
   const washing = w.glasses.filter(g => g.state === 'washing'), first = washing[0];
   return { clean: w.glasses.filter(g => g.state === 'clean').length, capacity: w.glasses.length,
     queued: w.glasses.filter(g => g.state === 'dirty').length, busy: washing.length,

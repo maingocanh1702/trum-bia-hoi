@@ -379,3 +379,26 @@ No public upload or M9 history optimization is included.
 | 2026-09-10 admission tightened | All public cookie-authenticated commands, including the first startShift, require a live session-bound heartbeat. Internal legacy adapters remain separate. Updated HTTP clients test real heartbeat and pause protocol; no compatibility exception in the public action route. |
 
 | 2026-09-10 heartbeat verified | Final `9f38166` passes config/build/typecheck and298 engine/server tests;19 final HTTP/presence checks pass. Full-range native review found no actionable defect;9 non-socket presence checks independently pass. `.qa/m4-heartbeat-verification.json`. Mandatory public heartbeat, durable timeout/restart and hidden/menu recovery implemented; web outbox/authority/reconnect UI and registry/admin remain open. |
+
+## Web authority and reconnect adapter — 2026-09-10
+
+Normal web startup now renders server `WorldView` and never runs Game.command/advance.
+The authenticated `/player/config?version=...` returns the strict public economy schema
+for that immutable version; HTTP state/command/heartbeat include server-computed menu
+report and bounded presentation events. Realtime event pages carry player identity and
+a cursor distinct from presentation/history. Private world RNG/nextId/planning seeds
+stay omitted. Config credentials and admin permissions do not belong in economy JSON.
+
+The browser's native Web Lock owns one durable localStorage command journal. Capacity
+uses `network.commandBufferMax`; persistence precedes sending; keys/sequences survive
+lost replies/reload and are only removed on explicit acknowledgement. Cookie/account
+mismatch, corrupt journal and storage failure retain data and stop mutation. Heartbeats
+use fresh monotonic sequence plus actual active/paused flags before queued actions.
+The configured detection deadline changes edge status even on hung fetch; no simulation
+continues on client time. Server normal closing after grace remains authoritative.
+
+Legacy local archive continuation is explicit, separate from online play, while the
+owner-deferred public upload/review flow remains absent. No automatic blank replacement
+or local credit into competitive state. See `apps/web/README.md` for startup and tests.
+
+| 2026-09-10 web cutover implementation |298server/engine +91legacy browser +7remote scenarios pass; final hidden presence/sim/review in progress. Registry/admin, real Google and import/eligibility UI remain open; no full M4 closure yet. |

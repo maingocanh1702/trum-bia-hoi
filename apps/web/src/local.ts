@@ -1,4 +1,4 @@
-import { config, isEconomy2, Game, decodeSave, type Command, type DomainEvent, type Result } from '../../../packages/engine/src';
+import { config, isEconomy2, Game, decodeSave, type Command, type DomainEvent, type Result, type WorldView, type Config } from '../../../packages/engine/src';
 import type { Locale } from './i18n';
 import { BrowserSave } from './browser-save';
 
@@ -55,7 +55,7 @@ export function download(text: string, name: string): void {
   const link = document.createElement('a'); link.href = url; link.download = name; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000); // config-exempt: browser download lifetime
 }
-export function advanceGuide(settings: Settings, game: Game, events: DomainEvent[], uiEvent?: string): void {
+export function advanceGuide(settings: Settings, game: { world: WorldView; config: Config }, events: DomainEvent[], uiEvent?: string): void {
   const c = game.config.values.onboarding;
   if (!c.enabled) return;
   for (const e of [...events, ...(uiEvent ? [{ type: uiEvent, data: {}, at: game.world.now }] : [])]) {

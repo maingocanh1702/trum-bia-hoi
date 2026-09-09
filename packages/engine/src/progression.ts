@@ -1,9 +1,9 @@
 import { DISHES, EQUIPMENT, parseProgressRequirement, type BusinessUnlock, type Config, type Dish, type ProgressRequirement } from './config';
 import { stockGiftQuote } from './rules';
-import type { World } from './types';
+import type { WorldView } from './types';
 
 export interface RequirementStatus { kind: 'lifetime' | ProgressRequirement['kind']; met: boolean; have?: number; need?: number; target?: string }
-export function requirementStatus(w: World, c: Config, token: string): RequirementStatus {
+export function requirementStatus(w: WorldView, c: Config, token: string): RequirementStatus {
   const r = parseProgressRequirement(token, c.values);
   if (r.kind === 'owned') return { kind: r.kind, target: r.target, met: r.target === 'dog' ? w.dogLevel > 0 : w.unlocks.includes(r.target) };
   if (r.kind === 'peak') return { kind: r.kind, target: r.target, met: c.values.league.tiers.findIndex(t => t.id === w.peakLeague) >= c.values.league.tiers.findIndex(t => t.id === r.target) };
@@ -12,7 +12,7 @@ export function requirementStatus(w: World, c: Config, token: string): Requireme
   return { kind: r.kind, have, need: r.need, met: r.exact ? have === r.need : have >= r.need };
 }
 /** Reached milestones stay reached; unclaimed rewards never hold feature access back. */
-export function lifePathStatus(w: World, c: Config) {
+export function lifePathStatus(w: WorldView, c: Config) {
   let level = w.lifePath;
   const rows = c.values.lifePath.map((definition, index) => {
     const requirements: RequirementStatus[] = [
@@ -25,13 +25,13 @@ export function lifePathStatus(w: World, c: Config) {
   });
   return { level, rows };
 }
-export function unlockQuote(w: World, c: Config, item: BusinessUnlock) {
+export function unlockQuote(w: WorldView, c: Config, item: BusinessUnlock) {
   const definition = c.values.unlocks[item];
   const requirements = [definition.gate].flat().map(token => requirementStatus(w, c, token));
   const owned = w.unlocks.includes(item), cost = definition.priceBase;
   return { owned, cost, requirements, ok: !owned && w.coins >= cost && requirements.every(r => r.met) };
 }
-export function lifePathRewardQuote(w: World, c: Config, level: number) {
+export function lifePathRewardQuote(w: WorldView, c: Config, level: number) {
   const row = c.values.lifePath[level];
   if (!row || level <= 0 || level > w.lifePath || w.claimedLifePaths.includes(level)) return null;
   const stock: Partial<Record<Dish, number>> = {};

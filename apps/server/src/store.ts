@@ -277,7 +277,7 @@ export class GameStore {
         commandSeq: archive.log.length, eventSeq: archive.world.events.length, review: 'pending', token: nextToken, expiresAt: current.expiresAt };
     } catch (error) { if (this.db.isTransaction) this.db.exec('ROLLBACK'); throw error; }
   }
-  private configSnapshot(version: string): string {
+  configSnapshot(version: string): string {
     const row = this.db.prepare('SELECT snapshot FROM configs WHERE version=?').get(version);
     if (!row) throw Error('store:configMissing');
     return String(row.snapshot);

@@ -1,9 +1,9 @@
 import { isEconomy2, type Config } from './config';
-import type { World } from './types';
+import type { WorldView } from './types';
 import { dishUnlocked } from './rules';
 
 /** Read the existing prep pipeline; pending jobs have no promised completion time. */
-export function kitchenStatus(w: World, c: Config) {
+export function kitchenStatus(w: WorldView, c: Config) {
   const level = w.equipment.kitchen, slots = c.values.upgrades.kitchen.slots[level];
   const jobs = w.tables.flatMap((table, index) => {
     const order = table.order;

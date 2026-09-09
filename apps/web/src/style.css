@@ -254,3 +254,9 @@ progress::-webkit-progress-value { background: var(--beerAmber); border-radius: 
 .season-history { list-style: none; padding: 0; }
 .season-history li { display: flex; flex-direction: column; gap: 6px; padding: 14px 0; border-bottom: 1px solid var(--panelBorder); }
 .season-history span { font-size: 13px; color: var(--creamMuted); }
+
+/* Connectivity stays at the edge; the yard remains visible during reconnection. */
+.network-status { position: absolute; z-index: 8; top: 16%; left: 3%; max-width: 74%; display: flex; gap: .5rem; flex-wrap: wrap; padding: .4rem .7rem; border-radius: 1rem; color: #fff4d9; background: #234d42; box-shadow: 0 2px 4px #1238; font-size: .75rem; }
+.network-status.is-online:not(:has(strong)) { opacity: .65; }
+.network-status.is-reconnecting, .network-status.is-connecting { background: #694c21; }
+.network-status.is-conflict, .network-status.is-storage, .network-status.is-invalidSession { background: #852e25; }
