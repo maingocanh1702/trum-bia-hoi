@@ -168,6 +168,37 @@ test('schema7 migration seeds once while preserving actual prior career history 
   assert.equal(f.open(loadConfig(raw)).createPlayer('next', 43).configVersion, config.version);
 });
 
+test('changing publishers cannot bypass the daily limit for one proposal author', t => {
+  const f = fixture(t), author = f.actor('economy', 'one-author');
+  for (let n = 0; n < 5; n++) {
+    const d = f.draft(raw => { raw.menu.bia.price++; }, author); f.registry.approve(author, d.version);
+    const pub = f.registry.publish(f.actor('economy', `publisher-${n}`), d.version);
+    assert.equal(pub.changed_by, author.subject);
+  }
+  const blocked = f.draft(raw => { raw.menu.bia.price++; }, author); f.registry.approve(author, blocked.version);
+  const before = f.registry.latest();
+  assert.throws(() => f.registry.publish(f.actor('economy', 'fresh-publisher'), blocked.version), /rateLimited/);
+  assert.deepEqual(f.registry.latest(), before);
+  const last = JSON.parse(String(f.db.prepare("SELECT payload FROM registry_audit WHERE type='ConfigPublished' ORDER BY seq DESC LIMIT 1").get()!.payload));
+  assert.equal(last.changedBy, author.subject); assert.equal(last.publishedBy, 'publisher-4');
+});
+
+test('valid-schema catalog renames cannot strand existing careers behind an incompatible opening config', t => {
+  const f = fixture(t); f.store.createPlayer('existing', 42);
+  for (const edit of [
+    (r: Config['raw']) => { r.league.tiers[0].id = 'renamed-tier'; },
+    (r: Config['raw']) => { r.locations.list.at(-1)!.id = 'renamed-location'; },
+  ]) {
+    const snapshot = structuredClone(config.raw); edit(snapshot); loadConfig(snapshot);
+    assert.throws(() => f.registry.propose(f.actor('super'), { key: crypto.randomUUID(), baseVersion: config.version, snapshot, reason: 'Catalog rename' }), /identityMigrationRequired/);
+  }
+  // Life Path identifiers are already protected by the shared schema validator.
+  assert.throws(() => f.draft(raw => { raw.lifePath[0].id = 'renamed-path'; }, f.actor('super')), /config:lifePathOrder/);
+  assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM registry_proposals').get()!.n, 0);
+  const opened = f.store.command('existing', { idempotencyKey: 'still-openable', command: { type: 'startShift' } });
+  assert.ok(opened.result.ok); assert.equal(opened.world.shift!.configVersion, config.version);
+});
+
 test('a newly published shorter heartbeat re-arms the real HTTP scheduler without repricing existing players', async t => {
   const f = fixture(t), server = createGameServer(f.store, { origin: 'http://127.0.0.1:5174', sessionTtlMs: 86400000, rateMax: 1000, rateWindowMs: 60000 });
   await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));

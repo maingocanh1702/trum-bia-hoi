@@ -136,6 +136,10 @@ export class ConfigRegistry {
       const seedVersion = this.db.prepare('SELECT version FROM registry_publications ORDER BY seq LIMIT 1').get()!.version;
       const seed = this.config(String(seedVersion));
       if (original.values.shift.dayRollover.tz !== seed.values.shift.dayRollover.tz || original.values.k.value < seed.values.k.band[0] || original.values.k.value > seed.values.k.band[1]) throw Error('registry:bindingRange');
+      const identities = (c: Config) => [c.raw.league.tiers.map(t => t.id),
+        c.raw.locations.list.map(l => l.id).sort(), c.raw.locations.fallback];
+      // These identifiers are persisted in careers. Tuning numbers cannot migrate their meaning.
+      if (!isDeepStrictEqual(identities(seed), identities(original))) throw Error('registry:identityMigrationRequired');
       const metadata = (c: Config) => ({ ...c.raw._meta, version: '', date: '' });
       if (!isDeepStrictEqual(metadata(base), metadata(original))) throw Error('registry:metadataImmutable');
       const keys = changedPaths(base.raw, original.raw).filter(k => !under(k, '_meta')).sort();
@@ -185,9 +189,9 @@ export class ConfigRegistry {
       const at = scheduledAt(now, draft.effective, policy, base);
       if (at < latest.effective_at) throw Error('registry:scheduleConflict');
       const today = activation(now, 'next_day', base) - DAY_MS;
-      const count = Number(this.db.prepare('SELECT COUNT(*) AS n FROM registry_publications WHERE changed_by=? AND published_at>=?').get(actor.subject, today)!.n);
+      const count = Number(this.db.prepare('SELECT COUNT(*) AS n FROM registry_publications WHERE changed_by=? AND published_at>=?').get(draft.changed_by, today)!.n);
       if (count >= PUBLISH_PER_DAY) throw Error('registry:rateLimited');
-      this.db.prepare('INSERT INTO registry_publications VALUES (NULL,?,?,?,?,?)').run(version, at, now, actor.subject, String(approval.approved_by));
+      this.db.prepare('INSERT INTO registry_publications VALUES (NULL,?,?,?,?,?)').run(version, at, now, draft.changed_by, String(approval.approved_by));
       this.audit('ConfigPublished', { version, keys: JSON.parse(draft.keys), effectiveAt: draft.effective, activatesAt: at,
         changedBy: draft.changed_by, publishedBy: actor.subject, approvedBy: approval.approved_by, reason: draft.reason,
         rollbackVersion: this.rollbackSource(loadConfig(JSON.parse(JSON.parse(draft.fingerprint).config)), draft.base_version), at: now });

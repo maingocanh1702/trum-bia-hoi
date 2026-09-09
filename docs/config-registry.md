@@ -9,11 +9,11 @@ editor, impact forecasts and emergency review. Public archive upload remains def
 | Interaction | Decision |
 |---|---|
 | Startup/restart | Import the seed once. A new constructor seed never activates itself over an existing registry. Existing exact config snapshots remain append-only for replay. |
-| Draft/import | Validate the complete snapshot with the shared loader. Governance/metadata and prototype-only values cannot be edited. Compare actual changed paths; the most restrictive matching JSON tier wins. |
+| Draft/import | Validate the complete snapshot with the shared loader. Governance/metadata and prototype-only values cannot be edited. League/Life Path/location IDs and the lease fallback retain their persisted meanings; renaming requires an explicit career migration, not balance tuning. Compare actual changed paths; the most restrictive matching JSON tier wins. |
 | Tier A | Economy proposes; legal/money/feature flags require Super. Distinct Super approves. No self-approval, including Super proposing. |
 | Tier B/C | Economy/Game respectively (or Super), single approval. Support/Viewer cannot mutate. |
 | Identity boundary | Core accepts only a trusted server-authenticated actor, never HTTP role/subject fields. Super/Game require MFA; sessions expire. No admin endpoint is exposed by this slice. |
-| Publish | Approved exact snapshot, current published base, atomic config/audit/publication. Exact retries return the original publication. Per-admin daily abuse limit persists. |
+| Publish | Approved exact snapshot, current published base, atomic config/audit/publication. Exact retries return the original publication. Daily change limit is charged to the proposal author; changing the publisher cannot reset it. Audit records both author and publisher. |
 | Schedule | Default A next VN day; league/Life Path/ledgers next common season boundary. B next shift except risk/locations next day; C immediate. Explicit delay may be later, never earlier. |
 | Queued versions | Default versions form one optimistic-concurrency chain. Stale base or activation before its predecessor is rejected; rebase the draft explicitly. |
 | Active shift/retry | Select registry only at creation/opening. Engine owns per-shift pins; replay and repeated commands retain original results/configs. Publishing never rewrites a running world. |
@@ -29,3 +29,4 @@ No new gameplay numbers, seed changes, engine formulas or performance work in th
 | Date | Change |
 |---|---|
 | 2026-09-10 | Default registry contract and explicit remaining M4 work; implementation started. |
+| 2026-09-10 correction | Review found publisher rotation bypassed the author's daily limit; attribution/count now use the author. An independent author probe found schema-valid catalog renames could block old careers; such changes now require a migration. Regression cases added; verification/review pending. |
