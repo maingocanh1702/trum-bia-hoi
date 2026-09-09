@@ -28,6 +28,7 @@ export class BrowserSave {
   private replacing = false;
   private legacy: string | null = null;
   recoveryText: string | null = null;
+  private snapshot: unknown = null;
   private constructor(private db: IDBDatabase) { db.onversionchange = () => db.close(); }
   static async open() {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
@@ -40,7 +41,8 @@ export class BrowserSave {
     });
     return new BrowserSave(db);
   }
-  close() { this.db.close(); }
+  close() { this.db.close(); this.snapshot = null; }
+  markCorrupt() { if (this.snapshot !== null) this.recoveryText = JSON.stringify(this.snapshot); }
   async read(): Promise<string | null> {
     if (this.game) throw Error('storage:writerAlreadyLoaded');
     const tx = this.db.transaction(['head', 'commands', 'events'], 'readonly'), done = complete(tx);
@@ -49,13 +51,14 @@ export class BrowserSave {
     const events = request<unknown[][]>(tx.objectStore('events').getAll()), eventKeys = request(tx.objectStore('events').getAllKeys());
     const [h, cs, ck, es, ek] = await Promise.all([head, commands, commandKeys, events, eventKeys, done]);
     this.head = h ?? null;
+    this.snapshot = h === undefined && !cs.length && !es.length ? null : { format: 'tbh.indexeddb-backup.v1', head: h ?? null, commandKeys: ck, commands: cs, eventKeys: ek, events: es };
     try {
       if (h === undefined) { if (cs.length || es.length) throw Error('storage:corrupt'); return null; }
       if (!(typeof h.revision === 'number' && Number.isSafeInteger(h.revision) && h.revision > 0) && !(typeof h.revision === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(h.revision))) throw Error('storage:corrupt');
       return JSON.stringify({ ...h.metadata, log: unpack(ck, cs, h.commands), events: unpack(ek, es, h.events), now: h.now });
     } catch {
       // Keep all surviving raw rows before exposing recovery; this is forensic data, not a trusted game.
-      this.recoveryText = JSON.stringify({ format: 'tbh.indexeddb-backup.v1', head: h ?? null, commandKeys: ck, commands: cs, eventKeys: ek, events: es });
+      this.markCorrupt();
       throw Error('storage:corrupt');
     }
   }
@@ -102,7 +105,7 @@ export class BrowserSave {
       } catch (error) { failure = error; tx.abort(); }
     };
     try { await done; } catch (error) { throw failure ?? error; }
-    this.head = next; this.legacy = null; this.recoveryText = null;
+    this.head = next; this.legacy = null; this.recoveryText = null; this.snapshot = null;
   }
 }
 

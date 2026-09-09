@@ -52,7 +52,7 @@ test('switching from upgrades to equipment stays paused and reloading preserves 
   await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click(); await page.clock.runFor(1000); const before = await snapshot();
   await page.locator('.kitchen-entry').click(); await expect(page.getByRole('dialog', { name: 'Bếp', exact: true })).toBeVisible();
   await page.clock.runFor(40000); const nested = await snapshot(); expect(nested.paused).toBe(true); expect(nested.remaining).toBe(before.remaining);
-  await waitSaved(page); await page.reload(); await page.clock.runFor(1000); const after = await snapshot();
+  await waitSaved(page); await page.reload(); await waitSaved(page); await page.clock.runFor(1000); const after = await snapshot();
   expect(after.active).toBe(true); expect(after.expired).toBe(0); expect(after.remaining).toBe(before.remaining - 1000);
   await expect(page.locator('.sheet[open]')).toHaveCount(0);
 });

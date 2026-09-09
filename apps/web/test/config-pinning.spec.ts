@@ -18,7 +18,7 @@ test('a mixed-config save imports through recovery, preserves its backup and con
   const before = decode(await snapshot()); expect(before.version).toBe(f.version); expect(before.world.coins).toBe(f.coins);
   expect(before.world.shift!.endsAt - before.world.shift!.startedAt - before.world.shift!.pausedMs).toBe(f.duration);
   expect((await readBackups(page)).includes('{broken')).toBe(true);
-  await waitSaved(page); await page.reload(); await page.clock.runFor(1100);
+  await waitSaved(page); await page.reload(); await waitSaved(page); await page.clock.runFor(1100);
   const after = decode(await snapshot()); expect(after.version).toBe(f.version); expect(after.world.coins).toBe(f.coins);
   expect(after.world.events.filter((e: { type: string }) => e.type === 'config_pinned')).toHaveLength(1);
   expect(after.world.events.filter((e: { type: string }) => e.type === 'customer_served')).toEqual(before.world.events.filter((e: { type: string }) => e.type === 'customer_served'));

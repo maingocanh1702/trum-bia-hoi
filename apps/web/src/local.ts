@@ -33,7 +33,8 @@ export async function boot(): Promise<BootSession> {
     return { game, storage, original: null, error: null };
   } catch (error) {
     let legacy: string | null = null;
-    if (storage?.recoveryText !== null && storage?.recoveryText !== undefined) {
+    if (failure === 'corrupt') storage?.markCorrupt();
+    if (storage?.recoveryText != null) {
       failure = 'corrupt'; original = storage.recoveryText;
       try { legacy = localStorage.getItem(SAVE_KEY); } catch { /* IndexedDB recovery is still available. */ }
     }

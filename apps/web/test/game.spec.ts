@@ -8,7 +8,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
     await page.setViewportSize(viewport);
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.clock.install({ time: new Date('2026-09-08T10:00:00Z') });
+    await page.clock.pauseAt(new Date('2026-09-08T10:00:00Z'));
     await page.goto('/');
     await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
     await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();

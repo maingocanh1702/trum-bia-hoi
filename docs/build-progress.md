@@ -1970,3 +1970,18 @@ cancelling reload keeps the completed beer batch, then successful save/reload re
 Test-only HMR is disabled after traces proved dev websocket disconnect/reconnect
 navigated controlled-clock tests. Machine-sleep timeouts are retained as failed runs;
 no timeout or gameplay assertion was relaxed. Final checks/review are in progress.
+
+### Decode-corruption correction and host limitation — 2026-09-10
+
+Second native review accepted structural recovery/pending reload and found two
+remaining issues: decode-level failures omitted raw snapshot/legacy export, and
+reload-clock tests could advance before async boot. Both are corrected through
+one retained raw read snapshot and loaded-game waits. Metadata, frontier, command
+and event corruption join structural cases in the same recovery test. The normal
+read snapshot is released after commit/close; autosave still writes deltas only.
+Playwright dev WebSocket is disabled in addition to HMR; normal dev is unchanged.
+
+Current full91-case run passed86 and hit5timeouts during confirmed Clamshell Sleep.
+This is not a passing full-suite receipt. Owner was asked to open the lid for the
+remaining browser verification. Do not relax test timeouts or claim the final build
+fully verified before the rerun. Native correction review remains to be completed.

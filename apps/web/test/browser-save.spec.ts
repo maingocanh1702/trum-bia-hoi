@@ -112,7 +112,7 @@ test('a real three-day career larger than localStorage survives IndexedDB close 
   expect(result).toMatchObject({ exact: true, continued: true, shifts: 24 });
 });
 
-for (const damage of ['missing chunk', 'invalid revision']) test(`${damage} exposes recovery and preserves raw rows before importing the legacy archive`, async ({ page }) => {
+for (const damage of ['missing chunk', 'invalid revision', 'invalid frontier', 'invalid command', 'invalid event', 'invalid metadata']) test(`${damage} exposes recovery and preserves raw rows before importing the legacy archive`, async ({ page }) => {
   const legacy = await page.evaluate(async damage => {
     const path = '/test/fixtures/browser-save.ts';
     const { BrowserSave, Game, encodeSave } = await import(path) as typeof import('./fixtures/browser-save');
@@ -121,9 +121,12 @@ for (const damage of ['missing chunk', 'invalid revision']) test(`${damage} expo
     await store.save(game); store.close(); const legacy = encodeSave(new Game(undefined, 99)); localStorage.setItem('tbh.save.v1', legacy);
     await new Promise<void>((resolve, reject) => {
       const open = indexedDB.open('tbh.career.v1'); open.onsuccess = () => {
-        const db = open.result, tx = db.transaction(['head', 'events'], 'readwrite');
+        const db = open.result, tx = db.transaction(['head', 'commands', 'events'], 'readwrite');
         if (damage === 'missing chunk') tx.objectStore('events').delete(0);
-        else { const row = tx.objectStore('head').get('current'); row.onsuccess = () => tx.objectStore('head').put({ ...row.result, revision: -3 }, 'current'); }
+        else if (damage === 'invalid command' || damage === 'invalid event') {
+          const name = damage === 'invalid command' ? 'commands' : 'events', row = tx.objectStore(name).get(0);
+          row.onsuccess = () => { const rows = row.result; if (name === 'commands') rows[0].result = { ok: false }; else rows[0].type = 'invalid'; tx.objectStore(name).put(rows, 0); };
+        } else { const row = tx.objectStore('head').get('current'); row.onsuccess = () => tx.objectStore('head').put({ ...row.result, ...(damage === 'invalid revision' ? { revision: -3 } : damage === 'invalid frontier' ? { now: 'invalid' } : { metadata: {} }) }, 'current'); }
         tx.oncomplete = () => { db.close(); resolve(); }; tx.onabort = () => reject(tx.error);
       };
     });
@@ -140,6 +143,7 @@ for (const damage of ['missing chunk', 'invalid revision']) test(`${damage} expo
   expect(backups).toHaveLength(1); expect(backups[0].format).toBe('tbh.indexeddb-backup.v1');
   expect(backups[0].commands[0][0].idempotencyKey).toBe('original-start');
   if (damage === 'invalid revision') expect(backups[0].head.revision).toBe(-3);
-  else expect(backups[0].eventKeys).toEqual([]);
+  else if (damage === 'missing chunk') expect(backups[0].eventKeys).toEqual([]);
+  else if (damage === 'invalid frontier') expect(backups[0].head.now).toBe('invalid');
   expect(JSON.parse(await readSave(page)).seed).toBe(99);
 });
