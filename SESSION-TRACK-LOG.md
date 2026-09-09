@@ -5,6 +5,20 @@
 
 ---
 
+## 🧭 Web server authority verified; registry/admin next — 2026-09-10
+
+Product936e9d5 (base8e25c19, foundation60f9090) defaults new online play to server
+snapshots, pinned config and reports. Durable ordered retry survives response loss,
+offline/reload and current menu presence. Local archives remain separate and preserved;
+corrupt archives retain forensic download/import/reset. Returning online yard stays visible.
+298engine/server +91legacy/10remote browser, config/build (zero warnings),10ordinary
+kcohorts2.4186–2.8738 and15rush PASS. Full-base review P1 recovery finding fixed;
+independent correction review CLEAN. Evidence: `.qa/m4-web-verification.json`.
+Closure: M0 COMPLETE; M4 now10/18 criteria PASS, still OPEN; M1–M3/M5 remain OPEN.
+Next: protected registry/admin BRD§5.2, then remaining account/eligibility/locale gaps,
+M6→M7→M8→M9. ClientID absent; local credit needs approval; no public upload/M9 tuning.
+Original checkout/owner5174 untouched. No merge/push/deploy. Full-game goal stays active.
+
 ## 🧭 Web server cutover implemented; independent review next — 2026-09-10
 
 Base8e25c19. Web defaults to server authority with a native-lock single-writer journal,

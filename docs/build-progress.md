@@ -6,11 +6,11 @@ complete-game goal; milestones below are implementation order, not scope cuts.
 
 | Milestone | Status | Evidence / remaining |
 |---|---|---|
-| M0 — config, pure engine, deterministic replay, k sim, workspaces | COMPLETE — exit criteria PASS | Config/schema + workspaces + pure engine + replay + actual 5-seed k sim; 27 unit checks pass; review evidence below |
+| M0 — config, pure engine, deterministic replay, k sim, workspaces | COMPLETE — exit criteria PASS | All3exit criteria PASS: current config/build/298tests,5seeds×2profiles k2.4186–2.8738; reviewed foundation/checkpoint/web. |
 | M1 — serve loop, glasses, stock, upgrades, local save, spatial UI, core audio | In progress | Playable loop, local save/replay, stock/equipment/table UI, core SFX wired; final sprites and listening QA pending |
 | M2 — guest, vi/en, onboarding | In progress | Local guest + matching vi/en keys + event-driven guide with skip/repeat cap; Google account linking and 5-person evidence pending |
 | M3 — full menu, customer mix, weather, rush, business unlocks | In progress | 6 menu entries and hot prep, 5 seated types, 5 weather states, basic scheduled rush. Local phone/QR progression reviewed; shipper local reviewed CLEAN at307a3b0. Football, remaining business upgrades and exhaustive balance/edge QA remain |
-| M4 — server authority, accounts, reconnect, config registry/admin | In progress | Config pinning/savev3, SQLite event store and guest HTTP verified locally; Google/claim/registry/admin/reconnect and web cutover remain |
+| M4 — server authority, accounts, reconnect, config registry/admin | In progress | 10/18 exit criteria PASS; web server authority/pinned config/outbox/reconnect verified936e9d5. Registry/admin and integrated account/import/eligibility/locale remain. |
 | M5 — seasons, leaderboard/shrine, life path, leases, quests/referrals | In progress | Local LP/quests/attendance and lease calendar/UI implemented; season/peak/referrals/social and full acceptance remain |
 | M6 — risks, dog, emergency supplies | Pending | |
 | M7 — voluntary donations, cosmetic gifts, age notice | Pending | |
@@ -21,7 +21,7 @@ Current milestone closure (2026-09-10): **M0 COMPLETE; M1–M5 OPEN**. Every ROA
 exit criterion is evaluated in [M0–M5 closure report](milestone-closure-m0-m5.md).
 Verified engine sub-rules, missing implementation and missing human/UI evidence are
 separate. Feature rows span milestones; their count is not milestone completion.
-Owner queue: M4 web server authority/reconnect/registry-admin → M6 → M7 → M8 → M9.
+Owner queue: remaining M4 registry/admin/account acceptance → M6 → M7 → M8 → M9.
 No additional M5 breadth or history-volume tuning before those dependencies.
 
 ## Decisions and boundaries
@@ -58,20 +58,16 @@ No complete-game or release-ready claim. Further implementation stays in this wo
 
 ## Immediate next work
 
-1. Complete M1/M3 rule gaps: segment/day caps, individual reputation ejection,
-   business-unlock prerequisites, larger-table price rows beyond the existing 10-seat curve,
-   full rush schedule, shipper/football demand and business unlocks. Version new
-   replay semantics; preserve the current mixed-round/patience/midnight regressions.
-2. Finish the 14 illustrated drafts, replace 30 remaining sprite placeholders and
-   complete the 75-event audio set with listening QA. The current 32 clips are
-   original synthesis drafts; final export/performance/family polish remains.
-3. Add server SaveStore/authority + Google linking/reconnect and Config Registry with
-   real role/approval/schedule/override handling. Keep the existing log/config pinning.
-4. Continue all meta, risk, event and release rows above; preserve legal/content holds.
+1. M4 protected Config Registry/admin per BRD§5.2, effectiveAt and exact version pinning.
+2. Complete account/eligibility/locale acceptance without fabricating Google setup or
+   approving local competitive credit automatically; public upload stays owner-deferred.
+3. M6 → M7 → M8 → M9. Preserve verified service/batch/pause/upgrade behavior and current
+   server/outbox authority; no extra M5 breadth or80MB tuning before dependencies.
 
 ## Known implementation limits
 
-- Local runtime only; settings Config screen is a snapshot viewer, not an admin editor.
+- Normal new-career web uses server authority; explicit legacy local play remains separate.
+  Settings Config screen is a snapshot viewer, not an admin editor.
 - No Google credentials, live rankings, bank receiving details, remote deployment or
   human playtest evidence have been configured or fabricated.
 - Earning is credited at service time (08-SPEC §9 per-earn); later table cleanup does
@@ -2181,3 +2177,9 @@ choice protects existing progress while public upload is deferred.298unit/server
 browser and7remote scenarios pass; final hidden/menu check, sim and review in progress.
 M4 remains open for registry/admin and integrated account/import/eligibility. Next work is
 registry/admin, followed by M6–M9. Full game goal remains unchanged.
+
+Final web cutover936e9d5:298engine/server +91legacy/10remote browser, config/build with
+zero literal warnings,10ordinary kcohorts2.4186–2.8738 and15rush PASS. Full review
+found a local corrupt-save recovery regression; corrected and independently reviewed
+CLEAN. M4 now10/18criteria PASS but remains OPEN. Receipt `.qa/m4-web-verification.json`;
+next protected registry/admin, then remaining M4 acceptance and M6–M9.

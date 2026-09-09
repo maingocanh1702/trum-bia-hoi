@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-10 04:58 · **Branch hiện tại:** `codex/game-build-isolated`
+> **Cập nhật:** 2026-09-10 05:29 · **Branch hiện tại:** `codex/game-build-isolated`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -191,7 +191,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 1
-- **Notes:** Guest local + vi/en + backup/replay v1–v3 + import/reset giữ bản cũ đã có; M4 guest-cookie auth backend đã qua kiểm tra/review; chủ dự án chưa có Google Client ID (09/09), hướng dẫn ở docs/google-signin-setup.md. Verifier Google917f862 đã qua review,255engine/server tests/config/build;5ca dùng chữ ký/chứng thư thật. Owner chốt lịch sử local phải duyệt trước khi tính BXH. Schema4 account/nonce/audit và Google HTTP đã có,264tests/config/build/CLI smoke qua; review độc lập ebe820c không tìm thấy lỗi mới, tự chạy6storechecks qua. Core nhập local một lần, gzip giữ bản gốc và provenance chờ duyệt đã có;271tests/config/build +80MB probe qua; native review51a0734 không tìm thấy lỗi mới. HTTP upload/approval/cloud UI và live Google chưa hoàn tất. Schema6 checkpoint giảm cold read80MB29,36s→2,23s;281tests/config/build,10kcohorts/15rush qua; reviewf86e2b3 không có lỗi mới và tự chạy17tests qua. Theo owner, upload/tuning tiếp theo sang M9; ưu tiên closure M0–M5 rồi M4 web/reconnect/admin.
+- **Notes:** Guest local + vi/en + backup/replay v1–v3 + import/reset giữ bản cũ đã có; M4 guest-cookie auth backend đã qua kiểm tra/review; chủ dự án chưa có Google Client ID (09/09), hướng dẫn ở docs/google-signin-setup.md. Verifier Google917f862 đã qua review,255engine/server tests/config/build;5ca dùng chữ ký/chứng thư thật. Owner chốt lịch sử local phải duyệt trước khi tính BXH. Schema4 account/nonce/audit và Google HTTP đã có,264tests/config/build/CLI smoke qua; review độc lập ebe820c không tìm thấy lỗi mới, tự chạy6storechecks qua. Core nhập local một lần, gzip giữ bản gốc và provenance chờ duyệt đã có;271tests/config/build +80MB probe qua; native review51a0734 không tìm thấy lỗi mới. HTTP upload/approval/cloud UI và live Google chưa hoàn tất. Schema6 checkpoint giảm cold read80MB29,36s→2,23s;281tests/config/build,10kcohorts/15rush qua; reviewf86e2b3 không có lỗi mới và tự chạy17tests qua. Theo owner, upload/tuning tiếp theo sang M9; Web936e9d5 đã dùng server; local lỗi vẫn có tải gốc/import/reset với backup nguyên bản. Registry/admin và account/import/eligibility UI là phần M4 tiếp theo.
 
 ### F27 — Onboarding — ca 1 = 1 khách 1 bia, thông báo mất khách, step guide (lần đầu + sau 3 lần mất khách)
 
@@ -227,7 +227,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 3
-- **Notes:** Đã có config pin/savev3, SQLite append-only event store và guest HTTP/session schema2. Config/build182 engine/server + actual CLI/Chromium smoke pass tại62b4445;3 findings cookie/command fields/event paging đã sửa, native full-range review090d920..62b4445 không còn lỗi actionable (reviewer socket rerun bị sandbox chặn). Schema3 clientSeq/owned stream/atomic receipts đã qua config/build187 tests và CLI/Chromium tại e390a1c; native review794d75c..e390a1c không có lỗi mới,12 storage tests độc lập pass. Rules19–20 timeout-close/replay/live adoption verified tại1fa6b14: config/build211 tests; review sửa cuối xác nhận hết2 findings và34 checks độc lập pass.72 browser/20 k cohorts/15rush pass tại3ed1e19; server liveness chưa nối. Registry/Google claim/WebSocket/client buffer/reconnect/anti-cheat và web cutover còn thiếu; web vẫn local. Xem docs/build-progress.md.
+- **Notes:** Default web dùng server snapshot và config pin; durable ordered journal/reconnect/presence/authoritative reports đã kiểm chứng tại936e9d5.298engine/server +91legacy/10online browser, config/build,10kcohorts2.4186–2.8738/15rush qua. Review đầy đủ phát hiện lỗi mở save local hỏng; đã sửa và review correction CLEAN. Schema7/checkpoint/Google session/claim core giữ nguyên; registry/admin, public account/import/eligibility vẫn thiếu. M4 đạt10/18, chưa hoàn tất. Xem closure và .qa/m4-web-verification.json.
 
 ### F12 — Giải Nhậu & Vụ Bia — 8 bậc, 2 Vụ Bia song song
 

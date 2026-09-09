@@ -1,6 +1,6 @@
 # Milestone closure report — M0–M5
 
-2026-09-10 · implementation `f86e2b3` · config2.0.1/rules23.
+2026-09-10 · implementation `936e9d5` · config2.0.1/rules24/schema7.
 Authority: [ROADMAP §mốc M0–M9](../06-ROADMAP-trum-bia-hoi.md), including the
 acceptance sections it references. PASS means the whole stated criterion has
 supporting evidence; FAIL includes missing implementation or missing acceptance
@@ -21,8 +21,8 @@ append-only history, legacy migration and backup preservation remain required.
   k cohorts (5seeds × cold/full menus,≥1000serves each),15rush cases PASS.
   k2.4186–2.8738; formula is actual payment+tip per served customer/82.5.
 - **E2** `.qa/browser-save-e2e-device-awake.txt`:91/91browser tests PASS at917f862.
-  Current `apps/web/src` and browser tests are unchanged since that verification;
-  checkpoint changes do not change gameplay rules. No host-sleep rerun performed.
+  Those legacy checks were rerun successfully after the web cutover (E7);
+  E3 remains the separate prior large-archive result. No host-sleep rerun performed.
 - **E3** `.qa/browser-save-month.json`, `.qa/browser-save-verification.json`:
   exact80MB write/reopen/continuation and App boot; earlier quota/sleep failures
   retained in historical receipts, resolved by the cited final acceptance.
@@ -32,6 +32,15 @@ append-only history, legacy migration and backup preservation remain required.
 - **E5** `.qa/google-session-verification.json`, `.qa/local-import-verification.json`:
   reviewed server account/session and internal one-time import. Local provenance
   remains pending approval. No real Google Client ID, public upload or cloud UI.
+- **E7** web cutover `60f9090`, visible-yard correction `101594c`, local recovery
+  correction `936e9d5`: `.qa/m4-web-tests.txt`298engine/server;
+  `.qa/m4-web-local-e2e.txt`91legacy browser; `.qa/m4-web-recovery-e2e.txt`10remote
+  browser scenarios; `.qa/m4-web-recovery-config.txt` config (zero warnings) and
+  `.qa/m4-web-recovery-build.txt` build/typecheck PASS. Current10ordinary kcohorts
+  (2.4186–2.8738) and15rush PASS in `.qa/m4-web-sim.txt`/`.qa/m4-web-rush.txt`.
+  Full-base review found one P1 local-recovery regression; `936e9d5` reuses existing
+  forensic recovery and tests both corrupt structures. Independent correction review: CLEAN in `.qa/review-m4-web-recovery.txt`;
+  the prior finding and original verdict remain preserved in `.qa/review-m4-web-final.txt`.
 - **E6** `.qa/checkpoint-month.json`: exact server projection/388986events/original
   archive/retry, cold2.23s. This is integrity evidence, not a release latency pass.
 
@@ -43,20 +52,20 @@ No new gameplay test or80MB run was added solely to make this report green.
 
 | Milestone | Exit verdict | Closure | Remaining acceptance |
 |---|---|---|---|
-| M0 | PASS | COMPLETE | All three explicit exit criteria met; foundation review already passed, checkpoint review passed independently with17focused tests. |
-| M1 | FAIL | OPEN | Full12min proof at all3viewports, complete7-screen coverage, measured upgrade recommendation, axe and new-player feel evidence. |
-| M2 | FAIL | OPEN | Five-person test, real mid-shift Google browser flow and admin-editable onboarding; locale/login-prompt gaps below. |
-| M3 | FAIL | OPEN | Advanced economy band/feel,32px badge acceptance and remaining equipment/football placeholders. |
-| M4 | FAIL | OPEN — next implementation priority | Web server authority/reconnect UI, registry/admin effectiveAt and integrated account/eligibility; backend liveness verified9f38166. |
-| M5 | FAIL | OPEN | Public seasons/ranking/shrine, rewards/referral/gifts and full integration; local LP acceptance rules pass. |
+| M0 | PASS (3/3) | COMPLETE | All three explicit exit criteria met; E7 config/build/tests/sim pass. Foundation/checkpoint reviews also passed. |
+| M1 | FAIL (6/12 PASS) | OPEN | Full12min proof at all3viewports, complete7-screen coverage, measured upgrade recommendation, axe and new-player feel evidence. |
+| M2 | FAIL (4/9 PASS) | OPEN | Five-person test, real mid-shift Google browser flow and admin-editable onboarding; locale/login-prompt gaps below. |
+| M3 | FAIL (5/12 PASS) | OPEN | Advanced economy band/feel,32px badge acceptance and remaining equipment/football placeholders. |
+| M4 | FAIL (10/18 PASS) | OPEN — next implementation priority | Remote web authority/reconnect verified in E7; registry/admin effectiveAt and integrated account/import/eligibility/locale remain. |
+| M5 | FAIL (9/25 PASS) | OPEN | Public seasons/ranking/shrine, rewards/referral/gifts and full integration; local LP acceptance rules pass. |
 
 ## M0 — foundation
 
 | Criterion (ROADMAP) | Verdict | Evidence |
 |---|---|---|
-| check:config green in new workspaces | PASS | E1;40sections,39governed tiers, runtime seed/schema matched. |
-| Five-seed sim k in2.0–3.0 | PASS | E1;10cohorts/5seeds, range2.4186–2.8738,≥1000serves/cohort. |
-| Build and tests green | PASS | E1; Vite production build/typecheck and281tests, no prototype code used. |
+| check:config green in new workspaces | PASS | E7 current config check;40sections,39governed tiers, runtime seed/schema matched. |
+| Five-seed sim k in2.0–3.0 | PASS | E7 current10cohorts/5seeds, range2.4186–2.8738,≥1000serves/cohort. |
+| Build and tests green | PASS | E7 current Vite production build/typecheck and298tests, no prototype code used. |
 
 ## M1 — serving loop
 
@@ -107,15 +116,15 @@ No new gameplay test or80MB run was added solely to make this report green.
 ## M4 — server/accounts/admin
 
 | Criterion (ROADMAP, F23§8, F25§10) | Verdict | Evidence or exact gap |
-| Editing local state cannot earn authoritative coins | FAIL | Server HTTP “identity, clock and totals cannot be supplied…” passes E1; web still constructs local Game in `apps/web/src/local.ts`, so product cutover incomplete. |
+| Editing local state cannot earn authoritative coins | PASS | Server HTTP rejects identity/clock/total forgery; default remote web never constructs or advances Game. E7 account rotation/quota/queue tests prove only server receipts change balances; local archives stay separate. |
 | Duplicate serve request idempotent | PASS | Server HTTP guest/restart test, `client-sequence.test.ts` “response loss after serving…”; E1 and E6 cold-retry exactness. |
 | Leaderboard ignores flagged/ineligible writes | FAIL | No ranking write/query path or protected approval eligibility yet; pending import provenance alone is not eligibility. |
 | Server clock handles VN midnight | PASS | Server “management pause survives a server restart and real VN midnight…” and “season rollover and old service retries…”; E1. |
-| Reconnecting within2s with yard visible | FAIL | No remote browser adapter/network-state UI. |
-| Offline commands buffer key+clientSeq within reconnectGraceMs, no loss/duplicate | FAIL | Ordered server receipts pass E1; browser durable queue/reconnect replay missing. |
-| Reconnect resync from lastSeq; server wins | FAIL | Server paginated cursor/owned-stream tests pass; no integrated browser resync. |
-| Beyond grace: server normally closes and returns ShiftClosed; no client-only ticking | FAIL | Backend PASS at9f38166: `presence.test.ts` real HTTP startup/restart scheduler, exact lease/grace closure and replay; remote web still ticks local Game, so client timeout/server-authority acceptance remains missing. |
-| Local-first history replays at import; no client-only rules after cutover | FAIL | Shared engine and E5 full import replay PASS; after-cutover browser authority still missing. |
+| Reconnecting within2s with yard visible | PASS | E7 silent hung-transport test exercises the configured2000ms deadline (browser assertion tolerance250ms); returning-player regression keeps the yard accessible while heartbeat is unavailable. |
+| Offline commands buffer key+clientSeq within reconnectGraceMs, no loss/duplicate | PASS | E7 real server lost-service ACK/reload test retains exact key+seq and credits once; offline restock/in-shift upgrade replay current menu flags; configured queue cap and quota refusal tested. |
+| Reconnect resync from lastSeq; server wins | PASS | E7 real server state/report equality after response loss/reload and paged owner-bound events; stale account cannot replay retained commands into another player. |
+| Beyond grace: server normally closes and returns ShiftClosed; no client-only ticking | PASS | Backend9f38166 exact expiry/restart/normal closing plus E7 browser grace-close/ShiftClosed book; offline yard stays frozen and returning inactive projection no longer hides it. |
+| Local-first history replays at import; no client-only rules after cutover | FAIL | Shared engine and E5 full import replay PASS; online browser authority now PASS in E7; public local archive migration remains deferred by owner, so full import acceptance stays open. |
 | Google mid-shift without reload/lost tick; attach history once | FAIL | E5 transaction core PASS; public upload/GIS integration and live credential absent. |
 | Unrestricted guest core; exactly3login benefits and cooldown | FAIL | Guest core PASS E2; login-benefit prompt/cooldown UI not implemented. |
 | First session without login | PASS | E2 first-run guest scenarios. |
@@ -163,12 +172,11 @@ are not milestone rows, so completing M0 does not incorrectly close all Phase0 r
 
 ## Next queue fixed by owner
 
-1. M4 web uses server SaveStore as sole authority; preserve local backup/import boundary.
-2. F23 reconnect/liveness, durable ordered queue and resync; paused management rules stay.
-3. BRD§5.2 config registry/admin editor, protected changes and effectiveAt; integrated
-   accounts/eligibility remain explicit M4 exit gaps. No fabricated Google setup.
-4. M6 → M7 → M8 → M9; defer additional M5 breadth until hard dependencies are met.
-5. M9 history-volume alternatives in [follow-up](m9-history-volume-followup.md),
+1. M4 protected Config Registry/admin per BRD§5.2, effectiveAt and pinned replay.
+2. Integrated accounts/eligibility/locale remain explicit M4 exit gaps; preserve
+   server authority and the owner-deferred public import boundary. No fabricated Google setup.
+3. M6 → M7 → M8 → M9; defer additional M5 breadth until hard dependencies are met.
+4. M9 history-volume alternatives in [follow-up](m9-history-volume-followup.md),
    including commands+periodic checkpoints and measured redundant activity handling.
 
 | Date | Change |
@@ -178,3 +186,5 @@ are not milestone rows, so completing M0 does not incorrectly close all Phase0 r
 | 2026-09-10 review correction | Split the four04§6 feel criteria into separate FAIL rows with their own evidence gaps; M0–M5 closure verdicts unchanged. |
 
 | 2026-09-10 server-liveness evidence update |9f38166 completes the backend timeout/restart portion of M4/F23; full-range review and298tests pass. The combined exit criterion stays FAIL because remote web/outbox/reconnect handling is not yet implemented. Milestone PASS/FAIL counts unchanged. |
+
+| 2026-09-10 web cutover acceptance |936e9d5 reviewed and verified:298engine/server +91legacy/10remote browser, config/build and k/rush pass. Five M4 criteria move to PASS; M4 is10/18, still OPEN. Corrupt local recovery preserves originals; public upload remains deferred. |

@@ -35,7 +35,8 @@ merged, repriced or discarded by that choice. After a server journal exists, rel
 resumes that server player and its pending actions. `local.ts`/IndexedDB remain for the
 explicit legacy continuation and test fixtures while the owner-deferred public archive
 upload/review flow is unfinished. Local earnings cannot reach server balances/ranking.
-Google Client ID is absent; no real Google/GIS or approval UI is claimed here.
+Structurally corrupt local archives enter the existing forensic download/import/reset
+flow; replacement preserves the exact damaged rows in a backup. Google Client ID is absent; no real Google/GIS or approval UI is claimed here.
 
 ## Checks
 
@@ -51,3 +52,5 @@ Google Client ID is absent; no real Google/GIS or approval UI is claimed here.
 | Date | Change |
 |---|---|
 | 2026-09-10 | First web server cutover/outbox and explicit local preservation boundary. Verification and independent review in progress; M4 registry/admin and full account/import integration remain open. |
+
+| 2026-09-10 verified |936e9d5: config/build,298engine/server +91legacy/10remote browser and k/rush PASS. Full review local-recovery regression fixed; correction review CLEAN. M4 registry/admin/account acceptance remain open. |
