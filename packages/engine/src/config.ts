@@ -13,9 +13,9 @@ export const WEATHER: Weather[] = ['sunny', 'hot', 'humid', 'rain', 'cold'];
 export const RUSH_TYPES = Object.entries(seed.rush).filter(([, r]) => typeof r === 'object' && 'floorMs' in r).map(([kind]) => kind) as Rush[];
 
 /** Unrounded per-customer cadence: ordinary baseline precedes weather; active rush keeps its hard floor. */
-export function arrivalIntervalMs(c: Economy, weather: Weather, kind: Rush): number {
+export function arrivalIntervalMs(c: Economy, weather: Weather, kind: Rush, campaign = false): number {
   const rush = c.rush[kind];
-  const interval = (kind === 'none' ? Math.max(c.spawn.baseMs, rush.floorMs) : c.spawn.baseMs) * c.weather[weather].spawnIntervalMult * rush.spawnIntervalMult;
+  const interval = (kind === 'none' ? Math.max(c.spawn.baseMs, rush.floorMs) : c.spawn.baseMs) * c.weather[weather].spawnIntervalMult * rush.spawnIntervalMult * (campaign ? c.unlocks.flyer.spawnIntervalMult : 1);
   return kind === 'none' ? interval : Math.max(interval, rush.floorMs);
 }
 
@@ -158,11 +158,16 @@ function validate(c: Economy): void {
     whole(c.unlocks[item].priceBase, `unlocks.${item}`); whole(Math.round(c.unlocks[item].priceBase * c.k.value), `unlocks.scaled${item}`);
     for (const token of [c.unlocks[item].gate].flat()) parseProgressRequirement(token, c);
   }
+  const flyer = c.unlocks.flyer;
+  whole(flyer.repBase, 'flyer.repBase'); whole(Math.round(flyer.repBase * c.k.value), 'flyer.scaledCost');
+  whole(flyer.campaignMs, 'flyer.campaignMs', 1); whole(flyer.stockCap, 'flyer.stockCap', 1); whole(flyer.perShift, 'flyer.perShift', 1);
+  positive(flyer.spawnIntervalMult, 'flyer.spawnIntervalMult'); parseProgressRequirement(flyer.gate, c);
   // Levels also require their predecessor: an unlock cannot depend on a level that needs it.
   const dependencies = new Map<string, string[]>(c.lifePath.map((row, index) => [row.id, [
     ...(index ? [c.lifePath[index - 1].id] : []), ...(row.requires ?? []),
   ]]));
   for (const item of BUSINESS_UNLOCKS) dependencies.set(item, [c.unlocks[item].gate].flat());
+  dependencies.set('flyer', [flyer.gate]);
   const visiting = new Set<string>(), visited = new Set<string>();
   const visit = (key: string) => {
     if (visited.has(key) || !dependencies.has(key)) return;
@@ -183,8 +188,8 @@ function validate(c: Economy): void {
     whole(table.capacity, 'table.capacity', 1); whole(table.priceBase, 'table.priceBase');
     if (index > 0 && table.capacity <= c.upgrades.table.levels[index - 1].capacity) throw Error('config:tableCapacityOrder');
   });
-  for (const weather of WEATHER) for (const kind of RUSH_TYPES) {
-    const interval = arrivalIntervalMs(c, weather, kind);
+  for (const weather of WEATHER) for (const kind of RUSH_TYPES) for (const campaign of [false, true]) {
+    const interval = arrivalIntervalMs(c, weather, kind, campaign);
     whole(Math.round(interval), 'spawn.interval', 1);
     for (const table of c.upgrades.table.levels) whole(Math.round(interval * (c.spawn.perCustomer ? table.capacity : 1)), 'spawn.groupInterval', 1);
   }

@@ -129,3 +129,51 @@ Independent full-diff review pending. Other F10/game work remains in progress.
 
 
 | 2026-09-09 review receipt | Full immutable diff bdbb493..9239007 independently reviewed with no introduced actionable defects. Corrected VIP-cap exhaustion at config intake, synchronized both sign gate keys, and aligned quote spend validation with active-shift ledger ownership.95 unit/37 E2E/config/build/assets plus normal/pressure sim passed. Full F10/M0-M9 remains in progress. |
+
+
+## 11. Local flyer campaigns — rules11
+
+`unlocks.flyer` is the sole tuning source: repBase is spent after one Base scaling;
+there is no coin price or separate unlock fee. The LP gate applies to purchase and
+activation. `world.flyers` is optional for older histories (zero stock), and first
+acquisition records persistent `flyer` ownership for LP4 even after stock is consumed.
+One flyerQuote supplies UI and engine guards; buyFlyer checks safe stock, capacity,
+reputation and the active shift's reputation aggregate before debiting changeRep.
+Resting purchases leave historical shift stats untouched. Audit events record before/
+after reputation, actual cost and resulting stock. Coin/day/season/lifetime ledgers
+receive no acquisition or activation credit.
+
+| Trigger | Result |
+|---|---|
+| buyFlyer, reached configured gate, sufficient reputation, stock below cap | Debit reputation once; add one flyer and persistent ownership |
+| Buy fails gate/stock/rep/safe arithmetic | Refuse before resource mutation |
+| activateFlyer with exact live shiftId, visible open shift, stock, unused allowance | Consume one, increment per-shift counter, record event start and deadline |
+| Stale shift, hidden/resting/closing, active campaign, no stock or allowance | Refuse; no timers or guests reset |
+| New arrival interval while active | Multiply demand in shared arrivalIntervalMs; ordinary baseline first, active Rush hard floor last; round once after group size |
+| Activate or expire with pending arrival | Keep that arrival's existing deadline; only newly planned intervals change |
+| Hidden/offline | Move campaign gameplay start/end with existing paused shift clock; original start event wall timestamp stays intact |
+| Natural expiry | Report `[start,end)` before same-time service/departure events; remove campaign once |
+| Closing | Stop new arrivals; campaign/report continues for remaining seated service until deadline or shift finalization |
+| Finalize before deadline | Emit one early report, clear campaign; next shift receives a fresh allowance |
+
+No forced hurried-customer retag and no patience multiplier. summarizeRush reads
+the campaign event interval for actual seated served/lost/revenue and nominal tips;
+it excludes delivery credit and reward faucets, and counts mirrored departures once.
+Daily-cap-adjusted revenue is labeled separately from pre-cap tips. Hidden duration
+is excluded from activeMs. Reports are events, not another mutable ledger.
+
+The native flyer sheet is reachable from Upgrades, the stock strip and Shift Book.
+Activation closes it immediately and the yard shows a live countdown. Buy/use guards
+remain visible, translations cover VI/EN, touch targets are at least44px. An original
+native-alpha draft sprite and existing paired upgrade SFX serve the actual producer.
+The four bottom actions and numeric-only departure toasts remain unchanged.
+
+F17's free flyer for daily5/5 requires its actual quest and unique-gift producer;
+there is no unauthenticated/free claim shortcut here. That dependency remains in the
+full M0–M9 scope. When implemented, full-stock claims must refuse atomically and be
+retryable rather than dropping rewards or inventing a conversion. Server validation
+and final art/release QA are still required later milestones.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 rules11 | Added local flyer purchase/use/stock/clock/event reports and native sheet, with canonical rep debit, LP gate, demand-only effects and exact historical replay. Daily5/5 producer remains dependent F17 work. |

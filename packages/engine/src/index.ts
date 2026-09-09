@@ -6,3 +6,4 @@ export * from './save';
 export * from './progression';
 export * from './rush';
 export * from './signboard';
+export * from './flyer';

@@ -294,3 +294,6 @@ v9 hot/humid tests now advance additional legacy ticks before current input; exi
 v7 rush-clock and v6 shipper replay tests also exercise the boundary unchanged.
 
 | 2026-09-09 transition correction | Preserve pre-command autonomous history when adopting rules10; retain historical1–9 switch-before-advance behavior. Fixes replay mismatches exposed by full legacy clock/delivery tests. |
+
+
+| 2026-09-09 rules11 | Savev2 accepts1–11. Optional world.flyers and shift.flyersUsed/flyer keep legacy projections unchanged; commands buyFlyer/activateFlyer use one quote, changeRep and exact current shiftId. Existing arrival helper takes the actual campaign state, expiry uses the injected scheduler, and summarizeRush derives seated results from events. Protocol10 remains the fixed switch-after-advance threshold; true v10 weather/Neon captures from432626d replay identically through first current input. Server/F17 claim producers remain separate unfinished milestones. |

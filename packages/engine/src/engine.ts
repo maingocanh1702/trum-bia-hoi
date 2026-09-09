@@ -3,6 +3,7 @@ import { integer, random, weighted } from './rng';
 import { addStock, credit, currentGuests, customerValue, dayKey, deliveryInterval, deliveryQuote, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
 import { lifePathStatus, lifePathRewardQuote, unlockQuote } from './progression';
 import { signboardQuote, signboardStyle } from './signboard';
+import { flyerQuote } from './flyer';
 import { planRushes, summarizeRush } from './rush';
 import type { Command, Customer, Envelope, Group, Item, LoggedCommand, Order, Result, RulesVersion, Stats, Table, World } from './types';
 
@@ -12,6 +13,7 @@ const DELIVERY_RULES: RulesVersion = 7; // config-exempt: fixed replay protocol 
 const SIGNBOARD_RULES: RulesVersion = 9; // config-exempt: fixed replay protocol revision
 const RUSH_SCHEDULE_RULES: RulesVersion = 8; // config-exempt: fixed replay protocol revision
 const ARRIVAL_INTERVAL_RULES: RulesVersion = 10; // config-exempt: fixed replay protocol revision
+const FLYER_RULES: RulesVersion = 11; // config-exempt: fixed replay protocol revision
 const emptyStats = (): Stats => ({ arrived: 0, served: 0, lost: 0, rejected: 0, orders: 0, payment: 0, tip: 0, credited: 0, penalty: 0, spent: 0, rep: 0, wellRestedBonus: 0 });
 
 /** No wall clock, IO or renderer: only config, seed, explicit time and commands. */
@@ -21,7 +23,7 @@ export class Game {
   private readonly results = new Map<string, LoggedCommand>();
   private commandKey: string | null = null;
   private activeRushIndex: number | null = null;
-  private rulesVersion: RulesVersion = ARRIVAL_INTERVAL_RULES;
+  private rulesVersion: RulesVersion = FLYER_RULES;
   constructor(readonly config: Config = defaultConfig, readonly seed = 1, readonly createdAt = 0, readonly playerId = 'guest') {
     if (!Number.isSafeInteger(seed) || !Number.isSafeInteger(createdAt) || createdAt < 0) throw Error('game:invalid-origin');
     const c = config.values;
@@ -71,6 +73,7 @@ export class Game {
         }
       }
     }
+    if (w.shift?.flyer) times.push(w.shift.flyer.end);
     for (const t of w.tables) {
       if (t.until !== null) times.push(t.until);
       if (t.order?.state === 'pending') times.push(t.order.placedAt + t.order.patienceMs);
@@ -98,6 +101,7 @@ export class Game {
         w.shift.endsAt += elapsed; w.shift.nextSpawnAt += elapsed;
         if (w.shift.wellRestedUntil !== null) w.shift.wellRestedUntil += elapsed;
         if (w.shift.rushUntil != null) w.shift.rushUntil += elapsed;
+        if (w.shift.flyer) { w.shift.flyer.start += elapsed; w.shift.flyer.end += elapsed; }
         for (const rush of w.shift.rushes) { rush.start += elapsed; rush.end += elapsed; }
       }
       for (const table of w.tables) {
@@ -151,9 +155,16 @@ export class Game {
       }
     }
   }
+  private endFlyer(reason: 'expired' | 'shiftClosed') {
+    const w = this.world, s = w.shift, campaign = s?.flyer;
+    if (!s || !campaign) return;
+    this.emit('flyer_ended', { shiftId: s.id, reason, startedAt: w.events[campaign.eventStart].at, endedAt: w.now, activeMs: Math.max(0, w.now - campaign.start), ...summarizeRush(w.events, campaign.eventStart) });
+    delete s.flyer;
+  }
   private processDue(): void {
     const w = this.world, c = this.config.values, s = w.shift;
     if (!w.active && this.rulesVersion !== 1) return;
+    if (s?.flyer && w.now >= s.flyer.end) this.endFlyer('expired');
     if (this.rulesVersion >= RUSH_CLOCK_RULES) {
       if (w.phase === 'open' && s && w.now >= s.endsAt) { w.phase = 'closing'; this.emit('shift_closing'); }
       this.updateRush();
@@ -226,6 +237,7 @@ export class Game {
       w.dayShifts[key] = (w.dayShifts[key] ?? 0) + 1;
       if (s) s.closedAt = w.now;
       if (this.rulesVersion >= RUSH_CLOCK_RULES) this.updateRush();
+      this.endFlyer('shiftClosed');
       this.emit('shift_closed', { shiftId: s?.id ?? '', credited: s?.stats.credited ?? 0 });
     }
   }
@@ -343,7 +355,7 @@ export class Game {
       this.seatQueue();
     }
     const rush = rushConfig(this.config, s.rush);
-    const interval = this.rulesVersion >= ARRIVAL_INTERVAL_RULES ? arrivalIntervalMs(c, s.weather, s.rush) : Math.max(c.spawn.baseMs * c.weather[s.weather].spawnIntervalMult * rush.spawnIntervalMult, rush.floorMs);
+    const interval = this.rulesVersion >= ARRIVAL_INTERVAL_RULES ? arrivalIntervalMs(c, s.weather, s.rush, this.rulesVersion >= FLYER_RULES && !!s.flyer) : Math.max(c.spawn.baseMs * c.weather[s.weather].spawnIntervalMult * rush.spawnIntervalMult, rush.floorMs);
     s.nextSpawnAt = w.now + Math.round(interval * (c.spawn.perCustomer ? size : 1));
     s.firstGroup = false;
   }
@@ -402,7 +414,7 @@ export class Game {
       this.emit('glass_washing', { glassId: glass.id });
     }
   }
-  command(envelope: Envelope): Result { return this.applyCommand(envelope, ARRIVAL_INTERVAL_RULES); }
+  command(envelope: Envelope): Result { return this.applyCommand(envelope, FLYER_RULES); }
   /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
   replay(entry: LoggedCommand): Result { return this.applyCommand(entry, entry.rulesVersion); }
   private applyCommand(envelope: Envelope, rulesVersion: RulesVersion): Result {
@@ -585,6 +597,24 @@ export class Game {
         this.spend(q.cost); w.unlocks.push(cmd.item);
         this.emit('unlock_bought', { item: cmd.item, cost: q.cost }); return { ok: true, amount: q.cost };
       }
+      case 'buyFlyer': {
+        const q = flyerQuote(w, this.config);
+        if (q.buyReason) return fail(q.buyReason);
+        const reputationBefore = w.reputation;
+        this.changeRep(-q.cost); w.flyers = q.stock + 1;
+        if (!w.unlocks.includes('flyer')) w.unlocks.push('flyer');
+        this.emit('flyer_bought', { cost: q.cost, stock: w.flyers, reputationBefore, reputationAfter: w.reputation });
+        return { ok: true, amount: q.cost };
+      }
+      case 'activateFlyer': {
+        if (cmd.shiftId !== s?.id) return fail('shiftChanged');
+        const q = flyerQuote(w, this.config);
+        if (q.useReason) return fail(q.useReason);
+        w.flyers = q.stock - 1; s!.flyersUsed = q.used + 1;
+        s!.flyer = { start: w.now, end: w.now + c.unlocks.flyer.campaignMs, eventStart: w.events.length };
+        this.emit('flyer_started', { shiftId: s!.id, until: s!.flyer.end, stock: w.flyers, used: s!.flyersUsed });
+        return { ok: true };
+      }
       case 'installSignboard': case 'setSignboard': {
         const q = signboardQuote(w, this.config, cmd.type === 'installSignboard' ? null : cmd.style);
         if (!q.ok) return fail(q.reason!);
@@ -647,7 +677,8 @@ export function validEnvelope(input: unknown): input is Envelope {
   if (typeof e.idempotencyKey !== 'string' || !e.idempotencyKey || e.idempotencyKey.length > 128 || !Number.isSafeInteger(e.at) || e.at < 0 || !e.command || typeof e.command !== 'object') return false; // config-exempt: protocol key length
   const c = e.command;
   switch (c.type) {
-    case 'startShift': case 'endShift': case 'buyTable': case 'emergencyPack': case 'installSignboard': return true;
+    case 'startShift': case 'endShift': case 'buyTable': case 'emergencyPack': case 'installSignboard': case 'buyFlyer': return true;
+    case 'activateFlyer': return typeof c.shiftId === 'string' && c.shiftId.length > 0;
     case 'kickAll': return (c.shiftId === undefined || typeof c.shiftId === 'string') && (c.maxCost === undefined || Number.isSafeInteger(c.maxCost) && c.maxCost >= 0);
     case 'activity': return typeof c.active === 'boolean';
     case 'serve': return typeof c.tableId === 'string' && typeof c.orderId === 'string';

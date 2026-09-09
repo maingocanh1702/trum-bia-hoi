@@ -616,3 +616,43 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
   expect(errors).toEqual([]);
  });
 }
+
+for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }, { width: 1280, height: 400 }]) {
+ test(`flyer purchase, live timer, actual service report and reload at ${viewport.width}×${viewport.height}`, async ({ page }) => {
+  const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/flyer.ts'], { encoding: 'utf8' }));
+  const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  await page.setViewportSize(viewport); await page.clock.install({ time: new Date(fixture.now) }); await page.clock.pauseAt(new Date(fixture.now));
+  await page.addInitScript(save => { if (!localStorage.getItem('flyer-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('flyer-seeded', '1'); } }, fixture.save);
+  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click(); await page.getByRole('button', { name: 'Tờ rơi 0 / 5 tờ rơi', exact: true }).click();
+  const panel = page.getByRole('dialog', { name: 'Tờ rơi', exact: true });
+  await expect(panel).toContainText('Không giảm thời gian chờ'); await expect(panel.getByRole('button', { name: 'Phát tờ rơi', exact: true })).toBeDisabled();
+  await panel.getByRole('button', { name: /^Mua 1 tờ/ }).click(); await expect(panel).toContainText('1 / 5 tờ rơi');
+  await expect(page.locator('.stock-strip .reputation')).toHaveText(new Intl.NumberFormat('vi-VN').format(fixture.reputation - fixture.cost));
+  await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(fixture.coins));
+  await expect(panel.getByRole('button', { name: /^Mua 1 tờ/ })).toBeDisabled();
+  expect(await panel.locator('.flyer-summary img').evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth === 1254)).toBe(true);
+  await panel.getByRole('button', { name: 'Phát tờ rơi', exact: true }).click(); await expect(panel).toHaveCount(0);
+  const trigger = page.getByRole('button', { name: 'Tờ rơi · còn 0', exact: true }); await expect(trigger).toHaveText('01:30');
+  const box = (await trigger.boundingBox())!; expect(box.width).toBeGreaterThanOrEqual(44); expect(box.height).toBeGreaterThanOrEqual(44);
+  await page.clock.runFor(5000); await expect(trigger).toHaveText('01:25'); await page.reload(); await expect(trigger).toHaveText('01:25');
+  await trigger.click(); await expect(panel.getByRole('button', { name: 'Phát tờ rơi', exact: true })).toBeDisabled();
+  await page.screenshot({ path: `.qa/flyer-active-${viewport.width}.png` }); await page.keyboard.press('Escape');
+  for (let i = 0; i < 20; i++) {
+    await page.clock.runFor(2000);
+    const ready = page.locator('.table-order-hint.is-ready').first();
+    if (await ready.count()) { await ready.click(); await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click(); }
+  }
+  await page.clock.runFor(fixture.duration - 45000); await trigger.click();
+  const report = panel.getByRole('region', { name: 'Chiến dịch gần nhất', exact: true }); await expect(report).toBeVisible();
+  await expect(report).toContainText('Đã chạy 90s'); await expect(report).toContainText('Xu thực nhận');
+  await expect(panel.getByRole('button', { name: 'Phát tờ rơi', exact: true })).toBeDisabled();
+  await page.clock.runFor(1000); const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));
+  const ends = saved.events.filter((e: { type: string }) => e.type === 'flyer_ended'); expect(ends).toHaveLength(1); expect(ends[0].data.served).toBeGreaterThan(0); expect(ends[0].data.revenue).toBeGreaterThan(0);
+  expect(saved.events.filter((e: { type: string }) => e.type === 'flyer_bought')).toHaveLength(1);
+  await page.screenshot({ path: `.qa/flyer-report-${viewport.width}.png` }); await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Cài đặt', exact: true }).click(); await page.getByLabel('Ngôn ngữ').selectOption('en'); await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Flyers · 0 left', exact: true }).click(); await expect(page.getByRole('dialog', { name: 'Flyers', exact: true })).toContainText('Latest campaign');
+  await page.emulateMedia({ reducedMotion: 'reduce' }); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); expect(errors).toEqual([]);
+ });
+}

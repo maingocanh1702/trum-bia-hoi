@@ -1746,7 +1746,9 @@
         "life_path_reward_claimed",
         "signboard_installed",
         "signboard_bought",
-        "signboard_equipped"
+        "signboard_equipped",
+        "flyer_bought",
+        "flyer_started"
       ],
       "loop": false,
       "status": "draft",
@@ -1772,7 +1774,9 @@
         "life_path_reward_claimed",
         "signboard_installed",
         "signboard_bought",
-        "signboard_equipped"
+        "signboard_equipped",
+        "flyer_bought",
+        "flyer_started"
       ],
       "loop": false,
       "status": "draft",
@@ -2193,6 +2197,23 @@
       ],
       "status": "draft",
       "review_notes": "Original builtin generated sign, native alpha retained. Style based on owner reference boards; no reused source screenshot. Prompt set docs/reference/assets-owner-2026-09-08/signboard-prompts.json; final release art QA pending."
+    },
+    {
+      "id": "flyer-bundle",
+      "type": "sprite",
+      "path": "assets/flyer-bundle.png",
+      "source": "imagegen_builtin",
+      "dimensions": [
+        1254,
+        1254
+      ],
+      "transparent": true,
+      "usage": [
+        "flyer",
+        "business-upgrade"
+      ],
+      "status": "draft",
+      "review_notes": "Original builtin generated paper bundle, native RGBA preserved. SHA256 e566f40195f6307b8df4c0b0297c86c51d9b21c801fc8ab23788553c1337121a. Prompt docs/reference/assets-owner-2026-09-08/flyer-prompt.json; final release art QA pending."
     }
   ]
 }

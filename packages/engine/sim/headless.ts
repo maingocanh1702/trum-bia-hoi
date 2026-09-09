@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
-import { Game, config as seedConfig, loadConfig, DISHES, SIGN_STYLES, type SignStyle, dayKey, deliveryQuote, restockQuote, type Command } from '../src/index';
+import { Game, config as seedConfig, loadConfig, DISHES, flyerQuote, SIGN_STYLES, type SignStyle, dayKey, deliveryQuote, restockQuote, type Command } from '../src/index';
 
 // config-exempt: measurement protocol and bot sampling, never production economy.
 const SEEDS = [20260611, 42, 20260908, 7, 99], MIN_SERVED = 500, STEP_MS = 100, MAX_STEPS = 500000;
 const restedStart = process.argv.includes('--well-rested'), qrStart = process.argv.includes('--qr'), shipperStart = process.argv.includes('--shipper');
 const signStyle = process.argv.find(arg => arg.startsWith('--sign='))?.slice('--sign='.length) as SignStyle | undefined;
 if (signStyle && !SIGN_STYLES.includes(signStyle)) throw Error('Unknown sign style');
+const flyerStart = process.argv.includes('--flyer');
 const rows = [];
 for (const kitchenLevel of [seedConfig.raw.runtime.initialKitchenLevel, seedConfig.raw.upgrades.kitchen.priceBase.length - 1]) {
   const raw = structuredClone(seedConfig.raw);
@@ -19,6 +20,8 @@ for (const seed of SEEDS) {
   // Isolate the selected business mix; real install/purchase/re-equip is checked in signboard tests.
   if (signStyle) { w.unlocks.push('signboard', `signboard:${signStyle}`); w.signStyle = signStyle; }
   if (shipperStart) w.unlocks.push('phone');
+  // Measurement wallet/gate isolates demand; command-level purchase and LP gates have focused checks.
+  if (flyerStart) { w.lifePath = config.values.lifePath.findIndex(row => row.id === config.values.unlocks.flyer.gate); w.reputation = config.values.unlocks.flyer.repBase * config.values.unlocks.flyer.stockCap; }
   if (restedStart) game.advance(w.now + config.values.shift.wellRested.requiresRestHours * 3600000 + 1);
   const send = (command: Command) => game.command({ idempotencyKey: `sim-${game.log.length}`, at: w.now, command });
   let steps = 0;
@@ -30,6 +33,10 @@ for (const seed of SEEDS) {
         continue;
       }
       assert.ok(start.ok, start.reason ?? 'Cannot start shift');
+    }
+    if (flyerStart && w.phase === 'open' && !w.shift!.flyersUsed) {
+      if (!flyerQuote(w, config).buyReason) send({ type: 'buyFlyer' });
+      if (!flyerQuote(w, config).useReason) assert.ok(send({ type: 'activateFlyer', shiftId: w.shift!.id }).ok);
     }
     for (const dish of DISHES) {
       const quote = restockQuote(w, config, dish, 'bulk');
@@ -51,7 +58,9 @@ for (const seed of SEEDS) {
   if (restedStart) assert.ok(bonus > 0, `seed ${seed}: the rested profile must exercise actual bonus credit`);
   const deliveries = w.events.filter(e => e.type === 'shipper_completed').length;
   if (shipperStart) assert.ok(deliveries > 0, `seed ${seed}: must complete an actual delivery`);
-  rows.push({ profile: kitchenLevel ? 'full-menu' : 'cold-menu', seed, signStyle, restedStart, qrStart, shipperStart, deliveries, bonus, serves: w.serves.length, mean: +mean.toFixed(2), k: +k.toFixed(4), stale: w.serves.filter(e => e.stale).length, days: Object.keys(w.dayShifts).length, configVersion: config.version, day: dayKey(w.now, config) });
+  const campaigns = w.events.filter(e => e.type === 'flyer_ended');
+  if (flyerStart) { assert.ok(campaigns.length > 0); assert.ok(campaigns.some(e => Number(e.data.served) > 0)); }
+  rows.push({ flyerStart, campaigns: campaigns.length, profile: kitchenLevel ? 'full-menu' : 'cold-menu', seed, signStyle, restedStart, qrStart, shipperStart, deliveries, bonus, serves: w.serves.length, mean: +mean.toFixed(2), k: +k.toFixed(4), stale: w.serves.filter(e => e.stale).length, days: Object.keys(w.dayShifts).length, configVersion: config.version, day: dayKey(w.now, config) });
 }
 }
 console.table(rows);

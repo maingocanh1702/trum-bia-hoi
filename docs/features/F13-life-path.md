@@ -109,3 +109,6 @@ state boundary; this is not evidence that all LP0–LP7 are reachable in current
 | 2026-09-09 | Added v6 local progression and separate claim-once rewards, closed requirement grammar, preflighted stock/coin/token rewards, actionable ladder. Numeric claim IDs and derived eligibility replace the illustrative schema; full producer/server integration remains open. |
 
 | 2026-09-09 | Independent review fix: config rejects cycles across sequential LP requirements and phone/QR gates; milestone and peak-tier names now use VI/EN translation keys. Added crossed-gate and English browser regressions. |
+
+
+| 2026-09-09 | Flyer acquisition now records persistent ownership through buyFlyer in rules11; using the consumable does not revoke LP4's requirement. Canonical LP2 purchase/activation gate is shared through requirementStatus. Peak/season and full downstream progression acceptance remain unfinished. |

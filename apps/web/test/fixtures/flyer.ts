@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import { Game, config, loadConfig, encodeSave, WEATHER, type Command } from '../../../../packages/engine/src';
+const raw = structuredClone(config.raw); raw.shift.startingCoinsBase = 1000000; raw.unlocks.flyer.repBase = 1;
+raw.lifePath[1].lifetimeBase = 1; raw.lifePath[2].lifetimeBase = 2;
+for (const weather of WEATHER) raw.weather[weather].weight = weather === 'sunny' ? 1 : 0;
+const g = new Game(loadConfig(raw), 42, Date.parse('2026-09-08T10:00:00Z'));
+const send = (command: Command) => { const r = g.command({ command, at: g.world.now, idempotencyKey: `flyer-fixture-${g.log.length}` }); assert.ok(r.ok, r.reason ?? 'fixture command'); };
+send({ type: 'buyTable' });
+while (g.world.equipment.stall < 3) send({ type: 'upgrade', kind: 'stall' });
+send({ type: 'restock', dish: 'lac', mode: 'full' }); send({ type: 'upgradeDog', level: 1 });
+send({ type: 'startShift' }); g.advance(g.world.now + 11000);
+const t = g.world.tables.find(t => t.order)!; send({ type: 'serve', tableId: t.id, orderId: t.order!.id });
+send({ type: 'buyUnlock', item: 'phone' }); assert.equal(g.world.lifePath, 2);
+process.stdout.write(JSON.stringify({ save: encodeSave(g), now: g.world.now, coins: g.world.coins, reputation: g.world.reputation, cost: g.config.values.unlocks.flyer.repBase, duration: g.config.values.unlocks.flyer.campaignMs }));

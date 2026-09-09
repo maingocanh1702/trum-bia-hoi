@@ -1,6 +1,6 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.14.1
+> **Version:** v0.15.0
 > **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-09 (layout/art theo ảnh owner)
 > **Trạng thái:** Active — **M0 qua verify; review sửa lỗi nền và layout/art đã CLEAN. M1–M3 tiếp tục triển khai; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.0** (1 phase, mốc M0–M9).
 > **Owner:** Team
@@ -56,7 +56,7 @@
 | F24 | 🎨 Design | Thiết Kế UI/UX Quán Bia — tokens, wireframe, sprite, animation | 🟡 | `codex/game-build-isolated` | 🔒S | Sân xanh/cảnh phố, HUD gọn, quầy trên, kho dọc, thẻ mâm khi chạm bàn. 12 E2E pass; review CLEAN tại `2d80437`. 14 art draft, 30 sprite placeholders; chưa đủ art/release. |
 | F07 | 🎮 Code | Các Kiểu Khách — 3 loại P1 (thường/vội/VIP) | 🟡 | `codex/game-build-isolated` | 🔒S 🔒B | 5 kiểu khách ngồi; shipper local v7 có timer riêng, giao cả đơn, cap/timeout/closing/replay và UI điện thoại. Review shipper CLEAN tại307a3b0; football và acceptance đầy đủ còn thiếu. |
 | F09 | ⚖️ Economy | Thời Tiết Quán — tối giản (hệ số độ hơi/tip/spawn) | 🟡 | `codex/game-build-isolated` | 🔒S | 5 thời tiết từ config; rules10 sửa thứ tự baseline để hot/humid thực sự tăng nhịp khách, giữ active-rush floor và replay v9. 100 unit/37 E2E +20 k rows đã qua; review độc lập full diff2959544..432626d không có lỗi actionable. Sprite/ambient và full statistical QA tiếp tục. |
-| F10 | 🎮 Code | Nâng Cấp Quán — bom/rửa/hầm/bàn cơ bản (×k) | 🟡 | `codex/game-build-isolated` | 🔒S 🔒B | Bom/rửa/hầm/quầy/bếp + mua/nâng bàn có command/UI; phone/QR quote/gate/command/UI + boa qua review không còn findings tại598f66f; Biển rules9 lắp/đổi5 kiểu, gate uy tín, customer mix/Neon +5 sprite draft;95 unit/37 E2E xanh, full-diff review bdbb493..9239007 không còn findings sau3 sửa lỗi biên. Cốc mua/tờ rơi và full F10 tiếp tục. |
+| F10 | 🎮 Code | Nâng Cấp Quán — bom/rửa/hầm/bàn cơ bản (×k) | 🟡 | `codex/game-build-isolated` | 🔒S 🔒B | Bom/rửa/hầm/quầy/bếp + mua/nâng bàn có command/UI; phone/QR quote/gate/command/UI + boa qua review không còn findings tại598f66f; Biển rules9 lắp/đổi5 kiểu, gate uy tín, customer mix/Neon +5 sprite draft;95 unit/37 E2E xanh, full-diff review bdbb493..9239007 không còn findings sau3 sửa lỗi biên. Tờ rơi rules11 có mua bằng uy tín, LP2, kho/timer/báo cáo/UI VI-EN;108 unit/40 E2E +30 k rows qua; review độc lập pending. Cốc mua, free flyer daily5/5 và full F10 tiếp tục. |
 | F25 | 🎮 Code | Ngôn Ngữ / Tài Khoản — chọn vi/en, guest play, Google login (kể cả giữa ca) | 🟡 | `codex/game-build-isolated` | 🔒S | Guest local + vi/en + backup/replay v1→v2 + import/reset giữ bản cũ đã có; Google/claim/cloud ở M4 chưa có. |
 | F27 | 🎮 Code | Onboarding — ca 1 = 1 khách 1 bia, thông báo mất khách, step guide (lần đầu + sau 3 lần mất khách) | 🟡 | `codex/game-build-isolated` | 🔒S | Guide theo events/config, skip/persist + giới hạn chạy lại. Browser/unit pass; Google giữa ca + playtest 5 người chưa có. |
 
@@ -73,7 +73,7 @@
 |----|------|---------|:------:|--------|:-----:|-------|
 | F23 | 🎮 Code | Kiến Trúc Server Quán — server-auth, websocket, CAPTCHA | ⬜ | `—` | 🔒S | Spec `docs/features/F23-server-architecture.md`. **localStorage trước (M1) → server ở M4**; §8 mất mạng/reconnect. |
 | F12 | 🎮 Code | Giải Nhậu & Vụ Bia — 8 bậc, 2 Vụ Bia song song | ⬜ | `—` | 🔒S 🔒B | Spec `docs/features/F12-league-seasons.md`. Phân Hạng 7d / Tranh Bá 14d. |
-| F13 | 🎮 Code | Đường Lên Trùm — LP0–LP7, gate tính năng & mặt bằng | 🟡 | `codex/game-build-isolated` | 🔒S | V6 projection đủ requirements/rewards, level tăng bền + claim một lần; ladder VI/EN và phone/QR. 67 unit/30 E2E +40 sim rows k2.3249–2.7688; review d2918e9..598f66f không còn findings. Season/peak/flyer/signboard/location/server integration còn tiếp tục. |
+| F13 | 🎮 Code | Đường Lên Trùm — LP0–LP7, gate tính năng & mặt bằng | 🟡 | `codex/game-build-isolated` | 🔒S | V6 projection đủ requirements/rewards, level tăng bền + claim một lần; ladder VI/EN và phone/QR. 67 unit/30 E2E +40 sim rows k2.3249–2.7688; review d2918e9..598f66f không còn findings. Flyer/signboard ownership đã có producer; season/peak/location/server và full acceptance còn tiếp tục. |
 | F14 | 🎮 Code | Mặt Bằng Quán — 9 mặt bằng, rent/cọc 7 ngày | ⬜ | `—` | 🔒S 🔒B | Spec `docs/features/F14-locations.md`. |
 | F15 | 🎮 Code | Sự Cố Quán Nhậu — bảo kê, trộm offline, đánh nhau (kiểm tra ATTP ⏸ pending) | ⬜ | `—` | 🔒S | Spec `docs/features/F15-risk-events.md`; §4 kiểm tra pending, `risk.inspection.enabled=false`. |
 | F16 | 🎮 Code | Rủ Bạn & Huy Hiệu — 3 mốc, huy hiệu Kết Nối | ⬜ | `—` | 🔒S | Spec `docs/features/F16-referral-badges.md`. |
@@ -175,3 +175,5 @@
 | v0.14.0 | F09/F08 ordinary demand rules10 implemented; config1.7.1 formula metadata clarified with all numeric leaves unchanged, real seeded group/replay/unsafe interval tests. 100 unit/37 E2E/config/build +20 k/15 pressure rows passed; independent review pending,16 in progress and zero complete. |
 
 | 2026-09-09 v0.14.1 | Ghi nhận review độc lập rules10 full diff2959544..432626d không có lỗi actionable; giữ16 in progress, zero full features complete. |
+
+| 2026-09-09 v0.15.0 | Flyer producer rules11 implemented, author verification and final review underway; full M0–M9 remains active. |

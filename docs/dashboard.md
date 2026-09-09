@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-09 07:22 · **Branch hiện tại:** `codex/game-build-isolated`
+> **Cập nhật:** 2026-09-09 07:39 · **Branch hiện tại:** `codex/game-build-isolated`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -182,7 +182,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S 🔒B
 - **Phase:** Phase 1
-- **Notes:** Bom/rửa/hầm/quầy/bếp + mua/nâng bàn có command/UI; phone/QR quote/gate/command/UI + boa qua review không còn findings tại598f66f; Biển rules9 lắp/đổi5 kiểu, gate uy tín, customer mix/Neon +5 sprite draft;95 unit/37 E2E xanh, full-diff review bdbb493..9239007 không còn findings sau3 sửa lỗi biên. Cốc mua/tờ rơi và full F10 tiếp tục.
+- **Notes:** Bom/rửa/hầm/quầy/bếp + mua/nâng bàn có command/UI; phone/QR quote/gate/command/UI + boa qua review không còn findings tại598f66f; Biển rules9 lắp/đổi5 kiểu, gate uy tín, customer mix/Neon +5 sprite draft;95 unit/37 E2E xanh, full-diff review bdbb493..9239007 không còn findings sau3 sửa lỗi biên. Tờ rơi rules11 có mua bằng uy tín, LP2, kho/timer/báo cáo/UI VI-EN;108 unit/40 E2E +30 k rows qua; review độc lập pending. Cốc mua, free flyer daily5/5 và full F10 tiếp tục.
 
 ### F25 — Ngôn Ngữ / Tài Khoản — chọn vi/en, guest play, Google login (kể cả giữa ca)
 
@@ -218,7 +218,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 3
-- **Notes:** V6 projection đủ requirements/rewards, level tăng bền + claim một lần; ladder VI/EN và phone/QR. 67 unit/30 E2E +40 sim rows k2.3249–2.7688; review d2918e9..598f66f không còn findings. Season/peak/flyer/signboard/location/server integration còn tiếp tục.
+- **Notes:** V6 projection đủ requirements/rewards, level tăng bền + claim một lần; ladder VI/EN và phone/QR. 67 unit/30 E2E +40 sim rows k2.3249–2.7688; review d2918e9..598f66f không còn findings. Flyer/signboard ownership đã có producer; season/peak/location/server và full acceptance còn tiếp tục.
 
 ### F18 — Chó Giữ Quán — combat bảo kê, bảo hiểm trộm
 

@@ -69,7 +69,7 @@ test('real v8 delivery and rush saves retain all recorded fields before and afte
     for (const [key, value] of Object.entries(expected)) if (key !== 'source') assert.deepEqual(historical[key], value, `historical ${name}:${key}`);
     assert.deepEqual(g.world.events, source.events); assert.equal(g.log.at(-1)!.rulesVersion, 8); assert.equal(g.world.signStyle, undefined);
     const before = structuredClone(g.world); assert.ok(send(g, { type: 'activity', active: true }).ok);
-    assert.deepEqual(g.world, { ...before, staminaAnchorAt: before.now, staminaAnchorMs: before.staminaMs }); assert.equal(g.log.at(-1)!.rulesVersion, 10); assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
+    assert.deepEqual(g.world, { ...before, staminaAnchorAt: before.now, staminaAnchorMs: before.staminaMs }); assert.equal(g.log.at(-1)!.rulesVersion, 11); assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
   }
 });
 

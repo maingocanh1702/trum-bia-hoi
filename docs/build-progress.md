@@ -821,3 +821,41 @@ Root untouched; preview5174 remains local, no merge/push or hosted-release claim
 | Date | Change |
 |---|---|
 | 2026-09-09 | Recorded independent no-finding arrival review2959544..432626d and continued full-game backlog. |
+
+
+## 2026-09-09 — Flyer campaign rules11
+
+Base360453e. Implemented buyFlyer and exact-shift activateFlyer with one shared
+quote: configured LP2 gate, scaled reputation cost, cap, per-shift allowance and
+safe preflights. First acquisition records persistent LP ownership, stock is consumed
+once. No coin faucet, forced customer type or patience change. Shared arrival helper
+stacks campaign demand before active Rush floors; first/pending arrival schedules
+remain intact. Campaign lives in its owning shift, pauses while hidden, continues
+through closing for seated service and ends once at expiry or early finalization.
+Reports reuse the existing event-window summarizer, exclude shipper/rewards and
+separate actual credited revenue from nominal tips. Rules10's adoption boundary is
+unchanged; protocol11 adds no fields to original historical worlds until produced.
+True v10 hot/humid and Neon fixtures captured from432626d preserve stored projections.
+
+Native VI/EN sheet from Upgrades/stock strip/book, immediate close on activation,
+live yard timer, report and44px targets. Original1254-square RGBA flyer sprite copied
+without pixel changes; prompt/provenance tracked, paired existing upgrade SFX wired.
+Manifest128 entries/32 paired SFX/30 placeholders/90 drafts; release art is unfinished.
+
+Author verify currently passes config/build/108 unit +normal10 k/15 rush-pressure
+rows.30 combined economy rows (normal, flyer, flyer+Golden+QR+shipper+well-rested),
+all>=500 served, k2.2417–2.8783; profile setup isolates canonical effects while actual
+buy/use/serve commands execute.20 controlled90s windows show higher demand and zero
+earnings without serving (.qa/flyer-pressure.mjs/.txt). Focused browser3 layouts
+passed purchase/rep debit/actual service/report/locale/reload; final full40 E2E passed
+in43.5s (.qa/flyer-e2e.txt), final build passed (.qa/flyer-final-build.txt).
+Independent full-base review pending. Browser fixture reaches LP2 via real table/dog/stall/
+service/phone commands; its thresholds/cost are retuned for bounded QA, not production.
+
+F17 daily5/5 free-flyer claim awaits its real quest/gift producer, no fake claim
+endpoint; server/social and full M4–M9 remain active scope. Tracker v0.15.0 retains
+16 in progress, zero full features complete. Root untouched, no merge/push.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Implemented local flyer producer, original sprite/UI and config/replay/campaign checks; final review pending. |
