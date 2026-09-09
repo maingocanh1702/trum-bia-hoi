@@ -227,3 +227,8 @@ No HTTP upload, approval or cloud UI is active. Details: [server guide](../../ap
 | Date | Change |
 |---|---|
 | 2026-09-10 local claim core | Added worker-validated one-time archive import with immutable pending provenance and atomic identity/session transition;271tests/config/build and80MB probe pass. No public upload/review approval/web cutover yet; performance limits are measured and remain open. |
+
+
+| Date | Change |
+|---|---|
+| 2026-09-10 verified local claim core |51a0734 passes271tests/config/build and80MB exact import/reopen/retry; native independent code/security review found no actionable introduced defect. `.qa/local-import-verification.json`. Imported history remains pending approval; public upload, cold-read performance and web cutover remain unfinished. |

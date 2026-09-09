@@ -74,3 +74,8 @@ history may count once; pending history cannot count. No compensation credit is 
 | Date | Change |
 |---|---|
 | 2026-09-10 provenance | Schema5 records pending local-history origin/cutoffs for the later review and ranking boundary; approval and rank projection remain required work. |
+
+
+| Date | Change |
+|---|---|
+| 2026-09-10 verified local claim core |51a0734 passes271tests/config/build and80MB exact import/reopen/retry; native independent code/security review found no actionable introduced defect. `.qa/local-import-verification.json`. Imported history remains pending approval; public upload, cold-read performance and web cutover remain unfinished. |

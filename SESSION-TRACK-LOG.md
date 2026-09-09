@@ -5,6 +5,33 @@
 
 ---
 
+## 🧭 Local claim core verified; server cold-state loading next — 2026-09-10
+
+Product `51a0734`, base `c9bd6e8`: schema5 internal `GameStore.claimLocal` validates
+archives in a bounded worker against known server configs. Full original gzip,
+source IDs, active shift, command/event history and pending provenance are preserved.
+Account/destination revalidation, collisions, exactly-once import and auth rotation
+are atomic; previous server player stays stored. Approval eligibility is still pending.
+No public upload/review endpoint, real Google Client ID or web cutover is claimed.
+
+271engine/server tests (including7local-import cases), config/build/typecheck pass.
+Native independent review found no actionable introduced defect; no independent
+reviewer test rerun is claimed. `.qa/local-import-verification.json` binds artifacts.
+Actual80MB archive imports/reopens/retries exactly:16,567commands/388,986events,
+1,582,365xu/LP4/240shifts. Measured48.38s import,29.36s cold read,2.65s main-loop pulse
+gap during result/persistence. This proves integrity, not public cloud responsiveness.
+The temporary database was removed by the probe; original month fixture is retained.
+
+Next concrete work: server cold-state loading, then isolated upload/recovery and
+review eligibility before remote web integration. Read `.qa/server-cold-state-boundary.md`.
+Do not repeat the30day simulation or reviewed import core. Fix the measured replay
+cost without trusting uploaded projections or dropping history. Owner local-history
+review policy is settled; advanced k scope/prize amounts remain unanswered, no tuning.
+
+Original20sourcehashes unchanged; original checkout/owner5174 profile untouched.
+Keep unrelated.dashboard/events.jsonl. No tests/review processes running after receipt.
+No merge/push/deploy. Full M0–M9 goal remains active:20features in progress,0complete.
+
 ## 🧭 Google server accounts verified; local import/review next — 2026-09-10
 
 Product `ebe820c`, base `b42c034`: schema4 canonical Google subject/player mapping,

@@ -2079,3 +2079,13 @@ See [server guide](../apps/server/README.md) and `.qa/local-import-month.json`.
 | Date | Change |
 |---|---|
 | 2026-09-10 local claim core | Added worker-validated one-time archive import with immutable pending provenance and atomic identity/session transition;271tests/config/build and80MB probe pass. No public upload/review approval/web cutover yet; performance limits are measured and remain open. |
+
+
+## Verified local claim core — 2026-09-10
+
+`51a0734` passed independent review with no actionable introduced defects.271tests,
+config/build and actual80MB integrity pass; imported history remains pending approval.
+The measured48s import/29s cold read/2.65s main-loop gap remain explicit performance
+work before public upload/cloud UI. Next: server cold-state loading while preserving
+replay validation at the untrusted import boundary. No browser/economy change or
+completed full-game claim. Receipt: `.qa/local-import-verification.json`.
