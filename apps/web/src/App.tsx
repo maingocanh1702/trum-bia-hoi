@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { buyGlassQuote, isEconomy2, BUSINESS_UNLOCKS, menuReport, beerStatus, washerStatus, kitchenStatus, flyerQuote, SIGN_STYLES, signboardQuote, DISHES, EQUIPMENT, currentGuests, deliveryQuote, dogUpgradeQuote, encodeSave, freshnessMs, kickAllQuote, lifePathStatus, restockQuote, rushStatus, stockCap, unlockQuote, upgradeQuote, wellRestedRemaining, type Command, type Equipment, type Order, type RequirementStatus, type Table } from '../../../packages/engine/src';
 import { Sprite, TableSeats, menuAsset, reactions } from './assets';
 import { translate } from './i18n';
-import { advanceGuide, boot, dispatch, download, persist, readSettings, writeSettings, replaceSave } from './local';
+import { advanceGuide, boot, dispatch, download, readSettings, writeSettings, replaceSave, type BootSession } from './local';
 import { Quests } from './Quests';
 import { Kitchen } from './Kitchen';
 import { MenuReport } from './MenuReport';
@@ -38,7 +38,11 @@ function SheetDialog({ title, close, children, view, pausedLabel }: { title: str
 }
 
 export function App() {
-  const [session] = useState(boot);
+  const [session, setSession] = useState<BootSession | null>(null);
+  useEffect(() => { let active = true; void boot().then(value => { if (active) setSession(value); else value.storage?.close(); }); return () => { active = false; }; }, []);
+  return session ? <GameView session={session} /> : <main className="recovery"><h1>{translate(readSettings().locale, 'brand')}</h1><p role="status">{translate(readSettings().locale, 'save.loading')}</p></main>;
+}
+function GameView({ session }: { session: BootSession }) {
   const game = session.game, w = game.world, c = game.config.values;
   const questsRevealed = !c.onboarding.enabled || w.completedShifts >= c.onboarding.featureReveal.questsAfterShifts;
   const prefs = useRef(readSettings());
@@ -53,7 +57,9 @@ export function App() {
   const [welcome, setWelcome] = useState(!settings.welcomed);
   const menuPaused = Boolean(sheet || selectedEquipment || welcome);
   const menuPause = useRef(menuPaused);
-  const [saveError, setSaveError] = useState(false);
+  const [saveError, setSaveError] = useState<boolean | 'conflict'>(false);
+  const [saving, setSaving] = useState(false);
+  const saveSequence = useRef(0);
   const [recoveryError, setRecoveryError] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [toast, setToast] = useState<{ text: string; kind: string; id?: string; gain?: number; loss?: { coins: number; reputation: number } } | null>(null);
@@ -64,7 +70,12 @@ export function App() {
   const t = (key: string, params: Record<string, string | number> = {}) => translate(locale, key, params);
   const num = (n: number) => new Intl.NumberFormat(locale === 'vi' ? 'vi-VN' : 'en-US').format(Math.round(n));
   const orderTime = (o: Order) => t('order.time', { s: Math.ceil(Math.max(0, o.placedAt + o.patienceMs + (o.state === 'grace' ? c.patience.graceMs : 0) - w.now) / 1000) });
-  const save = () => { try { persist(game); writeSettings(prefs.current); setSaveError(false); } catch { setSaveError(true); } };
+  const save = async () => {
+    const sequence = ++saveSequence.current; setSaving(true);
+    try { await session.storage!.save(game); writeSettings(prefs.current); if (sequence === saveSequence.current) setSaveError(false); }
+    catch (error) { if (sequence === saveSequence.current) setSaveError(error instanceof Error && error.message === 'storage:conflict' ? 'conflict' : true); }
+    finally { if (sequence === saveSequence.current) setSaving(false); }
+  };
   const processEvents = () => {
     const events = w.events.slice(cursor.current); cursor.current = w.events.length;
     advanceGuide(prefs.current, game, events);
@@ -89,6 +100,7 @@ export function App() {
       if (e.type === 'shift_closed') { setSelectedTable(null); setSheet('book'); if (!events.some(event => event.type === 'shipper_completed')) setToast({ text: translate(prefs.current.locale, 'book.closed'), kind: 'early' }); }
     }
     if (loss) setToast({ text: '', kind: 'loss', loss });
+    return events.length;
   };
   const run = (cmd: Command) => {
     const result = dispatch(game, cmd);
@@ -142,16 +154,17 @@ export function App() {
   }, [locale]);
   useEffect(() => {
     if (session.error) return;
-    const tick = setInterval(() => { game.advance(Math.max(Date.now(), w.now)); processEvents(); setFrame(x => x + 1); }, 100); // config-exempt: UI refresh cadence
+    const tick = setInterval(() => { game.advance(Math.max(Date.now(), w.now)); if (processEvents()) void save(); setFrame(x => x + 1); }, 100); // config-exempt: UI refresh cadence
     const checkpoint = setInterval(save, 1000); // config-exempt: local IO batching cadence
     const visibility = () => syncActivity();
-    const pagehide = () => { dispatch(game, { type: 'activity', active: false }); save(); };
+    const pagehide = () => { dispatch(game, { type: 'activity', active: false }); void save(); };
+    const beforeUnload = (event: BeforeUnloadEvent) => { if (session.storage?.saving) { event.preventDefault(); event.returnValue = ''; } };
     const click = (e: MouseEvent) => { if ((e.target as Element).closest('button,select')) sound.play('ui:tap'); };
     const escape = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelectedTable(null); };
     document.addEventListener('keydown', escape);
     document.addEventListener('click', click, true);
-    document.addEventListener('visibilitychange', visibility); window.addEventListener('pagehide', pagehide);
-    return () => { clearInterval(tick); clearInterval(checkpoint); document.removeEventListener('keydown', escape); document.removeEventListener('visibilitychange', visibility); document.removeEventListener('click', click, true); window.removeEventListener('pagehide', pagehide); sound.mute(true); };
+    document.addEventListener('visibilitychange', visibility); window.addEventListener('pagehide', pagehide); window.addEventListener('beforeunload', beforeUnload);
+    return () => { clearInterval(tick); clearInterval(checkpoint); document.removeEventListener('keydown', escape); document.removeEventListener('visibilitychange', visibility); document.removeEventListener('click', click, true); window.removeEventListener('pagehide', pagehide); window.removeEventListener('beforeunload', beforeUnload); sound.mute(true); };
   }, []);
   useEffect(() => {
     if (!toast) return;
@@ -159,14 +172,14 @@ export function App() {
     return () => clearTimeout(handle);
   }, [toast]);
 
-  if (session.error) return <main className="recovery"><h1>{t('brand')}</h1><p role="alert">{t('save.corrupt')}</p>
-    <button onClick={() => download(session.original ?? '', 'tbh-original-save.json')}>{t('save.downloadOriginal')}</button>
-    <label>{t('save.import')}<input type="file" accept="application/json,.json" onChange={async e => {
+  if (session.error) return <main className="recovery"><h1>{t('brand')}</h1><p role="alert">{t(session.error === 'corrupt' ? 'save.corrupt' : session.error === 'conflict' ? 'save.conflict' : 'save.storageUnavailable')}</p>
+    {session.original !== null && <button onClick={() => download(session.original!, 'tbh-original-save.json')}>{t('save.downloadOriginal')}</button>}
+    {session.error === 'corrupt' && <><label>{t('save.import')}<input type="file" accept="application/json,.json" onChange={async e => {
       const file = e.currentTarget.files?.[0]; if (!file) return;
-      try { replaceSave(await file.text()); location.reload(); } catch { setRecoveryError(true); }
+      try { await replaceSave(await file.text(), session); location.reload(); } catch { setRecoveryError(true); }
     }} /></label>
     {recoveryError && <p role="alert">{t('save.importError')}</p>}
-    {confirmReset ? <><p>{t('save.resetConfirm')}</p><button onClick={() => { try { replaceSave(null); location.reload(); } catch { setRecoveryError(true); } }}>{t('save.resetYes')}</button><button onClick={() => setConfirmReset(false)}>{t('save.cancel')}</button></> : <button onClick={() => setConfirmReset(true)}>{t('save.reset')}</button>}
+    {confirmReset ? <><p>{t('save.resetConfirm')}</p><button onClick={async () => { try { await replaceSave(null, session); location.reload(); } catch { setRecoveryError(true); } }}>{t('save.resetYes')}</button><button onClick={() => setConfirmReset(false)}>{t('save.cancel')}</button></> : <button onClick={() => setConfirmReset(true)}>{t('save.reset')}</button>}</>}
     <button onClick={() => location.reload()}>{t('save.retry')}</button></main>;
 
   const shift = w.shift, inShift = w.phase !== 'resting';
@@ -251,7 +264,7 @@ export function App() {
     return <div className="upgrade-card" key={kind}><h3>{t(`equipment.${kind}`)}</h3><div className="equipment-comparison">{[w.equipment[kind], ...(q.cost !== null ? [q.next] : [])].map((level, i) => <section key={i}><Sprite id={`${kind}-lv${Math.max(1, level)}`} /><strong>{t(i ? 'production.next' : 'level', { n: level })}</strong>{metrics(level)}</section>)}</div><button disabled={!q.ok} onClick={() => run({ type: 'upgrade', kind })}>{q.cost === null ? t('upgrade.max') : t('upgrade.buy', { cost: num(q.cost) })}</button>{q.reason && q.cost !== null && <p role="status">{q.reason === 'lifePathRequired' ? t('upgrade.lifePath', { name: levelName(q.requiredLifePath) }) : t(`error.${q.reason}`)}</p>}</div>;
   }
 
-  return <div className="game-shell" data-frame={frame}>
+  return <div className="game-shell" data-save-state={saveError ? 'error' : saving ? 'saving' : 'saved'} data-frame={frame}>
     {!w.active && !menuPaused && <div className="paused-overlay" role="status">{t('pause.hidden')}</div>}
     <div className="street-backdrop" aria-hidden="true"><Sprite id="bg-street" /></div>
     <main className={`game weather-${shift?.weather ?? 'sunny'}${!w.active || w.paused ? ' is-paused' : ''}`}>
@@ -290,7 +303,7 @@ export function App() {
       </div> : toast?.gain !== undefined ? <div key={toast.id} className={`toast toast-gain gain-${toast.kind}`} role="status" aria-label={toast.text}>
         <span className="gain-reaction" aria-hidden="true">{reactions[toast.kind]}</span><strong aria-hidden="true">+{num(toast.gain)}</strong><Icon name="coin" />
       </div> : toast && <button className={`toast toast-${toast.kind}`} role="status" onClick={() => setToast(null)}>{toast.text}<span aria-hidden="true">×</span></button>}
-      {saveError && <button className="save-error" role="alert" onClick={() => download(encodeSave(game), 'tbh-backup.json')}>{t('save.error')}</button>}
+      {saveError && <button className="save-error" role="alert" onClick={() => download(encodeSave(game), 'tbh-backup.json')}>{t(saveError === 'conflict' ? 'save.conflict' : 'save.error')}</button>}
     </main>
 
 

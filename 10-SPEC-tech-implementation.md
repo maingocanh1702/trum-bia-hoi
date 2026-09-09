@@ -171,6 +171,17 @@ tick(dtMs):  now += dt
 | **1 · trước** | `localStorage['tbh.save.v1']` | `{version, guestId, coins, ledgers, inventory, upgrades, tables, day, quests, settings(locale, sound, audio), onboarding, eventLog[]}` | versioned + `migrate(v→v+1)`; ghi sau finalize + sau mua; try/catch; **mọi mutation ghi vào `eventLog` append-only** (cùng schema event của server) — đây là điều kiện để bước 2 không phải viết lại |
 | **2 · sau** | Server event store | events: `ShiftStarted, OrderServed, ShiftClosed, UpgradeBought, Restocked, TableBought, RiskResolved, SeasonRewardClaimed, LeaseStarted…` → projection `player_state` | client upload `eventLog` local 1 lần (guest claim, F25 §4) rồi server là nguồn sự thật; `idempotencyKey` mọi mutation; pin `configVersion`; reconnect/resync theo F23 §8 |
 
+**Adapter local hiện tại (09/09):** localStorage đã hoàn thành bước đầu. Career
+30 ngày tạo archive 80 MB, vượt quota localStorage đo được trên Chromium. Dữ liệu
+chơi chuyển sang IndexedDB `tbh.career.v1`; settings và bản localStorage cũ được giữ.
+Header, phần command/event mới và backup cùng một giao dịch nguyên tử. Autosave
+chạy sau lệnh/sự kiện và định kỳ, chỉ báo đã lưu sau commit; revision chặn tab cũ
+đè tab mới. Import/reset kiểm tra replay trước khi backup và thay thế nguyên tử.
+Lỗi quota/blocked/abort giữ bản đã commit và hiện phục hồi, không tạo game mới âm thầm.
+Export vẫn là archive versioned cũ, lịch sử không bị cắt. Boot vẫn replay toàn bộ;
+chi phí khởi động dài và bộ nhớ là giới hạn còn lại. Đây là lưu local, chưa phải
+đồng bộ tài khoản/server. Quyền kiểm tra/migrate guest phía server vẫn theo F25.
+
 **Bất biến qua cả 2 bước:** engine thuần, `now` truyền vào, RNG seedable, event schema chung, không có luật nào chỉ tồn tại ở client. Chuyển bước 1 → 2 = đổi adapter `SaveStore` (local → remote), không đụng rule.
 
 ---
@@ -469,3 +480,5 @@ money reducer are added; the owner's local5174 adapter is not switched yet.
 | Date | Change |
 |---|---|
 | 2026-09-09 ordered ingress | Added mandatory HTTP client sequencing and atomic durable receipts around the shared engine. Server now refuses unsequenced HTTP commands; full reconnect/remote cutover remains in progress. |
+
+| 2026-09-09 browser save | Bước local dùng IndexedDB sau khi career80MB vượt localStorage: append delta, atomic header/history/backup, compare revision, async boot và migration giữ nguồn cũ. Không đổi schema replay/rules/economy hay tuyên bố cloud sync. |

@@ -1939,3 +1939,23 @@ Actual advanced k is3.483282/3.318249 overall, with22/20days outside band. Numbe
 formula and ordinary assertion are unchanged; owner scope decision remains pending.
 Full game and LP0–LP7 certification remain unfinished. Receipt:
 `.qa/career-verification.json`.
+
+## Durable local career storage — 2026-09-09
+
+Base310c94e. Native IndexedDB replaces whole-career localStorage writes after the
+verified80MB failure. Header and new ordered history chunks commit atomically;
+coalesced saves keep the newest frontier and revision checks refuse stale writers.
+Valid legacy saves migrate with an atomic backup, retaining the original key.
+Recovery import/reset validates first and preserves the old archive if writing fails.
+The archive/export format and replay validation remain unchanged. No dependencies,
+economy numbers, server authority or cloud eligibility changed.
+
+An initial full browser run passed82/84: immediate reload after autonomous batch
+completion exposed a gap between the event and periodic autosave. The UI now saves
+on engine events as well as commands and the periodic timer; targeted regression,
+80MB acceptance and final independent review are running. Boot still replays all
+history on the main thread; startup/memory ceilings remain explicit follow-up work.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Added atomic IndexedDB local archive and browser recovery/race/delta coverage; final verification pending. |

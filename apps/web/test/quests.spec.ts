@@ -1,3 +1,4 @@
+import { readSave, waitSaved } from './storage';
 import { test, expect } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 function fixture(midnight = false) { return JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/quests.ts', ...(midnight ? ['--midnight'] : [])], { encoding: 'utf8' })); }
@@ -23,8 +24,8 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
     await expect(panel.locator('[data-quest="gift_3"]')).toContainText('Gửi quà chưa khả dụng');
     await expect(panel.locator('.quest-bonus button')).toBeDisabled();
     await row.scrollIntoViewIfNeeded(); await page.screenshot({ path: `.qa/quests-claimed-${viewport.width}.png` });
-    await page.reload(); await trigger.click(); await expect(row.getByRole('button', { name: 'Đã nhận', exact: true })).toBeDisabled();
-    await page.clock.runFor(1000); const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));
+    await waitSaved(page); await page.reload(); await trigger.click(); await expect(row.getByRole('button', { name: 'Đã nhận', exact: true })).toBeDisabled();
+    await page.clock.runFor(1000); const saved = JSON.parse(await readSave(page));
     expect(saved.events.filter((e: { type: string }) => e.type === 'quest_claimed')).toHaveLength(1);
     await page.keyboard.press('Escape'); await page.getByRole('button', { name: 'Cài đặt', exact: true }).click();
     await page.getByLabel('Ngôn ngữ').selectOption('en'); await page.keyboard.press('Escape');
@@ -44,7 +45,7 @@ test('open daily sheet expires an unclaimed reward at VN midnight', async ({ pag
   await page.clock.runFor(f.daily.expiresAt - f.now + 100);
   await expect(panel.locator('.quest-summary strong')).not.toHaveText(f.daily.day);
   for (const button of await panel.locator('.quest-list button').all()) await expect(button).toBeDisabled();
-  await page.clock.runFor(1000); const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));
+  await page.clock.runFor(1000); const saved = JSON.parse(await readSave(page));
   expect(saved.events.filter((e: { type: string }) => e.type === 'quest_claimed')).toHaveLength(0);
 });
 
@@ -68,7 +69,7 @@ for (const threshold of [2, 3]) {
     }
     await page.getByRole('dialog', { name: 'Sổ ca hôm nay', exact: true }).getByRole('button', { name: 'Nhiệm vụ ngày', exact: true }).click();
     await expect(page.locator('.quest-list li')).toHaveCount(5); await page.keyboard.press('Escape');
-    await expect(page.locator('.quest-trigger')).toBeVisible(); await page.reload(); await expect(page.locator('.quest-trigger')).toBeVisible();
+    await expect(page.locator('.quest-trigger')).toBeVisible(); await waitSaved(page); await page.reload(); await expect(page.locator('.quest-trigger')).toBeVisible();
     await page.locator('.quest-trigger').click(); await expect(page.locator('.quest-list li')).toHaveCount(5);
   });
 }

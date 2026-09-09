@@ -1,5 +1,6 @@
-import { config, isEconomy2, Game, encodeSave, decodeSave, type Command, type DomainEvent, type Result } from '../../../packages/engine/src';
+import { config, isEconomy2, Game, decodeSave, type Command, type DomainEvent, type Result } from '../../../packages/engine/src';
 import type { Locale } from './i18n';
+import { BrowserSave } from './browser-save';
 
 const SAVE_KEY = 'tbh.save.v1', SETTINGS_KEY = 'tbh.settings.v1';
 export interface Settings { locale: Locale; muted: boolean; welcomed: boolean; guideDone: boolean; guideIndex: number | null; guideRuns: number; guideDay: string; lostStreak: number }
@@ -11,31 +12,32 @@ export function readSettings(): Settings {
   } catch { return fallback; }
 }
 export function writeSettings(settings: Settings): void { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
-export function boot(): { game: Game; original: string | null; error: boolean } {
-  let original: string | null = null;
+export interface BootSession { game: Game; storage: BrowserSave | null; original: string | null; error: 'corrupt' | 'storage' | 'conflict' | null }
+export async function boot(): Promise<BootSession> {
+  let original: string | null = null, storage: BrowserSave | null = null, failure: BootSession['error'] = 'storage';
   try {
-    original = localStorage.getItem(SAVE_KEY);
-    if (original !== null) {
-      const game = decodeSave(original);
-      // Offline time pauses gameplay and never grants active-rest recovery.
-      game.command({ idempotencyKey: crypto.randomUUID(), at: game.world.now, command: { type: 'activity', active: false } });
-      game.advance(Math.max(Date.now(), game.world.now));
-      game.command({ idempotencyKey: crypto.randomUUID(), at: game.world.now, command: { type: 'activity', active: !document.hidden } });
-      return { game, original, error: false };
+    storage = await BrowserSave.open(); original = await storage.read();
+    if (original === null) {
+      original = localStorage.getItem(SAVE_KEY);
+      if (original !== null) storage.migrateLegacy(original);
     }
-  } catch { return { game: new Game(), original, error: true }; }
-  const seed = crypto.getRandomValues(new Uint32Array(1))[0];
-  const game = new Game(undefined, seed, Date.now(), `guest-${crypto.randomUUID()}`);
-  game.command({ idempotencyKey: crypto.randomUUID(), at: game.world.now, command: { type: 'activity', active: !document.hidden } });
-  return { game, original, error: false };
+    failure = 'corrupt';
+    const game = original !== null ? decodeSave(original) : new Game(undefined, crypto.getRandomValues(new Uint32Array(1))[0], Date.now(), `guest-${crypto.randomUUID()}`);
+    failure = 'storage';
+    // Offline time pauses gameplay and never grants active-rest recovery.
+    game.command({ idempotencyKey: crypto.randomUUID(), at: game.world.now, command: { type: 'activity', active: false } });
+    game.advance(Math.max(Date.now(), game.world.now));
+    game.command({ idempotencyKey: crypto.randomUUID(), at: game.world.now, command: { type: 'activity', active: !document.hidden } });
+    await storage.save(game);
+    // Keep the legacy localStorage item and its transactional backup; never erase the recovery source.
+    return { game, storage, original: null, error: null };
+  } catch (error) { return { game: new Game(), storage, original, error: error instanceof Error && error.message === 'storage:conflict' ? 'conflict' : failure }; }
 }
-export function persist(game: Game): void { localStorage.setItem(SAVE_KEY, encodeSave(game)); }
-/** Validate before replacing; keep the original under a separate key even if import/reset fails. */
-export function replaceSave(text: string | null): void {
+/** Validate before the atomic backup/replacement. A failed transaction retains the old archive. */
+export async function replaceSave(text: string | null, session: BootSession): Promise<void> {
+  if (!session.storage || session.error !== 'corrupt') throw Error('storage:unavailable');
   const game = text === null ? new Game(undefined, crypto.getRandomValues(new Uint32Array(1))[0], Date.now(), `guest-${crypto.randomUUID()}`) : decodeSave(text);
-  const original = localStorage.getItem(SAVE_KEY);
-  if (original !== null) localStorage.setItem(`tbh.backup.${crypto.randomUUID()}`, original);
-  persist(game);
+  await session.storage.replace(game, session.original);
 }
 export function dispatch(game: Game, command: Command): Result {
   return game.command({ idempotencyKey: crypto.randomUUID(), at: Math.max(Date.now(), game.world.now), command }, command.type === 'startShift' && !isEconomy2(game.config.raw) ? config : undefined);

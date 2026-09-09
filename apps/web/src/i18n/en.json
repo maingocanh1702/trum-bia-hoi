@@ -331,5 +331,8 @@
   "season.history": "Completed seasons",
   "season.empty": "No completed season results yet.",
   "season.legacy": "Earlier revenue without season records: {amount} coins. Your lifetime earnings are preserved.",
-  "error.configSeasonTiers": "The new configuration is incompatible with your saved league tiers. The shift has not opened."
+  "error.configSeasonTiers": "The new configuration is incompatible with your saved league tiers. The shift has not opened.",
+  "save.loading": "Opening your stall…",
+  "save.storageUnavailable": "Saved progress could not be opened. Try reloading; the previous save is preserved.",
+  "save.conflict": "Another tab has updated this game. Download a copy of this tab before reloading."
 }

@@ -1,3 +1,4 @@
+import { waitSaved } from './storage';
 import { test, expect } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 const fixture = (mode = 'live') => JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/kitchen.ts', mode], { encoding: 'utf8' }));
@@ -25,7 +26,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
     await page.keyboard.press('Escape'); await page.clock.runFor(23000); await yard.click(); await expect(panel.locator('[data-state="ready"]')).not.toHaveCount(0);
     await row.getByRole('button').click(); const serve = order.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }); await expect(serve).toBeEnabled(); await serve.click();
     await expect(order).toHaveCount(0); await expect(yard).not.toBeFocused();
-    await page.reload(); await yard.click(); await expect(panel.locator(`[data-item="${job.itemId}"]`)).toHaveCount(0);
+    await waitSaved(page); await page.reload(); await yard.click(); await expect(panel.locator(`[data-item="${job.itemId}"]`)).toHaveCount(0);
     await page.keyboard.press('Escape'); await page.getByRole('button', { name: 'Cài đặt', exact: true }).click(); await page.getByLabel('Ngôn ngữ').selectOption('en'); await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Kitchen', exact: true }).click(); await expect(page.getByRole('region', { name: 'Live kitchen', exact: true })).toBeVisible();
     await page.emulateMedia({ reducedMotion: 'reduce' }); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); expect(errors).toEqual([]);

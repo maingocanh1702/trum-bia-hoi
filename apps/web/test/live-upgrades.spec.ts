@@ -1,3 +1,4 @@
+import { readSave, waitSaved } from './storage';
 import { test, expect } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 const fixture = (mode = '', save?: string) => JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/live-upgrades.ts', mode], { encoding: 'utf8', input: save ? JSON.stringify({ save }) : undefined }));
@@ -6,7 +7,7 @@ for (const poor of [false, true]) test(`kitchen can be bought in the current shi
   await page.clock.pauseAt(new Date(f.now));
   await page.addInitScript(save => { if (!localStorage.getItem('upgrades-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('tbh.settings.v1', JSON.stringify({ welcomed: true, guideDone: true })); localStorage.setItem('upgrades-seeded', '1'); } }, f.save);
   await page.goto('/');
-  const snapshot = async () => fixture('inspect', await page.evaluate(() => localStorage.getItem('tbh.save.v1')!));
+  const snapshot = async () => fixture('inspect', await readSave(page));
   await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click(); await page.locator('.kitchen-entry').click();
   const panel = page.getByRole('dialog', { name: 'Bếp', exact: true }), buy = panel.getByRole('button', { name: /^Nâng ·/ });
   await expect(panel.getByText('Nâng cấp sau khi đóng ca. Ca vẫn đang chạy.', { exact: true })).toHaveCount(0);
@@ -23,5 +24,5 @@ for (const poor of [false, true]) test(`kitchen can be bought in the current shi
   expect(held.orderId).toBe(before.orderId); expect(held.shiftId).toBe(before.shiftId); expect(held.expired).toBe(0);
   await panel.getByRole('button', { name: 'Bếp ×', exact: true }).click(); await page.clock.runFor(1000);
   const resumed = await snapshot(); expect(resumed.paused).toBe(false); expect(resumed.remaining).toBe(before.remaining - 1000);
-  await page.reload(); expect((await snapshot()).equipment.kitchen).toBe(poor ? 0 : 1);
+  await waitSaved(page); await page.reload(); expect((await snapshot()).equipment.kitchen).toBe(poor ? 0 : 1);
 });

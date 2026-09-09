@@ -5,6 +5,17 @@
 
 ---
 
+## 🧭 Browser career storage implemented; checks running — 2026-09-09
+
+Base310c94e. Native IndexedDB writer + async App/local wiring, delta chunks,
+atomic header/backups and stale revision refusal are implemented. Legacy source
+is retained, export/decoder keep full history. New real3-day storage regression
+passes. Full browser82/84 exposed batch-completion reload before periodic save;
+event-triggered save correction now being checked. `.qa/browser-save-contract.md`.
+Finish browser/80MB acceptance, native review, docs/receipt/commit. Do not repeat
+career simulation policy/review or touch owner5174. Full goal remains active;
+advanced k question, Google Client ID and season prize quantities remain pending.
+
 ## 🧭 Career verified; durable save growth next — 2026-09-09
 
 Harness `b01f4b1` verified/reviewed: two30-day seeds,240shifts each, LP3 day8/9,

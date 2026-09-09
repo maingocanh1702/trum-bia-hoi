@@ -1,3 +1,4 @@
+import { readSave, waitSaved, readBackups } from './storage';
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -35,7 +36,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
     await expect(page.locator('.seat')).toHaveCount(6);
     await expect(page.locator('.seat-customer')).toHaveCount(1);
     await expect(page.locator('.seat-empty')).toHaveCount(5);
-    await page.reload();
+    await waitSaved(page); await page.reload();
     await expect(page.locator('.money strong')).toHaveText(coins!);
     await expect(page.locator('.table-space.state-consuming')).toHaveCount(1);
     await page.getByRole('button', { name: 'Nhập hàng', exact: true }).click();
@@ -57,7 +58,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
     await expect(page.getByRole('heading', { name: 'Your own corner' })).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.getByRole('button', { name: 'Restock', exact: true })).toBeVisible();
-    await page.reload();
+    await waitSaved(page); await page.reload();
     await expect(page.getByRole('button', { name: 'Restock', exact: true })).toBeVisible();
     expect(errors).toEqual([]);
   });
@@ -83,7 +84,7 @@ test('a neglected first shift closes after remaining guests expire and shows onl
   await page.clock.fastForward(maxPatience + c.patience.graceMs + c.runtime.tableSeatingMs + c.runtime.tableCleaningMs);
   await expect(page.getByRole('heading', { name: 'Sổ ca hôm nay' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Ngừng đón khách' })).toHaveCount(0);
-  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));
+  const saved = JSON.parse(await readSave(page));
   expect(saved.version).toBe(2); expect(saved.log[0].command.type).toBe('activity'); expect(saved.log.some((e: { command: { type: string } }) => e.command.type === 'startShift')).toBe(true);
 });
 
@@ -118,7 +119,7 @@ test('tapped order stays live, returns keyboard focus, and closes on customer ex
   await expect(panel.getByRole('button', { name: 'Phục vụ cả mâm', exact: true })).toBeEnabled();
   expect(await page.locator('.energy strong').textContent()).not.toBe(timeBefore);
   // Weather changes patience; exercise this actual order's deadline, not a sunny-day estimate.
-  const saved = await page.evaluate(() => ({ text: localStorage.getItem('tbh.save.v1')!, now: Date.now() }));
+  const saved = { text: await readSave(page), now: await page.evaluate(() => Date.now()) };
   const current = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/pause.ts', 'inspect'], { encoding: 'utf8', input: JSON.stringify({ save: saved.text }) }));
   const remaining = current.now + current.remaining + current.grace - saved.now;
   expect(remaining).toBeGreaterThan(0);
@@ -182,7 +183,7 @@ for (const [mode, emoji] of [['early', '🤩'], ['late', '😐'], ['grace', '�
     expect(await page.locator('.toast-gain').evaluate(el => getComputedStyle(el).animationName)).toBe('none');
     await page.clock.runFor(2500);
     await expect(page.locator('.toast-gain')).toHaveCount(0);
-    await page.reload();
+    await waitSaved(page); await page.reload();
     await expect(page.locator('.money strong')).toHaveText(balance);
     await expect(page.locator('.toast-gain')).toHaveCount(0);
     await expect(table.locator('.customer-reaction')).toHaveText(emoji);
@@ -207,7 +208,7 @@ for (const width of [360, 390]) {
     await expect(badge).toHaveAccessibleName(/Tỉnh Táo ×1.1/);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const before = await badge.locator('time').textContent();
-    await page.goto('about:blank'); await page.clock.setSystemTime(new Date(fixture.now + 86400000));
+    await waitSaved(page); await page.goto('about:blank'); await page.clock.setSystemTime(new Date(fixture.now + 86400000));
     await page.goto('/'); await expect(badge.locator('time')).toHaveText(before!);
     await page.locator('.table-order-hint').first().click();
     await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
@@ -230,7 +231,7 @@ test('muting, guide skipping and reduced-motion preference survive normal play',
   await page.getByRole('button', { name: 'Bỏ qua', exact: true }).click();
   await page.getByRole('button', { name: 'Cài đặt', exact: true }).click();
   await page.getByRole('button', { name: 'Âm thanh Đang bật' }).click();
-  await page.reload();
+  await waitSaved(page); await page.reload();
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.settings.v1')!))).toMatchObject({ muted: true, guideDone: true });
   await expect(page.locator('.guide')).toHaveCount(0);
 });
@@ -250,7 +251,7 @@ test('hidden and offline time preserves the current order and remaining shift', 
   await expect(page.locator('.energy strong')).toHaveText(timeBefore!);
   await expect(page.locator('.toast-loss')).toHaveCount(0);
   await page.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, value: false }); document.dispatchEvent(new Event('visibilitychange')); });
-  await page.goto('about:blank');
+  await waitSaved(page); await page.goto('about:blank');
   await page.clock.setSystemTime(new Date('2026-09-09T10:01:11.100Z'));
   await page.goto('/');
   await expect(page.locator('.energy strong')).toHaveText(timeBefore!);
@@ -271,7 +272,7 @@ test('recovery rejects a bad import, accepts a valid backup and preserves the or
   expect(await page.evaluate(() => localStorage.getItem('tbh.save.v1'))).toBe('{bad-original');
   await input.setInputFiles({ name: 'backup.json', mimeType: 'application/json', buffer: readFileSync('packages/engine/test/fixtures/legacy-save-v1.json') });
   await expect(page.locator('.game-shell')).toBeVisible();
-  expect(await page.evaluate(() => Object.keys(localStorage).filter(k => k.startsWith('tbh.backup.')).map(k => localStorage.getItem(k)))).toContain('{bad-original');
+  expect(await readBackups(page)).toContain('{bad-original');
 });
 
 test('starting fresh requires an explicit choice and retains the corrupt backup', async ({ page }) => {
@@ -285,7 +286,7 @@ test('starting fresh requires an explicit choice and retains the corrupt backup'
   await page.getByRole('button', { name: 'Giữ bản dự phòng và tạo quán mới' }).click();
   await expect(page.locator('.game-shell')).toBeVisible();
   await expect(page.locator('.money strong')).toHaveText('750');
-  expect(await page.evaluate(() => Object.keys(localStorage).filter(k => k.startsWith('tbh.backup.')).map(k => localStorage.getItem(k)))).toContain('{bad-reset');
+  expect(await readBackups(page)).toContain('{bad-reset');
 });
 
 for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 }]) {
@@ -318,8 +319,8 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 
     await expect(page.locator('.ledger > div').filter({ hasText: 'Chi trong ca' }).locator('dd')).toHaveText('5');
     await expect(page.locator('.seat-customer')).toHaveCount(0);
     await expect(page.locator('.toast-loss')).toHaveCount(0);
-    await page.reload(); await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(coins - 5));
-    const save = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));
+    await waitSaved(page); await page.reload(); await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(coins - 5));
+    const save = JSON.parse(await readSave(page));
     expect(save.events.filter((e: { type: string }) => e.type === 'guests_dismissed')).toHaveLength(1);
   });
 }
@@ -338,7 +339,7 @@ test('insufficient close funds keep the guest paused until choosing to wait, the
   await page.getByRole('button', { name: 'Đợi khách dùng xong', exact: true }).click(); await page.clock.runFor(fixture.expiresIn + 500);
   await expect(page.getByRole('dialog', { name: 'Sổ ca hôm nay' })).toBeVisible();
   await expect(page.locator('.money strong')).toHaveText('0');
-  const save = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));
+  const save = JSON.parse(await readSave(page));
   expect(save.events.some((e: { type: string }) => e.type === 'guests_dismissed')).toBe(false);
 });
 
@@ -387,16 +388,16 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 
     await expect(hud).toHaveText('Nhịp quán bình thường');
     await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
     const report = page.getByRole('table', { name: 'Giờ Vàng trong ca' }); await report.scrollIntoViewIfNeeded(); await expect(report).toBeVisible();
-    const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));
+    const stored = JSON.parse(await readSave(page));
     const ended = stored.events.find((e: { type: string }) => e.type === 'rush_ended').data;
     await expect(report.locator('tbody td').nth(0)).toHaveText(new Intl.NumberFormat('vi-VN').format(ended.served));
     await expect(report.locator('tbody td').nth(1)).toHaveText(new Intl.NumberFormat('vi-VN').format(ended.lost));
     await expect(report.locator('tbody td').nth(2)).toHaveText(new Intl.NumberFormat('vi-VN').format(ended.revenue));
-    await page.keyboard.press('Escape'); await page.reload();
+    await page.keyboard.press('Escape'); await waitSaved(page); await page.reload();
     await expect(hud).toHaveText('Nhịp quán bình thường');
     await page.getByRole('button', { name: 'Cài đặt', exact: true }).click(); await page.getByLabel('Ngôn ngữ').selectOption('en'); await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Shift book', exact: true }).click(); await expect(page.getByRole('table', { name: 'Rush results this shift' })).toBeVisible();
-    const save = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));
+    const save = JSON.parse(await readSave(page));
     expect(save.events.filter((e: { type: string }) => e.type === 'rush_warning')).toHaveLength(1);
     expect(save.events.filter((e: { type: string }) => e.type === 'rush_started')).toHaveLength(1);
     expect(save.events.filter((e: { type: string }) => e.type === 'rush_ended')).toHaveLength(1);
@@ -442,7 +443,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 
     await expect(page.locator('.dog-object img')).toHaveAttribute('src', /dog-idle-lv1/);
     const dogSprites = [await page.locator('.dog-object img').getAttribute('src')];
     const boughtCoins = await page.locator('.money strong').textContent();
-    await page.reload(); await expect(page.locator('.money strong')).toHaveText(boughtCoins!);
+    await waitSaved(page); await page.reload(); await expect(page.locator('.money strong')).toHaveText(boughtCoins!);
     await expect(page.locator('.dog-object')).toHaveAccessibleName('Chó giữ quán · cấp 1');
     for (const level of [2, 3]) {
       await page.locator('.dog-object').click();
@@ -484,7 +485,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 
     await page.getByLabel('Ngôn ngữ').selectOption('en'); await page.keyboard.press('Escape'); await page.locator('.dog-object').click();
     await expect(page.getByRole('dialog')).toHaveAccessibleName('Guard dog'); await expect(page.locator('.dog-panel')).toContainText('Veteran dog');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!).events.filter((e: { type: string }) => ['dog_bought', 'dog_upgraded'].includes(e.type)));
+    const saved = JSON.parse(await readSave(page)).events.filter((e: { type: string }) => ['dog_bought', 'dog_upgraded'].includes(e.type));
     expect(saved.map((e: { data: { toLevel: number } }) => e.data.toLevel)).toEqual([1, 2, 3]);
   });
 }
@@ -522,7 +523,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 
     await page.keyboard.press('Escape'); await expect(page.locator('.nav-badge')).toHaveCount(0);
     const coins = fixture.coins - 12500 - 12500 - 20000 + 25000 + 12500;
     await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(coins));
-    await page.reload(); await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(coins));
+    await waitSaved(page); await page.reload(); await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(coins));
     for (const prop of await page.locator('.business-props button').all()) {
       const a = (await prop.boundingBox())!; expect(a.width).toBeGreaterThanOrEqual(44); expect(a.height).toBeGreaterThanOrEqual(44);
       for (const target of await page.locator('.equipment-object, .glass-counter, .dog-object, .stock-strip button').all()) {
@@ -535,7 +536,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 
     await expect(lp1.getByRole('heading')).toHaveText('Stall helper'); await expect(page.locator('.journey-summary h3')).toHaveText('Newcomer');
     await expect(page.locator('.milestone-list > li[data-level="4"]')).toContainText('Previously reached Silver keg');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    const state = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));
+    const state = JSON.parse(await readSave(page));
     expect(state.events.filter((e: { type: string }) => e.type === 'life_path_reward_claimed').map((e: { data: { level: string } }) => e.data.level)).toEqual(['LP2', 'LP1']);
   });
 }
@@ -567,13 +568,13 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 
     await expect(page.locator('.toast-gain strong')).toHaveText(`+${fixture.quote.credited}`);
     const amount = fixture.coins - cost + fixture.quote.credited;
     await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(amount));
-    await page.reload(); await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(amount));
+    await waitSaved(page); await page.reload(); await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(amount));
     await page.getByRole('button', { name: 'Sổ ca', exact: true }).click(); await expect(page.locator('.ledger')).toContainText('Đơn đã giao'); await expect(page.locator('.ledger')).toContainText('Tiền đơn sau chiết khấu');
     await page.keyboard.press('Escape'); await page.getByRole('button', { name: 'Cài đặt', exact: true }).click(); await page.getByLabel('Ngôn ngữ').selectOption('en'); await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Phone · delivery orders', exact: true }).click();
     await expect(page.getByRole('dialog', { name: 'Delivery order', exact: true })).toContainText('Next order in');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));
+    const saved = JSON.parse(await readSave(page));
     expect(saved.events.filter((e: { type: string }) => e.type === 'shipper_completed')).toHaveLength(1);
   });
 }
@@ -622,14 +623,14 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
   await page.getByRole('button', { name: 'Xem mâm · bàn 1', exact: true }).first().click(); await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
   await prop.click(); await expect(golden.getByRole('button')).toBeEnabled(); await golden.getByRole('button').click();
   await expect(golden.getByRole('button')).toHaveText('Đang treo');
-  await page.keyboard.press('Escape'); await page.reload();
+  await page.keyboard.press('Escape'); await waitSaved(page); await page.reload();
   await expect(page.getByRole('button', { name: 'Biển Hoàng kim · đổi kiểu', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Cài đặt', exact: true }).click(); await page.getByLabel('Ngôn ngữ').selectOption('en'); await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Golden sign · change style', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Shop sign', exact: true })).toContainText('VIP attraction ×3');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));
+  const saved = JSON.parse(await readSave(page));
   expect(saved.events.filter((e: { type: string }) => e.type === 'signboard_installed')).toHaveLength(1);
   expect(saved.events.filter((e: { type: string }) => e.type === 'signboard_bought')).toHaveLength(2);
   const purchase = saved.events.filter((e: { type: string }) => e.type === 'signboard_bought').at(-1);
@@ -656,7 +657,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
   await panel.getByRole('button', { name: 'Phát tờ rơi', exact: true }).click(); await expect(panel).toHaveCount(0);
   const trigger = page.getByRole('button', { name: 'Tờ rơi · còn 0', exact: true }); await expect(trigger).toHaveText('01:30');
   const box = (await trigger.boundingBox())!; expect(box.width).toBeGreaterThanOrEqual(44); expect(box.height).toBeGreaterThanOrEqual(44);
-  await page.clock.runFor(5000); await expect(trigger).toHaveText('01:25'); await page.reload(); await expect(trigger).toHaveText('01:25');
+  await page.clock.runFor(5000); await expect(trigger).toHaveText('01:25'); await waitSaved(page); await page.reload(); await expect(trigger).toHaveText('01:25');
   await trigger.click(); await expect(panel.getByRole('button', { name: 'Phát tờ rơi', exact: true })).toBeDisabled();
   await page.screenshot({ path: `.qa/flyer-active-${viewport.width}.png` }); await page.keyboard.press('Escape');
   for (let i = 0; i < 20; i++) {
@@ -668,7 +669,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
   const report = panel.getByRole('region', { name: 'Chiến dịch gần nhất', exact: true }); await expect(report).toBeVisible();
   await expect(report).toContainText('Đã chạy 90s'); await expect(report).toContainText('Xu thực nhận');
   await expect(panel.getByRole('button', { name: 'Phát tờ rơi', exact: true })).toBeDisabled();
-  await page.clock.runFor(1000); const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));
+  await page.clock.runFor(1000); const saved = JSON.parse(await readSave(page));
   const ends = saved.events.filter((e: { type: string }) => e.type === 'flyer_ended'); expect(ends).toHaveLength(1); expect(ends[0].data.served).toBeGreaterThan(0); expect(ends[0].data.revenue).toBeGreaterThan(0);
   expect(saved.events.filter((e: { type: string }) => e.type === 'flyer_bought')).toHaveLength(1);
   await page.screenshot({ path: `.qa/flyer-report-${viewport.width}.png` }); await page.keyboard.press('Escape');

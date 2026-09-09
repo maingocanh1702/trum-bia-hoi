@@ -331,5 +331,8 @@
   "season.history": "Các vụ đã kết thúc",
   "season.empty": "Chưa có kết quả Vụ Bia.",
   "season.legacy": "Doanh thu cũ chưa chia mùa: {amount} xu. Tổng doanh thu trọn đời vẫn được giữ nguyên.",
-  "error.configSeasonTiers": "Cấu hình mới chưa tương thích với bậc Giải Nhậu đã lưu. Ca chưa được mở."
+  "error.configSeasonTiers": "Cấu hình mới chưa tương thích với bậc Giải Nhậu đã lưu. Ca chưa được mở.",
+  "save.loading": "Đang mở quán…",
+  "save.storageUnavailable": "Chưa mở được dữ liệu đã lưu. Thử tải lại; tiến trình cũ vẫn được giữ.",
+  "save.conflict": "Bản chơi đã được cập nhật ở tab khác. Tải bản sao của tab này trước khi tải lại."
 }

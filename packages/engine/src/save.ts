@@ -4,11 +4,14 @@ import type { LoggedCommand } from './types';
 const CATALOG_SAVE_VERSION = 3; // config-exempt: fixed local-save format revision, not economy tuning
 
 /** Command log is append-only. The time frontier replays autonomous events between commands. */
-export function encodeSave(game: Game): string {
+export function saveMetadata(game: Game) {
   // A live dev tab can still hold a pre-upgrade Game instance during hot reload.
   const configs = (game.configs ?? [game.config]).slice(1).map(c => c.raw);
   const version = configs.length ? CATALOG_SAVE_VERSION : game.log.some(e => !e.rulesVersion) || game.world.events.some(e => !e.idempotencyKey) ? 1 : 2;
-  return JSON.stringify({ version, seed: game.seed, createdAt: game.createdAt, playerId: game.playerId, config: (game.initialConfig ?? game.config).raw, ...(configs.length ? { configs } : {}), log: game.log, events: game.world.events, now: game.world.now });
+  return { version, seed: game.seed, createdAt: game.createdAt, playerId: game.playerId, config: (game.initialConfig ?? game.config).raw, ...(configs.length ? { configs } : {}) };
+}
+export function encodeSave(game: Game): string {
+  return JSON.stringify({ ...saveMetadata(game), log: game.log, events: game.world.events, now: game.world.now });
 }
 
 /** Replay may enrich old event payloads with additive fields; every recorded value must still match. */

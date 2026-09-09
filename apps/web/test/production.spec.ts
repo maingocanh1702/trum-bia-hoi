@@ -1,3 +1,4 @@
+import { readSave, waitSaved } from './storage';
 import { test, expect } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 const fixture = (save?: string, legacy = false) => JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/production.ts', ...(save ? ['inspect'] : legacy ? ['legacy'] : [])], { encoding: 'utf8', input: save ? JSON.stringify({ save }) : undefined }));
@@ -7,7 +8,7 @@ for (const width of [360, 390]) test(`stocked beer capacity and upgrade comparis
   await page.addInitScript(save => { if (!localStorage.getItem('batch-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('tbh.settings.v1', JSON.stringify({ welcomed: true, guideDone: true })); localStorage.setItem('batch-seeded', '1'); } }, f.save);
   await page.goto('/');
   const keg = page.getByRole('button', { name: 'Bom bia', exact: true }), washer = page.getByRole('button', { name: 'Bồn rửa', exact: true });
-  const snapshot = async () => fixture(await page.evaluate(() => localStorage.getItem('tbh.save.v1')!));
+  const snapshot = async () => fixture(await readSave(page));
   await expect(washer.locator('.capacity-badge')).toHaveText('0/1');
   const cooler = page.locator('.equipment-object.cooler');
   await expect(cooler.locator('.capacity-badge')).toHaveText('8.04s');
@@ -31,7 +32,7 @@ for (const width of [360, 390]) test(`stocked beer capacity and upgrade comparis
   await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
   await expect(keg.locator('.capacity-badge')).toHaveText('4/5'); await expect(keg.getByRole('progressbar')).toBeVisible();
   await page.clock.runFor(2700); await expect(keg.locator('.capacity-badge')).toHaveText('5/5');
-  await page.reload(); await expect(keg.locator('.capacity-badge')).toHaveText('5/5');
+  await waitSaved(page); await page.reload(); await expect(keg.locator('.capacity-badge')).toHaveText('5/5');
   await washer.click(); const washPanel = page.getByRole('dialog', { name: 'Bồn rửa', exact: true });
   await expect(washPanel.getByText('1 ly/mẻ · 7s', { exact: true })).toBeVisible();
   await expect(washPanel.getByText('1 ly/mẻ · 5s', { exact: true })).toBeVisible();

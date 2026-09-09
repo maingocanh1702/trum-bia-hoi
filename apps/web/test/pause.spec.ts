@@ -1,3 +1,4 @@
+import { readSave, waitSaved } from './storage';
 import { test, expect, type Page } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 const fixture = (input?: { save: string; orderId: string }) => JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/pause.ts', ...(input ? ['inspect'] : [])], { encoding: 'utf8', input: input ? JSON.stringify(input) : undefined }));
@@ -6,7 +7,7 @@ async function boot(page: Page) {
   await page.clock.pauseAt(new Date(f.now));
   await page.addInitScript(save => { if (!localStorage.getItem('pause-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('tbh.settings.v1', JSON.stringify({ welcomed: true, guideDone: true })); localStorage.setItem('pause-seeded', '1'); } }, f.save);
   await page.goto('/');
-  return { f, snapshot: async () => fixture({ save: await page.evaluate(() => localStorage.getItem('tbh.save.v1')!), orderId: f.orderId }) };
+  return { f, snapshot: async () => fixture({ save: await readSave(page), orderId: f.orderId }) };
 }
 
 test('stock purchases keep the menu open and the whole game paused until closing, then the same table can be served', async ({ page }) => {
@@ -51,7 +52,7 @@ test('switching from upgrades to equipment stays paused and reloading preserves 
   await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click(); await page.clock.runFor(1000); const before = await snapshot();
   await page.locator('.kitchen-entry').click(); await expect(page.getByRole('dialog', { name: 'Bếp', exact: true })).toBeVisible();
   await page.clock.runFor(40000); const nested = await snapshot(); expect(nested.paused).toBe(true); expect(nested.remaining).toBe(before.remaining);
-  await page.reload(); await page.clock.runFor(1000); const after = await snapshot();
+  await waitSaved(page); await page.reload(); await page.clock.runFor(1000); const after = await snapshot();
   expect(after.active).toBe(true); expect(after.expired).toBe(0); expect(after.remaining).toBe(before.remaining - 1000);
   await expect(page.locator('.sheet[open]')).toHaveCount(0);
 });

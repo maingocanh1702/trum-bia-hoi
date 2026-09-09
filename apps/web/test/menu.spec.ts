@@ -1,3 +1,4 @@
+import { waitSaved } from './storage';
 import { test, expect } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 const fixture = (mode = 'live') => JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/menu.ts', mode], { encoding: 'utf8' }));
@@ -23,7 +24,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
     await expect(page.getByRole('dialog', { name: 'Sổ ca hôm nay', exact: true })).toBeVisible();
     expect(f.after.rows.reduce((n: number, row: { wasted: number }) => n + row.wasted, 0)).toBeGreaterThan(0);
     for (const row of f.after.rows) await expect(panel.locator(`[data-dish="${row.dish}"] td`)).toHaveText([row.ordered, row.sold, row.wasted].map(n => number(n)));
-    await page.reload(); await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
+    await waitSaved(page); await page.reload(); await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
     await expect(panel.locator('[data-metric="avgTicket"]')).toHaveText(number(f.after.avgTicket));
     await page.keyboard.press('Escape'); await expect(page.getByRole('button', { name: 'Sổ ca', exact: true })).toBeFocused();
     await page.getByRole('button', { name: 'Cài đặt', exact: true }).click(); await page.getByLabel('Ngôn ngữ').selectOption('en'); await page.keyboard.press('Escape');

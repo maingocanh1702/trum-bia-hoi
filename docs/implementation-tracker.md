@@ -1,6 +1,6 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.31.1
+> **Version:** v0.32.0
 > **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-09 (layout/art theo ảnh owner)
 > **Trạng thái:** Active — **M0 qua verify; review sửa lỗi nền và layout/art đã CLEAN. M1–M3 tiếp tục triển khai; M4 bắt đầu nền config pin/replay, server event store đã review; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.3** (1 phase, mốc M0–M9).
 > **Owner:** Team
@@ -26,6 +26,10 @@ passes.250engine/server tests, config/build, ordinary/rush and native review pas
 Actual30-day save is80MB and an isolated Chromium size probe throws
 QuotaExceededError. Next priority: durable career storage before account/ranking
 expansion. Advanced k scope and full LP0–LP7 remain open;20inprogress,0complete.
+
+Browser storage slice: IndexedDB delta/atomic revision và migration đã triển khai;
+kiểm tra archive, recovery và UI đang chạy. Không cắt lịch sử, không thay đổi config;
+full M0–M9 vẫn20feature đang làm. Native review còn chờ.
 
 ## 0. How to use this tracker
 
@@ -257,3 +261,5 @@ expansion. Advanced k scope and full LP0–LP7 remain open;20inprogress,0complet
 | 2026-09-09 | v0.31.0 | Thêm sim:career thực hiện mua sắm, LP, mặt bằng và mùa qua lệnh thật; seed42 chạy30ngày tớiLP4. Đối soát tiền và replay2ngày qua; kiểm tra nhiều seed/review đang chạy. F13 vẫn đang triển khai. |
 
 | 2026-09-09 | v0.31.1 | Career b01f4b1 verified with two30-day seeds and full-month replay;250tests/config/build/ordinary/rush/review pass. Recorded actual80MB save and Chromium quota failure; prioritize durable storage, not full career readiness. |
+
+| 2026-09-09 | v0.32.0 | Thay local career autosave bằng IndexedDB nguyên tử, ghi delta và chặn stale tab; giữ nguồn legacy/backup. Codec không đổi rules. Kiểm tra hồi quy và native review đang chạy; không đánh dấu full feature hoàn tất. |

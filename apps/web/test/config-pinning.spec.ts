@@ -1,3 +1,4 @@
+import { readSave, waitSaved, readBackups } from './storage';
 import { test, expect } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 const decode = (save: string) => JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/config-pinning.ts', 'inspect'], { encoding: 'utf8', input: save }));
@@ -12,12 +13,12 @@ test('a mixed-config save imports through recovery, preserves its backup and con
   await page.locator('input[type=file]').setInputFiles({ name: 'mixed-save.json', mimeType: 'application/json', buffer: Buffer.from(f.save) });
   await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
   await expect(page.locator('.recovery')).toHaveCount(0);
-  const snapshot = async () => page.evaluate(() => localStorage.getItem('tbh.save.v1')!);
+  const snapshot = async () => readSave(page);
   await page.clock.runFor(1100);
   const before = decode(await snapshot()); expect(before.version).toBe(f.version); expect(before.world.coins).toBe(f.coins);
   expect(before.world.shift!.endsAt - before.world.shift!.startedAt - before.world.shift!.pausedMs).toBe(f.duration);
-  expect(await page.evaluate(() => Object.keys(localStorage).some(k => k.startsWith('tbh.backup.') && localStorage.getItem(k) === '{broken'))).toBe(true);
-  await page.reload(); await page.clock.runFor(1100);
+  expect((await readBackups(page)).includes('{broken')).toBe(true);
+  await waitSaved(page); await page.reload(); await page.clock.runFor(1100);
   const after = decode(await snapshot()); expect(after.version).toBe(f.version); expect(after.world.coins).toBe(f.coins);
   expect(after.world.events.filter((e: { type: string }) => e.type === 'config_pinned')).toHaveLength(1);
   expect(after.world.events.filter((e: { type: string }) => e.type === 'customer_served')).toEqual(before.world.events.filter((e: { type: string }) => e.type === 'customer_served'));
