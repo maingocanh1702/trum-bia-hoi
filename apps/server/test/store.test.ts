@@ -47,12 +47,16 @@ test('two SQLite connections invalidate stale cached state, deduplicate retries,
   send(a, 'one', 'open', { type: 'startShift' }); f.now += 11100;
   const action = ready(a, 'one'); b.read('one'); const first = send(a, 'one', 'serve', action), retry = send(b, 'one', 'serve', action);
   assert.deepEqual(retry, first);
+  const reordered = { orderId: action.orderId, tableId: action.tableId, type: action.type };
+  assert.deepEqual(send(b, 'one', 'serve', reordered), first);
+  a.close(); assert.deepEqual(send(f.open(), 'one', 'serve', reordered), first);
+  const c = f.open();
   assert.equal(send(b, 'one', 'serve', { type: 'restock', dish: 'bia', mode: 'one' }).result.reason, 'idempotencyConflict');
   const bought = send(b, 'one', 'stock', { type: 'restock', dish: 'bia', mode: 'one' }); assert.ok(bought.result.ok);
-  assert.deepEqual(send(a, 'one', 'stock', { type: 'restock', dish: 'bia', mode: 'one' }), bought);
-  assert.equal(a.read('one').world.coins, first.world.coins - config.values.menu.bia.unitCost);
+  assert.deepEqual(send(c, 'one', 'stock', { type: 'restock', dish: 'bia', mode: 'one' }), bought);
+  assert.equal(c.read('one').world.coins, first.world.coins - config.values.menu.bia.unitCost);
   assert.equal(b.read('two').world.coins, config.values.shift.startingCoinsBase);
-  assert.throws(() => a.createPlayer('one', 99), /playerExists/); assert.deepEqual(a.read('one'), retryWithoutResult(bought));
+  assert.throws(() => c.createPlayer('one', 99), /playerExists/); assert.deepEqual(c.read('one'), retryWithoutResult(bought));
 });
 
 test('a real SQLite failure between command and event inserts rolls everything back and evicts mutated cache before retry', t => {

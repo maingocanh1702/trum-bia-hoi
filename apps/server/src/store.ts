@@ -1,4 +1,5 @@
 import { DatabaseSync } from 'node:sqlite';
+import { isDeepStrictEqual } from 'node:util';
 import { Game, config as seedConfig, configContent, decodeSave, loadConfig, validEnvelope, type Config, type Command, type DomainEvent, type LoggedCommand, type World } from '@tbh/engine';
 
 const SCHEMA_VERSION = 1, CACHE_SIZE = 64; // config-exempt: persistence format and bounded process cache, not game tuning
@@ -135,7 +136,13 @@ export class GameStore {
   read(id: string): Snapshot { const { result: _, ...state } = this.operate(id, () => undefined); return state; }
   command(id: string, request: { idempotencyKey: string; command: Command }) {
     if (!validEnvelope({ ...request, at: 0 })) throw Error('store:invalidCommand');
-    return this.operate(id, (game, now) => game.command({ idempotencyKey: request.idempotencyKey, command: request.command, at: now }, request.command.type === 'startShift' ? this.config : undefined));
+    return this.operate(id, (game, now) => {
+      const row = this.db.prepare('SELECT entry FROM commands WHERE player_id=? AND idempotency_key=?').get(id, request.idempotencyKey);
+      const previous = row && (JSON.parse(String(row.entry)) as LoggedCommand).command;
+      // JSON member order is not command identity; retain the original engine payload on an equal retry.
+      const command = previous && isDeepStrictEqual(previous, request.command) ? previous : request.command;
+      return game.command({ idempotencyKey: request.idempotencyKey, command, at: now }, request.command.type === 'startShift' ? this.config : undefined);
+    });
   }
   eventsAfter(id: string, after: number): { seq: number; event: DomainEvent }[] {
     const { world, lastEventSeq } = this.read(id);
