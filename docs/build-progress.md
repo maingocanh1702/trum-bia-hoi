@@ -1777,3 +1777,28 @@ Full M0–M9, server liveness/remote cutover and release remain unfinished.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Implemented latest-handoff economy pipelines/demand/gates, versioned config compatibility and capacity/glass UI; full validation and independent review in progress. |
+
+
+### Economy2.0.1 checkpoint evidence at9c2870a
+
+Config/build pass;221 engine/server tests and75 browser checks pass. Native full-diff
+reviewf8ed8b1..9c2870a reports no actionable introduced defects. Its socket-based HTTP
+rerun was sandbox-blocked; primary full suite exercised engine and HTTP/server tests.
+10 ordinary cold/full1000-serve cohorts k2.4186–2.8738 and15 rush pressure cases pass.
+
+**Balance is not complete:** the10-row combined QR/neon/flyer/rested/shipper run
+fails its existing band assertion. Full-menu seeds are3.1327,3.0416,3.1320,3.0907,
+3.2074; cold-menu seeds2.5834–2.7939. The payment+tip/82.5 formula, approved numbers
+and failing evidence are retained. Asked owner whether the band is the baseline
+calibration target with separate advanced reporting or whether advanced numbers
+must also be retuned into band. No response yet; do not silently weaken the check,
+change the anchor, or describe the new economy as fully verified/ready.
+
+Receipt: `.qa/economy2-verification.json`. Source20-file handoff hashes rechecked and
+unchanged. Original checkout and owner's5174 save were not modified. Next independent
+work: lease calendar/quote/forfeiture/refund and UI, then actual career progression.
+Full M0–M9 remains unfinished.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Recorded functional verification/native review at9c2870a and the concrete advanced-economy band failure; retained numbers and requested owner clarification. |

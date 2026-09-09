@@ -5,7 +5,7 @@
 >
 > Trạng thái dự án: prototype Phase 0 đã hoàn thành nhiệm vụ của nó — chứng minh "feel" và **đo được k = 2.24–2.34** (trong band 2.0–3.0), bản Alpha đã host và chủ dự án đã chơi, phản hồi đã đưa vào GDD/03-SPEC (rót & rửa tự động, phục vụ theo Order). Từ 09/09 `prototype/` chuyển sang **lưu trữ**; game viết mới từ đầu. Slice `feat/p0-ui-serve-popover--r2` và gate "Alpha playtest 3–5 người" chỉ còn liên quan tới prototype — merge hay bỏ tuỳ chủ dự án, **không chặn** việc bắt đầu game (xem `SESSION-TRACK-LOG.md`).
 
-**Update owner 09/09 mới nhất:** đã đối chiếu bản gốc đang sửa (`economy.tbh.json` 2.0.0 / `08-SPEC` v1.5.0 / `03-SPEC` v1.3). Hướng tích hợp hiện hành ở [latest-handoff-adoption](docs/latest-handoff-adoption.md): trạm theo mẻ + vòi riêng, bếp theo chảo, mua cốc tới40, gọi mồi theo kho, heavy/thiết bị theo LP và rent mới. Runtime đã kiểm tra vẫn là config1.7.3; bộ số mới đang tích hợp, không lấy kết quả19test/career của checkout gốc làm bằng chứng cho branch này. Giữ menu pause, nâng cấp trong ca và thông báo mất khách chỉ bằng số theo chỉ đạo trực tiếp.
+**Update owner 09/09 mới nhất:** đã đối chiếu bản gốc đang sửa (`economy.tbh.json` 2.0.0 / `08-SPEC` v1.5.0 / `03-SPEC` v1.3). Hướng tích hợp hiện hành ở [latest-handoff-adoption](docs/latest-handoff-adoption.md): trạm theo mẻ + vòi riêng, bếp theo chảo, mua cốc tới40, gọi mồi theo kho, heavy/thiết bị theo LP và rent mới. Bản game đã tích hợp config2.0.1/rules21:221 engine/server+75 browser và native review qua; k nền trong band, k nâng cao3.04–3.21 đang chờ chốt. Lease/career còn tiếp tục; không lấy kết quả19test/career của checkout gốc làm bằng chứng cho branch này. Giữ menu pause, nâng cấp trong ca và thông báo mất khách chỉ bằng số theo chỉ đạo trực tiếp.
 
 ---
 
@@ -204,3 +204,5 @@ Giao việc: `11-PROMPT-PACK` Phần A (designer) và Phần B (dev) — cả ha
 | v1.21 (2026-09-09) | Owner yêu cầu rót sẵn/rửa theo mẻ và capacity HUD; cơ chế cập nhật tại08§8.1 +03§8. JSON1.7.3/rules18 giữ replay/pause/upgrade; bia dự trữ và ly uống là hai kho riêng. |
 
 | v1.22 (2026-09-09) | Đối chiếu handoff mới ở checkout gốc, nhận mục tiêu economy2.0 và ghi rõ nguồn/precedence/việc tích hợp tại docs/latest-handoff-adoption.md. Header hai checkout phát triển riêng; dùng nội dung thực tế, không suy recency từ số phiên bản. Không ghi nhận kết quả engine gốc thành kết quả branch game hiện hành. |
+
+| v1.23 (2026-09-09) | Ghi nhận checkpoint9c2870a economy2.0.1/rules21 và kết quả kiểm tra; công khai band nâng cao chưa qua, giữ số/formula chờ owner, tiếp tục lease/career. |

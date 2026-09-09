@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-09 17:24 · **Branch hiện tại:** `codex/game-build-isolated`
+> **Cập nhật:** 2026-09-09 17:34 · **Branch hiện tại:** `codex/game-build-isolated`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -92,7 +92,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 0
-- **Notes:** Engine mới: cốc định danh, auto-rót/rửa, huỷ đơn trả cốc bẩn; regression + replay pass. Đang tích hợp UI/art.
+- **Notes:** Rules21: mua ly theo tổng sở hữu40, quote/debit/retry và menu pause đã kiểm tra; giữ replay1.x. Engine mới: cốc định danh, auto-rót/rửa, huỷ đơn trả cốc bẩn; regression + replay pass. Đang tích hợp UI/art.
 
 ### F01 — Vòng Lặp Mở Ca — ca 12 phút, thể lực, trần ngày 500k
 
@@ -119,7 +119,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 0
-- **Notes:** Order cấp bàn, 1 chạm, grace, mua/nâng bàn. Giá ghế vượt mốc 10 và edge cases còn cần hoàn tất.
+- **Notes:** Rules21 nhận giá ghế11–48 và sửa vị trí bàn4–6 không che nút phục vụ; acceptance đầy đủ tiếp tục. Order cấp bàn, 1 chạm, grace, mua/nâng bàn. Giá ghế vượt mốc 10 và edge cases còn cần hoàn tất.
 
 ### F05 — Độ Hơi Bia — mất hơi 12s, cờ vàng, MVP mềm
 
@@ -146,7 +146,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S 🔒P
 - **Phase:** Phase 0
-- **Notes:** Rules v8: seeded ordinary schedule, full warning/fit, heavy enjoy, báo cáo Sổ ca VI/EN; giữ lịch/replay v7.85 unit/34 E2E/config/build xanh;50 sim rows k2.2622–2.7625 +15 pressure rows. Review đầy đủ6535484..5e46cf1 không có lỗi actionable; lunch/football/priority và full acceptance tiếp tục.
+- **Notes:** Rules21 heavy từ LP1; trước đó chỉ light.15 pressure cases pass. Rules v8: seeded ordinary schedule, full warning/fit, heavy enjoy, báo cáo Sổ ca VI/EN; giữ lịch/replay v7.85 unit/34 E2E/config/build xanh;50 sim rows k2.2622–2.7625 +15 pressure rows. Review đầy đủ6535484..5e46cf1 không có lỗi actionable; lunch/football/priority và full acceptance tiếp tục.
 
 ### F24 — Thiết Kế UI/UX Quán Bia — tokens, wireframe, sprite, animation
 
@@ -182,7 +182,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S 🔒B
 - **Phase:** Phase 1
-- **Notes:** Bom/rửa/hầm/quầy/bếp + mua/nâng bàn có command/UI; phone/QR quote/gate/command/UI + boa qua review không còn findings tại598f66f; Biển rules9 lắp/đổi5 kiểu, gate uy tín, customer mix/Neon +5 sprite draft;95 unit/37 E2E xanh, full-diff review bdbb493..9239007 không còn findings sau3 sửa lỗi biên. Tờ rơi rules11 có mua bằng uy tín, LP2, kho/timer/báo cáo/UI VI-EN;108 unit/40 E2E +30 k rows qua; full-diff review360453e..d5be3e0 không có lỗi actionable, nghi vấn nhân k đã bị bác bằng thực thi. Free flyer daily5/5 đã được producer claimDailyBonus + quests.test xác nhận; cốc mua và full F10 tiếp tục. Owner rules17: nâng cấp asset trong ca, giữ pause đến khi đóng menu; save v16 replay + mobile purchase đã qua config/build/166 unit/69 E2E và native review3ff21df không còn findings. Owner batch/HUD rules18/config1.7.3 đã qua174 unit/72 browser, config/build,20 canonical1000-serve k rows2.5821–2.9601 và15 rush; native reviewfe59758..7897bdd không còn lỗi actionable sau2 sửa HUD. Bia dự trữ tách kho thô, refill khi lấy lên mâm; save cũ nhận config ở ca kế tiếp. F10 đầy đủ/art từng cấp tiếp tục.
+- **Notes:** Rules21 bom dự trữ + vòi timed riêng, mua cốc, gate LP và capacity UI đã qua221 unit/server+75 browser và native review. Cân bằng nâng cao đang chờ quyết định (k tới3.2074); art và full acceptance tiếp tục. Lịch sử: Bom/rửa/hầm/quầy/bếp + mua/nâng bàn có command/UI; phone/QR quote/gate/command/UI + boa qua review không còn findings tại598f66f; Biển rules9 lắp/đổi5 kiểu, gate uy tín, customer mix/Neon +5 sprite draft;95 unit/37 E2E xanh, full-diff review bdbb493..9239007 không còn findings sau3 sửa lỗi biên. Tờ rơi rules11 có mua bằng uy tín, LP2, kho/timer/báo cáo/UI VI-EN;108 unit/40 E2E +30 k rows qua; full-diff review360453e..d5be3e0 không có lỗi actionable, nghi vấn nhân k đã bị bác bằng thực thi. Free flyer daily5/5 đã được producer claimDailyBonus + quests.test xác nhận; cốc mua và full F10 tiếp tục. Owner rules17: nâng cấp asset trong ca, giữ pause đến khi đóng menu; save v16 replay + mobile purchase đã qua config/build/166 unit/69 E2E và native review3ff21df không còn findings. Owner batch/HUD rules18/config1.7.3 đã qua174 unit/72 browser, config/build,20 canonical1000-serve k rows2.5821–2.9601 và15 rush; native reviewfe59758..7897bdd không còn lỗi actionable sau2 sửa HUD. Bia dự trữ tách kho thô, refill khi lấy lên mâm; save cũ nhận config ở ca kế tiếp. F10 đầy đủ/art từng cấp tiếp tục.
 
 ### F25 — Ngôn Ngữ / Tài Khoản — chọn vi/en, guest play, Google login (kể cả giữa ca)
 
@@ -209,7 +209,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S 🔒B
 - **Phase:** Phase 2
-- **Notes:** Live bếp và7 sprite đã qua reviewaf16833. Rules14 thêm dish/job/waste events, cursor ca/legacy partial, shared nominal-value helper và Sổ ca VI/EN gọi/bán/bỏ/TB mỗi mâm;143 unit/63 E2E/config/build xanh. Review độc lập full-base80ee489..2f1aa07 không nêu findings, tự chạy143 unit/config/build;20 k rows2.3125–2.7562 và15 pressure rows xanh. Demand theo loại khách, art/server và acceptance đầy đủ tiếp tục.
+- **Notes:** Rules21 chảo nhiều phần cùng món với batch ID riêng và demand theo kho/nhóm đã kiểm tra. Cân bằng nâng cao k3.0416–3.2074 chưa đạt band; quyết định owner đang chờ. Lịch sử: Live bếp và7 sprite đã qua reviewaf16833. Rules14 thêm dish/job/waste events, cursor ca/legacy partial, shared nominal-value helper và Sổ ca VI/EN gọi/bán/bỏ/TB mỗi mâm;143 unit/63 E2E/config/build xanh. Review độc lập full-base80ee489..2f1aa07 không nêu findings, tự chạy143 unit/config/build;20 k rows2.3125–2.7562 và15 pressure rows xanh. Demand theo loại khách, art/server và acceptance đầy đủ tiếp tục.
 
 ### F17 — Nhiệm Vụ Quán Nhậu — 7 nhánh (ngày/ca/gift/điểm danh/referral/ĐLT)
 

@@ -5,6 +5,17 @@
 
 ---
 
+## 🧭 Economy2.0.1 checkpoint — 2026-09-09
+
+Implemented/reviewed at9c2870a: versioned schema, tank/tap/pan pipelines, stock-aware
+demand, owned glass buying, LP gates and capacity UI. Config/build221 engine/server
++75 browser pass; native review has no actionable introduced defects. Ordinary
+1000-serve k2.4186–2.8738 and15rush pass. Combined full-menu k3.0416–3.2074 fails the
+band; owner question pending, preserve numbers and formula. Receipt in
+`.qa/economy2-verification.json`; do not redo this checkpoint or label full balance
+complete. NEXT independent implementation is leases/rental UI, then actual career;
+`.qa/lease-next-boundary.md` records bounded calendar/financial edge decisions.
+
 ## 🧭 Owner handoff update — 2026-09-09
 
 Read the actual updated original handoff, 03/08/10-SPEC, F08/F10/F11/F13/F14,

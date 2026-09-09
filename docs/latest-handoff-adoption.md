@@ -35,3 +35,5 @@ Source SHA256: handoff 8849b0ecd37f6a0ee6833f1f3b9e10876d3fafbae7ff2f196c8408ca7
 | 2026-09-09 | Disconnection prerequisite verified through1fa6b14. Economy2.0.1 candidate/schema and reconciled-doc probes prepared; runtime activation and gameplay/UI integration are next, not yet claimed complete. |
 
 | 2026-09-09 | Integrated complete versioned schemas, station/tap/pan pipeline, stock-aware demand, glass purchases, LP gates and VI/EN capacity UI;217 engine/server checks pass. Browser/simulation/review still in progress; lease and career remain next. |
+
+| 2026-09-09 | At9c2870a, config/build221 engine/server +75 browser and native review pass; ordinary k2.4186–2.8738,15rush pass. Combined full-menu k3.0416–3.2074 fails existing band; exact numbers/formula retained pending owner interpretation. Lease/career/full game remain unfinished. |
