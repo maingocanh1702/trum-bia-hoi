@@ -138,3 +138,49 @@ test('real served revenue crosses configured tiers and the reached peak survives
   send(g, { type: 'activity', active: false }); g.catchUp(epoch + 14 * DAY);
   assert.equal(g.world.peakLeague, 'huyen_thoai'); assert.equal(seasonTier(g.world, g.config).tier.id, 'dong'); replay(g);
 });
+
+test('a new calendar accepted at or after rollover replaces the unused window, even if a read already advanced it', () => {
+  for (const after of [0, 3600000]) for (const preRead of [true, false]) {
+    const g = served(); send(g, { type: 'endShift' }); g.advance(g.world.now + 3600000);
+    const old = structuredClone(g.world.seasons!), raw = structuredClone(config.raw); raw._meta.version = `calendar-${after}-${preRead}`;
+    raw.league.seasons.epochUtc = '2026-04-12T10:00:00Z'; raw.league.seasons.ranking.days = 10;
+    const next = loadConfig(raw), at = old.ranking.endsAt + after;
+    if (preRead) g.catchUp(at);
+    assert.ok(g.command({ at, idempotencyKey: 'rollover-pin', command: { type: 'startShift' } }, next).ok);
+    const ranking = g.world.seasons!.ranking, window = seasonWindow(at, next, 'ranking');
+    assert.equal(ranking.id, window.id); assert.equal(ranking.endsAt, window.endsAt); assert.equal(ranking.configVersion, next.version);
+    assert.equal(ranking.trackingFromAt, at); assert.equal(g.world.seasons!.contest.configVersion, config.version);
+    assert.equal(g.world.seasons!.results[0].earned, old.contestEarned); replay(g);
+  }
+});
+
+test('first rules23 opening rejects renamed permanent tiers for new games and historical saves', () => {
+  for (const g of [new Game(config, 42, epoch), decodeSave(readFileSync(new URL('./fixtures/pre-seasons-v22.json', import.meta.url), 'utf8'))]) {
+    if (g.world.phase !== 'resting') { g.replay({ at: g.world.now, idempotencyKey: 'resume22', command: { type: 'activity', active: true }, rulesVersion: 22, configVersion: g.config.version, result: { ok: true } }); g.advance(g.world.now + 3600000); }
+    const raw = structuredClone(g.config.raw); raw._meta.version = 'first-rename'; raw.league.tiers[0].id = 'other';
+    assert.equal(g.command({ at: g.world.now, idempotencyKey: 'first23-pin', command: { type: 'startShift' } }, loadConfig(raw)).reason, 'configSeasonTiers');
+    assert.equal(g.config.values.league.tiers[0].id, 'dong'); replay(g);
+  }
+});
+
+test('a later tip, bonus or second customer cannot partially credit an overflowing order', () => {
+  for (const boundary of ['tip', 'bonus', 'second-customer'] as const) {
+    const g = new Game(config, 42, epoch); send(g, { type: 'startShift' }); g.advance(epoch + 11000);
+    const w = g.world, t = w.tables.find(t => t.order?.items.every(i => i.state === 'ready'))!;
+    if (boundary === 'bonus') w.shift!.wellRestedUntil = w.now + 10000;
+    if (boundary === 'second-customer') {
+      const first = t.group!.customers[0], second = { ...first, id: 'overflow-second' }; t.group!.customers.push(second);
+      t.order!.items.push(...t.order!.items.map(i => ({ ...i, id: `${i.id}-second`, customerId: second.id })));
+    }
+    // At least the first payment fits; a subsequent component does not.
+    w.seasons!.contestEarned = Number.MAX_SAFE_INTEGER - (boundary === 'tip' ? 60 : 68);
+    const before = structuredClone(w), entry = { at: w.now, idempotencyKey: 'overflow-order', command: { type: 'serve' as const, tableId: t.id, orderId: t.order!.id } };
+    assert.equal(g.command(entry).reason, 'rewardOverflow'); assert.deepEqual(w, before);
+    assert.equal(g.command(entry).reason, 'rewardOverflow'); assert.deepEqual(w, before);
+  }
+  // The quote must use actual capped credits, not over-reject a large nominal order.
+  const raw = structuredClone(config.raw); raw.shift.dailyEarnCapBase = 1; const g = new Game(loadConfig(raw), 42, epoch);
+  send(g, { type: 'startShift' }); g.advance(epoch + 11000); const t = g.world.tables.find(t => t.order?.items.every(i => i.state === 'ready'))!;
+  g.world.seasons!.contestEarned = Number.MAX_SAFE_INTEGER - g.config.values.shift.dailyEarnCapBase;
+  assert.ok(send(g, { type: 'serve', tableId: t.id, orderId: t.order!.id }).ok); assert.equal(g.world.seasons!.contestEarned, Number.MAX_SAFE_INTEGER);
+});

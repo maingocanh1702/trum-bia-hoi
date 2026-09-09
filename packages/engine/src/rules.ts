@@ -120,6 +120,20 @@ export function credit(w: World, c: Config, amount: number, source: string): num
   creditSeasons(w, c, credited, source);
   return credited;
 }
+/** Run the same ledger mutation on its small writable projection before a whole order commits. */
+export function creditBatchSafe(w: World, c: Config, credits: { amount: number; source: string }[]): boolean {
+  const day = dayKey(w.now, c);
+  const trial: World = { ...w, dayEarned: { [day]: w.dayEarned[day] ?? 0 },
+    seasons: w.seasons ? { ...w.seasons, ranking: { ...w.seasons.ranking }, contest: { ...w.seasons.contest } } : undefined };
+  for (const { amount, source } of credits) {
+    if (!Number.isSafeInteger(amount) || amount < 0) return false;
+    const quote = creditQuote(trial, c, amount, source);
+    if (!seasonCreditSafe(trial, quote.credited, source)) return false;
+    credit(trial, c, amount, source);
+    if (![trial.coins, trial.lifetimeEarned, trial.seasonEarned, trial.seasons?.contestEarned ?? 0, trial.dayEarned[day]].every(n => Number.isSafeInteger(n) && n >= 0)) return false;
+  }
+  return true;
+}
 export function deliveryInterval(w: World, c: Config) {
   const style = signboardStyle(w, c), mult = style && 'shipperMult' in style ? Number(style.shipperMult) : 1;
   return Math.round(c.values.customerTypes.shipper.spawnIntervalMs / c.values.weather[w.shift?.weather ?? 'sunny'].shipperMult / mult);

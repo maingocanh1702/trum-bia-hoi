@@ -1,9 +1,9 @@
-import { SEASON_KINDS, compatibleSeasonTiers, nextSeasonEnd, syncSeasons } from './seasons';
+import { SEASON_KINDS, compatibleSeasonTiers, nextSeasonEnd, pinUnusedSeasons, syncSeasons } from './seasons';
 import { leaseQuote, leaveLocationQuote } from './locations';
 import { kitchenStatus } from './kitchen';
 import { isEconomy2, config as defaultConfig, configContent, BUSINESS_UNLOCKS, SIGN_STYLES, signWeightMult, DISHES, EQUIPMENT, WEATHER, deliveryBundles, arrivalIntervalMs, type Config, type SeatedType, type Rush } from './config';
 import { integer, random, weighted } from './rng';
-import { buyGlassQuote, addStock, credit, currentGuests, customerValue, dayKey, deliveryInterval, deliveryQuote, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
+import { buyGlassQuote, addStock, credit, creditBatchSafe, currentGuests, customerValue, dayKey, deliveryInterval, deliveryQuote, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
 import { lifePathStatus, lifePathRewardQuote, unlockQuote } from './progression';
 import { signboardQuote, signboardStyle } from './signboard';
 import { attendanceDay, attendanceRewardQuote, applyQuestEvent, planDailyQuests, questRewardQuote, zeroLossWindow } from './quests';
@@ -724,7 +724,7 @@ export class Game {
       case 'startShift': {
         const c = openingConfig.values, changed = openingConfig.version !== this.config.version, previousVersion = this.config.version;
         if (w.phase !== 'resting') return fail('shiftRunning');
-        if (changed && !compatibleSeasonTiers(w, openingConfig)) return fail('configSeasonTiers');
+        if (changed && !compatibleSeasonTiers(w, openingConfig, this.config)) return fail('configSeasonTiers');
         const location = changed && this.rulesVersion >= LEASE_RULES && isEconomy2(c) && !w.lease ? c.locations.fallback : w.location;
         if (changed && w.lease && (!isEconomy2(c) || c.locations.fallback !== w.lease.fallback)) return fail('configLocationMissing');
         if (changed && !c.locations.list.some(row => row.id === location)) return fail('configLocationMissing');
@@ -742,6 +742,7 @@ export class Game {
           w.staminaMs = Math.round(w.staminaMs / this.config.values.shift.durationMs * c.shift.durationMs);
           w.staminaAnchorAt = w.now; w.staminaAnchorMs = w.staminaMs;
           this.currentConfig = openingConfig; w.location = location;
+          if (this.rulesVersion >= SEASON_RULES) pinUnusedSeasons(w, openingConfig);
           for (const table of w.tables) table.capacity = c.upgrades.table.levels[table.level - 1].capacity;
         }
         if (this.rulesVersion >= SEASON_RULES) syncSeasons(w, this.config);
@@ -822,6 +823,9 @@ export class Game {
           const nominalBonus = this.rulesVersion >= 3 ? wellRestedBonus(w, this.config, value.payment, value.tip) : 0;
           return { customer, value, nominalBonus };
         });
+        if (this.rulesVersion >= SEASON_RULES && !creditBatchSafe(w, this.config, values.flatMap(({ value, nominalBonus }) => [
+          { amount: value.payment, source: 'servePayment' }, { amount: value.tip, source: 'serveTip' }, { amount: nominalBonus, source: 'servePayment' },
+        ]))) return fail('rewardOverflow');
         for (const { customer, value, nominalBonus } of values) {
           const baseCredit = credit(w, this.config, value.payment, 'servePayment') + credit(w, this.config, value.tip, 'serveTip');
           const bonus = nominalBonus ? credit(w, this.config, nominalBonus, 'servePayment') : 0;

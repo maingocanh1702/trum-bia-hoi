@@ -70,6 +70,14 @@ export function creditSeasons(w: World, c: Config, credited: number, source: str
   }
 }
 /** Tier identities/order carry permanent LP meaning; repricing their thresholds is safe at rollover. */
-export function compatibleSeasonTiers(w: World, c: Config): boolean {
-  return !w.seasons || SEASON_KINDS.every(kind => w.seasons![kind].tiers.map(t => t.id).join('\0') === c.values.league.tiers.map(t => t.id).join('\0'));
+export function compatibleSeasonTiers(w: World, c: Config, previous: Config): boolean {
+  const matches = (tiers: Config['values']['league']['tiers']) => tiers.length === c.values.league.tiers.length && tiers.every((tier, i) => tier.id === c.values.league.tiers[i].id);
+  return matches(previous.values.league.tiers) && (!w.seasons || SEASON_KINDS.every(kind => matches(w.seasons![kind].tiers)));
+}
+/** A just-rolled, unused window can accept opening config without rewriting any earned outcome. */
+export function pinUnusedSeasons(w: World, c: Config): void {
+  if (!w.seasons) return;
+  for (const kind of SEASON_KINDS) if (seasonEarned(w, kind) === 0 && w.seasons[kind].closedShifts === 0) {
+    w.seasons[kind] = newPeriod(w.now, w.now, c, kind);
+  }
 }

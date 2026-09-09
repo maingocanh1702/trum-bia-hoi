@@ -176,7 +176,10 @@ test('an overflowing offline advance cannot close a served shift or mutate calen
 
 
 test('early rules19 timestamp-keyed loss logs remain readable but new trusted calls require a loss identity', () => {
-  const g = readyOrder(), at = g.world.now, shiftId = g.world.shift!.id;
+  const legacy = loadConfig(JSON.parse(readFileSync(new URL('../../../docs/config/legacy/economy-1.7.3.json', import.meta.url), 'utf8')));
+  const g = new Game(legacy, 42, start);
+  assert.ok(g.replay({ at: start, idempotencyKey: 'legacy-open', command: { type: 'startShift' }, rulesVersion: 19, configVersion: g.config.version, result: { ok: true } }).ok);
+  g.advance(start + 11100); const at = g.world.now, shiftId = g.world.shift!.id;
   assert.ok(g.replay({ at, idempotencyKey: `system:connectionLost:${shiftId}:${at}`, command: { type: 'connectionLost', shiftId }, rulesVersion: 19, configVersion: g.config.version, result: { ok: true } }).ok);
   assert.equal(g.world.active, false); roundtrip(g);
   assert.equal(g.disconnect(at, shiftId, undefined as never).reason, 'invalidCommand');
