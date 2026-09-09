@@ -8,7 +8,8 @@
     "./http": "./src/http.ts"
   },
   "dependencies": {
-    "@tbh/engine": "*"
+    "@tbh/engine": "*",
+    "google-auth-library": "11.0.2"
   },
   "engines": {
     "node": ">=22.22.1"

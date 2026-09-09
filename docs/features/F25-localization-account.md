@@ -128,3 +128,24 @@ no account/login success is simulated. Other server/registry/reconnect work cont
 | Date | Change |
 |---|---|
 | 2026-09-09 | Recorded missing Google Client ID and setup guide; reviewed guest HTTP foundation exists, full F25 acceptance remains open. |
+
+
+## Google verification prerequisite — 2026-09-10
+
+`apps/server/src/google.ts` now verifies ID tokens through the official
+`google-auth-library`, with a configured Web Client ID, strict expiry/claim shape,
+matching request nonce and authorized party. The result contains only Google's
+immutable `sub`; email is never an account lookup key. Certificate IO is bounded,
+SDK errors are sanitized, and missing configuration returns unavailable.
+
+This module does not create a session or expose a successful login endpoint yet.
+The next account transaction must bind/consume a one-use nonce with the durable
+cookie, then link the verified provider. Guest claim, conflict handling, local-save
+provenance and uninterrupted web cutover remain unfinished. Owner still has no
+Client ID; no real Google login has been claimed. Five checks exercise real RSA
+signatures and the SDK through a local HTTP certificate service, including rotation,
+wrong claims, timeout and safe error output. Full checks/review are in progress.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 | Added bounded Google token verifier prerequisite and real-signature checks; no session/claim/UI activation or change to F25 acceptance. |

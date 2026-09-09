@@ -44,3 +44,20 @@ Việc thiếu Client ID không cản các phần server, config registry và re
 | Ngày | Thay đổi |
 |---|---|
 | 2026-09-09 | Ghi nhận chủ dự án chưa có Client ID; chuẩn bị hướng dẫn và origin thử nghiệm, giữ Google/cloud integration ở trạng thái chưa hoàn tất. |
+
+
+## Tiến độ xác minh token — 10/09/2026
+
+Đã có module `apps/server/src/google.ts` dùng `google-auth-library` 11.0.2.
+`googleVerifier(clientId)` trả về hàm xác minh `(credential, expectedNonce)`;
+thiếu Client ID trả về chưa khả dụng. Hàm chỉ trả `subject` sau xác minh, không tạo
+phiên đăng nhập. SDK kiểm tra chữ ký, issuer, audience và thời gian; game kiểm tra
+thêm nonce, authorized party, kiểu claim và expiry chính xác. Lỗi không chứa token.
+
+Launcher chưa đọc biến Google, web chưa bật GIS. Bước tiếp theo là nonce gắn cookie
+và giao dịch tạo/liên kết tài khoản; sau đó mới nối claim và giao diện. Kiểm thử RSA
+và chứng thư HTTP cục bộ không thay cho đăng nhập bằng Client ID thật.
+
+| Ngày | Thay đổi |
+|---|---|
+| 2026-09-10 | Thêm module xác minh token và kiểm thử chữ ký thật; phân biệt rõ prerequisite với đăng nhập/claim thực tế chưa bật. |

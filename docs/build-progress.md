@@ -1999,3 +1999,15 @@ resume `.qa/resume-browser-save-verification.md`. Current original20hashes uncha
 | Date | Change |
 |---|---|
 | 2026-09-10 | Closed independent storage code review atc9db016; retained explicit pending browser verification due host sleep. |
+
+
+## Google token verification prerequisite — 2026-09-10
+
+Base b5101f0: server-only official Google SDK wrapper plus five actual-signature
+checks using a local certificate HTTP service. Correct subject/audience/issuer,
+strict expiry, nonce and authorized party; rotating certificate cache, bounded IO,
+sanitized errors and disabled missing configuration. No engine/economy/UI edits.
+Full config/build/tests and independent review in progress. No login endpoint or
+account session/guest claim yet; no real Google Client ID. Continue with the durable
+nonce/account transaction, then provenance/conflict-safe claim and web cutover.
+Storage final91-case/80MB browser verification separately awaits an awake host.

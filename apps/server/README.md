@@ -148,3 +148,29 @@ Google guest claim and remote web integration remain mandatory follow-on work.
 | 2026-09-09 sequence | Added transactional per-client receipts, ordered HTTP commands and owned stream resume; schema0/1/2 migrate to3 preserving accounts/history. Tests cover lost response, multiple tabs, gaps/conflicts, failure acknowledgement, rollback and session isolation. Verification/review in progress. |
 
 | 2026-09-09 sequence verification | e390a1c: config/build187 engine/server,21 server checks, actual CLI/Chromium pass. Native review794d75c..e390a1c found no introduced actionable defects and independently passed12 storage checks. Client buffer/timeout closing and remote cutover remain pending. |
+
+
+## Google identity verifier (prerequisite only)
+
+`src/google.ts::googleVerifier(clientId)` uses the official Google Auth Library
+11.0.2 and returns an asynchronous `(credential, expectedNonce) => {subject}`.
+Missing configuration returns undefined; malformed configuration throws. Only the
+Google `sub` identifies an account. The wrapper additionally checks nonce, authorized
+party, claim types and strict expiry, and removes credentials from SDK error output.
+Certificate retrieval uses Google's rotating-key cache with a five-second timeout
+and no retries. No custom JWT signature implementation or tokeninfo call is used.
+
+This module is deliberately not an HTTP login endpoint. A following transaction must
+bind a server nonce to the durable session and consume it once with provider lookup
+and cookie rotation. Verification alone grants no game authority. The launcher still
+has no Google configuration and the owner has not provided a Client ID. Guest claim,
+conflict resolution, cloud/web integration and full F25 acceptance remain open.
+
+Run `node --import tsx --test apps/server/test/google.test.ts` for actual RSA-signed
+JWTs verified by the SDK against a local HTTP certificate server. It covers valid
+subjects, invalid claims/signatures/nonces, cache/rotation, unavailable/stalled keys
+and sanitized errors. No Google account or live credential is simulated by these tests.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 | Added server-only Google verifier prerequisite with real SDK/signature/certificate tests; no login/claim endpoint or deployment enabled. |
