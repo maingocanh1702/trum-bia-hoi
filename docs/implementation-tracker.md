@@ -1,6 +1,6 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.37.1
+> **Version:** v0.38.0
 > **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-09 (layout/art theo ảnh owner)
 > **Trạng thái:** Active — **M0 COMPLETE theo exit criteria; xem báo cáo closure M0–M5. M1–M3 tiếp tục triển khai; M4 bắt đầu nền config pin/replay, server event store đã review; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.3** (1 phase, mốc M0–M9).
 > **Owner:** Team
@@ -302,3 +302,5 @@ rows. Follow owner queue M4→M6→M7→M8→M9; defer extra M5 breadth/performa
 | 2026-09-10 | v0.37.0 | M4 rules24 engine prerequisite: trusted hidden/menu recovery and resting loss, preserving old replay. Focused tests pass; full verification/review in progress. F23/M4 remain open; durable liveness, web cutover and registry/admin next. |
 
 | 2026-09-10 | v0.37.1 | Rules24 prerequisite 0bcbcde verified:288 engine/server tests,42 final focused including real HTTP, config/build,10 kcohorts2.4186–2.8738 and15rush pass. Native review found no actionable defect;33 engine checks passed independently (reviewer HTTP socket permission blocked). F23/M4 still open; server leases/web authority/registry-admin next. |
+
+| 2026-09-10 | v0.38.0 | M4 schema7 heartbeat leases + authenticated HTTP + autonomous restart/closing; config/build298 tests and strengthened10-case presence suite pass. Native review pending. F23/M4 remain open for remote web/outbox/registry-admin. Engine/config values unchanged. |

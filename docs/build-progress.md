@@ -2148,3 +2148,14 @@ config/build/typecheck,10 ordinary k cohorts2.4186–2.8738 and15rush all pass.
 Native review found no actionable correctness/security defect; independent engine
 checks33/33 pass, HTTP rerun limited by reviewer socket permissions. Receipt:
 `.qa/m4-presence-verification.json`. F23/M4 remain OPEN; this is engine readiness only.
+
+## 2026-09-10 — M4 durable server heartbeat (review pending)
+
+Schema7 now persists session-bound client leases and heartbeat sequences. Native
+HTTP heartbeat and restart scheduler normalize exact loss before clock catch-up;
+multiple views preserve aggregate menu/visibility state. Expiry/revocation, normal
+closing, rollback, action idempotency and legacy migrations have executable tests.
+Full config/build and298 engine/server tests pass; the strengthened final presence
+suite10/10 passes. Native review is next. Engine/config values unchanged; prior
+0bcbcde ordinary k/rush evidence remains applicable. Remote web/outbox/registry-admin
+remain open, as does M4. Owner's no-public-upload/no80MB-tuning timebox is preserved.

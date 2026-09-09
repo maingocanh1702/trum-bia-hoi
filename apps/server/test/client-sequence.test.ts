@@ -83,8 +83,8 @@ test('v2 guest session and authoritative history migrate to ordered streams with
   const f = fixture(t), session = f.store.createGuestSession(86400000);
   const original = f.store.command(session.playerId, { idempotencyKey: 'already-opened', command: { type: 'startShift' } });
   f.store.close(); const db = new DatabaseSync(f.file); t.after(() => db.close());
-  db.exec('DROP TABLE engine_checkpoints; DROP TABLE local_imports; DROP TABLE account_logins; DROP TABLE google_challenges; DROP TABLE google_accounts; DROP INDEX sessions_player; DROP TABLE client_receipts; DROP TABLE client_streams; PRAGMA user_version=2');
-  const migrated = f.open(); assert.equal(db.prepare('PRAGMA user_version').get()!.user_version, 6);
+  db.exec('DROP TABLE client_presence; DROP TABLE engine_checkpoints; DROP TABLE local_imports; DROP TABLE account_logins; DROP TABLE google_challenges; DROP TABLE google_accounts; DROP INDEX sessions_player; DROP TABLE client_receipts; DROP TABLE client_streams; PRAGMA user_version=2');
+  const migrated = f.open(); assert.equal(db.prepare('PRAGMA user_version').get()!.user_version, 7);
   assert.equal(migrated.session(session.token)!.playerId, session.playerId);
   const stream = migrated.connect(session.playerId); assert.deepEqual(stream.world, original.world);
   const retried = migrated.clientCommand(session.playerId, request(stream.clientId, 1, 'already-opened', { type: 'startShift' }));

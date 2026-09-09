@@ -53,7 +53,7 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
   };
   // ponytail: bounded process-local limiter; enforce at a shared edge before multi-host deployment.
   const requests = new Map<string, { until: number; count: number }>();
-  return createServer({ maxHeaderSize: BODY_BYTES, requestTimeout: REQUEST_TIMEOUT_MS, headersTimeout: HEADER_TIMEOUT_MS }, async (req, res) => {
+  const server = createServer({ maxHeaderSize: BODY_BYTES, requestTimeout: REQUEST_TIMEOUT_MS, headersTimeout: HEADER_TIMEOUT_MS }, async (req, res) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8'); res.setHeader('Cache-Control', 'no-store');
     res.setHeader('X-Content-Type-Options', 'nosniff'); res.setHeader('Vary', 'Origin');
     const reply = (status: number, data: unknown) => { if (!res.destroyed) { res.statusCode = status; res.end(JSON.stringify(data)); } };
@@ -104,7 +104,15 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
       if (req.method === 'POST' && path === '/player/connect') {
         if (!record(body) || Object.keys(body).some(k => k !== 'clientId') || body.clientId !== undefined && (typeof body.clientId !== 'string' || !body.clientId || body.clientId.length > 128)) throw new HttpError(400, 'invalidClient'); // config-exempt: transport identifier length bound
         const connected = store.connect(owner.playerId, body.clientId as string | undefined);
-        reply(200, { ...publicState(connected), clientId: connected.clientId, acknowledgedSeq: connected.acknowledgedSeq }); return;
+        reply(200, { ...publicState(connected), clientId: connected.clientId, acknowledgedSeq: connected.acknowledgedSeq, heartbeatSeq: connected.heartbeatSeq }); return;
+      }
+      if (req.method === 'POST' && path === '/player/heartbeat') {
+        if (!record(body) || Object.keys(body).some(k => !['clientId', 'beatSeq', 'active', 'paused'].includes(k)) ||
+            typeof body.clientId !== 'string' || !Number.isSafeInteger(body.beatSeq) || typeof body.active !== 'boolean' || typeof body.paused !== 'boolean') throw new HttpError(400, 'invalidHeartbeat');
+        const beat = store.heartbeat(token!, { clientId: body.clientId, beatSeq: Number(body.beatSeq), active: body.active, paused: body.paused });
+        reply(beat.error ? 409 : 200, { ...publicState(beat), clientId: beat.clientId, heartbeatSeq: beat.heartbeatSeq,
+          heartbeatUntil: beat.heartbeatUntil, heartbeatIntervalMs: beat.heartbeatIntervalMs, heartbeatTimeoutMs: beat.heartbeatTimeoutMs,
+          duplicate: beat.duplicate, error: beat.error }); return;
       }
       if (req.method === 'GET' && path === '/player/state') { reply(200, publicState(store.read(owner.playerId))); return; }
       if (req.method === 'GET' && path === '/player/events') {
@@ -118,7 +126,7 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
         if (!record(body) || Object.keys(body).some(k => !['command', 'idempotencyKey', 'clientId', 'clientSeq'].includes(k)) ||
             typeof body.clientId !== 'string' || !body.clientId || body.clientId.length > 128 || !Number.isSafeInteger(body.clientSeq) || Number(body.clientSeq) < 1 || !validEnvelope(envelope) || // config-exempt: transport identifier length bound
             Object.keys(envelope.command).some(k => k !== 'type' && !(commandFields[envelope.command.type] as readonly string[]).includes(k))) throw new HttpError(400, 'invalidCommand');
-        const response = store.clientCommand(owner.playerId, { command: envelope.command, idempotencyKey: envelope.idempotencyKey, clientId: body.clientId, clientSeq: Number(body.clientSeq) });
+        const response = store.clientCommand(owner.playerId, { command: envelope.command, idempotencyKey: envelope.idempotencyKey, clientId: body.clientId, clientSeq: Number(body.clientSeq) }, token);
         reply(response.error ? 409 : 200, { ...publicState(response), clientId: response.clientId, acknowledgedSeq: response.acknowledgedSeq, result: response.result, error: response.error }); return;
       }
       throw new HttpError(404, 'notFound');
@@ -129,10 +137,19 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
         'store:accountConflict': [409, 'accountConflict'], 'store:signOutRequired': [409, 'signOutRequired'],
       }[error.message];
       if (Array.isArray(auth)) { reply(Number(auth[0]), { error: auth[1] }); req.resume(); return; }
-      const input = error instanceof Error && ['store:invalidCursor', 'store:invalidCommand', 'store:invalidClient'].includes(error.message);
+      const input = error instanceof Error && ['store:invalidCursor', 'store:invalidCommand', 'store:invalidClient', 'store:invalidHeartbeat'].includes(error.message);
       reply(error instanceof HttpError ? error.status : error instanceof Error && error.message === 'store:invalidClient' ? 403 : input ? 400 : 500,
         { error: error instanceof HttpError ? error.message : input ? error.message.slice(6) : 'serverError' });
       req.resume();
     }
   });
+  let timer: ReturnType<typeof setInterval> | undefined;
+  const stop = () => { if (timer) clearInterval(timer); timer = undefined; };
+  const sweep = () => {
+    try { for (const failure of store.sweepPresence()) console.error('presence sweep failed', failure); }
+    catch (error) { console.error('presence sweep failed', error instanceof Error ? error.message : 'unknown'); }
+  };
+  server.on('listening', () => { stop(); sweep(); timer = setInterval(sweep, store.heartbeatIntervalMs); timer.unref(); });
+  server.on('close', stop); server.on('error', stop);
+  return server;
 }

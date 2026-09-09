@@ -314,3 +314,54 @@ M4 web cutover/reconnect/registry-admin; no public upload was introduced.
 | Date | Change |
 |---|---|
 | 2026-09-10 verified checkpoint | f86e2b3 passes full verify and independent17-test review; performance work timeboxed, M9 follow-up recorded. |
+
+## Durable heartbeat presence — schema7
+
+`POST /player/heartbeat` takes `{clientId, beatSeq, active, paused}` under the same
+cookie/origin rules. First heartbeat activates managed presence for that player.
+Use a fresh increasing `beatSeq`; gaps are allowed. `/player/connect` now returns
+`heartbeatSeq` for resuming an owned stream. The heartbeat response carries the
+sanitized server snapshot, sequence and `heartbeatUntil`, `heartbeatIntervalMs`,
+`heartbeatTimeoutMs`. No client clock, totals or session hash is accepted/exposed.
+
+Timeout equals the pinned config's `network.reconnectingUiDelayMs`; cadence is half
+that window. This derives transport detection from the existing configured UI limit,
+not a new economic knob. A persisted lease keeps its original deadline until renewed.
+An exact duplicate returns the existing ack/deadline without renewing; lower or
+conflicting sequence returns409 `heartbeatStale`. Use a fresh seq and current flags
+on reconnect, including hidden/menu state. Heartbeats with unchanged presence do
+not append engine commands. Requests still advance authoritative server time.
+
+| Situation | Behavior |
+|---|---|
+| Any live view is active / any live menu is open | Canonical aggregate active / paused. Both flags are independent. |
+| A view expires, others remain | Recompute aggregate at that view's expiry; no player-wide loss if another lease remains. |
+| Final view expires | Record trusted loss at exact expiry before catch-up; grace comes from the shift's pinned config. |
+| Session expires/revokes | Earlier session deadline bounds its leases, including Google token rotation. |
+| Fresh valid heartbeat inside grace | Recover using actual aggregate visibility/menu; keep customer wait paused appropriately. |
+| Recovery at/after grace | Normal closing wins; never reopen the shift. |
+| Managed player action | Requires that stream's live lease bound to its current valid cookie session. Otherwise409 `heartbeatRequired`; sequence is not consumed. |
+| Managed legacy `activity` |409 `presenceManaged`; send presence via heartbeat so an action cannot overwrite another view's menu. |
+| Legacy adapter before first heartbeat | Existing stream/action behavior remains until explicit cutover. No liveness claim for this path. |
+
+SQLite stores owned client leases and their last heartbeat sequence. Expiry groups
+are normalized in time order inside the same transaction as engine events/projection/
+checkpoint updates. `GameStore.sweepPresence()` processes due leases and disconnected
+shifts; failures include player ID and do not skip other due players. The native HTTP
+server sweeps on listening (including restart) and periodically, stopping its timer
+on close/error. HTTP request/socket completion is never interpreted as player loss.
+The single-host scan is a known scaling boundary; distributed scheduling remains M9.
+
+Deployment default `TBH_RATE_MAX` is600 per60seconds, overrideable as before, allowing
+heartbeat plus event polling and player actions. This is an HTTP abuse/resource limit,
+not gameplay tuning. Serving receipts remain exactly-once under their existing keys.
+
+Tests: `apps/server/test/presence.test.ts` exercises actual HTTP restart/scheduler,
+SQLite restart/two stores, token rotation/expiry, multi-view pause, reordered packets,
+rollback, old-schema migration and full deterministic replay after timeout closing.
+The remote web adapter, durable browser action outbox and reconnect UI are still next;
+this does not complete F23/M4. No public local-save upload was introduced.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 heartbeat implementation | Schema7 session-bound presence, pre-catchUp expiry, authenticated heartbeat and restart scheduler; legacy pre-activation adapters retained. Verification/review in progress. |

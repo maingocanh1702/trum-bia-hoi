@@ -343,3 +343,34 @@ No public upload or M9 history tuning was added.
 | 2026-09-10 rules24 recovery implementation | Trusted hidden/menu recovery and resting loss; genuine base rules23 fixture plus full-replay/checkpoint regressions. Config/build/tests/sim and native review in progress. F23 and M4 remain open. |
 
 | 2026-09-10 rules24 verified | `0bcbcde` passes config/build/typecheck,288 full engine/server tests,42 final focused tests including real HTTP,10 ordinary kcohorts and15rush. Native review: no actionable introduced correctness/security defects,33 engine tests independently pass; reviewer socket sandbox prevented its HTTP rerun. `.qa/m4-presence-verification.json`. Durable liveness and full F23§8 remain open. |
+
+## Durable server liveness — M4 transport checkpoint
+
+Schema7 adds session-bound client heartbeat leases. Authenticated
+`POST /player/heartbeat` activates managed presence; monotonic heartbeat sequencing
+is independent of the ordered action stream. Exact duplicate packets do not renew;
+older/conflicting packets cannot change presence. Timeout derives from pinned
+`network.reconnectingUiDelayMs`, heartbeat cadence is half that window. Lease expiry
+is bounded by cookie session expiry/revocation. First heartbeat is explicit migration
+from legacy adapter behavior, not a claim that legacy clients now detect disconnects.
+
+Before every authoritative catch-up, expire views in timestamp groups and recompute
+one aggregate: any live active view sets active; any live open menu sets paused.
+Final-view loss starts configured grace at the exact lease frontier, even if normal
+closing has already finished and the player is resting. Recovery preserves actual
+hidden/menu state; at/after grace normal closing wins. Managed actions require their
+own session-bound live lease; legacy activity cannot override managed presence.
+
+Native HTTP sweeps on startup/listening and periodically so persisted offline shifts
+drain without further requests. SQLite lease transitions, append-only engine commands/
+events, projection and checkpoint updates commit or roll back together. Ordinary
+HTTP socket completion is not loss. Duplicate serving still credits once after valid
+recovery. [Protocol and decision table](../../apps/server/README.md#durable-heartbeat-presence--schema7).
+
+M4 remains open: remote web uses local Game today; browser outbox/reconnect UI,
+registry/admin and full account/import/ranking integration are not completed here.
+No public upload or M9 history optimization is included.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 durable heartbeat | Added authenticated durable liveness and autonomous restart/timeout closing; native HTTP and SQLite regressions pass, final verification/review pending. F23§8 remains open pending web integration. |

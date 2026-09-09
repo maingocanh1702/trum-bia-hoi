@@ -58,12 +58,12 @@ test('checkpoint metadata, projection, origin, raw history and registry order mu
 
 test('schema5 history is replayed once and checkpointed even on an unchanged read; subsequent restart preserves exact state', t => {
   const f = fixture(t), before = f.start(); f.store.close();
-  f.db.exec('DROP TABLE engine_checkpoints; PRAGMA user_version=5');
+  f.db.exec('DROP TABLE client_presence; DROP TABLE engine_checkpoints; PRAGMA user_version=5');
   let replays = 0; const replay = Game.prototype.replay;
   Game.prototype.replay = function(...args) { replays++; return replay.apply(this, args); };
   t.after(() => { Game.prototype.replay = replay; });
   const migrated = f.open(), after = migrated.read('one'); assert.deepEqual(after.world, before.world); assert.ok(replays > 0);
-  assert.equal(f.db.prepare('PRAGMA user_version').get()!.user_version, 6);
+  assert.equal(f.db.prepare('PRAGMA user_version').get()!.user_version, 7);
   assert.ok(f.db.prepare('SELECT * FROM engine_checkpoints WHERE player_id=?').get('one'));
   const count = replays; migrated.close(); assert.deepEqual(f.open().read('one'), after); assert.equal(replays, count);
 });

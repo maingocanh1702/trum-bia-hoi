@@ -612,3 +612,5 @@ Các số sim/19-test trong các dòng sau thuộc engine tham chiếu của che
 | Date | Reconciled game update |
 |---|---|
 | 2026-09-09 | Adopted latest handoff numbers as config2.0.1, preserving owner pause/live-upgrade policy and immutable1.x snapshots. Rules21 station/demand/glass/LP-gate implementation is under verification; lease lifecycle and actual career measurements remain pending. Current evidence: docs/build-progress.md. |
+
+| 2026-09-10 server heartbeat | No values or tiers changed. The server derives its heartbeat timeout from pinned `network.reconnectingUiDelayMs` and cadence as half that detection window; lease expiry plus pinned `reconnectGraceMs` controls normal offline closing. Existing leases retain their recorded deadline until renewed. This gives the existing Tier B network row an explicit transport consumer; protocol details in apps/server/README.md. |

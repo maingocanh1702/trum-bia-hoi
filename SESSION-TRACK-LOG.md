@@ -5,6 +5,16 @@
 
 ---
 
+## 🧭 M4 durable heartbeat — 2026-09-10
+
+Base `3f1d2bc`. Implemented schema7 owned/session-bound heartbeat leases, monotonic
+presence sequence, aggregate menu/visibility, exact expiry before catch-up and native
+HTTP startup/timer sweep. Normal closing and resting loss are both durable. Tests
+cover real HTTP restart, two stores, replay/checkpoint, session rotation/revocation,
+rollback and action retry. Config/build298 tests + strengthened10presence pass;
+native review pending. No engine/config value changes, no public upload or80MB work.
+Next: web uses server snapshots/outbox/reconnect, then config registry/admin, M6–M9.
+
 ## 🧭 M4 connection recovery prerequisite — 2026-09-10
 
 Base `9e88643`, product `0bcbcde`. Trusted rules24 recovery preserves hidden/menu
