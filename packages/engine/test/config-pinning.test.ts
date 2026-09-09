@@ -114,19 +114,18 @@ test('an unsafe new clock is refused before onboarding can install an unrepresen
   assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
 });
 
-test('a published location rename cannot orphan an owned stall, including the first onboarding shift that skips rush validation', () => {
+test('a published free-location rename migrates unleased players on a successful opening, including onboarding without rush', () => {
   for (const returning of [false, true]) {
     const g = new Game(pinConfig('pin-A'), 42, 0);
     if (returning) { sendKitchen(g, { type: 'startShift' }); servePin(g); restPin(g); }
-    const before = structuredClone({ coins: g.world.coins, location: g.world.location, stamina: g.world.staminaMs, tables: g.world.tables, shift: g.world.shift, rng: g.world.rng });
+    const coins = g.world.coins;
     const renamed = pinConfig('rename', raw => {
       raw.locations.list.find(l => l.id === g.world.location)!.id = 'new-location'; raw.locations.fallback = 'new-location';
     });
-    assert.deepEqual(g.command(open(g), renamed), { ok: false, reason: 'configLocationMissing' });
-    assert.equal(g.config.version, 'pin-A'); assert.deepEqual({ coins: g.world.coins, location: g.world.location, stamina: g.world.staminaMs, tables: g.world.tables, shift: g.world.shift, rng: g.world.rng }, before);
-    assert.ok(!g.world.events.some(e => e.type === 'config_pinned')); assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
-    const compatible = nextPin(); assert.ok(g.command(open(g), compatible).ok); servePin(g); assert.ok(g.world.serves.at(-1)!.payment > 0);
-    assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
+    assert.ok(g.command(open(g), renamed).ok); assert.equal(g.config.version, 'rename');
+    assert.equal(g.world.location, 'new-location'); assert.equal(g.world.lease, undefined); assert.equal(g.world.coins, coins);
+    assert.ok(g.world.events.some(e => e.type === 'config_pinned')); assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
+    servePin(g); assert.ok(g.world.serves.at(-1)!.payment > 0); assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
   }
 });
 

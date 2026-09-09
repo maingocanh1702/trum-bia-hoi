@@ -1838,3 +1838,33 @@ validated the maximum configured whole-order calculation including customer/rush
 weather/QR/rest boosts. Failed openings preserve location/config.12 focused tests
 and build pass; full engine/server/browser/config/sim are rerunning. Native final
 review follows the fixed commit. Prior4600410 was not review-clean.
+
+
+### Lease final checkpoint throughce7564b
+
+234 engine/server and77browser checks pass, with config/build/typecheck green.
+Ten ordinary cold/full1000-serve cohorts remain k2.4186–2.8738,15rush cases pass.
+Native review0fc8c4f..4600410 found two config issues; correction review4600410..ce7564b
+resolves both and reports no remaining actionable introduced defects. Subsequent
+changes are tests/docs only: align free fallback migration with rules22 and preserve
+the mixed-order overflow guard under immutable legacy1.7.3 while modern schema
+rejects that config earlier. No product code changed after the reviewed correction.
+
+Receipt: `.qa/lease-verification.json`. Native review receipts `.qa/review-lease.txt`
+and `.qa/review-lease-fix.txt`; gameplay/browser artifacts use `.qa/lease-*`. Source20
+hashes remain unchanged, original checkout and owner5174 save untouched. Build keeps
+the existing large-chunk warning; config checker retains advisory literal warnings.
+The advanced boosted k failure remains a separate unresolved owner question; do not
+retune approved numbers or weaken the band before a reply.
+
+A diagnostic fresh-game seed42 ran8 actual shifts through commands:678serves,
+160495lifetimeearned,LP1 reached during shift7,phone purchased. No free money,
+assigned LP/peak or free equipment. Artifact `.qa/career-first-day-probe.json` is
+first-day diagnosis, not full career evidence. Next implementation is real season
+counters/peak producer (F12), required before proving higher LP/career. Full F14
+break-even/art/neighborhood/shift-report, server liveness/remote cutover and M0–M9
+remain ongoing. Do not rerun the closed lease review without new code or findings.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Closed lease correction verification throughce7564b; preserved advanced-band question and recorded actual first-day progression probe. |

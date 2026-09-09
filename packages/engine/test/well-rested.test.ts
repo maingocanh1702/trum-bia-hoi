@@ -1,11 +1,12 @@
+import legacy from '../../../docs/config/legacy/economy-1.7.3.json';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Game, kickAllQuote, config, loadConfig, dayKey, encodeSave, decodeSave, wellRestedRemaining, type Command, type Economy } from '../src';
 
 const origin = Date.parse('2026-09-08T00:00:00Z');
-function create(patch?: (raw: Economy) => void, at = origin, seed = 42) {
-  const raw = structuredClone(config.raw);
+function create(patch?: (raw: Economy) => void, at = origin, seed = 42, source: Economy = config.raw) {
+  const raw = structuredClone(source);
   for (const key of ['hot', 'humid', 'rain', 'cold'] as const) raw.weather[key].weight = 0;
   patch?.(raw);
   return new Game(loadConfig(raw), seed, at);
@@ -154,14 +155,16 @@ test('well-rested aliases cannot drift and invalid multipliers or clock units fa
   ]) assert.throws(() => create(patch));
 });
 
-test('an unrepresentable configured bonus cannot partially serve the earlier customer in a mixed group', () => {
-  const g = create(c => {
+test('modern config rejects overflowing service bonuses; legacy snapshots still refuse the entire mixed order before partial service', () => {
+  const patch = (c: Economy) => {
     c.onboarding.enabled = false;
     Object.entries(c.customerTypes).forEach(([key, profile]) => { profile.weight = key === 'thuong' || key === 'voi' ? 1 : 0; });
     c.customerTypes.thuong.paymentMult = 0;
     c.customerTypes.shipper.netRate = 0; // Isolate the table overflow path from the new delivery config guard.
     c.shift.wellRested.mult = c.tip.wellRestedMult = Number.MAX_VALUE;
-  }, origin, 8);
+  };
+  assert.throws(() => create(patch), /config:locations.maximumService/);
+  const g = create(patch, origin, 8, legacy);
   openRested(g); g.advance(g.world.shift!.nextSpawnAt + g.config.values.runtime.tableSeatingMs);
   const table = g.world.tables[0], order = table.order!;
   assert.deepEqual(table.group!.customers.map(c => c.type), ['thuong', 'voi']);

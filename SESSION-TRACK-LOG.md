@@ -5,6 +5,20 @@
 
 ---
 
+## 🧭 Lease verified; season producer next — 2026-09-09
+
+Rules22 lease productce7564b reviewed with both config findings resolved.234 engine/
+server,77browser,config/build/typecheck,10ordinary k cohorts2.4186–2.8738 and15rush pass.
+Test-only alignment preserves legacy overflow regression. Receipt `.qa/lease-verification.json`.
+Do not repeat the lease review/checkpoint. Next: real seasons/peakLeague producer, then
+career simulation. Read `.qa/league-next-boundary.md` and F12/F13/F28.
+
+Fresh actual8-shift diagnostic:678serves,160495earned,LP1 during shift7,phone bought;
+no direct LP/coins/gear assignment, not fullcareer proof. Source20files still match.
+Owner advanced-band scope question remains unanswered; keep2.0.1 numbers and failed
+combined evidence. No Google ClientID (owner said chưa có). Original checkout/5174
+save preserved. Full M0–M9 remains active;19features in progress.
+
 ## 🧭 Lease calendar/UI — 2026-09-09
 
 Rules22 lease purchase/early move/departure/calendar expiry/refund and VI/EN menu
