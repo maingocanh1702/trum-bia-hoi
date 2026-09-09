@@ -297,3 +297,43 @@ v7 rush-clock and v6 shipper replay tests also exercise the boundary unchanged.
 
 
 | 2026-09-09 rules11 | Savev2 accepts1–11. Optional world.flyers and shift.flyersUsed/flyer keep legacy projections unchanged; commands buyFlyer/activateFlyer use one quote, changeRep and exact current shiftId. Existing arrival helper takes the actual campaign state, expiry uses the injected scheduler, and summarizeRush derives seated results from events. Protocol10 remains the fixed switch-after-advance threshold; true v10 weather/Neon captures from432626d replay identically through first current input. Server/F17 claim producers remain separate unfinished milestones. |
+
+
+## 2026-09-09 — Per-shift config pinning and local save v3 (M4 prerequisite)
+
+The pure engine now separates the original creation snapshot from the current
+shift pin. `Game.command(envelope, openingConfig?)` accepts a loaded/frozen config
+only as a trusted adapter argument to `startShift`; player payload fields do not
+select a config. A registry must still resolve which snapshot is authorized.
+
+- Idempotency, malformed/stale input and version-content collisions are checked
+  before mutation. Retrying an opening returns its original result even if the
+  registry has since selected another version.
+- Elapsed time and pre-command housekeeping use the previous pin. Candidate
+  admission checks use the proposed config, but an active/closing shift, unready
+  stamina, exhausted day cap or invalid rush schedule cannot switch the current pin.
+- Only a successful opening adopts the candidate. Existing coins, earned ledgers,
+  stock, equipment and table identities/levels persist. Stamina keeps its proportion
+  of the old duration; owned tables take the new capacity for their existing level.
+  Starting-wallet/stock defaults never reset an existing player.
+- For a start command, logged `configVersion` identifies the admission candidate,
+  including a failed attempt; other commands identify the current pin. Successful
+  changed-version openings emit `config_pinned` with both versions and shift ID.
+  Refused-candidate housekeeping events may therefore retain the previous version.
+- Single-snapshot exports remain savev2. Savev3 stores `config` (original snapshot),
+  `configs` (additional used/attempted snapshots), commands, events and time frontier.
+  Replay resolves each command by exact version and rejects missing/duplicate/unused
+  catalog entries, unsupported pre-rules15 transitions, duplicate replay commands,
+  mismatched results or altered event fields. v3 compares both directions; v1/v2
+  retain their historical additive event-payload compatibility.
+- Rules15 introduces this transition; historical1–14 handlers remain replayable.
+  The rules10 elapsed-time boundary stays fixed. No canonical config keys, prices,
+  dependency, HTTP endpoint, authentication or network authority were added here.
+
+This is the engine prerequisite only. Config Registry persistence, version approval,
+scoped overrides/effectiveAt, RBAC, server event store, guest claim and reconnect
+remain M4 work. Local save validation is not an anti-cheat or authenticity proof.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Added rules15 trusted opening snapshot, immutable config catalog and multi-config savev3; preserved old replay protocols and clarified rejected-candidate log/event semantics. M4 server/registry still pending. |

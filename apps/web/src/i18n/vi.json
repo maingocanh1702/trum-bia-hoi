@@ -136,6 +136,7 @@
   "book.deliveryCompleted": "Đơn đã giao",
   "book.deliveryNet": "Tiền đơn sau chiết khấu",
   "book.deliveryMissed": "Đơn giao quá hạn",
+  "error.configClock": "Chưa mở được ca với cấu hình thời gian hiện tại.",
   "error.rushScheduleUnavailable": "Lịch Giờ Vàng không vừa ca. Kiểm tra cấu hình thời gian và số đợt.",
   "book.rushes": "Giờ Vàng trong ca",
   "book.rushKind": "Đợt",

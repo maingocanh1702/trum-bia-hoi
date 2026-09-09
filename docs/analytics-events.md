@@ -130,3 +130,17 @@ match earlier protocol runs. The autonomous adoption frontier remains rules10.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Added rules14 local dish/job/waste provenance, cursor coverage, shared nominal service-value definition and Sổ ca report. Recorded partial legacy semantics, zero-duration completion, exactly-once disposal and absence of remote collection. |
+
+
+## Rules15 — configuration pin provenance (2026-09-09)
+
+`config_pinned {shiftId, previousVersion, configVersion}` is emitted once when a
+successful opening adopts a different immutable snapshot. Its event envelope uses
+the new configVersion and the opening command idempotencyKey. Refused openings and
+retries do not emit it. A refused start command logs its attempted candidate version
+while any pre-command housekeeping events still use the previous active pin.
+This is local engine provenance; remote collection/registry publication is pending.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Added successful config pin transition event and clarified candidate-versus-active version provenance for refused openings. |

@@ -98,5 +98,5 @@ export type Command =
   | { type: 'emergencyPack' };
 export interface Envelope { idempotencyKey: string; at: number; command: Command }
 export interface Result { ok: boolean; reason?: string; outcome?: 'early' | 'late' | 'grace' | 'expired' | 'stale'; amount?: number }
-export type RulesVersion = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14; // config-exempt: persisted replay protocol revisions, not economy tuning
+export type RulesVersion = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15; // config-exempt: persisted replay protocol revisions, not economy tuning
 export interface LoggedCommand extends Envelope { result: Result; configVersion: string; rulesVersion: RulesVersion }

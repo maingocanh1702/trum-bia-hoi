@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-09 10:38 · **Branch hiện tại:** `codex/game-build-isolated`
+> **Cập nhật:** 2026-09-09 11:03 · **Branch hiện tại:** `codex/game-build-isolated`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -11,7 +11,7 @@
 ## Tổng quan
 
 - **MVP progress:** **0%** (0/28 PR merged)
-- **In flight:** 17 PR · **Blocked:** 0 · **Deferred:** 1
+- **In flight:** 18 PR · **Blocked:** 0 · **Deferred:** 1
 - **Lộ trình (baseline 06-ROADMAP v3.0):** 1 phase, mốc M0–M9 theo exit criteria — chưa gán ngày; Phase N ở đây = khoá parser (P0→M0 · P1→M1–M2 · P2→M3 · P3→M4–M6 · P4→M7–M8)
 
 ## Phase progress
@@ -60,7 +60,7 @@
 
 | PR | Feature | Status | Computed | Branch |
 |----|---------|:------:|:--------:|--------|
-| `F23` | Kiến Trúc Server Quán — server-auth, websocket, CAPTCHA | ⬜ Not started | — | `—` |
+| `F23` | Kiến Trúc Server Quán — server-auth, websocket, CAPTCHA | 🟡 In progress | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
 | `F12` | Giải Nhậu & Vụ Bia — 8 bậc, 2 Vụ Bia song song | ⬜ Not started | — | `—` |
 | `F13` | Đường Lên Trùm — LP0–LP7, gate tính năng & mặt bằng | 🟡 In progress | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
 | `F14` | Mặt Bằng Quán — 9 mặt bằng, rent/cọc 7 ngày | ⬜ Not started | — | `—` |
@@ -191,7 +191,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 1
-- **Notes:** Guest local + vi/en + backup/replay v1→v2 + import/reset giữ bản cũ đã có; Google/claim/cloud ở M4 chưa có.
+- **Notes:** Guest local + vi/en + backup/replay v1–v3 + import/reset giữ bản cũ đã có; Google/claim/cloud ở M4 chưa có.
 
 ### F27 — Onboarding — ca 1 = 1 khách 1 bia, thông báo mất khách, step guide (lần đầu + sau 3 lần mất khách)
 
@@ -220,6 +220,15 @@
 - **Phase:** Phase 2
 - **Notes:** Rules12 daily5: seed VN/tier, actual event progress, rollover, reward/bonus guards/UI VI-EN; đã sửa P1 review về mốc onboarding mở nhiệm vụ.118 unit/46 E2E/config/build,20 k rows2.3171–2.7312 qua; full-base review3f978ec..e551b40 không còn lỗi actionable. Rules13 thêm điểm danh theo ngày active, claim uy tín một lần, đổi vòng/reset/offline/replay và ladder VI-EN;126 unit/52 E2E/config/build và20 k rows2.2564–2.8277 xanh; full-base review483bb03..d232be5 không nêu lỗi cần sửa. Gift transfer/referral/season authority và full F17 còn tiếp tục.
 
+### F23 — Kiến Trúc Server Quán — server-auth, websocket, CAPTCHA
+
+- **Status:** 🟡 In progress · 🌿 đang trên branch này
+- **Branch:** `codex/game-build-isolated`
+- **Wave:** 🎮 Code
+- **Gates:** 🔒S
+- **Phase:** Phase 3
+- **Notes:** Rules15 nền ghim config theo ca + savev3 nhiều snapshot; ca cũ và tài sản giữ nguyên, retry/replay/import có kiểm thử. Registry/API/auth/guest claim/WebSocket/reconnect/anti-cheat chưa có. Verify và review ghi ở `docs/build-progress.md`.
+
 ### F13 — Đường Lên Trùm — LP0–LP7, gate tính năng & mặt bằng
 
 - **Status:** 🟡 In progress · 🌿 đang trên branch này
@@ -242,11 +251,11 @@
 
 | PR | Feature | Phase | Status |
 |----|---------|-------|--------|
-| `F23` | Kiến Trúc Server Quán — server-auth, websocket, CAPTCHA | Phase 3 | ⬜ Not started |
 | `F12` | Giải Nhậu & Vụ Bia — 8 bậc, 2 Vụ Bia song song | Phase 3 | ⬜ Not started |
 | `F14` | Mặt Bằng Quán — 9 mặt bằng, rent/cọc 7 ngày | Phase 3 | ⬜ Not started |
 | `F15` | Sự Cố Quán Nhậu — bảo kê, trộm offline, đánh nhau (kiểm tra ATTP ⏸ pending) | Phase 3 | ⬜ Not started |
 | `F16` | Rủ Bạn & Huy Hiệu — 3 mốc, huy hiệu Kết Nối | Phase 3 | ⬜ Not started |
+| `F28` | Bảng Xếp Hạng & Bàn Thờ Ông Địa — top N, hàng của tôi, snapshot kết Vụ | Phase 3 | ⬜ Not started |
 
 ---
 

@@ -19,6 +19,7 @@ const FLYER_RULES: RulesVersion = 11; // config-exempt: fixed replay protocol re
 const QUEST_RULES: RulesVersion = 12; // config-exempt: fixed replay protocol revision
 const ATTENDANCE_RULES: RulesVersion = 13; // config-exempt: fixed replay protocol revision
 const MENU_RULES: RulesVersion = 14; // config-exempt: fixed replay protocol revision
+const CONFIG_PIN_RULES: RulesVersion = 15; // config-exempt: fixed replay protocol revision
 const emptyStats = (): Stats => ({ arrived: 0, served: 0, lost: 0, rejected: 0, orders: 0, payment: 0, tip: 0, credited: 0, penalty: 0, spent: 0, rep: 0, wellRestedBonus: 0 });
 
 /** No wall clock, IO or renderer: only config, seed, explicit time and commands. */
@@ -28,10 +29,15 @@ export class Game {
   private readonly results = new Map<string, LoggedCommand>();
   private commandKey: string | null = null;
   private activeRushIndex: number | null = null;
-  private rulesVersion: RulesVersion = MENU_RULES;
-  constructor(readonly config: Config = defaultConfig, readonly seed = 1, readonly createdAt = 0, readonly playerId = 'guest') {
+  private rulesVersion: RulesVersion = CONFIG_PIN_RULES;
+  private currentConfig: Config;
+  private readonly snapshots = new Map<string, Config>();
+  get config() { return this.currentConfig; }
+  get configs(): readonly Config[] { return [...this.snapshots.values()]; }
+  constructor(readonly initialConfig: Config = defaultConfig, readonly seed = 1, readonly createdAt = 0, readonly playerId = 'guest') {
     if (!Number.isSafeInteger(seed) || !Number.isSafeInteger(createdAt) || createdAt < 0) throw Error('game:invalid-origin');
-    const c = config.values;
+    this.currentConfig = initialConfig; this.snapshots.set(initialConfig.version, initialConfig);
+    const c = initialConfig.values;
     this.world = {
       now: createdAt, rng: seed >>> 0, nextId: 0, playerId, phase: 'resting', coins: c.shift.startingCoinsBase,
       reputation: 0, seasonEarned: 0, lifetimeEarned: 0, staminaMs: c.shift.durationMs,
@@ -483,18 +489,26 @@ export class Game {
       this.emit('glass_washing', { glassId: glass.id });
     }
   }
-  command(envelope: Envelope): Result { return this.applyCommand(envelope, MENU_RULES); }
+  /** Opening config is supplied by a trusted registry adapter, never by a player command payload. */
+  command(envelope: Envelope, openingConfig?: Config): Result { return this.applyCommand(envelope, CONFIG_PIN_RULES, openingConfig); }
   /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
-  replay(entry: LoggedCommand): Result { return this.applyCommand(entry, entry.rulesVersion); }
-  private applyCommand(envelope: Envelope, rulesVersion: RulesVersion): Result {
+  replay(entry: LoggedCommand, config = this.config): Result {
+    if (entry.configVersion !== config.version || config.version !== this.config.version && (entry.command.type !== 'startShift' || entry.rulesVersion < CONFIG_PIN_RULES)) throw Error('replay:configVersion');
+    return this.applyCommand(entry, entry.rulesVersion, entry.command.type === 'startShift' ? config : undefined);
+  }
+  private applyCommand(envelope: Envelope, rulesVersion: RulesVersion, openingConfig?: Config): Result {
     if (!validEnvelope(envelope)) return { ok: false, reason: 'invalidCommand' };
     const previous = this.results.get(envelope.idempotencyKey);
     if (previous) return JSON.stringify(previous.command) === JSON.stringify(envelope.command) ? { ...previous.result } : { ok: false, reason: 'idempotencyConflict' };
     if (envelope.at < this.world.now) return { ok: false, reason: 'staleCommand' };
+    if (openingConfig && envelope.command.type !== 'startShift') return { ok: false, reason: 'configOnlyOnStart' };
+    const selected = openingConfig ?? this.config, known = this.snapshots.get(selected.version);
+    if (known && known !== selected && JSON.stringify(known.raw) !== JSON.stringify(selected.raw)) return { ok: false, reason: 'configVersionConflict' };
     // Old logs switched before advancing; v10+ keeps elapsed autonomous history under its preceding rules.
     if (rulesVersion < ARRIVAL_INTERVAL_RULES) this.rulesVersion = rulesVersion;
     this.advance(envelope.at);
     this.rulesVersion = rulesVersion;
+    this.snapshots.set(selected.version, selected);
     this.commandKey = envelope.idempotencyKey;
     try {
       this.startMenu();
@@ -502,10 +516,10 @@ export class Game {
       if (rulesVersion >= ATTENDANCE_RULES) this.observeAttendance();
       if (rulesVersion >= RUSH_CLOCK_RULES) this.updateRush();
       if (rulesVersion >= PROGRESSION_RULES) this.updateProgression();
-      const result = this.execute(envelope.command);
+      const result = this.execute(envelope.command, selected);
       if (rulesVersion >= DELIVERY_RULES && this.world.phase === 'open' && this.world.nextDeliveryAt === null && this.world.unlocks.includes(this.config.values.customerTypes.shipper.requires)) this.world.nextDeliveryAt = this.world.now + deliveryInterval(this.world, this.config);
       if (rulesVersion >= PROGRESSION_RULES) this.updateProgression();
-      const entry = structuredClone({ ...envelope, result, configVersion: this.config.version, rulesVersion });
+      const entry = structuredClone({ ...envelope, result, configVersion: selected.version, rulesVersion });
       this.log.push(entry); this.results.set(entry.idempotencyKey, entry);
       this.processDue();
       return { ...result };
@@ -518,7 +532,7 @@ export class Game {
       this.emit('life_path_level_reached', { level: this.config.values.lifePath[this.world.lifePath].id, lifetimeEarned: this.world.lifetimeEarned });
     }
   }
-  private execute(cmd: Command): Result {
+  private execute(cmd: Command, openingConfig = this.config): Result {
     const w = this.world, c = this.config.values, s = w.shift;
     const fail = (reason: string): Result => ({ ok: false, reason });
     switch (cmd.type) {
@@ -527,15 +541,23 @@ export class Game {
         if (this.rulesVersion >= ATTENDANCE_RULES && cmd.active) this.observeAttendance(true);
         return { ok: true };
       case 'startShift': {
+        const c = openingConfig.values, changed = openingConfig.version !== this.config.version, previousVersion = this.config.version;
         if (w.phase !== 'resting') return fail('shiftRunning');
-        if (c.shift.openRequiresFullStamina && w.staminaMs < c.shift.durationMs) return fail('restFirst');
-        const day = dayKey(w.now, this.config);
+        if (c.shift.openRequiresFullStamina && w.staminaMs < this.config.values.shift.durationMs) return fail('restFirst');
+        if (this.rulesVersion >= CONFIG_PIN_RULES && !Number.isSafeInteger(w.now + c.shift.durationMs)) return fail('configClock');
+        const day = dayKey(w.now, openingConfig);
         if ((w.dayShifts[day] ?? 0) >= c.shift.dailyShiftCap.newbie) return fail('dailyShiftCap');
         if (this.rulesVersion === 1 && (w.dayEarned[day] ?? 0) >= c.shift.dailyEarnCapBase) return fail('dailyEarnCap');
         const onboarding = c.onboarding.enabled && w.completedShifts === 0;
         const scheduled = !(onboarding && c.onboarding.firstShift.rushDisabled);
-        const plan = this.rulesVersion >= RUSH_SCHEDULE_RULES && scheduled ? planRushes(this.config, w.location, this.id('shift', false), day, w.now) : null;
+        const plan = this.rulesVersion >= RUSH_SCHEDULE_RULES && scheduled ? planRushes(openingConfig, w.location, this.id('shift', false), day, w.now) : null;
         if (this.rulesVersion >= RUSH_SCHEDULE_RULES && scheduled && !plan) return fail('rushScheduleUnavailable');
+        if (changed) {
+          w.staminaMs = Math.round(w.staminaMs / this.config.values.shift.durationMs * c.shift.durationMs);
+          w.staminaAnchorAt = w.now; w.staminaAnchorMs = w.staminaMs;
+          this.currentConfig = openingConfig;
+          for (const table of w.tables) table.capacity = c.upgrades.table.levels[table.level - 1].capacity;
+        }
         const weather = weighted(w, WEATHER.map(k => [k, c.weather[k].weight]));
         const rushes: NonNullable<World['shift']>['rushes'] = plan?.rushes ?? [];
         if (this.rulesVersion < RUSH_SCHEDULE_RULES && scheduled) {
@@ -551,6 +573,7 @@ export class Game {
         w.shift = { id: this.id('shift'), startedAt: w.now, pausedMs: 0, endsAt: w.now + c.shift.durationMs, closedAt: null, configVersion: this.config.version, weather, rush: 'none', rushes, nextSpawnAt: w.now + Math.round(onboarding ? c.onboarding.firstShift.guaranteedFirstGroupWithinMs - c.runtime.tableSeatingMs : c.spawn.baseMs * c.spawn.warmupMult), firstGroup: true, onboarding, stats: emptyStats(), wellRestedUntil: wellRested ? w.now + rested.durationMs : null };
         if (plan) w.shift.rushScheduleSeed = plan.seed;
         w.phase = 'open'; w.lastServedAt = null; w.lostStreak = 0;
+        if (changed) this.emit('config_pinned', { shiftId: w.shift.id, previousVersion, configVersion: this.config.version });
         this.startMenu(true);
         if (this.rulesVersion >= QUEST_RULES) this.ensureDailyQuests(true);
         if (this.rulesVersion >= ATTENDANCE_RULES) this.observeAttendance(true);

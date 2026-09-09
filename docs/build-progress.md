@@ -10,7 +10,7 @@ complete-game goal; milestones below are implementation order, not scope cuts.
 | M1 — serve loop, glasses, stock, upgrades, local save, spatial UI, core audio | In progress | Playable loop, local save/replay, stock/equipment/table UI, core SFX wired; final sprites and listening QA pending |
 | M2 — guest, vi/en, onboarding | In progress | Local guest + matching vi/en keys + event-driven guide with skip/repeat cap; Google account linking and 5-person evidence pending |
 | M3 — full menu, customer mix, weather, rush, business unlocks | In progress | 6 menu entries and hot prep, 5 seated types, 5 weather states, basic scheduled rush. Local phone/QR progression reviewed; shipper local reviewed CLEAN at307a3b0. Football, remaining business upgrades and exhaustive balance/edge QA remain |
-| M4 — server authority, accounts, reconnect, config registry/admin | Pending | |
+| M4 — server authority, accounts, reconnect, config registry/admin | In progress | Engine config pinning/savev3 prerequisite; server/registry/auth/network not implemented yet |
 | M5 — seasons, leaderboard/shrine, life path, leases, quests/referrals | Pending | |
 | M6 — risks, dog, emergency supplies | Pending | |
 | M7 — voluntary donations, cosmetic gifts, age notice | Pending | |
@@ -1256,3 +1256,31 @@ Root stays bc79af5 with original WIP, untouched. No merge, push or hosted releas
 | Date | Change |
 |---|---|
 | 2026-09-09 | Recorded native menu review with no reported findings and independent143 unit/config/build; author63 browser/20 k rows/15 rush rows passed. Updated tracker/dashboard truthfully and preserved full-game continuation. |
+
+
+## 2026-09-09 — M4 prerequisite: per-shift config pinning
+
+Pinned base d732240bf32e53fa48e0be55df1d4e4713241f2b. Rules15 separates
+creation/current snapshots and permits a trusted next-opening config without
+rewriting an active shift. Only an accepted opening switches. Player assets,
+ledger/day history and owned identities survive; stamina is proportional to
+new duration and owned table capacity follows the new level definition.
+
+Savev3 includes additional used/attempted configs and exact event validation.
+Single-snapshot exports remainv2; genuine v13 history is preserved before current
+adoption and the next config. Eight focused tests cover actual A/B service and
+pour timing, candidate refusal, retry underC, old elapsed time, caps/rest grants,
+malformed catalogs, immutable snapshots and safe clock boundaries. Browser
+acceptance imports an actual mixed save through the existing recovery flow.
+
+Author config/build,151 unit and64 browser tests passed. Ordinary10 k rows
+passed2.3125–2.6606; combined/rush simulations and native independent review
+are in progress. Logs use `.qa/config-pinning-*.txt`;
+contract is `.qa/config-pinning-contract.md`. No canonical config or dependency
+changed. F23 is now in progress; tracker v0.20.0/dashboard show18 active features.
+This does not claim server authority, registry approval/publish, auth/guest claim,
+reconnect or full M4. Full M0–M9 remains active; root checkout is untouched.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Implemented rules15 per-shift config adoption and savev3 prerequisite, updated F23/tracker to in progress; final verification and independent review pending. |

@@ -103,3 +103,26 @@ Project current state into profile tables for fast reads.
 - Server time handles midnight edge cases.
 - **Network state (added 2026-09-08, binding):** cutting the connection mid-shift shows a distinct "reconnecting" state within 2 s without hiding the yard; serve/restock/upgrade commands issued while offline are buffered with `idempotencyKey` + `clientSeq` and replayed on reconnect, none duplicated, none lost inside `reconnectGraceMs` (config); after reconnect the client state equals the server projection (resync from `lastSeq`, server wins on conflict); beyond `reconnectGraceMs` the server closes the shift by the normal closing rule and the client receives `ShiftClosed`; a shift never continues on client-only time.
 - **Persistence order (owner 2026-09-08): localStorage first, server after.** The local save keeps an append-only `eventLog` in the shared event schema so the server import (guest claim) replays it; after the server lands, no rule exists only on the client (10-SPEC §9). The network-state bullet above applies from that point.
+
+
+## 9. Implementation checkpoint — 2026-09-09
+
+M4 has started with a pure-engine prerequisite: per-shift config adoption and
+multi-config local replay (`Game.command` trusted opening argument; savev3).
+The preceding shift and elapsed time retain their pin. Failed opening attempts
+retain their candidate snapshot for exact replay without adopting it; successful
+openings preserve player assets and emit `config_pinned`.
+
+`packages/engine/test/config-pinning.test.ts` covers actual old/new service prices,
+pour duration, caps, stamina, retries, malformed catalogs and genuine historical
+replay. The browser test imports a real A→B save through recovery and reloads it.
+See `10-SPEC-tech-implementation.md` for the exact log/catalog contract.
+
+There is still no `apps/server` implementation or server authority. Registry
+publish/approval, storage, auth/guest claim, WebSocket sequencing, reconnect,
+anti-cheat and the acceptance in §8 remain unfinished. A caller must not accept
+an opening snapshot directly from an untrusted client when building the server.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Marked M4 in progress for engine config pinning/savev3 prerequisite only; explicitly retained server/registry/auth/network acceptance as unfinished. |

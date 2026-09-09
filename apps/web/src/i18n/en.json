@@ -136,6 +136,7 @@
   "book.deliveryCompleted": "Deliveries completed",
   "book.deliveryNet": "Delivery payment after discount",
   "book.deliveryMissed": "Missed deliveries",
+  "error.configClock": "This shift cannot open with the current timing configuration.",
   "error.rushScheduleUnavailable": "The rush schedule does not fit this shift. Check its timing and slot count.",
   "book.rushes": "Rush results this shift",
   "book.rushKind": "Rush",
