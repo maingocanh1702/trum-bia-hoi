@@ -10,7 +10,7 @@ complete-game goal; milestones below are implementation order, not scope cuts.
 | M1 — serve loop, glasses, stock, upgrades, local save, spatial UI, core audio | In progress | Playable loop, local save/replay, stock/equipment/table UI, core SFX wired; final sprites and listening QA pending |
 | M2 — guest, vi/en, onboarding | In progress | Local guest + matching vi/en keys + event-driven guide with skip/repeat cap; Google account linking and 5-person evidence pending |
 | M3 — full menu, customer mix, weather, rush, business unlocks | In progress | 6 menu entries and hot prep, 5 seated types, 5 weather states, basic scheduled rush. Local phone/QR progression reviewed; shipper local reviewed CLEAN at307a3b0. Football, remaining business upgrades and exhaustive balance/edge QA remain |
-| M4 — server authority, accounts, reconnect, config registry/admin | In progress | Engine config pinning/savev3 prerequisite; server/registry/auth/network not implemented yet |
+| M4 — server authority, accounts, reconnect, config registry/admin | In progress | Engine config pinning/savev3 + durable SQLite event store verified locally; HTTP/auth/registry/admin/reconnect cutover remain |
 | M5 — seasons, leaderboard/shrine, life path, leases, quests/referrals | Pending | |
 | M6 — risks, dog, emergency supplies | Pending | |
 | M7 — voluntary donations, cosmetic gifts, age notice | Pending | |
@@ -1526,3 +1526,45 @@ within band. No seed was removed and no prices or anchor were adjusted.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Recorded full173unit71browser15rush pass and disclosed the500-serve k excursion; extended all measurement cohorts to1000 before final acceptance. |
+
+
+### Batch final verification — 2026-09-09
+
+Product range `fe59758..7897bdd` implements the owner beer/washer batch request.
+Config1.7.3, build/typecheck and174 engine/server tests pass. All72 browser checks
+pass, including360/390px capacity/upgrade/pause/reload and actual legacy washing.
+Native review first found two HUD defects: unadjusted cooler freshness and a0%
+bar for legacy jobs without a start timestamp. Both are fixed at7897bdd; full-range
+followup confirmed no remaining introduced actionable defect. Its independent
+browser rerun was blocked by sandbox port EPERM; author browser verification ran
+successfully on the local runtime.
+
+The72-test run initially failed before navigation in a pre-existing clock setup.
+Playwright's native pauseAt installs timers itself; removing the redundant running
+install at the identical target time removes the race across the affected fixtures.
+Fixture timestamps, gameplay deadlines and all reward/penalty assertions are unchanged.
+The final72-test run passes without retries; config/build/engine results remain green.
+
+Canonical1000-serve normal and combined rested/QR/shipper runs now pass all20
+seed/profile rows, k2.5821–2.9601; all15 controlled rush rows pass. The initial500
+combined excursion k3.0494 remains failed evidence, not retroactively called green.
+All cohorts use the same larger sample; no seeds, prices, k band, anchors or nominal
+formula were changed. This does not guarantee every short window stays in band.
+
+HUD shows washer busy/batch capacity separately from the clean/total glass rack,
+weather-adjusted cooler freshness for current/next levels, and indeterminate native
+progress for inherited washing jobs whose historical start time is unavailable.
+Current jobs retain their real deadlines. Ready beer and raw inventory stay separate.
+
+Evidence: .qa/batch-review-fix-{config,build,tests}.txt,
+.qa/batch-e2e-clock-fixed.txt, .qa/batch-{sim,combined}-canonical.txt,
+.qa/batch-rush.txt, .qa/review-batch-final.txt and .qa/batch-verification.json.
+The5174 dev server serves the update; no owner save/menu was reset or forcibly closed.
+Older pinned shifts adopt enabled production on the next successful shift start.
+The full M0–M9 goal remains active; unique level art and M4 HTTP/auth/registry cutover
+are still unfinished. Optional top-up/freshness interpretations remain adjustable
+when the owner answers; current defaults are specified in08§8.1.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Verified batch production/HUD at7897bdd:174 engine/server,72 browser,20 canonical k cohorts and15 rush rows. Fixed both native-review HUD findings and removed redundant fake-clock installs; full game remains active. |

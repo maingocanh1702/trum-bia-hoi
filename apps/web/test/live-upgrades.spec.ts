@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 const fixture = (mode = '', save?: string) => JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/live-upgrades.ts', mode], { encoding: 'utf8', input: save ? JSON.stringify({ save }) : undefined }));
 for (const poor of [false, true]) test(`kitchen can be bought in the current shift while its menu stays paused, sufficient funds=${!poor}`, async ({ page }) => {
   const f = fixture(poor ? 'poor' : ''); await page.setViewportSize({ width: 390, height: 844 });
-  await page.clock.install({ time: new Date(f.now) }); await page.clock.pauseAt(new Date(f.now));
+  await page.clock.pauseAt(new Date(f.now));
   await page.addInitScript(save => { if (!localStorage.getItem('upgrades-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('tbh.settings.v1', JSON.stringify({ welcomed: true, guideDone: true })); localStorage.setItem('upgrades-seeded', '1'); } }, f.save);
   await page.goto('/');
   const snapshot = async () => fixture('inspect', await page.evaluate(() => localStorage.getItem('tbh.save.v1')!));

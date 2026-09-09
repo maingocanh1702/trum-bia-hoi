@@ -6,7 +6,7 @@ test('a mixed-config save imports through recovery, preserves its backup and con
   const f = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/config-pinning.ts'], { encoding: 'utf8' }));
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.clock.install({ time: new Date(f.now) }); await page.clock.pauseAt(new Date(f.now));
+  await page.clock.pauseAt(new Date(f.now));
   await page.addInitScript(() => { if (!localStorage.getItem('pin-seeded')) { localStorage.setItem('tbh.save.v1', '{broken'); localStorage.setItem('pin-seeded', '1'); } });
   await page.goto('/'); await expect(page.getByRole('alert')).toContainText('Bản lưu chưa đọc được');
   await page.locator('input[type=file]').setInputFiles({ name: 'mixed-save.json', mimeType: 'application/json', buffer: Buffer.from(f.save) });

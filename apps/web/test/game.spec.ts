@@ -140,12 +140,12 @@ test('mixed customers retain their urgent identity and a live grace countdown wh
   await expect(page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true })).toBeDisabled();
 });
 
+// pauseAt installs fake timers itself; a separate running install can race the identical target time.
 for (const [mode, emoji] of [['early', '🤩'], ['late', '😐'], ['grace', '😥'], ['stale', '😖']]) {
   test(`multi-dish service shows the actual ${mode} reward and guest reaction`, async ({ page }) => {
     const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/service-states.ts', mode], { encoding: 'utf8' }));
     expect(fixture.result).toMatchObject({ ok: true, outcome: mode });
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.clock.install({ time: new Date(fixture.now) });
     await page.clock.pauseAt(new Date(fixture.now));
     await page.addInitScript(save => { if (!localStorage.getItem('service-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('service-seeded', '1'); } }, fixture.save);
     await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
@@ -191,7 +191,6 @@ for (const width of [360, 390]) {
   test(`well-rested timer pauses offline and actual bonus appears in the shift book at ${width}px`, async ({ page }) => {
     const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/service-states.ts', 'rested'], { encoding: 'utf8' }));
     await page.setViewportSize({ width, height: 844 });
-    await page.clock.install({ time: new Date(fixture.now) });
     await page.clock.pauseAt(new Date(fixture.now));
     await page.addInitScript(save => { if (!localStorage.getItem('rested-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('rested-seeded', '1'); } }, fixture.save);
     await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
@@ -318,7 +317,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 
 
 test('insufficient close funds keep the guest paused until choosing to wait, then natural expiry charges no second fee', async ({ page }) => {
   const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/manual-close.ts', 'poor'], { encoding: 'utf8' }));
-  await page.clock.install({ time: new Date(fixture.now) }); await page.clock.pauseAt(new Date(fixture.now));
+  await page.clock.pauseAt(new Date(fixture.now));
   await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), fixture.save);
   await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
   await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
@@ -336,7 +335,7 @@ test('insufficient close funds keep the guest paused until choosing to wait, the
 
 test('a mixed occupied table renders only the remaining Chi Pheo and closes with zero fee', async ({ page }) => {
   const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/manual-close.ts', 'occupied'], { encoding: 'utf8' }));
-  await page.clock.install({ time: new Date(fixture.now) }); await page.clock.pauseAt(new Date(fixture.now));
+  await page.clock.pauseAt(new Date(fixture.now));
   await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), fixture.save);
   await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
   await expect(page.locator('.state-occupied .seat-customer')).toHaveCount(1);
@@ -352,7 +351,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 
   test(`rush warning pauses in sheets, resumes on closing, active timer wins, and closing ends it at ${viewport.width}×${viewport.height}`, async ({ page }) => {
     const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/rush.ts'], { encoding: 'utf8' }));
     await page.setViewportSize(viewport);
-    await page.clock.install({ time: new Date(fixture.now) }); await page.clock.pauseAt(new Date(fixture.now));
+    await page.clock.pauseAt(new Date(fixture.now));
     await page.addInitScript(save => { if (!localStorage.getItem('rush-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('rush-seeded', '1'); } }, fixture.save);
     await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
     const hud = page.locator('.rush-label');
@@ -399,7 +398,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 
 test('an overlapping upcoming rush cannot interrupt the active-rush HUD with a screen-reader warning', async ({ page }) => {
   const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/rush.ts', 'overlap'], { encoding: 'utf8' }));
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.clock.install({ time: new Date(fixture.now) }); await page.clock.pauseAt(new Date(fixture.now));
+  await page.clock.pauseAt(new Date(fixture.now));
   await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), fixture.save);
   await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
   await page.clock.runFor(1000);
@@ -413,7 +412,7 @@ test('an overlapping upcoming rush cannot interrupt the active-rush HUD with a s
 for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 }, { width: 1280, height: 400 }]) {
   test(`dog purchase has a reachable stock path, three sprites and exact reload at ${viewport.width}×${viewport.height}`, async ({ page }) => {
     const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/dog.ts'], { encoding: 'utf8' }));
-    await page.setViewportSize(viewport); await page.clock.install({ time: new Date(fixture.now) }); await page.clock.pauseAt(new Date(fixture.now));
+    await page.setViewportSize(viewport); await page.clock.pauseAt(new Date(fixture.now));
     await page.addInitScript(save => { if (!localStorage.getItem('dog-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('dog-seeded', '1'); } }, fixture.save);
     await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
     await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click();
@@ -484,7 +483,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 
 for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 }]) {
   test(`life path rewards and business upgrades remain separate at ${viewport.width}×${viewport.height}`, async ({ page }) => {
     const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/progression.ts'], { encoding: 'utf8' }));
-    await page.setViewportSize(viewport); await page.clock.install({ time: new Date(fixture.now) }); await page.clock.pauseAt(new Date(fixture.now));
+    await page.setViewportSize(viewport); await page.clock.pauseAt(new Date(fixture.now));
     await page.addInitScript(save => { if (!localStorage.getItem('path-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('path-seeded', '1'); } }, fixture.save);
     await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
     await page.getByRole('button', { name: 'Đường lên Trùm', exact: true }).click();
@@ -535,7 +534,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 
 for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 }]) {
   test(`shipper ingredients, whole handoff, phone focus and reload at ${viewport.width}×${viewport.height}`, async ({ page }) => {
     const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/shipper.ts'], { encoding: 'utf8' }));
-    await page.setViewportSize(viewport); await page.clock.install({ time: new Date(fixture.now) }); await page.clock.pauseAt(new Date(fixture.now));
+    await page.setViewportSize(viewport); await page.clock.pauseAt(new Date(fixture.now));
     await page.addInitScript(save => { if (!localStorage.getItem('shipper-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('shipper-seeded', '1'); } }, fixture.save);
     await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
     const phone = page.getByRole('button', { name: 'Điện thoại · đơn giao hàng', exact: true });
@@ -572,7 +571,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 
 
 test('a pending shipper blocks paid closure and expires with a numeric-only penalty', async ({ page }) => {
   const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/shipper.ts', 'ready'], { encoding: 'utf8' }));
-  await page.setViewportSize({ width: 390, height: 844 }); await page.clock.install({ time: new Date(fixture.now) }); await page.clock.pauseAt(new Date(fixture.now));
+  await page.setViewportSize({ width: 390, height: 844 }); await page.clock.pauseAt(new Date(fixture.now));
   await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), fixture.save);
   await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
   await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
@@ -594,7 +593,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
  test(`business sign installation, ownership, reputation gate and live yard at ${viewport.width}×${viewport.height}`, async ({ page }) => {
   const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/signboard.ts'], { encoding: 'utf8' }));
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  await page.setViewportSize(viewport); await page.clock.install({ time: new Date(fixture.now) }); await page.clock.pauseAt(new Date(fixture.now));
+  await page.setViewportSize(viewport); await page.clock.pauseAt(new Date(fixture.now));
   await page.addInitScript(save => { if (!localStorage.getItem('sign-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('sign-seeded', '1'); } }, fixture.save);
   await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
   await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click(); await page.getByRole('button', { name: 'Biển hiệu Chưa lắp biển', exact: true }).click();
@@ -634,7 +633,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
  test(`flyer purchase, live timer, actual service report and reload at ${viewport.width}×${viewport.height}`, async ({ page }) => {
   const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/flyer.ts'], { encoding: 'utf8' }));
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  await page.setViewportSize(viewport); await page.clock.install({ time: new Date(fixture.now) }); await page.clock.pauseAt(new Date(fixture.now));
+  await page.setViewportSize(viewport); await page.clock.pauseAt(new Date(fixture.now));
   await page.addInitScript(save => { if (!localStorage.getItem('flyer-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('flyer-seeded', '1'); } }, fixture.save);
   await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
   await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click(); await page.getByRole('button', { name: 'Tờ rơi 0 / 5 tờ rơi', exact: true }).click();

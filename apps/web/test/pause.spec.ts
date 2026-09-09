@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 const fixture = (input?: { save: string; orderId: string }) => JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/pause.ts', ...(input ? ['inspect'] : [])], { encoding: 'utf8', input: input ? JSON.stringify(input) : undefined }));
 async function boot(page: Page) {
   const f = fixture(); await page.setViewportSize({ width: 390, height: 844 });
-  await page.clock.install({ time: new Date(f.now) }); await page.clock.pauseAt(new Date(f.now));
+  await page.clock.pauseAt(new Date(f.now));
   await page.addInitScript(save => { if (!localStorage.getItem('pause-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('tbh.settings.v1', JSON.stringify({ welcomed: true, guideDone: true })); localStorage.setItem('pause-seeded', '1'); } }, f.save);
   await page.goto('/');
   return { f, snapshot: async () => fixture({ save: await page.evaluate(() => localStorage.getItem('tbh.save.v1')!), orderId: f.orderId }) };

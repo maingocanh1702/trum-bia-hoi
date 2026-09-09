@@ -219,3 +219,13 @@ current batch's quantity/deadline. Menus remain paused until closed. Bia invento
 means raw stock, shown separately from ready tank servings and reusable glasses.
 
 | 2026-09-09 batch/HUD | Implemented rules18/config1.7.3 stocked beer, washer loads and live capacity/progress + current/next comparison. Author173 tests/mobile pass; full browser/sim/review pending. |
+
+
+The washer object displays washing units/batch capacity; the separate rack displays
+clean/total glasses. Cooler current/next freshness includes the current weather
+multiplier through the shared engine calculation. Inherited wash jobs without a
+start timestamp use native indeterminate progress and retain their real countdown.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 verification | Batch/HUD product reviewed through7897bdd with both initial HUD findings fixed and no remaining introduced actionable defect.174 engine/server +72 browser +config/build pass;20 canonical1000-serve cohorts k2.5821–2.9601 and15 rush pass. Initial500 excursion and larger-sample disclosure in build-progress. F10 as a whole remains in progress. |

@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 const fixture = (save?: string, legacy = false) => JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/production.ts', ...(save ? ['inspect'] : legacy ? ['legacy'] : [])], { encoding: 'utf8', input: save ? JSON.stringify({ save }) : undefined }));
 for (const width of [360, 390]) test(`stocked beer capacity and upgrade comparison update live, with frozen batch progress in menus at ${width}px`, async ({ page }) => {
   const f = fixture(); await page.setViewportSize({ width, height: 844 });
-  await page.clock.install({ time: new Date(f.now) }); await page.clock.pauseAt(new Date(f.now));
+  await page.clock.pauseAt(new Date(f.now));
   await page.addInitScript(save => { if (!localStorage.getItem('batch-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('tbh.settings.v1', JSON.stringify({ welcomed: true, guideDone: true })); localStorage.setItem('batch-seeded', '1'); } }, f.save);
   await page.goto('/');
   const keg = page.getByRole('button', { name: 'Bom bia', exact: true }), washer = page.getByRole('button', { name: 'Bồn rửa', exact: true });
@@ -41,7 +41,7 @@ for (const width of [360, 390]) test(`stocked beer capacity and upgrade comparis
 
 test('legacy washing shows an indeterminate bar in the yard and paused equipment panel', async ({ page }) => {
   const f = fixture(undefined, true);
-  await page.clock.install({ time: new Date(f.now) }); await page.clock.pauseAt(new Date(f.now));
+  await page.clock.pauseAt(new Date(f.now));
   await page.addInitScript(save => { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('tbh.settings.v1', JSON.stringify({ welcomed: true, guideDone: true })); }, f.save);
   await page.goto('/');
   const washer = page.getByRole('button', { name: 'Bồn rửa', exact: true });

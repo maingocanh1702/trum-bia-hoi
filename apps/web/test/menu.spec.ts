@@ -6,7 +6,7 @@ const number = (n: number, locale = 'vi-VN') => new Intl.NumberFormat(locale).fo
 for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }, { width: 1280, height: 400 }]) {
   test(`Sổ ca shows actual dish counts, pauses while open and updates after closing and survives reload at ${viewport.width}×${viewport.height}`, async ({ page }) => {
     const f = fixture(), errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-    await page.setViewportSize(viewport); await page.clock.install({ time: new Date(f.now) }); await page.clock.pauseAt(new Date(f.now));
+    await page.setViewportSize(viewport); await page.clock.pauseAt(new Date(f.now));
     await page.addInitScript(save => { if (!localStorage.getItem('menu-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('menu-seeded', '1'); } }, f.save);
     await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
     await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
@@ -39,7 +39,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
 test('empty current and partial or closed legacy shifts do not present an invented average', async ({ browser }) => {
   for (const mode of ['empty', 'legacy-active', 'legacy-closed']) {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } }), page = await context.newPage(), f = fixture(mode);
-    await page.clock.install({ time: new Date(f.now) }); await page.clock.pauseAt(new Date(f.now));
+    await page.clock.pauseAt(new Date(f.now));
     await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), f.save);
     await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click(); await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
     const report = page.locator('.menu-report'); await report.scrollIntoViewIfNeeded();

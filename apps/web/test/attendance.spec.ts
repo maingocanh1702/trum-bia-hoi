@@ -4,7 +4,7 @@ const fixture = () => JSON.parse(execFileSync(process.execPath, ['--import', 'ts
 for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }, { width: 1280, height: 400 }]) {
   test(`attendance claims exactly once, shows unclaimed past days and survives reload at ${viewport.width}×${viewport.height}`, async ({ page }) => {
     const f = fixture(), errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-    await page.setViewportSize(viewport); await page.clock.install({ time: new Date(f.now) }); await page.clock.pauseAt(new Date(f.now));
+    await page.setViewportSize(viewport); await page.clock.pauseAt(new Date(f.now));
     await page.addInitScript(save => { if (!localStorage.getItem('attendance-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('attendance-seeded', '1'); } }, f.save);
     await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
     await page.getByRole('button', { name: 'Nhiệm vụ ngày', exact: true }).click();
@@ -28,7 +28,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
   });
 }
 test('live midnight expires an unclaimed check-in and wraps after the seventh observed day', async ({ page }) => {
-  const f = fixture(); await page.setViewportSize({ width: 390, height: 844 }); await page.clock.install({ time: new Date(f.now) }); await page.clock.pauseAt(new Date(f.now));
+  const f = fixture(); await page.setViewportSize({ width: 390, height: 844 }); await page.clock.pauseAt(new Date(f.now));
   await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), f.save); await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
   await page.getByRole('button', { name: 'Nhiệm vụ ngày', exact: true }).click(); const panel = page.locator('.attendance-panel');
   await expect(panel.getByRole('button', { name: `Nhận +${f.rewards[5]} uy tín`, exact: true })).toBeEnabled();
@@ -39,7 +39,7 @@ test('live midnight expires an unclaimed check-in and wraps after the seventh ob
   await expect(page.locator('.stock-strip .reputation')).toHaveText(new Intl.NumberFormat('vi-VN').format(f.reputation + f.rewards[6]));
 });
 test('returning after offline days resets the cycle without backfilling rewards or attendance', async ({ page }) => {
-  const f = fixture(), now = f.now + 86400000 * 3; await page.clock.install({ time: new Date(now) }); await page.clock.pauseAt(new Date(now));
+  const f = fixture(), now = f.now + 86400000 * 3; await page.clock.pauseAt(new Date(now));
   await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), f.save); await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
   await page.getByRole('button', { name: 'Nhiệm vụ ngày', exact: true }).click(); const panel = page.locator('.attendance-panel');
   await expect(panel.locator('[aria-current]')).toContainText('Ngày 1'); await expect(panel.locator('[data-state="claimed"]')).toHaveCount(0);

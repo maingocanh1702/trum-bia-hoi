@@ -4,7 +4,7 @@ function fixture(midnight = false) { return JSON.parse(execFileSync(process.exec
 for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }, { width: 1280, height: 400 }]) {
   test(`daily claim follows actual service, persists once and switches locale at ${viewport.width}×${viewport.height}`, async ({ page }) => {
     const f = fixture(), errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-    await page.setViewportSize(viewport); await page.clock.install({ time: new Date(f.now) }); await page.clock.pauseAt(new Date(f.now));
+    await page.setViewportSize(viewport); await page.clock.pauseAt(new Date(f.now));
     await page.addInitScript(save => { if (!localStorage.getItem('quest-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('quest-seeded', '1'); } }, f.save);
     await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
     const trigger = page.getByRole('button', { name: 'Nhiệm vụ ngày', exact: true }); await trigger.click();
@@ -34,7 +34,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
 }
 test('open daily sheet expires an unclaimed reward at VN midnight', async ({ page }) => {
   const f = fixture(true); await page.setViewportSize({ width: 390, height: 844 });
-  await page.clock.install({ time: new Date(f.now) }); await page.clock.pauseAt(new Date(f.now));
+  await page.clock.pauseAt(new Date(f.now));
   await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), f.save);
   await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
   await page.locator('.table-order-hint.is-ready').first().click(); await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
@@ -51,7 +51,7 @@ test('open daily sheet expires an unclaimed reward at VN midnight', async ({ pag
 for (const threshold of [2, 3]) {
   test(`onboarding reveals both quest entries only after ${threshold} finalized shifts`, async ({ page }) => {
     const f = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/quests.ts', `--onboarding=${threshold}`], { encoding: 'utf8' }));
-    await page.setViewportSize({ width: 390, height: 844 }); await page.clock.install({ time: new Date(f.now) }); await page.clock.pauseAt(new Date(f.now));
+    await page.setViewportSize({ width: 390, height: 844 }); await page.clock.pauseAt(new Date(f.now));
     await page.addInitScript(save => { if (!localStorage.getItem('quest-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('quest-seeded', '1'); } }, f.save);
     await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Nhiệm vụ ngày', exact: true })).toHaveCount(0);

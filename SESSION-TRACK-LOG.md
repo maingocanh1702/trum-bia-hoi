@@ -19,12 +19,18 @@ Implemented the M4 SQLite event store in `apps/server`; it persists the same eng
 atomically and survives retries/restarts. Config/build,166 engine/server and69 browser
 checks passed;20 economy/15 rush rows passed. Native review found retry-order and invalid-cursor issues; both fixed; native reviewf2e85f8..3ff21df found no actionable defects.
 Owner live-upgrade update is verified in rules17; menus remain paused until closed.
-Next: owner beer/washer batches and capacity HUD, then authenticated transport and real registry/account/reconnect integration; web
+Owner beer/washer batches and capacity HUD are now verified at7897bdd: rules18/config1.7.3,
+174 engine/server and72 browser checks,20 canonical1000-serve k rows2.5821–2.9601,
+15 rush rows. Native review has no remaining introduced defects after cooler/legacy
+progress fixes. A500-serve combined excursion remains disclosed in build-progress.
+Menus still pause until close; old pinned shifts adopt batches at their next start.
+Next: authenticated transport and real registry/account/reconnect integration; web
 remains local until cutover is ready. Full game/art/server/release are unfinished.
 Current evidence and requirements: `docs/build-progress.md`, tracker and roadmap.
 
 | Date | Change |
 |---|---|
+| 2026-09-09 | Verified batch beer/washer production and realtime capacity HUD; refreshed current evidence and remaining M4 work. |
 | 2026-09-09 | Updated verified SQLite/live-upgrade receipt and owner batch priority. |
 | 2026-09-09 | Added current isolated-worktree checkpoint and durable-store work; preserved the historical snapshot below as history. |
 

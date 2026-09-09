@@ -4,7 +4,7 @@ const fixture = (mode = 'live') => JSON.parse(execFileSync(process.execPath, ['-
 for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }, { width: 1280, height: 400 }]) {
   test(`live kitchen shows real timers and routes to the whole table at ${viewport.width}×${viewport.height}`, async ({ page }) => {
     const f = fixture(), errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-    await page.setViewportSize(viewport); await page.clock.install({ time: new Date(f.now) }); await page.clock.pauseAt(new Date(f.now));
+    await page.setViewportSize(viewport); await page.clock.pauseAt(new Date(f.now));
     await page.addInitScript(save => { if (!localStorage.getItem('kitchen-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('kitchen-seeded', '1'); } }, f.save);
     await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
     const yard = page.getByRole('button', { name: 'Bếp', exact: true }); await yard.scrollIntoViewIfNeeded();
@@ -32,26 +32,26 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
   });
 }
 test('kitchen warning disappears after real expiry and never leaves a stale dish link', async ({ page }) => {
-  const f = fixture('late'); await page.clock.install({ time: new Date(f.now) }); await page.clock.pauseAt(new Date(f.now)); await page.setViewportSize({ width: 390, height: 844 });
+  const f = fixture('late'); await page.clock.pauseAt(new Date(f.now)); await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), f.save); await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click(); await page.getByRole('button', { name: 'Bếp', exact: true }).click();
   const panel = page.locator('.kitchen-panel'); await expect(panel.locator('.kitchen-warning').first()).toBeVisible(); await page.screenshot({ path: '.qa/kitchen-late.png' });
   await page.clock.runFor(f.deadline - f.now + 100); await expect(panel.locator('.kitchen-warning').first()).toBeVisible();
   await page.keyboard.press('Escape'); await page.clock.runFor(f.deadline - f.now + 100); await page.getByRole('button', { name: 'Bếp', exact: true }).click(); for (const job of f.status.jobs) await expect(panel.locator(`[data-item="${job.itemId}"]`)).toHaveCount(0);
 });
 test('out-of-stock recipe opens the existing restock sheet', async ({ page }) => {
-  const f = fixture('stock'); await page.clock.install({ time: new Date(f.now) }); await page.clock.pauseAt(new Date(f.now));
+  const f = fixture('stock'); await page.clock.pauseAt(new Date(f.now));
   await page.addInitScript(save => { if (!localStorage.getItem('tbh.save.v1')) localStorage.setItem('tbh.save.v1', save); }, f.save); await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click(); await page.getByRole('button', { name: 'Bếp', exact: true }).click();
   await expect(page.locator('.kitchen-panel')).toContainText('Hết nguyên liệu'); await page.locator('.kitchen-panel').getByRole('button', { name: 'Nhập hàng', exact: true }).click(); await expect(page.getByRole('dialog', { name: 'Nhập hàng', exact: true })).toBeVisible();
 });
 test('max-level kitchen shows all three configured burners', async ({ page }) => {
-  const f = fixture('max'); await page.clock.install({ time: new Date(f.now) }); await page.clock.pauseAt(new Date(f.now));
+  const f = fixture('max'); await page.clock.pauseAt(new Date(f.now));
   await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), f.save); await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click(); await page.getByRole('button', { name: 'Bếp', exact: true }).click();
   await expect(page.locator('.kitchen-panel')).toContainText('3/3 bếp đang nấu'); await expect(page.locator('.equipment-detail .upgrade-card button')).toHaveText('Đã tối đa');
   await expect.poll(() => page.locator('.equipment-detail img').evaluateAll(imgs => imgs.every(img => (img as HTMLImageElement).complete && (img as HTMLImageElement).naturalWidth > 0))).toBe(true);
   await page.screenshot({ path: '.qa/kitchen-max.png' });
 });
 test('an unowned kitchen is purchasable mid-shift without showing a fake owned yard appliance', async ({ page }) => {
-  const f = fixture('locked'); await page.clock.install({ time: new Date(f.now) }); await page.clock.pauseAt(new Date(f.now)); await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), f.save);
+  const f = fixture('locked'); await page.clock.pauseAt(new Date(f.now)); await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), f.save);
   await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click(); await expect(page.getByRole('button', { name: 'Bếp', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click(); await page.locator('.kitchen-entry').click(); await expect(page.locator('.kitchen-panel')).toContainText('Mua bếp để mở'); await expect(page.locator('.equipment-detail .upgrade-card button')).toBeEnabled();
 });
