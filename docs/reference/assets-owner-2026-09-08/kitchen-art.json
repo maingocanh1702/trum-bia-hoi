@@ -1,0 +1,93 @@
+[
+  {
+    "id": "kitchen-lv1",
+    "prompt": "Use case: stylized-concept. Asset type: one isolated equipment sprite for Trum Bia Hoi mobile tycoon, Hanoi sidewalk beer stall in 2000s, matching the user's hand-painted cartoon Vietnamese game asset board references. Primary request: a humble round Vietnamese brown honeycomb-coal stove with ONE blackened cast-iron wok on its ONE cooking position. Orange ember glow in lower opening, metal carry handle, short sturdy base. Only ONE pan and ONE burner. No stand, no exhaust hood. Style: crisp thick dark-brown outlines, readable compact silhouettes, hand-painted 2D cartoon game prop, restrained cel shading, warm upper-left highlights, subtle wear, not photoreal and not glossy 3D. Camera: elevated three-quarter orthographic view showing front and top, centered complete object, square framing, object occupies about 82 percent of image, even transparent padding. Scene/backdrop: TRUE TRANSPARENT RGBA alpha outside object. Preserve exact pan/burner count; readable at 64px. No text, no logo, no label, no floor, no background, no people, no extra appliances, no collage, no painted checkerboard. Generate one standalone sprite.",
+    "path": "assets/kitchen-lv1-illustrated-v1.png",
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "f76c1b6155755f8b846107bb32f64b06339bcb48155ab9bb9a21f93a01828be2",
+    "tool": "image_gen (builtin)",
+    "status": "draft",
+    "processing": "Original RGBA bytes copied unchanged; no raster editing."
+  },
+  {
+    "id": "kitchen-lv2",
+    "prompt": "Use case: stylized-concept. Asset type: one isolated equipment sprite for Trum Bia Hoi mobile tycoon, Hanoi sidewalk beer stall in 2000s, matching the user's hand-painted cartoon Vietnamese game asset board references. Primary request: a small low tabletop brushed-inox gas stove bench with EXACTLY TWO round black woks on TWO visible burner positions side by side, TWO simple front knobs, one old red gas cylinder partly visible attached at side. Simple squat utilitarian construction. Style: crisp thick dark-brown outlines, readable compact silhouettes, hand-painted 2D cartoon game prop, restrained cel shading, warm upper-left highlights, subtle wear, not photoreal and not glossy 3D. Camera: elevated three-quarter orthographic view showing front and top, centered complete object, square framing, object occupies about 82 percent of image, even transparent padding. Scene/backdrop: TRUE TRANSPARENT RGBA alpha outside object. Preserve exact pan/burner count; readable at 64px. No text, no logo, no label, no floor, no background, no people, no extra appliances, no collage, no painted checkerboard. Generate one standalone sprite.",
+    "path": "assets/kitchen-lv2-illustrated-v1.png",
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "b627430875580c8e3b659523dd4af3f4d8a8153f52bbd207d1a141d5a76c3420",
+    "tool": "image_gen (builtin)",
+    "status": "draft",
+    "processing": "Original RGBA bytes copied unchanged; no raster editing."
+  },
+  {
+    "id": "kitchen-lv3",
+    "prompt": "Use case: stylized-concept. Asset type: one isolated equipment sprite for Trum Bia Hoi mobile tycoon, Hanoi sidewalk beer stall in 2000s, matching the user's hand-painted cartoon Vietnamese game asset board references. Primary request: a wider sturdy freestanding double-burner Vietnamese gas cooking bench, EXACTLY TWO large black woks on TWO visible burner positions side by side, TWO brass front controls, wide metal prep ledge, worn dark inox legs and a lower storage shelf with one gas cylinder. Better built and larger than a tabletop stove, no third burner. Style: crisp thick dark-brown outlines, readable compact silhouettes, hand-painted 2D cartoon game prop, restrained cel shading, warm upper-left highlights, subtle wear, not photoreal and not glossy 3D. Camera: elevated three-quarter orthographic view showing front and top, centered complete object, square framing, object occupies about 82 percent of image, even transparent padding. Scene/backdrop: TRUE TRANSPARENT RGBA alpha outside object. Preserve exact pan/burner count; readable at 64px. No text, no logo, no label, no floor, no background, no people, no extra appliances, no collage, no painted checkerboard. Generate one standalone sprite.",
+    "path": "assets/kitchen-lv3-illustrated-v1.png",
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "d62b661673856ebaecdf6615926cd2a78e3f7e11884574eadffef5cc951a5f0d",
+    "tool": "image_gen (builtin)",
+    "status": "draft",
+    "processing": "Original RGBA bytes copied unchanged; no raster editing."
+  },
+  {
+    "id": "kitchen-lv4",
+    "prompt": "Use case: stylized-concept. Asset type: one isolated equipment sprite for Trum Bia Hoi mobile tycoon, Hanoi sidewalk beer stall in 2000s, matching the user's hand-painted cartoon Vietnamese game asset board references. Primary request: a large industrial inox Vietnamese cooking station with EXACTLY THREE black wok/pot vessels on THREE separate visible burner positions arranged side by side across a broad top, THREE front knobs, tall metal backsplash and broad old angular exhaust hood. All THREE cooking positions clearly visible and countable. Short sturdy legs and lower shelf, no digital controls. Style: crisp thick dark-brown outlines, readable compact silhouettes, hand-painted 2D cartoon game prop, restrained cel shading, warm upper-left highlights, subtle wear, not photoreal and not glossy 3D. Camera: elevated three-quarter orthographic view showing front and top, centered complete object, square framing, object occupies about 82 percent of image, even transparent padding. Scene/backdrop: TRUE TRANSPARENT RGBA alpha outside object. Preserve exact pan/burner count; readable at 64px. No text, no logo, no label, no floor, no background, no people, no extra appliances, no collage, no painted checkerboard. Generate one standalone sprite.",
+    "path": "assets/kitchen-lv4-illustrated-v1.png",
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "c78708f651b55dfb436fa9a9b77821a5326a1eb94e9227997ddfe1e439c84eb7",
+    "tool": "image_gen (builtin)",
+    "status": "draft",
+    "processing": "Original RGBA bytes copied unchanged; no raster editing."
+  },
+  {
+    "id": "menu-friedbean",
+    "prompt": "Use case: stylized-concept. Asset type: one isolated mobile tycoon game sprite for Trum Bia Hoi, Hanoi sidewalk beer stall, matching the previously shown illustrated peanut and nem chua plates and user's colorful game asset references. Primary request: a shallow off-white enamel plate with a thin dark blue rim filled with GOLDEN FRIED TOFU CUBES, topped with chopped GREEN SCALLIONS and tiny golden fried onion pieces. Clearly cooked golden outside, pale tofu cut faces. No peanuts, no meat. Style: hand-painted 2D cartoon game inventory icon with crisp dark brown outlines, compact readable color blocks, warm upper-left light, gentle cel shading, playful Vietnamese food illustration, clean silhouette recognizable at 40 px. Three-quarter elevated view, centered complete plate, square composition, object occupies 85 percent of frame with even transparent padding, no cropped edges. Scene/backdrop: TRUE TRANSPARENT RGBA alpha outside the plate. No floor, no backdrop, no checkerboard pattern painted into pixels, no text, no labels, no watermark, no extra props, no collage. Generate one standalone image only.",
+    "path": "assets/menu-friedbean-illustrated-v1.png",
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "3ec5b3bc20992a5126a4d1195e5f0590dbe9561051caf6facb49781be7bfdc65",
+    "tool": "image_gen (builtin)",
+    "status": "draft",
+    "processing": "Original RGBA bytes copied unchanged; no raster editing."
+  },
+  {
+    "id": "menu-crackle",
+    "prompt": "Use case: stylized-concept. Asset type: one isolated mobile tycoon game sprite for Trum Bia Hoi, Hanoi sidewalk beer stall, matching the previously shown illustrated peanut and nem chua plates and user's colorful game asset references. Primary request: a shallow off-white enamel plate with a thin dark blue rim filled with crunchy GOLDEN PORK CRACKLINGS, irregular small puffed crisp cubes, a few reddish toasted edges and slight shine. No tofu, no vegetables, no peanuts. Style: hand-painted 2D cartoon game inventory icon with crisp dark brown outlines, compact readable color blocks, warm upper-left light, gentle cel shading, playful Vietnamese food illustration, clean silhouette recognizable at 40 px. Three-quarter elevated view, centered complete plate, square composition, object occupies 85 percent of frame with even transparent padding, no cropped edges. Scene/backdrop: TRUE TRANSPARENT RGBA alpha outside the plate. No floor, no backdrop, no checkerboard pattern painted into pixels, no text, no labels, no watermark, no extra props, no collage. Generate one standalone image only.",
+    "path": "assets/menu-crackle-illustrated-v1.png",
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "ef1d3909784d10c972b682a8e48337d3b3f91420eb4c5757a87115d9103c9e59",
+    "tool": "image_gen (builtin)",
+    "status": "draft",
+    "processing": "Original RGBA bytes copied unchanged; no raster editing."
+  },
+  {
+    "id": "menu-intestine",
+    "prompt": "Use case: stylized-concept. Asset type: one isolated mobile tycoon game sprite for Trum Bia Hoi, Hanoi sidewalk beer stall, matching the previously shown illustrated peanut and nem chua plates and user's colorful game asset references. Primary request: a shallow oval off-white enamel plate with a thin dark blue rim filled with COOKED STIR-FRIED PORK INTESTINE and PICKLED MUSTARD GREENS: pale ivory curved small tubular rings mixed with yellow-green cabbage strips, a few green scallions. Appetizing wok gloss, cooked food, one small subtle steam wisp. No raw meat, no blood. Style: hand-painted 2D cartoon game inventory icon with crisp dark brown outlines, compact readable color blocks, warm upper-left light, gentle cel shading, playful Vietnamese food illustration, clean silhouette recognizable at 40 px. Three-quarter elevated view, centered complete plate, square composition, object occupies 85 percent of frame with even transparent padding, no cropped edges. Scene/backdrop: TRUE TRANSPARENT RGBA alpha outside the plate. No floor, no backdrop, no checkerboard pattern painted into pixels, no text, no labels, no watermark, no extra props, no collage. Generate one standalone image only.",
+    "path": "assets/menu-intestine-illustrated-v1.png",
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "sha256": "01ac68634d027aa94eac066f0536596c473feac2d84ab198642597ed510f13ee",
+    "tool": "image_gen (builtin)",
+    "status": "draft",
+    "processing": "Original RGBA bytes copied unchanged; no raster editing."
+  }
+]

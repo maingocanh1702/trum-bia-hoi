@@ -270,3 +270,35 @@
 .attendance-track [aria-current] { border-color: var(--coinGold); background: #ffffff0a; }
 .attendance-track [data-state="claimed"] small { color: #a9eac0; }
 @media (min-width: 640px) { .attendance-track { grid-template-columns: repeat(7, minmax(0, 1fr)); } }
+
+
+.stall-scene.has-kitchen { min-height: 270px; }
+.equipment-object.kitchen { left: calc(50% - 32px); top: 200px; transform: none; min-height: 48px; height: 48px; }
+.equipment-object.kitchen > .sprite { width: 58px; height: 45px; }
+.equipment-object.kitchen b { bottom: -2px; }
+.equipment-detail:has(.kitchen-panel) { max-width: 480px; text-align: left; }
+.equipment-detail:has(.kitchen-panel) > .upgrade-card { max-width: 220px; margin: 0 auto; text-align: center; }
+.kitchen-panel { border-bottom: 1px solid var(--panelBorder); padding-bottom: 20px; margin-bottom: 20px; }
+.kitchen-panel > header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.kitchen-panel h3 { font-size: 18px; margin: 0; }
+.kitchen-panel header b { font-size: 12px; color: var(--coinGold); }
+.kitchen-panel p { font-size: 13px; color: var(--creamMuted); line-height: 1.5; }
+.kitchen-slots { display: flex; gap: 8px; margin: 14px 0; }
+.kitchen-slots span { width: 32px; height: 32px; line-height: 30px; text-align: center; border: 1px solid var(--panelBorder); border-radius: 50%; color: var(--creamMuted); }
+.kitchen-slots .is-cooking { color: var(--panelDeep); background: var(--coinGold); border-color: var(--coinGold); }
+.kitchen-jobs { list-style: none; padding: 0; margin: 0; }
+.kitchen-jobs li { border-top: 1px solid var(--panelBorder); padding: 6px 0; }
+.kitchen-jobs button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 58px; text-align: left; background: transparent; padding: 6px 0; }
+.kitchen-jobs .sprite { width: 43px; height: 43px; flex-shrink: 0; }
+.kitchen-jobs strong, .kitchen-jobs small, .kitchen-jobs time { display: block; }
+.kitchen-jobs strong { font-size: 14px; }.kitchen-jobs small { font-size: 11px; color: var(--creamMuted); margin-top: 4px; }
+.kitchen-job-state { margin-left: auto; text-align: right; font-size: 11px; }.kitchen-job-state time { font-size: 19px; color: var(--coinGold); font-variant-numeric: tabular-nums; }
+.kitchen-jobs [data-state="ready"] .kitchen-job-state { color: #a9eac0; }
+.kitchen-jobs .kitchen-warning { color: #ffe19a; font-size: 12px; margin: 0 0 6px; }
+.order-panel .kitchen-link { margin-top: 8px; min-height: 44px; font-size: 12px; }
+@media (prefers-reduced-motion: no-preference) {
+  .equipment-object.kitchen.is-cooking .sprite { animation: kitchen-cook 1.5s ease-in-out infinite; }
+  @keyframes kitchen-cook { 50% { filter: drop-shadow(0 0 4px #e7953a); } }
+}
+/* A short landscape viewport scrolls the navigation with the yard instead of covering equipment. */
+@media (max-height: 500px) { .bottom-nav { position: static; } }

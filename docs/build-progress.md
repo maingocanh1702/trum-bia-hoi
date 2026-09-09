@@ -1074,3 +1074,55 @@ missing live presentation and focused intermediate-level/deadline checks; use
 | Date | Change |
 |---|---|
 | 2026-09-09 | Recorded independent attendance review without findings,126 unit/52 E2E/20 k rows and true v13 compatibility captures; full-game goal remains active. |
+
+
+## 2026-09-09 — Live kitchen and hot-dish assets
+
+Base f9fa82f3b667e54873d35ff7110945daba8576d1. The read-only kitchenStatus
+projection exposes existing Item states/readyAt without a second queue, scheduler,
+command, RNG draw or replay revision. Owned stove on the yard, accessible kitchen
+entry through upgrades (including level0), VI/EN live occupancy/countdowns and
+stock/queued/ready states now route to the existing whole-table order popover,
+restock sheet and upgrade command. Preparing completion at/after normal patience
+warns; pending jobs have no promised ETA. Served/expired orders cannot retain dish
+links. Numeric/icon-only departure feedback remains unchanged.
+
+Seven original built-in image_gen calls replaced kitchen levels1–4 and three hot
+plates, all native1254x1254 RGBA with alpha0–255. Original image bytes copied
+unchanged. Exact prompts/output paths/SHA-256 in reference/assets-owner-2026-09-08/
+kitchen-art.json. Burner art1/2/2/3 matches canonical config. Corrected the stale
+single-burner level2 generation prompt; no economy numbers changed. All128 manifest
+entries/32paired SFX pass;23 sprite placeholders and97draft files remain. Draft
+status is intentional; no final pixel-art release approval is claimed.
+
+Author verification: npm run verify passed config/production build/133 engine
+tests,10 ordinary >=500-serve k rows2.2564–2.65 and15 rush-pressure rows. Final full59
+browser tests passed, including seven focused kitchen cases after widening the
+live-kitchen content area. Production build passed again. New seven engine
+checks use real command-created/replayed saves for all levels, actual restock,
+exact completion/expiry boundaries, coarse/fine time, hidden pause, pending stock,
+prepared waste, partial-mâm refusal and stale whole-mâm service. One isolated
+cloned-world probe checks the warning equality predicate; it is never a fake save.
+
+Visual QA at360x740,390x844,1280x400 confirms native sprites load,44px hit targets,
+unobscured yard appliance, readable timers and scrollable sheets; max-level view
+shows3 occupied burners. Fixed short landscape nav covering the new stove center
+by allowing nav to scroll with the yard below500px viewport height. First focused
+run also exposed an invalid test assumption: existing queued arrivals can still
+seat while closing, so expiry now checks each original job disappears instead of
+forbidding legitimate later orders. Reduced-motion and language switch pass.
+
+Logs: .qa/kitchen-verify.txt,kitchen-final-e2e.txt,kitchen-final-build.txt,
+kitchen-assets.txt. The final59-pass log supersedes earlier diagnostic runs. A
+fixture-switch experiment was correctly overwritten by pagehide save; stock and
+max-level checks now use separate fresh browser tests, without bypassing pagehide. Screenshot evidence kitchen-yard/live-{360,390,1280}.png
+and kitchen-max.png; kitchen-art-ui-footprints.png checks all seven sprites at
+the actual43px dish/58x45px equipment sizes. Full F11 still includes per-dish waste/menu-mix telemetry and
+future customer-specific demand; documented current dish_preparing/dish_ready
+mapping, automatic Item-based prep and GDD/03 stale soft service. Independent
+full-base review pending. Tracker v0.18.0/dashboard retain17 in-progress features.
+Root bc79af5/WIP preserved; no merge/push/hosted test. Full M0–M9 continues.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Added live kitchen UI and seven original sprites;133 unit/59 browser/10 k rows plus15 rush rows pass. Independent review pending; analytics/server/full-game work remains active. |

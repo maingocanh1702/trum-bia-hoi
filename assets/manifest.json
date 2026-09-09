@@ -260,50 +260,53 @@
     {
       "id": "menu-friedbean",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/menu-friedbean-illustrated-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        1254,
+        1254
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "status": "draft",
+      "review_notes": "Native RGBA generated from owner style direction. Full alpha preserved; 40px UI QA required. Illustrated art draft, not final pixel-art release approval.",
+      "license_note": "Original built-in image generation for this project; no extracted third-party sprite."
     },
     {
       "id": "menu-crackle",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/menu-crackle-illustrated-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        1254,
+        1254
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "status": "draft",
+      "review_notes": "Native RGBA generated from owner style direction. Full alpha preserved; 40px UI QA required. Illustrated art draft, not final pixel-art release approval.",
+      "license_note": "Original built-in image generation for this project; no extracted third-party sprite."
     },
     {
       "id": "menu-intestine",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/menu-intestine-illustrated-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        1254,
+        1254
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "status": "draft",
+      "review_notes": "Native RGBA generated from owner style direction. Full alpha preserved; 40px UI QA required. Illustrated art draft, not final pixel-art release approval.",
+      "license_note": "Original built-in image generation for this project; no extracted third-party sprite."
     },
     {
       "id": "keg-lv1",
@@ -628,66 +631,70 @@
     {
       "id": "kitchen-lv1",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/kitchen-lv1-illustrated-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        1254,
+        1254
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "status": "draft",
+      "review_notes": "Native RGBA generated from owner style direction. Full alpha preserved; compact UI QA required. Illustrated art draft, not final pixel-art release approval.",
+      "license_note": "Original built-in image generation for this project; no extracted third-party sprite."
     },
     {
       "id": "kitchen-lv2",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/kitchen-lv2-illustrated-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        1254,
+        1254
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "status": "draft",
+      "review_notes": "Native RGBA generated from owner style direction. Full alpha preserved; compact UI QA required. Illustrated art draft, not final pixel-art release approval.",
+      "license_note": "Original built-in image generation for this project; no extracted third-party sprite."
     },
     {
       "id": "kitchen-lv3",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/kitchen-lv3-illustrated-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        1254,
+        1254
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "status": "draft",
+      "review_notes": "Native RGBA generated from owner style direction. Full alpha preserved; compact UI QA required. Illustrated art draft, not final pixel-art release approval.",
+      "license_note": "Original built-in image generation for this project; no extracted third-party sprite."
     },
     {
       "id": "kitchen-lv4",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/kitchen-lv4-illustrated-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        1254,
+        1254
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "status": "draft",
+      "review_notes": "Native RGBA generated from owner style direction. Full alpha preserved; compact UI QA required. Illustrated art draft, not final pixel-art release approval.",
+      "license_note": "Original built-in image generation for this project; no extracted third-party sprite."
     },
     {
       "id": "customer-thuong",

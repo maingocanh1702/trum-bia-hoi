@@ -230,5 +230,16 @@
   "attendance.received": "+{n} uy tín",
   "error.attendanceExpired": "Quà điểm danh này đã hết ngày.",
   "error.attendanceClaimed": "Bạn đã nhận quà hôm nay.",
-  "error.attendanceInactive": "Quay lại quán để nhận quà hôm nay."
+  "error.attendanceInactive": "Quay lại quán để nhận quà hôm nay.",
+  "kitchen.live": "Tại bếp",
+  "kitchen.slots": "{busy}/{total} bếp đang nấu",
+  "kitchen.locked": "Mua bếp để mở đậu tẩm hành và tóp mỡ.",
+  "kitchen.idle": "Bếp đang trống. Món mới sẽ tự vào hàng nấu.",
+  "kitchen.tableHint": "Chạm món để xem và phục vụ cả mâm của bàn.",
+  "kitchen.preparing": "Đang nấu",
+  "kitchen.queued": "Chờ bếp",
+  "kitchen.stock": "Hết nguyên liệu",
+  "kitchen.ready": "✓ Đã xong",
+  "kitchen.seconds": "{n}s",
+  "kitchen.late": "! Món sẽ xong sau khi khách hết kiên nhẫn."
 }

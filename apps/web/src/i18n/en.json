@@ -230,5 +230,16 @@
   "attendance.received": "+{n} reputation",
   "error.attendanceExpired": "This check-in reward has expired.",
   "error.attendanceClaimed": "Today’s reward has already been claimed.",
-  "error.attendanceInactive": "Return to the stall to claim today’s reward."
+  "error.attendanceInactive": "Return to the stall to claim today’s reward.",
+  "kitchen.live": "Live kitchen",
+  "kitchen.slots": "{busy}/{total} burners in use",
+  "kitchen.locked": "Buy a kitchen to unlock scallion tofu and pork cracklings.",
+  "kitchen.idle": "The kitchen is idle. New dishes join the cooking queue automatically.",
+  "kitchen.tableHint": "Tap a dish to view and serve its whole table order.",
+  "kitchen.preparing": "Cooking",
+  "kitchen.queued": "Waiting for burner",
+  "kitchen.stock": "Out of ingredients",
+  "kitchen.ready": "✓ Ready",
+  "kitchen.seconds": "{n}s",
+  "kitchen.late": "! This dish will finish after the patience deadline."
 }

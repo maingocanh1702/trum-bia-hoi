@@ -263,7 +263,7 @@ Change only the operating state: show amber beer flowing from the tap into one t
 | Asset | Crop | Prompt riêng |
 |---|---:|---|
 | `kitchen-lv1` | 224x192 | `Create one Vietnamese honeycomb-coal stove with a blackened cast-iron pan, small charcoal tongs and soot marks. One cooking position, humble and smoky.` |
-| `kitchen-lv2` | 240x192 | `Create one small single-burner tabletop gas stove with old red cylinder partly visible, one wok and a simple splash guard. Clearly faster than the coal stove.` |
+| `kitchen-lv2` | 240x192 | `Create one small tabletop gas stove with old red cylinder partly visible, two visible cooking positions with two woks (main burner and auxiliary burner) and a simple splash guard. Clearly faster than the coal stove. Match the two configured kitchen slots.` |
 | `kitchen-lv3` | 304x208 | `Create one sturdy double-burner gas stove with two pans, wider prep edge and shared old gas cylinder. Two simultaneous cooking positions.` |
 | `kitchen-lv4` | 400x288 | `Create one large inox commercial stove with several heavy burners, tall backsplash and old metal exhaust hood. Professional but analog, no digital controls.` |
 | ~~`kitchen-lv5`~~ (bỏ 08/09 — bếp 4 cấp) | 480x320 | `Create one master street-kitchen line with multiple burners, wok station, stock pot, broad prep surface and powerful old metal hood. Maximum throughput, highly organized, no modern display.` |
@@ -963,3 +963,18 @@ checked at360/390/1280 widths. Manifest marks these draft pending final release 
 | Date | Change |
 |---|---|
 | 2026-09-09 | Added builtin business-sign prompt/output provenance and native-alpha QA evidence. |
+
+## Local kitchen and hot dishes — 2026-09-09
+
+Seven standalone images generated with built-in `image_gen`, one call per asset.
+Exact prompts, workspace paths, output dimensions and source SHA-256:
+`docs/reference/assets-owner-2026-09-08/kitchen-art.json`. Four kitchen silhouettes
+show 1/2/2/3 cooking positions, following the JSON and item-list v1.5+; corrected
+the stale single-burner Lv2 prompt above. Three hot plates show fried tofu with
+scallions, pork cracklings and stir-fried offal with mustard greens. Original
+1254×1254 RGBA bytes copied unchanged; alpha0–255, no screenshot extraction or
+pixel editing. Manifest status remains draft pending final art release QA.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Added four kitchen and three hot-dish prompt/output receipts; corrected Lv2 art to two cooking positions, with no gameplay/config changes. |
