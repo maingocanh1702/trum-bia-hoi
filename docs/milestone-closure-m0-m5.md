@@ -93,7 +93,10 @@ No new gameplay test or80MB run was added solely to make this report green.
 | Criterion (ROADMAP,04§5–§6,09§11 P2) | Verdict | Evidence or exact gap |
 | Correct k calculation and ordinary band | PASS | E1 actual per-customer payment+tip/82.5, no throughput term. |
 | Full progressed economy stays in band | FAIL | E4 advanced k3.483282/3.318249; owner scope decision pending, no numbers retuned. |
-| Loss/freshness/group clarity/glass bottleneck/rush feel per04§6 | FAIL | E1 rush reports per-window loss/stale and validates pressure/floor, engine rules pass; no uncoached feel evidence.04§6 has qualitative criteria, not a numeric loss threshold to invent. |
+| 04§6: player controls pouring rhythm; stale warning rarely feels unfair | FAIL | Engine freshness deadlines/penalties and web stale reaction PASS; no human observation showing controlled pacing or absence of unfair-feeling penalties. |
+| 04§6: group/table serving is clear, not confusing | FAIL | Web whole-table action and multi-dish outcomes PASS; no uncoached group-order clarity study. |
+| 04§6: glass/washing bottleneck is perceptible and washer upgrade feels better immediately | FAIL | Engine production/batch and web live-capacity/upgrade tests PASS; no player comparison before/after washer upgrade. |
+| 04§6: peak rush feels intense but manageable | FAIL | E1 pressure/floor/serve-ceiling checks and per-window loss/stale reports PASS; no human rush-handling observation.04§6 gives no numeric loss threshold to invent. |
 | Kitchen panel and separate beer/hot-food bubbles | PASS | E2 `kitchen.spec.ts` “live kitchen shows real timers…” and multi-dish service; actual job deadlines and whole-table links. |
 | Special customer badges distinguishable at32px | FAIL | Urgent identity is tested at normal yard scale; no complete32px recognizability acceptance, football customer still placeholder. |
 | Rush-type telegraph | PASS | E2 “rush warning pauses in sheets, resumes on closing, active timer wins…” at3viewports; engine rush-clock/schedule tests. |
@@ -171,3 +174,5 @@ are not milestone rows, so completing M0 does not incorrectly close all Phase0 r
 | Date | Change |
 |---|---|
 | 2026-09-10 | Owner-requested criterion-by-criterion M0–M5 closure. Closed M0 from current config/build/tests/sim evidence; retained explicit FAILs and split engine proofs from missing product flows. |
+
+| 2026-09-10 review correction | Split the four04§6 feel criteria into separate FAIL rows with their own evidence gaps; M0–M5 closure verdicts unchanged. |
