@@ -1038,3 +1038,39 @@ Read-only root stillbc79af5 with original WIP; no merge/push/hosted release.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Added rules13 attendance, explicit reputation claim, old-save adoption and VI/EN ladder;126 unit/52 browser/20 k rows pass. Independent review pending; full-game goal remains active. |
+
+
+## 2026-09-09 — Attendance rules13 independent review receipt
+
+Productd232be53f220a3e59041b2299d72f8c95c330bc7, full immutable base
+483bb03a75b0f767a2554a8a9e0caf75b6d2da68. Independent Codex review exited0
+without introduced actionable findings. Native final text states that the nonempty
+diff implements configured attendance without violating binding rules, and that
+focused attendance, all126 engine tests, config validation and production build
+pass. Outputs retained at.qa/review-attendance.txt/.log, exact prompt alongside;
+no synthetic clean marker was added. Product remained immutable during review.
+
+Reviewer could not bind browser test port4178 in its read-only sandbox (EPERM).
+It inspected the author's actual52-pass browser and20-row simulation logs; these
+remain author-run evidence, not an independent browser execution. Full author
+checks: config/build/typecheck,126 unit,52 browser,20>=500-serve k rows2.2564–2.8277
+and15 rush-pressure rows. Asset check128 entries/32pairedSFX;30placeholder/90draft
+release work remains. Preview5174 responded200. No root merge, push or hosted test.
+
+Genuine current-protocol captures from immutable d232be5 preserve a claimed day6
+with unclaimed days2/4 and a hidden three-day gap, full expected worlds and source
+SHA (.qa/capture-attendance-v13.mjs/.txt,legacy-attendance-{claimed,hidden-gap}-v13
+files). These support the next replay revision; no future protocol is claimed.
+Read-only next-intake notes cover kitchen M3 gaps and the actual ten-glass buy cap.
+The six-table/tenth-priced-seat gap must not be filled with invented prices.
+
+Tracker v0.17.1/dashboard retain17 active full features and zero full-feature
+completion claims. Local attendance branch is reviewed; remaining F17 social,
+referral/sign-in integration and all server/risk/events/art/release M0–M9 scope
+continue. Next implementation priority is the existing kitchen prep pipeline's
+missing live presentation and focused intermediate-level/deadline checks; use
+.qa/kitchen-next-intake.md as orientation, re-read live source before admission.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Recorded independent attendance review without findings,126 unit/52 E2E/20 k rows and true v13 compatibility captures; full-game goal remains active. |
