@@ -26,7 +26,8 @@ CHECK, IN THIS ORDER
 4. Security / robustness (server slices): input validation, auth on mutating endpoints, no
    trusting client totals, rate limits on donate/serve, secrets not committed.
 5. UI invariants when UI changed: 44 px hit targets, no hover-only, colour-only signals, i18n keys
-   (no hardcoded strings), reduced-motion, sheets don't pause the shift.
+   (no hardcoded strings), reduced-motion. Management/equipment menus pause gameplay until closed;
+   stock purchases keep the menu open and paused. Inline whole-table service stays live.
 6. Docs hygiene (MINOR unless it hides a rule change): deviation from a doc without a changelog
    row; tracker/dashboard not updated for a feature state change.
 
@@ -42,3 +43,9 @@ VERDICT: CLEAN | FINDINGS
 [if FINDINGS]
 - [BLOCKER|MAJOR|MINOR] <file>:<line> — <what> — <why> — <fix>
 SUMMARY: <one line: what this slice does and the biggest risk left>
+
+
+## Changelog (append-only)
+| Date | Change |
+|---|---|
+| 2026-09-09 | Owner supersedes the prior no-pause sheet rule: management/equipment dialogs pause; purchases retain the open stock menu; closing resumes. Calendar attendance and menu actions remain available. |

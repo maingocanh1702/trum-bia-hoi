@@ -31,6 +31,7 @@
   "save.resetConfirm": "Create a new stall? Your current save will remain as a backup on this device.",
   "save.resetYes": "Keep backup and create a new stall",
   "save.cancel": "Cancel",
+  "pause.menu": "Paused · Close the menu to resume",
   "pause.hidden": "Game automatically paused",
   "wellRested.active": "Well rested ×{mult} · {time} remaining",
   "book.wellRestedBonus": "Well-rested bonus",

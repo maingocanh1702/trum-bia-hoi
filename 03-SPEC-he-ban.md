@@ -285,3 +285,17 @@ t-0    Order hết patience → bàn vào GRACE: viền ĐỎ pulse, cả nhóm 
 | v1.5 | 2026-09-09: tách phí tự nguyện đóng ca khỏi phạt bỏ đi, làm rõ v1.4 chỉ nói dọn tự nhiên. Xác nhận phí live, thiếu xu giữ nguyên, queue/seating chưa gọi món phí 0, occupied chỉ giữ Chí Phèo. Replay v1–v3 giữ hành vi cũ. |
 
 | v1.6 | 2026-09-09: bổ sung shipper khi closing theo F07/08: dừng arrivals, giải quyết đơn đang chạy trước finalize, chặn kick-all trước debit; không thay đổi vòng đời bàn/cốc. |
+
+
+## Owner update — management pause (2026-09-09)
+
+Mở Nhập hàng, menu quản lý hoặc chi tiết/nâng cấp thiết bị tự tạm dừng gameplay.
+Nhập hàng thành công vẫn giữ menu mở và tạm dừng đến khi người chơi đóng menu.
+Thời gian chờ của khách/hàng đợi, chuẩn bị/rửa, độ tươi bia, ca, Giờ Vàng và đơn
+giao hàng giữ nguyên phần còn lại. Đóng bằng nút ×, Escape hoặc nền ngoài menu
+chạy tiếp từ phần thời gian đó. Chuyển menu hoặc đổi tab rồi trở lại không chạy
+lén đồng hồ. Thẻ phục vụ cả mâm khi chạm bàn vẫn là thao tác sân đang chạy.
+Các thao tác có chủ đích trong menu vẫn khả dụng theo điều kiện vốn có; điểm danh
+và ngày Việt Nam theo lịch thật. Toast trừ tiền/uy tín vẫn chỉ là phản hồi số/icon.
+
+| v1.7 | 2026-09-09: owner chốt auto-pause menu và giữ Nhập hàng mở sau mua; dừng mọi gameplay clock đồng bộ, không đóng băng ngày lịch hoặc khóa thao tác menu. Thay thế chỉ dẫn cũ về menu live. |

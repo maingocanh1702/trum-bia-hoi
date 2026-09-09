@@ -63,7 +63,7 @@ export interface World {
   now: number; rng: number; nextId: number; phase: 'resting' | 'open' | 'closing';
   playerId: string; coins: number; reputation: number; seasonEarned: number; lifetimeEarned: number;
   staminaMs: number; staminaAnchorMs: number; staminaAnchorAt: number;
-  completedShifts: number; active: boolean; lastServedAt: number | null;
+  completedShifts: number; active: boolean; paused?: boolean; lastServedAt: number | null;
   restStartedAt: number; wellRestedDays: Record<string, boolean>;
   dayEarned: Record<string, number>; dayShifts: Record<string, number>;
   inventory: Record<Dish, number>; equipment: Record<Equipment, number>; tables: Table[];
@@ -94,9 +94,9 @@ export type Command =
   | { type: 'activateFlyer'; shiftId: string }
   | { type: 'installSignboard' }
   | { type: 'setSignboard'; style: SignStyle }
-  | { type: 'activity'; active: boolean }
+  | { type: 'activity'; active: boolean; paused?: boolean }
   | { type: 'emergencyPack' };
 export interface Envelope { idempotencyKey: string; at: number; command: Command }
 export interface Result { ok: boolean; reason?: string; outcome?: 'early' | 'late' | 'grace' | 'expired' | 'stale'; amount?: number }
-export type RulesVersion = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15; // config-exempt: persisted replay protocol revisions, not economy tuning
+export type RulesVersion = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16; // config-exempt: persisted replay protocol revisions, not economy tuning
 export interface LoggedCommand extends Envelope { result: Result; configVersion: string; rulesVersion: RulesVersion }

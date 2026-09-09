@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
 for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1280, height: 720 }, { width: 1280, height: 400 }]) {
-  test(`guest serves, reloads, opens live sheets and switches locale at ${viewport.width}×${viewport.height}`, async ({ page }) => {
+  test(`guest serves, reloads, opens paused sheets and switches locale at ${viewport.width}×${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
@@ -40,12 +40,17 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
     await expect(page.locator('.table-space.state-consuming')).toHaveCount(1);
     await page.getByRole('button', { name: 'Nhập hàng', exact: true }).click();
     const stockRow = page.locator('.stock-row').first();
+    for (const button of await stockRow.getByRole('button').all()) {
+      const b = (await button.boundingBox())!, panel = (await page.locator('.sheet').boundingBox())!;
+      expect(b.width).toBeGreaterThanOrEqual(44); expect(b.height).toBeGreaterThanOrEqual(44);
+      expect(b.x).toBeGreaterThanOrEqual(panel.x); expect(b.x + b.width).toBeLessThanOrEqual(panel.x + panel.width);
+    }
     const stockBefore = Number((await stockRow.locator('.stock-info span').textContent())!.split('/')[0]);
     await stockRow.getByRole('button', { name: '+1 · 12 xu', exact: true }).click();
     await expect(stockRow.locator('.stock-info span')).toHaveText(`${stockBefore + 1} / 15`);
     const before = await page.locator('.energy strong').textContent();
     await page.clock.runFor(2000);
-    expect(await page.locator('.energy strong').textContent()).not.toBe(before);
+    expect(await page.locator('.energy strong').textContent()).toBe(before);
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Cài đặt', exact: true }).click();
     await page.getByLabel('Ngôn ngữ').selectOption('en');
@@ -290,10 +295,12 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 
     await expect(dialog).toBeVisible(); await expect(dialog.locator('.sheet-header button')).toBeFocused();
     await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(coins));
     const time = await page.locator('.energy strong').textContent();
-    await page.clock.runFor(1000); expect(await page.locator('.energy strong').textContent()).not.toBe(time);
+    await page.clock.runFor(1000); expect(await page.locator('.energy strong').textContent()).toBe(time);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.getByRole('button', { name: 'Đợi khách dùng xong', exact: true }).click();
     await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(coins)); await expect(page.locator('.state-consuming')).toHaveCount(1);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
     await page.getByRole('button', { name: 'Mời tất cả về · 5 xu', exact: true }).click();
     await page.getByRole('button', { name: 'Trả 5 xu và đóng ca', exact: true }).click();
     await expect(page.getByRole('dialog', { name: 'Sổ ca hôm nay' })).toBeVisible();
@@ -307,7 +314,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 
   });
 }
 
-test('insufficient close funds keep the guest, and natural expiry closes the confirmation without a second fee', async ({ page }) => {
+test('insufficient close funds keep the guest paused until choosing to wait, then natural expiry charges no second fee', async ({ page }) => {
   const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/manual-close.ts', 'poor'], { encoding: 'utf8' }));
   await page.clock.install({ time: new Date(fixture.now) }); await page.clock.pauseAt(new Date(fixture.now));
   await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), fixture.save);
@@ -317,7 +324,8 @@ test('insufficient close funds keep the guest, and natural expiry closes the con
   await expect(page.getByRole('button', { name: 'Trả 5 xu và đóng ca', exact: true })).toBeDisabled();
   await expect(page.locator('.seat-customer')).toHaveCount(1);
   await expect(page.locator('.money strong')).toHaveText(String(fixture.coins));
-  await page.clock.runFor(20000);
+  await page.clock.runFor(20000); await expect(page.locator('.seat-customer')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Đợi khách dùng xong', exact: true }).click(); await page.clock.runFor(20000);
   await expect(page.getByRole('dialog', { name: 'Sổ ca hôm nay' })).toBeVisible();
   await expect(page.locator('.money strong')).toHaveText('0');
   const save = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));
@@ -339,7 +347,7 @@ test('a mixed occupied table renders only the remaining Chi Pheo and closes with
 });
 
 for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 }, { width: 1280, height: 400 }]) {
-  test(`rush warning stays live in sheets, active timer wins, and closing ends it at ${viewport.width}×${viewport.height}`, async ({ page }) => {
+  test(`rush warning pauses in sheets, resumes on closing, active timer wins, and closing ends it at ${viewport.width}×${viewport.height}`, async ({ page }) => {
     const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/rush.ts'], { encoding: 'utf8' }));
     await page.setViewportSize(viewport);
     await page.clock.install({ time: new Date(fixture.now) }); await page.clock.pauseAt(new Date(fixture.now));
@@ -352,9 +360,9 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 
     await expect(page.locator('.rush-label.is-warning')).toHaveCount(1);
     await expect(page.getByRole('status').filter({ hasText: 'Chuẩn bị đón Giờ Vàng.' })).toHaveCount(1);
     await page.getByRole('button', { name: 'Nhập hàng', exact: true }).click();
-    await page.clock.runFor(1000); await expect(hud.locator('time')).toHaveText('00:19');
+    await page.clock.runFor(1000); await expect(hud.locator('time')).toHaveText('00:20');
     await page.keyboard.press('Escape');
-    await page.clock.runFor(fixture.warningMs - 1000);
+    await page.clock.runFor(fixture.warningMs);
     await expect(page.locator('.rush-label.is-active')).toHaveCount(1);
     await expect(hud).toHaveText('Giờ VàngCòn 01:30');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -367,6 +375,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 
     await expect(hud).toHaveText('Nhịp quán bình thường');
     await page.clock.fastForward(fixture.second.start - fixture.first.end + 1);
     await expect(hud).toHaveText('Nhịp quán bình thường');
+    await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
     const report = page.getByRole('table', { name: 'Giờ Vàng trong ca' }); await report.scrollIntoViewIfNeeded(); await expect(report).toBeVisible();
     const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));
     const ended = stored.events.find((e: { type: string }) => e.type === 'rush_ended').data;
@@ -537,7 +546,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 
     await phone.click(); const panel = page.getByRole('dialog', { name: 'Đơn giao hàng', exact: true });
     await expect(panel.getByRole('button', { name: /^Giao cả đơn/ })).toBeDisabled(); await expect(panel.locator('.delivery-lines li')).toHaveCount(fixture.lines.length);
     await expect.poll(() => panel.locator('.delivery-summary img').evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth === 1024)).toBe(true);
-    await page.clock.runFor(1000); await expect(panel.getByRole('timer')).toHaveText('00:44');
+    await page.clock.runFor(1000); await expect(panel.getByRole('timer')).toHaveText('00:45');
     await panel.getByRole('button', { name: 'Nhập nguyên liệu còn thiếu', exact: true }).click();
     let cost = 0;
     for (const line of fixture.lines) { cost += line.cost; await page.locator('.stock-row').nth(line.index).getByRole('button', { name: /^Đầy kho/ }).click(); }
@@ -567,10 +576,12 @@ test('a pending shipper blocks paid closure and expires with a numeric-only pena
   await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
   await page.getByRole('button', { name: /Mời tất cả về/ }).click();
   await expect(page.getByRole('button', { name: /^Trả .* xu và đóng ca$/ })).toBeDisabled(); await expect(page.getByRole('dialog')).toContainText('Giao đơn shipper đang chờ');
-  await page.getByRole('button', { name: 'Đợi khách dùng xong', exact: true }).click(); await page.getByRole('button', { name: 'Ngừng đón khách', exact: true }).click();
-  await page.keyboard.press('Escape'); const phone = page.getByRole('button', { name: 'Điện thoại · đơn giao hàng', exact: true }); await phone.click();
-  await page.clock.runFor(20000); await expect(page.locator('.delivery-urgent')).toBeVisible(); await expect(phone).toHaveAccessibleDescription(/Sắp hết hạn giao/);
-  await page.clock.runFor(25000); await expect(page.getByRole('dialog', { name: 'Đơn giao hàng', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Đợi khách dùng xong', exact: true }).click();
+  await page.getByRole('button', { name: 'Sổ ca', exact: true }).click(); await page.getByRole('button', { name: 'Ngừng đón khách', exact: true }).click();
+  const phone = page.getByRole('button', { name: 'Điện thoại · đơn giao hàng', exact: true });
+  await page.clock.runFor(20000); await phone.click(); await expect(page.locator('.delivery-urgent')).toBeVisible(); await expect(phone).toHaveAccessibleDescription(/Sắp hết hạn giao/);
+  await page.clock.runFor(25000); await expect(page.locator('.delivery-urgent')).toBeVisible();
+  await page.keyboard.press('Escape'); await page.clock.runFor(25000); await expect(page.getByRole('dialog', { name: 'Đơn giao hàng', exact: true })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Sổ ca hôm nay', exact: true })).toBeVisible();
   await expect(page.locator('.toast-loss')).toHaveText(/^[−\d\s.,]+$/); await expect(page.locator('.toast-loss')).toHaveAccessibleName(`Trừ ${fixture.quote.penalty} xu và 0 uy tín`);
   await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(fixture.coins - fixture.quote.penalty));

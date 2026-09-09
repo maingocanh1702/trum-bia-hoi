@@ -16,13 +16,13 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
     await expect(panel.locator('[data-state="queued"]')).not.toHaveCount(0);
     const job = f.status.jobs.find((j: { state: string }) => j.state === 'preparing'), row = panel.locator(`[data-item="${job.itemId}"]`);
     await expect(row.locator('time')).toHaveText(`${Math.ceil(job.remainingMs / 1000)}s`);
-    await page.clock.runFor(1000); await expect(row.locator('time')).toHaveText(`${Math.ceil((job.remainingMs - 1000) / 1000)}s`);
+    await page.clock.runFor(1000); await expect(row.locator('time')).toHaveText(`${Math.ceil(job.remainingMs / 1000)}s`);
     await expect.poll(() => panel.locator('img').evaluateAll(imgs => imgs.every(img => (img as HTMLImageElement).complete && (img as HTMLImageElement).naturalWidth > 0))).toBe(true);
     await page.screenshot({ path: `.qa/kitchen-live-${viewport.width}.png` }); await row.getByRole('button').click();
     const order = page.getByRole('dialog', { name: `Bàn ${job.tableNumber}`, exact: true }); await expect(order).toBeVisible();
     await expect(order.getByRole('button', { name: 'Phục vụ cả mâm', exact: true })).toBeDisabled();
     await order.getByRole('button', { name: 'Tại bếp', exact: true }).click(); await expect(panel).toBeVisible();
-    await page.clock.runFor(22000); await expect(panel.locator('[data-state="ready"]')).not.toHaveCount(0);
+    await page.keyboard.press('Escape'); await page.clock.runFor(23000); await yard.click(); await expect(panel.locator('[data-state="ready"]')).not.toHaveCount(0);
     await row.getByRole('button').click(); const serve = order.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }); await expect(serve).toBeEnabled(); await serve.click();
     await expect(order).toHaveCount(0); await expect(yard).not.toBeFocused();
     await page.reload(); await yard.click(); await expect(panel.locator(`[data-item="${job.itemId}"]`)).toHaveCount(0);
@@ -35,7 +35,8 @@ test('kitchen warning disappears after real expiry and never leaves a stale dish
   const f = fixture('late'); await page.clock.install({ time: new Date(f.now) }); await page.clock.pauseAt(new Date(f.now)); await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), f.save); await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click(); await page.getByRole('button', { name: 'Bếp', exact: true }).click();
   const panel = page.locator('.kitchen-panel'); await expect(panel.locator('.kitchen-warning').first()).toBeVisible(); await page.screenshot({ path: '.qa/kitchen-late.png' });
-  await page.clock.runFor(f.deadline - f.now + 100); for (const job of f.status.jobs) await expect(panel.locator(`[data-item="${job.itemId}"]`)).toHaveCount(0);
+  await page.clock.runFor(f.deadline - f.now + 100); await expect(panel.locator('.kitchen-warning').first()).toBeVisible();
+  await page.keyboard.press('Escape'); await page.clock.runFor(f.deadline - f.now + 100); await page.getByRole('button', { name: 'Bếp', exact: true }).click(); for (const job of f.status.jobs) await expect(panel.locator(`[data-item="${job.itemId}"]`)).toHaveCount(0);
 });
 test('out-of-stock recipe opens the existing restock sheet', async ({ page }) => {
   const f = fixture('stock'); await page.clock.install({ time: new Date(f.now) }); await page.clock.pauseAt(new Date(f.now));

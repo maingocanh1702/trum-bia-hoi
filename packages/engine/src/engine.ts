@@ -20,6 +20,7 @@ const QUEST_RULES: RulesVersion = 12; // config-exempt: fixed replay protocol re
 const ATTENDANCE_RULES: RulesVersion = 13; // config-exempt: fixed replay protocol revision
 const MENU_RULES: RulesVersion = 14; // config-exempt: fixed replay protocol revision
 const CONFIG_PIN_RULES: RulesVersion = 15; // config-exempt: fixed replay protocol revision
+const MENU_PAUSE_RULES: RulesVersion = 16; // config-exempt: fixed replay protocol revision
 const emptyStats = (): Stats => ({ arrived: 0, served: 0, lost: 0, rejected: 0, orders: 0, payment: 0, tip: 0, credited: 0, penalty: 0, spent: 0, rep: 0, wellRestedBonus: 0 });
 // Registry storage may reorder object keys; arrays retain their meaningful order.
 const snapshotContent = (c: Config) => JSON.stringify(c.raw, (_, value) => value && typeof value === 'object' && !Array.isArray(value)
@@ -32,7 +33,7 @@ export class Game {
   private readonly results = new Map<string, LoggedCommand>();
   private commandKey: string | null = null;
   private activeRushIndex: number | null = null;
-  private rulesVersion: RulesVersion = CONFIG_PIN_RULES;
+  private rulesVersion: RulesVersion = MENU_PAUSE_RULES;
   private currentConfig: Config;
   private readonly snapshots = new Map<string, Config>();
   get config() { return this.currentConfig; }
@@ -115,7 +116,7 @@ export class Game {
   advance(now: number): void {
     const w = this.world, c = this.config.values;
     if (!Number.isSafeInteger(now) || now < w.now) throw Error('clock:non-monotonic');
-    if (!w.active && this.rulesVersion !== 1) {
+    if ((!w.active || w.paused) && this.rulesVersion !== 1) {
       const elapsed = now - w.now;
       // Keep calendar time real; move gameplay deadlines so hidden/offline time is not played.
       if (w.shift && w.phase !== 'resting') {
@@ -141,6 +142,7 @@ export class Game {
       if (w.delivery) { w.delivery.placedAt += elapsed; w.delivery.expiresAt += elapsed; }
       if (w.daily?.lossFreeSince != null) w.daily.lossFreeSince += elapsed;
       w.now = now;
+      if (this.rulesVersion >= MENU_PAUSE_RULES) this.observeAttendance();
       if (this.rulesVersion >= QUEST_RULES) this.ensureDailyQuests();
       return;
     }
@@ -154,7 +156,7 @@ export class Game {
   }
   private updateRush(): void {
     const w = this.world, s = w.shift;
-    if (!s || !w.active) return;
+    if (!s || !w.active || w.paused) return;
     const candidate = w.phase === 'open' ? s.rushes.findIndex(r => w.now >= r.start && w.now < r.end) : this.activeRushIndex;
     const planned = candidate == null ? undefined : s.rushes[candidate];
     const slot = w.phase !== 'resting' && planned && planned.start <= w.now && w.now < planned.end ? planned : undefined;
@@ -195,7 +197,7 @@ export class Game {
   }
   private tickQuests() {
     const w = this.world, daily = w.daily;
-    if (!daily || !w.active || w.phase === 'resting') return;
+    if (!daily || !w.active || w.paused || w.phase === 'resting') return;
     daily.lossFreeSince ??= w.now;
     const row = daily.rows.find(r => r.kind === 'zero_loss_window');
     if (row && row.progress < row.target && daily.lossFreeServed && w.now - daily.lossFreeSince >= zeroLossWindow(this.config)) {
@@ -211,7 +213,7 @@ export class Game {
   }
   private processDue(): void {
     const w = this.world, c = this.config.values, s = w.shift;
-    if (!w.active && this.rulesVersion !== 1) return;
+    if ((!w.active || w.paused) && this.rulesVersion !== 1) return;
     if (this.rulesVersion >= QUEST_RULES) this.ensureDailyQuests();
     if (this.rulesVersion >= ATTENDANCE_RULES) this.observeAttendance();
     if (s?.flyer && w.now >= s.flyer.end) this.endFlyer('expired');
@@ -493,9 +495,10 @@ export class Game {
     }
   }
   /** Opening config is supplied by a trusted registry adapter, never by a player command payload. */
-  command(envelope: Envelope, openingConfig?: Config): Result { return this.applyCommand(envelope, CONFIG_PIN_RULES, openingConfig); }
+  command(envelope: Envelope, openingConfig?: Config): Result { return this.applyCommand(envelope, MENU_PAUSE_RULES, openingConfig); }
   /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
   replay(entry: LoggedCommand, config = this.config): Result {
+    if (entry.command.type === 'activity' && entry.command.paused !== undefined && entry.rulesVersion < MENU_PAUSE_RULES) throw Error('replay:rulesVersion');
     if (entry.configVersion !== config.version || config.version !== this.config.version && (entry.command.type !== 'startShift' || entry.rulesVersion < CONFIG_PIN_RULES)) throw Error('replay:configVersion');
     return this.applyCommand(entry, entry.rulesVersion, entry.command.type === 'startShift' ? config : undefined);
   }
@@ -541,6 +544,8 @@ export class Game {
     switch (cmd.type) {
       case 'activity':
         w.staminaAnchorAt = w.now; w.staminaAnchorMs = w.staminaMs; w.active = cmd.active;
+        if (this.rulesVersion >= MENU_PAUSE_RULES && cmd.paused) w.paused = true;
+        else delete w.paused;
         if (this.rulesVersion >= ATTENDANCE_RULES && cmd.active) this.observeAttendance(true);
         return { ok: true };
       case 'startShift': {
@@ -806,7 +811,7 @@ export function validEnvelope(input: unknown): input is Envelope {
     case 'claimAttendance': case 'claimDailyBonus': return typeof c.day === 'string';
     case 'activateFlyer': return typeof c.shiftId === 'string' && c.shiftId.length > 0;
     case 'kickAll': return (c.shiftId === undefined || typeof c.shiftId === 'string') && (c.maxCost === undefined || Number.isSafeInteger(c.maxCost) && c.maxCost >= 0);
-    case 'activity': return typeof c.active === 'boolean';
+    case 'activity': return typeof c.active === 'boolean' && (c.paused === undefined || typeof c.paused === 'boolean') && (!c.paused || c.active);
     case 'serve': return typeof c.tableId === 'string' && typeof c.orderId === 'string';
     case 'serveDelivery': return typeof c.deliveryId === 'string';
     case 'upgradeTable': return typeof c.tableId === 'string';

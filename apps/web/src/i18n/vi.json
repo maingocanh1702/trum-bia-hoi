@@ -31,6 +31,7 @@
   "save.resetConfirm": "Tạo quán mới? Bản lưu hiện tại sẽ được giữ thành bản dự phòng trên máy này.",
   "save.resetYes": "Giữ bản dự phòng và tạo quán mới",
   "save.cancel": "Hủy",
+  "pause.menu": "Tạm dừng · Đóng menu để tiếp tục",
   "pause.hidden": "Game tự tạm dừng",
   "wellRested.active": "Tỉnh Táo ×{mult} · còn {time}",
   "book.wellRestedBonus": "Thưởng Tỉnh Táo",

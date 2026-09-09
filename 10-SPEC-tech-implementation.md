@@ -342,3 +342,28 @@ remain M4 work. Local save validation is not an anti-cheat or authenticity proof
 | 2026-09-09 pin review correction | A candidate must retain the current owned location ID; otherwise opening refuses without relocation or adoption. Same-version equality ignores object-key order recursively, but array order and values remain immutable. |
 
 | 2026-09-09 onboarding compatibility | Before changed-config adoption during onboarding, the guaranteed first group must fit at least one retained table using its candidate capacity. InitialTableLevel defaults never replace owned table levels. |
+
+
+## Management pause protocol — owner 2026-09-09
+
+Rules16 extends the existing activity command with optional `paused: boolean`.
+`active` still means the player is present; `active: true, paused: true` means a
+visible management menu. Hidden/offline activity clears pause and remains inactive.
+Do not conflate gameplay time with presence: explicit menu actions (including
+attendance and flyer activation) remain available, and the VN calendar stays real.
+The existing paused advance path shifts all gameplay deadlines; no second clock.
+It observes the current attendance day while present, without granting played-time
+quest progress. Closing the last dialog resumes from its remaining deadlines.
+Rules1–15 replay unchanged; older protocols cannot acquire the new pause field.
+The saved command log replays pause/resume and keeps exact world/event history.
+
+Web derives pause from management/welcome/equipment modal state, combines it with
+document visibility before paint, and dispatches only when activity or pause changes.
+A saved session reload clears the closed menu after preserving offline elapsed time.
+Recovery errors never dispatch/save over corrupt input. Inline table service is live.
+Stock purchases stay in the open menu; explicit closing/wait commands return to the
+yard for customer drain, and the actual close event may open the final report.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Rules16 preserves player presence during management pause, reuses deadline shifting and logs menu lifecycle; old replay versions remain fixed. Added engine and real-browser regressions for actions, clock hold, visibility, reload and calendar behavior. |

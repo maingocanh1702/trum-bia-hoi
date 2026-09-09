@@ -108,7 +108,7 @@ test('the actual v3 close save retains its free served-table dismissal, results 
   assert.deepEqual(g.world.shift!.stats, expected.stats); assert.deepEqual(g.log.at(-1)!.result, expected.result);
   assert.deepEqual(g.world.events, JSON.parse(text).events); assert.ok(g.log.every(e => e.rulesVersion === 3));
   send(g, { type: 'activity', active: true });
-  assert.equal(g.log.at(-1)!.rulesVersion, 15); assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
+  assert.equal(g.log.at(-1)!.rulesVersion, 16); assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
 });
 
 

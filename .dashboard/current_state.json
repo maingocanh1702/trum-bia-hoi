@@ -44,7 +44,9 @@
       "human_status": "IN_PROGRESS",
       "progress": 30,
       "runtime_urgency": "normal",
-      "overlays": [],
+      "overlays": [
+        "tracker-modified"
+      ],
       "signals": {
         "spec_exists": false,
         "tech_exists": false,
@@ -70,7 +72,7 @@
         "spec_modified_at": null,
         "tech_hash": null,
         "tech_modified_at": null,
-        "tracker_row_hash": "63f315b834c85ab47fed0fd0580352d2bffd0f1c17da25db1d77fcedac40a5c9",
+        "tracker_row_hash": "533e323ba3ce38d10d1492251c2b4a81fdc949e28785bb969e6f78404685bb26",
         "foundation_codex_approved": null,
         "foundation_founder_signoff": null
       },
@@ -272,7 +274,9 @@
       "human_status": "IN_PROGRESS",
       "progress": 30,
       "runtime_urgency": "normal",
-      "overlays": [],
+      "overlays": [
+        "tracker-modified"
+      ],
       "signals": {
         "spec_exists": false,
         "tech_exists": false,
@@ -298,7 +302,7 @@
         "spec_modified_at": null,
         "tech_hash": null,
         "tech_modified_at": null,
-        "tracker_row_hash": "6305baec5cb7daf59be294f2c3ba2a2f56f16bc18fb337e89837b0a3d5f5f735",
+        "tracker_row_hash": "1c9be62c9c263b039fc6493255bc4d1170d818ddbc2ee7b4f247de56b50afb2b",
         "foundation_codex_approved": null,
         "foundation_founder_signoff": null
       },

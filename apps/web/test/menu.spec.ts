@@ -4,7 +4,7 @@ const fixture = (mode = 'live') => JSON.parse(execFileSync(process.execPath, ['-
 const number = (n: number, locale = 'vi-VN') => new Intl.NumberFormat(locale).format(Math.round(n));
 
 for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }, { width: 1280, height: 400 }]) {
-  test(`Sổ ca shows actual dish counts, updates while open and survives reload at ${viewport.width}×${viewport.height}`, async ({ page }) => {
+  test(`Sổ ca shows actual dish counts, pauses while open and updates after closing and survives reload at ${viewport.width}×${viewport.height}`, async ({ page }) => {
     const f = fixture(), errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
     await page.setViewportSize(viewport); await page.clock.install({ time: new Date(f.now) }); await page.clock.pauseAt(new Date(f.now));
     await page.addInitScript(save => { if (!localStorage.getItem('menu-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('menu-seeded', '1'); } }, f.save);
@@ -18,6 +18,9 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
     await expect.poll(() => panel.locator('img').evaluateAll(imgs => imgs.every(img => (img as HTMLImageElement).complete && (img as HTMLImageElement).naturalWidth > 0))).toBe(true);
     await page.screenshot({ path: `.qa/menu-live-${viewport.width}.png` });
     await page.clock.fastForward(f.target - f.now);
+    for (const row of f.report.rows) await expect(panel.locator(`[data-dish="${row.dish}"] td`)).toHaveText([row.ordered, row.sold, row.wasted].map(n => number(n)));
+    await page.keyboard.press('Escape'); await page.clock.fastForward(f.target - f.now);
+    await expect(page.getByRole('dialog', { name: 'Sổ ca hôm nay', exact: true })).toBeVisible();
     expect(f.after.rows.reduce((n: number, row: { wasted: number }) => n + row.wasted, 0)).toBeGreaterThan(0);
     for (const row of f.after.rows) await expect(panel.locator(`[data-dish="${row.dish}"] td`)).toHaveText([row.ordered, row.sold, row.wasted].map(n => number(n)));
     await page.reload(); await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();

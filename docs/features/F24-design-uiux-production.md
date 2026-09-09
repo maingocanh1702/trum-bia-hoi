@@ -136,3 +136,21 @@ All gameplay icons must pass legibility at 24px, 40px, and 72px.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Recorded the owner's two successive HUD descriptions; latest portrait casual-management/rounded skeuomorphic/pill-control direction is the current designer brief. |
+
+
+## 8. Management menu pause — owner 2026-09-09
+
+Opening stock, management or equipment dialogs freezes the yard and its gameplay
+clocks. Successful stock purchases keep the same dialog open and paused until
+closing; repeat purchases are supported. Display a compact localized pause pill
+below the header. Modal controls and result feedback remain responsive; freeze
+yard/stall animation. The close button, Escape and backdrop resume only when no
+management dialog remains and the document is visible. Switching dialogs or
+returning from a hidden tab must not briefly resume gameplay. Inline whole-table
+service panels remain live. Explicit wait/stop-admission actions return to the yard
+so customers can finish; the final shift report opens on actual completion.
+Calendar check-in and available management actions remain usable during a pause.
+Mobile stock actions occupy three equal columns below the item instead of clipping
+the full-stock button. Retain the owner's portrait, rounded street-game language.
+
+| 2026-09-09 | Owner-requested management pause with persistent stock menu, localized hint, frozen yard motion and mobile restock button fit. Previous live-menu behavior is superseded. |

@@ -1333,3 +1333,27 @@ full-game completion is claimed at this checkpoint.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Reject incompatible first-group capacity using retained table levels;11 focused tests pass. Preserved second review finding and queued the explicit owner menu-pause behavior for final combined review. |
+
+
+## 2026-09-09 — Owner management pause implementation
+
+The owner explicitly chose to keep Nhập hàng open and paused after purchases until
+closing. Implemented for management/equipment/welcome dialogs with a VI/EN hint and
+paused yard/stall animations; inline table service stays live. Stock controls now
+fit the mobile dialog. Closing/wait actions return to the yard for normal drain.
+
+The full browser run exposed a real distinction in the existing activity model:
+using inactive for a visible menu disabled attendance and flyer activation. Rules16
+adds an optional pause flag to the same activity command, preserving player presence
+and real calendar attendance while reusing deadline shifting for gameplay. Hidden
+activity still refuses those presence-dependent actions. No canonical numbers or
+new dependencies changed. Existing tests that advanced gameplay while a sheet was
+open now explicitly verify the hold and close before measuring gameplay progress.
+
+Final full verification and combined independent review against d732240 remain in
+progress. Earlier config reviews have findings corrected, not a clean final verdict.
+Root remains untouched; full M0–M9/art/server/release work is still incomplete.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Implemented the owner's pause-until-close rule; distinguished presence from paused gameplay after real E2E failures, kept management actions usable, and updated prior no-pause expectations. |
