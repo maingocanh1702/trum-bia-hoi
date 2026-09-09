@@ -407,7 +407,7 @@ export class GameStore {
     if (!validEnvelope({ ...request, at: 0 }) || !Number.isSafeInteger(request.clientSeq) || request.clientSeq < 1) throw Error('store:invalidCommand');
     const { result, ...state } = this.operate(id, (game, now) => {
       const acknowledgedSeq = this.stream(id, request.clientId), previous = this.commandEntry(id, request.idempotencyKey);
-      if (this.managed(id)) {
+      if (token !== undefined || this.managed(id)) {
         const session = token && this.session(token), hash = token && sessionHash(token);
         if (!session || session.playerId !== id || !this.db.prepare('SELECT 1 FROM client_presence WHERE client_id=? AND session_hash=? AND live=1').get(request.clientId, hash!)) {
           return { clientId: request.clientId, acknowledgedSeq, error: 'heartbeatRequired' };

@@ -5,6 +5,17 @@
 
 ---
 
+## 🧭 Mandatory public heartbeat admission — 2026-09-10
+
+Product `85cbb5d` received independent review with no actionable defect. Tightened
+public admission before web cutover: every cookie-authenticated action requires a
+live heartbeat even for a new player; no public compatibility opt-out. HTTP tests
+now handshake, keep alive and update menu state through real heartbeat requests.
+19 targeted HTTP/presence tests pass; final full checks and full-range review pending.
+Native review of85cbb5d independently passed30checks; socket test startup and two
+following checks were cancelled in reviewer environment, host42tests passed.
+Next is web remote controller/outbox/config delivery, then registry/admin.
+
 ## 🧭 M4 durable heartbeat — 2026-09-10
 
 Base `3f1d2bc`. Implemented schema7 owned/session-bound heartbeat leases, monotonic

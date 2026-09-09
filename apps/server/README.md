@@ -318,7 +318,7 @@ M4 web cutover/reconnect/registry-admin; no public upload was introduced.
 ## Durable heartbeat presence — schema7
 
 `POST /player/heartbeat` takes `{clientId, beatSeq, active, paused}` under the same
-cookie/origin rules. First heartbeat activates managed presence for that player.
+cookie/origin rules. Every public action requires a live heartbeat from its first command; first heartbeat records that player's managed presence.
 Use a fresh increasing `beatSeq`; gaps are allowed. `/player/connect` now returns
 `heartbeatSeq` for resuming an owned stream. The heartbeat response carries the
 sanitized server snapshot, sequence and `heartbeatUntil`, `heartbeatIntervalMs`,
@@ -342,7 +342,7 @@ not append engine commands. Requests still advance authoritative server time.
 | Recovery at/after grace | Normal closing wins; never reopen the shift. |
 | Managed player action | Requires that stream's live lease bound to its current valid cookie session. Otherwise409 `heartbeatRequired`; sequence is not consumed. |
 | Managed legacy `activity` |409 `presenceManaged`; send presence via heartbeat so an action cannot overwrite another view's menu. |
-| Legacy adapter before first heartbeat | Existing stream/action behavior remains until explicit cutover. No liveness claim for this path. |
+| Public client before first heartbeat |409 `heartbeatRequired`, including the first startShift. Connect only allocates/resumes a stream. Trusted internal unsequenced adapters retain their pre-activation behavior. |
 
 SQLite stores owned client leases and their last heartbeat sequence. Expiry groups
 are normalized in time order inside the same transaction as engine events/projection/
@@ -365,3 +365,5 @@ this does not complete F23/M4. No public local-save upload was introduced.
 | Date | Change |
 |---|---|
 | 2026-09-10 heartbeat implementation | Schema7 session-bound presence, pre-catchUp expiry, authenticated heartbeat and restart scheduler; legacy pre-activation adapters retained. Verification/review in progress. |
+
+| 2026-09-10 mandatory public admission | Removed the temporary public pre-heartbeat bypass before web cutover: cookie-authenticated commands now always require their own lease from the first action. HTTP fixtures perform real heartbeats, presence changes and virtual-time keepalive. Native listen failures reject test startup instead of hanging. Final verification/review in progress. |

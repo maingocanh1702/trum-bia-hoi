@@ -167,12 +167,16 @@ test('native HTTP heartbeat authenticates views, reports protocol clocks and aut
   t.after(async () => { for (const server of servers) if (server.listening) { server.closeAllConnections(); await new Promise<void>(r => server.close(() => r())); } });
   const serve = async (store: GameStore) => {
     const server = createGameServer(store, { origin: ORIGIN, sessionTtlMs: 86400000, rateMax: 1000, rateWindowMs: 60000 }); servers.push(server);
-    await new Promise<void>(r => server.listen(0, '127.0.0.1', r));
+    await new Promise<void>((r, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', r); });
     return { server, request: (path: string, body: unknown, cookie?: string) => fetch(`http://127.0.0.1:${(server.address() as AddressInfo).port}${path}`,
       { method: 'POST', headers: { Origin: ORIGIN, 'Content-Type': 'application/json', ...(cookie ? { Cookie: cookie } : {}) }, body: JSON.stringify(body) }) };
   };
   const http = await serve(f.store), guest = await http.request('/auth/session', {}), cookie = guest.headers.get('set-cookie')!.split(';')[0];
   const playerId = (await guest.json()).playerId, connected = await (await http.request('/player/connect', {}, cookie)).json();
+  const openCommand = { clientId: connected.clientId, clientSeq: 1, idempotencyKey: 'open', command: { type: 'startShift' } };
+  const unleased = await http.request('/player/command', openCommand, cookie);
+  assert.equal(unleased.status, 409); const refused = await unleased.json();
+  assert.equal(refused.error, 'heartbeatRequired'); assert.equal(refused.acknowledgedSeq, 0); assert.equal(refused.world.phase, 'resting');
   const payload = { clientId: connected.clientId, beatSeq: 1, active: true, paused: true };
   assert.equal((await http.request('/player/heartbeat', payload)).status, 401);
   for (const bad of [{ ...payload, at: 0 }, { ...payload, beatSeq: 0 }, { ...payload, active: 1 }, { ...payload, paused: undefined }, { ...payload, world: { coins: 999 } }])
@@ -181,7 +185,7 @@ test('native HTTP heartbeat authenticates views, reports protocol clocks and aut
   assert.equal(beat.heartbeatIntervalMs, 20); assert.equal(beat.heartbeatTimeoutMs, 40); assert.equal(beat.world.paused, true);
   assert.equal(beat.world.rng, undefined); assert.equal(beat.world.events, undefined); assert.equal(beat.session_hash, undefined);
   assert.equal((await http.request('/player/heartbeat', { ...payload, active: false }, cookie)).status, 409);
-  const opened = await (await http.request('/player/command', { clientId: connected.clientId, clientSeq: 1, idempotencyKey: 'open', command: { type: 'startShift' } }, cookie)).json();
+  const opened = await (await http.request('/player/command', openCommand, cookie)).json();
   assert.ok(opened.result.ok); const lostAt = beat.heartbeatUntil;
   http.server.closeAllConnections(); await new Promise<void>(r => http.server.close(() => r())); f.store.close();
   f.now = lostAt + 10; const restart = f.open(), next = await serve(restart);

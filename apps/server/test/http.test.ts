@@ -11,7 +11,7 @@ const ORIGIN = 'http://127.0.0.1:5174', NOW = Date.parse('2026-09-09T10:00:00Z')
 async function fixture(t: { after(fn: () => unknown): void }, limits: Partial<ServerOptions> = {}) {
   mkdirSync('.qa', { recursive: true }); const dir = mkdtempSync(resolve('.qa/http-')), file = resolve(dir, 'game.db');
   let now = NOW; const instances: { store: GameStore; close: () => Promise<void> }[] = [];
-  const clients = new Map<string, { id: string; next: number; keys: Map<string, number> }>();
+  const clients = new Map<string, { id: string; next: number; keys: Map<string, number>; beatSeq: number; active: boolean; paused: boolean }>();
   t.after(async () => { for (const i of instances) { await i.close(); i.store.close(); } rmSync(dir, { force: true, recursive: true }); });
   const open = async () => {
     const store = new GameStore(file, config, () => now), server = createGameServer(store,
@@ -35,17 +35,30 @@ async function fixture(t: { after(fn: () => unknown): void }, limits: Partial<Se
     };
     const registerClient = async (cookie: string) => {
       const r = await request('/player/connect', {}, cookie); assert.equal(r.status, 200); const data = await r.json();
-      clients.set(cookie, { id: data.clientId, next: 1, keys: new Map() }); return data.clientId as string;
+      clients.set(cookie, { id: data.clientId, next: 1, keys: new Map(), beatSeq: 0, active: true, paused: false }); return data.clientId as string;
     };
-    return { store, request, close, url, registerClient };
+    const beat = async (cookie: string, flags: Partial<{ active: boolean; paused: boolean }> = {}) => {
+      const client = clients.get(cookie)!; Object.assign(client, flags);
+      const r = await request('/player/heartbeat', { clientId: client.id, beatSeq: ++client.beatSeq, active: client.active, paused: client.paused }, cookie);
+      assert.equal(r.status, 200); return r.json();
+    };
+    const advance = async (milliseconds: number) => {
+      const end = now + milliseconds;
+      while (now < end) {
+        now = Math.min(end, now + config.values.network.reconnectingUiDelayMs / 2);
+        for (const [cookie, client] of clients) if (client.beatSeq) await beat(cookie);
+      }
+    };
+    return { store, request, close, url, registerClient, beat, advance };
   };
   return { file, open, get now() { return now; }, set now(v: number) { now = v; }, ...await open() };
 }
-async function guest(api: Awaited<ReturnType<typeof fixture>>) {
+async function guest(api: Awaited<ReturnType<typeof fixture>>, heartbeat = true) {
   const response = await api.request('/auth/session', {}); assert.equal(response.status, 201);
   const set = response.headers.get('set-cookie')!; assert.match(set, /HttpOnly; SameSite=Lax/); assert.match(set, /Path=\//);
   const data = await response.json(); assert.equal(data.provider, 'guest'); assert.equal(data.token, undefined);
   const cookie = set.split(';')[0], clientId = await api.registerClient(cookie);
+  if (heartbeat) await api.beat(cookie);
   return { cookie, clientId, ...data };
 }
 const command = (type: string) => ({ idempotencyKey: type, command: { type } });
@@ -58,7 +71,7 @@ test('real HTTP guests own separate state; serving retries, paused stock purchas
   assert.equal(opened.world.now, f.now); assert.equal(opened.configVersion, config.version);
   assert.equal(opened.world.rng, undefined); assert.equal(opened.world.nextId, undefined); assert.equal(opened.world.events, undefined);
   assert.equal(opened.world.shift.rushScheduleSeed, undefined); assert.equal(opened.config, undefined);
-  f.now += 11100;
+  await f.advance(11100);
   const ready = await (await f.request('/player/state', undefined, a.cookie)).json(), table = ready.world.tables.find((t: any) => t.order?.items.every((i: any) => i.state === 'ready'));
   const payload = { idempotencyKey: 'serve-one', command: { type: 'serve', tableId: table.id, orderId: table.order.id } };
   const served = await (await f.request('/player/command', payload, a.cookie)).json(); assert.ok(served.result.ok);
@@ -69,9 +82,9 @@ test('real HTTP guests own separate state; serving retries, paused stock purchas
   const changes = await (await f.request(`/player/events?after=${opened.lastEventSeq}`, undefined, a.cookie)).json();
   assert.equal(changes.events.filter((e: any) => e.event.type === 'order_served').length, 1);
   assert.ok(changes.events.every((e: any, i: number) => e.seq === opened.lastEventSeq + i + 1 && e.event.data.seed === undefined));
-  const paused = await (await f.request('/player/command', { idempotencyKey: 'pause', command: { type: 'activity', active: true, paused: true } }, a.cookie)).json();
+  const paused = await f.beat(a.cookie, { active: true, paused: true });
   const stock = await (await f.request('/player/command', { idempotencyKey: 'stock', command: { type: 'restock', dish: 'bia', mode: 'one' } }, a.cookie)).json(); assert.ok(stock.result.ok);
-  f.now += 40000; await f.close(); f.store.close(); const restarted = await f.open();
+  await f.advance(40000); await f.close(); f.store.close(); const restarted = await f.open();
   const restored = await (await restarted.request('/player/state', undefined, a.cookie)).json();
   assert.equal(restored.world.paused, true); assert.equal(restored.world.shift.endsAt - restored.serverNow, paused.world.shift.endsAt - paused.serverNow);
   assert.equal(restored.world.coins, stock.world.coins); assert.equal(restored.world.inventory.bia, stock.world.inventory.bia);
@@ -144,11 +157,16 @@ test('every public action refuses injected authority fields before durable comma
   }
   assert.deepEqual(f.store.read(a.playerId), before);
   const db = new DatabaseSync(f.file); t.after(() => db.close()); assert.equal(db.prepare('SELECT count(*) AS n FROM commands').get()!.n, 0);
-  for (const action of Object.values(actions)) assert.equal((await f.request('/player/command', { idempotencyKey: action.type, command: action }, a.cookie)).status, 200, action.type);
+  await f.registerClient(a.cookie); await f.beat(a.cookie);
+  for (const action of Object.values(actions).filter(action => action.type !== 'activity'))
+    assert.equal((await f.request('/player/command', { idempotencyKey: action.type, command: action }, a.cookie)).status, 200, action.type);
+  const activity = await f.request('/player/command', { idempotencyKey: 'activity', command: actions.activity }, a.cookie);
+  assert.equal(activity.status, 409); assert.equal((await activity.json()).error, 'presenceManaged');
 });
 
 test('long-lived players catch up in bounded repeatable pages across restart without replaying or advancing the game', async t => {
-  const f = await fixture(t, { sessionTtlMs: 10 * 86400000 }), a = await guest(f), b = await guest(f);
+  const f = await fixture(t, { sessionTtlMs: 10 * 86400000 }), a = await guest(f, false), b = await guest(f, false);
+  // Seed legacy server history internally; public commands now require heartbeat from the first action.
   let last = 0;
   for (let day = 0; day < 5 && last <= 200; day++) {
     f.now = NOW + day * 86400000;

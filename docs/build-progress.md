@@ -2159,3 +2159,8 @@ Full config/build and298 engine/server tests pass; the strengthened final presen
 suite10/10 passes. Native review is next. Engine/config values unchanged; prior
 0bcbcde ordinary k/rush evidence remains applicable. Remote web/outbox/registry-admin
 remain open, as does M4. Owner's no-public-upload/no80MB-tuning timebox is preserved.
+
+Follow-up in the same boundary: public command admission now requires heartbeat
+from the very first action; trusted internal fixture/import adapters are separate.
+19 real HTTP/presence checks pass after strengthening the gate; final full checks
+and full-range review are in progress. Web implementation remains next.

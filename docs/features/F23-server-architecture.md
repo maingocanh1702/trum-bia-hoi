@@ -351,8 +351,9 @@ Schema7 adds session-bound client heartbeat leases. Authenticated
 is independent of the ordered action stream. Exact duplicate packets do not renew;
 older/conflicting packets cannot change presence. Timeout derives from pinned
 `network.reconnectingUiDelayMs`, heartbeat cadence is half that window. Lease expiry
-is bounded by cookie session expiry/revocation. First heartbeat is explicit migration
-from legacy adapter behavior, not a claim that legacy clients now detect disconnects.
+is bounded by cookie session expiry/revocation. Every cookie-authenticated public action requires a live heartbeat from its first
+command. First heartbeat records managed presence; trusted internal adapters retain
+their pre-activation behavior, but HTTP has no opt-out from liveness.
 
 Before every authoritative catch-up, expire views in timestamp groups and recompute
 one aggregate: any live active view sets active; any live open menu sets paused.
@@ -374,3 +375,5 @@ No public upload or M9 history optimization is included.
 | Date | Change |
 |---|---|
 | 2026-09-10 durable heartbeat | Added authenticated durable liveness and autonomous restart/timeout closing; native HTTP and SQLite regressions pass, final verification/review pending. F23§8 remains open pending web integration. |
+
+| 2026-09-10 admission tightened | All public cookie-authenticated commands, including the first startShift, require a live session-bound heartbeat. Internal legacy adapters remain separate. Updated HTTP clients test real heartbeat and pause protocol; no compatibility exception in the public action route. |
