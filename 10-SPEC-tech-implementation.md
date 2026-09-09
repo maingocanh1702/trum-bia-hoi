@@ -449,3 +449,4 @@ and remote web integration remain in the original full-game scope. The existing
 | Date | Change |
 |---|---|
 | 2026-09-09 HTTP/session | Implemented native HTTP guest authentication/state/command/event boundary and schema2 session migration. Real socket/security/persistence checks added; full verification/review in progress. |
+| 2026-09-09 HTTP review | Strict action-field allowlists and invalid-cookie refusal precede mutation. Catch-up now reads at most100 durable events directly from SQLite, with lastEventSeq/hasMore continuation; it does not advance simulation. State/command operations remain the simulation clock boundary. |

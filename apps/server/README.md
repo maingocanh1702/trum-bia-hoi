@@ -21,7 +21,8 @@ store.createPlayer(playerId, randomInt(0x100000000));
 const response = store.command(playerId, {
   idempotencyKey: randomUUID(), command: { type: 'startShift' },
 });
-const changes = store.eventsAfter(playerId, response.lastEventSeq);
+const page = store.eventsAfter(playerId, response.lastEventSeq);
+// If page.hasMore, request the next page using page.lastEventSeq.
 store.close();
 ```
 
@@ -72,7 +73,7 @@ must supply edge rate limits. Session credentials are not accepted in URLs or bo
 | POST | `/auth/session` | Empty JSON; new random guest + HttpOnly cookie, or resume current valid cookie. An invalid/expired supplied credential is refused, never silently replaced. |
 | POST | `/auth/logout` | Empty JSON; revoke credential and expire cookie. Player history remains. |
 | GET | `/player/state` | Owned projection, `configVersion`, `serverNow`, `revision`, `lastEventSeq`. |
-| GET | `/player/events?after=N` | Owned events after a validated contiguous cursor. |
+| GET | `/player/events?after=N` | Up to100 owned durable events after a validated cursor; `lastEventSeq` is this page's continuation cursor, `hasMore` reports remaining rows at its read frontier. |
 | POST | `/player/command` | `{idempotencyKey, command}`; existing engine handler, authoritative projection/result. No client clock, player ID, seed or totals. |
 
 Clients send `credentials: 'include'`. POST requests require the configured Origin
@@ -96,6 +97,16 @@ this service boundary; full CAPTCHA/flags/appeal and production observability re
 Google account linking/one-time local claim, per-client sequence and offline replay,
 reconnectGraceMs closure, WebSocket push and the web adapter remain explicit M4 work.
 
+Command properties are allowlisted per action at the HTTP boundary, in addition to
+the engine's value validation. Empty/malformed supplied session cookies are refused
+without creating another player. Event catch-up queries bounded SQLite rows directly;
+it does not hydrate history or advance simulation. Use state/command responses for
+current simulation state; page through events using the returned cursor. Repeating a
+page is safe; clients deduplicate by sequence. Later appends are picked up by subsequent
+polls, including after `hasMore:false`. State/command cold starts still have the full
+replay ceiling documented above; pagination does not claim to remove that limit.
+
 | Date | Change |
 |---|---|
 | 2026-09-09 | Added hashed guest sessions and locally runnable authenticated HTTP transport around GameStore; full M4/client cutover remains pending. |
+| 2026-09-09 | Addressed HTTP review: exact command properties, explicit invalid-cookie refusal, and bounded durable event pages with continuation; catch-up no longer advances simulation. |

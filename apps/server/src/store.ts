@@ -4,6 +4,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { Game, config as seedConfig, configContent, decodeSave, loadConfig, validEnvelope, type Config, type Command, type DomainEvent, type LoggedCommand, type World } from '@tbh/engine';
 
 const SCHEMA_VERSION = 2, CACHE_SIZE = 64; // config-exempt: persistence format and bounded process cache, not game tuning
+const EVENT_PAGE_SIZE = 100; // config-exempt: transport history page bound, not gameplay tuning
 type PlayerRow = { id: string; seed: number; created_at: number; config_version: string; now: number; revision: number; projection: string };
 export type Snapshot = { world: World; configVersion: string; revision: number; lastEventSeq: number };
 const sessionHash = (token: string) => typeof token === 'string' && /^[a-f0-9]{64}$/.test(token) ? createHash('sha256').update(token).digest('hex') : null; // config-exempt:256-bit random credential encoding
@@ -175,13 +176,17 @@ export class GameStore {
       return game.command({ idempotencyKey: request.idempotencyKey, command, at: now }, request.command.type === 'startShift' ? this.config : undefined);
     });
   }
-  eventsAfter(id: string, after: number): { seq: number; event: DomainEvent }[] {
+  /** Bounded durable history only. State reads/commands advance simulation; catch-up does not replay it. */
+  eventsAfter(id: string, after: number) {
     if (!validPlayerId(id)) throw Error('store:invalidPlayer');
     if (!Number.isSafeInteger(after) || after < 0) throw Error('store:invalidCursor');
-    const last = this.db.prepare('SELECT COALESCE(MAX(seq),0) AS seq FROM events WHERE player_id=?').get(id)!;
-    // History only grows, so this validated cursor remains valid if another writer appends before read().
+    const last = this.db.prepare('SELECT (SELECT COALESCE(MAX(seq),0) FROM events WHERE player_id=players.id) AS seq FROM players WHERE id=?').get(id);
+    if (!last) throw Error('store:playerMissing');
     if (after > Number(last.seq)) throw Error('store:invalidCursor');
-    const { world } = this.read(id);
-    return world.events.slice(after).map((event, index) => ({ seq: after + index + 1, event }));
+    // Append-only rows let us page a fixed frontier without hydrating/copying a player's entire stream.
+    const events = this.db.prepare('SELECT seq,payload FROM events WHERE player_id=? AND seq>? AND seq<=? ORDER BY seq LIMIT ?')
+      .all(id, after, last.seq, EVENT_PAGE_SIZE).map(row => ({ seq: Number(row.seq), event: JSON.parse(String(row.payload)) as DomainEvent }));
+    const lastEventSeq = events.at(-1)?.seq ?? after;
+    return { events, lastEventSeq, hasMore: lastEventSeq < Number(last.seq) };
   }
 }

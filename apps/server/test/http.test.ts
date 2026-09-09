@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { AddressInfo } from 'node:net';
-import { config } from '@tbh/engine';
+import { config, type Command } from '@tbh/engine';
 import { GameStore } from '../src/store';
 import { createGameServer, type ServerOptions } from '../src/http';
 const ORIGIN = 'http://127.0.0.1:5174', NOW = Date.parse('2026-09-09T10:00:00Z');
@@ -96,7 +96,62 @@ test('cookie sessions expire and revoke durably, store only hashes and refuse CS
   const b = await guest({ ...f, ...reopened }); f.now += 10000;
   assert.equal((await reopened.request('/player/state', undefined, b.cookie)).status, 401);
   assert.equal((await reopened.request('/auth/session', {}, b.cookie)).status, 401);
+  for (const cookie of ['tbh-session=', 'tbh-session', 'tbh-session=forged', `tbh-session=; ${b.cookie}`]) {
+    const rejected = await reopened.request('/auth/session', {}, cookie);
+    assert.equal(rejected.status, 401); assert.equal(rejected.headers.get('set-cookie'), null);
+  }
   assert.equal(db.prepare('SELECT count(*) AS n FROM players').get()!.n, 2);
+});
+
+test('every public action refuses injected authority fields before durable command logging', async t => {
+  const f = await fixture(t), a = await guest(f);
+  const actions = {
+    startShift: { type: 'startShift' }, endShift: { type: 'endShift' }, kickAll: { type: 'kickAll', shiftId: 'old', maxCost: 0 },
+    serve: { type: 'serve', tableId: 'old', orderId: 'old' }, serveDelivery: { type: 'serveDelivery', deliveryId: 'old' },
+    restock: { type: 'restock', dish: 'bia', mode: 'one' }, upgrade: { type: 'upgrade', kind: 'keg' },
+    upgradeTable: { type: 'upgradeTable', tableId: 'old' }, buyTable: { type: 'buyTable' }, upgradeDog: { type: 'upgradeDog', level: 1 },
+    claimLifePath: { type: 'claimLifePath', level: 1 }, buyUnlock: { type: 'buyUnlock', item: 'phone' },
+    claimAttendance: { type: 'claimAttendance', day: '2026-09-09' }, claimQuest: { type: 'claimQuest', day: '2026-09-09', questId: 'old' },
+    claimDailyBonus: { type: 'claimDailyBonus', day: '2026-09-09' }, buyFlyer: { type: 'buyFlyer' },
+    activateFlyer: { type: 'activateFlyer', shiftId: 'old' }, installSignboard: { type: 'installSignboard' },
+    setSignboard: { type: 'setSignboard', style: 'wood' }, activity: { type: 'activity', active: true, paused: true }, emergencyPack: { type: 'emergencyPack' },
+  } satisfies { [T in Command['type']]: Extract<Command, { type: T }> };
+  const before = f.store.read(a.playerId);
+  for (const action of Object.values(actions)) for (const extra of [{ at: NOW }, { playerId: 'someone' }, { world: { coins: 1e12 } }, { seed: 42 }, { arbitrary: true }]) {
+    const response = await f.request('/player/command', { idempotencyKey: action.type, command: { ...action, ...extra } }, a.cookie);
+    assert.equal(response.status, 400, `${action.type}: ${Object.keys(extra)[0]}`);
+  }
+  assert.deepEqual(f.store.read(a.playerId), before);
+  const db = new DatabaseSync(f.file); t.after(() => db.close()); assert.equal(db.prepare('SELECT count(*) AS n FROM commands').get()!.n, 0);
+  for (const action of Object.values(actions)) assert.equal((await f.request('/player/command', { idempotencyKey: action.type, command: action }, a.cookie)).status, 200, action.type);
+});
+
+test('long-lived players catch up in bounded repeatable pages across restart without replaying or advancing the game', async t => {
+  const f = await fixture(t, { sessionTtlMs: 10 * 86400000 }), a = await guest(f), b = await guest(f);
+  let last = 0;
+  for (let day = 0; day < 5 && last <= 200; day++) {
+    f.now = NOW + day * 86400000;
+    assert.ok(f.store.command(a.playerId, { idempotencyKey: `day-${day}`, command: { type: 'startShift' } }).result.ok);
+    f.now += config.values.shift.durationMs; last = f.store.read(a.playerId).lastEventSeq;
+  }
+  assert.ok(last > 200);
+  await f.close(); f.store.close(); const reopened = await f.open(), db = new DatabaseSync(f.file); t.after(() => db.close());
+  const durable = () => db.prepare('SELECT now,revision,projection FROM players WHERE id=?').get(a.playerId);
+  const before = durable(); f.now += 10000;
+  const page = async (after: number) => { const r = await reopened.request(`/player/events?after=${after}`, undefined, a.cookie); assert.equal(r.status, 200); return r.json(); };
+  const first = await page(0); assert.equal(first.events.length, 100); assert.equal(first.hasMore, true); assert.equal(first.lastEventSeq, 100);
+  assert.deepEqual(await page(0), first);
+  const events = [...first.events]; let cursor = first.lastEventSeq, more = first.hasMore;
+  while (more) {
+    const next = await page(cursor); assert.ok(next.events.length > 0 && next.events.length <= 100);
+    assert.ok(next.lastEventSeq > cursor); events.push(...next.events); cursor = next.lastEventSeq; more = next.hasMore;
+  }
+  assert.equal(cursor, last); assert.equal(events.length, last);
+  assert.ok(events.every((row, i) => row.seq === i + 1 && row.event.data.seed === undefined));
+  assert.equal(new Set(events.map(row => row.event.id)).size, last);
+  assert.deepEqual(await page(last), { events: [], lastEventSeq: last, hasMore: false });
+  const other = await (await reopened.request('/player/events?after=0', undefined, b.cookie)).json(); assert.deepEqual(other.events, []);
+  assert.deepEqual(durable(), before);
 });
 
 test('v1 SQLite players and event history survive auth migration; failed guest creation leaves no orphan player', async t => {

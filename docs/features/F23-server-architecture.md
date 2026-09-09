@@ -170,3 +170,4 @@ are still required. Current HTTP tests prove this boundary only; §8 remains ope
 | Date | Change |
 |---|---|
 | 2026-09-09 | Added real guest HTTP transport and SQLite session ownership; verified socket scenarios added, final config/build/tests/native review in progress. |
+| 2026-09-09 review corrections | Exact nested command fields, empty/malformed-cookie rejection and100-event durable pages; continuation/retry/restart tests added. Event polling no longer replays or advances the game; state/command operations advance server time. |

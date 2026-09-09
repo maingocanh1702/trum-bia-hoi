@@ -1,5 +1,5 @@
 import { createServer, type IncomingMessage } from 'node:http';
-import { validEnvelope, type DomainEvent } from '@tbh/engine';
+import { validEnvelope, type Command, type DomainEvent } from '@tbh/engine';
 import { GameStore, type Snapshot } from './store';
 
 // config-exempt: deployment security/resource limits, not gameplay or economic parameters
@@ -7,6 +7,14 @@ const BODY_BYTES = 16384, RATE_KEYS = 4096, REQUEST_TIMEOUT_MS = 30000, HEADER_T
 export interface ServerOptions { origin: string; sessionTtlMs: number; rateWindowMs: number; rateMax: number }
 class HttpError extends Error { constructor(readonly status: number, message: string) { super(message); } }
 const record = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
+// HTTP accepts only these fields; historical replay keeps the engine's existing decoder.
+const commandFields = {
+  startShift: [], endShift: [], kickAll: ['shiftId', 'maxCost'], serve: ['tableId', 'orderId'],
+  serveDelivery: ['deliveryId'], restock: ['dish', 'mode'], upgrade: ['kind'], upgradeTable: ['tableId'],
+  buyTable: [], upgradeDog: ['level'], claimLifePath: ['level'], buyUnlock: ['item'],
+  claimAttendance: ['day'], claimQuest: ['day', 'questId'], claimDailyBonus: ['day'], buyFlyer: [],
+  activateFlyer: ['shiftId'], installSignboard: [], setSignboard: ['style'], activity: ['active', 'paused'], emergencyPack: [],
+} satisfies { [T in Command['type']]: readonly (keyof Extract<Command, { type: T }>)[] };
 const publicEvent = (event: DomainEvent) => ({ ...event, data: Object.fromEntries(Object.entries(event.data).filter(([key]) => key !== 'seed')) });
 /** Never ship replay RNG, generation seeds or a private config snapshot to a client. */
 function publicState(state: Snapshot) {
@@ -35,7 +43,7 @@ export function createGameServer(store: GameStore, options: ServerOptions) {
   const secure = url.protocol === 'https:', cookieName = secure ? '__Host-tbh-session' : 'tbh-session';
   const cookie = (token: string, expires: number) => `${cookieName}=${token}; Path=/; HttpOnly; SameSite=Lax; Expires=${new Date(expires).toUTCString()}${secure ? '; Secure' : ''}`;
   const credential = (req: IncomingMessage) => {
-    const values = (req.headers.cookie ?? '').split(';').map(p => p.trim()).filter(p => p.startsWith(`${cookieName}=`));
+    const values = (req.headers.cookie ?? '').split(';').map(p => p.trim()).filter(p => p === cookieName || p.startsWith(`${cookieName}=`));
     if (values.length > 1) throw new HttpError(401, 'invalidSession');
     return values[0]?.slice(cookieName.length + 1);
   };
@@ -63,7 +71,7 @@ export function createGameServer(store: GameStore, options: ServerOptions) {
       const token = credential(req);
       if (req.method === 'POST' && path === '/auth/session') {
         const body = await json(req); if (!record(body) || Object.keys(body).length) throw new HttpError(400, 'invalidBody');
-        if (token) { const owner = store.session(token); if (!owner) throw new HttpError(401, 'invalidSession'); reply(200, { ...owner, provider: 'guest' }); return; }
+        if (token !== undefined) { const owner = store.session(token); if (!owner) throw new HttpError(401, 'invalidSession'); reply(200, { ...owner, provider: 'guest' }); return; }
         const created = store.createGuestSession(options.sessionTtlMs);
         res.setHeader('Set-Cookie', cookie(created.token, created.expiresAt)); reply(201, { playerId: created.playerId, expiresAt: created.expiresAt, provider: 'guest' }); return;
       }
@@ -78,12 +86,14 @@ export function createGameServer(store: GameStore, options: ServerOptions) {
       if (req.method === 'GET' && path === '/player/events') {
         const after = route.searchParams.get('after');
         if (route.searchParams.size !== 1 || after === null || !/^(0|[1-9]\d*)$/.test(after) || !Number.isSafeInteger(Number(after))) throw new HttpError(400, 'invalidCursor');
-        const events = store.eventsAfter(owner.playerId, Number(after));
-        reply(200, { events: events.map(row => ({ ...row, event: publicEvent(row.event) })), lastEventSeq: events.at(-1)?.seq ?? Number(after) }); return;
+        const page = store.eventsAfter(owner.playerId, Number(after));
+        reply(200, { ...page, events: page.events.map(row => ({ ...row, event: publicEvent(row.event) })) }); return;
       }
       if (req.method === 'POST' && path === '/player/command') {
-        if (!record(body) || Object.keys(body).some(k => !['command', 'idempotencyKey'].includes(k)) || !validEnvelope({ ...body, at: 0 })) throw new HttpError(400, 'invalidCommand');
-        const response = store.command(owner.playerId, body as { command: Parameters<GameStore['command']>[1]['command']; idempotencyKey: string });
+        const envelope = record(body) ? { ...body, at: 0 } : undefined;
+        if (!record(body) || Object.keys(body).some(k => !['command', 'idempotencyKey'].includes(k)) || !validEnvelope(envelope) ||
+            Object.keys(envelope.command).some(k => k !== 'type' && !(commandFields[envelope.command.type] as readonly string[]).includes(k))) throw new HttpError(400, 'invalidCommand');
+        const response = store.command(owner.playerId, { command: envelope.command, idempotencyKey: envelope.idempotencyKey });
         reply(200, { ...publicState(response), result: response.result }); return;
       }
       throw new HttpError(404, 'notFound');

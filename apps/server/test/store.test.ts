@@ -35,9 +35,10 @@ test('server time, one service debit/credit and detached state survive an actual
     "import { GameStore } from '@tbh/server'; const s=new GameStore(process.argv[1],undefined,()=>Number(process.argv[2])); console.log(JSON.stringify(s.read('one'))); s.close();", f.file, String(f.now)], { encoding: 'utf8' }));
   assert.deepEqual(restarted, retryWithoutResult(retry));
   const b = f.open(); assert.deepEqual(b.read('one'), retryWithoutResult(retry));
-  const events = b.eventsAfter('one', started.lastEventSeq);
+  const { events } = b.eventsAfter('one', started.lastEventSeq);
   assert.deepEqual(events.map(e => e.seq), Array.from({ length: retry.lastEventSeq - started.lastEventSeq }, (_, i) => started.lastEventSeq + i + 1));
-  assert.equal(events.filter(e => e.event.type === 'order_served').length, 1); assert.deepEqual(b.eventsAfter('one', retry.lastEventSeq), []);
+  assert.equal(events.filter(e => e.event.type === 'order_served').length, 1);
+  assert.deepEqual(b.eventsAfter('one', retry.lastEventSeq), { events: [], lastEventSeq: retry.lastEventSeq, hasMore: false });
   const db = new DatabaseSync(f.file); t.after(() => db.close());
   const durable = () => db.prepare('SELECT now,revision,projection FROM players WHERE id=?').get('one');
   const beforeInvalid = durable(); f.now += 300000;
