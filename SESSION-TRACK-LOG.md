@@ -5,6 +5,14 @@
 
 ---
 
+## 🧭 M4 connection recovery prerequisite — 2026-09-10
+
+Base `9e88643`. Implemented trusted rules24 recovery using real visibility/menu
+state and resting connection loss; historical replay remains unchanged. Focused
+regressions pass; full checks and native review in progress. No server liveness or
+web cutover claim yet. Next: durable heartbeat deadline before GameStore.catchUp,
+then web server authority/outbox and config registry/admin. No further80MB work.
+
 ## 🧭 Checkpoint closed; M0 complete; M4 integration next — 2026-09-10
 
 Product `f86e2b3`, base `89c7263`: schema6 trusted checkpoints preserve exact

@@ -86,6 +86,9 @@ test('identity, clock and totals cannot be supplied by clients; malformed JSON, 
   for (const body of [{ ...command('startShift'), at: Number.MAX_SAFE_INTEGER }, { ...command('startShift'), playerId: 'someone' },
     { ...command('startShift'), world: { coins: 1e12 } }, { idempotencyKey: 'bad', command: { type: 'activity', active: false, paused: true } },
     { idempotencyKey: 'system:connectionLost:shift-14:0', command: { type: 'connectionLost', shiftId: 'shift-14' } },
+    { idempotencyKey: 'public-recovery', command: { type: 'connectionRestored', recoveryId: 'forged', active: false, paused: true } },
+    { idempotencyKey: 'system:connectionRestored:forged', command: { type: 'connectionRestored', recoveryId: 'forged', active: true, paused: false } },
+    { idempotencyKey: 'system:connectionLost:null:forged', command: { type: 'connectionLost', shiftId: null, lossId: 'forged' } },
     { ...command('startShift'), idempotencyKey: 'system:reserved' }, null]) {
     assert.equal((await f.request('/player/command', body, a.cookie)).status, 400);
   }

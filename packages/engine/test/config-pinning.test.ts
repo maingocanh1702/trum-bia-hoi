@@ -95,7 +95,7 @@ test('single-config saves stay v2; multi-config saves reject missing, duplicated
 test('a genuine rules13 service history survives current adoption and a new pinned shift without rewriting its recorded prefix', () => {
   const g = decodeSave(readFileSync(new URL('./fixtures/legacy-kitchen-served-v13.json', import.meta.url), 'utf8'));
   const prefix = structuredClone(g.world.events); sendKitchen(g, { type: 'activity', active: true });
-  restPin(g); assert.ok(g.command(open(g), nextPin()).ok); assert.equal(g.log.at(-1)!.rulesVersion, 23);
+  restPin(g); assert.ok(g.command(open(g), nextPin()).ok); assert.equal(g.log.at(-1)!.rulesVersion, 24);
   assert.deepEqual(g.world.events.slice(0, prefix.length), prefix); assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
 });
 

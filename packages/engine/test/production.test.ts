@@ -83,7 +83,7 @@ test('the actual v17 paused save replays exactly and adopts enabled batches only
   const text = readFileSync(new URL('./fixtures/batch-v17.json', import.meta.url), 'utf8');
   const g = decodeSave(text), original = JSON.parse(text), w = g.world;
   assert.ok(g.log.every(e => e.rulesVersion === 17)); assert.deepEqual(w.events, original.events); assert.equal(w.beer, undefined);
-  send(g, { type: 'activity', active: true }); assert.equal(g.log.at(-1)!.rulesVersion, 23);
+  send(g, { type: 'activity', active: true }); assert.equal(g.log.at(-1)!.rulesVersion, 24);
   assert.equal(w.beer, undefined); assert.equal(g.config.values.upgrades.keg.refillEnabled, false);
   send(g, { type: 'endShift' }); g.advance(w.now + 100000);
   g.advance(w.now + g.config.values.shift.durationMs / g.config.values.shift.regenRate);

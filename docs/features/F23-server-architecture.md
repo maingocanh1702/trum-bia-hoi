@@ -315,3 +315,29 @@ Details: [server guide](../../apps/server/README.md), `.qa/local-import-month.js
 | Date | Change |
 |---|---|
 | 2026-09-10 verified local claim core |51a0734 passes271tests/config/build and80MB exact import/reopen/retry; native independent code/security review found no actionable introduced defect. `.qa/local-import-verification.json`. Imported history remains pending approval; public upload, cold-read performance and web cutover remain unfinished. |
+
+## Connection recovery while hidden — rules24 engine prerequisite
+
+`Game.reconnect(at, recoveryId, active, paused)` is a trusted, replayable transition.
+Recovery clears a non-expired outage even when `active=false`, using the actual
+visibility and menu state instead of inventing visible activity. Hidden recovery
+never earns absent attendance or resting stamina. The booleans are independent at
+this trusted boundary: a hidden tab can retain an open menu. At or after the grace
+deadline, normal closing wins; recovery cannot reopen the shift. Identical recovery
+retries return their original result without undoing a later loss. The server adapter
+must serialize/revalidate connection generations; these methods are not client APIs.
+
+`Game.disconnect(at, null, lossId)` now records loss while resting and freezes active
+rest at that frontier. A null shift during an open/closing shift or an old shift ID
+still fails. Resting loss does not invent a shift or grace timer. The existing public
+`activity` semantics and historical rules1–23 replay remain unchanged. New live
+commands select rules24, and the trusted checkpoint/decoder support it.
+
+This is only the engine prerequisite. Durable heartbeat leases, pre-catchUp loss
+normalization, scheduler/restart handling and the browser reconnect/outbox remain
+M4 work. Ordinary HTTP request completion is still not player disconnection.
+No public upload or M9 history tuning was added.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 rules24 recovery implementation | Trusted hidden/menu recovery and resting loss; genuine base rules23 fixture plus full-replay/checkpoint regressions. Config/build/tests/sim and native review in progress. F23 and M4 remain open. |

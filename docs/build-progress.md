@@ -2133,3 +2133,12 @@ No merge/push/deploy. Owner gameplay decisions remain; no public upload added.
 | Date | Change |
 |---|---|
 | 2026-09-10 verified checkpoint/closure | Closed reviewed f86e2b3 and M0 acceptance; published exact M0–M5 closure gaps and fixed owner dependency queue. |
+
+## 2026-09-10 — M4 engine presence prerequisite (verification in progress)
+
+Rules24 adds trusted hidden/menu-preserving connection recovery and resting loss.
+It reuses presence bookkeeping, preserves rules1–23 history and does not reopen a
+shift after grace. Source: `Game.reconnect`, `Game.disconnect`, disconnection and
+checkpoint regression tests, including a genuine `9e88643` rules23 fixture.
+This does not complete F23/M4: durable server leases, web authority/outbox and
+registry/admin remain next. Owner performance timebox and M4→M6→M7→M8→M9 stand.

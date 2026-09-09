@@ -28,6 +28,7 @@ const MENU_PAUSE_RULES: RulesVersion = 16; // config-exempt: fixed replay protoc
 const LIVE_UPGRADE_RULES: RulesVersion = 17; // config-exempt: fixed replay protocol revision for owner live-upgrade policy
 const BATCH_RULES: RulesVersion = 18; // config-exempt: fixed replay protocol revision for stocked beer and wash batches
 const DISCONNECT_RULES: RulesVersion = 19; // config-exempt: replay protocol for trusted disconnection deadlines
+const CONNECTION_RULES: RulesVersion = 24; // config-exempt: replay protocol for hidden recovery and resting connection loss
 const SEASON_RULES: RulesVersion = 23; // config-exempt: replay protocol for real seasonal earnings
 const LEASE_RULES: RulesVersion = 22; // config-exempt: replay protocol for rental contracts
 const ECONOMY_RULES: RulesVersion = 21; // config-exempt: replay protocol for economy 2.0 mechanics
@@ -78,7 +79,7 @@ export class Game {
   }
   /** Takes ownership of integrity-checked server data. Untrusted saves MUST use decodeSave replay. */
   static restoreTrusted(configs: readonly Config[], snapshot: { seed: number; createdAt: number; world: World; log: LoggedCommand[] }, state: EngineCheckpoint): Game {
-    if (state.version !== 1 || !Number.isInteger(state.rulesVersion) || state.rulesVersion < 1 || state.rulesVersion > SEASON_RULES || // config-exempt: supported checkpoint/replay protocol revisions
+    if (state.version !== 1 || !Number.isInteger(state.rulesVersion) || state.rulesVersion < 1 || state.rulesVersion > CONNECTION_RULES || // config-exempt: supported checkpoint/replay protocol revisions
         state.activeRushIndex !== null && (!Number.isSafeInteger(state.activeRushIndex) || state.activeRushIndex < 0) ||
         !Array.isArray(state.configVersions) || !configs.length || configs.length !== state.configVersions.length ||
         new Set(state.configVersions).size !== configs.length || configs.some((c, i) => c.version !== state.configVersions[i]) ||
@@ -672,12 +673,17 @@ export class Game {
   /** Opening config is supplied by a trusted registry adapter, never by a player command payload. */
   command(envelope: Envelope, openingConfig?: Config): Result {
     if (!validEnvelope(envelope)) return { ok: false, reason: 'invalidCommand' };
-    return this.applyCommand(envelope, SEASON_RULES, openingConfig, true);
+    return this.applyCommand(envelope, CONNECTION_RULES, openingConfig, true);
   }
   /** Trusted adapter supplies one lossId per outage and reuses it only for retries. */
-  disconnect(at: number, shiftId: string, lossId: string): Result {
+  disconnect(at: number, shiftId: string | null, lossId: string): Result {
     if (typeof lossId !== 'string' || !lossId) return { ok: false, reason: 'invalidCommand' };
-    return this.applyCommand({ at, idempotencyKey: `system:connectionLost:${shiftId}:${lossId}`, command: { type: 'connectionLost', shiftId, lossId } }, SEASON_RULES, undefined, true);
+    return this.applyCommand({ at, idempotencyKey: `system:connectionLost:${shiftId}:${lossId}`, command: { type: 'connectionLost', shiftId, lossId } }, CONNECTION_RULES, undefined, true);
+  }
+  /** Trusted adapter orders connection generations; hidden recovery is not visible activity. */
+  reconnect(at: number, recoveryId: string, active: boolean, paused = false): Result {
+    return this.applyCommand({ at, idempotencyKey: `system:connectionRestored:${recoveryId}`,
+      command: { type: 'connectionRestored', recoveryId, active, paused } }, CONNECTION_RULES, undefined, true);
   }
   /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
   replay(entry: LoggedCommand, config = this.config): Result {
@@ -685,6 +691,7 @@ export class Game {
     if (['rentLocation', 'leaveLocation'].includes(entry.command.type) && entry.rulesVersion < LEASE_RULES) throw Error('replay:rulesVersion');
     if (entry.command.type === 'buyGlass' && entry.rulesVersion < ECONOMY_RULES) throw Error('replay:rulesVersion');
     if (entry.command.type === 'adoptCalendarRules' && entry.rulesVersion !== ABSENT_CALENDAR_RULES) throw Error('replay:rulesVersion');
+    if ((entry.command.type === 'connectionRestored' || entry.command.type === 'connectionLost' && entry.command.shiftId === null) && entry.rulesVersion < CONNECTION_RULES) throw Error('replay:rulesVersion');
     if (entry.command.type === 'connectionLost' && (entry.rulesVersion < DISCONNECT_RULES || entry.rulesVersion >= ABSENT_CALENDAR_RULES && !entry.command.lossId)) throw Error('replay:rulesVersion');
     if (entry.command.type === 'activity' && entry.command.paused !== undefined && entry.rulesVersion < MENU_PAUSE_RULES) throw Error('replay:rulesVersion');
     if (entry.configVersion !== config.version || config.version !== this.config.version && (entry.command.type !== 'startShift' || entry.rulesVersion < CONFIG_PIN_RULES)) throw Error('replay:configVersion');
@@ -733,6 +740,11 @@ export class Game {
     switch (cmd.type) {
       case 'adoptCalendarRules': return { ok: true };
       case 'connectionLost': {
+        if (cmd.shiftId === null && w.phase === 'resting') {
+          w.staminaAnchorAt = w.now; w.staminaAnchorMs = w.staminaMs; w.active = false;
+          this.emit('connection_lost', { shiftId: null });
+          return { ok: true };
+        }
         if (!s || s.id !== cmd.shiftId || w.phase === 'resting') return fail('noShift');
         const grace = c.network.reconnectGraceMs;
         if (!w.disconnection) {
@@ -743,6 +755,9 @@ export class Game {
         w.staminaAnchorAt = w.now; w.staminaAnchorMs = w.staminaMs; w.active = false;
         return { ok: true };
       }
+      case 'connectionRestored':
+        if (!w.disconnection?.timedOut) delete w.disconnection;
+        // Fall through to the same presence bookkeeping, using the actual visibility/menu state.
       case 'activity':
         if (cmd.active && !w.disconnection?.timedOut) delete w.disconnection;
         w.staminaAnchorAt = w.now; w.staminaAnchorMs = w.staminaMs; w.active = cmd.active;
@@ -1045,7 +1060,7 @@ export class Game {
 
 /** Runtime validation for local imports and HTTP. Reject unknown command variants. */
 export function validEnvelope(input: unknown): input is Envelope {
-  return validReplayEnvelope(input) && input.command.type !== 'connectionLost' && input.command.type !== 'adoptCalendarRules' && !input.idempotencyKey.startsWith('system:');
+  return validReplayEnvelope(input) && input.command.type !== 'connectionLost' && input.command.type !== 'connectionRestored' && input.command.type !== 'adoptCalendarRules' && !input.idempotencyKey.startsWith('system:');
 }
 /** Historical logs may contain reserved keys; only the public ingress forbids them. */
 export function validReplayEnvelope(input: unknown): input is Envelope<Command | SystemCommand> {
@@ -1055,7 +1070,8 @@ export function validReplayEnvelope(input: unknown): input is Envelope<Command |
   const c = e.command;
   switch (c.type) {
     case 'adoptCalendarRules': return new RegExp(`^system:calendar:${ABSENT_CALENDAR_RULES}(?::[1-9][0-9]*)?$`).test(e.idempotencyKey);
-    case 'connectionLost': return typeof c.shiftId === 'string' && c.shiftId.length > 0 && (c.lossId === undefined || typeof c.lossId === 'string' && c.lossId.length > 0) && e.idempotencyKey === `system:connectionLost:${c.shiftId}:${c.lossId ?? e.at}`;
+    case 'connectionLost': return (c.shiftId === null || typeof c.shiftId === 'string' && c.shiftId.length > 0) && (c.lossId === undefined || typeof c.lossId === 'string' && c.lossId.length > 0) && e.idempotencyKey === `system:connectionLost:${c.shiftId}:${c.lossId ?? e.at}`;
+    case 'connectionRestored': return typeof c.recoveryId === 'string' && !!c.recoveryId && e.idempotencyKey === `system:connectionRestored:${c.recoveryId}` && typeof c.active === 'boolean' && typeof c.paused === 'boolean';
     case 'startShift': case 'endShift': case 'buyTable': case 'emergencyPack': case 'installSignboard': case 'buyFlyer': return true;
     case 'rentLocation': return typeof c.locationId === 'string' && !!c.locationId && (c.leaseId === null || typeof c.leaseId === 'string' && !!c.leaseId) && Number.isSafeInteger(c.maxCost) && c.maxCost >= 0;
     case 'leaveLocation': return typeof c.leaseId === 'string' && !!c.leaseId;

@@ -128,7 +128,7 @@ test('the captured actual rules21 save replays unchanged and adopts leasing only
   const save = readFileSync(new URL('./fixtures/pre-lease-v21.json', import.meta.url), 'utf8');
   const g = decodeSave(save), expected = JSON.parse(readFileSync(new URL('./fixtures/pre-lease-v21-expected.json', import.meta.url), 'utf8'));
   assert.deepEqual(g.world, expected); assert.equal(g.log.at(-1)!.rulesVersion, 21); assert.equal(g.world.lease, undefined);
-  send(g, { type: 'activity', active: true, paused: true }); assert.equal(g.log.at(-1)!.rulesVersion, 23); replay(g);
+  send(g, { type: 'activity', active: true, paused: true }); assert.equal(g.log.at(-1)!.rulesVersion, 24); replay(g);
   const modern = game(); rent(modern); const entry = structuredClone(modern.log.at(-1)!); entry.rulesVersion = 21;
   assert.throws(() => game().replay(entry), /replay:rulesVersion/);
 });

@@ -366,7 +366,7 @@ export class GameStore {
   private execute(game: Game, id: string, request: Request, now: number) {
     const previous = this.commandEntry(id, request.idempotencyKey)?.command;
     // JSON member order is not command identity; retain the original engine payload on an equal retry.
-    const command = previous && previous.type !== 'connectionLost' && previous.type !== 'adoptCalendarRules' && isDeepStrictEqual(previous, request.command) ? previous : request.command;
+    const command = previous && isDeepStrictEqual(previous, request.command) ? previous as Command : request.command;
     return game.command({ idempotencyKey: request.idempotencyKey, command, at: now }, request.command.type === 'startShift' ? this.config : undefined);
   }
   command(id: string, request: Request) {

@@ -209,7 +209,7 @@ test('genuine cb389e0 rules19 absent-day history survives rules20 adoption witho
   const expected = JSON.parse(readFileSync(new URL('./fixtures/legacy-v19-absence-expected.json', import.meta.url), 'utf8'));
   assert.equal(expected.source, 'cb389e088fadd05f77b6ed20e1f96de34833ac2b');
   const g = decodeSave(saved); assert.deepEqual(g.world, expected.world); roundtrip(g);
-  send(g, { type: 'activity', active: false }); assert.equal(g.log.at(-1)!.rulesVersion, 23);
+  send(g, { type: 'activity', active: false }); assert.equal(g.log.at(-1)!.rulesVersion, 24);
   const countBefore = count(g, 'quest_generated');
   g.advance(g.world.now + 1000 * 86400000); assert.equal(count(g, 'quest_generated'), countBefore); roundtrip(g);
 });
@@ -306,4 +306,101 @@ test('calendar adoption is a rules20 system record and cannot be submitted throu
   }
   assert.throws(() => g.replay({ at: g.world.now, idempotencyKey: 'system:calendar:20', command, rulesVersion: 19, configVersion: g.config.version, result: { ok: true } }), /replay:rulesVersion/);
   assert.equal(encodeSave(g), before);
+});
+
+
+test('hidden network recovery across midnight cancels grace without granting attendance or unpausing the menu', () => {
+  for (const paused of [false, true]) {
+    const g = readyOrder(), w = g.world, at = w.now;
+    send(g, { type: 'activity', active: true, paused });
+    assert.ok(g.disconnect(at, w.shift!.id, 'hidden-loss').ok);
+    const attendance = structuredClone(w.attendance), stamina = w.staminaMs;
+    const table = w.tables.find(t => t.order)!, remaining = table.order!.placedAt + table.order!.patienceMs - at;
+    const deadline = w.disconnection!.expiresAt;
+    assert.ok(g.reconnect(deadline - 1, 'hidden-recovery', false, paused).ok);
+    assert.equal(w.disconnection, undefined); assert.equal(w.active, false); assert.equal(!!w.paused, paused);
+    g.advance(deadline + 100000);
+    assert.equal(w.phase, 'open'); assert.equal(w.staminaMs, stamina); assert.deepEqual(w.attendance, attendance);
+    assert.equal(table.order!.placedAt + table.order!.patienceMs - w.now, remaining);
+    assert.equal(count(g, 'connection_expired'), 0); roundtrip(g);
+    assert.ok(g.reconnect(w.now, 'visible-recovery', true, true).ok);
+    assert.equal(w.attendance!.lastActiveDateKey, dayKey(w.now, g.config));
+    g.advance(w.now + 1000); assert.equal(table.order!.placedAt + table.order!.patienceMs - w.now, remaining);
+    send(g, { type: 'activity', active: true }); g.advance(w.now + 1);
+    assert.equal(table.order!.placedAt + table.order!.patienceMs - w.now, remaining - 1); roundtrip(g);
+  }
+});
+
+test('resting connection loss freezes stamina at its frontier and hidden recovery does not backfill absent rest', () => {
+  const g = readyOrder(), w = g.world;
+  send(g, { type: 'endShift' }); g.advance(w.now + 300000); assert.equal(w.phase, 'resting');
+  // Consume the recovered stamina with another real shift, then close it immediately.
+  send(g, { type: 'startShift' }); g.advance(w.now + 1000); send(g, { type: 'endShift' });
+  assert.equal(w.phase, 'resting'); assert.ok(w.staminaMs < g.config.values.shift.durationMs);
+  send(g, { type: 'activity', active: true, paused: true });
+  assert.ok(g.disconnect(w.now, null, 'resting-loss').ok);
+  const stamina = w.staminaMs, attendance = structuredClone(w.attendance), closedAt = w.shift!.closedAt;
+  g.advance(w.now + 86400000); assert.equal(w.staminaMs, stamina); assert.deepEqual(w.attendance, attendance);
+  assert.equal(w.disconnection, undefined); assert.equal(w.shift!.closedAt, closedAt); assert.equal(w.paused, true);
+  assert.ok(g.reconnect(w.now, 'resting-hidden', false, true).ok); g.advance(w.now + 10000);
+  assert.equal(w.staminaMs, stamina); assert.deepEqual(w.attendance, attendance); roundtrip(g);
+  assert.ok(g.reconnect(w.now, 'resting-visible', true, false).ok); g.advance(w.now + 1000);
+  assert.equal(w.staminaMs, Math.min(g.config.values.shift.durationMs, stamina + 1000 * g.config.values.shift.regenRate)); roundtrip(g);
+});
+
+test('trusted recovery at exact grace or later drains normally in hidden and menu states', () => {
+  for (const active of [false, true]) for (const delta of [0, 1]) {
+    const g = readyOrder(), w = g.world; g.disconnect(w.now, w.shift!.id, 'timeout-loss');
+    const deadline = w.disconnection!.expiresAt;
+    assert.ok(g.reconnect(deadline + delta, 'too-late', active, true).ok);
+    assert.equal(w.phase, 'closing'); assert.equal(w.disconnection!.timedOut, true);
+    const chunks = roundtrip(g), end = deadline + 300000;
+    g.advance(end); while (chunks.world.now < end) chunks.advance(Math.min(end, chunks.world.now + 1000));
+    assert.deepEqual(chunks.world, w); assert.equal(w.phase, 'resting');
+    assert.equal(count(g, 'shift_closed'), 1); assert.equal(count(g, 'connection_expired'), 1); roundtrip(g);
+  }
+});
+
+test('recovery retries cannot undo a later loss and stale or malformed recovery does not mutate presence', () => {
+  const g = readyOrder(), at = g.world.now, shiftId = g.world.shift!.id;
+  assert.equal(g.disconnect(at, null, 'wrong-rest').reason, 'noShift'); assert.equal(g.world.active, true);
+  g.disconnect(at, shiftId, 'loss-one'); assert.ok(g.reconnect(at, 'recovery-one', false, true).ok);
+  g.disconnect(at, shiftId, 'loss-two'); const before = encodeSave(g);
+  assert.ok(g.reconnect(at, 'recovery-one', false, true).ok); assert.equal(encodeSave(g), before);
+  assert.equal(g.reconnect(at, 'recovery-one', true, true).reason, 'idempotencyConflict');
+  assert.equal(g.reconnect(at - 1, 'stale-recovery', true, false).reason, 'staleCommand');
+  for (const args of [['', false, false], ['x'.repeat(128), false, false], ['invalid-active', 1, false], ['invalid-pause', true, 1]]) {
+    assert.equal(g.reconnect(at, args[0] as string, args[1] as boolean, args[2] as boolean).reason, 'invalidCommand');
+  }
+  assert.equal(encodeSave(g), before); const restored = roundtrip(g);
+  assert.ok(restored.reconnect(at, 'recovery-one', false, true).ok); assert.equal(encodeSave(restored), before);
+});
+
+test('public ingress rejects recovery commands and old rules cannot replay recovery or resting loss', () => {
+  const g = readyOrder(), at = g.world.now, before = encodeSave(g);
+  const command = { type: 'connectionRestored' as const, recoveryId: 'trusted', active: false, paused: true };
+  for (const key of ['public-recovery', 'system:connectionRestored:trusted']) {
+    const envelope = { at, idempotencyKey: key, command };
+    assert.equal(validEnvelope(envelope), false); assert.equal(g.command(envelope as never).reason, 'invalidCommand');
+  }
+  for (const entry of [
+    { idempotencyKey: 'system:connectionRestored:trusted', command },
+    { idempotencyKey: 'system:connectionLost:null:resting', command: { type: 'connectionLost' as const, shiftId: null, lossId: 'resting' } },
+  ]) assert.throws(() => g.replay({ ...entry, at, rulesVersion: 23, configVersion: g.config.version, result: { ok: true } }), /replay:rulesVersion/);
+  assert.equal(encodeSave(g), before);
+});
+
+test('genuine base rules23 hidden activity retains its armed outage and visible activity cancels it on replay', () => {
+  const text = readFileSync(new URL('./fixtures/legacy-v23-network.json', import.meta.url), 'utf8');
+  const expected = JSON.parse(readFileSync(new URL('./fixtures/legacy-v23-network-expected.json', import.meta.url), 'utf8'));
+  assert.equal(expected.source, '9e886437e918e8c1a910bc4a1a62df0eeadca510');
+  const g = decodeSave(text); assert.deepEqual(g.world, expected.world); roundtrip(g);
+  const raw = JSON.parse(text), hiddenIndex = raw.log.findIndex((e: any) => e.command.type === 'activity' && !e.command.active);
+  const historical = new Game(loadConfig(raw.config), raw.seed, raw.createdAt, raw.playerId);
+  for (const entry of raw.log.slice(0, hiddenIndex + 1)) historical.replay(entry);
+  assert.ok(historical.world.disconnection); assert.equal(historical.world.active, false);
+  const prefix = structuredClone(historical.world.events);
+  assert.ok(historical.reconnect(historical.world.now, 'adopt-hidden', false, true).ok);
+  assert.equal(historical.world.disconnection, undefined); assert.equal(historical.world.active, false);
+  assert.deepEqual(historical.world.events.slice(0, prefix.length), prefix); roundtrip(historical);
 });

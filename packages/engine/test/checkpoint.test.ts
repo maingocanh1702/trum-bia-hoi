@@ -21,7 +21,7 @@ test('every archived replay state restores its actual bookkeeping and continues 
     if (!Array.isArray(raw.log) || !raw.config) continue;
     const replayed = decodeSave(text), resumed = restore(replayed); equal(replayed, resumed);
     const last = replayed.log.at(-1);
-    if (last && !['connectionLost', 'adoptCalendarRules'].includes(last.command.type)) {
+    if (last && !['connectionLost', 'connectionRestored', 'adoptCalendarRules'].includes(last.command.type)) {
       assert.deepEqual(resumed.command(last as never), replayed.command(last as never)); equal(replayed, resumed);
     }
     for (const delta of [1, 15000]) {
@@ -34,9 +34,9 @@ test('every archived replay state restores its actual bookkeeping and continues 
   assert.ok(checked >= 28);
 });
 
-test('rules1 through23 preserve an active rush through closing and retain the original producing batch deadlines', () => {
+test('rules1 through24 preserve an active rush through closing and retain the original producing batch deadlines', () => {
   const legacy = loadConfig(JSON.parse(readFileSync(new URL('../../../docs/config/legacy/economy-1.7.3.json', import.meta.url), 'utf8')));
-  for (let version = 1; version <= 23; version++) {
+  for (let version = 1; version <= 24; version++) {
     const raw = structuredClone((version < 21 ? legacy : config).raw);
     raw.onboarding.enabled = false; raw.patience.thuongMs = 1000000;
     const c = loadConfig(raw), game = new Game(c, 42, Date.parse('2026-09-10T10:00:00Z'));
@@ -73,4 +73,25 @@ test('unknown checkpoint versions, missing pins, wrong history counts and duplic
   assert.throws(() => Game.restoreTrusted([], snapshot, game.checkpoint()), /checkpoint:invalid/);
   assert.throws(() => Game.restoreTrusted(game.configs, { ...snapshot, log: [...snapshot.log, snapshot.log[0]] },
     { ...game.checkpoint(), commandCount: 2 }), /checkpoint:invalid/);
+});
+
+
+test('rules24 hidden recovery and resting loss checkpoint exactly, including a retry after a later outage', () => {
+  const g = new Game(config, 42, Date.parse('2026-09-10T10:00:00Z'));
+  assert.ok(g.disconnect(g.world.now, null, 'initial-rest-loss').ok);
+  let resumed = restore(g); equal(g, resumed);
+  assert.ok(g.reconnect(g.world.now, 'first-recovery', false, true).ok);
+  assert.ok(resumed.reconnect(resumed.world.now, 'first-recovery', false, true).ok); equal(g, resumed);
+  resumed = restore(g);
+  for (const game of [g, resumed]) {
+    game.reconnect(game.world.now, 'visible', true);
+    game.command({ at: game.world.now, idempotencyKey: 'open-after-recovery', command: { type: 'startShift' } });
+    game.advance(game.world.now + 11100);
+    game.disconnect(game.world.now, game.world.shift!.id, 'second-loss');
+  }
+  equal(g, resumed); resumed = restore(g);
+  assert.ok(g.reconnect(g.createdAt, 'first-recovery', false, true).ok);
+  assert.ok(resumed.reconnect(resumed.createdAt, 'first-recovery', false, true).ok); equal(g, resumed);
+  const end = g.world.now + config.values.network.reconnectGraceMs + 300000;
+  g.catchUp(end); resumed.catchUp(end); equal(g, resumed);
 });

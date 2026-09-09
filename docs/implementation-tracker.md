@@ -1,6 +1,6 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.36.1
+> **Version:** v0.37.0
 > **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-09 (layout/art theo ảnh owner)
 > **Trạng thái:** Active — **M0 COMPLETE theo exit criteria; xem báo cáo closure M0–M5. M1–M3 tiếp tục triển khai; M4 bắt đầu nền config pin/replay, server event store đã review; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.3** (1 phase, mốc M0–M9).
 > **Owner:** Team
@@ -298,3 +298,5 @@ rows. Follow owner queue M4→M6→M7→M8→M9; defer extra M5 breadth/performa
 | 2026-09-10 | v0.36.0: schema6 trusted checkpoint implemented;281tests/config/build and exact80MB restore pass, review and final k/rush running. Owner timeboxes performance here and requests criterion-level M0–M5 closure, then M4 cutover/reconnect/admin before M6–M9. |
 
 | 2026-09-10 | v0.36.1: f86e2b3 independently verified;281tests/config/build,10kcohorts,15rush,17reviewer checks pass. M0 marked COMPLETE from explicit exit criteria; M1–M5 criterion-level gaps published. Owner prioritizes M4 cutover/reconnect/admin then M6–M9; no additional performance work now. |
+
+| 2026-09-10 | v0.37.0 | M4 rules24 engine prerequisite: trusted hidden/menu recovery and resting loss, preserving old replay. Focused tests pass; full verification/review in progress. F23/M4 remain open; durable liveness, web cutover and registry/admin next. |
