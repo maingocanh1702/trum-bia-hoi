@@ -2183,3 +2183,14 @@ zero literal warnings,10ordinary kcohorts2.4186–2.8738 and15rush PASS. Full re
 found a local corrupt-save recovery regression; corrected and independently reviewed
 CLEAN. M4 now10/18criteria PASS but remains OPEN. Receipt `.qa/m4-web-verification.json`;
 next protected registry/admin, then remaining M4 acceptance and M6–M9.
+
+## Default Config Registry — 2026-09-10
+
+Base732f860: immutable proposal, approval and publication/audit; JSON tier decisions,
+server-only actor contract, publish retry/rate limit, VN day/common season scheduling,
+rollback as a new version and actual GameStore opening resolution. Seed snapshots
+remain registered for historical import but cannot activate themselves after restart.
+Shorter heartbeat configurations re-arm the scheduler at actual durable lease deadlines.
+307full tests +10final focused/10remote browser pass; final sim and independent review
+in progress. No public admin API/editor yet; scoped overrides and MFA/SSO wiring next.
+See [registry contract](config-registry.md). M4 stays OPEN and no acceptance count is inflated.

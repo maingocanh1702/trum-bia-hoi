@@ -3,9 +3,10 @@ import { createHash, randomBytes, randomInt, randomUUID } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import { validGoogleSubject, type GoogleIdentity } from './google';
 import { LOCAL_ARCHIVE_BYTES, validateLocalArchive } from './local-archive';
+import { ConfigRegistry, initializeRegistry, heartbeatTiming } from './registry';
 import { Game, config as seedConfig, configContent, decodeSave, loadConfig, validEnvelope, type Config, type Command, type DomainEvent, type EngineCheckpoint, type LoggedCommand, type World } from '@tbh/engine';
 
-const SCHEMA_VERSION = 7, CACHE_SIZE = 64; // config-exempt: persistence format and bounded process cache, not game tuning
+const SCHEMA_VERSION = 8, CACHE_SIZE = 64; // config-exempt: persistence format and bounded process cache, not game tuning
 const GOOGLE_CHALLENGE_TTL_MS = 300000; // config-exempt: five-minute authentication nonce lifetime, not gameplay time
 const EVENT_PAGE_SIZE = 100; // config-exempt: transport history page bound, not gameplay tuning
 type PlayerRow = { id: string; seed: number; created_at: number; config_version: string; now: number; revision: number; projection: string };
@@ -20,11 +21,6 @@ type Request = { idempotencyKey: string; command: Command };
 export type SequencedRequest = Request & { clientId: string; clientSeq: number };
 export type Heartbeat = { clientId: string; beatSeq: number; active: boolean; paused: boolean };
 const presenceExpiry = 'MIN(p.until,s.expires_at,COALESCE(s.revoked_at,p.until))';
-function heartbeatTiming(config: Config) {
-  const timeoutMs = config.values.network.reconnectingUiDelayMs;
-  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 2 || timeoutMs > 2147483647) throw Error('store:heartbeatClock'); // config-exempt: two distinguishable tick instants and native signed32 timer limit
-  return { heartbeatTimeoutMs: timeoutMs, heartbeatIntervalMs: Math.floor(timeoutMs / 2) }; // config-exempt: two heartbeat opportunities per configured detection window
-}
 const sessionHash = (token: string) => typeof token === 'string' && /^[a-f0-9]{64}$/.test(token) ? createHash('sha256').update(token).digest('hex') : null; // config-exempt:256-bit random credential encoding
 const projection = (w: World) => JSON.stringify({ ...w, events: undefined });
 const validPlayerId = (id: string) => typeof id === 'string' && id.length > 0 && id.length <= 128; // config-exempt: internal identity protocol bound
@@ -38,7 +34,7 @@ function sessionExpiry(now: number, ttlMs: number) {
  * never accept a client world, seed, clock or config here as authoritative state. */
 export class GameStore {
   private readonly db: DatabaseSync;
-  private readonly config: Config;
+  private readonly registry: ConfigRegistry;
   private readonly cache = new Map<string, LiveGame & { revision: number }>();
   constructor(path: string, config: Config = seedConfig, private readonly clock = Date.now) {
     const candidate = loadConfig(config.raw);
@@ -49,7 +45,7 @@ export class GameStore {
       if (this.db.prepare('PRAGMA foreign_keys').get()?.foreign_keys !== 1) throw Error('store:foreignKeys');
       this.db.exec('BEGIN IMMEDIATE');
       const version = this.db.prepare('PRAGMA user_version').get()?.user_version;
-      if (version !== 0 && version !== 1 && version !== 2 && version !== 3 && version !== 4 && version !== 5 && version !== 6 && version !== SCHEMA_VERSION) throw Error('store:unsupportedSchema');
+      if (!Number.isInteger(version) || Number(version) < 0 || Number(version) > SCHEMA_VERSION) throw Error('store:unsupportedSchema');
       if (version === 0) {
         this.db.exec(`
           CREATE TABLE configs (version TEXT PRIMARY KEY, snapshot TEXT NOT NULL) STRICT;
@@ -112,7 +108,11 @@ export class GameStore {
         CREATE INDEX presence_player ON client_presence(player_id);
         CREATE INDEX presence_deadline ON client_presence(live,until);`);
       this.db.exec(`PRAGMA user_version=${SCHEMA_VERSION}`);
-      this.config = this.registerConfig(candidate);
+      // Register approved historical snapshots for import/replay without activating them.
+      const registered = this.registerConfig(candidate);
+      if (Number(version) < 8) initializeRegistry(this.db, registered, this.now());
+      this.registry = new ConfigRegistry(this.db, () => this.now());
+      heartbeatTiming(this.registry.active());
       this.db.exec('COMMIT');
     } catch (error) {
       if (this.db.isTransaction) this.db.exec('ROLLBACK');
@@ -153,8 +153,8 @@ export class GameStore {
     } catch (error) { if (this.db.isTransaction) this.db.exec('ROLLBACK'); throw error; }
   }
   private insertPlayer(id: string, seed: number, now: number) {
-    const game = new Game(this.config, seed, now, id);
-    this.db.prepare('INSERT INTO players VALUES (?,?,?,?,?,?,?)').run(id, seed, now, this.config.version, now, 0, projection(game.world));
+    const config = this.registry.active(now), game = new Game(config, seed, now, id);
+    this.db.prepare('INSERT INTO players VALUES (?,?,?,?,?,?,?)').run(id, seed, now, config.version, now, 0, projection(game.world));
     const state = { game, commandHash: EMPTY_HASH, eventHash: EMPTY_HASH, checkpointable: true };
     this.saveCheckpoint(id, game.checkpoint(), state); return state;
   }
@@ -383,7 +383,7 @@ export class GameStore {
     const previous = this.commandEntry(id, request.idempotencyKey)?.command;
     // JSON member order is not command identity; retain the original engine payload on an equal retry.
     const command = previous && isDeepStrictEqual(previous, request.command) ? previous as Command : request.command;
-    return game.command({ idempotencyKey: request.idempotencyKey, command, at: now }, request.command.type === 'startShift' ? this.config : undefined);
+    return game.command({ idempotencyKey: request.idempotencyKey, command, at: now }, request.command.type === 'startShift' ? this.registry.active(now) : undefined);
   }
   command(id: string, request: Request) {
     if (!validEnvelope({ ...request, at: 0 })) throw Error('store:invalidCommand');
@@ -472,7 +472,12 @@ export class GameStore {
     });
     return { ...state, ...result, clientId: request.clientId };
   }
-  get heartbeatIntervalMs() { return heartbeatTiming(this.config).heartbeatIntervalMs; }
+  get heartbeatIntervalMs() {
+    const now = this.now(), interval = heartbeatTiming(this.registry.active(now)).heartbeatIntervalMs;
+    const next = this.db.prepare(`SELECT MIN(${presenceExpiry}) AS at FROM client_presence p JOIN sessions s
+      ON s.token_hash=p.session_hash WHERE p.live=1`).get()?.at;
+    return next === null || next === undefined ? interval : Math.max(1, Math.min(interval, Number(next) - now)); // config-exempt: native timer requires a positive delay
+  }
   /** ponytail: single-host due-player scan; shard scheduling only when measured load requires it. */
   sweepPresence() {
     const due = this.db.prepare(`SELECT DISTINCT p.player_id FROM client_presence p JOIN sessions s ON s.token_hash=p.session_hash

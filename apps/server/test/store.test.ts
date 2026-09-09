@@ -86,7 +86,7 @@ test('history and configs are append-only, foreign keys are enforced, and damage
   db.exec('PRAGMA user_version=999'); assert.throws(() => f.open(), /unsupportedSchema/);
 });
 
-test('restarting with a new server snapshot preserves the running pin and adopts it only on the next successful shift', t => {
+test('restarting with a new seed cannot bypass registry publication or change the next shift', t => {
   const f = fixture(t), a = f.open(); a.createPlayer('one', 42); send(a, 'one', 'open-A', { type: 'startShift' }); f.now += 1000;
   const before = a.read('one'); a.close();
   const raw = structuredClone(config.raw); raw._meta.version = 'store-B'; raw.shift.durationMs += 60000; raw.menu.bia.price += 3;
@@ -96,8 +96,8 @@ test('restarting with a new server snapshot preserves the running pin and adopts
   send(b, 'one', 'end-A', { type: 'endShift' }); f.now += config.values.shift.durationMs;
   const rest = b.read('one'); f.now += Math.ceil((config.values.shift.durationMs - rest.world.staminaMs) / config.values.shift.regenRate);
   const opened = send(b, 'one', 'open-B', { type: 'startShift' }); assert.ok(opened.result.ok);
-  assert.equal(opened.world.shift!.configVersion, 'store-B'); assert.equal(opened.world.shift!.endsAt - f.now, next.values.shift.durationMs);
-  assert.equal(opened.world.events.filter(e => e.type === 'config_pinned').length, 1);
+  assert.equal(opened.world.shift!.configVersion, config.version); assert.equal(opened.world.shift!.endsAt - f.now, config.values.shift.durationMs);
+  assert.equal(opened.world.events.filter(e => e.type === 'config_pinned').length, 0);
   b.close(); assert.deepEqual(f.open(next).read('one'), retryWithoutResult(opened));
 });
 

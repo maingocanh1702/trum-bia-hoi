@@ -1,0 +1,184 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
+import type { AddressInfo } from 'node:net';
+import { setTimeout as delay } from 'node:timers/promises';
+import { config, Game, loadConfig, seasonWindow, type Config } from '@tbh/engine';
+import { GameStore } from '../src/store';
+import { createGameServer } from '../src/http';
+import { ConfigRegistry, registryPolicy, type AdminActor } from '../src/registry';
+const NOW = Date.parse('2026-09-10T10:00:00Z');
+function fixture(t: { after(fn: () => unknown): void }, seed = config) {
+  const dir = mkdtempSync(join(tmpdir(), 'tbh-registry-')), file = join(dir, 'game.db');
+  let now = NOW; const stores: GameStore[] = [], connections: DatabaseSync[] = [];
+  const open = (c = seed) => { const s = new GameStore(file, c, () => now); stores.push(s); return s; };
+  const store = open(), db = new DatabaseSync(file); connections.push(db);
+  db.exec('PRAGMA foreign_keys=ON');
+  const registry = new ConfigRegistry(db, () => now);
+  t.after(() => { for (const s of stores) s.close(); for (const d of connections) d.close(); rmSync(dir, { recursive: true, force: true }); });
+  const actor = (role: AdminActor['role'] = 'economy', subject: string = role): AdminActor => ({ subject, role, mfa: true, issuedAt: now, expiresAt: now + 3600000 });
+  const draft = (edit: (raw: Config['raw']) => void, who = actor(), key = crypto.randomUUID()) => {
+    const base = registry.config(registry.latest().version), snapshot = structuredClone(base.raw); edit(snapshot);
+    return registry.propose(who, { key, baseVersion: base.version, snapshot, reason: 'Measured balance adjustment' });
+  };
+  const publish = (edit: (raw: Config['raw']) => void, who = actor()) => {
+    const d = draft(edit, who); registry.approve(actor('super', 'reviewer'), d.version); return registry.publish(who, d.version);
+  };
+  return { file, db, store, registry, open, actor, draft, publish, get now() { return now; }, set now(v) { now = v; } };
+}
+
+test('published default config is used by real openings, never rewrites a live shift, and replays exactly after restart', t => {
+  const f = fixture(t), s = f.store;
+  s.createPlayer('old', 42); const opened = s.command('old', { idempotencyKey: 'open-old', command: { type: 'startShift' } });
+  assert.ok(opened.result.ok); f.now += 1000; const before = s.read('old');
+  const pub = f.publish(raw => { raw.menu.bia.price++; });
+  assert.equal(pub.effective_at, f.now); assert.deepEqual(s.read('old'), before);
+  assert.equal(s.createPlayer('new', 43).configVersion, pub.version);
+  assert.equal(s.command('new', { idempotencyKey: 'open-new', command: { type: 'startShift' } }).world.shift!.configVersion, pub.version);
+  const again = s.command('old', { idempotencyKey: 'open-old', command: { type: 'startShift' } });
+  assert.deepEqual(again.result, opened.result); assert.equal(again.world.shift!.configVersion, config.version);
+  s.command('old', { idempotencyKey: 'close', command: { type: 'endShift' } }); f.now += 3600000;
+  const next = s.command('old', { idempotencyKey: 'open-second', command: { type: 'startShift' } });
+  assert.ok(next.result.ok); assert.equal(next.world.shift!.configVersion, pub.version);
+  const restart = f.open(); assert.deepEqual(restart.read('old'), s.read('old'));
+  assert.equal(restart.createPlayer('restart', 44).configVersion, pub.version);
+  const replay = new Game(config, 42, NOW, 'old');
+  for (const row of f.db.prepare('SELECT entry FROM commands WHERE player_id=? ORDER BY seq').all('old')) {
+    const entry = JSON.parse(String(row.entry)); assert.deepEqual(replay.replay(entry, f.registry.config(entry.configVersion)), entry.result);
+  }
+  replay.advance(f.now); assert.deepEqual(replay.world, restart.read('old').world);
+  assert.equal(JSON.parse(restart.configSnapshot(config.version)).menu.bia.price, config.raw.menu.bia.price);
+});
+
+test('Tier A requires a distinct Super approval and becomes active exactly at VN midnight across connections', t => {
+  const f = fixture(t), who = f.actor(), d = f.draft(raw => { raw.shift.dailyEarnCapBase++; });
+  assert.throws(() => f.registry.publish(who, d.version), /approvalRequired/);
+  assert.throws(() => f.registry.approve(who, d.version), /forbidden/);
+  assert.throws(() => f.registry.approve(f.actor('super', who.subject), d.version), /distinctApprover/);
+  const reviewer = f.actor('super', 'another-person'); f.registry.approve(reviewer, d.version);
+  assert.deepEqual(f.registry.approve(reviewer, d.version), d);
+  const publication = f.registry.publish(who, d.version), count = f.db.prepare('SELECT COUNT(*) AS n FROM registry_audit').get()!.n;
+  assert.deepEqual(f.registry.publish(who, d.version), publication);
+  assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM registry_audit').get()!.n, count);
+  assert.equal(publication.effective_at, Date.parse('2026-09-10T17:00:00Z'));
+  f.now = publication.effective_at - 1; assert.equal(f.open().createPlayer('before', 1).configVersion, config.version);
+  f.now++; assert.equal(f.open().createPlayer('at', 2).configVersion, publication.version);
+});
+
+test('tier classifier covers every section, flags beat broad balance groups, and mixed changes require all roles', t => {
+  const f = fixture(t);
+  for (const [tier, rule] of Object.entries(config.raw._meta.governance.tiers)) {
+    for (const key of rule.sections) assert.equal(registryPolicy([key], config).tier, tier, key);
+  }
+  assert.equal(registryPolicy(['weather.phase1Enabled'], config).tier, 'A');
+  for (const role of ['support', 'viewer', 'game'] as const) assert.throws(() => f.draft(raw => { raw.menu.bia.price++; }, f.actor(role)), /forbidden/);
+  assert.throws(() => f.draft(raw => { raw.upgrades.phase1UpgradesOutsideShiftOnly = !raw.upgrades.phase1UpgradesOutsideShiftOnly; }), /forbidden/);
+  assert.throws(() => f.draft(raw => { raw.audio.enabled = !raw.audio.enabled; }), /forbidden/);
+  const d = f.draft(raw => { raw.audio.enabled = !raw.audio.enabled; }, f.actor('game'));
+  f.registry.approve(f.actor('game'), d.version); const pub = f.registry.publish(f.actor('game'), d.version);
+  assert.equal(pub.effective_at, f.now);
+  assert.throws(() => f.draft(raw => { raw.audio.enabled = !raw.audio.enabled; raw.menu.bia.price++; }), /forbidden/);
+  assert.throws(() => f.draft(raw => { raw.menu.bia.price++; }, { ...f.actor('economy'), expiresAt: f.now }), /invalidActor/);
+  assert.throws(() => f.draft(raw => { raw.audio.enabled = !raw.audio.enabled; }, { ...f.actor('game'), mfa: false }), /invalidActor/);
+  assert.throws(() => f.draft(raw => { raw.menu.bia.price++; }, { ...f.actor(), expiresAt: f.now + 28800001 }), /invalidActor/);
+});
+
+test('shared validation rejects unsafe config, held features, metadata privilege changes and early schedules atomically', t => {
+  const f = fixture(t), count = () => f.db.prepare('SELECT COUNT(*) AS n FROM configs').get()!.n, before = count();
+  for (const edit of [
+    (r: Config['raw']) => { r.menu.bia.price = -1; },
+    (r: Config['raw']) => { r.lottery.legalGate = true; },
+    (r: Config['raw']) => { r.entitlements.sessionPass.enabled = true; },
+    (r: Config['raw']) => { r._meta.governance.tiers.A.sections = []; },
+    (r: Config['raw']) => { r.network.reconnectingUiDelayMs = 1; },
+    (r: Config['raw']) => { r.k.band = [1, 10]; r.k.value = 4; },
+    (r: Config['raw']) => { r.shift.dayRollover.tz = 'UTC'; },
+  ]) assert.throws(() => f.draft(edit, f.actor('super')), /config:|registry:|store:heartbeatClock/);
+  const snapshot = structuredClone(config.raw); snapshot.shift.dailyEarnCapBase++;
+  assert.throws(() => f.registry.propose(f.actor(), { key: 'early', baseVersion: config.version, snapshot, reason: 'No bypass', effective: 'immediate' }), /earlyActivation/);
+  assert.equal(count(), before);
+  assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM registry_proposals').get()!.n, 0);
+});
+
+test('proposal retries, stale bases and same-key conflicts cannot publish another snapshot; rollback creates a fresh version', t => {
+  const f = fixture(t), snapshot = structuredClone(config.raw); snapshot.menu.bia.price++;
+  const input = { key: 'one-request', baseVersion: config.version, snapshot, reason: 'Price probe' }, who = f.actor();
+  const first = f.registry.propose(who, input); assert.deepEqual(f.registry.propose(who, input), first);
+  assert.throws(() => f.registry.propose(who, { ...input, reason: 'Changed request' }), /keyConflict/);
+  const stale = f.draft(raw => { raw.spawn.baseMs++; });
+  f.registry.approve(who, first.version); f.registry.publish(who, first.version);
+  assert.throws(() => f.registry.approve(who, stale.version), /staleBase/);
+  assert.throws(() => f.registry.propose(who, { ...input, key: 'late-new' }), /staleBase/);
+  const rollback = f.registry.propose(who, { key: 'rollback', baseVersion: first.version, snapshot: config.raw, reason: 'Restore measured baseline' });
+  f.registry.approve(who, rollback.version); f.registry.publish(who, rollback.version);
+  assert.notEqual(rollback.version, config.version); assert.equal(f.registry.active().raw.menu.bia.price, config.raw.menu.bia.price);
+  const audit = f.db.prepare("SELECT payload FROM registry_audit WHERE type='ConfigPublished' ORDER BY seq DESC LIMIT 1").get()!;
+  assert.equal(JSON.parse(String(audit.payload)).rollbackVersion, config.version);
+  assert.equal(f.registry.config(first.version).raw.menu.bia.price, snapshot.menu.bia.price);
+  for (const table of ['configs', 'registry_proposals', 'registry_approvals', 'registry_publications', 'registry_audit']) {
+    assert.throws(() => f.db.exec(`DELETE FROM ${table}`), /appendOnly/);
+  }
+});
+
+test('registering an approved historic snapshot cannot change the identity of an identical draft retry', t => {
+  const f = fixture(t), snapshot = structuredClone(config.raw); snapshot.menu.bia.price++; snapshot._meta.version = 'historic-import';
+  const input = { key: 'catalog-retry', baseVersion: config.version, snapshot, reason: 'Import old tuning' }, who = f.actor();
+  const draft = f.registry.propose(who, input); f.open(loadConfig(snapshot));
+  assert.deepEqual(f.registry.propose(who, input), draft);
+  assert.equal(f.registry.active().version, config.version);
+});
+
+test('season publication waits for common boundaries, including a mixed cap change after today\'s season ending', t => {
+  const f = fixture(t), window = seasonWindow(f.now, config, 'contest');
+  f.now = window.endsAt - 1000;
+  const p = f.publish(raw => { raw.league.tiers[1].minSeasonEarnedBase++; });
+  assert.equal(p.effective_at, window.endsAt);
+  f.now = p.effective_at; assert.equal(f.registry.active().version, p.version);
+  f.now = seasonWindow(f.now, config, 'contest').endsAt - 1000;
+  const later = f.publish(raw => { raw.league.tiers[1].minSeasonEarnedBase++; raw.shift.dailyEarnCapBase++; });
+  const nextEnd = seasonWindow(f.now, config, 'contest').endsAt;
+  assert.equal(later.effective_at, nextEnd + config.values.league.seasons.contest.days * 86400000);
+  const immediate = f.draft(raw => { raw.menu.bia.price++; }); f.registry.approve(f.actor(), immediate.version);
+  assert.throws(() => f.registry.publish(f.actor(), immediate.version), /scheduleConflict/);
+});
+
+test('failed publication transaction leaves no activation or audit, and persistent daily abuse limit survives restart', t => {
+  const f = fixture(t), d = f.draft(raw => { raw.menu.bia.price++; }); f.registry.approve(f.actor(), d.version);
+  f.db.exec("CREATE TRIGGER fail_registry BEFORE INSERT ON registry_audit WHEN NEW.type='ConfigPublished' BEGIN SELECT RAISE(ABORT,'test:write-failed'); END;");
+  assert.throws(() => f.registry.publish(f.actor(), d.version), /write-failed/);
+  assert.equal(f.registry.latest().version, config.version); f.db.exec('DROP TRIGGER fail_registry');
+  f.registry.publish(f.actor(), d.version);
+  for (let n = 0; n < 4; n++) f.publish(raw => { raw.menu.bia.price++; });
+  const limited = f.draft(raw => { raw.menu.bia.price++; }); f.registry.approve(f.actor(), limited.version);
+  const reopened = new ConfigRegistry(f.db, () => f.now);
+  assert.throws(() => reopened.publish(f.actor(), limited.version), /rateLimited/);
+  f.now = Date.parse('2026-09-10T17:00:00Z'); assert.equal(reopened.publish(f.actor(), limited.version).version, limited.version);
+});
+
+test('schema7 migration seeds once while preserving actual prior career history and projection', t => {
+  const f = fixture(t); f.store.createPlayer('legacy', 42); f.store.command('legacy', { idempotencyKey: 'open', command: { type: 'startShift' } });
+  const before = f.store.read('legacy'); f.store.close();
+  f.db.exec('DROP TABLE registry_audit; DROP TABLE registry_publications; DROP TABLE registry_approvals; DROP TABLE registry_proposals; PRAGMA user_version=7');
+  const migrated = f.open(); assert.deepEqual(migrated.read('legacy'), before);
+  assert.equal(f.db.prepare('PRAGMA user_version').get()!.user_version, 8);
+  const raw = structuredClone(config.raw); raw._meta.version = 'replacement-seed'; raw.menu.bia.price += 2;
+  assert.equal(f.open(loadConfig(raw)).createPlayer('next', 43).configVersion, config.version);
+});
+
+test('a newly published shorter heartbeat re-arms the real HTTP scheduler without repricing existing players', async t => {
+  const f = fixture(t), server = createGameServer(f.store, { origin: 'http://127.0.0.1:5174', sessionTtlMs: 86400000, rateMax: 1000, rateWindowMs: 60000 });
+  await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise<void>(resolve => { server.closeAllConnections(); server.close(() => resolve()); }));
+  const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  f.publish(raw => { raw.network.reconnectingUiDelayMs = 40; });
+  const a = f.store.createGuestSession(86400000), stream = f.store.connect(a.playerId);
+  const response = await fetch(url + '/player/heartbeat', { method: 'POST', headers: { Origin: 'http://127.0.0.1:5174', 'Content-Type': 'application/json', Cookie: `tbh-session=${a.token}` },
+    body: JSON.stringify({ clientId: stream.clientId, beatSeq: 1, active: true, paused: false }) });
+  assert.equal(response.status, 200); assert.equal((await response.json()).heartbeatIntervalMs, 20);
+  f.now += 41; await delay(100);
+  assert.equal(f.db.prepare('SELECT live FROM client_presence WHERE client_id=?').get(stream.clientId)!.live, 0);
+  assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM events WHERE player_id=? AND json_extract(payload,\'$.type\')=\'connection_lost\'').get(a.playerId)!.n, 1);
+});

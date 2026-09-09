@@ -113,8 +113,8 @@ test('two SQLite connections cannot reuse a nonce, claim one guest twice or fork
 test('schema3 migration preserves guest credentials, active history and ordered receipts without inventing an account', t => {
   const f = fixture(t), s = f.store, guest = s.createGuestSession(86400000), stream = s.connect(guest.playerId);
   const before = s.clientCommand(guest.playerId, { clientId: stream.clientId, clientSeq: 1, idempotencyKey: 'open', command: { type: 'startShift' } });
-  s.close(); f.db.exec('DROP TABLE client_presence; DROP TABLE engine_checkpoints; DROP TABLE local_imports; DROP TABLE account_logins; DROP TABLE google_challenges; DROP TABLE google_accounts; DROP INDEX sessions_player; PRAGMA user_version=3');
-  const migrated = f.open(); assert.equal(f.db.prepare('PRAGMA user_version').get()!.user_version, 7);
+  s.close(); f.db.exec('DROP TABLE registry_audit; DROP TABLE registry_publications; DROP TABLE registry_approvals; DROP TABLE registry_proposals; DROP TABLE client_presence; DROP TABLE engine_checkpoints; DROP TABLE local_imports; DROP TABLE account_logins; DROP TABLE google_challenges; DROP TABLE google_accounts; DROP INDEX sessions_player; PRAGMA user_version=3');
+  const migrated = f.open(); assert.equal(f.db.prepare('PRAGMA user_version').get()!.user_version, 8);
   assert.equal(migrated.session(guest.token)!.provider, 'guest'); assert.deepEqual(migrated.read(guest.playerId).world, before.world);
   assert.equal(migrated.connect(guest.playerId, stream.clientId).acknowledgedSeq, 1);
   assert.equal(f.db.prepare('SELECT count(*) AS n FROM google_accounts').get()!.n, 0);

@@ -5,6 +5,17 @@
 
 ---
 
+## 🧭 Default registry implemented; review in progress — 2026-09-10
+
+Base732f860. Schema8 keeps immutable config proposals/approval/publication/audit;
+GameStore now selects the active registry for creation/opening, never a replacement
+constructor seed. Historical snapshot registration remains for exact old-save import.
+Tier decisions require trusted server actors; no new public admin endpoint or role
+input. Next slice must authenticate actors before exposing this core (MFA for Super/Game).
+307full tests +10final focused/10remote browser pass; final sim and review in progress.
+No game numbers/engine rules changed. M4 remains OPEN; scoped overrides, admin editor,
+account/eligibility/locale remain. No M5 breadth or public upload/performance work.
+
 ## 🧭 Web server authority verified; registry/admin next — 2026-09-10
 
 Product936e9d5 (base8e25c19, foundation60f9090) defaults new online play to server

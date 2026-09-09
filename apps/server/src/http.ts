@@ -122,6 +122,7 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
         if (!record(body) || Object.keys(body).some(k => !['clientId', 'beatSeq', 'active', 'paused'].includes(k)) ||
             typeof body.clientId !== 'string' || !Number.isSafeInteger(body.beatSeq) || typeof body.active !== 'boolean' || typeof body.paused !== 'boolean') throw new HttpError(400, 'invalidHeartbeat');
         const beat = store.heartbeat(token!, { clientId: body.clientId, beatSeq: Number(body.beatSeq), active: body.active, paused: body.paused });
+        arm();
         reply(beat.error ? 409 : 200, { ...present(beat), clientId: beat.clientId, heartbeatSeq: beat.heartbeatSeq,
           heartbeatUntil: beat.heartbeatUntil, heartbeatIntervalMs: beat.heartbeatIntervalMs, heartbeatTimeoutMs: beat.heartbeatTimeoutMs,
           duplicate: beat.duplicate, error: beat.error }); return;
@@ -162,13 +163,14 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
       req.resume();
     }
   });
-  let timer: ReturnType<typeof setInterval> | undefined;
-  const stop = () => { if (timer) clearInterval(timer); timer = undefined; };
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const stop = () => { if (timer) clearTimeout(timer); timer = undefined; };
+  const arm = () => { stop(); if (server.listening) { timer = setTimeout(() => { sweep(); arm(); }, store.heartbeatIntervalMs); timer.unref(); } };
   const sweep = () => {
     try { for (const failure of store.sweepPresence()) console.error('presence sweep failed', failure); }
     catch (error) { console.error('presence sweep failed', error instanceof Error ? error.message : 'unknown'); }
   };
-  server.on('listening', () => { stop(); sweep(); timer = setInterval(sweep, store.heartbeatIntervalMs); timer.unref(); });
+  server.on('listening', () => { sweep(); arm(); });
   server.on('close', stop); server.on('error', stop);
   return server;
 }

@@ -470,3 +470,5 @@ type AuditEntry = {
 | v0.5 | Chủ dự án 08/09: **chơi free hết, monetization = donate cho admin** — §1 mục tiêu, §3 KPI/funnel, §5.2 tier A, §7 Payment → Donation (bỏ Session Pass). |
 
 *Nguồn: `02-GDD-trum-bia-hoi.md` v1.8 (§0/§3/§8/§10/§11/§16/§18), `08-SPEC-economy-constants.md` v1.2 (§0/§13/§22), `docs/config/economy.tbh.json`, `10-SPEC-tech-implementation.md` §7/§10, `docs/features/F23-server-architecture.md`, `docs/features/F25-localization-account.md`, `docs/features/F26-daily-session-pass-payments.md`, `06-ROADMAP-trum-bia-hoi.md` v2.4.*
+
+| 2026-09-10 default registry implementation | Default version chain now implements shared schema validation, tier decisions, distinct Tier A approval, exact retry, audit and day/common-season activation with server opening pins. This is the internal service only: scoped overrides, compensation/emergency, authenticated SSO/MFA transport, editor and impact preview remain open. See docs/config-registry.md; no full BRD/M4 completion claim. |

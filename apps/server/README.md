@@ -2,8 +2,8 @@
 
 `@tbh/server` exports `GameStore`, the internal M4 persistence layer, and
 `@tbh/server/http` exports a Node HTTP server with durable guest and Google account cookie ownership.
-It runs the existing pure engine against SQLite. The web app uses local IndexedDB career saves and localStorage settings;
-Google claim, client buffering/reconnect, registry and web cutover remain in progress.
+It runs the existing pure engine against SQLite. Normal new web careers use server snapshots and a durable command journal. Explicit
+legacy local careers stay separate; full account/import and admin integration remain.
 The API is locally runnable; it is not full M4 or a production release.
 
 Tested runtime: Node22.22.1 with native `node:sqlite` (SQLite3.51.2). The server
@@ -385,3 +385,25 @@ and bounded `presentation` events for current table reactions/rushes/latest flye
 RNG/checkpoint/world event archive is added to snapshots. See `../web/README.md`.
 
 | 2026-09-10 web projection | Added pinned config/presentation/report delivery and event-page owner binding for actual web cutover. Verification/review in progress; no public local upload or admin endpoint added. |
+
+## Default Config Registry
+
+Schema8 imports one active seed. Later constructor snapshots are registered for exact
+historical validation but never activate themselves; registry publications decide new
+player/opening configuration. Live shifts and replay keep their immutable original pins.
+`registry.ts` contains the internal default proposal/approval/publication service,
+using the same database/transactions and shared schema validation. `AdminActor` is a
+trusted authenticated server context, never client JSON. No admin HTTP route is exposed
+yet; the follow-up admin boundary must supply SSO identity, role and MFA/session proof.
+Tier A needs a distinct Super approver, B/C use the prescribed role. Default versions
+form a linear chain with explicit stale-base rejection. Rollback is a new publication;
+ops events are stored only, with no external notification delivery.
+
+The current player API keeps its existing authentication/owned streams. Heartbeat
+scheduling follows the nearest durable lease and re-arms when a lease is renewed.
+See `docs/config-registry.md` and `apps/server/test/registry.test.ts` for the decision
+table, exact scope and real SQLite/opening/replay/scheduler checks.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 | Schema8 default registry and actual opening resolution; internal service verification/review underway, admin API/editor/scopes remain. |

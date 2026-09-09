@@ -1,8 +1,8 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.39.1
+> **Version:** v0.40.0
 > **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-10 (web authority/reconnect đã kiểm chứng)
-> **Trạng thái:** Active — **M0 COMPLETE theo exit criteria; xem báo cáo closure M0–M5. M1–M3 tiếp tục triển khai; M4 web server/outbox đã qua review và101browser checks; đạt10/18 tiêu chí, registry/admin và account/import UI còn thiếu; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.3** (1 phase, mốc M0–M9).
+> **Trạng thái:** Active — **M0 COMPLETE theo exit criteria; xem báo cáo closure M0–M5. M1–M3 tiếp tục triển khai; M4 web server/outbox đã qua review và101browser checks; đạt10/18 tiêu chí, lõi registry mặc định đang review, admin/account/import UI còn thiếu; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.3** (1 phase, mốc M0–M9).
 > **Owner:** Team
 > **Mục đích:** Master status board cho mọi feature F01–F28. Nhãn `Phase N` chỉ là **khoá parser** của dashboard-engine; mốc thật: P0 → M0 (nền) · P1 → M1–M2 · P2 → M3 · P3 → M4–M6 · P4 → M7–M8 · QA/release → M9. Là **input cho dashboard-engine** (`tools/dashboard-engine/build_dashboard.py`). Nguồn quyết định/scope = `02-GDD-trum-bia-hoi.md` + `06-ROADMAP-trum-bia-hoi.md`; tracker chỉ theo dõi **trạng thái build**.
 > **Cập nhật:** đổi status mỗi khi 1 feature chuyển trạng thái (bắt đầu code / review / merge).
@@ -312,3 +312,5 @@ rows. Follow owner queue M4→M6→M7→M8→M9; defer extra M5 breadth/performa
 | 2026-09-10 | v0.39.0 | Web defaults to server snapshots/pinned public rules and authoritative reports. Durable bounded journal, current-presence heartbeat, reconnect status and exact command retry; explicit local preservation boundary.298tests,91legacy browser and7remote scenarios pass; final hidden-presence check/sim/review in progress. M4 remains open for registry/admin/account integration. |
 
 | 2026-09-10 | v0.39.1 | Web cutover936e9d5 verified:298engine/server +91legacy/10remote browser, config/build,10ordinary kcohorts2.4186–2.8738 and15rush PASS. Full review P1 local recovery fixed; independent correction CLEAN. M4 now10/18 PASS, remains OPEN. Next registry/admin then account gaps and M6–M9; no public upload/performance expansion. |
+
+| 2026-09-10 | v0.40.0 | Schema8 default registry implemented: seed registration separate from activation, immutable drafts/approval/publication/audit, tier decisions and actual server opening resolver.307 full tests +10 final focused and10 remote browser pass; final sim/review pending. M4 remains10/18 OPEN; scoped overrides, authenticated admin API/editor and account gaps next. |
