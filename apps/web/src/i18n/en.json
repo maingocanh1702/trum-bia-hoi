@@ -256,5 +256,22 @@
   "menu.noValue": "—",
   "menu.unavailable": "Dish data is unavailable for this older shift. Tracking starts with a new shift.",
   "menu.partial": "Partial shift: only data recorded since the update is included.",
-  "menu.note": "Value includes food and tips before the daily cap, excluding bonuses and deliveries. Prepared dishes that are discarded count as wasted; ingredients are not refunded."
+  "menu.note": "Value includes food and tips before the daily cap, excluding bonuses and deliveries. Prepared dishes that are discarded count as wasted; ingredients are not refunded.",
+  "production.ready": "Ready beer {count}",
+  "production.clean": "Clean glasses {count}",
+  "production.freshness": "Fresh for {count}",
+  "production.busy": "Cooking {count}",
+  "production.batchProgress": "Batch progress: {n} glasses",
+  "production.capacity": "Holds {n} servings",
+  "production.batch": "{n}/batch · {seconds}s",
+  "production.stockCap": "Stock {n}/dish",
+  "production.kitchenSlots": "{n} cooking slots",
+  "production.next": "→ Level {n}",
+  "production.status": "Equipment status",
+  "production.running": "Preparing {n} · {seconds}s left",
+  "production.idle": "Ready · Next batch starts automatically",
+  "production.noStock": "Out of raw beer · Restock to pour",
+  "production.washQueue": "Queued {n} · Up to {capacity}/batch",
+  "production.reserveHint": "Refills as beer is drawn onto trays. Freshness starts on the tray.",
+  "production.legacy": "Batch pouring starts with your next shift."
 }

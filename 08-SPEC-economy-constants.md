@@ -1,4 +1,4 @@
-# 🧮 SPEC — Economy Constants & Formulas — Trùm Bia Hơi (v1.3.10)
+# 🧮 SPEC — Economy Constants & Formulas — Trùm Bia Hơi (v1.3.11)
 
 > **Tương ứng với `economy-spec-from-bundle.md` của game gốc**, nhưng cho Trùm Bia Hơi: **mọi hằng số & công thức gom về một chỗ**, dev cầm là code được. Bản máy đọc: **`docs/config/economy.tbh.json`** (cùng số, cùng tên trường). Script kiểm số Phase 0 khớp prototype: `python3 scripts/check_economy_config.py`.
 > Ngày: 2026-09-08. Nguồn: `02-GDD-trum-bia-hoi.md` v1.8 (thắng khi mâu thuẫn) · `03-SPEC-he-ban.md` · `04-SPEC-prototype-phase0.md` · `07-SPEC-shop-mua-giai-worldcup.md` · `docs/features/F07–F26` · `docs/item-list-upgrade-levels.md` v1.4 · `economy-spec-from-bundle.md` (số gốc trumviahe) · `prototype/src/engine/constants.ts` (số đang chạy).
@@ -166,15 +166,18 @@ Giá hiển thị = `round(priceBase × k)`. Mua bằng `coins`, không giảm `
 
 ### 8.1 Bom bia + vòi rót (`keg`) — thay Ấm tích 🟡
 
-| Lv | Tên | priceBase | ×k | Vòi (`pourSlots`) | `pourMs` | Bom: `kegStorage` / `batch` / `refillMs` (P2) |
+| Lv | Tên | priceBase | ×k | Vòi (`pourSlots`) | `pourMs` | Bom: `kegStorage` / `kegBatch` / `refillMs` |
 |:--:|---|--:|--:|:--:|--:|---|
-| 1 | Bom nhựa + vòi tay | 0 | 0 | 1 | 3.000 | 3 / 1 / 15.000 |
-| 2 | Bom inox nhỏ | 3.000 | 7.500 | 1 | 2.700 | 5 / 2 / 13.000 |
-| 3 | Bom inox lớn | 12.000 | 30.000 | 2 | 2.400 | 8 / 3 / 11.000 |
-| 4 | Hệ thống áp suất | 50.000 | 125.000 | 2 | 2.100 | 18 / 6 / 8.000 |
-| 5 | Trạm rót công nghiệp | 200.000 | 500.000 | 3 | 1.800 | 40 / 12 / 6.000 |
+| 1 | Bom nhựa + vòi tay | 0 | 0 | 1 | 3.000 | 5 / 5 / 3.000 |
+| 2 | Bom inox nhỏ | 3.000 | 7.500 | 1 | 2.700 | 5 / 5 / 2.700 |
+| 3 | Bom inox lớn | 12.000 | 30.000 | 2 | 2.400 | 8 / 8 / 2.400 |
+| 4 | Hệ thống áp suất | 50.000 | 125.000 | 2 | 2.100 | 18 / 18 / 2.100 |
+| 5 | Trạm rót công nghiệp | 200.000 | 500.000 | 3 | 1.800 | 40 / 40 / 1.800 |
 
-- **Chốt hai lớp:** `pourSlots/pourMs` (F10) là lớp **Phase 0–1** (prototype có 1 vòi × 3.000ms, không có bom-refill). `kegStorage/batch/refillMs` (item-list §2, ánh xạ ấm tích gốc) là lớp **Phase 2** khi có kho: vòi chỉ rót khi bom còn bia; bom tự châm từ kho theo batch. Bật/tắt bằng `keg.refillEnabled`.
+- **Owner 2026-09-09, JSON1.7.3 / rules18:** bom rót sẵn theo mẻ, không đợi Order. `kegStorage` là số suất bia dự trữ; `kegBatch` là tối đa mỗi mẻ; `refillMs` là thời gian cả mẻ. Lv1 chứa/rót5, các sức chứa Lv2–5 giữ số cũ; mẻ tối đa bằng sức chứa, thời gian dùng tốc độ rót hiện hành. `refillEnabled=true`; `pourSlots/pourMs` vẫn giữ để replay bản cũ.
+- Lấy bia ra mâm giải phóng chỗ và tự bắt đầu mẻ `min(batch, chỗ trống, bia nguyên liệu)`. Còn4/5 thì rót bù1. Trừ nguyên liệu đúng lúc bắt đầu, không trừ lại lúc giao. Bia đã lên mâm nằm ngoài sức chứa để bàn6–8 người có thể chuẩn bị qua nhiều mẻ; mâm vẫn phục vụ một chạm.
+- Bia trong bom tính theo suất; pool ly uống tái sử dụng vẫn riêng và cần ly sạch để ra mâm. Không tự cấp thêm ly khi nâng bom. Mặc định đang áp dụng: freshness bắt đầu khi lên mâm, dự trữ trong bom không mất hơi. Đây là cách diễn giải đã thông báo, hai câu hỏi tùy chọn về phần bù/freshness vẫn chờ owner xác nhận nếu muốn đổi.
+- Mẻ giữ nguyên số lượng/thời gian đã bắt đầu qua upgrade. Menu/hidden pause dịch cả thời điểm bắt đầu và kết thúc. Không bắt đầu mẻ mới khi đã đóng ca; mẻ đang chạy được hoàn thành và bia dư giữ sang ca sau. Ca cũ ghim refill=false tiếp tục cơ chế cũ đến lần mở ca thành công kế tiếp. Giảm cap qua config không xoá dự trữ đã có; không sản xuất thêm khi đang vượt cap mới.
 
 ### 8.2 Bồn rửa cốc (`washer`) 🟢 số gốc
 
@@ -185,6 +188,8 @@ Giá hiển thị = `round(priceBase × k)`. Mua bằng `coins`, không giảm `
 | 3 | Bồn rửa inox | 10.000 | 25.000 | 4.000 | 2 |
 | 4 | Máy rửa bán tự động | 40.000 | 100.000 | 2.500 | 3 |
 | 5 | Máy rửa công nghiệp | 150.000 | 375.000 | 1.500 | 5 |
+
+Rules18: rửa theo một mẻ dùng `slots/washMs`; lấy ngay các ly bẩn hiện có tới giới hạn, không chờ đủ mẻ. Ly bẩn tới thêm xếp hàng đến mẻ kế tiếp. Ly sạch giữ trong pool sẵn dùng. HUD hiển thị sạch/tổng ly và thanh tiến độ; panel ghi số đang chờ + sức rửa mỗi mẻ.
 
 Prototype: `WASH_BASE = {1, 7000}`, `WASH_UPGRADED = {3, 2500}` (= Lv4, toggle đo gate).
 
@@ -575,3 +580,5 @@ Mọi section của `docs/config/economy.tbh.json` đều nằm trong registry. 
 | v1.3.9 (2026-09-09) | Rules13 nối điểm danh bằng mảng thưởng hiện hành; làm rõ ngày active khác ngày claim, hết hạn/đổi vòng/reset cấu hình và không backfill offline. Không đổi JSON hay số cân bằng; lịch sử rules1–12 giữ nguyên. |
 
 | v1.3.10 (2026-09-09) | Owner cho nâng cấp asset ngay trong ca. JSON1.7.2 đặt phase1UpgradesOutsideShiftOnly=false; key chỉ còn phục vụ replay lịch sử1–16, không còn là toggle của luật hiện tại17. Mọi giá, thời gian và mức giới hạn giữ nguyên; ca cũ giữ config/giá đã ghim, chỉ bỏ gate ngoài ca cho lệnh mới. |
+
+| v1.3.11 (2026-09-09) | Owner batch reserve: JSON1.7.3 bật refill, Lv1 chứa/rót5, mẻ bằng sức chứa và dùng thời gian rót hiện hành; washer gom mẻ, stock debit lúc bắt đầu, pause/upgrades giữ job, capacity HUD. Bia dự trữ tách pool ly, mặc định freshness từ lúc lên mâm; hai câu hỏi diễn giải vẫn mở. |

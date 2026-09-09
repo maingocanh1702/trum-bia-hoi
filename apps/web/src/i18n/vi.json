@@ -256,5 +256,22 @@
   "menu.noValue": "—",
   "menu.unavailable": "Ca cũ chưa có thống kê món. Dữ liệu được ghi từ ca mới.",
   "menu.partial": "Một phần ca: chỉ tính dữ liệu ghi nhận từ lần cập nhật.",
-  "menu.note": "Giá trị gồm tiền món và boa trước trần ngày; không gồm thưởng và đơn giao hàng. Món đã làm nhưng phải bỏ tính vào cột Bỏ, không hoàn nguyên liệu."
+  "menu.note": "Giá trị gồm tiền món và boa trước trần ngày; không gồm thưởng và đơn giao hàng. Món đã làm nhưng phải bỏ tính vào cột Bỏ, không hoàn nguyên liệu.",
+  "production.ready": "Bia sẵn sàng {count}",
+  "production.clean": "Ly sạch {count}",
+  "production.freshness": "Giữ tươi {count}",
+  "production.busy": "Đang nấu {count}",
+  "production.batchProgress": "Tiến độ mẻ {n} ly",
+  "production.capacity": "Chứa {n} ly",
+  "production.batch": "{n} ly/mẻ · {seconds}s",
+  "production.stockCap": "Kho {n}/món",
+  "production.kitchenSlots": "{n} bếp cùng lúc",
+  "production.next": "→ Cấp {n}",
+  "production.status": "Tình trạng thiết bị",
+  "production.running": "Đang làm {n} ly · còn {seconds}s",
+  "production.idle": "Sẵn sàng · Tự làm mẻ kế tiếp",
+  "production.noStock": "Hết bia trong kho · Nhập thêm để rót",
+  "production.washQueue": "Chờ rửa {n} · Tối đa {capacity} ly/mẻ",
+  "production.reserveHint": "Lấy bia ra mâm là bom tự rót bù. Bia bắt đầu mất hơi khi lên mâm.",
+  "production.legacy": "Rót theo mẻ sẽ áp dụng từ ca kế tiếp."
 }

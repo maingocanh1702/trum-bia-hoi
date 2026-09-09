@@ -7,6 +7,7 @@ import { attendanceDay, attendanceRewardQuote, applyQuestEvent, planDailyQuests,
 import { flyerQuote } from './flyer';
 import { planRushes, summarizeRush } from './rush';
 import { menuReport } from './menu';
+import { beerStatus } from './production';
 import type { Command, Customer, Envelope, Group, Item, LoggedCommand, Order, Result, RulesVersion, Stats, Table, World } from './types';
 
 const RUSH_CLOCK_RULES: RulesVersion = 5; // config-exempt: fixed replay protocol revision
@@ -22,6 +23,7 @@ const MENU_RULES: RulesVersion = 14; // config-exempt: fixed replay protocol rev
 const CONFIG_PIN_RULES: RulesVersion = 15; // config-exempt: fixed replay protocol revision
 const MENU_PAUSE_RULES: RulesVersion = 16; // config-exempt: fixed replay protocol revision
 const LIVE_UPGRADE_RULES: RulesVersion = 17; // config-exempt: fixed replay protocol revision for owner live-upgrade policy
+const BATCH_RULES: RulesVersion = 18; // config-exempt: fixed replay protocol revision for stocked beer and wash batches
 const emptyStats = (): Stats => ({ arrived: 0, served: 0, lost: 0, rejected: 0, orders: 0, payment: 0, tip: 0, credited: 0, penalty: 0, spent: 0, rep: 0, wellRestedBonus: 0 });
 
 /** No wall clock, IO or renderer: only config, seed, explicit time and commands. */
@@ -109,6 +111,7 @@ export class Game {
       }
     }
     for (const g of w.glasses) if (g.state === 'washing' && g.readyAt !== null) times.push(g.readyAt);
+    if (w.beer?.batch) times.push(w.beer.batch.readyAt);
     return Math.min(...times.filter(t => t > w.now));
   }
   advance(now: number): void {
@@ -134,7 +137,11 @@ export class Game {
         }
       }
       for (const group of w.queue) group.arrivedAt += elapsed;
-      for (const glass of w.glasses) if (glass.readyAt !== null) glass.readyAt += elapsed;
+      for (const glass of w.glasses) {
+        if (glass.readyAt !== null) glass.readyAt += elapsed;
+        if (glass.startedAt !== undefined) glass.startedAt += elapsed;
+      }
+      if (w.beer?.batch) { w.beer.batch.startedAt += elapsed; w.beer.batch.readyAt += elapsed; }
       if (w.lastServedAt !== null) w.lastServedAt += elapsed;
       if (w.nextDeliveryAt !== null) w.nextDeliveryAt += elapsed;
       if (w.delivery) { w.delivery.placedAt += elapsed; w.delivery.expiresAt += elapsed; }
@@ -228,8 +235,14 @@ export class Game {
     for (const g of w.glasses) {
       if (g.state === 'washing' && g.readyAt !== null && w.now >= g.readyAt) {
         g.state = 'clean'; g.readyAt = null; g.itemId = null; g.staleEmitted = false;
+        delete g.startedAt;
         this.emit('glass_washed', { glassId: g.id });
       }
+    }
+    if (w.beer?.batch && w.now >= w.beer.batch.readyAt) {
+      const quantity = w.beer.batch.quantity;
+      w.beer.ready += quantity; w.beer.batch = null;
+      this.emit('beer_batch_ready', { quantity, available: w.beer.ready });
     }
     for (const item of this.items()) {
       if (item.state === 'preparing' && item.readyAt !== null && w.now >= item.readyAt) {
@@ -453,18 +466,19 @@ export class Game {
   }
   private prepare(): void {
     const w = this.world, c = this.config.values;
+    const batches = this.rulesVersion >= BATCH_RULES && c.upgrades.keg.refillEnabled;
     const items = w.tables.filter(t => t.order && ['pending', 'grace'].includes(t.order.state)).flatMap(t => t.order!.items);
     let pouring = items.filter(i => i.state === 'preparing' && i.dish === 'bia').length;
     let cooking = items.filter(i => i.state === 'preparing' && c.menu[i.dish].station === 'kitchen').length;
     for (const item of items) {
-      if (item.state !== 'pending' || w.inventory[item.dish] <= 0 || !dishUnlocked(w, this.config, item.dish)) continue;
+      if (item.state !== 'pending' || (batches && item.dish === 'bia' ? w.beer?.ready ?? 0 : w.inventory[item.dish]) <= 0 || !dishUnlocked(w, this.config, item.dish)) continue;
       const menu = c.menu[item.dish];
       let duration = menu.prepMs;
       if (menu.needsGlass) {
-        if (pouring >= c.upgrades.keg.pourSlots[w.equipment.keg - 1]) continue;
+        if (!batches && pouring >= c.upgrades.keg.pourSlots[w.equipment.keg - 1]) continue;
         const glass = w.glasses.find(g => g.state === 'clean');
         if (!glass) continue;
-        duration = c.upgrades.keg.pourMs[w.equipment.keg - 1];
+        duration = batches ? 0 : c.upgrades.keg.pourMs[w.equipment.keg - 1];
         glass.state = 'in_use'; glass.itemId = item.id; glass.readyAt = w.now + duration; glass.staleEmitted = false;
         item.glassId = glass.id; pouring++;
       } else if (menu.station === 'kitchen') {
@@ -473,8 +487,11 @@ export class Game {
         if (mult === null) continue;
         duration = Math.round(duration * mult); cooking++;
       }
-      w.inventory[item.dish]--; item.state = duration > 0 ? 'preparing' : 'ready'; item.readyAt = w.now + duration;
+      if (batches && item.dish === 'bia') w.beer!.ready--;
+      else w.inventory[item.dish]--;
+      item.state = duration > 0 ? 'preparing' : 'ready'; item.readyAt = w.now + duration;
       this.emit(menu.needsGlass ? 'beer_pouring' : 'dish_preparing', { itemId: item.id, dish: item.dish });
+      if (batches && item.dish === 'bia') this.emit('beer_poured', { itemId: item.id, fromReserve: true });
       if (this.rulesVersion >= MENU_RULES && menu.station === 'kitchen') {
         this.emit('kitchen_job_started', { shiftId: w.shift!.id, itemId: item.id, dish: item.dish, prepMs: duration, readyAt: item.readyAt });
         if (item.state === 'ready') this.emit('kitchen_job_ready', { shiftId: w.shift!.id, itemId: item.id, dish: item.dish });
@@ -483,17 +500,31 @@ export class Game {
     for (const t of w.tables) if (t.order && ['pending', 'grace'].includes(t.order.state) && !t.order.readyEmitted && t.order.items.every(i => i.state === 'ready')) {
       t.order.readyEmitted = true; this.emit('order_ready', { tableId: t.id, orderId: t.order.id });
     }
+    if (batches && (w.phase === 'open' || w.phase === 'closing' && items.some(i => i.state === 'pending'))) {
+      w.beer ??= { ready: 0, batch: null };
+      if (!w.beer.batch) {
+        const status = beerStatus(w, this.config);
+        const quantity = Math.min(status.batchSize, Math.max(0, status.capacity - status.stored), w.inventory.bia);
+        if (quantity > 0) {
+          w.inventory.bia -= quantity;
+          w.beer.batch = { quantity, startedAt: w.now, readyAt: w.now + status.durationMs };
+          this.emit('beer_batch_started', { quantity, readyAt: w.beer.batch.readyAt, stock: w.inventory.bia });
+        }
+      }
+    }
   }
   private wash(): void {
     const w = this.world, c = this.config.values;
+    if (this.rulesVersion >= BATCH_RULES && w.glasses.some(g => g.state === 'washing')) return;
     let slots = c.upgrades.washer.slots[w.equipment.washer - 1] - w.glasses.filter(g => g.state === 'washing').length;
     for (const glass of w.glasses) if (slots > 0 && glass.state === 'dirty') {
       glass.state = 'washing'; glass.readyAt = w.now + c.upgrades.washer.washMs[w.equipment.washer - 1]; slots--;
+      if (this.rulesVersion >= BATCH_RULES) glass.startedAt = w.now;
       this.emit('glass_washing', { glassId: glass.id });
     }
   }
   /** Opening config is supplied by a trusted registry adapter, never by a player command payload. */
-  command(envelope: Envelope, openingConfig?: Config): Result { return this.applyCommand(envelope, LIVE_UPGRADE_RULES, openingConfig); }
+  command(envelope: Envelope, openingConfig?: Config): Result { return this.applyCommand(envelope, BATCH_RULES, openingConfig); }
   /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
   replay(entry: LoggedCommand, config = this.config): Result {
     if (entry.command.type === 'activity' && entry.command.paused !== undefined && entry.rulesVersion < MENU_PAUSE_RULES) throw Error('replay:rulesVersion');

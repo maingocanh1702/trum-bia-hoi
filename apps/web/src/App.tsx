@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { BUSINESS_UNLOCKS, menuReport, kitchenStatus, flyerQuote, SIGN_STYLES, signboardQuote, DISHES, EQUIPMENT, currentGuests, deliveryQuote, dogUpgradeQuote, encodeSave, freshnessMs, kickAllQuote, lifePathStatus, restockQuote, rushStatus, stockCap, unlockQuote, upgradeQuote, wellRestedRemaining, type Command, type Equipment, type Order, type RequirementStatus, type Table } from '../../../packages/engine/src';
+import { BUSINESS_UNLOCKS, menuReport, beerStatus, washerStatus, kitchenStatus, flyerQuote, SIGN_STYLES, signboardQuote, DISHES, EQUIPMENT, currentGuests, deliveryQuote, dogUpgradeQuote, encodeSave, freshnessMs, kickAllQuote, lifePathStatus, restockQuote, rushStatus, stockCap, unlockQuote, upgradeQuote, wellRestedRemaining, type Command, type Equipment, type Order, type RequirementStatus, type Table } from '../../../packages/engine/src';
 import { Sprite, TableSeats, menuAsset, reactions } from './assets';
 import { translate } from './i18n';
 import { advanceGuide, boot, dispatch, download, persist, readSettings, writeSettings, replaceSave } from './local';
@@ -171,6 +171,7 @@ export function App() {
   const rush = rushStatus(w, game.config);
   const rushReports = sheet === 'book' ? w.events.filter(e => e.type === 'rush_ended' && e.data.shiftId === shift?.id) : [];
   const kitchen = kitchenStatus(w, game.config);
+  const beer = beerStatus(w, game.config), washer = washerStatus(w, game.config);
   const flyers = flyerQuote(w, game.config);
   const flyerReport = sheet === 'flyer' ? w.events.filter(e => e.type === 'flyer_ended').at(-1) : undefined;
   const dogQuote = dogUpgradeQuote(w, game.config);
@@ -210,8 +211,12 @@ export function App() {
     </section>;
   }
   function equipmentButton(kind: Equipment) {
+    const production = kind === 'keg' ? beer : kind === 'washer' ? washer : null;
+    const cold = c.upgrades.cooler.freshnessMs[w.equipment.cooler - 1];
+    const count = kind === 'keg' ? `${beer.stored}/${beer.capacity}` : kind === 'washer' ? `${washer.clean}/${washer.capacity}` : kind === 'kitchen' ? `${kitchen.busy}/${kitchen.slots}` : cold === null ? '∞' : `${cold / 1000}s`;
     return <button className={`equipment-object ${kind} ${kind === 'kitchen' && kitchen.busy ? 'is-cooking' : ''}`} key={kind} onClick={() => { setSelectedTable(null); setSelectedEquipment(kind); }} aria-label={t(`equipment.${kind}`)}>
-      <Sprite id={`${kind}-lv${Math.max(1, w.equipment[kind])}`} /><span>{t(`equipment.${kind}`)}</span><b>{kind === 'kitchen' ? `${kitchen.busy}/${kitchen.slots}` : t('level', { n: w.equipment[kind] })}</b>
+      <Sprite id={`${kind}-lv${Math.max(1, w.equipment[kind])}`} /><span>{t(`equipment.${kind}`)}</span><b className="capacity-badge" aria-label={t(`production.${kind === 'washer' ? 'clean' : kind === 'keg' ? 'ready' : kind === 'cooler' ? 'freshness' : 'busy'}`, { count })}>{count}</b>
+      {production && production.busy > 0 && <progress className="equipment-progress" aria-label={t('production.batchProgress', { n: production.busy })} value={production.progress} max={1} />}
     </button>;
   }
   const levelName = (level: number) => t(`lifePath.${c.lifePath[level].id}`);
@@ -230,7 +235,15 @@ export function App() {
   }
   function upgradeCard(kind: Equipment) {
     const q = upgradeQuote(w, game.config, kind);
-    return <div className="upgrade-card" key={kind}><Sprite id={`${kind}-lv${Math.max(1, w.equipment[kind])}`} /><h3>{t(`equipment.${kind}`)}</h3><p>{t('level', { n: w.equipment[kind] })} {q.cost !== null ? `→ ${q.next}` : ''}</p><button disabled={!q.ok} onClick={() => run({ type: 'upgrade', kind })}>{q.cost === null ? t('upgrade.max') : t('upgrade.buy', { cost: num(q.cost) })}</button>{q.reason && q.cost !== null && <p role="status">{t(`error.${q.reason}`)}</p>}</div>;
+    const metrics = (level: number) => {
+      const i = level - 1;
+      if (kind === 'keg') return <><p>{t('production.capacity', { n: c.upgrades.keg.refillEnabled ? c.upgrades.keg.kegStorage[i] : c.upgrades.keg.pourSlots[i] })}</p><p>{t('production.batch', { n: c.upgrades.keg.refillEnabled ? c.upgrades.keg.kegBatch[i] : c.upgrades.keg.pourSlots[i], seconds: (c.upgrades.keg.refillEnabled ? c.upgrades.keg.refillMs[i] : c.upgrades.keg.pourMs[i]) / 1000 })}</p></>;
+      if (kind === 'washer') return <p>{t('production.batch', { n: c.upgrades.washer.slots[i], seconds: c.upgrades.washer.washMs[i] / 1000 })}</p>;
+      if (kind === 'cooler') return <p>{t('production.freshness', { count: c.upgrades.cooler.freshnessMs[i] === null ? '∞' : `${c.upgrades.cooler.freshnessMs[i]! / 1000}s` })}</p>;
+      if (kind === 'stall') return <p>{t('production.stockCap', { n: c.upgrades.stall.stockCap[i] })}</p>;
+      return <p>{t('production.kitchenSlots', { n: c.upgrades.kitchen.slots[level] })}</p>;
+    };
+    return <div className="upgrade-card" key={kind}><h3>{t(`equipment.${kind}`)}</h3><div className="equipment-comparison">{[w.equipment[kind], ...(q.cost !== null ? [q.next] : [])].map((level, i) => <section key={i}><Sprite id={`${kind}-lv${Math.max(1, level)}`} /><strong>{t(i ? 'production.next' : 'level', { n: level })}</strong>{metrics(level)}</section>)}</div><button disabled={!q.ok} onClick={() => run({ type: 'upgrade', kind })}>{q.cost === null ? t('upgrade.max') : t('upgrade.buy', { cost: num(q.cost) })}</button>{q.reason && q.cost !== null && <p role="status">{t(`error.${q.reason}`)}</p>}</div>;
   }
 
   return <div className="game-shell" data-frame={frame}>
@@ -256,7 +269,7 @@ export function App() {
         {w.queue.length > 0 && <span className="queue-badge">{t('queue', { n: w.queue.length })}</span>}
         {!inShift && !shift && <div className="opening-note"><h2>{t('rest.title')}</h2><p>{t('rest.copy')}</p><button className="primary" onClick={() => run({ type: 'startShift' })}><Icon name="bolt" />{t('nav.shift')}</button><small>{t('rest.free')}</small></div>}
       </section>
-      <div className="stock-strip">{DISHES.filter(d => c.menu[d].unlock.kitchenLevel <= w.equipment.kitchen).map(d => <button key={d} onClick={() => open('stock')} aria-label={`${t(`dish.${d}`)}: ${w.inventory[d]}`}><Sprite id={menuAsset[d]} /><strong>{w.inventory[d]}</strong></button>)}<button className={`flyer-stock ${flyers.remainingMs > 0 ? 'active' : ''}`} onClick={() => open('flyer')} aria-label={t('flyer.open', { n: flyers.stock })}><Sprite id="flyer-bundle" /><strong>{flyers.remainingMs > 0 ? time(flyers.remainingMs) : flyers.stock}</strong></button>{questsRevealed && <button className="quest-trigger" onClick={() => open('quests')} aria-label={t('quests.title')}><Icon name="book" /><strong>{w.daily?.rows.filter(r => r.progress >= r.target).length ?? 0}/{c.quests.daily.count}</strong></button>}<button className="reputation" onClick={() => open('journey')}><Icon name="star" />{num(w.reputation)}</button></div>
+      <div className="stock-strip">{DISHES.filter(d => c.menu[d].unlock.kitchenLevel <= w.equipment.kitchen).map(d => <button key={d} onClick={() => open('stock')} aria-label={`${t(`dish.${d}`)}: ${w.inventory[d]}/${stockCap(w, game.config)}`}><Sprite id={menuAsset[d]} /><strong>{w.inventory[d]}<small>/{stockCap(w, game.config)}</small></strong></button>)}<button className={`flyer-stock ${flyers.remainingMs > 0 ? 'active' : ''}`} onClick={() => open('flyer')} aria-label={t('flyer.open', { n: flyers.stock })}><Sprite id="flyer-bundle" /><strong>{flyers.remainingMs > 0 ? time(flyers.remainingMs) : flyers.stock}</strong></button>{questsRevealed && <button className="quest-trigger" onClick={() => open('quests')} aria-label={t('quests.title')}><Icon name="book" /><strong>{w.daily?.rows.filter(r => r.progress >= r.target).length ?? 0}/{c.quests.daily.count}</strong></button>}<button className="reputation" onClick={() => open('journey')}><Icon name="star" />{num(w.reputation)}</button></div>
       {w.phase === 'closing' && <p className="status-line">{t('closing')}</p>}
       {!inShift && shift && <div className="status-line rest-summary"><span>{w.staminaMs < c.shift.durationMs ? t('rest.regen') : t('rest.free')}</span><button onClick={() => open('book')}><Icon name="book" />{t('nav.book')}</button></div>}
       {showGuide && <div className="guide" role="status"><span className="guide-mark">!</span><p>{t(guide.copyKey)}</p>{c.onboarding.stepGuide.skippable && <button onClick={() => setPrefs({ guideDone: true, guideIndex: null })}>{t('skip')}</button>}</div>}
@@ -338,7 +351,7 @@ export function App() {
       {sheet === 'settings' && <div className="settings-list"><label>{t('settings.language')}<select value={locale} onChange={e => setPrefs({ locale: e.target.value as 'vi' | 'en' })}><option value="vi">Tiếng Việt</option><option value="en">English</option></select></label><button className="setting-row" onClick={() => setPrefs({ muted: !settings.muted })}><span>{t('settings.sound')}</span><b>{t(settings.muted ? 'settings.soundOff' : 'settings.soundOn')}</b></button><p>{t('settings.saved')}</p><button onClick={() => download(encodeSave(game), 'tbh-backup.json')}>{t('settings.export')}</button><button onClick={() => { setPrefs({ guideDone: false, guideIndex: 0 }); setSheet(null); }}>{t('settings.guide')}</button><button onClick={() => open('config')}>{t('settings.config')}</button></div>}
       {sheet === 'config' && <><p>{t('config.pinned', { version: game.config.version })}</p><pre className="config-json">{JSON.stringify(game.config.raw, null, 2)}</pre></>}
     </SheetDialog>}
-    {selectedEquipment && <SheetDialog pausedLabel={t('pause.menu')} title={t(`equipment.${selectedEquipment}`)} close={() => setSelectedEquipment(null)}><div className="equipment-detail">{selectedEquipment === 'kitchen' && <Kitchen status={kitchen} t={t} onTable={tableId => { setSelectedEquipment(null); const button = document.querySelector<HTMLButtonElement>(`[data-table-id="${CSS.escape(tableId)}"] .table-object`); if (button) showTable(tableId, button); }} onStock={() => { setSelectedEquipment(null); open('stock'); }} />}{upgradeCard(selectedEquipment)}</div></SheetDialog>}
+    {selectedEquipment && <SheetDialog pausedLabel={t('pause.menu')} title={t(`equipment.${selectedEquipment}`)} close={() => setSelectedEquipment(null)}><div className="equipment-detail">{(selectedEquipment === 'keg' || selectedEquipment === 'washer') && <section className="production-detail" aria-label={t('production.status')}><strong>{t(selectedEquipment === 'keg' ? 'production.ready' : 'production.clean', { count: selectedEquipment === 'keg' ? `${beer.stored}/${beer.capacity}` : `${washer.clean}/${washer.capacity}` })}</strong>{(() => { const p = selectedEquipment === 'keg' ? beer : washer; return p.busy ? <><p>{t('production.running', { n: p.busy, seconds: Math.ceil(p.remainingMs / 1000) })}</p><progress value={p.progress} max={1} aria-label={t('production.batchProgress', { n: p.busy })} /></> : <p>{t(selectedEquipment === 'keg' && !w.inventory.bia && beer.stored < beer.capacity ? 'production.noStock' : 'production.idle')}</p>; })()}{selectedEquipment === 'washer' && <p>{t('production.washQueue', { n: washer.queued, capacity: washer.batchSize })}</p>}{selectedEquipment === 'keg' && <p>{t(beer.enabled ? 'production.reserveHint' : 'production.legacy')}</p>}</section>}{selectedEquipment === 'kitchen' && <Kitchen status={kitchen} t={t} onTable={tableId => { setSelectedEquipment(null); const button = document.querySelector<HTMLButtonElement>(`[data-table-id="${CSS.escape(tableId)}"] .table-object`); if (button) showTable(tableId, button); }} onStock={() => { setSelectedEquipment(null); open('stock'); }} />}{upgradeCard(selectedEquipment)}</div></SheetDialog>}
     {selectedTable && (() => {
       const table = w.tables.find(x => x.id === selectedTable)!; const o = table.order;
       const active = o && ['pending', 'grace'].includes(o.state);

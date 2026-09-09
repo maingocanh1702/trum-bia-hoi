@@ -276,6 +276,18 @@
 .equipment-object.kitchen { left: calc(50% - 32px); top: 200px; transform: none; min-height: 48px; height: 48px; }
 .equipment-object.kitchen > .sprite { width: 58px; height: 45px; }
 .equipment-object.kitchen b { bottom: -2px; }
+.equipment-object .capacity-badge { min-width: 34px; right: 3px; font-size: 11px; font-weight: 850; padding: 3px 6px; box-shadow: 0 2px 3px #12372d35; }
+.equipment-progress { position: absolute; width: 43px; height: 5px; bottom: -18px; left: 10px; accent-color: #efb82d; }
+.stock-strip strong small { font-size: 8px; color: #d3e1d7; font-weight: 650; }
+.equipment-detail { max-width: 360px; }
+.equipment-comparison { display: flex; width: 100%; gap: 8px; justify-content: center; }
+.equipment-comparison > section { flex: 1; min-width: 0; }
+.equipment-comparison strong { display: block; color: var(--cream); font-size: 12px; margin-bottom: 6px; }
+.equipment-comparison p { font-size: 11px; line-height: 1.6; }
+.production-detail { padding: 4px 8px 20px; text-align: left; }
+.production-detail > strong { color: #ffd34e; font-size: 18px; }
+.production-detail p { color: var(--creamMuted); font-size: 12px; line-height: 1.5; margin-top: 7px; }
+.production-detail progress { width: 100%; height: 8px; margin-top: 10px; accent-color: #efb82d; }
 .equipment-detail:has(.kitchen-panel) { max-width: 480px; text-align: left; }
 .equipment-detail:has(.kitchen-panel) > .upgrade-card { max-width: 220px; margin: 0 auto; text-align: center; }
 .kitchen-panel { border-bottom: 1px solid var(--panelBorder); padding-bottom: 20px; margin-bottom: 20px; }

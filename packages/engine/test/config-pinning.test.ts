@@ -20,9 +20,10 @@ test('a published candidate cannot reprice a running shift; the next opening pre
   const pin = g.world.events.find(e => e.type === 'config_pinned')!;
   assert.deepEqual(pin.data, { shiftId: g.world.shift!.id, previousVersion: a.version, configVersion: b.version });
   servePin(g); assert.equal(g.world.serves.at(-1)!.payment, b.values.menu.bia.price);
-  const pour = g.world.events.find(e => e.type === 'beer_pouring' && e.configVersion === b.version)!;
-  const ready = g.world.events.find(e => e.type === 'beer_poured' && e.data.itemId === pour.data.itemId)!;
-  assert.equal(ready.at - pour.at, b.values.upgrades.keg.pourMs[g.world.equipment.keg - 1]);
+  const pour = g.world.events.find(e => e.type === 'beer_batch_started' && e.configVersion === b.version)!;
+  g.advance(Number(pour.data.readyAt));
+  const ready = g.world.events.find(e => e.type === 'beer_batch_ready' && e.at === pour.data.readyAt)!;
+  assert.equal(ready.at - pour.at, b.values.upgrades.keg.refillMs[g.world.equipment.keg - 1]);
   assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
 });
 
@@ -93,7 +94,7 @@ test('single-config saves stay v2; multi-config saves reject missing, duplicated
 test('a genuine rules13 service history survives current adoption and a new pinned shift without rewriting its recorded prefix', () => {
   const g = decodeSave(readFileSync(new URL('./fixtures/legacy-kitchen-served-v13.json', import.meta.url), 'utf8'));
   const prefix = structuredClone(g.world.events); sendKitchen(g, { type: 'activity', active: true });
-  restPin(g); assert.ok(g.command(open(g), nextPin()).ok); assert.equal(g.log.at(-1)!.rulesVersion, 17);
+  restPin(g); assert.ok(g.command(open(g), nextPin()).ok); assert.equal(g.log.at(-1)!.rulesVersion, 18);
   assert.deepEqual(g.world.events.slice(0, prefix.length), prefix); assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
 });
 

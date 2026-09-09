@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-09 12:57 · **Branch hiện tại:** `codex/game-build-isolated`
+> **Cập nhật:** 2026-09-09 13:15 · **Branch hiện tại:** `codex/game-build-isolated`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -182,7 +182,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S 🔒B
 - **Phase:** Phase 1
-- **Notes:** Bom/rửa/hầm/quầy/bếp + mua/nâng bàn có command/UI; phone/QR quote/gate/command/UI + boa qua review không còn findings tại598f66f; Biển rules9 lắp/đổi5 kiểu, gate uy tín, customer mix/Neon +5 sprite draft;95 unit/37 E2E xanh, full-diff review bdbb493..9239007 không còn findings sau3 sửa lỗi biên. Tờ rơi rules11 có mua bằng uy tín, LP2, kho/timer/báo cáo/UI VI-EN;108 unit/40 E2E +30 k rows qua; full-diff review360453e..d5be3e0 không có lỗi actionable, nghi vấn nhân k đã bị bác bằng thực thi. Free flyer daily5/5 đã được producer claimDailyBonus + quests.test xác nhận; cốc mua và full F10 tiếp tục. Owner rules17: nâng cấp asset trong ca, giữ pause đến khi đóng menu; save v16 replay + mobile purchase đã qua config/build/166 unit/69 E2E và native review3ff21df không còn findings. Owner tiếp tục yêu cầu rót sẵn/rửa theo mẻ + capacity HUD.
+- **Notes:** Bom/rửa/hầm/quầy/bếp + mua/nâng bàn có command/UI; phone/QR quote/gate/command/UI + boa qua review không còn findings tại598f66f; Biển rules9 lắp/đổi5 kiểu, gate uy tín, customer mix/Neon +5 sprite draft;95 unit/37 E2E xanh, full-diff review bdbb493..9239007 không còn findings sau3 sửa lỗi biên. Tờ rơi rules11 có mua bằng uy tín, LP2, kho/timer/báo cáo/UI VI-EN;108 unit/40 E2E +30 k rows qua; full-diff review360453e..d5be3e0 không có lỗi actionable, nghi vấn nhân k đã bị bác bằng thực thi. Free flyer daily5/5 đã được producer claimDailyBonus + quests.test xác nhận; cốc mua và full F10 tiếp tục. Owner rules17: nâng cấp asset trong ca, giữ pause đến khi đóng menu; save v16 replay + mobile purchase đã qua config/build/166 unit/69 E2E và native review3ff21df không còn findings. Owner batch/HUD đã có rules18/config1.7.3,173 unit +2 mobile pass; full browser/sim/review đang chạy.
 
 ### F25 — Ngôn Ngữ / Tài Khoản — chọn vi/en, guest play, Google login (kể cả giữa ca)
 

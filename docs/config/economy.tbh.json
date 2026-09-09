@@ -1,7 +1,7 @@
 {
   "_meta": {
     "name": "Trùm Bia Hơi — economy config",
-    "version": "1.7.2",
+    "version": "1.7.3",
     "date": "2026-09-09",
     "spec": "08-SPEC-economy-constants.md (cùng số, cùng tên trường)",
     "rules": [
@@ -637,27 +637,27 @@
         1800
       ],
       "kegStorage": [
-        3,
+        5,
         5,
         8,
         18,
         40
       ],
       "kegBatch": [
-        1,
-        2,
-        3,
-        6,
-        12
+        5,
+        5,
+        8,
+        18,
+        40
       ],
       "refillMs": [
-        15000,
-        13000,
-        11000,
-        8000,
-        6000
+        3000,
+        2700,
+        2400,
+        2100,
+        1800
       ],
-      "refillEnabled": false,
+      "refillEnabled": true,
       "phase": 1
     },
     "washer": {

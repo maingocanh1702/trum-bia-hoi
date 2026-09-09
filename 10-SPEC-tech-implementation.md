@@ -408,3 +408,24 @@ same engine; no special transport-only upgrade rule exists.
 | Date | Change |
 |---|---|
 | 2026-09-09 rules17 | Allowed in-shift upgrades per owner; legacy gate retained only for exact old replay, current UI removes close-shift restriction and reports actual shortage. Added real v16 migration and mobile purchase/pause checks. |
+
+### Stocked production protocol18 — 2026-09-09
+
+`World.beer` owns ready servings and one `{quantity, startedAt, readyAt}` batch.
+`beerStatus` is the shared UI/engine capacity calculation. Raw stock is reserved at
+batch start; tray allocation consumes ready servings and one physical clean glass.
+Tray items are outside tank storage (large groups can assemble across batches).
+No second raw-stock debit at service. Existing pour events mark tray allocation;
+`beer_batch_started/ready` report actual production. `washerStatus` derives the
+clean/dirty/washing pool, with one washer load of up to configured slots.
+
+Rules18 + config refillEnabled gate stocked beer; existing disabled snapshots keep
+their production through the current shift. New config1.7.3 pins at successful
+startShift. Rules1–17 replay unchanged, including an actual pre-edit v17 save.
+Menu/hidden pause shifts batch start/end times; upgrade only affects subsequent
+loads. Ready beer and in-flight jobs survive closure/reload/config changes without
+inventory deletion; no new load when fully closed. A lower future cap blocks new
+production until existing reserve drains; a disabled future refill config retains
+reserve for re-enablement and uses legacy pouring in the interim.
+
+| 2026-09-09 protocol18 | Added stocked beer/load timing and shared live capacity read models; old config/replay preserved, no server/client protocol split. |

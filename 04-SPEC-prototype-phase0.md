@@ -169,3 +169,5 @@ In ra cuối mỗi ca: số lượt, DT_bia_mỗi_lượt, k suy ra, % lượt c
 | v0.2 | Thêm note rõ Phase 0 dùng **placeholder art** (không design/UIUX/icon thật); trỏ design sản xuất sang `05-SPEC-design-uiux.md` (Phase 1). |
 
 *Nguồn: `02-GDD-trum-bia-hoi.md` (v1.3), `economy-spec-from-bundle.md`, `03-SPEC-he-ban.md`, `scripts/measure_k.py`.*
+
+| 2026-09-09 measurement update | Current workspace headless sim uses at least1000 serves per seed/profile (the invariant still requires >=500). Owner batch production had one500-serve combined cohort at k3.0494; preserve that diagnostic and double ALL cohorts, with unchanged seed list, band, price/credit formulas and raw data. Do not treat a finite early-window excursion as hidden or delete its seed. |

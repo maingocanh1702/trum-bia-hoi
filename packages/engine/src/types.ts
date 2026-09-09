@@ -18,7 +18,7 @@ export interface Table {
 }
 export interface Glass {
   id: string; state: 'clean' | 'in_use' | 'dirty' | 'washing';
-  itemId: string | null; readyAt: number | null; staleEmitted: boolean;
+  itemId: string | null; readyAt: number | null; staleEmitted: boolean; startedAt?: number;
 }
 export interface ServeRecord {
   t: number; customerId: string; customerType: SeatedType; orderId: string; dishes: Dish[];
@@ -68,6 +68,7 @@ export interface World {
   dayEarned: Record<string, number>; dayShifts: Record<string, number>;
   inventory: Record<Dish, number>; equipment: Record<Equipment, number>; tables: Table[];
   glasses: Glass[]; queue: Group[]; shift: Shift | null; serves: ServeRecord[];
+  beer?: { ready: number; batch: { quantity: number; startedAt: number; readyAt: number } | null };
   events: DomainEvent[]; lostStreak: number;
   delivery: DeliveryOrder | null; nextDeliveryAt: number | null;
   dogLevel: number; claimedLifePaths: number[]; badgeShards: number; cosmeticTokens: number; peakLeague: string | null;
@@ -98,5 +99,5 @@ export type Command =
   | { type: 'emergencyPack' };
 export interface Envelope { idempotencyKey: string; at: number; command: Command }
 export interface Result { ok: boolean; reason?: string; outcome?: 'early' | 'late' | 'grace' | 'expired' | 'stale'; amount?: number }
-export type RulesVersion = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17; // config-exempt: persisted replay protocol revisions, not economy tuning
+export type RulesVersion = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18; // config-exempt: persisted replay protocol revisions, not economy tuning
 export interface LoggedCommand extends Envelope { result: Result; configVersion: string; rulesVersion: RulesVersion }

@@ -99,7 +99,7 @@ Cốc là **tài nguyên quay vòng định danh** (`reservedGlassId`) = lõi bo
 
 | Thiết bị (gốc → bia hơi) | Vai trò | Đường cong giá (×k) | Stats theo cấp |
 |---|---|---|---|
-| Ấm tích → **Bom bia + vòi rót** | rót bia (batch + tốc độ) | 0/3k/12k/50k/200k → ×2.5 | rót 1→nhiều vòi; brew 15s→6s |
+| Ấm tích → **Bom bia + vòi rót** | rót bia (batch + tốc độ) | 0/3k/12k/50k/200k → ×2.5 | rót sẵn5→40 suất/mẻ; 3s→1.8s (08§8.1) |
 | Bộ rửa ly → **Bồn rửa cốc** | vòng đời cốc clean→dùng→bẩn→rửa | 0/2.5k/10k/40k/150k → ×2.5 | wash 7s→1.5s, slot 1→5 |
 | Thùng đá → **Hầm/tủ giữ lạnh** | giữ bia lạnh, chống mất hơi | 0/2k/8k/30k/100k → ×2.5 | freshness 12s→∞ (xem §6) |
 | Quầy → **Quầy/kho** | sức chứa kho (bia, nguyên liệu mồi) | 0/1k/5k/20k/80k → ×2.5 | cap 15→150 |
@@ -154,7 +154,7 @@ type Customer = {               // giữ field gốc
 
 Đồng hồ áp lực thứ 2, gắn **trực tiếp vào món lõi** (khác đá tan vốn chỉ ảnh hưởng kho).
 
-**Tầng 1 — Cốc đã rót (chính):** mỗi cốc rót xong có `beerFreshnessMs`. Quá hạn → bia hết hơi. Buộc **rót đúng nhịp, không tích trữ cốc**.
+**Tầng 1 — Bia đã lên mâm (owner batch update 2026-09-09):** bom giữ bia rót sẵn theo sức chứa/mẻ ở08§8.1. Khi lấy ra mâm bằng một ly sạch, bắt đầu `beerFreshnessMs`; quá hạn trước khi giao thì mất hơi. Bia dự trữ trong bom chưa tính freshness theo mặc định đang áp dụng; người chơi cần bưng mâm đúng nhịp.
 - 🟡 **Hậu quả — MVP (mềm, dễ test):** phục vụ cốc hết hơi → **tip ×0 + giảm uy tín nhẹ (−1)**, **VẪN thu payment** (khách "uống tạm"). Tránh quá gắt khi chưa cân bằng.
 - 🔵 **Hậu quả — làm sau cùng, bật bằng config `freshness.staleConsequence` (gắt hơn, nếu cần độ khó):** có thể nâng thành khách từ chối/đổ bỏ cốc (mất payment) — **chỉ bật sau khi economy ổn**.
 - Hai hướng này ảnh hưởng economy rất khác nhau → MVP chọn hướng mềm, đo rồi mới quyết.
@@ -452,3 +452,5 @@ Mục tiêu: chứng minh **vòng lặp vận hành ca vui & economy cân**. KH�
 | v1.7 runtime Tỉnh Táo | Theo công thức 08-SPEC §9 và JSON: bonus = round((payment+tip) × mult) − (payment+tip), không nhân Tỉnh Táo riêng vào tip. Thời gian nghỉ bắt đầu khi đóng hẳn ca (tài khoản mới: createdAt), tính cả offline; hiệu lực dùng thời gian chơi đang hoạt động. Ngày dùng = ngày mở ca; tiền vẫn per-earn, số ca vẫn finalize-day. |
 
 | 2026-09-09 (daily rules12) | §16 sửa điều kiện bonus từ3 lõi thành đủ5 theo `quests.daily.bonusAll5` và08§14; không đổi số JSON. Contract tiến độ/claim/local replay tạiF17§10. |
+
+| 2026-09-09 batch update | Theo owner: rót bia dự trữ/rửa theo mẻ, capacity UI, nguyên liệu cập nhật ngay. Quy tắc và số ở08§8.1; tách suất trong bom khỏi pool ly; mặc định rót bù chỗ trống/freshness từ mâm đã được thông báo, câu hỏi tùy chọn còn mở. |

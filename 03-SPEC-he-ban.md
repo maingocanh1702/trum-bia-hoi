@@ -188,7 +188,7 @@ Chi tiết:
 - **Chủ động mời về đóng ca (runtime rules v4):** UI hiện tổng phí trước khi xác nhận; ca vẫn chạy. Phí theo `08 §9` cho khách đang chờ/dùng món, không gọi lại nhánh khách bỏ đi: không trừ uy tín hoặc tăng `lost`. Phí ghi `spent`, không giảm `seasonEarned`/`lifetimeEarned`. Thiếu xu thì giữ khách để chờ dùng xong. Khách chưa có Order (queue/seating) có tập món đã gán rỗng nên phí 0; báo giá không tạo Order/RNG hoặc dùng nguyên liệu. Bàn `occupied` chỉ còn Chí Phèo; người đã rời không còn avatar và không tính phí. `empty/cleaning/broken` không tính lại. Đơn chưa phục vụ bị `cancelled`, món đã chuẩn bị bị waste, cốc trả rửa đúng một lần; finalize ca theo luồng hiện hành.
 - **Không đủ cốc sạch/bia cho cả Order:** không giao được Order đó → đồng hồ vẫn chạy → áp lực rửa cốc/rót. (Bottleneck cốc giữ nguyên vai trò gốc.)
 - **Khách Chí Phèo trong nhóm — quy tắc giữ bàn 🟢:** không trả tiền + giữ ghế lâu (patience ×5). Khi phần còn lại của nhóm sang `PAYING`/`CLEANING` mà Chí Phèo **vẫn ngồi** → **bàn KHÔNG về `EMPTY` ngay**. MVP chọn cách đơn giản: **giữ nguyên cả bàn ở trạng thái "bị chiếm" (occupied)** cho tới khi Chí Phèo tự rời (hết patience ×5) hoặc bị xử (tiễn bằng uy tín như "ngồi lỳ"); lúc đó mới `CLEANING → EMPTY`. → bàn không nhận nhóm mới khi còn Chí Phèo (đúng tinh thần "chiếm chỗ" gốc). (Tách Chí Phèo thành occupant 1-ghế để giải phóng ghế còn lại = 🔵 post-MVP.)
-- **Freshness vs Order:** mỗi cốc bia trong Order có timer riêng; nếu rót sớm rồi để quá hạn trước khi giao Order → cốc đó mất hơi (hậu quả MVP mềm: tip×0 + uy tín−1, vẫn thu payment).
+- **Freshness vs Order (batch update 2026-09-09):** bia lấy từ dự trữ bom ra mâm dùng một ly sạch, bắt đầu timer riêng tại thời điểm đó; nếu đưa lên mâm sớm rồi để quá hạn trước khi giao Order → cốc đó mất hơi (hậu quả MVP mềm: tip×0 + uy tín−1, vẫn thu payment).
 - **Xử lý món đã chuẩn bị khi Order fail/stale (MVP đơn giản) 🟢:** khi 1 Order `expired` (hoặc bị hủy do kết thúc buổi):
   - **Món đã `ready`/`preparing` của Order đó bị HỦY** (không tự chuyển sang khách khác).
   - **Cốc bia (đã rót) → `dirty`** vào hàng rửa (mất công rót + 1 vòng rửa = phần "phạt ngầm").
@@ -299,3 +299,5 @@ Các thao tác có chủ đích trong menu vẫn khả dụng theo điều kiệ
 và ngày Việt Nam theo lịch thật. Toast trừ tiền/uy tín vẫn chỉ là phản hồi số/icon.
 
 | v1.7 | 2026-09-09: owner chốt auto-pause menu và giữ Nhập hàng mở sau mua; dừng mọi gameplay clock đồng bộ, không đóng băng ngày lịch hoặc khóa thao tác menu. Thay thế chỉ dẫn cũ về menu live. |
+
+| 2026-09-09 batch production | Bom dự trữ tự rót theo08§8.1; lấy ra mâm giải phóng chỗ rót bù, mâm lớn có thể nhận nhiều mẻ. Ly tái sử dụng độc lập, freshness mặc định bắt đầu khi lên mâm; nguyên liệu trừ ở mẻ, không trừ lần hai khi giao. Giữ whole-table/expiry/waste/penalty. |

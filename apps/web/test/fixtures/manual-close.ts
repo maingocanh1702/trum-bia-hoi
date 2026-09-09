@@ -19,4 +19,4 @@ if (mode === 'occupied') {
   assert.equal(send({ type: 'serve', tableId: table.id, orderId: order.id }).ok, true);
   g.advance(table.until!); assert.equal(table.state, 'occupied');
 }
-process.stdout.write(JSON.stringify({ save: encodeSave(g), now: g.world.now, coins: g.world.coins, quote: kickAllQuote(g.world, g.config), guests: currentGuests(table).map(c => c.id) }));
+process.stdout.write(JSON.stringify({ save: encodeSave(g), now: g.world.now, expiresIn: order.placedAt + order.patienceMs + g.config.values.patience.graceMs - g.world.now, coins: g.world.coins, quote: kickAllQuote(g.world, g.config), guests: currentGuests(table).map(c => c.id) }));

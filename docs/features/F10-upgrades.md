@@ -203,3 +203,19 @@ regression fixture: old results remain exact, new commands work in that same shi
 | Date | Change |
 |---|---|
 | 2026-09-09 owner update | Allowed asset upgrades during an active shift; retained pause-until-close, prices, prerequisites, in-flight jobs and exact v16 replay. Removed close-shift UI lock and surfaced real insufficient-coin condition. Verification/review in progress. |
+
+## 13. Owner production/capacity update — 2026-09-09
+
+See08§8.1 for authoritative numbers and explicit interpretation. New upgrades show
+current and next storage, batch units/duration, clean glass pool, kitchen slots,
+per-dish warehouse capacity and cooler freshness. Cooler has no storage-cap field:
+show its real freshness duration instead of inventing a capacity. On-yard counters
+and progress bars use the same engine state as contextual panels. Blank higher
+keg/washer/cooler sprites temporarily reuse the nearest available lower-level art;
+level labels and stats remain accurate, distinct level art is still unfinished.
+
+A purchased upgrade immediately changes capacity/next-load speed while keeping the
+current batch's quantity/deadline. Menus remain paused until closed. Bia inventory
+means raw stock, shown separately from ready tank servings and reusable glasses.
+
+| 2026-09-09 batch/HUD | Implemented rules18/config1.7.3 stocked beer, washer loads and live capacity/progress + current/next comparison. Author173 tests/mobile pass; full browser/sim/review pending. |

@@ -221,6 +221,10 @@ function validate(c: Economy): void {
   for (const values of [c.upgrades.keg.pourMs, c.upgrades.keg.pourSlots, c.upgrades.washer.washMs, c.upgrades.washer.slots, c.upgrades.stall.stockCap]) {
     values.forEach(v => positive(v, 'equipment'));
   }
+  for (const values of [c.upgrades.keg.kegStorage, c.upgrades.keg.kegBatch, c.upgrades.keg.refillMs, c.upgrades.washer.slots, c.upgrades.washer.washMs]) {
+    values.forEach(v => whole(v, 'equipment.batch', 1));
+  }
+  if (c.upgrades.keg.kegBatch.some((n, i) => n > c.upgrades.keg.kegStorage[i])) throw Error('config:kegBatchCapacity');
   for (const d of DISHES) {
     positive(c.menu[d].price, `menu.${d}.price`);
     for (const k of ['price', 'unitCost', 'bulkCost'] as const) whole(c.menu[d][k], `menu.${d}.${k}`);

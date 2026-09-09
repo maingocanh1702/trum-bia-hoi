@@ -71,7 +71,7 @@ test('genuine v9 hot and humid histories keep their old cadence until a new inte
     assert.equal(w.shift!.nextSpawnAt - latestArrival(g).at, 10500 * Number(latestArrival(g).data.size));
     const pending = w.shift!.nextSpawnAt;
     assert.ok(send(g, { type: 'activity', active: true }).ok);
-    assert.equal(g.log.at(-1)!.rulesVersion, 17);
+    assert.equal(g.log.at(-1)!.rulesVersion, 18);
     assert.deepEqual(w, { ...historical, staminaAnchorAt: w.now, staminaAnchorMs: w.staminaMs, attendance: w.attendance, shift: { ...historical.shift!, menu: { eventStart: historical.events.length, serveStart: historical.serves.length, complete: false } }, nextId: historical.nextId + 2, events: [...historical.events, { id: `event-${historical.nextId + 1}`, type: 'menu_tracking_started', at: historical.now, configVersion: g.config.version, idempotencyKey: g.log.at(-1)!.idempotencyKey, data: { shiftId: historical.shift!.id, complete: false } }, w.events.at(-1)!] }); assert.equal(w.events.at(-1)!.type, 'attendance_day_opened');
     assert.equal(w.shift!.nextSpawnAt, pending);
     g.advance(pending);

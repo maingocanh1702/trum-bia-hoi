@@ -55,7 +55,7 @@ test('first guest gets one customer and one beer, with auto pour, a single serve
 });
 test('late service keeps payment, loses tip, and does not fine the group', () => {
   const g = create(); const { command } = firstOrder(g);
-  assert.deepEqual(send(g, command, 20000), { ok: true, outcome: 'late', amount: 50 });
+  assert.deepEqual(send(g, command, 19000), { ok: true, outcome: 'late', amount: 50 });
   assert.equal(g.world.shift!.stats.penalty, 0);
 });
 test('grace rescues the whole table; exact grace end expires and charges only once', () => {
@@ -186,7 +186,7 @@ test('v1 save migrates without changing prior fines, identifiers or an in-progre
   assert.ok(data.events.every((e: { idempotencyKey: string; configVersion: string }) => e.idempotencyKey && e.configVersion === g.config.version));
   assert.deepEqual(decodeSave(migrated).world, g.world);
   assert.equal(send(g, { type: 'activity', active: true }).ok, true);
-  assert.equal(g.log.at(-1)!.rulesVersion, 17);
+  assert.equal(g.log.at(-1)!.rulesVersion, 18);
   assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
   data.events[0].configVersion = 'tampered';
   assert.throws(() => decodeSave(JSON.stringify(data)), /event-mismatch/);

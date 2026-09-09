@@ -1481,3 +1481,48 @@ order/time/money assertions; both repeat checks pass. Full browser rerun passed 
 | Date | Change |
 |---|---|
 | 2026-09-09 | Recorded native review completion and deterministic browser clock fix; owner batch-pouring request is the next bounded change, full game remains active. |
+
+## 2026-09-09 — Stocked beer and wash batches (rules18)
+
+Owner asked for proactive5-serving Lv1 production, immediate refill, realtime stock
+and capacities on devices. Uses existing config storage/batch/duration keys with
+JSON1.7.3. Defaults communicated while optional questions remain open: top up vacant
+space and start freshness on the tray. Tank servings are separate from reusable
+physical glasses. A tray withdraws reserve and frees refill space immediately;
+otherwise a group larger than tank capacity would deadlock. This interpretation
+keeps whole-table service and prepares the next beer without waiting for a new guest.
+
+One current load per machine; raw stock reserved once at start, partial loads when
+short on ingredients/dirty glasses. Existing jobs keep their deadlines through
+upgrade and pause/reload. Legacy disabled config stays through current shift and
+adopts batches on next config pin; actual pre-edit v17 fixture proves replay.
+HUD shows tank ready/capacity, clean/total glasses, raw-stock/per-dish cap, cooking
+slots and cooler freshness. Contextual panels compare real current/next stats.
+Temporarily reuse available lower-level equipment sprites instead of blank blocks.
+
+Config/build and173 engine/server tests passed; two mobile batch/upgrade/pause
+cases pass. Full browser, economy/rush simulations and review still pending.
+The existing hidden/offline harness now freezes its fake clock before navigation.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Added proactive beer/washer production and capacity UI; full game remains active, batch verification in progress. |
+
+### Batch verification progress
+
+All173 engine/server and71 browser checks passed, plus15 controlled rush rows.
+The two prior browser failures were obsolete preparation/expiry timing assumptions:
+first-tray beer is already ready at arrival; close/expiry now uses the actual Order
+remaining time. No production rule was weakened to satisfy those assertions.
+
+The initial500-serve normal cohorts passed; one combined rested/QR/shipper cohort
+(seed20260611,cold menu) had k3.0494. Keep .qa/batch-combined.txt as failed evidence.
+Measurement now uses1000 for every seed/profile (spec minimum remains500), retaining
+identical band2–3, seeds, nominal-price formula and all economy values. The ten normal
+1000-serve probes pass2.5821–2.7918; combined1000 and final canonical verification
+are in progress. This is a sampling change, not proof that every short window is
+within band. No seed was removed and no prices or anchor were adjusted.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Recorded full173unit71browser15rush pass and disclosed the500-serve k excursion; extended all measurement cohorts to1000 before final acceptance. |

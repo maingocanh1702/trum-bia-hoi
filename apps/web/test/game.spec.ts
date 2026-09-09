@@ -89,6 +89,7 @@ test('a neglected first shift closes after remaining guests expire and shows onl
 
 test('tapped order stays live, returns keyboard focus, and closes on customer expiry', async ({ page }) => {
   await page.clock.install({ time: new Date('2026-09-08T10:00:00Z') });
+  await page.clock.pauseAt(new Date('2026-09-08T10:00:00Z'));
   await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
   await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
   await page.clock.runFor(8100);
@@ -98,7 +99,7 @@ test('tapped order stays live, returns keyboard focus, and closes on customer ex
   await trigger.click();
   const panel = page.getByRole('dialog', { name: 'Bàn 1', exact: true });
   await expect(panel).toBeVisible();
-  await expect(panel.getByRole('button', { name: 'Phục vụ cả mâm', exact: true })).toBeDisabled();
+  await expect(panel.getByRole('button', { name: 'Phục vụ cả mâm', exact: true })).toBeEnabled();
   await expect(panel.getByRole('button', { name: 'Đóng', exact: true })).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(panel).toHaveCount(0);
@@ -326,7 +327,7 @@ test('insufficient close funds keep the guest paused until choosing to wait, the
   await expect(page.locator('.seat-customer')).toHaveCount(1);
   await expect(page.locator('.money strong')).toHaveText(String(fixture.coins));
   await page.clock.runFor(20000); await expect(page.locator('.seat-customer')).toHaveCount(1);
-  await page.getByRole('button', { name: 'Đợi khách dùng xong', exact: true }).click(); await page.clock.runFor(20000);
+  await page.getByRole('button', { name: 'Đợi khách dùng xong', exact: true }).click(); await page.clock.runFor(fixture.expiresIn + 500);
   await expect(page.getByRole('dialog', { name: 'Sổ ca hôm nay' })).toBeVisible();
   await expect(page.locator('.money strong')).toHaveText('0');
   const save = await page.evaluate(() => JSON.parse(localStorage.getItem('tbh.save.v1')!));

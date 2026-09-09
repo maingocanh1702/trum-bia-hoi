@@ -13,6 +13,7 @@ export function nextPin() {
   return pinConfig('pin-B', raw => {
     raw.menu.bia.price *= 2; raw.shift.durationMs *= 1.5;
     raw.upgrades.keg.pourMs = raw.upgrades.keg.pourMs.map(n => n * 2);
+    raw.upgrades.keg.refillMs = raw.upgrades.keg.refillMs.map(n => n * 2);
     raw.upgrades.table.levels[0].capacity = 3;
     raw.shift.startingCoinsBase *= 10;
   });

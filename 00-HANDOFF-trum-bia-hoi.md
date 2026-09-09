@@ -1,7 +1,7 @@
-# 🍺 HANDOFF — Trùm Bia Hơi — điểm vào cho Designer & Dev (v1.20)
+# 🍺 HANDOFF — Trùm Bia Hơi — điểm vào cho Designer & Dev (v1.21)
 
 > **Tương ứng với `00-TONG-HOP-trumviahe.md`** (bản nghiên cứu game gốc) — nhưng đây là bản **của Trùm Bia Hơi**: đọc file này trước mọi file khác. Mục tiêu: một designer (có Blender MCP) và một dev cầm bộ docs này là **tạo asset và code được game**, không cần hỏi lại lịch sử.
-> Ngày: 2026-09-09 (v1.20). **Cách đọc bộ docs (chốt founder 09/09):** ràng buộc là **luật chơi** (`02-GDD` + `03-SPEC`), **số** (`08-SPEC` + `docs/config/economy.tbh.json`), **không-hardcode/config admin** (`trum-bia-hoi-brd-admin.md` §5.2), **bất biến đo k** (`04-SPEC` §5), **server-authoritative + engine thuần** (`10-SPEC` §7/§1; thứ tự code: lưu localStorage trước, server sau — §4.2). Mọi thứ còn lại — kiến trúc, module, thư viện, **layout, màn hình, design** — do dev/designer **tự quyết**. `prototype/` là bản thử nghiệm lưu trữ, KHÔNG phải điểm xuất phát.
+> Ngày: 2026-09-09 (v1.21). **Cách đọc bộ docs (chốt founder 09/09):** ràng buộc là **luật chơi** (`02-GDD` + `03-SPEC`), **số** (`08-SPEC` + `docs/config/economy.tbh.json`), **không-hardcode/config admin** (`trum-bia-hoi-brd-admin.md` §5.2), **bất biến đo k** (`04-SPEC` §5), **server-authoritative + engine thuần** (`10-SPEC` §7/§1; thứ tự code: lưu localStorage trước, server sau — §4.2). Mọi thứ còn lại — kiến trúc, module, thư viện, **layout, màn hình, design** — do dev/designer **tự quyết**. `prototype/` là bản thử nghiệm lưu trữ, KHÔNG phải điểm xuất phát.
 >
 > Trạng thái dự án: prototype Phase 0 đã hoàn thành nhiệm vụ của nó — chứng minh "feel" và **đo được k = 2.24–2.34** (trong band 2.0–3.0), bản Alpha đã host và chủ dự án đã chơi, phản hồi đã đưa vào GDD/03-SPEC (rót & rửa tự động, phục vụ theo Order). Từ 09/09 `prototype/` chuyển sang **lưu trữ**; game viết mới từ đầu. Slice `feat/p0-ui-serve-popover--r2` và gate "Alpha playtest 3–5 người" chỉ còn liên quan tới prototype — merge hay bỏ tuỳ chủ dự án, **không chặn** việc bắt đầu game (xem `SESSION-TRACK-LOG.md`).
 
@@ -9,7 +9,7 @@
 
 ## 1. Game là gì (1 phút)
 
-Idle/tycoon **phục vụ khách theo ca 12 phút** ở **quán bia hơi vỉa hè Hà Nội 2000s**, mobile-first web (Pixi.js + React là gợi ý, dev tự quyết), **lưu localStorage trước → server-authoritative ở M4** (thiết kế server-ready từ đầu, không viết lại). Re-skin từ trumviahe.com (trà đá) — **giữ 5 lớp economy** đã được chứng minh (unit · throughput · demand-mix · risk · meta), thêm **2 cơ chế đặc thù**: **hệ bàn** (khách ngồi theo nhóm, gọi nhiều đợt, phục vụ cả mâm một chạm) và **bia mất hơi** (cốc rót xong 12s là hết hơi → rót đúng nhịp, đừng tích cốc).
+Idle/tycoon **phục vụ khách theo ca 12 phút** ở **quán bia hơi vỉa hè Hà Nội 2000s**, mobile-first web (Pixi.js + React là gợi ý, dev tự quyết), **lưu localStorage trước → server-authoritative ở M4** (thiết kế server-ready từ đầu, không viết lại). Re-skin từ trumviahe.com (trà đá) — **giữ 5 lớp economy** đã được chứng minh (unit · throughput · demand-mix · risk · meta), thêm **2 cơ chế đặc thù**: **hệ bàn** (khách ngồi theo nhóm, gọi nhiều đợt, phục vụ cả mâm một chạm) và **bia mất hơi** (bia lên mâm12s là hết hơi; bom giữ dự trữ theo mẻ, cần bưng mâm đúng nhịp).
 
 ```
 Mở ca (thể lực 100%) → khách vào theo bàn → rót bia kịp "độ hơi" + làm mồi → chạm ✅ PHỤC VỤ cả mâm
@@ -198,3 +198,5 @@ Giao việc: `11-PROMPT-PACK` Phần A (designer) và Phần B (dev) — cả ha
 | v1.19 | Owner 2026-09-09: menu Nhập hàng/quản lý/nâng thiết bị tạm dừng gameplay; mua xong giữ menu mở và pause đến khi đóng. §4 UI invariants cập nhật thay no-pause sheet; thẻ mâm và toast phạt giữ live. Rules16 tách presence khỏi pause để điểm danh/thao tác menu vẫn hoạt động. |
 
 | v1.20 (2026-09-09 owner update) | Cho nâng cấp asset ngay trong ca, không phải đóng ca; menu vẫn pause đến khi đóng. Rules17 giữ replay1–16, giá/config của ca cũ và đơn khách đang chờ. Seed1.7.2 tắt flag Phase1 cũ (chỉ giữ để replay). F10§12 là contract cập nhật. |
+
+| v1.21 (2026-09-09) | Owner yêu cầu rót sẵn/rửa theo mẻ và capacity HUD; cơ chế cập nhật tại08§8.1 +03§8. JSON1.7.3/rules18 giữ replay/pause/upgrade; bia dự trữ và ly uống là hai kho riêng. |

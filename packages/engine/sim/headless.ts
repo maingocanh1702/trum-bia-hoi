@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { Game, config as seedConfig, loadConfig, DISHES, flyerQuote, SIGN_STYLES, type SignStyle, dayKey, deliveryQuote, restockQuote, serveValueStats, type Command } from '../src/index';
 
 // config-exempt: measurement protocol and bot sampling, never production economy.
-const SEEDS = [20260611, 42, 20260908, 7, 99], MIN_SERVED = 500, STEP_MS = 100, MAX_STEPS = 500000;
+const SEEDS = [20260611, 42, 20260908, 7, 99], MIN_SERVED = 1000, STEP_MS = 100, MAX_STEPS = 500000;
 const restedStart = process.argv.includes('--well-rested'), qrStart = process.argv.includes('--qr'), shipperStart = process.argv.includes('--shipper');
 const signStyle = process.argv.find(arg => arg.startsWith('--sign='))?.slice('--sign='.length) as SignStyle | undefined;
 if (signStyle && !SIGN_STYLES.includes(signStyle)) throw Error('Unknown sign style');
@@ -65,4 +65,4 @@ for (const seed of SEEDS) {
 }
 console.table(rows);
 for (const row of rows) assert.ok(row.k >= seedConfig.values.k.band[0] && row.k <= seedConfig.values.k.band[1], `seed ${row.seed}: k=${row.k} outside band`);
-console.log('PASS: actual customer payment + tip / anchor; no throughput term, >=500 serves per seed in cold and fully unlocked menu profiles.');
+console.log('PASS: actual customer payment + tip / anchor; no throughput term, >=1000 serves per seed in cold and fully unlocked menu profiles.');

@@ -4,7 +4,10 @@ import type { Customer, Dish } from '../../../packages/engine/src';
 const urls = import.meta.glob('../../../assets/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 export const menuAsset: Record<Dish, string> = { bia: 'menu-beer', lac: 'menu-peanut', nem: 'menu-nemchua', dau: 'menu-friedbean', topmo: 'menu-crackle', long: 'menu-intestine' };
 export function Sprite({ id, className = '' }: { id: string; className?: string }) {
-  const asset = manifest.assets.find(a => a.type === 'sprite' && a.id === id);
+  let asset = manifest.assets.find(a => a.type === 'sprite' && a.id === id);
+  const equipment = /^(keg|washer|cooler)-lv(\d+)$/.exec(id);
+  // ponytail: keep equipment recognizable with the nearest finished sprite until its level art arrives.
+  if (!asset?.path && equipment) asset = manifest.assets.filter(a => a.path && a.id.startsWith(`${equipment[1]}-lv`) && Number(a.id.split('-lv')[1]) <= Number(equipment[2])).at(-1);
   const src = asset?.path ? urls[`../../../${asset.path}`] : null;
   return src ? <img src={src} className={`sprite ${asset?.source === 'imagegen_builtin' ? 'illustrated' : ''} ${className}`} alt="" draggable={false} /> : <span aria-hidden="true" className={`sprite placeholder ${className}`}></span>;
 }
