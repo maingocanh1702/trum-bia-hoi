@@ -211,3 +211,46 @@ test('a visible returning player keeps the yard accessible before heartbeat reco
   await expect.poll(async () => (await snapshot(back)).world.active).toBe(true);
   expect((await snapshot(back)).world.paused).toBe(true);
 });
+
+for (const damage of ['missing chunk', 'invalid revision']) test(`normal startup preserves ${damage} forensic recovery before any server career is created`, async ({ page }) => {
+  await page.route('**/prepare-local', route => route.fulfill({ contentType: 'text/html', body: '<html lang="vi"><body></body></html>' }));
+  await page.goto('/prepare-local');
+  const legacy = await page.evaluate(async damage => {
+    const path = '/test/fixtures/browser-save.ts';
+    const { BrowserSave, Game, encodeSave } = await import(path) as typeof import('../test/fixtures/browser-save');
+    const storage = await BrowserSave.open(); await storage.read();
+    const game = new Game(undefined, 42);
+    game.command({ at: game.world.now, idempotencyKey: 'recover-original-shift', command: { type: 'startShift' } });
+    await storage.save(game); storage.close();
+    const legacy = encodeSave(new Game(undefined, 99)); localStorage.setItem('tbh.save.v1', legacy);
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open('tbh.career.v1'); request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const db = request.result, tx = db.transaction(['head', 'events'], 'readwrite');
+        if (damage === 'missing chunk') tx.objectStore('events').delete(0);
+        else { const row = tx.objectStore('head').get('current'); row.onsuccess = () => tx.objectStore('head').put({ ...row.result, revision: -3 }, 'current'); }
+        tx.oncomplete = () => { db.close(); resolve(); }; tx.onabort = () => reject(tx.error);
+      };
+    });
+    return legacy;
+  }, damage);
+  let newSession = false; page.on('request', r => { if (r.url().endsWith('/api/auth/session')) newSession = true; });
+  await page.goto('/');
+  await expect(page.getByRole('alert')).toContainText('Bản lưu chưa đọc được');
+  await expect(page.getByRole('button', { name: 'Tải bản lưu gốc', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Tải bản lưu localStorage cũ', exact: true })).toBeVisible();
+  await page.locator('input[type=file]').setInputFiles({ name: 'legacy.json', mimeType: 'application/json', buffer: Buffer.from(legacy) });
+  await expect(page.getByRole('heading', { name: 'Tiến độ đã lưu trên máy' })).toBeVisible();
+  const { readBackups, readSave } = await import('../test/storage');
+  const backups = (await readBackups(page)).map(text => JSON.parse(text));
+  expect(backups).toHaveLength(1); expect(backups[0].format).toBe('tbh.indexeddb-backup.v1');
+  expect(backups[0].commands[0][0].idempotencyKey).toBe('recover-original-shift');
+  if (damage === 'missing chunk') expect(backups[0].eventKeys).toEqual([]);
+  else expect(backups[0].head.revision).toBe(-3);
+  expect(await page.evaluate(() => localStorage.getItem('tbh.save.v1'))).toBe(legacy);
+  expect(await page.evaluate(() => localStorage.getItem('tbh.remote.v1'))).toBeNull();
+  expect(newSession).toBe(false);
+  await page.getByRole('button', { name: 'Tiếp tục quán đã lưu' }).click();
+  await expect(page.locator('.game-shell')).toBeVisible();
+  expect(JSON.parse(await readSave(page)).seed).toBe(99);
+});

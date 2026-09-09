@@ -12,6 +12,10 @@ export async function start(mode?: 'local' | 'remote'): Promise<StartState> {
       try {
         const original = await storage.read(), legacy = localStorage.getItem('tbh.save.v1');
         if (original !== null || legacy !== null) return { local: original ?? legacy!, legacy };
+      } catch (error) {
+        // Reuse the established forensic download/import/reset flow; never replace a damaged archive.
+        if (storage.recoveryText !== null) return { session: await boot() };
+        throw error;
       } finally { storage.close(); }
     }
     const remote = await RemoteGame.open();
