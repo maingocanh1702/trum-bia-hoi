@@ -1213,3 +1213,46 @@ in progress; customer-specific demand, server/meta/risk/events/art/release remai
 | Date | Change |
 |---|---|
 | 2026-09-09 | Added rules14 local menu provenance/value report, legacy adoption coverage and persistent access to the last shift;143 unit/63 E2E/config/build pass. Updated owner designer brief; final balance rerun and independent review pending. |
+
+
+## 2026-09-09 — Menu provenance independent review receipt
+
+Product 2f1aa07c8a9143f5f91ab69c8ef9e8f101695ba7, immutable full base
+80ee489475443af7be0cfd617b42d6ebec650720. Independent native Codex review
+exited0, reported its completed review and listed no actionable findings. Its
+final output is prose, not a literal CLEAN marker; no marker was manufactured.
+It independently passed config validation, typecheck, production build and all
+143 engine tests, inspected genuine fixture hashes and the final simulation logs.
+Native prompt/log/final text: .qa/review-menu-prompt.txt, review-menu.log and
+review-menu.txt. Browser binding was sandbox-blocked by EPERM on127.0.0.1:4178;
+63 passing browser tests remain author-run evidence, not independent execution.
+
+Final author checks completed successfully: config/build/typecheck,143 unit,
+63 browser, assets128 entries/32paired SFX with23 placeholders/97draft files,
+20 ordinary+combined500+-serve k rows2.3125–2.7562 and15 rush-pressure rows.
+Final sim logs are menu-sim-final.txt, menu-sim-combined-final.txt and
+menu-rush-final.txt in .qa. Canonical economy JSON is byte-identical to the base.
+Both new-shift reset and legacy adoption are covered, alongside actual expiry,
+zero-duration completion, repeated rounds, cap/bonus/delivery and reload cases.
+
+Browser diagnosis is preserved: initial menu tests exposed inaccessible last-shift
+book after reload; the final63-pass run includes its rest-screen entry fix. Earlier
+legacy tests expecting one v13 adoption event were updated to explicitly assert
+v14 menu cursors/event and preserve every prior world field. The original
+attendance-adoption test pins v13 by design; actual v13-to-current coverage is
+in menu.test. Final output does not claim old/new future schedules are identical.
+
+Owner designer brief is current in F24, tokens and reference README. F02/F11
+tracker notes now reflect the menu implementation; F10's obsolete "free flyer
+missing" note was reconciled against claimDailyBonus and its existing tests.
+Tracker v0.19.1/dashboard retain17 features in progress. These documentation
+receipts do not alter reviewed product code. Full M0–M9 remains active: art,
+customer demand, configured upgrades, server/meta/risk/events and release remain.
+Read-only next intake .qa/menu-next-intake.md identifies configured glass-purchase
+work without fabricating a purchase above the existing buy cap.
+
+Root stays bc79af5 with original WIP, untouched. No merge, push or hosted release.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Recorded native menu review with no reported findings and independent143 unit/config/build; author63 browser/20 k rows/15 rush rows passed. Updated tracker/dashboard truthfully and preserved full-game continuation. |

@@ -82,7 +82,9 @@
       "human_status": "IN_PROGRESS",
       "progress": 30,
       "runtime_urgency": "normal",
-      "overlays": [],
+      "overlays": [
+        "tracker-modified"
+      ],
       "signals": {
         "spec_exists": false,
         "tech_exists": false,
@@ -108,7 +110,7 @@
         "spec_modified_at": null,
         "tech_hash": null,
         "tech_modified_at": null,
-        "tracker_row_hash": "cb0ea6d0b0d6c3b413464da885220dc1a39e058ec13e0e98050cea014be40503",
+        "tracker_row_hash": "7f6b92409493beee8d02f95fe54c4ab0ea1ac01506c1b3aa2446ef7a7e4088de",
         "foundation_codex_approved": null,
         "foundation_founder_signoff": null
       },
@@ -272,9 +274,7 @@
       "human_status": "IN_PROGRESS",
       "progress": 30,
       "runtime_urgency": "normal",
-      "overlays": [
-        "tracker-modified"
-      ],
+      "overlays": [],
       "signals": {
         "spec_exists": false,
         "tech_exists": false,
@@ -388,7 +388,9 @@
       "human_status": "IN_PROGRESS",
       "progress": 30,
       "runtime_urgency": "normal",
-      "overlays": [],
+      "overlays": [
+        "tracker-modified"
+      ],
       "signals": {
         "spec_exists": false,
         "tech_exists": false,
@@ -414,7 +416,7 @@
         "spec_modified_at": null,
         "tech_hash": null,
         "tech_modified_at": null,
-        "tracker_row_hash": "6e70e1d4cd62d293e04e7504900c469c735263caf2e3e3a0266fef283a45c5f3",
+        "tracker_row_hash": "de398e10f060da12a41d0b48b717b2a10ba2301a2753af543ab526c1b037cdaa",
         "foundation_codex_approved": null,
         "foundation_founder_signoff": null
       },
@@ -530,7 +532,7 @@
         "spec_modified_at": null,
         "tech_hash": null,
         "tech_modified_at": null,
-        "tracker_row_hash": "f811eacee6a44f24b60efc9e04460b3dc4343d2ebad39934e7d6eda9ff75fbf2",
+        "tracker_row_hash": "47034fd9248fc227303acd7821018852efd8d7a02427deccaa47ef759963159e",
         "foundation_codex_approved": null,
         "foundation_founder_signoff": null
       },
