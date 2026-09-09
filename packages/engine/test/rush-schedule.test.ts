@@ -5,7 +5,7 @@ import { Game, config, loadConfig, planRushes, summarizeRush, rushStatus, kickAl
 const origin = Date.parse('2026-09-08T10:00:00Z');
 const send = (g: Game, command: Command, at = g.world.now) => g.command({ idempotencyKey: `schedule-${g.log.length}`, at, command });
 function create(patch = (_: Economy) => {}) {
-  const raw = structuredClone(config.raw); raw.onboarding.enabled = false; raw.shift.startingCoinsBase = 100000; raw.patience.thuongMs = 1000000;
+  const raw = structuredClone(config.raw); raw.onboarding.enabled = false; if ('heavyFromLifePath' in raw.rush.schedule) raw.rush.schedule.heavyFromLifePath = 0; raw.shift.startingCoinsBase = 100000; raw.patience.thuongMs = 1000000;
   patch(raw); return new Game(loadConfig(raw), 42, origin);
 }
 function open(patch?: (c: Economy) => void) { const g = create(patch); assert.equal(send(g, { type: 'startShift' }).ok, true); return g; }
@@ -13,7 +13,7 @@ function open(patch?: (c: Economy) => void) { const g = create(patch); assert.eq
 test('seed tuple produces varied balanced schedules with complete durations and warning gaps', () => {
   const orders = new Set<string>(), layouts = new Set<string>();
   for (const count of [0, 1, 2, 3, 4]) {
-    const raw = structuredClone(config.raw); raw.rush.schedule.perShift = count; const c = loadConfig(raw);
+    const raw = structuredClone(config.raw); if ('heavyFromLifePath' in raw.rush.schedule) raw.rush.schedule.heavyFromLifePath = 0; raw.rush.schedule.perShift = count; const c = loadConfig(raw);
     for (let i = 0; i < 100; i++) {
       const location = c.values.locations.list[i % c.values.locations.list.length].id, id = `shift-${i}`, day = `2026-09-${i % 2 + 8}`;
       const plan = planRushes(c, location, id, day, origin)!; assert.ok(plan); assert.equal(plan.rushes.length, count);
@@ -61,7 +61,7 @@ test('genuine active v7 schedule and identifiers survive a same-time v8 command 
   for (const key of ['now', 'coins', 'reputation', 'rng', 'nextId'] as const) assert.equal(w[key], expected[key]);
   assert.deepEqual(w.shift!.rushes, expected.rushes); assert.deepEqual(w.shift!.stats, expected.stats); assert.deepEqual(w.events, JSON.parse(text).events);
   assert.deepEqual(g.log.at(-1)!.result, expected.result); send(g, { type: 'activity', active: true });
-  assert.equal(g.log.at(-1)!.rulesVersion, 20); assert.deepEqual(w.shift!.rushes, expected.rushes); assert.equal(w.shift!.rushScheduleSeed, undefined);
+  assert.equal(g.log.at(-1)!.rulesVersion, 21); assert.deepEqual(w.shift!.rushes, expected.rushes); assert.equal(w.shift!.rushScheduleSeed, undefined);
   assert.equal(w.events.filter(e => e.type === 'rush_scheduled').length, 0);
   send(g, { type: 'endShift' }); g.advance(w.shift!.rushes[0].end);
   const ended = w.events.find(e => e.type === 'rush_ended')!; assert.deepEqual(ended.data, { kind: expected.rushes[0].kind });
@@ -138,7 +138,8 @@ test('heavy arrival captures the configured enjoyment multiplier without changin
   }), w = g.world, heavy = w.shift!.rushes.find(r => r.kind === 'heavy')!;
   g.advance(w.shift!.nextSpawnAt); const earlier = w.queue[0] ?? w.tables.find(t => t.group)?.group;
   assert.ok(earlier); assert.ok(earlier.customers.every(c => c.enjoyMs === 1000));
-  g.advance(heavy.start + 10000);
+  g.advance(heavy.start);
+  while (w.now < heavy.end && ![...w.queue, ...w.tables.flatMap(t => t.group ? [t.group] : [])].some(group => group.arrivedAt >= heavy.start)) g.advance(Math.min(heavy.end, w.now + 100));
   const groups = [...w.queue, ...w.tables.flatMap(t => t.group ? [t.group] : [])].filter(g => g.arrivedAt >= heavy.start);
   assert.ok(groups.length > 0); assert.ok(groups.every(g => g.customers.every(c => c.enjoyMs === 1000 * config.values.rush.heavy.enjoyMult)));
   assert.ok(earlier.customers.every(c => c.enjoyMs === 1000)); assert.deepEqual(decodeSave(encodeSave(g)).world, w);

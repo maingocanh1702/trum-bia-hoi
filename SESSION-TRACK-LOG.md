@@ -12,8 +12,7 @@ config2.0.0 and corresponding reference code. Accepted delta/precedence and sour
 hashes are recorded in `docs/latest-handoff-adoption.md`. After closing the disconnection
 review, prioritize the new economy pipelines, glass purchases and capacity UI,
 in-stock demand, LP gates and lease lifecycle before the server liveness adapter.
-The original19-test/career results do not describe this branch. Config1.7.3 remains
-the verified runtime until the new mechanisms and their simulations pass.
+The original19-test/career results do not describe this branch. Working source has now adopted2.0.1/rules21 station/demand/glass/LP-gate mechanics and HUD;217 engine/server checks pass. Browser, simulations and independent review are in progress. Historical1.7.3 results do not certify the new economy.
 
 ## 🧭 Rules19–20 checkpoint verified — 2026-09-09
 

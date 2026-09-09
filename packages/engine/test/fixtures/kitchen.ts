@@ -1,8 +1,9 @@
+import legacy from '../../../../docs/config/legacy/economy-1.7.3.json';
 import assert from 'node:assert/strict';
 import { Game, config, loadConfig, DISHES, WEATHER, dishUnlocked, type Command } from '../../src';
 // Controlled demand exposes occupied burners; all state still comes from real commands.
 export function kitchenGame(level = 1, stocked = true, patienceMs = 120000) {
-  const raw = structuredClone(config.raw);
+  const raw = structuredClone(legacy);
   raw.onboarding.enabled = false; raw.shift.startingCoinsBase = 1000000;
   raw.demandMix.pMoi = 1; raw.patience.thuongMs = patienceMs;
   for (const key of WEATHER) raw.weather[key].weight = 0;

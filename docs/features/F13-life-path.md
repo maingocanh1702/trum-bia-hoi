@@ -104,6 +104,9 @@ state boundary; this is not evidence that all LP0–LP7 are reachable in current
 
 ## Changelog (append-only)
 
+Audit rows imported from the original checkout describe its reference engine and measurements. Current implementation evidence is in docs/build-progress.md; source claims of19tests, automatic LP rewards or pan identity by dish/time do not override the reconciled runtime contract.
+
+
 | Date | Change |
 |---|---|
 | 2026-09-09 | Added v6 local progression and separate claim-once rewards, closed requirement grammar, preflighted stock/coin/token rewards, actionable ladder. Numeric claim IDs and derived eligibility replace the illustrative schema; full producer/server integration remains open. |
@@ -112,3 +115,15 @@ state boundary; this is not evidence that all LP0–LP7 are reachable in current
 
 
 | 2026-09-09 | Flyer acquisition now records persistent ownership through buyFlyer in rules11; using the consumable does not revoke LP4's requirement. Canonical LP2 purchase/activation gate is shared through requirementStatus. Peak/season and full downstream progression acceptance remain unfinished. |
+
+
+## Original-checkout audit history (reference only)
+
+| Ngày | Thay đổi |
+|---|---|
+| 2026-09-09 | Engine cài đánh giá LP theo `lifetimeEarned` sau mỗi lượt phục vụ (`evaluateLifePath`), thưởng `rewardCoinBase` vào coins ngoài ledger, event `life_path_level_reached`; LP làm gate cho heavy rush (F08), thiết bị Lv4/Lv5 (`upgrades.lifePathGate`), mặt bằng (`gateLifePath`). 🟡 Điều kiện phụ `requires` (ghế, chó, phone, QR, peak) chưa enforce — chờ F16/đồ mở khoá vào engine. |
+
+
+| Date | Reconciled game update |
+|---|---|
+| 2026-09-09 | Adopted latest handoff numbers as config2.0.1, preserving owner pause/live-upgrade policy and immutable1.x snapshots. Rules21 station/demand/glass/LP-gate implementation is under verification; lease lifecycle and actual career measurements remain pending. Current evidence: docs/build-progress.md. |

@@ -68,7 +68,6 @@ small { font-size: 11px; }
 .table-4 { left: 75%; top: 110%; }
 .table-5 { left: 50%; top: 155%; }
 .yard:has(.table-3) { min-height: 620px; }
-.yard:has(.table-3) .table-space:nth-child(n) { top: auto; }
 .yard:has(.table-3) .table-0, .yard:has(.table-3) .table-1 { top: 13%; }
 .yard:has(.table-3) .table-2 { top: 40%; }
 .yard:has(.table-3) .table-3, .yard:has(.table-3) .table-4 { top: 68%; }
@@ -227,3 +226,7 @@ progress::-webkit-progress-value { background: var(--beerAmber); border-radius: 
   .stock-actions { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); max-width: none; }
   .stock-actions button { font-size: 12px; }
 }
+
+.buy-glasses { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.buy-glasses strong { flex-basis: 100%; }
+.buy-glasses button { min-height: 44px; }

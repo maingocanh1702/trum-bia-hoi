@@ -1,6 +1,6 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.27.2
+> **Version:** v0.28.0
 > **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-09 (layout/art theo ảnh owner)
 > **Trạng thái:** Active — **M0 qua verify; review sửa lỗi nền và layout/art đã CLEAN. M1–M3 tiếp tục triển khai; M4 bắt đầu nền config pin/replay, server event store đã review; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.3** (1 phase, mốc M0–M9).
 > **Owner:** Team
@@ -12,7 +12,7 @@
 Owner latest handoff intake (09/09): new economy2.0 rules/numbers accepted and prioritized;
 see `docs/latest-handoff-adoption.md`. Existing config1.7.3 evidence below remains
 historical verified behavior, not proof of the new pipelines/demand/gates/lease rules.
-Full M0–M9 is still in progress.
+Working config2.0.1/rules21 now implements tank/tap/pan pipelines, glass purchases, stock-aware side dishes, heavy/equipment LP gates and capacity UI.217 engine/server checks pass; browser/sims/review continue. Lease lifecycle and career simulation remain pending. Full M0–M9 is still in progress.
 
 ## 0. How to use this tracker
 

@@ -273,6 +273,16 @@
   "production.idle": "Ready · Next batch starts automatically",
   "production.noStock": "Out of raw beer · Restock to pour",
   "production.washQueue": "Queued {n} · Up to {capacity}/batch",
-  "production.reserveHint": "Refills as beer is drawn onto trays. Freshness starts on the tray.",
-  "production.legacy": "Batch pouring starts with your next shift."
+  "production.reserveHint": "Stored beer pours through the taps into glasses. The keg refills vacant storage in batches. Freshness starts when pouring finishes.",
+  "production.legacy": "Batch pouring starts with your next shift.",
+  "production.taps": "{n} taps · {seconds}s/glass",
+  "production.pouring": "Pouring on {busy}/{total} taps",
+  "production.portions": "{n} portions of one dish/pan",
+  "production.glassOwned": "Own {n} glasses · Purchase limit {max}",
+  "production.buyGlass": "Buy {n} glasses · {cost} coins",
+  "upgrade.lifePath": "Reach {name} first",
+  "error.lifePathRequired": "Reach the required Life Path level.",
+  "error.glassCapacity": "Glass purchase limit reached.",
+  "error.invalidQuantity": "Invalid quantity.",
+  "error.invalidCost": "Invalid cost."
 }

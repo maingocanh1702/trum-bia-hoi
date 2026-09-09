@@ -1,6 +1,8 @@
 import seed from '../../../docs/config/economy.tbh.json';
+import legacy from '../../../docs/config/legacy/economy-1.7.3.json';
 
-export type Economy = typeof seed;
+export type Economy = typeof seed | typeof legacy;
+export function isEconomy2(c: Economy): c is typeof seed { return Object.hasOwn(c.upgrades, 'lifePathGate'); }
 export type Dish = keyof Economy['menu'];
 export type Equipment = 'keg' | 'washer' | 'cooler' | 'stall' | 'kitchen';
 export type CustomerType = keyof Economy['customerTypes'];
@@ -106,6 +108,21 @@ function validate(c: Economy): void {
     if (typeof v === 'number' && v < 0 && !/reputation|reputationDelta|ignoreRepBase/.test(path)) throw Error(`config:${path}:negative`);
   };
   scan(c, '');
+  if (isEconomy2(c)) {
+    for (const p of [c.demandMix.pHotGivenMoi, c.demandMix.pHotGivenMoiSpecial]) if (p < 0 || p > 1) throw Error('config:hotProbability');
+    const level = (n: number) => { whole(n, 'lifePathGate'); if (n >= c.lifePath.length) throw Error('config:lifePathGate'); };
+    for (const kind of EQUIPMENT) c.upgrades.lifePathGate[kind].forEach(level);
+    level(c.rush.schedule.heavyFromLifePath);
+    c.upgrades.kitchen.portionsPerPan.forEach((n, i) => whole(n, 'kitchen.portionsPerPan', i ? 1 : 0));
+    if (c.upgrades.kitchen.portionsPerPan[0] !== 0) throw Error('config:kitchen.lockedPan');
+    whole(Math.round(c.glasses.priceBase * c.k.value) * c.glasses.buyCap, 'glasses.maximumPurchase');
+    for (const location of c.locations.list) {
+      level(location.gateLifePath);
+      if (location.gate !== (location.gateLifePath ? c.lifePath[location.gateLifePath].id : null)) throw Error('config:locationGateAlias');
+    }
+    whole(c.locations.leaseDays, 'locations.leaseDays', 1);
+    if (c.locations.depositRate < 0 || c.locations.depositRate > 1) throw Error('config:depositRate');
+  }
   if (!c._meta.version.trim() || c.k.value < c.k.band[0] || c.k.value > c.k.band[1]) throw Error('config:k');
   positive(c.k.anchorValuePerServe, 'anchor');
   positive(c.shift.durationMs, 'shift.durationMs');
@@ -185,6 +202,13 @@ function validate(c: Economy): void {
     for (const dependency of dependencies.get(key)!) visit(dependency);
     visiting.delete(key); visited.add(key);
   };
+  if (isEconomy2(c)) for (const row of c.lifePath) for (const token of row.requires ?? []) {
+    const r = parseProgressRequirement(token, c);
+    if (r.kind === 'equipment' || r.kind === 'stall') {
+      const kinds = EQUIPMENT.filter(kind => r.kind === 'stall' ? kind === 'stall' : kind !== 'kitchen');
+      dependencies.set(token, kinds.flatMap(kind => c.upgrades.lifePathGate[kind].slice(0, r.need)).filter(n => n > 0).map(n => c.lifePath[n].id));
+    }
+  }
   for (const key of dependencies.keys()) visit(key);
   for (const crate of Object.values(c.crates)) for (const amount of Object.values(crate)) whole(amount, 'crate');
   if (c.ledgers.countedSources.some(source => !seed.ledgers.countedSources.includes(source))) throw Error('config:countedSources');
@@ -310,7 +334,7 @@ function freeze<T>(value: T): T {
 }
 
 export function loadConfig(input: unknown = seed) {
-  shape(input, seed, '');
+  shape(input, Object.hasOwn((input as Economy)?.upgrades ?? {}, 'lifePathGate') ? seed : legacy, '');
   const raw = structuredClone(input) as Economy;
   validate(raw);
   const values = freeze(scale(raw, raw.k.value) as Economy);

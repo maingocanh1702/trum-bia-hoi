@@ -37,12 +37,12 @@ type KitchenJob = {
 
 | Dish | Price | Bulk cost | Prep | Station | Unlock |
 |---|--:|--:|--:|---|---|
-| `bia` | 50 | 10 | 3000ms | tap | start |
+| `bia` | 50 | 10 | `keg.pourMs[level]` | tap | start |
 | `lac` | 75 | 26 | 0 | instant | start |
 | `nem` | 150 | 60 | 0 | instant | start |
-| `dau` | 100 | 45 | 8000ms | kitchen | Lv1 |
-| `topmo` | 165 | 82 | 10000ms | kitchen | Lv1 |
-| `long` | 280 | 155 | 15000ms | kitchen | Lv2 |
+| `dau` | 100 | 45 | 4000ms | kitchen | Lv1 |
+| `topmo` | 165 | 82 | 5000ms | kitchen | Lv1 |
+| `long` | 280 | 155 | 7000ms | kitchen | Lv2 |
 
 ## 4. Kitchen station
 
@@ -55,14 +55,14 @@ type KitchenJob = {
 
 - Instant items become `ready` immediately if stock available.
 - Runtime items use the existing `Item.state`/`readyAt` as the kitchen queue; the conceptual `KitchenJob` above is not a second persisted job store.
-- Prep starts automatically when the ordered dish is unlocked, stock is available and a configured burner is free. Pending items consume no stock; a started item consumes one unit once.
+- A free pan starts up to portionsPerPan same-dish pending items, taking the same order first and then other orders. Each portion consumes stock once. A running pan never absorbs later arrivals; independent pans retain distinct batch identities even when their readyAt values match.
 - Serve the whole table only when all items are ready. Stale beer still permits service with the existing no-tip soft outcome (GDD/03-SPEC); freshness is not a hard rejection.
 - If Order expires, ready/preparing kitchen items become `wasted`; stock is not refunded.
 
 ## 6. Menu mix
 
-- Phase 2 spawn can generate 0-2 mồi per table round.
-- Hot dishes should appear more in `ngoily`, `football_fan`, and VIP-heavy groups.
+- Each customer rolls pMoi; side dishes are chosen only from unlocked stock minus pending reservations, including this order’s earlier choices. No available side dish means beer only.
+- When both categories are available, pHotGivenMoi is0.5, or pHotGivenMoiSpecial0.8 for a group containing VIP/ngoily. Fall back to the other available category; preserve pNemGivenMoi within cold choices.
 - Re-run `k_value` measurement after enabling all 6 dishes; k remains value-per-serve only.
 
 ## 7. UI
@@ -99,14 +99,13 @@ and upgrade actions reuse their existing commands and guards.
 Only a started dish has a known finish time. A warning appears when `readyAt`
 reaches or exceeds normal patience (equality enters grace); pending dishes have
 no invented ETA. Expired, cancelled and served orders are absent from the sheet.
-Hidden local time follows the existing pause rule; opening a sheet does not pause.
+Historical rules13 did not pause sheets. Current owner policy pauses all management sheets until closed.
 Ready/preparing food on expiry becomes wasted once, without inventory refunds;
 untouched pending food never consumes stock.
 
 The original rules13 presentation used `dish_preparing`/`dish_ready` aliases.
 Rules14 below adds the dedicated per-dish provenance and report. Future
-customer-specific hot-dish demand remains in full F11 scope; canonical config
-currently has no dedicated coefficients for those preferences. No coefficients
+rules13 had no dedicated hot-dish demand coefficients; current section6 and rules21 now use the new coefficients. No coefficients
 were invented to close the feature prematurely.
 
 Focused checks live in `packages/engine/test/kitchen.test.ts` and
@@ -145,7 +144,24 @@ See `../build-progress.md` for final verification and independent review status.
 
 ## Changelog (append-only)
 
+Audit rows imported from the original checkout describe its reference engine and measurements. Current implementation evidence is in docs/build-progress.md; source claims of19tests, automatic LP rewards or pan identity by dish/time do not override the reconciled runtime contract.
+
+
 | Date | Change |
 |---|---|
 | 2026-09-09 | Added live kitchen projection/UI and focused actual pipeline checks. Documented reuse of Item timestamps, automatic prep and GDD/03 stale soft service instead of a duplicate queue or freshness rejection; mapped current events and retained missing analytics/demand work. |
 | 2026-09-09 | Implemented rules14 per-dish analytics, shared nominal value helper and localized Sổ ca report; documented partial legacy data, zero-duration jobs and last-shift access. Customer-specific demand/server/art remain open. |
+
+
+## Original-checkout audit history (reference only)
+
+| Ngày | Thay đổi |
+|---|---|
+| 2026-09-09 | Founder chốt: bếp là pipeline **tự động nấu theo chảo** — 1 slot = 1 chảo, 1 mẻ tối đa `kitchen.portionsPerPan` khẩu phần cùng món (gom cùng Order trước), thời gian `menu.prepMs × prepMult`; người chơi không bấm bếp. Prep đậu/tóp/lòng 4/5/7 s; Lv1–4 chảo 1/2/2/3 × khẩu phần 2/2/3/3; giá 12k/50k/160k/400k base. Số ở `economy.tbh.json` 1.9.0, 08-SPEC §8.5. Lý do: nấu từng đĩa làm economy về 0 (audit 09/09). |
+| 2026-09-09 (2) | **Engine đã cài bếp theo chảo** (`prepare()`: đếm chảo = số (món, readyAt) đang nấu; mẻ gom tối đa `portionsPerPan` khẩu phần cùng món, ưu tiên cùng Order; event `pan_started`). Career sim engine thật: bếp Lv1 (1 chảo × 2) còn kéo thu nhập 29–37 k → 23 k xu/ca ở bàn 6 chỗ cho tới bếp Lv2 (31–36 k) — 🟡 cân nhắc Lv1 3 khẩu phần nếu playtest thấy bếp Lv1 là bẫy. |
+| 2026-09-09 (3) | Gọi mồi nóng: `demandMix.pHotGivenMoi` 0.5 (nhóm có VIP/ngồi lỳ 0.8) thay cho chọn đều tay [lạnh, …nóng]; **khách chỉ gọi mồi còn hàng** (03-SPEC v1.3). Engine đã cài. |
+
+
+| Date | Reconciled game update |
+|---|---|
+| 2026-09-09 | Adopted latest handoff numbers as config2.0.1, preserving owner pause/live-upgrade policy and immutable1.x snapshots. Rules21 station/demand/glass/LP-gate implementation is under verification; lease lifecycle and actual career measurements remain pending. Current evidence: docs/build-progress.md. |

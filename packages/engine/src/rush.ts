@@ -1,20 +1,21 @@
-import type { Config } from './config';
+import { isEconomy2, type Config } from './config';
 import { integer, seededRng } from './rng';
 import type { DomainEvent, Shift } from './types';
 
 /** Independent schedule RNG: changing the layout cannot consume customer rolls. */
-export function planRushes(c: Config, locationId: string, shiftId: string, day: string, now: number) {
+export function planRushes(c: Config, locationId: string, shiftId: string, day: string, now: number, lifePath = 0) {
   const { schedule, light, heavy } = c.values.rush, count = schedule.perShift;
   const seed = JSON.stringify([locationId, shiftId, day]);
   if (schedule.seed !== 'locationId+shiftId+dayBucket' || !Number.isSafeInteger(now + c.values.shift.durationMs)) return null;
   // config-exempt: bounded allocation for untrusted snapshots, not gameplay tuning.
   if (count > 10000) return null;
   const firstMs = Math.max(schedule.noRushFirstMs, schedule.warningMs);
-  const maximumMs = Math.floor(count / 2) * (light.durationMs + heavy.durationMs) + count % 2 * Math.max(light.durationMs, heavy.durationMs);
+  const lightOnly = isEconomy2(c.values) && lifePath < c.values.rush.schedule.heavyFromLifePath;
+  const maximumMs = lightOnly ? count * light.durationMs : Math.floor(count / 2) * (light.durationMs + heavy.durationMs) + count % 2 * Math.max(light.durationMs, heavy.durationMs);
   const minimumMs = firstMs + maximumMs + Math.max(0, count - 1) * schedule.warningMs;
   if (count && (!Number.isSafeInteger(minimumMs) || minimumMs > c.values.shift.durationMs)) return null;
   const rng = seededRng(seed);
-  const pool = ['light', 'heavy'] as const, offset = integer(rng, 0, pool.length - 1);
+  const pool: ('light' | 'heavy')[] = lightOnly ? ['light'] : ['light', 'heavy'], offset = integer(rng, 0, pool.length - 1);
   const kinds = Array.from({ length: count }, (_, i) => pool[(i + offset) % pool.length]);
   const totalMs = kinds.reduce((sum, kind) => sum + (kind === 'light' ? light : heavy).durationMs, 0);
   const slack = c.values.shift.durationMs - firstMs - totalMs - Math.max(0, count - 1) * schedule.warningMs;

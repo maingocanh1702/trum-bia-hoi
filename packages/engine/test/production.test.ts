@@ -1,10 +1,11 @@
+import legacy from '../../../docs/config/legacy/economy-1.7.3.json';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Game, config, loadConfig, beerStatus, washerStatus, encodeSave, decodeSave, type Command, type Economy } from '../src';
 const send = (g: Game, command: Command) => g.command({ command, at: g.world.now, idempotencyKey: `batch-${g.log.length}` });
 function game(patch?: (c: Economy) => void) {
-  const raw = structuredClone(config.raw); raw.shift.startingCoinsBase = 100000;
+  const raw = structuredClone(legacy); raw.shift.startingCoinsBase = 100000;
   for (const weather of ['hot', 'humid', 'rain', 'cold'] as const) raw.weather[weather].weight = 0;
   patch?.(raw); return new Game(loadConfig(raw), 42, 0);
 }
@@ -82,12 +83,12 @@ test('the actual v17 paused save replays exactly and adopts enabled batches only
   const text = readFileSync(new URL('./fixtures/batch-v17.json', import.meta.url), 'utf8');
   const g = decodeSave(text), original = JSON.parse(text), w = g.world;
   assert.ok(g.log.every(e => e.rulesVersion === 17)); assert.deepEqual(w.events, original.events); assert.equal(w.beer, undefined);
-  send(g, { type: 'activity', active: true }); assert.equal(g.log.at(-1)!.rulesVersion, 20);
+  send(g, { type: 'activity', active: true }); assert.equal(g.log.at(-1)!.rulesVersion, 21);
   assert.equal(w.beer, undefined); assert.equal(g.config.values.upgrades.keg.refillEnabled, false);
   send(g, { type: 'endShift' }); g.advance(w.now + 100000);
   g.advance(w.now + g.config.values.shift.durationMs / g.config.values.shift.regenRate);
   assert.ok(g.command({ command: { type: 'startShift' }, at: w.now, idempotencyKey: 'pin-batches' }, config).ok);
-  assert.equal(g.config.version, config.version); assert.equal(w.beer!.batch!.quantity, 5);
+  assert.equal(g.config.version, config.version); assert.equal(w.beer!.ready, config.values.upgrades.keg.kegStorage[0]);
   assert.deepEqual(decodeSave(encodeSave(g)).world, w);
 });
 

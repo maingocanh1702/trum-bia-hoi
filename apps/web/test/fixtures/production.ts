@@ -1,3 +1,4 @@
+import legacy from '../../../../docs/config/legacy/economy-1.7.3.json';
 import { readFileSync } from 'node:fs';
 import { Game, config, loadConfig, encodeSave, decodeSave, beerStatus, washerStatus } from '../../../../packages/engine/src';
 if (process.argv[2] === 'inspect') {
@@ -7,7 +8,7 @@ if (process.argv[2] === 'inspect') {
   const save = readFileSync('packages/engine/test/fixtures/legacy-daily-claimed-v12.json', 'utf8');
   console.log(JSON.stringify({ now: decodeSave(save).world.now, save }));
 } else {
-  const raw = structuredClone(config.raw); raw.shift.startingCoinsBase = 100000;
+  const raw = structuredClone(legacy); raw.shift.startingCoinsBase = 100000;
   for (const weather of ['sunny', 'hot', 'humid', 'rain', 'cold'] as const) raw.weather[weather].weight = weather === 'hot' ? 1 : 0;
   const g = new Game(loadConfig(raw), 42, Date.parse('2026-09-09T04:00:00Z'));
   g.command({ command: { type: 'startShift' }, at: g.world.now, idempotencyKey: 'open' });

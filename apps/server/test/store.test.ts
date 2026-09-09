@@ -138,6 +138,7 @@ test('a rules19 database resumes without backfilling absent quests and atomicall
   const f = fixture(t); f.open().close();
   const saved = readFileSync(new URL('../../../packages/engine/test/fixtures/legacy-v19-absence.json', import.meta.url), 'utf8');
   const data = JSON.parse(saved), old = decodeSave(saved), db = new DatabaseSync(f.file); t.after(() => db.close());
+  db.prepare('INSERT OR IGNORE INTO configs VALUES (?,?)').run(old.config.version, JSON.stringify(old.config.raw));
   db.prepare('INSERT INTO players VALUES (?,?,?,?,?,?,?)').run(data.playerId, data.seed, data.createdAt, old.config.version, data.now, 0, JSON.stringify({ ...old.world, events: undefined }));
   data.log.forEach((entry: { idempotencyKey: string }, i: number) => db.prepare('INSERT INTO commands VALUES (?,?,?,?)').run(data.playerId, i + 1, entry.idempotencyKey, JSON.stringify(entry)));
   data.events.forEach((event: { id: string }, i: number) => db.prepare('INSERT INTO events VALUES (?,?,?,?)').run(data.playerId, i + 1, event.id, JSON.stringify(event)));

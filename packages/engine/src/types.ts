@@ -3,7 +3,7 @@ import type { Dish, Equipment, SeatedType, Weather, Rush, BusinessUnlock, SignSt
 export interface Customer { id: string; type: SeatedType; patienceMs: number; enjoyMs: number }
 export interface Item {
   id: string; customerId: string; dish: Dish; state: 'pending' | 'preparing' | 'ready' | 'served' | 'wasted';
-  readyAt: number | null; glassId: string | null;
+  readyAt: number | null; glassId: string | null; kitchenBatchId?: string;
 }
 export interface Order {
   id: string; placedAt: number; patienceMs: number; items: Item[];
@@ -86,6 +86,7 @@ export type Command =
   | { type: 'upgrade'; kind: Equipment }
   | { type: 'upgradeTable'; tableId: string }
   | { type: 'buyTable' }
+  | { type: 'buyGlass'; count: number }
   | { type: 'upgradeDog'; level: number }
   | { type: 'claimLifePath'; level: number }
   | { type: 'buyUnlock'; item: BusinessUnlock }
@@ -101,5 +102,5 @@ export type Command =
 export type SystemCommand = { type: 'connectionLost'; shiftId: string; lossId?: string } | { type: 'adoptCalendarRules' }; // absent only in early rules19 persisted logs
 export interface Envelope<C = Command> { idempotencyKey: string; at: number; command: C }
 export interface Result { ok: boolean; reason?: string; outcome?: 'early' | 'late' | 'grace' | 'expired' | 'stale'; amount?: number }
-export type RulesVersion = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20; // config-exempt: persisted replay protocol revisions, not economy tuning
+export type RulesVersion = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21; // config-exempt: persisted replay protocol revisions, not economy tuning
 export interface LoggedCommand extends Envelope<Command | SystemCommand> { result: Result; configVersion: string; rulesVersion: RulesVersion }

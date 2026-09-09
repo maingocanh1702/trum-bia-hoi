@@ -22,7 +22,7 @@ function firstOrder(g: Game) {
 
 test('all money Base values scale once; menu, times and probabilities retain their units', () => {
   assert.equal(config.values.shift.startingCoinsBase, 750);
-  assert.equal(config.values.upgrades.keg.priceBase[1], 7500);
+  assert.equal(config.values.upgrades.keg.priceBase[1], 12500);
   assert.equal(config.values.quests.loginTrackRepBase[0], 5);
   assert.equal(config.values.menu.bia.price, 50);
   assert.equal(config.values.freshness.baseMs, 12000);
@@ -186,7 +186,7 @@ test('v1 save migrates without changing prior fines, identifiers or an in-progre
   assert.ok(data.events.every((e: { idempotencyKey: string; configVersion: string }) => e.idempotencyKey && e.configVersion === g.config.version));
   assert.deepEqual(decodeSave(migrated).world, g.world);
   assert.equal(send(g, { type: 'activity', active: true }).ok, true);
-  assert.equal(g.log.at(-1)!.rulesVersion, 20);
+  assert.equal(g.log.at(-1)!.rulesVersion, 21);
   assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
   data.events[0].configVersion = 'tampered';
   assert.throws(() => decodeSave(JSON.stringify(data)), /event-mismatch/);

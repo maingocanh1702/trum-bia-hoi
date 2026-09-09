@@ -1,6 +1,7 @@
-import { config as defaultConfig, configContent, BUSINESS_UNLOCKS, SIGN_STYLES, signWeightMult, DISHES, EQUIPMENT, WEATHER, deliveryBundles, arrivalIntervalMs, type Config, type SeatedType, type Rush } from './config';
+import { kitchenStatus } from './kitchen';
+import { isEconomy2, config as defaultConfig, configContent, BUSINESS_UNLOCKS, SIGN_STYLES, signWeightMult, DISHES, EQUIPMENT, WEATHER, deliveryBundles, arrivalIntervalMs, type Config, type SeatedType, type Rush } from './config';
 import { integer, random, weighted } from './rng';
-import { addStock, credit, currentGuests, customerValue, dayKey, deliveryInterval, deliveryQuote, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
+import { buyGlassQuote, addStock, credit, currentGuests, customerValue, dayKey, deliveryInterval, deliveryQuote, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
 import { lifePathStatus, lifePathRewardQuote, unlockQuote } from './progression';
 import { signboardQuote, signboardStyle } from './signboard';
 import { attendanceDay, attendanceRewardQuote, applyQuestEvent, planDailyQuests, questRewardQuote, zeroLossWindow } from './quests';
@@ -25,6 +26,7 @@ const MENU_PAUSE_RULES: RulesVersion = 16; // config-exempt: fixed replay protoc
 const LIVE_UPGRADE_RULES: RulesVersion = 17; // config-exempt: fixed replay protocol revision for owner live-upgrade policy
 const BATCH_RULES: RulesVersion = 18; // config-exempt: fixed replay protocol revision for stocked beer and wash batches
 const DISCONNECT_RULES: RulesVersion = 19; // config-exempt: replay protocol for trusted disconnection deadlines
+const ECONOMY_RULES: RulesVersion = 21; // config-exempt: replay protocol for economy 2.0 mechanics
 const ABSENT_CALENDAR_RULES: RulesVersion = 20; // config-exempt: replay protocol for lazy absent-day calendars
 const emptyStats = (): Stats => ({ arrived: 0, served: 0, lost: 0, rejected: 0, orders: 0, payment: 0, tip: 0, credited: 0, penalty: 0, spent: 0, rep: 0, wellRestedBonus: 0 });
 
@@ -57,7 +59,7 @@ export class Game {
       dogLevel: 0, claimedLifePaths: [], badgeShards: 0, cosmeticTokens: 0, peakLeague: null, location: c.locations.fallback, lifePath: 0, unlocks: [], badges: [],
     };
     for (let i = 0; i < c.upgrades.table.startingTables; i++) this.world.tables.push(this.newTable());
-    for (let i = 0; i < c.glasses.start; i++) this.world.glasses.push({ id: this.id('glass'), state: 'clean', itemId: null, readyAt: null, staleEmitted: false });
+    for (let i = 0; i < c.glasses.start; i++) this.world.glasses.push(this.newGlass());
   }
   private id(kind: string, consume = true) { const next = this.world.nextId + 1; if (consume) this.world.nextId = next; return `${kind}-${next}`; }
   private emit(type: string, data: World['events'][number]['data'] = {}) {
@@ -66,6 +68,7 @@ export class Game {
     this.world.events.push(event);
     if (this.rulesVersion >= QUEST_RULES && this.world.daily) for (const row of applyQuestEvent(this.world, this.config, event)) this.emit('quest_progressed', { questId: row.id, progress: row.progress, target: row.target });
   }
+  private newGlass(): World['glasses'][number] { return { id: this.id('glass'), state: 'clean', itemId: null, readyAt: null, staleEmitted: false }; }
   private newTable(): Table {
     const level = this.config.values.runtime.initialTableLevel;
     return { id: this.id('table'), level, capacity: this.config.values.upgrades.table.levels[level - 1].capacity, state: 'empty', group: null, order: null, until: null, roundsServed: 0 };
@@ -512,13 +515,23 @@ export class Game {
     const w = this.world, c = this.config.values, s = w.shift!, group = t.group!;
     const first = s.onboarding && s.stats.orders === 0;
     const items: Item[] = [];
+    const modern = this.rulesVersion >= ECONOMY_RULES && isEconomy2(c) ? c : null;
+    const available = { ...w.inventory };
+    if (modern) for (const table of w.tables) if (table.order && ['pending', 'grace'].includes(table.order.state)) for (const item of table.order.items) if (item.state === 'pending') available[item.dish]--;
+    const special = group.customers.some(customer => customer.type === 'vip' || customer.type === 'ngoily');
     for (const customer of group.customers) {
       const dishes = first ? [...c.onboarding.firstShift.firstOrder] as typeof DISHES : ['bia'] as typeof DISHES;
       if (!first && random(w) < c.demandMix.pMoi) {
-        const hot = DISHES.filter(d => c.menu[d].station === 'kitchen' && dishUnlocked(w, this.config, d));
-        const cold: (typeof DISHES)[number] = random(w) < c.demandMix.pNemGivenMoi ? 'nem' : 'lac';
-        // With no hot kitchen, use the measured cold-menu mix exactly.
-        dishes.push(hot.length ? [cold, ...hot][integer(w, 0, hot.length)] : cold);
+        const hot = DISHES.filter(d => c.menu[d].station === 'kitchen' && dishUnlocked(w, this.config, d) && (!modern || available[d] > 0));
+        if (modern) {
+          const cold = (['lac', 'nem'] as const).filter(d => available[d] > 0);
+          const preferHot = random(w) < (special ? modern.demandMix.pHotGivenMoiSpecial : modern.demandMix.pHotGivenMoi);
+          const dish = hot.length && (preferHot || !cold.length) ? hot[integer(w, 0, hot.length - 1)] : cold.length === 2 ? (random(w) < c.demandMix.pNemGivenMoi ? 'nem' : 'lac') : cold[0];
+          if (dish) { dishes.push(dish); available[dish]--; }
+        } else {
+          const cold: Item['dish'] = random(w) < c.demandMix.pNemGivenMoi ? 'nem' : 'lac';
+          dishes.push(hot.length ? [cold, ...hot][integer(w, 0, hot.length)] : cold);
+        }
       }
       for (const dish of dishes) items.push({ id: this.id('item'), customerId: customer.id, dish, state: 'pending', readyAt: null, glassId: null });
     }
@@ -529,32 +542,39 @@ export class Game {
   }
   private prepare(): void {
     const w = this.world, c = this.config.values;
+    const modern = this.rulesVersion >= ECONOMY_RULES && isEconomy2(c) ? c : null;
     const batches = this.rulesVersion >= BATCH_RULES && c.upgrades.keg.refillEnabled;
     const items = w.tables.filter(t => t.order && ['pending', 'grace'].includes(t.order.state)).flatMap(t => t.order!.items);
     let pouring = items.filter(i => i.state === 'preparing' && i.dish === 'bia').length;
-    let cooking = items.filter(i => i.state === 'preparing' && c.menu[i.dish].station === 'kitchen').length;
+    let cooking = kitchenStatus(w, this.config).busy;
+    const panAssignments = new Map<string, string>();
     for (const item of items) {
       if (item.state !== 'pending' || (batches && item.dish === 'bia' ? w.beer?.ready ?? 0 : w.inventory[item.dish]) <= 0 || !dishUnlocked(w, this.config, item.dish)) continue;
       const menu = c.menu[item.dish];
       let duration = menu.prepMs;
       if (menu.needsGlass) {
-        if (!batches && pouring >= c.upgrades.keg.pourSlots[w.equipment.keg - 1]) continue;
+        if ((!batches || modern) && pouring >= c.upgrades.keg.pourSlots[w.equipment.keg - 1]) continue;
         const glass = w.glasses.find(g => g.state === 'clean');
         if (!glass) continue;
-        duration = batches ? 0 : c.upgrades.keg.pourMs[w.equipment.keg - 1];
+        duration = batches && !modern ? 0 : c.upgrades.keg.pourMs[w.equipment.keg - 1];
         glass.state = 'in_use'; glass.itemId = item.id; glass.readyAt = w.now + duration; glass.staleEmitted = false;
         item.glassId = glass.id; pouring++;
       } else if (menu.station === 'kitchen') {
-        if (cooking >= c.upgrades.kitchen.slots[w.equipment.kitchen]) continue;
+        if (!panAssignments.has(item.id)) {
+          if (cooking >= c.upgrades.kitchen.slots[w.equipment.kitchen]) continue;
+          cooking++;
+          if (modern) for (const portion of items.filter(i => i.state === 'pending' && i.dish === item.dish && !panAssignments.has(i.id)).slice(0, Math.min(modern.upgrades.kitchen.portionsPerPan[w.equipment.kitchen], w.inventory[item.dish]))) panAssignments.set(portion.id, item.id);
+        }
+        if (modern) item.kitchenBatchId = panAssignments.get(item.id);
         const mult = c.upgrades.kitchen.prepMult[w.equipment.kitchen];
         if (mult === null) continue;
-        duration = Math.round(duration * mult); cooking++;
+        duration = Math.round(duration * mult);
       }
       if (batches && item.dish === 'bia') w.beer!.ready--;
       else w.inventory[item.dish]--;
       item.state = duration > 0 ? 'preparing' : 'ready'; item.readyAt = w.now + duration;
       this.emit(menu.needsGlass ? 'beer_pouring' : 'dish_preparing', { itemId: item.id, dish: item.dish });
-      if (batches && item.dish === 'bia') this.emit('beer_poured', { itemId: item.id, fromReserve: true });
+      if (batches && !modern && item.dish === 'bia') this.emit('beer_poured', { itemId: item.id, fromReserve: true });
       if (this.rulesVersion >= MENU_RULES && menu.station === 'kitchen') {
         this.emit('kitchen_job_started', { shiftId: w.shift!.id, itemId: item.id, dish: item.dish, prepMs: duration, readyAt: item.readyAt });
         if (item.state === 'ready') this.emit('kitchen_job_ready', { shiftId: w.shift!.id, itemId: item.id, dish: item.dish });
@@ -589,15 +609,16 @@ export class Game {
   /** Opening config is supplied by a trusted registry adapter, never by a player command payload. */
   command(envelope: Envelope, openingConfig?: Config): Result {
     if (!validEnvelope(envelope)) return { ok: false, reason: 'invalidCommand' };
-    return this.applyCommand(envelope, ABSENT_CALENDAR_RULES, openingConfig, true);
+    return this.applyCommand(envelope, ECONOMY_RULES, openingConfig, true);
   }
   /** Trusted adapter supplies one lossId per outage and reuses it only for retries. */
   disconnect(at: number, shiftId: string, lossId: string): Result {
     if (typeof lossId !== 'string' || !lossId) return { ok: false, reason: 'invalidCommand' };
-    return this.applyCommand({ at, idempotencyKey: `system:connectionLost:${shiftId}:${lossId}`, command: { type: 'connectionLost', shiftId, lossId } }, ABSENT_CALENDAR_RULES, undefined, true);
+    return this.applyCommand({ at, idempotencyKey: `system:connectionLost:${shiftId}:${lossId}`, command: { type: 'connectionLost', shiftId, lossId } }, ECONOMY_RULES, undefined, true);
   }
   /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
   replay(entry: LoggedCommand, config = this.config): Result {
+    if (entry.command.type === 'buyGlass' && entry.rulesVersion < ECONOMY_RULES) throw Error('replay:rulesVersion');
     if (entry.command.type === 'adoptCalendarRules' && entry.rulesVersion !== ABSENT_CALENDAR_RULES) throw Error('replay:rulesVersion');
     if (entry.command.type === 'connectionLost' && (entry.rulesVersion < DISCONNECT_RULES || entry.rulesVersion >= ABSENT_CALENDAR_RULES && !entry.command.lossId)) throw Error('replay:rulesVersion');
     if (entry.command.type === 'activity' && entry.command.paused !== undefined && entry.rulesVersion < MENU_PAUSE_RULES) throw Error('replay:rulesVersion');
@@ -676,7 +697,7 @@ export class Game {
         const onboarding = c.onboarding.enabled && w.completedShifts === 0;
         if (changed && onboarding && !w.tables.some(table => c.upgrades.table.levels[table.level - 1].capacity >= c.onboarding.firstShift.firstGroupSize)) return fail('configOnboardingTables');
         const scheduled = !(onboarding && c.onboarding.firstShift.rushDisabled);
-        const plan = this.rulesVersion >= RUSH_SCHEDULE_RULES && scheduled ? planRushes(openingConfig, w.location, this.id('shift', false), day, w.now) : null;
+        const plan = this.rulesVersion >= RUSH_SCHEDULE_RULES && scheduled ? planRushes(openingConfig, w.location, this.id('shift', false), day, w.now, this.rulesVersion >= ECONOMY_RULES ? w.lifePath : Infinity) : null;
         if (this.rulesVersion >= RUSH_SCHEDULE_RULES && scheduled && !plan) return fail('rushScheduleUnavailable');
         if (changed) {
           w.staminaMs = Math.round(w.staminaMs / this.config.values.shift.durationMs * c.shift.durationMs);
@@ -703,6 +724,12 @@ export class Game {
         this.startMenu(true);
         if (this.rulesVersion >= QUEST_RULES) this.ensureDailyQuests(true);
         if (this.rulesVersion >= ATTENDANCE_RULES) this.observeAttendance(true);
+        if (this.rulesVersion >= ECONOMY_RULES && isEconomy2(c) && c.upgrades.keg.refillEnabled) {
+          w.beer ??= { ready: 0, batch: null };
+          const quantity = Math.min(w.inventory.bia, Math.max(0, c.upgrades.keg.kegStorage[w.equipment.keg - 1] - w.beer.ready - (w.beer.batch?.quantity ?? 0)));
+          w.inventory.bia -= quantity; w.beer.ready += quantity;
+          if (quantity) this.emit('beer_initial_fill', { quantity, available: w.beer.ready, stock: w.inventory.bia });
+        }
         this.emit('shift_opened', { shiftId: w.shift.id }); this.emit('weather_rolled', { weather });
         if (plan) for (const [slot, r] of rushes.entries()) this.emit('rush_scheduled', { shiftId: w.shift.id, slot, seed: plan.seed, kind: r.kind, startsAt: r.start, duration: r.end - r.start });
         if (wellRested) { w.wellRestedDays[day] = true; this.emit('well_rested_started', { shiftId: w.shift.id, day, until: w.shift.wellRestedUntil, mult: rested.mult }); }
@@ -797,7 +824,7 @@ export class Game {
       }
       case 'upgrade': {
         const legacy = this.rulesVersion < LIVE_UPGRADE_RULES;
-        const q = upgradeQuote(w, this.config, cmd.kind, legacy && c.upgrades.phase1UpgradesOutsideShiftOnly);
+        const q = upgradeQuote(w, this.config, cmd.kind, legacy && c.upgrades.phase1UpgradesOutsideShiftOnly, this.rulesVersion >= ECONOMY_RULES);
         if (!q.ok || q.cost === null) return fail(legacy ? w.phase !== 'resting' ? 'outsideShiftOnly' : 'upgradeUnavailable' : q.reason!);
         this.spend(q.cost); w.equipment[cmd.kind] = q.next;
         this.emit('upgrade_bought', { kind: cmd.kind, level: q.next, cost: q.cost }); return { ok: true, amount: q.cost };
@@ -898,6 +925,14 @@ export class Game {
         this.spend(level.priceBase); t.level = level.level; t.capacity = level.capacity;
         this.emit('table_upgraded', { tableId: t.id, level: t.level }); return { ok: true, amount: level.priceBase };
       }
+      case 'buyGlass': {
+        const q = buyGlassQuote(w, this.config, cmd.count);
+        if (!q.ok) return fail(q.reason!);
+        this.spend(q.cost);
+        for (let i = 0; i < q.count; i++) w.glasses.push(this.newGlass());
+        this.emit('glasses_bought', { quantity: q.count, owned: w.glasses.length, cost: q.cost });
+        return { ok: true, amount: q.cost };
+      }
       case 'buyTable': {
         if (this.rulesVersion < LIVE_UPGRADE_RULES && w.phase !== 'resting' && c.upgrades.phase1UpgradesOutsideShiftOnly) return fail('outsideShiftOnly');
         if (w.tables.length >= c.upgrades.table.maxTables) return fail('maxTables');
@@ -930,6 +965,7 @@ export function validReplayEnvelope(input: unknown): input is Envelope<Command |
     case 'adoptCalendarRules': return new RegExp(`^system:calendar:${ABSENT_CALENDAR_RULES}(?::[1-9][0-9]*)?$`).test(e.idempotencyKey);
     case 'connectionLost': return typeof c.shiftId === 'string' && c.shiftId.length > 0 && (c.lossId === undefined || typeof c.lossId === 'string' && c.lossId.length > 0) && e.idempotencyKey === `system:connectionLost:${c.shiftId}:${c.lossId ?? e.at}`;
     case 'startShift': case 'endShift': case 'buyTable': case 'emergencyPack': case 'installSignboard': case 'buyFlyer': return true;
+    case 'buyGlass': return Number.isSafeInteger(c.count) && c.count > 0;
     case 'claimQuest': return typeof c.day === 'string' && typeof c.questId === 'string' && c.questId.length > 0;
     case 'claimAttendance': case 'claimDailyBonus': return typeof c.day === 'string';
     case 'activateFlyer': return typeof c.shiftId === 'string' && c.shiftId.length > 0;

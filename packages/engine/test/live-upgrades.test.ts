@@ -42,6 +42,7 @@ test('live upgrade refusals describe real funds or maximum level and cannot debi
   assert.deepEqual(send(g, { type: 'upgrade', kind: 'kitchen' }), { ok: false, reason: 'notEnoughCoins' });
   assert.deepEqual(g.world, before);
   const raw = structuredClone(config.raw); raw.shift.startingCoinsBase = 10000000;
+  if ('lifePathGate' in raw.upgrades) raw.upgrades.lifePathGate.keg.fill(0);
   const rich = new Game(loadConfig(raw)); send(rich, { type: 'startShift' }); send(rich, { type: 'activity', active: true, paused: true });
   while (upgradeQuote(rich.world, rich.config, 'keg').cost !== null) assert.ok(send(rich, { type: 'upgrade', kind: 'keg' }).ok);
   const max = structuredClone(rich.world); assert.equal(send(rich, { type: 'upgrade', kind: 'keg' }).reason, 'maxLevel');

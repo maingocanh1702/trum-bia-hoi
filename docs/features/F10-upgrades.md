@@ -28,12 +28,12 @@ type PlayerUpgrades = Record<UpgradeKind, number>
 
 | Kind | Levels price base | Main stats |
 |---|---|---|
-| `keg` | 0 / 3k / 12k / 50k / 200k | pour slots 1->3, pourMs 3000->1800 |
-| `washer` | 0 / 2.5k / 10k / 40k / 150k | wash slots 1->5, washMs 7000->1500 |
-| `cooler` | 0 / 2k / 8k / 30k / 100k | freshness 12s->20s->35s->60s->infinite |
-| `stall` | 0 / 1k / 5k / 20k / 80k | inventory cap 15->150 |
+| `keg` | 0 / 5,000 / 20,000 / 80,000 / 300,000 | pour slots 1/2/3/4/6, pourMs 2000->1200; keg refill ON: storage 3/6/10/18/40, batch 2/3/5/8/14, refillMs 12/8/6/5/4 s (08-SPEC §8.1, JSON 2.0.1) |
+| `washer` | 0 / 4,000 / 16,000 / 60,000 / 200,000 | wash slots 1->5, washMs 7000->1500 |
+| `cooler` | 0 / 3,000 / 12,000 / 45,000 / 150,000 | freshness 12s->20s->35s->60s->infinite |
+| `stall` | 0 / 1,500 / 8,000 / 30,000 / 120,000 | inventory cap 15->150 |
 | `table` | see `03-SPEC-he-ban.md` | capacity/sprite |
-| `kitchen` | 0 / 8k / 35k / 120k / 300k | unlock hot dishes, prep slots/speed |
+| `kitchen` | — / 12,000 / 50,000 / 160,000 / 400,000 | unlock hot dishes, prep slots/speed |
 
 Displayed price = `round(priceBaseXu * k)`.
 
@@ -85,6 +85,9 @@ QR feeds the existing customerValue tip path immediately. Reward claims are not 
 unlock prerequisite. Shipper now uses the phone prop and its own rules-v7 delivery timer/sheet (F07 §9). Social behavior still needs its own producer wiring.
 
 ## Changelog (append-only)
+
+Audit rows imported from the original checkout describe its reference engine and measurements. Current implementation evidence is in docs/build-progress.md; source claims of19tests, automatic LP rewards or pan identity by dish/time do not override the reconciled runtime contract.
+
 
 | Date | Change |
 |---|---|
@@ -229,3 +232,29 @@ start timestamp use native indeterminate progress and retain their real countdow
 | Date | Change |
 |---|---|
 | 2026-09-09 verification | Batch/HUD product reviewed through7897bdd with both initial HUD findings fixed and no remaining introduced actionable defect.174 engine/server +72 browser +config/build pass;20 canonical1000-serve cohorts k2.5821–2.9601 and15 rush pass. Initial500 excursion and larger-sample disclosure in build-progress. F10 as a whole remains in progress. |
+
+
+## Original-checkout audit history (reference only)
+
+| Ngày | Thay đổi |
+|---|---|
+| 2026-09-09 | `keg.pourMs` 3000→1800 đổi thành 2000/1700/1700/1500/1300 (slots giữ nguyên) theo 08-SPEC v1.3.1 §8.1 — bom Lv1 1 vòi × 3 s làm VIP nhóm 2 mất tip; số vẫn chỉ đọc từ `economy.tbh.json`. |
+| 2026-09-09 | `keg.pourSlots` 1/1/2/2/3 → 1/2/3/4/6, `pourMs` 2000/1800/1600/1400/1200 (JSON 1.7.2, 08-SPEC v1.3.2) — sim 5 quy mô quán: số vòi mới là giá trị của bom; Lv4/Lv5 còn chờ founder chọn nguồn giá trị. |
+| 2026-09-09 | Audit economy: bật `keg.refillEnabled` (bom chứa = phanh đầu game, engine cần cài ở M1: đầu ca bom đầy, vòi chỉ rót khi bom > 0, tự châm batch mỗi refillMs từ kho); thêm lệnh `buyGlass` (cốc mua tới `glasses.buyCap` 40, 400 base/cốc); giá washer/cooler/stall/kitchen/bàn cân lại ×1,3–1,6; ghế 11–48 để mua bàn sau khi nâng bàn. Số ở JSON 2.0.1 / 08-SPEC v1.4.0. |
+| 2026-09-09 (2) | **Engine đã cài** (`packages/engine`): lớp bom chứa/refill + lệnh `buyGlass` + `keg_refilled/keg_empty/glass_bought`; test 16/16, sim k 2,58–2,72 với refill bật. Career sim engine thật: cây thiết bị (không bếp) xong ~ngày 13, LP4 ngày 13. |
+
+
+| Date | Reconciled game update |
+|---|---|
+| 2026-09-09 | Adopted latest handoff numbers as config2.0.1, preserving owner pause/live-upgrade policy and immutable1.x snapshots. Rules21 station/demand/glass/LP-gate implementation is under verification; lease lifecycle and actual career measurements remain pending. Current evidence: docs/build-progress.md. |
+
+
+## Rules21: current economy2.0 station and purchase contract
+
+The tank holds configured servings independently of the glasses. At successful new-shift opening, fill only its free capacity from actual raw stock, excluding both stored beer and any in-flight batch. Never discard over-cap legacy stock, refill it for free, or accelerate carried work. A tap consumes one serving and one clean glass and finishes after pourMs; freshness begins then. Vacancies trigger bounded sequential refills immediately.
+
+Bếp uses stable `Item.kitchenBatchId` (the first portion's existing item ID), with at most portionsPerPan same-dish items. Same-order items precede other orders; a started pan never absorbs arrivals. Identical completion timestamps do not merge pans. Washer retains sequential bounded batches.
+
+`buyGlass {count}` quotes total owned glasses against min(buyCap,storageCap), spends exact price once, and allocates distinct glass IDs. Existing menu pause remains active after buying. Equipment quotes include the next-level LP gate; kitchen arrays include level0, other devices start at level1. Reached LP suffices without claiming its reward. UI reads the same quote and counts.
+
+Old1.x active shifts retain their complete raw config. New2.0.1 config is pinned only at a successful next opening; a refused opening never reprices assets or registers its candidate.

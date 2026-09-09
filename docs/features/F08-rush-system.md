@@ -93,6 +93,9 @@ effectiveInterval = rush.type === 'none'
 
 ## Changelog (append-only)
 
+Audit rows imported from the original checkout describe its reference engine and measurements. Current implementation evidence is in docs/build-progress.md; source claims of19tests, automatic LP rewards or pan identity by dish/time do not override the reconciled runtime contract.
+
+
 | Date | Change |
 |---|---|
 | 2026-09-09 | Rules v5 nối warning theo config, ưu tiên active timer, đóng đúng slot khi closing/finalize; hidden dời deadline, mỗi slot warning một lần. Replay v1–v4 giữ lịch sử, private slot tracking tái dựng qua replay. Lịch hiện vẫn light/heavy chia đều; seeded slot planning, lunch/football/priority và analytics tổng hợp vẫn đang triển khai. |
@@ -157,3 +160,15 @@ and unrepresentable single/group intervals across all weather/rush modes.
 
 
 | 2026-09-09 transition correction | Current rules10 commands advance elapsed time under the previous active version before switching, so previously played legacy arrivals are not recomputed. Historical1–9 commands retain original switching order. Pending arrivals keep their existing deadline. |
+
+
+## Original-checkout audit history (reference only)
+
+| Ngày | Thay đổi |
+|---|---|
+| 2026-09-09 | Founder: đợt **heavy chỉ từ LP1** (`rush.schedule.heavyFromLifePath = 1`); trước đó cả 2 đợt/ca là light. Lý do (audit): quán khởi đầu 6 chỗ mất 40–50 % khách khi heavy đến ngay ca 1. Engine đã cài. |
+
+
+| Date | Reconciled game update |
+|---|---|
+| 2026-09-09 | Adopted latest handoff numbers as config2.0.1, preserving owner pause/live-upgrade policy and immutable1.x snapshots. Rules21 station/demand/glass/LP-gate implementation is under verification; lease lifecycle and actual career measurements remain pending. Current evidence: docs/build-progress.md. |

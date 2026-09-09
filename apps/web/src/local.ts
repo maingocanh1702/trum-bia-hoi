@@ -1,4 +1,4 @@
-import { Game, encodeSave, decodeSave, type Command, type DomainEvent, type Result } from '../../../packages/engine/src';
+import { config, isEconomy2, Game, encodeSave, decodeSave, type Command, type DomainEvent, type Result } from '../../../packages/engine/src';
 import type { Locale } from './i18n';
 
 const SAVE_KEY = 'tbh.save.v1', SETTINGS_KEY = 'tbh.settings.v1';
@@ -38,7 +38,7 @@ export function replaceSave(text: string | null): void {
   persist(game);
 }
 export function dispatch(game: Game, command: Command): Result {
-  return game.command({ idempotencyKey: crypto.randomUUID(), at: Math.max(Date.now(), game.world.now), command });
+  return game.command({ idempotencyKey: crypto.randomUUID(), at: Math.max(Date.now(), game.world.now), command }, command.type === 'startShift' && !isEconomy2(game.config.raw) ? config : undefined);
 }
 export function download(text: string, name: string): void {
   const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));

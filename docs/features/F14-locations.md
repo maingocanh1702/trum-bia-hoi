@@ -16,7 +16,7 @@ type LocationConfig = {
   name: string
   multiplier: number
   requiredLifePath?: LifePathLevel
-  rentBaseE: number
+  rentPerDayBase: number
   themeTags: string[]
 }
 
@@ -32,26 +32,26 @@ type Lease = {
 
 ## 3. Location table
 
-| Location | Mult | `e` rent index | Gate |
+| Location | Mult | Rent/day Base | Gate |
 |---|--:|--:|---|
-| Hẻm Nhỏ | 1.0 | — (rent 0, 08 §16) | start |
-| Ngõ Chợ | 1.1 | 10 | LP1 |
-| Bến Xe | 1.2 | 15 | LP1 |
-| Gần Công Sở | 1.3 | 20 | LP2 |
-| Gần Sân Vận Động | 1.4 | 25 | LP3 |
-| Hồ Bia Đêm | 1.5 | 30 | LP3 |
-| Phố Cổ | 1.6 | 35 | LP4 |
-| Ga Metro | 1.7 | 40 | LP5 |
-| Khu Phố Tây | 1.8 | 45 | LP6 |
+| Hẻm Nhỏ | 1.0 | 0 | LP0 |
+| Ngõ Chợ | 1.1 | 4,000 | LP1 |
+| Bến Xe | 1.2 | 6,800 | LP1 |
+| Gần Công Sở | 1.3 | 10,000 | LP2 |
+| Gần Sân Vận Động | 1.4 | 14,000 | LP3 |
+| Hồ Bia Đêm | 1.5 | 18,000 | LP3 |
+| Phố Cổ | 1.6 | 24,000 | LP4 |
+| Ga Metro | 1.7 | 32,000 | LP5 |
+| Khu Phố Tây | 1.8 | 44,000 | LP6 |
 
-Rent per day: `round(700 * (e / 5) * (1 + e / 50)) * k`, where `e` is the table index above. Server stores the resolved `rentPerDay` at lease start so later balance changes do not mutate active leases.
+Rent per day: `rentPerDayBase × k` from the configured location row; the historical `e` index no longer calculates rent. Server stores the resolved `rentPerDay` at lease start so later balance changes do not mutate active leases.
 
 ## 4. Lease rules
 
 - Lease duration = 7 days.
 - Move-in cost = `rentPerDay * 7 + deposit`, deposit = 25% rent period.
 - Leaving early loses deposit and returns to Hẻm Nhỏ unless buying a new lease.
-- Lease expiry moves player to default or prompts renewal; server decides at next login.
+- Lease expiry returns the player to the configured fallback and refunds the stored deposit once; renewing requires a new lease purchase.
 - Multiplier applies to served revenue/tip before caps.
 
 ## 5. UI
@@ -72,3 +72,22 @@ Rent per day: `round(700 * (e / 5) * (1 + e / 50)) * k`, where `e` is the table 
 - Cannot rent locked location.
 - Deposit refunds only on normal end/renewal path, not early leave.
 - Multiplier is server-side and visible in shift summary.
+
+## Changelog (append-only)
+
+Audit rows imported from the original checkout describe its reference engine and measurements. Current implementation evidence is in docs/build-progress.md; source claims of19tests, automatic LP rewards or pan identity by dish/time do not override the reconciled runtime contract.
+
+
+| Ngày | Thay đổi |
+|---|---|
+| 2026-09-09 | Rent cân lại theo audit economy: `rentPerDayBase` 4 000 / 6 800 / 10 000 / 14 000 / 18 000 / 24 000 / 32 000 / 44 000 (×k = 10 k→110 k/ngày), neo 15–25 % thu nhập tier, bỏ công thức e; thêm `gateLifePath` (1/1/2/3/3/4/5/6). Engine cài `rentLocation` (trả trước 7 ngày + cọc 25 %, gate LP), `leaveLocation` (mất cọc), hết kỳ tự về Hẻm Nhỏ + hoàn cọc. Số ở `economy.tbh.json` 2.0.0, 08-SPEC §16. |
+
+
+## Current game implementation status — 2026-09-09
+
+The updated lease contract above is accepted. This isolated game has not yet implemented the lease purchase/expiry/refund lifecycle or rental UI. Original-checkout implementation and career claims below/above are reference evidence only. Follow docs/latest-handoff-adoption.md for integration order.
+
+
+| Date | Reconciled game update |
+|---|---|
+| 2026-09-09 | Adopted latest handoff numbers as config2.0.1, preserving owner pause/live-upgrade policy and immutable1.x snapshots. Rules21 station/demand/glass/LP-gate implementation is under verification; lease lifecycle and actual career measurements remain pending. Current evidence: docs/build-progress.md. |

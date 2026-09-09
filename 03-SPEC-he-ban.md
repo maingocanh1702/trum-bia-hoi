@@ -301,3 +301,10 @@ và ngày Việt Nam theo lịch thật. Toast trừ tiền/uy tín vẫn chỉ 
 | v1.7 | 2026-09-09: owner chốt auto-pause menu và giữ Nhập hàng mở sau mua; dừng mọi gameplay clock đồng bộ, không đóng băng ngày lịch hoặc khóa thao tác menu. Thay thế chỉ dẫn cũ về menu live. |
 
 | 2026-09-09 batch production | Bom dự trữ tự rót theo08§8.1; lấy ra mâm giải phóng chỗ rót bù, mâm lớn có thể nhận nhiều mẻ. Ly tái sử dụng độc lập, freshness mặc định bắt đầu khi lên mâm; nguyên liệu trừ ở mẻ, không trừ lần hai khi giao. Giữ whole-table/expiry/waste/penalty. |
+
+| v1.3 | Founder 09/09: **giữ nguyên §4 — Order chỉ giao khi ĐỦ món** (không giao mâm thiếu). Chống kẹt theo gameplay: khi gọi món, khách chỉ chọn **mồi còn hàng** (kho − phần khách khác đã gọi chưa làm > 0; hết mồi → chỉ gọi bia); bia luôn gọi, hết bia = khách bỏ đi + phạt như gốc (Thùng Cấp Cứu khi hết sạch). Engine `packages/engine` `order()` đã cài. Số: `demandMix.pHotGivenMoi` 0.5 / `pHotGivenMoiSpecial` 0.8 (08-SPEC §2). |
+
+
+| Date | Reconciled game update |
+|---|---|
+| 2026-09-09 | Adopted latest handoff numbers as config2.0.1, preserving owner pause/live-upgrade policy and immutable1.x snapshots. Rules21 station/demand/glass/LP-gate implementation is under verification; lease lifecycle and actual career measurements remain pending. Current evidence: docs/build-progress.md. |

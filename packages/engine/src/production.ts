@@ -7,7 +7,8 @@ export function beerStatus(w: World, c: Config) {
   const reserved = w.tables.filter(t => t.order && ['pending', 'grace'].includes(t.order.state))
     .flatMap(t => t.order!.items).filter(i => i.dish === 'bia' && i.glassId && ['preparing', 'ready'].includes(i.state)).length;
   const available = w.beer?.ready ?? 0, batch = w.beer?.batch;
-  return { enabled: keg.refillEnabled, available, reserved, stored: keg.refillEnabled ? available : reserved,
+  const pouring = w.tables.flatMap(t => t.order?.items ?? []).filter(i => i.dish === 'bia' && i.state === 'preparing').length;
+  return { pouring, tapSlots: keg.pourSlots[level], pourMs: keg.pourMs[level], enabled: keg.refillEnabled, available, reserved, stored: keg.refillEnabled ? available : reserved,
     capacity: keg.refillEnabled ? keg.kegStorage[level] : keg.pourSlots[level],
     batchSize: keg.refillEnabled ? keg.kegBatch[level] : keg.pourSlots[level],
     durationMs: keg.refillEnabled ? keg.refillMs[level] : keg.pourMs[level],

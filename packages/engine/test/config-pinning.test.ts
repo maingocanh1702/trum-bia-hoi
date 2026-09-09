@@ -85,17 +85,17 @@ test('single-config saves stay v2; multi-config saves reject missing, duplicated
     (s: typeof source) => { s.log.at(-1).result.ok = false; },
     (s: typeof source) => { s.events.pop(); },
     (s: typeof source) => { delete s.events.at(-1).data; },
-    (s: typeof source) => { s.configs[0].shift.durationMs++; },
+    (s: typeof source) => { s.configs[0].shift.durationMs *= 2; },
     (s: typeof source) => { s.log.push(s.log.at(-1)); },
   ];
-  for (const corrupt of corruptions) { const s = structuredClone(source); corrupt(s); assert.throws(() => decodeSave(JSON.stringify(s))); }
+  for (const corrupt of corruptions) { const s = structuredClone(source); corrupt(s); assert.throws(() => decodeSave(JSON.stringify(s)), `corruption ${corruptions.indexOf(corrupt)}`); }
   const restored = decodeSave(encodeSave(g)); assert.equal(encodeSave(restored), encodeSave(g));
 });
 
 test('a genuine rules13 service history survives current adoption and a new pinned shift without rewriting its recorded prefix', () => {
   const g = decodeSave(readFileSync(new URL('./fixtures/legacy-kitchen-served-v13.json', import.meta.url), 'utf8'));
   const prefix = structuredClone(g.world.events); sendKitchen(g, { type: 'activity', active: true });
-  restPin(g); assert.ok(g.command(open(g), nextPin()).ok); assert.equal(g.log.at(-1)!.rulesVersion, 20);
+  restPin(g); assert.ok(g.command(open(g), nextPin()).ok); assert.equal(g.log.at(-1)!.rulesVersion, 21);
   assert.deepEqual(g.world.events.slice(0, prefix.length), prefix); assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
 });
 

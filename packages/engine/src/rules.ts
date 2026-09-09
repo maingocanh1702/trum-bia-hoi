@@ -1,5 +1,5 @@
 import { signboardStyle } from './signboard';
-import { DISHES, type Config, type Dish, type Equipment, type Rush } from './config';
+import { isEconomy2, DISHES, type Config, type Dish, type Equipment, type Rush } from './config';
 import type { Customer, Order, Table, World } from './types';
 
 export function dayKey(now: number, c: Config): string {
@@ -37,13 +37,21 @@ export function restockQuote(w: World, c: Config, dish: Dish, mode: 'bulk' | 'fu
   const cost = Math.floor(quantity / batch) * batch * menu.bulkCost + quantity % batch * menu.unitCost;
   return { quantity, cost, ok: dishUnlocked(w, c, dish) && quantity > 0 && quantity <= missing && w.coins >= cost };
 }
-export function upgradeQuote(w: World, c: Config, kind: Equipment, outsideShiftOnly = false) {
+export function upgradeQuote(w: World, c: Config, kind: Equipment, outsideShiftOnly = false, lifePathGate = true) {
   const prices = c.values.upgrades[kind].priceBase;
   const next = w.equipment[kind] + 1;
   const index = kind === 'kitchen' ? next : next - 1;
   const cost = prices[index];
-  const reason = cost == null ? 'maxLevel' : w.coins < cost ? 'notEnoughCoins' : outsideShiftOnly && w.phase !== 'resting' ? 'outsideShiftOnly' : null;
-  return { next, cost: cost ?? null, ok: reason === null, reason };
+  const requiredLifePath = lifePathGate && isEconomy2(c.values) ? c.values.upgrades.lifePathGate[kind][index] ?? 0 : 0;
+  const reason = cost == null ? 'maxLevel' : w.lifePath < requiredLifePath ? 'lifePathRequired' : w.coins < cost ? 'notEnoughCoins' : outsideShiftOnly && w.phase !== 'resting' ? 'outsideShiftOnly' : null;
+  return { next, cost: cost ?? null, requiredLifePath, ok: reason === null, reason };
+}
+/** Owned glasses are the purchase ceiling; there is no second lifetime purchase counter. */
+export function buyGlassQuote(w: World, c: Config, count: number) {
+  const capacity = Math.min(c.values.glasses.buyCap, c.values.glasses.storageCap);
+  const cost = count * c.values.glasses.priceBase;
+  const reason = !Number.isSafeInteger(count) || count <= 0 ? 'invalidQuantity' : count > capacity - w.glasses.length ? 'glassCapacity' : !Number.isSafeInteger(cost) || cost < 0 ? 'invalidCost' : w.coins < cost ? 'notEnoughCoins' : null;
+  return { count, cost, capacity, owned: w.glasses.length, ok: reason === null, reason };
 }
 /** One level owns purchase state; dog stats and requirements remain in the config. */
 export function dogUpgradeQuote(w: World, c: Config) {

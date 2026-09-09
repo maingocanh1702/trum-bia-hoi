@@ -1,7 +1,7 @@
 {
   "_meta": {
     "name": "Trùm Bia Hơi — economy config",
-    "version": "1.7.3",
+    "version": "2.0.1",
     "date": "2026-09-09",
     "spec": "08-SPEC-economy-constants.md (cùng số, cùng tên trường)",
     "rules": [
@@ -123,7 +123,8 @@
         "_meta"
       ],
       "ci": "coverage test: key trong code ∉ registry → fail; scripts/check_economy_config.py chạy trên bản export từ registry"
-    }
+    },
+    "lifePathEvalRule": "Đánh giá đầy đủ lifetime và requires. Mốc đạt mở gate ngay, không phụ thuộc đã nhận thưởng; phần thưởng nhận một lần qua claimLifePath, giữ ledger canonical."
   },
   "k": {
     "value": 2.5,
@@ -184,7 +185,7 @@
       "bulkCost": 45,
       "unitCost": 54,
       "needsGlass": false,
-      "prepMs": 8000,
+      "prepMs": 4000,
       "station": "kitchen",
       "unlock": {
         "kitchenLevel": 1
@@ -197,7 +198,7 @@
       "bulkCost": 82,
       "unitCost": 98,
       "needsGlass": false,
-      "prepMs": 10000,
+      "prepMs": 5000,
       "station": "kitchen",
       "unlock": {
         "kitchenLevel": 1
@@ -210,7 +211,7 @@
       "bulkCost": 155,
       "unitCost": 186,
       "needsGlass": false,
-      "prepMs": 15000,
+      "prepMs": 7000,
       "station": "kitchen",
       "unlock": {
         "kitchenLevel": 2
@@ -246,7 +247,10 @@
     "moiPerRoundPhase2": [
       0,
       2
-    ]
+    ],
+    "pHotGivenMoi": 0.5,
+    "pHotGivenMoiSpecial": 0.8,
+    "_rule": "Founder 09/09: Order chỉ giao khi ĐỦ món (03-SPEC §4 giữ nguyên). Chống kẹt theo gameplay: khách chỉ gọi mồi trong số món CÒN HÀNG lúc gọi (kho − phần đã có khách gọi chưa làm > 0); hết mồi → khách chỉ gọi bia. Bia luôn gọi — hết bia là lỗi người chơi (khách bỏ đi + phạt như gốc; Thùng Cấp Cứu khi hết sạch). Khi có bếp: pHotGivenMoi = xác suất chọn mồi nóng thay lạnh; nhóm có VIP/ngồi lỳ dùng pHotGivenMoiSpecial (F11 §6)."
   },
   "spawn": {
     "baseMs": 10500,
@@ -522,7 +526,9 @@
         "heavy",
         "light",
         "none"
-      ]
+      ],
+      "heavyFromLifePath": 1,
+      "_rule": "Founder 09/09 (E7): đợt 'heavy' chỉ xuất hiện khi lifePath ≥ heavyFromLifePath; trước đó cả 2 đợt là 'light'."
     }
   },
   "freshness": {
@@ -601,73 +607,75 @@
   },
   "glasses": {
     "start": 10,
-    "buyCap": 10,
-    "storageCap": 20,
-    "priceBase": 200,
+    "buyCap": 40,
+    "storageCap": 50,
+    "priceBase": 400,
     "lifecycle": [
       "clean",
       "in_use",
       "dirty",
       "washing",
       "clean"
-    ]
+    ],
+    "_rule": "Mua tới buyCap tổng số cốc đang sở hữu (buyGlass), được mua trong ca; mỗi cốc priceBase ×k. Quà có thể vượt buyCap tới storageCap. Menu quản lý giữ tạm dừng đến khi đóng."
   },
   "upgrades": {
     "keg": {
       "label": "Bom bia + vòi rót",
       "priceBase": [
         0,
-        3000,
-        12000,
-        50000,
-        200000
+        5000,
+        20000,
+        80000,
+        300000
       ],
       "pourSlots": [
         1,
-        1,
         2,
-        2,
-        3
+        3,
+        4,
+        6
       ],
       "pourMs": [
-        3000,
-        2700,
-        2400,
-        2100,
-        1800
+        2000,
+        1800,
+        1600,
+        1400,
+        1200
       ],
       "kegStorage": [
-        5,
-        5,
-        8,
+        3,
+        6,
+        10,
         18,
         40
       ],
       "kegBatch": [
-        5,
+        2,
+        3,
         5,
         8,
-        18,
-        40
+        14
       ],
       "refillMs": [
-        3000,
-        2700,
-        2400,
-        2100,
-        1800
+        12000,
+        8000,
+        6000,
+        5000,
+        4000
       ],
       "refillEnabled": true,
-      "phase": 1
+      "phase": 1,
+      "_rule": "Đầu ca châm phần còn thiếu tới kegStorage từ kho thật, giữ nguyên bia và mẻ đang chạy. Vòi rót tối đa pourSlots cốc trong pourMs, mỗi cốc trừ 1 khỏi bom. Khi có chỗ và kho bia, mẻ mới bắt đầu ngay, lấy min(kegBatch, chỗ trống, kho), hoàn tất sau refillMs; việc mới chờ mẻ sau. Tắt refillEnabled thì rót trực tiếp từ kho theo vòi."
     },
     "washer": {
       "label": "Bồn rửa cốc",
       "priceBase": [
         0,
-        2500,
-        10000,
-        40000,
-        150000
+        4000,
+        16000,
+        60000,
+        200000
       ],
       "washMs": [
         7000,
@@ -683,16 +691,17 @@
         3,
         5
       ],
-      "phase": 1
+      "phase": 1,
+      "_rule": "Tự động: cốc bẩn vào mẻ ngay; 1 mẻ = tối đa `slots` cốc, mất `washMs`. Bền vững = slots/washMs = 8,6 / 12 / 30 / 72 / 200 cốc/phút."
     },
     "cooler": {
       "label": "Hầm / tủ giữ lạnh",
       "priceBase": [
         0,
-        2000,
-        8000,
-        30000,
-        100000
+        3000,
+        12000,
+        45000,
+        150000
       ],
       "freshnessMs": [
         12000,
@@ -707,10 +716,10 @@
       "label": "Quầy / kho",
       "priceBase": [
         0,
-        1000,
-        5000,
-        20000,
-        80000
+        1500,
+        8000,
+        30000,
+        120000
       ],
       "stockCap": [
         15,
@@ -726,10 +735,10 @@
       "label": "Bếp",
       "priceBase": [
         null,
-        8000,
-        35000,
-        120000,
-        300000
+        12000,
+        50000,
+        160000,
+        400000
       ],
       "slots": [
         0,
@@ -742,8 +751,8 @@
         null,
         1.0,
         0.9,
-        0.75,
-        0.6
+        0.8,
+        0.7
       ],
       "unlocks": [
         [],
@@ -757,7 +766,15 @@
         [],
         []
       ],
-      "phase": 2
+      "phase": 2,
+      "portionsPerPan": [
+        0,
+        2,
+        2,
+        3,
+        3
+      ],
+      "_rule": "Tự động nấu theo chảo: 1 slot = 1 chảo; 1 mẻ = tối đa portionsPerPan khẩu phần CÙNG món (ưu tiên gom món của cùng Order), mất menu.prepMs × prepMult. Món của Order khác vẫn được gom nếu còn chỗ trong chảo. Bền vững Lv1–4 ≈ 24–30 / 48–60 / 90–108 / 154–193 khẩu phần/phút (tuỳ món)."
     },
     "table": {
       "label": "Bàn",
@@ -773,21 +790,21 @@
           "level": 2,
           "name": "Bàn vuông",
           "capacity": 4,
-          "priceBase": 700,
+          "priceBase": 1500,
           "phase": 1
         },
         {
           "level": 3,
           "name": "Bàn dài",
           "capacity": 6,
-          "priceBase": 2500,
+          "priceBase": 6000,
           "phase": 2
         },
         {
           "level": 4,
           "name": "Bàn VIP / kê dài",
           "capacity": 8,
-          "priceBase": 17500,
+          "priceBase": 25000,
           "repBase": [
             3000,
             40000
@@ -806,7 +823,45 @@
       "7": 1500,
       "8": 2500,
       "9": 5000,
-      "10": 10000
+      "10": 10000,
+      "11": 18000,
+      "12": 22000,
+      "13": 23800,
+      "14": 25700,
+      "15": 27800,
+      "16": 30000,
+      "17": 32400,
+      "18": 35000,
+      "19": 37800,
+      "20": 40800,
+      "21": 44100,
+      "22": 47600,
+      "23": 51400,
+      "24": 55500,
+      "25": 59900,
+      "26": 64700,
+      "27": 69900,
+      "28": 75500,
+      "29": 81500,
+      "30": 88000,
+      "31": 95000,
+      "32": 102600,
+      "33": 110800,
+      "34": 119700,
+      "35": 129300,
+      "36": 139600,
+      "37": 150800,
+      "38": 162900,
+      "39": 175900,
+      "40": 190000,
+      "41": 205200,
+      "42": 221600,
+      "43": 239300,
+      "44": 258400,
+      "45": 279100,
+      "46": 301400,
+      "47": 325500,
+      "48": 351500
     },
     "backrest": {
       "label": "postmvp",
@@ -828,7 +883,47 @@
       ],
       "effect": "khách ghế đó gọi 2 mồi"
     },
-    "phase1UpgradesOutsideShiftOnly": false
+    "phase1UpgradesOutsideShiftOnly": false,
+    "_seatRule": "Mua bàn con thứ N = Σ giá ghế quy đổi (seats+1 .. seats+2). Từ 3 bàn con: bàn 4 = 4.000 · bàn 5 = 15.000 · bàn 6 = 40.000 base. Ghế 13–48 để mua bàn được cả sau khi đã nâng bàn (+8 %/ghế).",
+    "_pipelineRule": "Founder 09/09: MỌI trạm (bom rót, bồn rửa, bếp) là pipeline TỰ ĐỘNG — người chơi không bấm, chỉ Phục vụ. Mỗi trạm định nghĩa bằng 2 tham số: thời gian 1 mẻ (ms) + số lượng mỗi mẻ (batch). Mẻ bắt đầu ngay khi có ≥1 việc chờ và lấy tối đa batch việc; việc đến giữa mẻ chờ mẻ sau. Engine đọc: keg.refillMs/kegBatch, washer.washMs/slots (=batch), kitchen prepMs/slots (=số chảo) × portionsPerPan.",
+    "lifePathGate": {
+      "keg": [
+        0,
+        0,
+        0,
+        2,
+        3
+      ],
+      "washer": [
+        0,
+        0,
+        0,
+        2,
+        3
+      ],
+      "cooler": [
+        0,
+        0,
+        0,
+        2,
+        3
+      ],
+      "stall": [
+        0,
+        0,
+        0,
+        2,
+        3
+      ],
+      "kitchen": [
+        0,
+        0,
+        0,
+        3,
+        4
+      ],
+      "_rule": "Mức LP tối thiểu để mua cấp (index = cấp−1; bếp index = cấp). Rải cây thiết bị theo Đường Lên Trùm: Lv4 cần LP2, Lv5 cần LP3; bếp Lv3/Lv4 cần LP3/LP4."
+    }
   },
   "signboard": {
     "installFeeBase": 20000,
@@ -1413,7 +1508,7 @@
     }
   ],
   "locations": {
-    "rentFormula": "round(700 * (e/5) * (1 + e/50)) * k",
+    "rentFormula": "rentPerDayBase × k (chốt bảng 09/09, neo 15–25 % thu nhập tier; không còn dùng công thức e)",
     "leaseDays": 7,
     "depositRate": 0.25,
     "earlyLeaveLosesDeposit": true,
@@ -1425,74 +1520,84 @@
         "mult": 1.0,
         "e": null,
         "rentPerDayBase": 0,
-        "gate": null
+        "gate": null,
+        "gateLifePath": 0
       },
       {
         "id": "ngo_cho",
         "name": "Ngõ Chợ",
         "mult": 1.1,
         "e": 10,
-        "rentPerDayBase": 1680,
-        "gate": "LP1"
+        "rentPerDayBase": 4000,
+        "gate": "LP1",
+        "gateLifePath": 1
       },
       {
         "id": "ben_xe",
         "name": "Bến Xe",
         "mult": 1.2,
         "e": 15,
-        "rentPerDayBase": 2730,
-        "gate": "LP1"
+        "rentPerDayBase": 6800,
+        "gate": "LP1",
+        "gateLifePath": 1
       },
       {
         "id": "gan_cong_so",
         "name": "Gần Công Sở",
         "mult": 1.3,
         "e": 20,
-        "rentPerDayBase": 3920,
-        "gate": "LP2"
+        "rentPerDayBase": 10000,
+        "gate": "LP2",
+        "gateLifePath": 2
       },
       {
         "id": "gan_svd",
         "name": "Gần Sân Vận Động",
         "mult": 1.4,
         "e": 25,
-        "rentPerDayBase": 5250,
-        "gate": "LP3"
+        "rentPerDayBase": 14000,
+        "gate": "LP3",
+        "gateLifePath": 3
       },
       {
         "id": "ho_bia_dem",
         "name": "Hồ Bia Đêm",
         "mult": 1.5,
         "e": 30,
-        "rentPerDayBase": 6720,
-        "gate": "LP3"
+        "rentPerDayBase": 18000,
+        "gate": "LP3",
+        "gateLifePath": 3
       },
       {
         "id": "pho_co",
         "name": "Phố Cổ",
         "mult": 1.6,
         "e": 35,
-        "rentPerDayBase": 8330,
-        "gate": "LP4"
+        "rentPerDayBase": 24000,
+        "gate": "LP4",
+        "gateLifePath": 4
       },
       {
         "id": "ga_metro",
         "name": "Ga Metro",
         "mult": 1.7,
         "e": 40,
-        "rentPerDayBase": 10080,
-        "gate": "LP5"
+        "rentPerDayBase": 32000,
+        "gate": "LP5",
+        "gateLifePath": 5
       },
       {
         "id": "pho_tay",
         "name": "Khu Phố Tây",
         "mult": 1.8,
         "e": 45,
-        "rentPerDayBase": 11970,
-        "gate": "LP6"
+        "rentPerDayBase": 44000,
+        "gate": "LP6",
+        "gateLifePath": 6
       }
     ],
-    "phase": 3
+    "phase": 3,
+    "_rule": "Thuê: trả trước leaseDays × rent + cọc depositRate (hoàn khi hết kỳ); rời sớm (rentLocation nơi khác / leaveLocation) mất cọc, về fallback. Hết kỳ tự về fallback + hoàn cọc; muốn ở tiếp thì thuê lại. Gate = gateLifePath."
   },
   "risk": {
     "gangster": {

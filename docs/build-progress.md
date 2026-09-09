@@ -1740,3 +1740,40 @@ The complete M0–M9 goal and F23 remain unfinished; web is still local.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Verified disconnection/recovery prerequisite through1fa6b14, recorded correction-review scope and exact evidence, and prioritized accepted economy2.0 integration. |
+
+## Latest handoff integration: economy2.0.1 / rules21 — 2026-09-09
+
+Implemented the accepted station/demand/glass/LP-gate boundary on base f8ed8b1.
+The complete1.7.3 schema is retained under docs/config/legacy; new saves accept
+complete1.x or2.x snapshots without adding new fields to historical raw config.
+Only a successful new opening adopts the trusted current bundle. Existing shifts,
+prices and recorded histories remain pinned. Server command validation includes
+buyGlass while the web remains local.
+
+- Tank storage and timed taps are separate. Opening fills actual raw-stock deficit,
+  excluding in-flight reserved capacity; new vacancies start sequential bounded
+  refills. Legacy over-cap carry is preserved, not discarded or topped up.
+- Pans group configured same-dish portions with stable item-based batch identity.
+  New arrivals cannot enter a running pan. Two identical-time pans remain distinct.
+- Side dishes use available unlocked stock minus active pending reservations;
+  expired orders no longer reserve stock. Hot-category probability and fallback
+  use the new config, including whole-group VIP/ngoily preference.
+- Glass purchases debit one shared safe quote, respect total owned capacity,
+  preserve pause, allocate unique IDs and return original retry outcomes.
+- Equipment and heavy-rush LP gates are active; kitchen gate indexing includes
+  level0. VI/EN sheets display current/next capacities, taps, portions and gates.
+- A browser regression exposed an existing CSS specificity rule setting every
+  fourth-and-later-table layout to top:auto. Removing that override restores the
+  existing explicit table positions and prevents order bubbles blocking taps.
+
+Historical kitchen and reserve tests retain explicit1.7.3 fixture numbers; new
+rules21 checks cover new behavior, stock conservation, partial service refusal,
+pause, concurrent pans, purchase/retry, complete config validation and migration.
+Current verification/review is running. The first10 ordinary1000-serve cohorts
+pass on2.0.1; final evidence will pin the final implementation. Lease lifecycle,
+rental UI and actual career measurement remain the next boundary, not completed.
+Full M0–M9, server liveness/remote cutover and release remain unfinished.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Implemented latest-handoff economy pipelines/demand/gates, versioned config compatibility and capacity/glass UI; full validation and independent review in progress. |

@@ -273,6 +273,16 @@
   "production.idle": "Sẵn sàng · Tự làm mẻ kế tiếp",
   "production.noStock": "Hết bia trong kho · Nhập thêm để rót",
   "production.washQueue": "Chờ rửa {n} · Tối đa {capacity} ly/mẻ",
-  "production.reserveHint": "Lấy bia ra mâm là bom tự rót bù. Bia bắt đầu mất hơi khi lên mâm.",
-  "production.legacy": "Rót theo mẻ sẽ áp dụng từ ca kế tiếp."
+  "production.reserveHint": "Bia dự trữ được rót qua vòi vào ly, bom tự làm mẻ bù khi có chỗ trống. Ly bắt đầu mất hơi sau khi rót xong.",
+  "production.legacy": "Rót theo mẻ sẽ áp dụng từ ca kế tiếp.",
+  "production.taps": "{n} vòi · {seconds}s/ly",
+  "production.pouring": "Đang rót {busy}/{total} vòi",
+  "production.portions": "{n} phần cùng món/chảo",
+  "production.glassOwned": "Có {n} ly · Mua tối đa {max} ly",
+  "production.buyGlass": "Mua {n} ly · {cost} xu",
+  "upgrade.lifePath": "Cần đạt {name}",
+  "error.lifePathRequired": "Chưa đạt bậc Đời Quán yêu cầu.",
+  "error.glassCapacity": "Đã đạt giới hạn mua ly.",
+  "error.invalidQuantity": "Số lượng không hợp lệ.",
+  "error.invalidCost": "Chi phí không hợp lệ."
 }

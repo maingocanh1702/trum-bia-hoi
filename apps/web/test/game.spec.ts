@@ -99,6 +99,8 @@ test('tapped order stays live, returns keyboard focus, and closes on customer ex
   await trigger.click();
   const panel = page.getByRole('dialog', { name: 'Bàn 1', exact: true });
   await expect(panel).toBeVisible();
+  await expect(panel.getByRole('button', { name: 'Phục vụ cả mâm', exact: true })).toBeDisabled();
+  await page.clock.runFor(2000);
   await expect(panel.getByRole('button', { name: 'Phục vụ cả mâm', exact: true })).toBeEnabled();
   await expect(panel.getByRole('button', { name: 'Đóng', exact: true })).toBeFocused();
   await page.keyboard.press('Escape');

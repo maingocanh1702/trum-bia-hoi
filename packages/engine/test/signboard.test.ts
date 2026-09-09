@@ -69,7 +69,7 @@ test('real v8 delivery and rush saves retain all recorded fields before and afte
     for (const [key, value] of Object.entries(expected)) if (key !== 'source') assert.deepEqual(historical[key], value, `historical ${name}:${key}`);
     assert.deepEqual(g.world.events, source.events); assert.equal(g.log.at(-1)!.rulesVersion, 8); assert.equal(g.world.signStyle, undefined);
     const before = structuredClone(g.world); assert.ok(send(g, { type: 'activity', active: true }).ok);
-    assert.deepEqual(g.world, { ...before, staminaAnchorAt: before.now, staminaAnchorMs: before.staminaMs, attendance: g.world.attendance, shift: { ...before.shift!, menu: { eventStart: before.events.length, serveStart: before.serves.length, complete: false } }, nextId: before.nextId + 2, events: [...before.events, { id: `event-${before.nextId + 1}`, type: 'menu_tracking_started', at: before.now, configVersion: g.config.version, idempotencyKey: g.log.at(-1)!.idempotencyKey, data: { shiftId: before.shift!.id, complete: false } }, g.world.events.at(-1)!] }); assert.equal(g.world.events.at(-1)!.type, 'attendance_day_opened'); assert.equal(g.log.at(-1)!.rulesVersion, 20); assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
+    assert.deepEqual(g.world, { ...before, staminaAnchorAt: before.now, staminaAnchorMs: before.staminaMs, attendance: g.world.attendance, shift: { ...before.shift!, menu: { eventStart: before.events.length, serveStart: before.serves.length, complete: false } }, nextId: before.nextId + 2, events: [...before.events, { id: `event-${before.nextId + 1}`, type: 'menu_tracking_started', at: before.now, configVersion: g.config.version, idempotencyKey: g.log.at(-1)!.idempotencyKey, data: { shiftId: before.shift!.id, complete: false } }, g.world.events.at(-1)!] }); assert.equal(g.world.events.at(-1)!.type, 'attendance_day_opened'); assert.equal(g.log.at(-1)!.rulesVersion, 21); assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
   }
 });
 
@@ -132,7 +132,7 @@ test('both registry signboard gate names must agree, and a synchronized override
     else raw.signboard.gate.stallLevel++;
     assert.throws(() => loadConfig(raw), /config:signboardGateAlias/);
   }
-  const g = setup(raw => { raw.upgrades.stall.signboardGateLevel = raw.signboard.gate.stallLevel = 4; });
+  const g = setup(raw => { raw.upgrades.stall.signboardGateLevel = raw.signboard.gate.stallLevel = 4; if ('lifePathGate' in raw.upgrades) raw.upgrades.lifePathGate.stall.fill(0); });
   assert.equal(signboardQuote(g.world, g.config).requiredStall, 4);
   assert.equal(send(g, { type: 'installSignboard' }).reason, 'signboardGate');
   upgrade(g); assert.ok(send(g, { type: 'installSignboard' }).ok);
