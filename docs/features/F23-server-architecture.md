@@ -129,3 +129,5 @@ an opening snapshot directly from an untrusted client when building the server.
 
 
 | 2026-09-09 review correction | Refuse a candidate that removes the owned location before adoption. Compare immutable snapshot content independently of JSON object-key ordering; preserve array/value distinctions. Server registry/auth remains unfinished. |
+
+| 2026-09-09 verified checkpoint | Combined full-base review at7c60c70 found no actionable defects after all3 config corrections. Author config/build156engine67browser and20 k/15 rush rows passed; reviewer browser rerun was sandbox-blocked. This verifies config pin/savev3 prerequisite only, not server authority. |

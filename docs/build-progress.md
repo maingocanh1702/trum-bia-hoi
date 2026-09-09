@@ -1357,3 +1357,48 @@ Root remains untouched; full M0–M9/art/server/release work is still incomplete
 | Date | Change |
 |---|---|
 | 2026-09-09 | Implemented the owner's pause-until-close rule; distinguished presence from paused gameplay after real E2E failures, kept management actions usable, and updated prior no-pause expectations. |
+
+
+## 2026-09-09 — Verified config pinning and management pause checkpoint
+
+Product commit **7c60c7099d71c37727d28a0db33b1acf72564207**, complete review base
+**d732240bf32e53fa48e0be55df1d4e4713241f2b**. Three earlier config findings were
+corrected: owned location retention, immutable snapshot key-order comparison and
+onboarding capacity using retained table levels. Rules15 remains the pinning
+boundary; rules16 adds logged management pause while retaining player presence.
+
+Owner behavior is verified: stock purchases keep the dialog open and paused until
+closing. Gameplay/preparation/freshness/shift/rush clocks remain frozen, all menu
+actions retain their normal eligibility, attendance follows the real VN calendar,
+hidden→visible cannot resume behind a menu, reload preserves remaining wait, and
+the same table can be served after returning to the yard. Close/wait flows and the
+mobile stock action row remain usable. Source checkout stays at bc79af5; code is
+only in the isolated worktree and local preview5174. No merge or remote deployment.
+
+- `npm run check:config` and `npm run build` passed.
+- `npm test`:156/156 passed. `npm run test:e2e`:67/67 passed.
+- Final CSS-only alignment: build and5 existing mobile/stock browser cases passed.
+- `npm run sim` plus combined well-rested/QR/shipper/neon/flyer:20 rows, at least500
+  served orders each, k2.3125–2.7562. `npm run sim:rush`:15 rows passed.
+- An actual rules15 service/offline history generated from parent0adee31 replays
+  identically, then adopts rules16 menu pause and round-trips without prefix changes.
+- Native Codex independently reviewed the full base through7c60c70 and reported
+  no actionable defects. It reran config/build156engine tests and required sims.
+  Its sandbox could not bind the browser test server; browser evidence above is
+  from the author run, not an independent browser rerun. The native result was
+  prose, not an exact `VERDICT: CLEAN` marker; the retired Level3 gate is not claimed.
+
+Raw evidence: `.qa/menu-pause-*-final.txt`, `.qa/menu-pause-mobile-final.txt`,
+`.qa/menu-pause-v15-probe.{ts,txt}`, `.qa/menu-pause-verification.json`, and
+`.qa/review-config-menu-pause.{txt,log}` with its pinned prompt. Live in-app preview
+was also opened and the stock pause pill confirmed; menu left open for owner review.
+
+This closes this bounded update only.18 features remain in progress. Complete
+M0–M9, server/registry/auth/network, art/audio exports and hosted acceptance remain
+unfinished. The original full-game goal is still active; local checks are not Alpha
+or release evidence. The accompanying docs-only receipt updates the older handoff
+no-pause rule and regenerates the dashboard; it does not change reviewed product.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Recorded author verification and completed native independent review for config pinning and owner pause-until-close; preserved native browser limitation and full-game incompleteness. |
