@@ -229,6 +229,7 @@ test('muting, guide skipping and reduced-motion preference survive normal play',
 
 test('hidden and offline time preserves the current order and remaining shift', async ({ page }) => {
   await page.clock.install({ time: new Date('2026-09-08T10:00:00Z') });
+  await page.clock.pauseAt(new Date('2026-09-08T10:00:00Z'));
   await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
   await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
   await page.clock.runFor(11100);

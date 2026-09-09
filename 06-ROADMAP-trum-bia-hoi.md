@@ -1,4 +1,4 @@
-# 🗺️ ROADMAP — Trùm Bia Hơi v3.0
+# 🗺️ ROADMAP — Trùm Bia Hơi v3.3
 
 > **Roadmap sản phẩm.** Đây là **công cụ truyền đạt định hướng**, không phải project plan chi tiết — tasks cụ thể nằm ở các SPEC.
 > **Nguồn sự thật về quyết định/số = GDD** (`02-GDD-trum-bia-hoi.md`); roadmap mâu thuẫn GDD thì GDD thắng.
@@ -511,3 +511,5 @@ League/Life Path tạo mục tiêu dài hạn rõ; server-auth chặn gian lận
 | v3.2 | 2026-09-08: cập nhật M0–M3 đang triển khai trong worktree game mới; snapshot prototype không còn là tiến độ hiện hành. |
 
 | 2026-09-09 M4 checkpoint | M4 đã bắt đầu: config pin và server event store có code/tests; auth/registry/transport/cutover còn thiếu, không phải M4 hoàn tất. |
+
+| v3.3 (2026-09-09) | Native review f2e85f8..3ff21df xác nhận không còn lỗi actionable ở SQLite store và nâng cấp trong ca; còn auth/transport trước cutover. Đồng bộ version header với checkpoint hiện hành. |

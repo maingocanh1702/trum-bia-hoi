@@ -1467,3 +1467,17 @@ reduction or wallet grant is part of this owner request.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Fixed both server review findings, then implemented owner in-shift asset upgrades with replay17 and real v16/browser regression coverage; final verification/review pending. |
+
+### Combined review receipt — store and live upgrades
+
+Native review f2e85f8..3ff21df completed with no confirmed actionable defects.
+Reviewer reran eight SQLite and two live-upgrade tests via direct Node because its
+sandbox blocked TSX IPC; author canonical config/build/typecheck and166 tests passed.
+20 economy rows remain2.3125–2.7562;15 rush rows pass. Browser follow-up exposed a
+real-time race in the hidden/offline test harness: clock.install kept ticking
+during navigation. Explicit pauseAt fixes its clock while retaining all exact
+order/time/money assertions; both repeat checks pass. Full browser rerun passed all69 cases. Evidence: .qa/live-upgrades-e2e-verified.txt and .qa/review-store-live-upgrades.txt.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Recorded native review completion and deterministic browser clock fix; owner batch-pouring request is the next bounded change, full game remains active. |

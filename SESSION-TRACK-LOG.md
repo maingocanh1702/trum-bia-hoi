@@ -15,16 +15,17 @@ Config pinning plus owner menu pause were verified at7c60c70 (receipt f2e85f8):
 156 engine/67 browser checks,20 k rows2.3125–2.7562,15 rush rows and native review
 without actionable defects. Stock purchases keep the menu open/paused until closing.
 
-Now building the M4 SQLite event store in `apps/server`; it persists the same engine
-atomically and survives retries/restarts. Config/build,164 engine/server and67 browser
-checks passed;20 economy/15 rush rows passed. Native review found retry-order and invalid-cursor issues; both fixed, final review pending.
-Owner live-upgrade update is now implemented in rules17; verify/review in progress.
-Next: authenticated transport and real registry/account/reconnect integration; web
+Implemented the M4 SQLite event store in `apps/server`; it persists the same engine
+atomically and survives retries/restarts. Config/build,166 engine/server and69 browser
+checks passed;20 economy/15 rush rows passed. Native review found retry-order and invalid-cursor issues; both fixed; native reviewf2e85f8..3ff21df found no actionable defects.
+Owner live-upgrade update is verified in rules17; menus remain paused until closed.
+Next: owner beer/washer batches and capacity HUD, then authenticated transport and real registry/account/reconnect integration; web
 remains local until cutover is ready. Full game/art/server/release are unfinished.
 Current evidence and requirements: `docs/build-progress.md`, tracker and roadmap.
 
 | Date | Change |
 |---|---|
+| 2026-09-09 | Updated verified SQLite/live-upgrade receipt and owner batch priority. |
 | 2026-09-09 | Added current isolated-worktree checkpoint and durable-store work; preserved the historical snapshot below as history. |
 
 ---
