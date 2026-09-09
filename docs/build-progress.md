@@ -2142,3 +2142,9 @@ shift after grace. Source: `Game.reconnect`, `Game.disconnect`, disconnection an
 checkpoint regression tests, including a genuine `9e88643` rules23 fixture.
 This does not complete F23/M4: durable server leases, web authority/outbox and
 registry/admin remain next. Owner performance timebox and M4→M6→M7→M8→M9 stand.
+
+Verified `0bcbcde`:288 full tests +42 final focused checks (real HTTP included),
+config/build/typecheck,10 ordinary k cohorts2.4186–2.8738 and15rush all pass.
+Native review found no actionable correctness/security defect; independent engine
+checks33/33 pass, HTTP rerun limited by reviewer socket permissions. Receipt:
+`.qa/m4-presence-verification.json`. F23/M4 remain OPEN; this is engine readiness only.

@@ -7,10 +7,12 @@
 
 ## 🧭 M4 connection recovery prerequisite — 2026-09-10
 
-Base `9e88643`. Implemented trusted rules24 recovery using real visibility/menu
-state and resting connection loss; historical replay remains unchanged. Focused
-regressions pass; full checks and native review in progress. No server liveness or
-web cutover claim yet. Next: durable heartbeat deadline before GameStore.catchUp,
+Base `9e88643`, product `0bcbcde`. Trusted rules24 recovery preserves hidden/menu
+state and freezes resting loss; historical replay remains unchanged.288 full tests,
+42 final focused real-HTTP/engine tests, config/build,10kcohorts2.4186–2.8738 and
+15rush pass. Native review found no actionable defect (33 independent engine checks;
+reviewer HTTP socket permissions blocked). `.qa/m4-presence-verification.json`.
+Original20sourcehashes unchanged. No server liveness or web cutover claim yet. Next: durable heartbeat deadline before GameStore.catchUp,
 then web server authority/outbox and config registry/admin. No further80MB work.
 
 ## 🧭 Checkpoint closed; M0 complete; M4 integration next — 2026-09-10

@@ -341,3 +341,5 @@ No public upload or M9 history tuning was added.
 | Date | Change |
 |---|---|
 | 2026-09-10 rules24 recovery implementation | Trusted hidden/menu recovery and resting loss; genuine base rules23 fixture plus full-replay/checkpoint regressions. Config/build/tests/sim and native review in progress. F23 and M4 remain open. |
+
+| 2026-09-10 rules24 verified | `0bcbcde` passes config/build/typecheck,288 full engine/server tests,42 final focused tests including real HTTP,10 ordinary kcohorts and15rush. Native review: no actionable introduced correctness/security defects,33 engine tests independently pass; reviewer socket sandbox prevented its HTTP rerun. `.qa/m4-presence-verification.json`. Durable liveness and full F23§8 remain open. |
