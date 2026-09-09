@@ -1,6 +1,6 @@
 # Milestone closure report — M0–M5
 
-2026-09-10 · implementation `936e9d5` · config2.0.1/rules24/schema7.
+2026-09-10 · implementation `c1e953c` · config2.0.1/rules24/schema8.
 Authority: [ROADMAP §mốc M0–M9](../06-ROADMAP-trum-bia-hoi.md), including the
 acceptance sections it references. PASS means the whole stated criterion has
 supporting evidence; FAIL includes missing implementation or missing acceptance
@@ -41,6 +41,18 @@ append-only history, legacy migration and backup preservation remain required.
   Full-base review found one P1 local-recovery regression; `936e9d5` reuses existing
   forensic recovery and tests both corrupt structures. Independent correction review: CLEAN in `.qa/review-m4-web-recovery.txt`;
   the prior finding and original verdict remain preserved in `.qa/review-m4-web-final.txt`.
+- **E8** default registry foundation `65f9242`, final correction `c1e953c`:
+  `.qa/registry-correction-tests-final.txt`310engine/server (12registry cases),
+  `.qa/registry-correction-config-final.txt`zero warnings and
+  `.qa/registry-correction-build-final.txt`build/typecheck PASS.
+  `.qa/registry-remote-e2e.txt`10remote browser PASS at foundation; correction only
+  changes internal registry validation/limit attribution, covered by final310tests.
+  `.qa/registry-sim.txt`10ordinary cohorts k2.4186–2.8738 and
+  `.qa/registry-rush.txt`15rush PASS; engine/config values unchanged by correction.
+  `.qa/review-registry.txt` records foundation P2 author-limit bypass, corrected
+  with catalog identity protection. `.qa/review-registry-correction.txt`: CLEAN.
+  Actual opening/replay/scheduling and authenticated player HTTP checks pass;
+  trusted admin actor tests do not prove real SSO/MFA or editor integration.
 - **E6** `.qa/checkpoint-month.json`: exact server projection/388986events/original
   archive/retry, cold2.23s. This is integrity evidence, not a release latency pass.
 
@@ -52,20 +64,20 @@ No new gameplay test or80MB run was added solely to make this report green.
 
 | Milestone | Exit verdict | Closure | Remaining acceptance |
 |---|---|---|---|
-| M0 | PASS (3/3) | COMPLETE | All three explicit exit criteria met; E7 config/build/tests/sim pass. Foundation/checkpoint reviews also passed. |
+| M0 | PASS (3/3) | COMPLETE | All three explicit exit criteria met; E8 config/build/tests/sim pass. Foundation/checkpoint reviews also passed. |
 | M1 | FAIL (6/12 PASS) | OPEN | Full12min proof at all3viewports, complete7-screen coverage, measured upgrade recommendation, axe and new-player feel evidence. |
 | M2 | FAIL (4/9 PASS) | OPEN | Five-person test, real mid-shift Google browser flow and admin-editable onboarding; locale/login-prompt gaps below. |
 | M3 | FAIL (5/12 PASS) | OPEN | Advanced economy band/feel,32px badge acceptance and remaining equipment/football placeholders. |
-| M4 | FAIL (10/18 PASS) | OPEN — next implementation priority | Remote web authority/reconnect verified in E7; registry/admin effectiveAt and integrated account/import/eligibility/locale remain. |
+| M4 | FAIL (10/18 PASS) | OPEN — next implementation priority | Remote web authority/reconnect verified in E7; internal default registry/pins/scheduling verified in E8. Admin auth/editor/scopes and integrated account/import/eligibility/locale remain. |
 | M5 | FAIL (9/25 PASS) | OPEN | Public seasons/ranking/shrine, rewards/referral/gifts and full integration; local LP acceptance rules pass. |
 
 ## M0 — foundation
 
 | Criterion (ROADMAP) | Verdict | Evidence |
 |---|---|---|
-| check:config green in new workspaces | PASS | E7 current config check;40sections,39governed tiers, runtime seed/schema matched. |
-| Five-seed sim k in2.0–3.0 | PASS | E7 current10cohorts/5seeds, range2.4186–2.8738,≥1000serves/cohort. |
-| Build and tests green | PASS | E7 current Vite production build/typecheck and298tests, no prototype code used. |
+| check:config green in new workspaces | PASS | E8 current config check;40sections,39governed tiers, runtime seed/schema matched. |
+| Five-seed sim k in2.0–3.0 | PASS | E8 current10cohorts/5seeds, range2.4186–2.8738,≥1000serves/cohort. |
+| Build and tests green | PASS | E8 current Vite production build/typecheck and310tests, no prototype code used. |
 
 ## M1 — serving loop
 
@@ -95,7 +107,7 @@ No new gameplay test or80MB run was added solely to make this report green.
 | First guide runs, skip continues, reload does not rerun | PASS | E2 “muting, guide skipping and reduced-motion preference survive normal play” + persisted settings/guide tests. |
 | Google sign-in at minute5 keeps live shift and credits once | FAIL | E5 server mid-shift/claim transaction passes; GIS browser flow and actual Google Client ID absent. |
 | onboarding.enabled=false behaves as returning player, k unchanged | FAIL | E1 controlled rush probe disables onboarding; ordinary sim keeps configured onboarding. No paired on/off k acceptance; formula itself is unchanged. |
-| All thresholds/steps editable in admin without deploy; config green; VI/EN; reduced motion | FAIL | JSON governs thresholds, E1 config and E2 VI/EN/motion pass; actual admin editor/effective activation absent. |
+| All thresholds/steps editable in admin without deploy; config green; VI/EN; reduced motion | FAIL | JSON governs thresholds, E1 config and E2 VI/EN/motion pass; actual admin editor absent; E8 default service activation is verified independently. |
 
 ## M3 — full demand mix
 
@@ -132,7 +144,7 @@ No new gameplay test or80MB run was added solely to make this report green.
 | Locale switch preserves save | PASS | E2 “guest serves, reloads…switches locale” at4viewports. |
 | Guest progress migrates exactly once to Google | FAIL | Server account/import tests pass E5; end-to-end web claim remains absent. |
 | Guest cannot rank-write or claim donation gift | FAIL | These product paths are absent, not an exercised access-control acceptance. |
-| Admin changes1key, activates at effectiveAt | FAIL | No protected registry workflow/admin editor/scheduler. Store opening config pin tests do not prove admin effectiveAt. |
+| Admin changes1key, activates at effectiveAt | FAIL | E8 internal default proposal/approval/publication and real opening at effectiveAt pass. Authenticated admin editor and full protected workflow are not yet integrated; this end-to-end criterion remains FAIL. |
 | Replay event log equals state | PASS | Engine legacy/mixed-pin/replay tests, E4 month replay, E5 imported replay and E6 checkpoint exactness. |
 
 ## M5 — meta
@@ -172,7 +184,8 @@ are not milestone rows, so completing M0 does not incorrectly close all Phase0 r
 
 ## Next queue fixed by owner
 
-1. M4 protected Config Registry/admin per BRD§5.2, effectiveAt and pinned replay.
+1. M4 authenticated admin transport/editor and scoped Config Registry per BRD§5.2;
+   default service/effectiveAt/pinned replay verified in E8.
 2. Integrated accounts/eligibility/locale remain explicit M4 exit gaps; preserve
    server authority and the owner-deferred public import boundary. No fabricated Google setup.
 3. M6 → M7 → M8 → M9; defer additional M5 breadth until hard dependencies are met.
@@ -188,3 +201,5 @@ are not milestone rows, so completing M0 does not incorrectly close all Phase0 r
 | 2026-09-10 server-liveness evidence update |9f38166 completes the backend timeout/restart portion of M4/F23; full-range review and298tests pass. The combined exit criterion stays FAIL because remote web/outbox/reconnect handling is not yet implemented. Milestone PASS/FAIL counts unchanged. |
 
 | 2026-09-10 web cutover acceptance |936e9d5 reviewed and verified:298engine/server +91legacy/10remote browser, config/build and k/rush pass. Five M4 criteria move to PASS; M4 is10/18, still OPEN. Corrupt local recovery preserves originals; public upload remains deferred. |
+
+| 2026-09-10 default registry evidence | c1e953c:310engine/server,10remote browser, config/build,10ordinary kcohorts/15rush PASS; correction review CLEAN. Internal default registry/scheduling verified, authenticated editor still missing. Counts unchanged: M0 3/3, M1 6/12, M2 4/9, M3 5/12, M4 10/18, M5 9/25. |

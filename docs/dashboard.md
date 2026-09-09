@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-10 05:51 · **Branch hiện tại:** `codex/game-build-isolated`
+> **Cập nhật:** 2026-09-10 06:15 · **Branch hiện tại:** `codex/game-build-isolated`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -227,7 +227,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 3
-- **Notes:** Default web dùng server snapshot và config pin; durable ordered journal/reconnect/presence/authoritative reports đã kiểm chứng tại936e9d5.298engine/server +91legacy/10online browser, config/build,10kcohorts2.4186–2.8738/15rush qua. Review đầy đủ phát hiện lỗi mở save local hỏng; đã sửa và review correction CLEAN. Schema7/checkpoint/Google session/claim core giữ nguyên; registry/admin, public account/import/eligibility vẫn thiếu. M4 đạt10/18, chưa hoàn tất. Xem closure và .qa/m4-web-verification.json.
+- **Notes:** Web server authority/outbox/reconnect936e9d5 đã kiểm chứng. Schema8 default registry c1e953c: immutable proposal/approval/audit, role/tier decisions, VN day/season activation và pin khi mở ca; seed mới không tự kích hoạt.310engine/server,10remote browser, config/build,10kcohorts2.4186–2.8738/15rush qua. Review P2 giới hạn tác giả đã sửa; catalog rename bị chặn trước khi ảnh hưởng career; correction CLEAN. Admin API/editor/SSO-MFA/scopes và account/import/eligibility/locale còn thiếu. M4 vẫn10/18 OPEN. Xem docs/config-registry.md và .qa/registry-verification.json.
 
 ### F12 — Giải Nhậu & Vụ Bia — 8 bậc, 2 Vụ Bia song song
 

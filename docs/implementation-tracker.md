@@ -1,8 +1,8 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.40.0
-> **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-10 (web authority/reconnect đã kiểm chứng)
-> **Trạng thái:** Active — **M0 COMPLETE theo exit criteria; xem báo cáo closure M0–M5. M1–M3 tiếp tục triển khai; M4 web server/outbox đã qua review và101browser checks; đạt10/18 tiêu chí, lõi registry mặc định đang review, admin/account/import UI còn thiếu; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.3** (1 phase, mốc M0–M9).
+> **Version:** v0.40.1
+> **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-10 (default registry đã kiểm chứng)
+> **Trạng thái:** Active — **M0 COMPLETE theo exit criteria; xem báo cáo closure M0–M5. M1–M3 tiếp tục triển khai; M4 web server/outbox đã qua review và101browser checks; đạt10/18 tiêu chí, lõi registry mặc định đã verify/review tại c1e953c, admin/account/import UI còn thiếu; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.3** (1 phase, mốc M0–M9).
 > **Owner:** Team
 > **Mục đích:** Master status board cho mọi feature F01–F28. Nhãn `Phase N` chỉ là **khoá parser** của dashboard-engine; mốc thật: P0 → M0 (nền) · P1 → M1–M2 · P2 → M3 · P3 → M4–M6 · P4 → M7–M8 · QA/release → M9. Là **input cho dashboard-engine** (`tools/dashboard-engine/build_dashboard.py`). Nguồn quyết định/scope = `02-GDD-trum-bia-hoi.md` + `06-ROADMAP-trum-bia-hoi.md`; tracker chỉ theo dõi **trạng thái build**.
 > **Cập nhật:** đổi status mỗi khi 1 feature chuyển trạng thái (bắt đầu code / review / merge).
@@ -37,11 +37,11 @@ Giữ nguyên config và full M0–M9 với20feature đang làm.
 
 | Milestone | Status | Acceptance evidence / remaining |
 |---|---|---|
-| M0 | ✅ COMPLETE | check:config/build/298tests;10kcohorts2.4186–2.8738,5seeds; reviewed foundation/checkpoint/web. |
+| M0 | ✅ COMPLETE | check:config/build/310tests;10kcohorts2.4186–2.8738,5seeds; reviewed foundation/checkpoint/web. |
 | M1 | 🟡 OPEN | Core service/reload/pause pass; complete3-viewport shift, axe, recommendation and human feel evidence remain. |
 | M2 | 🟡 OPEN | Guest/guide pass; five-person study, integrated Google and admin/locale/prompt criteria remain. |
 | M3 | 🟡 OPEN | Standard k/kitchen/rush/quests/sign pass; advanced band/feel and equipment/customer assets remain. |
-| M4 | 🟡 OPEN — priority | 10/18 criteria PASS. Web authority/reconnect verified936e9d5; registry/admin and integrated account/import/eligibility/locale remain. |
+| M4 | 🟡 OPEN — priority | 10/18 criteria PASS. Web authority/reconnect verified936e9d5; default registry verifiedc1e953c. Authenticated admin/editor/scopes and integrated account/import/eligibility/locale remain. |
 | M5 | 🟡 OPEN | Local seasons/LP/lease/quest rules pass; community ranks/snapshot/rewards/referral/gift integration remains. |
 
 Full criterion list and named checks: [M0–M5 closure](milestone-closure-m0-m5.md).
@@ -110,7 +110,7 @@ rows. Follow owner queue M4→M6→M7→M8→M9; defer extra M5 breadth/performa
 
 | PR | Wave | Feature | Status | Branch | Gates | Notes |
 |----|------|---------|:------:|--------|:-----:|-------|
-| F23 | 🎮 Code | Kiến Trúc Server Quán — server-auth, websocket, CAPTCHA | 🟡 | `codex/game-build-isolated` | 🔒S | Default web dùng server snapshot và config pin; durable ordered journal/reconnect/presence/authoritative reports đã kiểm chứng tại936e9d5.298engine/server +91legacy/10online browser, config/build,10kcohorts2.4186–2.8738/15rush qua. Review đầy đủ phát hiện lỗi mở save local hỏng; đã sửa và review correction CLEAN. Schema7/checkpoint/Google session/claim core giữ nguyên; registry/admin, public account/import/eligibility vẫn thiếu. M4 đạt10/18, chưa hoàn tất. Xem closure và .qa/m4-web-verification.json. |
+| F23 | 🎮 Code | Kiến Trúc Server Quán — server-auth, websocket, CAPTCHA | 🟡 | `codex/game-build-isolated` | 🔒S | Web server authority/outbox/reconnect936e9d5 đã kiểm chứng. Schema8 default registry c1e953c: immutable proposal/approval/audit, role/tier decisions, VN day/season activation và pin khi mở ca; seed mới không tự kích hoạt.310engine/server,10remote browser, config/build,10kcohorts2.4186–2.8738/15rush qua. Review P2 giới hạn tác giả đã sửa; catalog rename bị chặn trước khi ảnh hưởng career; correction CLEAN. Admin API/editor/SSO-MFA/scopes và account/import/eligibility/locale còn thiếu. M4 vẫn10/18 OPEN. Xem docs/config-registry.md và .qa/registry-verification.json. |
 | F12 | 🎮 Code | Giải Nhậu & Vụ Bia — 8 bậc, 2 Vụ Bia song song | 🟡 | `packages/engine/src/seasons.ts` | 🔒S 🔒B | Rules23: hai mùa theo lịch, thu nhập sau daily cap, peak thật, lịch sử cá nhân và panel VI/EN. Đã verify/review tại faece69: 248 engine/server, 79 browser + 6 kiểm tra lại, config/build/k nền/rush qua. Community ranks và mailbox chưa xong. |
 | F13 | 🎮 Code | Đường Lên Trùm — LP0–LP7, gate tính năng & mặt bằng | 🟡 | `codex/game-build-isolated` | 🔒S | Requirements/claim-once và producers đã có. Hai seed30ngày (480ca) tớiLP4; replay tháng khớp,250tests/config/build/k nền/rush/review qua. FullLP0–LP7/balance còn mở; save tháng80MB vượt localStorage; adapter IndexedDB c9db016 đã review và qua91browser/80MB exactreopen/Appboot. |
 | F14 | 🎮 Code | Mặt Bằng Quán — 9 mặt bằng, rent/cọc 7 ngày | 🟡 | `codex/game-build-isolated` | 🔒S | Rules22 quote/purchase/early move/expiry/refund, real-calendar pause/offline, config/replay/SQLite và menu VI/EN.234 engine/server,77browser,config/build,10kcohorts+15rush pass; native review fixes verified atce7564b. Break-even/art/neighborhood/shift-report còn tiếp tục. |
@@ -314,3 +314,5 @@ rows. Follow owner queue M4→M6→M7→M8→M9; defer extra M5 breadth/performa
 | 2026-09-10 | v0.39.1 | Web cutover936e9d5 verified:298engine/server +91legacy/10remote browser, config/build,10ordinary kcohorts2.4186–2.8738 and15rush PASS. Full review P1 local recovery fixed; independent correction CLEAN. M4 now10/18 PASS, remains OPEN. Next registry/admin then account gaps and M6–M9; no public upload/performance expansion. |
 
 | 2026-09-10 | v0.40.0 | Schema8 default registry implemented: seed registration separate from activation, immutable drafts/approval/publication/audit, tier decisions and actual server opening resolver.307 full tests +10 final focused and10 remote browser pass; final sim/review pending. M4 remains10/18 OPEN; scoped overrides, authenticated admin API/editor and account gaps next. |
+
+| 2026-09-10 | v0.40.1 | Default registry c1e953c verified:310engine/server,10remote browser, config/build zero warnings,10ordinary kcohorts2.4186–2.8738 and15rush PASS. Foundation P2 author-limit bypass fixed; catalog identity regression also prevented. Independent correction review CLEAN. M0 COMPLETE; M4 still10/18 OPEN pending protected admin transport/editor/scopes and account gaps. |

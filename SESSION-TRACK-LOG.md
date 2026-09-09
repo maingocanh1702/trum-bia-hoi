@@ -5,6 +5,19 @@
 
 ---
 
+## 🧭 Default registry verified; admin auth/editor next — 2026-09-10
+
+Productc1e953c (base732f860, foundation65f9242), schema8/config2.0.1/rules24.
+Default config publication now controls actual opening pins; live/replayed shifts retain
+original snapshots. Trusted actor/tier approval, atomic audit, retries and VN scheduling pass.
+310engine/server +10remote browser, config/build zero warnings,10ordinary kcohorts
+2.4186–2.8738 and15rush PASS. Foundation review P2 author-limit bypass corrected;
+catalog identity changes require migration. Independent correction review CLEAN.
+Receipt `.qa/registry-verification.json`; closure M0 COMPLETE, M4 still10/18 OPEN.
+Next: authenticated admin transport/editor and scoped rules; remaining M4 accounts/
+eligibility/locale, then M6→M7→M8→M9. No public upload or history-volume tuning now.
+Original checkout/owner5174 untouched; no merge/push/deploy. Full-game goal active.
+
 ## 🧭 Default registry implemented; review in progress — 2026-09-10
 
 Base732f860. Schema8 keeps immutable config proposals/approval/publication/audit;

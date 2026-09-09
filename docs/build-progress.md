@@ -6,11 +6,11 @@ complete-game goal; milestones below are implementation order, not scope cuts.
 
 | Milestone | Status | Evidence / remaining |
 |---|---|---|
-| M0 — config, pure engine, deterministic replay, k sim, workspaces | COMPLETE — exit criteria PASS | All3exit criteria PASS: current config/build/298tests,5seeds×2profiles k2.4186–2.8738; reviewed foundation/checkpoint/web. |
+| M0 — config, pure engine, deterministic replay, k sim, workspaces | COMPLETE — exit criteria PASS | All3exit criteria PASS: current config/build/310tests,5seeds×2profiles k2.4186–2.8738; reviewed foundation/checkpoint/web. |
 | M1 — serve loop, glasses, stock, upgrades, local save, spatial UI, core audio | In progress | Playable loop, local save/replay, stock/equipment/table UI, core SFX wired; final sprites and listening QA pending |
 | M2 — guest, vi/en, onboarding | In progress | Local guest + matching vi/en keys + event-driven guide with skip/repeat cap; Google account linking and 5-person evidence pending |
 | M3 — full menu, customer mix, weather, rush, business unlocks | In progress | 6 menu entries and hot prep, 5 seated types, 5 weather states, basic scheduled rush. Local phone/QR progression reviewed; shipper local reviewed CLEAN at307a3b0. Football, remaining business upgrades and exhaustive balance/edge QA remain |
-| M4 — server authority, accounts, reconnect, config registry/admin | In progress | 10/18 exit criteria PASS; web server authority/pinned config/outbox/reconnect verified936e9d5. Registry/admin and integrated account/import/eligibility/locale remain. |
+| M4 — server authority, accounts, reconnect, config registry/admin | In progress | 10/18 exit criteria PASS; web server authority/pinned config/outbox/reconnect verified936e9d5. Default registry verifiedc1e953c; authenticated admin/editor/scopes and integrated account/import/eligibility/locale remain. |
 | M5 — seasons, leaderboard/shrine, life path, leases, quests/referrals | In progress | Local LP/quests/attendance and lease calendar/UI implemented; season/peak/referrals/social and full acceptance remain |
 | M6 — risks, dog, emergency supplies | Pending | |
 | M7 — voluntary donations, cosmetic gifts, age notice | Pending | |
@@ -2194,3 +2194,10 @@ Shorter heartbeat configurations re-arm the scheduler at actual durable lease de
 307full tests +10final focused/10remote browser pass; final sim and independent review
 in progress. No public admin API/editor yet; scoped overrides and MFA/SSO wiring next.
 See [registry contract](config-registry.md). M4 stays OPEN and no acceptance count is inflated.
+
+Final default registry c1e953c:310engine/server tests,10remote browser, config/build
+with zero literal warnings,10ordinary kcohorts2.4186–2.8738 and15rush PASS.
+Foundation P2 publisher-rotation bypass fixed by charging the author; persisted catalog
+identity changes now require explicit migration. Independent correction review CLEAN.
+Receipt `.qa/registry-verification.json`. M4 remains10/18 OPEN; next authenticated
+admin transport/editor, scoped rules and remaining account acceptance, then M6–M9.

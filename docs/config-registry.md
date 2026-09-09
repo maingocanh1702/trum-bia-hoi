@@ -30,3 +30,5 @@ No new gameplay numbers, seed changes, engine formulas or performance work in th
 |---|---|
 | 2026-09-10 | Default registry contract and explicit remaining M4 work; implementation started. |
 | 2026-09-10 correction | Review found publisher rotation bypassed the author's daily limit; attribution/count now use the author. An independent author probe found schema-valid catalog renames could block old careers; such changes now require a migration. Regression cases added; verification/review pending. |
+
+| 2026-09-10 verified | Productc1e953c:310engine/server (12registry cases),10remote browser, config/build zero warnings,10ordinary kcohorts2.4186–2.8738 and15rush PASS. Independent correction review CLEAN after fixing the author limit and catalog identity protection. Receipt `.qa/registry-verification.json`; internal default service complete, full admin/M4 remains open. |

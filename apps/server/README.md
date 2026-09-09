@@ -407,3 +407,5 @@ table, exact scope and real SQLite/opening/replay/scheduler checks.
 | Date | Change |
 |---|---|
 | 2026-09-10 | Schema8 default registry and actual opening resolution; internal service verification/review underway, admin API/editor/scopes remain. |
+
+| 2026-09-10 verified | c1e953c default service passes310engine/server (12registry),10remote browser, config/build and k/rush; correction review CLEAN. Admin auth/editor/scopes remain unexposed. Evidence `.qa/registry-verification.json`. |
