@@ -71,7 +71,7 @@ test('genuine v9 hot and humid histories keep their old cadence until a new inte
     assert.equal(w.shift!.nextSpawnAt - latestArrival(g).at, 10500 * Number(latestArrival(g).data.size));
     const pending = w.shift!.nextSpawnAt;
     assert.ok(send(g, { type: 'activity', active: true }).ok);
-    assert.equal(g.log.at(-1)!.rulesVersion, 11);
+    assert.equal(g.log.at(-1)!.rulesVersion, 12);
     assert.deepEqual(w, { ...historical, staminaAnchorAt: w.now, staminaAnchorMs: w.staminaMs });
     assert.equal(w.shift!.nextSpawnAt, pending);
     g.advance(pending);

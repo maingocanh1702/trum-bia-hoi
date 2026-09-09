@@ -1748,7 +1748,9 @@
         "signboard_bought",
         "signboard_equipped",
         "flyer_bought",
-        "flyer_started"
+        "flyer_started",
+        "quest_claimed",
+        "daily_bonus_claimed"
       ],
       "loop": false,
       "status": "draft",
@@ -1776,7 +1778,9 @@
         "signboard_bought",
         "signboard_equipped",
         "flyer_bought",
-        "flyer_started"
+        "flyer_started",
+        "quest_claimed",
+        "daily_bonus_claimed"
       ],
       "loop": false,
       "status": "draft",

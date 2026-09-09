@@ -16,3 +16,10 @@ export function weighted<T extends string>(state: { rng: number }, rows: [T, num
   for (const [key, weight] of rows) { roll -= weight; if (roll < 0) return key; }
   return rows[rows.length - 1][0];
 }
+
+/** FNV-1a seeds an independent stream without consuming gameplay randomness. */
+export function seededRng(key: string) {
+  const state = { rng: 2166136261 }; // config-exempt: FNV-1a offset and prime, not economy.
+  for (let i = 0; i < key.length; i++) state.rng = Math.imul(state.rng ^ key.charCodeAt(i), 16777619) >>> 0;
+  return state;
+}

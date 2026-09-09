@@ -7,3 +7,4 @@ export * from './progression';
 export * from './rush';
 export * from './signboard';
 export * from './flyer';
+export * from './quests';

@@ -244,3 +244,18 @@
 .flyer-timer progress { flex-basis: 100%; width: 100%; }
 .stock-strip .flyer-stock.active { background: #e5b94c; color: #143f30; border-radius: 16px; }
 .flyer-report { border-top: 1px solid #b7c2b2; margin-top: 20px; }
+
+.quest-summary, .quest-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.quest-summary > b { font-size: 24px; color: var(--coinGold); white-space: nowrap; }
+.quest-summary p, .quest-list p { color: var(--creamMuted); font-size: 13px; }
+.quest-list { list-style: none; margin: 0; padding: 0; }
+.quest-list li { border-top: 1px solid var(--panelBorder); padding: 14px 0; }
+.quest-heading h3 { font-size: 16px; margin: 0; }
+.quest-heading > b { white-space: nowrap; font-size: 13px; }
+.quest-list progress { width: 100%; max-width: none; height: 9px; margin: 12px 0 0; }
+.quest-list button { min-width: 130px; }
+.quest-list small, .quest-bonus small { display: block; margin: 8px 0; }
+.quest-bonus { display: flex; gap: 10px; border-top: 1px solid var(--panelBorder); padding: 16px 0; }
+.quest-bonus > .sprite { width: 72px; height: 72px; }
+.quest-bonus h3 { margin: 0; }
+.quest-bonus p { font-size: 13px; }

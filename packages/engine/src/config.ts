@@ -19,6 +19,15 @@ export function arrivalIntervalMs(c: Economy, weather: Weather, kind: Rush, camp
   return kind === 'none' ? interval : Math.max(interval, rush.floorMs);
 }
 
+/** Decode the single supported config curve grammar; never execute formula text. */
+export function dailyTargetCurve(c: Economy) {
+  const match = /^base \+ \(max-base\) \* \(\(clamp\(tier,(\d+),(\d+)\)-\1\)\/(\d+)\)\^(\d+(?:\.\d+)?)$/.exec(c.quests.daily.targetCurve);
+  if (!match) throw Error('config:questCurve');
+  const [min, max, divisor, exponent] = match.slice(1).map(Number);
+  if (![min, max, divisor].every(Number.isSafeInteger) || min < 1 || max <= min || divisor !== max - min || !Number.isFinite(exponent) || exponent <= 0) throw Error('config:questCurve');
+  return { min, max, divisor, exponent };
+}
+
 /** Final dish prices; only the gross range supplied by the caller is Base-scaled. */
 export function deliveryBundles(c: Economy, kitchen: number, grossRange: readonly number[]) {
   const dishes = DISHES.filter(d => c.menu[d].unlock.kitchenLevel <= kitchen);
@@ -235,6 +244,31 @@ function validate(c: Economy): void {
       if (!Number.isFinite(total) || total <= 0 || (capCanExclude && postCap <= 0)) throw Error('config:signboardWeights');
     }
   }
+  dailyTargetCurve(c);
+  const daily = c.quests.daily;
+  if (daily.seed !== seed.quests.daily.seed || daily.count !== daily.buckets.length + daily.fixed.length || c.shift.dayRollover.tz !== seed.shift.dayRollover.tz) throw Error('config:dailyShape');
+  const poolKeys = seed.quests.daily.buckets.map(b => Object.keys(b.pool).sort().join(','));
+  daily.buckets.forEach((bucket, i) => {
+    if (bucket.id !== seed.quests.daily.buckets[i].id || Object.keys(bucket.pool).sort().join(',') !== poolKeys[i]) throw Error('config:questPool');
+    for (const [type, range] of Object.entries(bucket.pool)) {
+      if (!range) continue;
+      (range as number[]).forEach(n => whole(n, 'quest.target', 1));
+      if (range[1] < range[0]) throw Error('config:questRange');
+      whole(Math.ceil(range[1] * (type === 'earn_coins_base' ? c.k.value : 1)), 'quest.scaledTarget', 1);
+    }
+    if ('zeroLossWindowMs' in bucket) whole(bucket.zeroLossWindowMs!, 'quest.zeroLossWindow', 1);
+  });
+  daily.fixed.forEach((row, i) => {
+    if (row.id !== seed.quests.daily.fixed[i].id || row.id === 'gift_3' && row.uniqueRecipients !== true) throw Error('config:questFixed');
+    whole(row.target, 'quest.fixedTarget', 1);
+  });
+  for (const row of [...daily.buckets, ...daily.fixed]) for (const amount of [row.rewardCoinBase, row.rewardRepBase]) { whole(amount, 'quest.reward'); whole(Math.round(amount * c.k.value), 'quest.scaledReward'); }
+  whole(daily.bonusAll5.flyer, 'quest.bonusFlyer'); whole(daily.bonusAll5.badgeShard, 'quest.bonusShard');
+  if (daily.bonusAll5.flyer > c.unlocks.flyer.stockCap || c.unlocks.flyer.freeOnDaily5of5 !== (daily.bonusAll5.flyer > 0)) throw Error('config:questBonusCapacity');
+  c.league.tiers.forEach((tier, index) => {
+    whole(tier.minSeasonEarnedBase, 'league.threshold'); whole(Math.round(tier.minSeasonEarnedBase * c.k.value), 'league.scaledThreshold');
+    if (index === 0 ? tier.minSeasonEarnedBase !== 0 : tier.minSeasonEarnedBase <= c.league.tiers[index - 1].minSeasonEarnedBase) throw Error('config:leagueOrder');
+  });
   const shipper = c.customerTypes.shipper, grossRange = shipper.grossBase.map(n => Math.round(n * c.k.value));
   for (const n of [...shipper.orderLines, ...shipper.grossBase, ...grossRange, shipper.spawnIntervalMs, shipper.deadlineMs]) whole(n, 'shipper.range', 1);
   if (shipper.orderLines[0] > shipper.orderLines[1] || grossRange[0] > grossRange[1] || shipper.requires !== 'phone') throw Error('config:shipper');

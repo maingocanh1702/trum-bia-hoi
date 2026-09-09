@@ -144,7 +144,7 @@ test('genuine rules10 weather and neon histories replay unchanged through curren
     assert.equal(g.log.at(-1)!.rulesVersion, 10); g.advance(g.world.shift!.nextSpawnAt + 1);
     const previous = structuredClone(g.world); assert.ok(send(g, { type: 'activity', active: true }).ok);
     assert.deepEqual(g.world, { ...previous, staminaAnchorAt: previous.now, staminaAnchorMs: previous.staminaMs });
-    assert.equal(g.log.at(-1)!.rulesVersion, 11); assert.equal(g.world.flyers, undefined);
+    assert.equal(g.log.at(-1)!.rulesVersion, 12); assert.equal(g.world.flyers, undefined);
     assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
   }
 });

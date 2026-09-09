@@ -43,6 +43,17 @@ export interface Shift {
   nextSpawnAt: number; firstGroup: boolean; onboarding: boolean; stats: Stats;
   wellRestedUntil: number | null; rushUntil?: number | null;
 }
+export interface DailyQuest {
+  id: string; kind: string; bucket: string; target: number; progress: number;
+  coin: number; reputation: number; claimed: boolean;
+}
+export interface DailyQuests {
+  day: string; tier: number; seed: string; expiresAt: number; rows: DailyQuest[];
+  bonusClaimed: boolean; recipients: string[];
+  lossFreeSince: number | null; lossFreeServed: boolean;
+  vipShift: string | null; vipServed: boolean; vipLost: boolean;
+  rushSlot: number | null; rushShift: string | null; rushServed: boolean;
+}
 export interface World {
   now: number; rng: number; nextId: number; phase: 'resting' | 'open' | 'closing';
   playerId: string; coins: number; reputation: number; seasonEarned: number; lifetimeEarned: number;
@@ -55,7 +66,7 @@ export interface World {
   events: DomainEvent[]; lostStreak: number;
   delivery: DeliveryOrder | null; nextDeliveryAt: number | null;
   dogLevel: number; claimedLifePaths: number[]; badgeShards: number; cosmeticTokens: number; peakLeague: string | null;
-  signStyle?: SignStyle; flyers?: number;
+  signStyle?: SignStyle; flyers?: number; daily?: DailyQuests;
   location: string; lifePath: number; unlocks: string[]; badges: string[];
 }
 export type Command =
@@ -71,6 +82,8 @@ export type Command =
   | { type: 'upgradeDog'; level: number }
   | { type: 'claimLifePath'; level: number }
   | { type: 'buyUnlock'; item: BusinessUnlock }
+  | { type: 'claimQuest'; day: string; questId: string }
+  | { type: 'claimDailyBonus'; day: string }
   | { type: 'buyFlyer' }
   | { type: 'activateFlyer'; shiftId: string }
   | { type: 'installSignboard' }
@@ -79,5 +92,5 @@ export type Command =
   | { type: 'emergencyPack' };
 export interface Envelope { idempotencyKey: string; at: number; command: Command }
 export interface Result { ok: boolean; reason?: string; outcome?: 'early' | 'late' | 'grace' | 'expired' | 'stale'; amount?: number }
-export type RulesVersion = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11; // config-exempt: persisted replay protocol revisions, not economy tuning
+export type RulesVersion = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12; // config-exempt: persisted replay protocol revisions, not economy tuning
 export interface LoggedCommand extends Envelope { result: Result; configVersion: string; rulesVersion: RulesVersion }

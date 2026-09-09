@@ -337,7 +337,7 @@ Mỗi loại ép một quyết định: VIP/vội = tốc độ, bàn lai rai = 
 
 ## 16. Hệ nhiệm vụ & Monetization
 
-**Nhiệm vụ (7 nhánh, giữ khung gốc, thưởng ×k):** Ngày (3 slot: serve_*/perfect_tip/zero_loss, +uy tín; xong cả 3 → tờ rơi + mảnh huy hiệu) · Shift (3 ca → 1.000xu+100 uy tín) · Gift · Điểm danh 7 ngày (uy tín 2→128) · Referral (250/1.000/3.000⭐) · Sign-in · Đường Lên Trùm.
+**Nhiệm vụ (7 nhánh, giữ khung gốc, thưởng ×k):** Ngày (3 slot: serve_*/perfect_tip/zero_loss, +uy tín; xong đủ 5 nhiệm vụ ngày, gồm 3 lõi + ca + gift → tờ rơi + mảnh huy hiệu) · Shift (3 ca → 1.000xu+100 uy tín) · Gift · Điểm danh 7 ngày (uy tín 2→128) · Referral (250/1.000/3.000⭐) · Sign-in · Đường Lên Trùm.
 → Thưởng nhiệm vụ = uy tín + xu nhỏ + vật phẩm, **KHÔNG tính xếp hạng** → retention phụ, không phá cân bằng.
 - ✅ **Cơ chế gán (đo live, lưu ý cho bia hơi):** 5 nhiệm vụ/ngày = 3 lõi (bốc 1/bucket bằng **seed theo ngày**, reward cố định theo bucket 120/220/320xu+5⭐) + 2 cố định (3 ca = 1.000+100; gửi quà 3 người KHÁC nhau = 300+15). **Target co giãn theo TIER** (`pm()`: base→max theo `((tier-1)/8)^1.5`) → veteran ghim gần MAX. **Vấn đề gốc: pool bucket quá nhỏ (3/2/1) + target ghim tier → nhiệm vụ "trông y hệt mỗi ngày"** → bia hơi nên **pool loại lớn hơn + đa dạng target** để cảm giác tươi mới. Gửi quà = transfer NL P2P (chống farm: 1 tin chưa đọc/người + trần gửi/nhận ngày + đếm uniqueRecipients).
 
@@ -450,3 +450,5 @@ Mục tiêu: chứng minh **vòng lặp vận hành ca vui & economy cân**. KH�
 *Nguồn: `00-TONG-HOP-trumviahe.md`, `economy-spec-from-bundle.md`, `01-MAP-tra-da-to-bia-hoi.md`. Spec hệ bàn: `03-SPEC-he-ban.md`. Script: `scripts/measure_k.py`.*
 
 | v1.7 runtime Tỉnh Táo | Theo công thức 08-SPEC §9 và JSON: bonus = round((payment+tip) × mult) − (payment+tip), không nhân Tỉnh Táo riêng vào tip. Thời gian nghỉ bắt đầu khi đóng hẳn ca (tài khoản mới: createdAt), tính cả offline; hiệu lực dùng thời gian chơi đang hoạt động. Ngày dùng = ngày mở ca; tiền vẫn per-earn, số ca vẫn finalize-day. |
+
+| 2026-09-09 (daily rules12) | §16 sửa điều kiện bonus từ3 lõi thành đủ5 theo `quests.daily.bonusAll5` và08§14; không đổi số JSON. Contract tiến độ/claim/local replay tạiF17§10. |

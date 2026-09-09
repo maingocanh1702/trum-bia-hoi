@@ -24,7 +24,7 @@ export function decodeSave(text: string): Game {
   for (const original of save.log as LoggedCommand[]) {
     const entry = save.version === 1 ? { ...original, configVersion: game.config.version, rulesVersion: 1 as const } : original;
     if (!validEnvelope(entry) || entry.at < game.world.now) throw Error('save:invalid-log');
-    if (entry.configVersion !== game.config.version || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].includes(entry.rulesVersion)) throw Error('save:invalid-version'); // config-exempt: supported replay protocol versions
+    if (entry.configVersion !== game.config.version || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].includes(entry.rulesVersion)) throw Error('save:invalid-version'); // config-exempt: supported replay protocol versions
     const result = game.replay(entry);
     if (JSON.stringify(result) !== JSON.stringify(entry.result)) throw Error('save:replay-mismatch');
   }

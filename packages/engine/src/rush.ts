@@ -1,5 +1,5 @@
 import type { Config } from './config';
-import { integer } from './rng';
+import { integer, seededRng } from './rng';
 import type { DomainEvent, Shift } from './types';
 
 /** Independent schedule RNG: changing the layout cannot consume customer rolls. */
@@ -13,8 +13,7 @@ export function planRushes(c: Config, locationId: string, shiftId: string, day: 
   const maximumMs = Math.floor(count / 2) * (light.durationMs + heavy.durationMs) + count % 2 * Math.max(light.durationMs, heavy.durationMs);
   const minimumMs = firstMs + maximumMs + Math.max(0, count - 1) * schedule.warningMs;
   if (count && (!Number.isSafeInteger(minimumMs) || minimumMs > c.values.shift.durationMs)) return null;
-  const rng = { rng: 2166136261 }; // config-exempt: FNV-1a algorithm offset/prime below.
-  for (let i = 0; i < seed.length; i++) rng.rng = Math.imul(rng.rng ^ seed.charCodeAt(i), 16777619) >>> 0;
+  const rng = seededRng(seed);
   const pool = ['light', 'heavy'] as const, offset = integer(rng, 0, pool.length - 1);
   const kinds = Array.from({ length: count }, (_, i) => pool[(i + offset) % pool.length]);
   const totalMs = kinds.reduce((sum, kind) => sum + (kind === 'light' ? light : heavy).durationMs, 0);

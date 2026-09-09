@@ -896,3 +896,46 @@ claim. Full-game goal remains active.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Recorded full-diff no-finding follow-up review, runtime dismissal of false scaling report,108 unit/40 E2E/30 k-row evidence and preserved next F17 scope. |
+
+
+## 2026-09-09 — Daily quests rules12, review pending
+
+Base3f978ec. Pure daily generation from canonical five-row definition (3 seeded
+core +2 fixed), pinned VN day/current season tier and independent RNG. Curve targets
+round up to reachable integer counts, reward Base values use the existing shared
+loader once; JSON1.7.1 and balance numbers unchanged. F17 section10 is the durable
+progress/claim decision table; stale all3 bonus text in GDD/F17 now follows bonusAll5.
+
+One engine event observer accounts actual customer/table/delivery service, finalized
+shifts, same-day full rush/VIP observation and active zero-loss windows. Midnight
+expires claims even across a ca; hidden time freezes gameplay while the calendar
+advances. Exact day/id, idempotency and safe integer checks protect claims. Rewards
+use existing quest credit/changeRep and do not alter season/lifetime/day counted
+ledgers. Bonus checks all5 and available flyer/shard capacity before any mutation;
+free flyer stamps persistent ownership. No public gift/progress assertion command.
+The trusted gift observer is a contract awaiting real social transfer; four local
+quests cannot earn five-of-five. Attendance/referral/server/full F17 remain required.
+
+Optional daily state and protocol12 preserve earlier saves; genuine active/ended
+flyer rules11 fixtures captured fromd5be3e0 validate exact historical world/events,
+then current adoption and next-shift quest generation. Test fixtures retune thresholds
+for bounded service checks; they do not change production numbers. Existing hidden
+regression now expects only new calendar-generation events, with no hidden progress.
+
+Native notebook action and VI/EN sheet, five progress rows, claim/claimed/locked states
+and free-flyer bonus. Existing paired upgrade SFX; no new dependency or image asset.
+Visual checks at360×740,390×844 and1280×400 confirmed readable scrolling sheets; progress
+bar max-width locally overrides the old170px stock bar limit. Departure numeric
+coin/reputation toast and whole-table serve behavior remain covered by the full suite.
+
+Author verification: config/build/118 unit tests passed (.qa/quests-verify.txt);
+44 E2E passed in48.4s (.qa/quests-browser-full.txt).20 economy rows (normal plus
+flyer/Golden/QR/shipper/well-rested), all>=500 actual serves, k2.3171–2.7312;
+15 controlled rush-pressure rows pass.128 assets/32 paired SFX;30 placeholders and90
+drafts still keep art release open. Independent full-base review is next; no claim
+that the complete feature or full-game goal is finished. Tracker v0.16.0 has17 in
+progress. Root untouched, no merge/push/hosted release.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Implemented local daily generation/progress/claims/UI and preserved rules11 replay, with118 unit/44 browser/20 k rows; final independent review pending. |

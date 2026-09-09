@@ -3,6 +3,7 @@ import { integer, random, weighted } from './rng';
 import { addStock, credit, currentGuests, customerValue, dayKey, deliveryInterval, deliveryQuote, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
 import { lifePathStatus, lifePathRewardQuote, unlockQuote } from './progression';
 import { signboardQuote, signboardStyle } from './signboard';
+import { applyQuestEvent, planDailyQuests, questRewardQuote, zeroLossWindow } from './quests';
 import { flyerQuote } from './flyer';
 import { planRushes, summarizeRush } from './rush';
 import type { Command, Customer, Envelope, Group, Item, LoggedCommand, Order, Result, RulesVersion, Stats, Table, World } from './types';
@@ -14,6 +15,7 @@ const SIGNBOARD_RULES: RulesVersion = 9; // config-exempt: fixed replay protocol
 const RUSH_SCHEDULE_RULES: RulesVersion = 8; // config-exempt: fixed replay protocol revision
 const ARRIVAL_INTERVAL_RULES: RulesVersion = 10; // config-exempt: fixed replay protocol revision
 const FLYER_RULES: RulesVersion = 11; // config-exempt: fixed replay protocol revision
+const QUEST_RULES: RulesVersion = 12; // config-exempt: fixed replay protocol revision
 const emptyStats = (): Stats => ({ arrived: 0, served: 0, lost: 0, rejected: 0, orders: 0, payment: 0, tip: 0, credited: 0, penalty: 0, spent: 0, rep: 0, wellRestedBonus: 0 });
 
 /** No wall clock, IO or renderer: only config, seed, explicit time and commands. */
@@ -23,7 +25,7 @@ export class Game {
   private readonly results = new Map<string, LoggedCommand>();
   private commandKey: string | null = null;
   private activeRushIndex: number | null = null;
-  private rulesVersion: RulesVersion = FLYER_RULES;
+  private rulesVersion: RulesVersion = QUEST_RULES;
   constructor(readonly config: Config = defaultConfig, readonly seed = 1, readonly createdAt = 0, readonly playerId = 'guest') {
     if (!Number.isSafeInteger(seed) || !Number.isSafeInteger(createdAt) || createdAt < 0) throw Error('game:invalid-origin');
     const c = config.values;
@@ -45,7 +47,9 @@ export class Game {
   private id(kind: string, consume = true) { const next = this.world.nextId + 1; if (consume) this.world.nextId = next; return `${kind}-${next}`; }
   private emit(type: string, data: World['events'][number]['data'] = {}) {
     const id = this.id('event');
-    this.world.events.push({ id, type, at: this.world.now, configVersion: this.config.version, idempotencyKey: this.commandKey ?? `tick:${id}`, data });
+    const event = { id, type, at: this.world.now, configVersion: this.config.version, idempotencyKey: this.commandKey ?? `tick:${id}`, data };
+    this.world.events.push(event);
+    if (this.rulesVersion >= QUEST_RULES && this.world.daily) for (const row of applyQuestEvent(this.world, this.config, event)) this.emit('quest_progressed', { questId: row.id, progress: row.progress, target: row.target });
   }
   private newTable(): Table {
     const level = this.config.values.runtime.initialTableLevel;
@@ -74,6 +78,11 @@ export class Game {
       }
     }
     if (w.shift?.flyer) times.push(w.shift.flyer.end);
+    if (w.daily) {
+      times.push(w.daily.expiresAt);
+      const row = w.daily.rows.find(r => r.kind === 'zero_loss_window');
+      if (row && row.progress < row.target && w.daily.lossFreeSince !== null) times.push(w.daily.lossFreeSince + zeroLossWindow(this.config));
+    }
     for (const t of w.tables) {
       if (t.until !== null) times.push(t.until);
       if (t.order?.state === 'pending') times.push(t.order.placedAt + t.order.patienceMs);
@@ -117,7 +126,9 @@ export class Game {
       if (w.lastServedAt !== null) w.lastServedAt += elapsed;
       if (w.nextDeliveryAt !== null) w.nextDeliveryAt += elapsed;
       if (w.delivery) { w.delivery.placedAt += elapsed; w.delivery.expiresAt += elapsed; }
+      if (w.daily?.lossFreeSince != null) w.daily.lossFreeSince += elapsed;
       w.now = now;
+      if (this.rulesVersion >= QUEST_RULES) this.ensureDailyQuests();
       return;
     }
     while (w.now < now) {
@@ -155,6 +166,22 @@ export class Game {
       }
     }
   }
+  private ensureDailyQuests(create = false) {
+    const w = this.world;
+    if (!w.daily && !create || w.daily && w.now < w.daily.expiresAt) return;
+    w.daily = planDailyQuests(w, this.config);
+    for (const row of w.daily.rows) this.emit('quest_generated', { questId: row.id, kind: row.kind, target: row.target, day: w.daily.day, tier: w.daily.tier, seed: w.daily.seed });
+  }
+  private tickQuests() {
+    const w = this.world, daily = w.daily;
+    if (!daily || !w.active || w.phase === 'resting') return;
+    daily.lossFreeSince ??= w.now;
+    const row = daily.rows.find(r => r.kind === 'zero_loss_window');
+    if (row && row.progress < row.target && daily.lossFreeServed && w.now - daily.lossFreeSince >= zeroLossWindow(this.config)) {
+      row.progress++; daily.lossFreeSince = w.now; daily.lossFreeServed = false;
+      this.emit('quest_progressed', { questId: row.id, progress: row.progress, target: row.target });
+    }
+  }
   private endFlyer(reason: 'expired' | 'shiftClosed') {
     const w = this.world, s = w.shift, campaign = s?.flyer;
     if (!s || !campaign) return;
@@ -164,6 +191,7 @@ export class Game {
   private processDue(): void {
     const w = this.world, c = this.config.values, s = w.shift;
     if (!w.active && this.rulesVersion !== 1) return;
+    if (this.rulesVersion >= QUEST_RULES) this.ensureDailyQuests();
     if (s?.flyer && w.now >= s.flyer.end) this.endFlyer('expired');
     if (this.rulesVersion >= RUSH_CLOCK_RULES) {
       if (w.phase === 'open' && s && w.now >= s.endsAt) { w.phase = 'closing'; this.emit('shift_closing'); }
@@ -221,7 +249,7 @@ export class Game {
         if (s) s.stats.lost += group.customers.length;
         const loss = this.penalize(0, group.customers.length);
         w.lostStreak += 1;
-        this.emit('customer_left', { groupId: group.id, reason: 'queue', count: group.customers.length, penalty: loss.coins, reputation: loss.reputation });
+        this.emit('customer_left', { groupId: group.id, reason: 'queue', count: group.customers.length, penalty: loss.coins, reputation: loss.reputation, ...(this.rulesVersion >= QUEST_RULES ? { vipCount: group.customers.filter(c => c.type === 'vip').length } : {}) });
       }
     }
     this.seatQueue();
@@ -229,6 +257,7 @@ export class Game {
     if (this.rulesVersion >= DELIVERY_RULES) this.processDelivery();
     this.prepare();
     this.wash();
+    if (this.rulesVersion >= QUEST_RULES) this.tickQuests();
     if (w.phase === 'closing' && !w.delivery && w.queue.length === 0 && w.tables.every(t => ['empty', 'cleaning', 'broken'].includes(t.state))) {
       w.phase = 'resting'; w.completedShifts++;
       w.staminaAnchorMs = w.staminaMs; w.staminaAnchorAt = w.now;
@@ -414,7 +443,7 @@ export class Game {
       this.emit('glass_washing', { glassId: glass.id });
     }
   }
-  command(envelope: Envelope): Result { return this.applyCommand(envelope, FLYER_RULES); }
+  command(envelope: Envelope): Result { return this.applyCommand(envelope, QUEST_RULES); }
   /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
   replay(entry: LoggedCommand): Result { return this.applyCommand(entry, entry.rulesVersion); }
   private applyCommand(envelope: Envelope, rulesVersion: RulesVersion): Result {
@@ -428,6 +457,7 @@ export class Game {
     this.rulesVersion = rulesVersion;
     this.commandKey = envelope.idempotencyKey;
     try {
+      if (rulesVersion >= QUEST_RULES) this.ensureDailyQuests();
       if (rulesVersion >= RUSH_CLOCK_RULES) this.updateRush();
       if (rulesVersion >= PROGRESSION_RULES) this.updateProgression();
       const result = this.execute(envelope.command);
@@ -478,6 +508,7 @@ export class Game {
         w.shift = { id: this.id('shift'), startedAt: w.now, pausedMs: 0, endsAt: w.now + c.shift.durationMs, closedAt: null, configVersion: this.config.version, weather, rush: 'none', rushes, nextSpawnAt: w.now + Math.round(onboarding ? c.onboarding.firstShift.guaranteedFirstGroupWithinMs - c.runtime.tableSeatingMs : c.spawn.baseMs * c.spawn.warmupMult), firstGroup: true, onboarding, stats: emptyStats(), wellRestedUntil: wellRested ? w.now + rested.durationMs : null };
         if (plan) w.shift.rushScheduleSeed = plan.seed;
         w.phase = 'open'; w.lastServedAt = null; w.lostStreak = 0;
+        if (this.rulesVersion >= QUEST_RULES) this.ensureDailyQuests(true);
         this.emit('shift_opened', { shiftId: w.shift.id }); this.emit('weather_rolled', { weather });
         if (plan) for (const [slot, r] of rushes.entries()) this.emit('rush_scheduled', { shiftId: w.shift.id, slot, seed: plan.seed, kind: r.kind, startsAt: r.start, duration: r.end - r.start });
         if (wellRested) { w.wellRestedDays[day] = true; this.emit('well_rested_started', { shiftId: w.shift.id, day, until: w.shift.wellRestedUntil, mult: rested.mult }); }
@@ -597,6 +628,17 @@ export class Game {
         this.spend(q.cost); w.unlocks.push(cmd.item);
         this.emit('unlock_bought', { item: cmd.item, cost: q.cost }); return { ok: true, amount: q.cost };
       }
+      case 'claimQuest': case 'claimDailyBonus': {
+        const q = questRewardQuote(w, this.config, cmd.day, cmd.type === 'claimQuest' ? cmd.questId : null);
+        if (q.reason) return fail(q.reason);
+        if (q.coin) credit(w, this.config, q.coin, 'quest');
+        if (q.reputation) this.changeRep(q.reputation);
+        if (q.flyers) { w.flyers = (w.flyers ?? 0) + q.flyers; if (!w.unlocks.includes('flyer')) w.unlocks.push('flyer'); }
+        w.badgeShards += q.shards;
+        if (q.row) q.row.claimed = true; else w.daily!.bonusClaimed = true;
+        this.emit(q.row ? 'quest_claimed' : 'daily_bonus_claimed', { day: cmd.day, questId: q.row?.id ?? null, coin: q.coin, reputation: q.reputation, flyers: q.flyers, badgeShards: q.shards });
+        return { ok: true, amount: q.coin };
+      }
       case 'buyFlyer': {
         const q = flyerQuote(w, this.config);
         if (q.buyReason) return fail(q.buyReason);
@@ -678,6 +720,8 @@ export function validEnvelope(input: unknown): input is Envelope {
   const c = e.command;
   switch (c.type) {
     case 'startShift': case 'endShift': case 'buyTable': case 'emergencyPack': case 'installSignboard': case 'buyFlyer': return true;
+    case 'claimQuest': return typeof c.day === 'string' && typeof c.questId === 'string' && c.questId.length > 0;
+    case 'claimDailyBonus': return typeof c.day === 'string';
     case 'activateFlyer': return typeof c.shiftId === 'string' && c.shiftId.length > 0;
     case 'kickAll': return (c.shiftId === undefined || typeof c.shiftId === 'string') && (c.maxCost === undefined || Number.isSafeInteger(c.maxCost) && c.maxCost >= 0);
     case 'activity': return typeof c.active === 'boolean';

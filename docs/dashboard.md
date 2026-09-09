@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-09 07:50 · **Branch hiện tại:** `codex/game-build-isolated`
+> **Cập nhật:** 2026-09-09 08:19 · **Branch hiện tại:** `codex/game-build-isolated`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -11,7 +11,7 @@
 ## Tổng quan
 
 - **MVP progress:** **0%** (0/28 PR merged)
-- **In flight:** 16 PR · **Blocked:** 0 · **Deferred:** 1
+- **In flight:** 17 PR · **Blocked:** 0 · **Deferred:** 1
 - **Lộ trình (baseline 06-ROADMAP v3.0):** 1 phase, mốc M0–M9 theo exit criteria — chưa gán ngày; Phase N ở đây = khoá parser (P0→M0 · P1→M1–M2 · P2→M3 · P3→M4–M6 · P4→M7–M8)
 
 ## Phase progress
@@ -54,7 +54,7 @@
 | PR | Feature | Status | Computed | Branch |
 |----|---------|:------:|:--------:|--------|
 | `F11` | Bếp & Mồi Nóng — bếp 4 cấp, 3 mồi nóng | 🟡 In progress | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
-| `F17` | Nhiệm Vụ Quán Nhậu — 7 nhánh (ngày/ca/gift/điểm danh/referral/ĐLT) | ⬜ Not started | — | `—` |
+| `F17` | Nhiệm Vụ Quán Nhậu — 7 nhánh (ngày/ca/gift/điểm danh/referral/ĐLT) | 🟡 In progress | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
 
 ### Phase 3 — 0/10 · 0% `░░░░░░░░░░`
 
@@ -211,6 +211,15 @@
 - **Phase:** Phase 2
 - **Notes:** Cấu hình 3 mồi nóng + prep/slot bếp đã có. Chưa đủ acceptance test bếp nâng hết và cân bằng menu.
 
+### F17 — Nhiệm Vụ Quán Nhậu — 7 nhánh (ngày/ca/gift/điểm danh/referral/ĐLT)
+
+- **Status:** 🟡 In progress · 🌿 đang trên branch này
+- **Branch:** `codex/game-build-isolated`
+- **Wave:** 🎮 Code
+- **Gates:** 🔒S
+- **Phase:** Phase 2
+- **Notes:** Rules12 daily5: seed VN/tier, actual event progress, rollover, reward/bonus guards và UI VI/EN.118 unit/44 E2E/config/build,20 k rows2.3171–2.7312 qua; independent review pending. Gift transfer/attendance/referral/season authority và full F17 còn tiếp tục.
+
 ### F13 — Đường Lên Trùm — LP0–LP7, gate tính năng & mặt bằng
 
 - **Status:** 🟡 In progress · 🌿 đang trên branch này
@@ -233,11 +242,11 @@
 
 | PR | Feature | Phase | Status |
 |----|---------|-------|--------|
-| `F17` | Nhiệm Vụ Quán Nhậu — 7 nhánh (ngày/ca/gift/điểm danh/referral/ĐLT) | Phase 2 | ⬜ Not started |
 | `F23` | Kiến Trúc Server Quán — server-auth, websocket, CAPTCHA | Phase 3 | ⬜ Not started |
 | `F12` | Giải Nhậu & Vụ Bia — 8 bậc, 2 Vụ Bia song song | Phase 3 | ⬜ Not started |
 | `F14` | Mặt Bằng Quán — 9 mặt bằng, rent/cọc 7 ngày | Phase 3 | ⬜ Not started |
 | `F15` | Sự Cố Quán Nhậu — bảo kê, trộm offline, đánh nhau (kiểm tra ATTP ⏸ pending) | Phase 3 | ⬜ Not started |
+| `F16` | Rủ Bạn & Huy Hiệu — 3 mốc, huy hiệu Kết Nối | Phase 3 | ⬜ Not started |
 
 ---
 
