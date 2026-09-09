@@ -24,7 +24,7 @@ F13§5 still specifies eligible/unclaimed/claimed rewards and gates independent 
 
 Confirmed reference defect: counting cooking pans by `(dish,readyAt)` merges two same-dish pans started together. A production-shaped probe admits 6 portions while2 pans × 2 portions allow 4. Use one stable identity per actual pan batch in the integrated engine and a regression for this case.
 
-Work order: disconnection verification completed through1fa6b14; station/demand/glass/LP-gate mechanics and HUD verified at9c2870a; lease lifecycle/UI verified throughce7564b with234 engine/server+77browser/config/build, ordinary k and rush; native review corrections closed. Next: real season/peak producer, then full career simulation. Server liveness/outbox/remote cutover follows; missing Google Client ID does not block this work. Full M0–M9 remains unfinished.
+Work order: disconnection verification completed through1fa6b14; station/demand/glass/LP-gate mechanics and HUD verified at9c2870a; lease lifecycle/UI verified throughce7564b with234 engine/server+77browser/config/build, ordinary k and rush; native review corrections closed. Season/peak producer and personal view are now verified at faece69; next is full career simulation. Server liveness/outbox/remote cutover follows; missing Google Client ID does not block this work. Full M0–M9 remains unfinished.
 
 Source SHA256: handoff 8849b0ecd37f6a0ee6833f1f3b9e10876d3fafbae7ff2f196c8408ca774a1814; JSON ff10ee2e3ef913c9215acf0bb9dbe8be8aea9ace9c2ba9065fbc70c3028c8c55. Full intake snapshot and merge/probe evidence are retained under `.qa/`.
 
@@ -41,3 +41,5 @@ Source SHA256: handoff 8849b0ecd37f6a0ee6833f1f3b9e10876d3fafbae7ff2f196c8408ca7
 | 2026-09-09 | Implemented rules22 lease lifecycle/UI;232 engine/server checks pass, full browser/sim/review in progress. Owner advanced-band question remains pending; no approved numbers changed. |
 
 | 2026-09-09 | Lease checkpointce7564b verified (234 engine/server,77browser,10ordinary k cohorts,15rush; native findings resolved). Source20file hashes unchanged. Actual fresh8-shift probe:678serves,160495earned,LP1 atshift7,phone bought; diagnostic only, no injectedprogression, not30daycareer certification. |
+
+| 2026-09-09 | Rules23 seasons/peak/personal view verified at faece69: 248 engine/server, 79 browser + 6 targeted reruns, config/build, 10 ordinary k cohorts and 15 rush. Native correction review closes all 3 findings. Actual 24-shift diagnosis reaches LP2/Bom Bạc with492295earned; full career and community ranking/mailbox remain open. |

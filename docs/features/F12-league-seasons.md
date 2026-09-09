@@ -131,3 +131,5 @@ this implementation does not invent or grant those rewards. F12/F28 are not comp
 | 2026-09-09 | Rules23 season accounting/peak producer and personal progress panel implemented; preserves legacy unwindowed income explicitly. Community ranking and configured mailbox rewards remain pending. |
 
 | 2026-09-09 | Review corrections: a window with no income and no closed shifts can accept an opening config (including a new calendar at rollover); a participated period remains pinned. First adoption compares permanent tier IDs against the prior gameplay config. Whole seated-order credits are preflighted through the canonical credit path before any mutation, including tip/bonus/later guests and daily-cap clipping. |
+
+| 2026-09-09 | Core accounting/peak/personal UI verified at faece69: 248 engine/server, 79 browser plus 6 correction checks, config/build, 10 ordinary k cohorts and 15 rush pass. Native correction review confirms all 3 findings resolved. Full ranking/reward acceptance remains open. |

@@ -1880,3 +1880,26 @@ Menus pause customer deadlines while seasons continue on the real calendar.
 The focused mobile tests pass at360/390px. Full verification and native review are
 in progress. No new economy values or reward quantities were invented. Community
 ranking/mailbox and actual long career remain unfinished. See F12 §10 for decisions.
+
+## Season verification closed — 2026-09-09
+
+Implementation base `8d31b35`; first code `800dbe7`; corrections `faece69`.
+Native review found calendar-at-rollover, first-adoption tier identity and partial
+multi-component credit defects. The correction review confirms all three resolved
+with no concrete introduced regression. Unused periods can accept opening config;
+participated periods keep pinned terms. Complete service credits use the same ledger
+mutation on an isolated preflight projection. Historical rules19 test setup now uses
+an actual rules19 opening on immutable economy1.7.3; the rules23 downgrade guard stays.
+
+- Config, build/typecheck and all248engine/server tests pass.
+- All79browser tests passed;6season/menu tests passed again after correction. Mobile
+  VI360/EN390 screens were inspected for readable layout and overflow.
+- Ten1000-serve cohorts: k2.4186–2.8738;15controlled rush cases pass.
+- Real first day:8shifts,678serves,160495earned,LP1,peak vang.
+- Real three days:24shifts,2042serves,492295earned,LP2,peak bach_kim; no injected state.
+  This is a diagnosis with cheapest-gear policy, not a full career certification.
+
+Receipt `.qa/seasons-verification.json` binds artifacts/SHAs. Full career, global
+leaderboards and configured prize/mailbox processing remain open. The advanced
+combined k failure remains preserved pending owner interpretation; no number,
+formula or assertion was weakened. Source20files remain unchanged.

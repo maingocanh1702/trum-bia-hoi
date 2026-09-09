@@ -5,6 +5,27 @@
 
 ---
 
+## 🧭 Seasons verified; real career next — 2026-09-09
+
+Rules23 product `faece69` is verified and independently reviewed: all three initial
+findings resolved. 248 engine/server tests, config/build, 10 ordinary k cohorts
+(2.4186–2.8738) and 15 rush cases pass. Browser: 79 passed on initial implementation,
+6 relevant season/menu checks passed again after corrections. Receipt:
+`.qa/seasons-verification.json`. Do not repeat the seasons review/checkpoint.
+
+A real three-day diagnostic completed24shifts,2042serves,492295earned,LP2 and peak
+bach_kim (Bom Bạc). Assets keg3/washer3/cooler3/stall4/kitchen1, phone+QR; no free
+coins/LP/peak/gear. `.qa/career-seasons-three-days.json` is diagnostic only: the
+policy has not yet purchased tables/sign/flyer/leases. Next implement the bounded
+career harness and run a fuller multi-day policy; read `.qa/career-next-policy.md`
+and F13. Do not force original-checkout reference timings or weaken subsidiary gates.
+
+F12 personal season accounting/view is implemented; community ranks, server season
+snapshots and reward mailbox are not. Config lacks concrete season prize quantities;
+no rewards were invented. Owner advanced k-band question remains pending, config2.0.1
+unchanged. No Google Client ID. Original checkout and5174save not manipulated by tools.
+Full M0–M9 remains active;20features in progress,0complete.
+
 ## 🧭 Seasons rules23 implemented; verification in progress — 2026-09-09
 
 Core dual-season accounting and a real peakLeague producer now exist, plus the

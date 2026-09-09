@@ -127,3 +127,18 @@ Audit rows imported from the original checkout describe its reference engine and
 | Date | Reconciled game update |
 |---|---|
 | 2026-09-09 | Adopted latest handoff numbers as config2.0.1, preserving owner pause/live-upgrade policy and immutable1.x snapshots. Rules21 station/demand/glass/LP-gate implementation is under verification; lease lifecycle and actual career measurements remain pending. Current evidence: docs/build-progress.md. |
+
+## Current season integration — 2026-09-09
+
+Rules23 now produces `peakLeague` from actual credited income in either real season,
+retains it through rollover, and keeps the existing subsidiary requirements and
+claim-once rewards. It does not infer a peak from lifetime or legacy unwindowed
+income. Verified product `faece69`; see F12 §10 and build-progress.
+
+Actual commands on unchanged economy2.0.1 completed24shifts across3days and reached
+LP2 / peak bach_kim with492295earned. This diagnostic buys gear/dog/phone/QR but not
+yet tables/sign/flyer/leases; it does not certify the full LP0–LP7 career.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Real season peak producer integrated and independently reviewed. Three-day diagnostic reaches LP2/Bom Bạc without injected progression; full career verification remains open. |
