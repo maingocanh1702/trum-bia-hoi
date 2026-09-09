@@ -43,3 +43,5 @@ Source SHA256: handoff 8849b0ecd37f6a0ee6833f1f3b9e10876d3fafbae7ff2f196c8408ca7
 | 2026-09-09 | Lease checkpointce7564b verified (234 engine/server,77browser,10ordinary k cohorts,15rush; native findings resolved). Source20file hashes unchanged. Actual fresh8-shift probe:678serves,160495earned,LP1 atshift7,phone bought; diagnostic only, no injectedprogression, not30daycareer certification. |
 
 | 2026-09-09 | Rules23 seasons/peak/personal view verified at faece69: 248 engine/server, 79 browser + 6 targeted reruns, config/build, 10 ordinary k cohorts and 15 rush. Native correction review closes all 3 findings. Actual 24-shift diagnosis reaches LP2/Bom Bạc with492295earned; full career and community ranking/mailbox remain open. |
+
+| 2026-09-09 | Career harness b01f4b1 verified: two30-day seeds reachLP4,250tests/config/build/ordinary/rush/native review pass; full-month replay matches. Actual80MB save fails an isolated Chromium localStorage size probe. Next: durable career persistence before account/rank; advanced k decision still pending and source20files unchanged. |

@@ -155,3 +155,19 @@ k-band scope. No numeric thresholds or subsidiary gates were changed.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Added actual-command multi-day career harness; early30-day diagnosis reachesLP4, not allLP0–LP7 or balance certification. |
+
+## Career verification and storage limit — 2026-09-09
+
+Harness `b01f4b1`: seeds42/99 each completed240shifts across30days, reachingLP3 on
+day8/9 andLP4 onday16/17. Every acquisition/claim used real commands; full-month
+replay forseed42 matches world/log.250engine/server, config/build, ordinary k/rush
+and native review pass. LP5 income requirement remains unmet atday30; subsidiary
+requirements are satisfied. See [career report](../career-simulation.md).
+
+The80MB month save exceeds the current localStorage path (isolated Chromium quota
+probe confirmed). Durable long-career persistence is the next prerequisite; this
+is not allLP0–LP7 or production career readiness. Advanced k remains unapproved.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Closed harness verification; recorded real LP3/LP4 timings and the measured local save capacity defect. Full career and advanced balance remain open. |

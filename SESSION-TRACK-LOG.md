@@ -5,6 +5,27 @@
 
 ---
 
+## 🧭 Career verified; durable save growth next — 2026-09-09
+
+Harness `b01f4b1` verified/reviewed: two30-day seeds,240shifts each, LP3 day8/9,
+LP4 day16/17.250engine/server tests, config/build,10ordinary k cohorts and15rush
+pass. Full30-day seed42 save replay matches16567commands/388986events/6season
+results. `.qa/career-verification.json` and docs/career-simulation.md hold evidence.
+Do not rerun the career checkpoint or retune numbers.
+
+NEW priority: the actual month save is80013203bytes. local.ts::persist writes the
+whole encodeSave string to localStorage on commands. Fresh isolated Chromium153
+size probe throws QuotaExceededError; prior small value is preserved, latest
+progress would be unsaved. Fix persistence growth/migration before auth/BXH.
+Inspect codec+local adapter+App callers; no silent log deletion or trust bypass.
+Read `.qa/career-next-boundary.md` for diagnosis and the later auth dependencies.
+Original checkout/owner5174save remain untouched by tools; source20hashes unchanged.
+
+Actual advanced career k3.483282/3.318249,22/20days outsideband; owner band-scope
+question still unanswered. Missing Google Client ID already answered “chưa có”; do
+not ask again or simulate successful login. No concrete season prize quantities;
+no invented rewards. Full M0–M9 remains active;20features in progress,0complete.
+
 ## 🧭 Seasons verified; real career next — 2026-09-09
 
 Rules23 product `faece69` is verified and independently reviewed: all three initial

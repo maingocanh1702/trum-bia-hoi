@@ -1914,3 +1914,28 @@ See [career-simulation](career-simulation.md) for policy and reproducible comman
 250engine/server tests plus config/build pass; second seed, ordinary/rush checks
 and independent review are in progress. Production engine/UI/config are unchanged.
 Advanced k scope remains pending; no balance values/assertions were altered.
+
+## Career harness verification closed; storage next — 2026-09-09
+
+Reviewed `ca0df8b..b01f4b1`; native review found no actionable introduced defect.
+Two30-day seeds,240shifts each: LP3 day8/9, LP4 day16/17. Seed42 earned9054324,
+seed99 earned8373534; both have full core gear, kitchen4,18seats and actual four
+leases. Each received91000deposit refunds from three expired contracts. Seed42
+repeat command hash is identical; its full30-day save replays all16567commands,
+388986events and6period outcomes to exactly the same world/log.
+
+250engine/server tests pass, plus focused rerun after timeline correction;
+config/build,10ordinary k cohorts2.4186–2.8738 and15rush pass. No runtime/renderer
+code changed, so existing browser UI coverage was not rerun. Isolated Chromium153
+storage probe is additional evidence, not the owner's game profile.
+
+That probe exposes a real limitation: month save80013203bytes exceeds the current
+localStorage path with QuotaExceededError. UI catches the write and offers export,
+but new progress is not durable. Resolve storage growth/migration next; keep all
+required history and recoverability. Account eligibility precedes community ranking
+after that. See career-simulation.md and `.qa/career-next-boundary.md`.
+
+Actual advanced k is3.483282/3.318249 overall, with22/20days outside band. Numbers,
+formula and ordinary assertion are unchanged; owner scope decision remains pending.
+Full game and LP0–LP7 certification remain unfinished. Receipt:
+`.qa/career-verification.json`.

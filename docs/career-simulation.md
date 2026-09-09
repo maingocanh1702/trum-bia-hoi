@@ -49,18 +49,53 @@ không lấy served/arrived làm tỷ lệ chuyển đổi khách.
 báo cáo đầy đủ các ngày ngoài band; không chứng nhận cân bằng. Phạm vi band nâng
 cao đang chờ owner quyết định. Assertion của `npm run sim` vẫn giữ nguyên.
 
-## Kết quả ban đầu — đang hoàn tất kiểm tra/review
+## Kết quả đã xác minh — 2026-09-09
 
-Seed 42, 30 ngày: 240 ca, 29.209 lượt phục vụ, 9.054.324 doanh thu trọn đời, 1.582.365 xu còn lại,
-LP4, peak huyen_thoai. Bom/rửa/lạnh/quầy cấp 5, bếp cấp 4; 3 bàn cấp 3, 36 cốc, chó cấp 3,
-điện thoại/QR/biển neon/tờ rơi; đã thuê Ngõ Chợ → Bến Xe → Công Sở → Sân Vận Động.
-k toàn lượt đo 3,483282. Đây là chẩn đoán thực tế, chưa phải đạt toàn bộ LP0–LP7.
+Mỗi seed chạy 30 ngày, 240 ca. Config 2.0.1 và production rules23 giữ nguyên.
 
-Seed 99 và review độc lập đang chạy. Chỉ cập nhật kết quả xác minh sau khi chúng
-hoàn tất. Dữ liệu đầy đủ ở `.qa/career-30-days-seed42.json`; tái tạo bằng lệnh trên.
+| Seed | Lượt phục vụ | Doanh thu trọn đời | Xu cuối | LP1 / LP2 / LP3 / LP4 vào ngày | k toàn career |
+|---|---:|---:|---:|---|---:|
+| 42 | 29,209 | 9,054,324 | 1,582,365 | 2 / 3 / 8 / 16 | 3.483282 |
+| 99 | 28,259 | 8,373,534 | 939,091 | 2 / 4 / 9 / 17 | 3.318249 |
+
+Cả hai đạt LP4, peak huyen_thoai; bom/rửa/lạnh/quầy cấp 5, bếp cấp 4, ba bàn cấp 3,
+36 cốc, chó cấp 3, điện thoại/QR/neon/tờ rơi. Mỗi seed qua bốn hợp đồng và nhận lại
+91.000 xu cọc từ ba hợp đồng đã hết hạn; có sáu kết quả mùa. LP5 còn thiếu doanh
+thu đến mốc 12,5 triệu xu; điều kiện biển hiệu và peak đã đủ.
+
+Seed42 tái chạy cho cùng hash lệnh. Phát lại save đầy đủ 30 ngày khớp toàn bộ
+World và log: 16.567 lệnh, 388.986 sự kiện, 240 ca, 6 kết quả mùa. Test thường trực hai
+ngày cũng kiểm tra replay và giao dịch thật. 250 engine/server tests, config/build,
+10 nhóm k nền (2,4186–2,8738) và 15 ca rush đều qua; review độc lập `ca0df8b..b01f4b1`
+không chỉ ra lỗi. Thêm lượt chạy test career sau khi bổ sung timeline cũng qua.
+
+k nâng cao chưa đạt band: seed42 có 22/30 ngày ngoài band (cao nhất 4,823585), seed99
+có 20/30 ngày (cao nhất 4,479384). Không tự thay số hoặc kết luận band chỉ áp dụng cho
+cấu hình nền; quyết định này vẫn chờ owner. Đây cũng không phải chứng nhận toàn
+bộ LP0–LP7 hoặc kết quả chơi của người thật. Các thao tác quản lý của bot không
+tiêu tốn thời gian; nó không mô phỏng độ trễ thao tác tay.
+
+Dữ liệu tại `.qa/career-30-days-seed42.json` và `career-30-days-seed99.json`;
+receipt `.qa/career-verification.json`. Tái tạo bằng lệnh đầu trang, đổi `--seed=99`.
+
+## Vấn đề lưu career cần xử lý tiếp
+
+Codec hiện tại tạo **80.013.203 byte** cho seed42 sau 30 ngày. Nó chứa cả log lệnh
+và toàn bộ sự kiện; `apps/web/src/local.ts::persist` ghi nguyên chuỗi vào
+localStorage sau lệnh người chơi. Probe Chromium 153 trên origin thử riêng:
+ghi nhỏ thành công, ghi payload cùng kích thước bị `QuotaExceededError`; giá trị
+cũ còn nguyên. Không dùng hoặc thay save 5174 của owner để làm phép thử này.
+
+Replay đúng không có nghĩa trình duyệt lưu được career dài. UI hiện báo lỗi lưu
+và cho tải backup, nhưng lần ghi lỗi không giữ được tiến trình mới khi đóng tab.
+Ưu tiên tiếp theo là sửa cơ chế lưu/growth, giữ migration và lịch sử kiểm chứng,
+trước khi mở rộng tài khoản/BXH. Không chữa bằng cách âm thầm bỏ log/sự kiện hay
+nới assertion. Chưa tuyên bố bản chơi hiện tại sẵn sàng lưu career dài ngày.
 
 ## Changelog (append-only)
 
 | Ngày | Thay đổi |
 |---|---|
 | 2026-09-09 | Thêm harness career dùng lệnh và tài nguyên thật; đối soát ví/ngày, log có hash, kiểm tra replay; giữ nguyên số kinh tế và trạng thái chờ quyết định band nâng cao. |
+
+| 2026-09-09 | Hoàn tất hai seed 30 ngày, replay trọn tháng, 250 tests/config/build/k nền/rush và review độc lập. Phát hiện bản lưu 80 MB vượt localStorage; chuyển ưu tiên kế tiếp sang lưu career, giữ câu hỏi band nâng cao. |
