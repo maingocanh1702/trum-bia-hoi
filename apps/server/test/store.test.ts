@@ -38,7 +38,12 @@ test('server time, one service debit/credit and detached state survive an actual
   const events = b.eventsAfter('one', started.lastEventSeq);
   assert.deepEqual(events.map(e => e.seq), Array.from({ length: retry.lastEventSeq - started.lastEventSeq }, (_, i) => started.lastEventSeq + i + 1));
   assert.equal(events.filter(e => e.event.type === 'order_served').length, 1); assert.deepEqual(b.eventsAfter('one', retry.lastEventSeq), []);
-  assert.throws(() => b.eventsAfter('one', -1), /invalidCursor/);
+  const db = new DatabaseSync(f.file); t.after(() => db.close());
+  const durable = () => db.prepare('SELECT now,revision,projection FROM players WHERE id=?').get('one');
+  const beforeInvalid = durable(); f.now += 300000;
+  for (const cursor of [-1, 0.5, Number.MAX_SAFE_INTEGER]) assert.throws(() => b.eventsAfter('one', cursor), /invalidCursor/);
+  assert.deepEqual(durable(), beforeInvalid);
+  assert.equal(db.prepare('SELECT count(*) AS n FROM events WHERE player_id=?').get('one')!.n, retry.lastEventSeq);
 });
 function retryWithoutResult<T extends { result: unknown }>(value: T) { const { result: _, ...state } = value; return state; }
 

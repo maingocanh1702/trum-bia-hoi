@@ -145,8 +145,12 @@ export class GameStore {
     });
   }
   eventsAfter(id: string, after: number): { seq: number; event: DomainEvent }[] {
-    const { world, lastEventSeq } = this.read(id);
-    if (!Number.isSafeInteger(after) || after < 0 || after > lastEventSeq) throw Error('store:invalidCursor');
+    if (!validPlayerId(id)) throw Error('store:invalidPlayer');
+    if (!Number.isSafeInteger(after) || after < 0) throw Error('store:invalidCursor');
+    const last = this.db.prepare('SELECT COALESCE(MAX(seq),0) AS seq FROM events WHERE player_id=?').get(id)!;
+    // History only grows, so this validated cursor remains valid if another writer appends before read().
+    if (after > Number(last.seq)) throw Error('store:invalidCursor');
+    const { world } = this.read(id);
     return world.events.slice(after).map((event, index) => ({ seq: after + index + 1, event }));
   }
 }
