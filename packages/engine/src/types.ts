@@ -64,6 +64,7 @@ export interface World {
   playerId: string; coins: number; reputation: number; seasonEarned: number; lifetimeEarned: number;
   staminaMs: number; staminaAnchorMs: number; staminaAnchorAt: number;
   completedShifts: number; active: boolean; paused?: boolean; lastServedAt: number | null;
+  disconnection?: { shiftId: string; expiresAt: number; timedOut: boolean };
   restStartedAt: number; wellRestedDays: Record<string, boolean>;
   dayEarned: Record<string, number>; dayShifts: Record<string, number>;
   inventory: Record<Dish, number>; equipment: Record<Equipment, number>; tables: Table[];
@@ -97,7 +98,8 @@ export type Command =
   | { type: 'setSignboard'; style: SignStyle }
   | { type: 'activity'; active: boolean; paused?: boolean }
   | { type: 'emergencyPack' };
-export interface Envelope { idempotencyKey: string; at: number; command: Command }
+export type SystemCommand = { type: 'connectionLost'; shiftId: string };
+export interface Envelope<C = Command> { idempotencyKey: string; at: number; command: C }
 export interface Result { ok: boolean; reason?: string; outcome?: 'early' | 'late' | 'grace' | 'expired' | 'stale'; amount?: number }
-export type RulesVersion = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18; // config-exempt: persisted replay protocol revisions, not economy tuning
-export interface LoggedCommand extends Envelope { result: Result; configVersion: string; rulesVersion: RulesVersion }
+export type RulesVersion = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19; // config-exempt: persisted replay protocol revisions, not economy tuning
+export interface LoggedCommand extends Envelope<Command | SystemCommand> { result: Result; configVersion: string; rulesVersion: RulesVersion }

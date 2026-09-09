@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { Game, loadConfig, encodeSave, decodeSave, dayKey } from '../src';
+import { Game, loadConfig, encodeSave, decodeSave, dayKey, validEnvelope } from '../src';
 import { pinConfig, nextPin, servePin, restPin, mixedPinGame } from './fixtures/config-pinning';
 import { sendKitchen } from './fixtures/kitchen';
 const open = (g: Game, key = `pin-${g.log.length}`) => ({ command: { type: 'startShift' } as const, at: g.world.now, idempotencyKey: key });
@@ -48,6 +48,7 @@ test('failed candidate admission keeps the preceding pin and its recharge, daily
 test('idempotent opening retries bind the original decision even after the registry selects another version; malformed, stale and non-opening transitions never register snapshots', () => {
   const g = mixedPinGame(), before = encodeSave(g), c = pinConfig('pin-C');
   const original = g.log.find(e => e.idempotencyKey === 'open-B')!;
+  assert.ok(validEnvelope(original));
   assert.deepEqual(g.command(original, c), original.result); assert.equal(encodeSave(g), before);
   assert.deepEqual(g.command({ ...open(g), at: g.world.now - 1 }, c), { ok: false, reason: 'staleCommand' });
   assert.deepEqual(g.command({ ...open(g), idempotencyKey: '' }, c), { ok: false, reason: 'invalidCommand' });
@@ -94,7 +95,7 @@ test('single-config saves stay v2; multi-config saves reject missing, duplicated
 test('a genuine rules13 service history survives current adoption and a new pinned shift without rewriting its recorded prefix', () => {
   const g = decodeSave(readFileSync(new URL('./fixtures/legacy-kitchen-served-v13.json', import.meta.url), 'utf8'));
   const prefix = structuredClone(g.world.events); sendKitchen(g, { type: 'activity', active: true });
-  restPin(g); assert.ok(g.command(open(g), nextPin()).ok); assert.equal(g.log.at(-1)!.rulesVersion, 18);
+  restPin(g); assert.ok(g.command(open(g), nextPin()).ok); assert.equal(g.log.at(-1)!.rulesVersion, 19);
   assert.deepEqual(g.world.events.slice(0, prefix.length), prefix); assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
 });
 

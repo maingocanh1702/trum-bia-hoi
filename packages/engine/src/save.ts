@@ -1,5 +1,5 @@
 import { loadConfig } from './config';
-import { Game, validEnvelope } from './engine';
+import { Game, validReplayEnvelope } from './engine';
 import type { LoggedCommand } from './types';
 const CATALOG_SAVE_VERSION = 3; // config-exempt: fixed local-save format revision, not economy tuning
 
@@ -35,9 +35,9 @@ export function decodeSave(text: string): Game {
   }
   for (const original of save.log as LoggedCommand[]) {
     const entry = save.version === 1 ? { ...original, configVersion: game.config.version, rulesVersion: 1 as const } : original;
-    if (!validEnvelope(entry) || entry.at < game.world.now) throw Error('save:invalid-log');
+    if (!validReplayEnvelope(entry) || entry.at < game.world.now) throw Error('save:invalid-log');
     const c = configs.get(entry.configVersion);
-    if (!c || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].includes(entry.rulesVersion)) throw Error('save:invalid-version'); // config-exempt: supported replay protocol versions
+    if (!c || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].includes(entry.rulesVersion)) throw Error('save:invalid-version'); // config-exempt: supported replay protocol versions
     const result = game.replay(entry, c);
     if (JSON.stringify(result) !== JSON.stringify(entry.result)) throw Error('save:replay-mismatch');
   }

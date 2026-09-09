@@ -84,7 +84,9 @@ test('identity, clock and totals cannot be supplied by clients; malformed JSON, 
   assert.equal((await f.request('/player/state', undefined, 'tbh-session=forged')).status, 401);
   assert.equal((await f.request('/player/state', undefined, `${a.cookie}; ${a.cookie}`)).status, 401);
   for (const body of [{ ...command('startShift'), at: Number.MAX_SAFE_INTEGER }, { ...command('startShift'), playerId: 'someone' },
-    { ...command('startShift'), world: { coins: 1e12 } }, { idempotencyKey: 'bad', command: { type: 'activity', active: false, paused: true } }, null]) {
+    { ...command('startShift'), world: { coins: 1e12 } }, { idempotencyKey: 'bad', command: { type: 'activity', active: false, paused: true } },
+    { idempotencyKey: 'system:connectionLost:shift-14:0', command: { type: 'connectionLost', shiftId: 'shift-14' } },
+    { ...command('startShift'), idempotencyKey: 'system:reserved' }, null]) {
     assert.equal((await f.request('/player/command', body, a.cookie)).status, 400);
   }
   assert.equal((await f.request('/auth/session', { playerId: a.playerId })).status, 400);

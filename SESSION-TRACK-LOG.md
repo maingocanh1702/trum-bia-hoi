@@ -5,6 +5,14 @@
 
 ---
 
+## 🧭 Rules19 work in progress — 2026-09-09
+
+Pure disconnection grace/closing is implemented on base cc1aee5 in the isolated
+game worktree. Regressions cover exact deadlines, no absent attendance/stamina,
+retries/replay and true v18 compatibility. Verification and independent review are
+in progress; server liveness and browser buffer integration remain the next work.
+This is an engine prerequisite, not end-to-end network support or game completion.
+
 ## 🧭 Current build checkpoint — 2026-09-09
 
 The current source is the isolated worktree `/Users/maingocanh/.codex/worktrees/trum-bia-hoi-game`

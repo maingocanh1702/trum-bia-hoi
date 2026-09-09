@@ -1687,3 +1687,25 @@ claim/remote cutover and later roadmap/art/release work remain. Tracker v0.26.1 
 | Date | Change |
 |---|---|
 | 2026-09-09 | Verified ordered ingress at e390a1c with187 tests, CLI/Chromium and independent review. Captured real v18 saves and proved the inactive-closing/attendance boundary before the next timeout implementation. |
+
+## Engine disconnection clock — rules19 (2026-09-09)
+
+Base cc1aee5, isolated game worktree. Added the trusted replayable connection-loss
+primitive and pinned grace deadline. It pauses guests during grace, starts normal
+closing exactly at expiry, finishes while inactive, and never fabricates attendance
+or resting stamina. Public commands cannot forge the system action/key namespace.
+A real reconnect before expiry cancels the pending outage; repeated loss retains
+its first deadline. Calendar events during pause now land at deterministic midnight
+boundaries under rules19; original rules18 fixtures still reproduce exact worlds.
+
+Regression checks cover before/at/after expiry, duplicate/restart/late loss, wrong
+shift, empty and already-closing shifts, menu pause, absent midnight attendance,
+resting after closure, stepwise versus large advances, configured/unsafe grace,
+public forgery, and genuine e390a1c save compatibility. Config/build/tests/sims/browser
+and independent native review are being finalized. No Google setup/auth or remote
+adapter has been enabled. Next: server-owned liveness, durable expiry and browser
+outbox/resync; engine API alone does not complete F23§8 or the full M0–M9 goal.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 | Implemented pure rules19 timeout-close prerequisite and replay/calendar regression checks; complete game remains in progress. |

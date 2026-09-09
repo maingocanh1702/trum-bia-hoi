@@ -199,3 +199,29 @@ inactive, with no fake attendance or active-rest reward; preserve ordinary manag
 pause. Real v18 menu/inactive-closing fixtures were captured before that next change.
 
 | 2026-09-09 next-boundary probe | Recorded inactive-closing and midnight attendance behavior to guide server timeout implementation; no timeout behavior is implemented or claimed by the sequencing checkpoint. |
+
+## Pure engine disconnection prerequisite — rules19
+
+Trusted `Game.disconnect(at, shiftId)` records a connection loss before the engine
+passes that authoritative timestamp. It is not a public player command; HTTP also
+rejects the reserved `system:` key namespace. The pinned config supplies the grace.
+Repeated loss does not extend it. Actual activity before expiry cancels the outage;
+activity at/after expiry cannot undo normal closing. During grace, guest/gameplay
+deadlines freeze; once expired, normal table/order/delivery closing runs even while
+inactive or menu-paused. Finishing clears the outage and freezes inactive resting
+stamina. No synthetic activity is used to earn attendance. Ordinary menu/visibility
+pause does not itself arm a disconnection deadline.
+
+Rules19 also makes paused calendar events independent of tick size across midnight,
+so saving/replaying the timeout gives the same event timeline. Genuine rules18 saves
+retain their historical behavior until a current command adopts rules19.
+
+This is an engine primitive, not server liveness or completed §8. The server still
+needs owned live connections/heartbeat and durable loss frontiers, restart/scheduler
+catch-up, expired-stream handling, and the browser outbox/reconnect integration.
+An HTTP request socket closing is not evidence that a player went offline. Do not
+call disconnect late through a store action that already advanced past the loss.
+
+| Date | Change |
+|---|---|
+| 2026-09-09 rules19 implementation | Added trusted replayable disconnection grace and inactive normal closing; preserved local menu pause and historical saves. Verification/review in progress; no remote timeout capability claimed. |

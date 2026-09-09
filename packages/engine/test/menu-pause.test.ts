@@ -44,3 +44,15 @@ test('menu pause rejects malformed or pre-protocol commands and repeated pause l
   assert.ok(g.command(e).ok); assert.deepEqual(g.world, paused); assert.equal(g.log.filter(x => x.idempotencyKey === e.idempotencyKey).length, 1);
   assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
 });
+
+test('a menu held across midnight replays the same calendar events whether the clock advances once or in small ticks', () => {
+  for (const active of [true, false]) {
+    const g = new Game(undefined, 42, Date.parse('2026-09-09T16:59:50Z'));
+    send(g, { type: 'startShift' }); send(g, { type: 'activity', active, ...(active ? { paused: true } : {}) });
+    const chunks = decodeSave(encodeSave(g)), until = g.world.now + 120000;
+    g.advance(until); while (chunks.world.now < until) chunks.advance(Math.min(until, chunks.world.now + 1000));
+    assert.deepEqual(g.world, chunks.world); assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
+    assert.equal(g.world.phase, 'open'); assert.equal(g.world.shift!.pausedMs, 120000);
+    assert.equal(g.world.attendance!.lastActiveDateKey, active ? '2026-09-10' : '2026-09-09');
+  }
+});

@@ -8,7 +8,7 @@ import { flyerQuote } from './flyer';
 import { planRushes, summarizeRush } from './rush';
 import { menuReport } from './menu';
 import { beerStatus } from './production';
-import type { Command, Customer, Envelope, Group, Item, LoggedCommand, Order, Result, RulesVersion, Stats, Table, World } from './types';
+import type { Command, Customer, Envelope, Group, Item, LoggedCommand, Order, Result, RulesVersion, Stats, SystemCommand, Table, World } from './types';
 
 const RUSH_CLOCK_RULES: RulesVersion = 5; // config-exempt: fixed replay protocol revision
 const PROGRESSION_RULES: RulesVersion = 6; // config-exempt: fixed replay protocol revision
@@ -24,6 +24,7 @@ const CONFIG_PIN_RULES: RulesVersion = 15; // config-exempt: fixed replay protoc
 const MENU_PAUSE_RULES: RulesVersion = 16; // config-exempt: fixed replay protocol revision
 const LIVE_UPGRADE_RULES: RulesVersion = 17; // config-exempt: fixed replay protocol revision for owner live-upgrade policy
 const BATCH_RULES: RulesVersion = 18; // config-exempt: fixed replay protocol revision for stocked beer and wash batches
+const DISCONNECT_RULES: RulesVersion = 19; // config-exempt: replay protocol for trusted disconnection deadlines
 const emptyStats = (): Stats => ({ arrived: 0, served: 0, lost: 0, rejected: 0, orders: 0, payment: 0, tip: 0, credited: 0, penalty: 0, spent: 0, rep: 0, wellRestedBonus: 0 });
 
 /** No wall clock, IO or renderer: only config, seed, explicit time and commands. */
@@ -115,40 +116,32 @@ export class Game {
     return Math.min(...times.filter(t => t > w.now));
   }
   advance(now: number): void {
-    const w = this.world, c = this.config.values;
+    const w = this.world, outage = w.disconnection;
     if (!Number.isSafeInteger(now) || now < w.now) throw Error('clock:non-monotonic');
-    if ((!w.active || w.paused) && this.rulesVersion !== 1) {
-      const elapsed = now - w.now;
-      // Keep calendar time real; move gameplay deadlines so hidden/offline time is not played.
-      if (w.shift && w.phase !== 'resting') {
-        w.shift.pausedMs += elapsed;
-        w.shift.endsAt += elapsed; w.shift.nextSpawnAt += elapsed;
-        if (w.shift.wellRestedUntil !== null) w.shift.wellRestedUntil += elapsed;
-        if (w.shift.rushUntil != null) w.shift.rushUntil += elapsed;
-        if (w.shift.flyer) { w.shift.flyer.start += elapsed; w.shift.flyer.end += elapsed; }
-        for (const rush of w.shift.rushes) { rush.start += elapsed; rush.end += elapsed; }
-      }
-      for (const table of w.tables) {
-        if (table.until !== null) table.until += elapsed;
-        if (table.group) table.group.arrivedAt += elapsed;
-        if (table.order) {
-          table.order.placedAt += elapsed;
-          for (const item of table.order.items) if (item.readyAt !== null) item.readyAt += elapsed;
+    if (outage && !outage.timedOut && now >= outage.expiresAt) {
+      this.advanceTime(outage.expiresAt);
+      outage.timedOut = true;
+      this.emit('connection_expired', { shiftId: outage.shiftId });
+      if (w.phase === 'open') { w.phase = 'closing'; this.emit('shift_closing', { reason: 'disconnected' }); }
+      this.processDue();
+    }
+    this.advanceTime(now);
+  }
+  private gameplayPaused(): boolean {
+    const w = this.world;
+    return (!w.active || !!w.paused) && this.rulesVersion !== 1 && !w.disconnection?.timedOut;
+  }
+  private advanceTime(now: number): void {
+    const w = this.world, c = this.config.values;
+    if (this.gameplayPaused()) {
+      do {
+        // Calendar events must land at the same instant for live ticks and log replay.
+        let next = now;
+        if (this.rulesVersion >= DISCONNECT_RULES) for (const expiry of [w.daily?.expiresAt, w.active ? w.attendance?.expiresAt : undefined]) {
+          if (expiry !== undefined && expiry > w.now) next = Math.min(next, expiry);
         }
-      }
-      for (const group of w.queue) group.arrivedAt += elapsed;
-      for (const glass of w.glasses) {
-        if (glass.readyAt !== null) glass.readyAt += elapsed;
-        if (glass.startedAt !== undefined) glass.startedAt += elapsed;
-      }
-      if (w.beer?.batch) { w.beer.batch.startedAt += elapsed; w.beer.batch.readyAt += elapsed; }
-      if (w.lastServedAt !== null) w.lastServedAt += elapsed;
-      if (w.nextDeliveryAt !== null) w.nextDeliveryAt += elapsed;
-      if (w.delivery) { w.delivery.placedAt += elapsed; w.delivery.expiresAt += elapsed; }
-      if (w.daily?.lossFreeSince != null) w.daily.lossFreeSince += elapsed;
-      w.now = now;
-      if (this.rulesVersion >= MENU_PAUSE_RULES) this.observeAttendance();
-      if (this.rulesVersion >= QUEST_RULES) this.ensureDailyQuests();
+        this.advancePaused(next);
+      } while (w.now < now);
       return;
     }
     while (w.now < now) {
@@ -157,11 +150,47 @@ export class Game {
       else if (w.phase === 'resting' && w.active) w.staminaMs = Math.min(c.shift.durationMs, w.staminaAnchorMs + (next - w.staminaAnchorAt) * c.shift.regenRate);
       w.now = next;
       this.processDue();
+      // Closing may finish midway through a long offline advance; rest must freeze again.
+      if (this.gameplayPaused() && w.now < now) return this.advanceTime(now);
     }
+  }
+  private advancePaused(now: number): void {
+    const w = this.world;
+    const elapsed = now - w.now;
+    // Keep calendar time real; move gameplay deadlines so hidden/offline time is not played.
+    if (w.shift && w.phase !== 'resting') {
+      w.shift.pausedMs += elapsed;
+      w.shift.endsAt += elapsed; w.shift.nextSpawnAt += elapsed;
+      if (w.shift.wellRestedUntil !== null) w.shift.wellRestedUntil += elapsed;
+      if (w.shift.rushUntil != null) w.shift.rushUntil += elapsed;
+      if (w.shift.flyer) { w.shift.flyer.start += elapsed; w.shift.flyer.end += elapsed; }
+      for (const rush of w.shift.rushes) { rush.start += elapsed; rush.end += elapsed; }
+    }
+    for (const table of w.tables) {
+      if (table.until !== null) table.until += elapsed;
+      if (table.group) table.group.arrivedAt += elapsed;
+      if (table.order) {
+        table.order.placedAt += elapsed;
+        for (const item of table.order.items) if (item.readyAt !== null) item.readyAt += elapsed;
+      }
+    }
+    for (const group of w.queue) group.arrivedAt += elapsed;
+    for (const glass of w.glasses) {
+      if (glass.readyAt !== null) glass.readyAt += elapsed;
+      if (glass.startedAt !== undefined) glass.startedAt += elapsed;
+    }
+    if (w.beer?.batch) { w.beer.batch.startedAt += elapsed; w.beer.batch.readyAt += elapsed; }
+    if (w.lastServedAt !== null) w.lastServedAt += elapsed;
+    if (w.nextDeliveryAt !== null) w.nextDeliveryAt += elapsed;
+    if (w.delivery) { w.delivery.placedAt += elapsed; w.delivery.expiresAt += elapsed; }
+    if (w.daily?.lossFreeSince != null) w.daily.lossFreeSince += elapsed;
+    w.now = now;
+    if (this.rulesVersion >= MENU_PAUSE_RULES) this.observeAttendance();
+    if (this.rulesVersion >= QUEST_RULES) this.ensureDailyQuests();
   }
   private updateRush(): void {
     const w = this.world, s = w.shift;
-    if (!s || !w.active || w.paused) return;
+    if (!s || (!w.active || w.paused) && !w.disconnection?.timedOut) return;
     const candidate = w.phase === 'open' ? s.rushes.findIndex(r => w.now >= r.start && w.now < r.end) : this.activeRushIndex;
     const planned = candidate == null ? undefined : s.rushes[candidate];
     const slot = w.phase !== 'resting' && planned && planned.start <= w.now && w.now < planned.end ? planned : undefined;
@@ -218,7 +247,7 @@ export class Game {
   }
   private processDue(): void {
     const w = this.world, c = this.config.values, s = w.shift;
-    if ((!w.active || w.paused) && this.rulesVersion !== 1) return;
+    if (this.gameplayPaused()) return;
     if (this.rulesVersion >= QUEST_RULES) this.ensureDailyQuests();
     if (this.rulesVersion >= ATTENDANCE_RULES) this.observeAttendance();
     if (s?.flyer && w.now >= s.flyer.end) this.endFlyer('expired');
@@ -302,6 +331,7 @@ export class Game {
       w.dayShifts[key] = (w.dayShifts[key] ?? 0) + 1;
       if (s) s.closedAt = w.now;
       if (this.rulesVersion >= RUSH_CLOCK_RULES) this.updateRush();
+      delete w.disconnection;
       this.endFlyer('shiftClosed');
       this.emit('shift_closed', { shiftId: s?.id ?? '', credited: s?.stats.credited ?? 0 });
       if (this.rulesVersion >= MENU_RULES) {
@@ -524,15 +554,23 @@ export class Game {
     }
   }
   /** Opening config is supplied by a trusted registry adapter, never by a player command payload. */
-  command(envelope: Envelope, openingConfig?: Config): Result { return this.applyCommand(envelope, BATCH_RULES, openingConfig); }
+  command(envelope: Envelope, openingConfig?: Config): Result {
+    if (!validEnvelope(envelope)) return { ok: false, reason: 'invalidCommand' };
+    return this.applyCommand(envelope, DISCONNECT_RULES, openingConfig);
+  }
+  /** Trusted connection lifecycle only; record loss before advancing past the loss time. */
+  disconnect(at: number, shiftId: string): Result {
+    return this.applyCommand({ at, idempotencyKey: `system:connectionLost:${shiftId}:${at}`, command: { type: 'connectionLost', shiftId } }, DISCONNECT_RULES);
+  }
   /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
   replay(entry: LoggedCommand, config = this.config): Result {
+    if (entry.command.type === 'connectionLost' && entry.rulesVersion < DISCONNECT_RULES) throw Error('replay:rulesVersion');
     if (entry.command.type === 'activity' && entry.command.paused !== undefined && entry.rulesVersion < MENU_PAUSE_RULES) throw Error('replay:rulesVersion');
     if (entry.configVersion !== config.version || config.version !== this.config.version && (entry.command.type !== 'startShift' || entry.rulesVersion < CONFIG_PIN_RULES)) throw Error('replay:configVersion');
     return this.applyCommand(entry, entry.rulesVersion, entry.command.type === 'startShift' ? config : undefined);
   }
-  private applyCommand(envelope: Envelope, rulesVersion: RulesVersion, openingConfig?: Config): Result {
-    if (!validEnvelope(envelope)) return { ok: false, reason: 'invalidCommand' };
+  private applyCommand(envelope: Envelope<Command | SystemCommand>, rulesVersion: RulesVersion, openingConfig?: Config): Result {
+    if (!validReplayEnvelope(envelope)) return { ok: false, reason: 'invalidCommand' };
     const previous = this.results.get(envelope.idempotencyKey);
     if (previous) return JSON.stringify(previous.command) === JSON.stringify(envelope.command) ? { ...previous.result } : { ok: false, reason: 'idempotencyConflict' };
     if (envelope.at < this.world.now) return { ok: false, reason: 'staleCommand' };
@@ -567,11 +605,23 @@ export class Game {
       this.emit('life_path_level_reached', { level: this.config.values.lifePath[this.world.lifePath].id, lifetimeEarned: this.world.lifetimeEarned });
     }
   }
-  private execute(cmd: Command, openingConfig = this.config): Result {
+  private execute(cmd: Command | SystemCommand, openingConfig = this.config): Result {
     const w = this.world, c = this.config.values, s = w.shift;
     const fail = (reason: string): Result => ({ ok: false, reason });
     switch (cmd.type) {
+      case 'connectionLost': {
+        if (!s || s.id !== cmd.shiftId || w.phase === 'resting') return fail('noShift');
+        const grace = c.network.reconnectGraceMs;
+        if (!w.disconnection) {
+          if (!Number.isSafeInteger(grace) || grace <= 0 || !Number.isSafeInteger(w.now + grace)) return fail('configClock');
+          w.disconnection = { shiftId: s.id, expiresAt: w.now + grace, timedOut: false };
+          this.emit('connection_lost', { shiftId: s.id, expiresAt: w.disconnection.expiresAt });
+        }
+        w.staminaAnchorAt = w.now; w.staminaAnchorMs = w.staminaMs; w.active = false;
+        return { ok: true };
+      }
       case 'activity':
+        if (cmd.active && !w.disconnection?.timedOut) delete w.disconnection;
         w.staminaAnchorAt = w.now; w.staminaAnchorMs = w.staminaMs; w.active = cmd.active;
         if (this.rulesVersion >= MENU_PAUSE_RULES && cmd.paused) w.paused = true;
         else delete w.paused;
@@ -831,11 +881,16 @@ export class Game {
 
 /** Runtime validation for local imports and HTTP. Reject unknown command variants. */
 export function validEnvelope(input: unknown): input is Envelope {
+  return validReplayEnvelope(input) && input.command.type !== 'connectionLost' && !input.idempotencyKey.startsWith('system:');
+}
+/** Historical logs may contain reserved keys; only the public ingress forbids them. */
+export function validReplayEnvelope(input: unknown): input is Envelope<Command | SystemCommand> {
   if (!input || typeof input !== 'object') return false;
-  const e = input as Envelope;
+  const e = input as Envelope<Command | SystemCommand>;
   if (typeof e.idempotencyKey !== 'string' || !e.idempotencyKey || e.idempotencyKey.length > 128 || !Number.isSafeInteger(e.at) || e.at < 0 || !e.command || typeof e.command !== 'object') return false; // config-exempt: protocol key length
   const c = e.command;
   switch (c.type) {
+    case 'connectionLost': return typeof c.shiftId === 'string' && c.shiftId.length > 0 && e.idempotencyKey === `system:connectionLost:${c.shiftId}:${e.at}`;
     case 'startShift': case 'endShift': case 'buyTable': case 'emergencyPack': case 'installSignboard': case 'buyFlyer': return true;
     case 'claimQuest': return typeof c.day === 'string' && typeof c.questId === 'string' && c.questId.length > 0;
     case 'claimAttendance': case 'claimDailyBonus': return typeof c.day === 'string';
