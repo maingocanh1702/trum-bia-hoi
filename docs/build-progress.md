@@ -1985,3 +1985,17 @@ Current full91-case run passed86 and hit5timeouts during confirmed Clamshell Sle
 This is not a passing full-suite receipt. Owner was asked to open the lid for the
 remaining browser verification. Do not relax test timeouts or claim the final build
 fully verified before the rerun. Native correction review remains to be completed.
+
+### Storage code review closed; runtime receipt pending — 2026-09-10
+
+Native final correction review ofe44bf5a..c9db016 reports both prior defects resolved
+and no identified code regression. This closes code review only. Current config/
+build/typecheck pass. Engine codec has not changed since the250test/ordinary/rush
+verification. Final browser91cases:86pass,5timeouts; confirmed hostClamshellSleep.
+The owner has been asked to open the lid for a sequential fullbrowser/80MB rerun.
+No READY/full-game-complete claim. Receipt `.qa/browser-save-verification.json`;
+resume `.qa/resume-browser-save-verification.md`. Current original20hashes unchanged.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 | Closed independent storage code review atc9db016; retained explicit pending browser verification due host sleep. |

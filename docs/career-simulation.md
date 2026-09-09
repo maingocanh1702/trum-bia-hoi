@@ -78,9 +78,9 @@ tiêu tốn thời gian; nó không mô phỏng độ trễ thao tác tay.
 Dữ liệu tại `.qa/career-30-days-seed42.json` và `career-30-days-seed99.json`;
 receipt `.qa/career-verification.json`. Tái tạo bằng lệnh đầu trang, đổi `--seed=99`.
 
-## Vấn đề lưu career cần xử lý tiếp
+## Vấn đề lưu career phát hiện tại b01f4b1
 
-Codec hiện tại tạo **80.013.203 byte** cho seed42 sau 30 ngày. Nó chứa cả log lệnh
+Codec tại b01f4b1 tạo **80.013.203 byte** cho seed42 sau 30 ngày. Nó chứa cả log lệnh
 và toàn bộ sự kiện; `apps/web/src/local.ts::persist` ghi nguyên chuỗi vào
 localStorage sau lệnh người chơi. Probe Chromium 153 trên origin thử riêng:
 ghi nhỏ thành công, ghi payload cùng kích thước bị `QuotaExceededError`; giá trị
@@ -99,3 +99,15 @@ nới assertion. Chưa tuyên bố bản chơi hiện tại sẵn sàng lưu car
 | 2026-09-09 | Thêm harness career dùng lệnh và tài nguyên thật; đối soát ví/ngày, log có hash, kiểm tra replay; giữ nguyên số kinh tế và trạng thái chờ quyết định band nâng cao. |
 
 | 2026-09-09 | Hoàn tất hai seed 30 ngày, replay trọn tháng, 250 tests/config/build/k nền/rush và review độc lập. Phát hiện bản lưu 80 MB vượt localStorage; chuyển ưu tiên kế tiếp sang lưu career, giữ câu hỏi band nâng cao. |
+
+## Cập nhật lưu trữ — 2026-09-10
+
+Adapter IndexedDB tại `c9db016` ghi lịch sử theo phần mới và bảo vệ backup/migration;
+review mã không còn lỗi được xác nhận. Archive80MB đã lưu/đọc/mở game đúng ở542784d,
+giữ240ca,LP4 và1.582.365xu; thời gian mở khoảng19.5giây vì còn replay toàn bộ.
+Bản sửa cuối vẫn chờ91browser +80MB acceptance khi máy thức;86/91pass trong lượt
+bị ClamshellSleep không được tính là fullpass. Chưa chứng nhận career dài ngày.
+
+| Ngày | Thay đổi |
+|---|---|
+| 2026-09-10 | Recorded reviewed IndexedDB implementation and earlier80MB acceptance, separating pending final runtime checks from code-review closure. |

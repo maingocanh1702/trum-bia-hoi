@@ -1,6 +1,6 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.32.0
+> **Version:** v0.32.1
 > **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-09 (layout/art theo ảnh owner)
 > **Trạng thái:** Active — **M0 qua verify; review sửa lỗi nền và layout/art đã CLEAN. M1–M3 tiếp tục triển khai; M4 bắt đầu nền config pin/replay, server event store đã review; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.3** (1 phase, mốc M0–M9).
 > **Owner:** Team
@@ -27,9 +27,10 @@ Actual30-day save is80MB and an isolated Chromium size probe throws
 QuotaExceededError. Next priority: durable career storage before account/ranking
 expansion. Advanced k scope and full LP0–LP7 remain open;20inprogress,0complete.
 
-Browser storage slice: IndexedDB delta/atomic revision và migration đã triển khai;
-kiểm tra archive, recovery và UI đang chạy. Không cắt lịch sử, không thay đổi config;
-full M0–M9 vẫn20feature đang làm. Native review còn chờ.
+Browser storage `c9db016`: IndexedDB delta/atomic revision, migration và raw recovery
+đã qua native code review; config/build qua. Browser cuối86/91pass,5timeout khi máy
+gập nắp: chờ lượt kiểm tra khi máy thức, chưa đánh dấu hoàn tất. Giữ nguyên config
+và full M0–M9 với20feature đang làm.
 
 ## 0. How to use this tracker
 
@@ -95,7 +96,7 @@ full M0–M9 vẫn20feature đang làm. Native review còn chờ.
 |----|------|---------|:------:|--------|:-----:|-------|
 | F23 | 🎮 Code | Kiến Trúc Server Quán — server-auth, websocket, CAPTCHA | 🟡 | `codex/game-build-isolated` | 🔒S | Đã có config pin/savev3, SQLite append-only event store và guest HTTP/session schema2. Config/build182 engine/server + actual CLI/Chromium smoke pass tại62b4445;3 findings cookie/command fields/event paging đã sửa, native full-range review090d920..62b4445 không còn lỗi actionable (reviewer socket rerun bị sandbox chặn). Schema3 clientSeq/owned stream/atomic receipts đã qua config/build187 tests và CLI/Chromium tại e390a1c; native review794d75c..e390a1c không có lỗi mới,12 storage tests độc lập pass. Rules19–20 timeout-close/replay/live adoption verified tại1fa6b14: config/build211 tests; review sửa cuối xác nhận hết2 findings và34 checks độc lập pass.72 browser/20 k cohorts/15rush pass tại3ed1e19; server liveness chưa nối. Registry/Google claim/WebSocket/client buffer/reconnect/anti-cheat và web cutover còn thiếu; web vẫn local. Xem docs/build-progress.md. |
 | F12 | 🎮 Code | Giải Nhậu & Vụ Bia — 8 bậc, 2 Vụ Bia song song | 🟡 | `packages/engine/src/seasons.ts` | 🔒S 🔒B | Rules23: hai mùa theo lịch, thu nhập sau daily cap, peak thật, lịch sử cá nhân và panel VI/EN. Đã verify/review tại faece69: 248 engine/server, 79 browser + 6 kiểm tra lại, config/build/k nền/rush qua. Community ranks và mailbox chưa xong. |
-| F13 | 🎮 Code | Đường Lên Trùm — LP0–LP7, gate tính năng & mặt bằng | 🟡 | `codex/game-build-isolated` | 🔒S | Requirements/claim-once và producers đã có. Hai seed30ngày (480ca) tớiLP4; replay tháng khớp,250tests/config/build/k nền/rush/review qua. FullLP0–LP7/balance còn mở; save tháng80MB vượt localStorage, cần sửa trước career dài. |
+| F13 | 🎮 Code | Đường Lên Trùm — LP0–LP7, gate tính năng & mặt bằng | 🟡 | `codex/game-build-isolated` | 🔒S | Requirements/claim-once và producers đã có. Hai seed30ngày (480ca) tớiLP4; replay tháng khớp,250tests/config/build/k nền/rush/review qua. FullLP0–LP7/balance còn mở; save tháng80MB vượt localStorage; adapter IndexedDB c9db016 đã review, verify browser cuối chờ máy thức. |
 | F14 | 🎮 Code | Mặt Bằng Quán — 9 mặt bằng, rent/cọc 7 ngày | 🟡 | `codex/game-build-isolated` | 🔒S | Rules22 quote/purchase/early move/expiry/refund, real-calendar pause/offline, config/replay/SQLite và menu VI/EN.234 engine/server,77browser,config/build,10kcohorts+15rush pass; native review fixes verified atce7564b. Break-even/art/neighborhood/shift-report còn tiếp tục. |
 | F15 | 🎮 Code | Sự Cố Quán Nhậu — bảo kê, trộm offline, đánh nhau (kiểm tra ATTP ⏸ pending) | ⬜ | `—` | 🔒S | Spec `docs/features/F15-risk-events.md`; §4 kiểm tra pending, `risk.inspection.enabled=false`. |
 | F16 | 🎮 Code | Rủ Bạn & Huy Hiệu — 3 mốc, huy hiệu Kết Nối | ⬜ | `—` | 🔒S | Spec `docs/features/F16-referral-badges.md`. |
@@ -263,3 +264,5 @@ full M0–M9 vẫn20feature đang làm. Native review còn chờ.
 | 2026-09-09 | v0.31.1 | Career b01f4b1 verified with two30-day seeds and full-month replay;250tests/config/build/ordinary/rush/review pass. Recorded actual80MB save and Chromium quota failure; prioritize durable storage, not full career readiness. |
 
 | 2026-09-09 | v0.32.0 | Thay local career autosave bằng IndexedDB nguyên tử, ghi delta và chặn stale tab; giữ nguồn legacy/backup. Codec không đổi rules. Kiểm tra hồi quy và native review đang chạy; không đánh dấu full feature hoàn tất. |
+
+| 2026-09-10 | v0.32.1 | Storage code c9db016 reviewed with no actionable introduced defect; current config/build pass. Final91browser86pass/5host-sleep timeouts and final80MB acceptance remain pending. Full game remains20inprogress/0complete. |

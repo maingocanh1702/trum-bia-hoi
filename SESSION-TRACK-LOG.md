@@ -5,6 +5,27 @@
 
 ---
 
+## 🧭 Storage code reviewed; browser verification awaits awake host — 2026-09-10
+
+Code `c9db016`, base310c94e. Native final correction review found no introduced
+code regression; both remaining findings resolved. Do not repeat the code review
+or30-day career simulation. Current config/build/typecheck pass;250engine/server,
+10ordinary k cohorts and15rush passed before web-only corrections (codec unchanged).
+
+Final91browser run:86passed,5timeouts during confirmed ClamshellSleep; NOT a full
+pass. Owner was asked to open the lid; no reply yet. Next run the full browser suite
+and existing80MB HTTP acceptance sequentially while awake, as listed in
+`.qa/resume-browser-save-verification.md`. The fixture already exists; no regeneration.
+Earlier80MB exactwrite/read/delta/Appboot passed at542784d (~19.5sstartup); that is
+not proof of the finalcorrection. `.qa/browser-save-verification.json` records both.
+
+No tests/review processes remain after this receipt. Product code is committed;
+original checkout/owner5174profile remain untouched by test tools,20sourcehashes
+still match. Keep unrelated `.dashboard/events.jsonl`. No merge/push. Full goal
+remains active,20features inprogress,0complete. After storage verification: account
+provider foundation before community ranking; see `.qa/career-next-boundary.md`.
+Advanced k scope unanswered; Google ClientID “chưa có”; no invented season prizes.
+
 ## 🧭 Browser career storage implemented; checks running — 2026-09-09
 
 Base310c94e. Native IndexedDB writer + async App/local wiring, delta chunks,
