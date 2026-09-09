@@ -157,36 +157,48 @@ export class Game {
   private advancePaused(now: number): void {
     const w = this.world;
     const elapsed = now - w.now;
-    // Keep calendar time real; move gameplay deadlines so hidden/offline time is not played.
-    if (w.shift && w.phase !== 'resting') {
-      w.shift.pausedMs += elapsed;
-      w.shift.endsAt += elapsed; w.shift.nextSpawnAt += elapsed;
-      if (w.shift.wellRestedUntil !== null) w.shift.wellRestedUntil += elapsed;
-      if (w.shift.rushUntil != null) w.shift.rushUntil += elapsed;
-      if (w.shift.flyer) { w.shift.flyer.start += elapsed; w.shift.flyer.end += elapsed; }
-      for (const rush of w.shift.rushes) { rush.start += elapsed; rush.end += elapsed; }
-    }
-    for (const table of w.tables) {
-      if (table.until !== null) table.until += elapsed;
-      if (table.group) table.group.arrivedAt += elapsed;
-      if (table.order) {
-        table.order.placedAt += elapsed;
-        for (const item of table.order.items) if (item.readyAt !== null) item.readyAt += elapsed;
-      }
-    }
-    for (const group of w.queue) group.arrivedAt += elapsed;
-    for (const glass of w.glasses) {
-      if (glass.readyAt !== null) glass.readyAt += elapsed;
-      if (glass.startedAt !== undefined) glass.startedAt += elapsed;
-    }
-    if (w.beer?.batch) { w.beer.batch.startedAt += elapsed; w.beer.batch.readyAt += elapsed; }
-    if (w.lastServedAt !== null) w.lastServedAt += elapsed;
-    if (w.nextDeliveryAt !== null) w.nextDeliveryAt += elapsed;
-    if (w.delivery) { w.delivery.placedAt += elapsed; w.delivery.expiresAt += elapsed; }
-    if (w.daily?.lossFreeSince != null) w.daily.lossFreeSince += elapsed;
+    if (this.rulesVersion >= DISCONNECT_RULES && !this.shiftPauseTimers(elapsed, false)) throw Error('clock:unsafePause');
+    this.shiftPauseTimers(elapsed, true);
     w.now = now;
     if (this.rulesVersion >= MENU_PAUSE_RULES) this.observeAttendance();
     if (this.rulesVersion >= QUEST_RULES) this.ensureDailyQuests();
+  }
+  private shiftPauseTimers(elapsed: number, apply: boolean): boolean {
+    const w = this.world;
+    let valid = true;
+    const shift = <T, K extends keyof T>(target: T, key: K) => {
+      const next = Number(target[key]) + elapsed;
+      valid = Number.isSafeInteger(next) && valid;
+      if (apply) target[key] = next as T[K];
+    };
+    // Keep calendar time real; move gameplay deadlines so hidden/offline time is not played.
+    if (w.shift && w.phase !== 'resting') {
+      shift(w.shift, 'pausedMs');
+      shift(w.shift, 'endsAt'); shift(w.shift, 'nextSpawnAt');
+      if (w.shift.wellRestedUntil !== null) shift(w.shift, 'wellRestedUntil');
+      if (w.shift.rushUntil != null) shift(w.shift, 'rushUntil');
+      if (w.shift.flyer) { shift(w.shift.flyer, 'start'); shift(w.shift.flyer, 'end'); }
+      for (const rush of w.shift.rushes) { shift(rush, 'start'); shift(rush, 'end'); }
+    }
+    for (const table of w.tables) {
+      if (table.until !== null) shift(table, 'until');
+      if (table.group) shift(table.group, 'arrivedAt');
+      if (table.order) {
+        shift(table.order, 'placedAt');
+        for (const item of table.order.items) if (item.readyAt !== null) shift(item, 'readyAt');
+      }
+    }
+    for (const group of w.queue) shift(group, 'arrivedAt');
+    for (const glass of w.glasses) {
+      if (glass.readyAt !== null) shift(glass, 'readyAt');
+      if (glass.startedAt !== undefined) shift(glass, 'startedAt');
+    }
+    if (w.beer?.batch) { shift(w.beer.batch, 'startedAt'); shift(w.beer.batch, 'readyAt'); }
+    if (w.lastServedAt !== null) shift(w, 'lastServedAt');
+    if (w.nextDeliveryAt !== null) shift(w, 'nextDeliveryAt');
+    if (w.delivery) { shift(w.delivery, 'placedAt'); shift(w.delivery, 'expiresAt'); }
+    if (w.daily?.lossFreeSince != null) shift(w.daily, 'lossFreeSince');
+    return valid;
   }
   private updateRush(): void {
     const w = this.world, s = w.shift;
@@ -613,7 +625,7 @@ export class Game {
         if (!s || s.id !== cmd.shiftId || w.phase === 'resting') return fail('noShift');
         const grace = c.network.reconnectGraceMs;
         if (!w.disconnection) {
-          if (!Number.isSafeInteger(grace) || grace <= 0 || !Number.isSafeInteger(w.now + grace)) return fail('configClock');
+          if (!Number.isSafeInteger(grace) || grace <= 0 || !Number.isSafeInteger(w.now + grace) || !this.shiftPauseTimers(grace, false)) return fail('configClock');
           w.disconnection = { shiftId: s.id, expiresAt: w.now + grace, timedOut: false };
           this.emit('connection_lost', { shiftId: s.id, expiresAt: w.disconnection.expiresAt });
         }

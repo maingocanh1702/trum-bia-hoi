@@ -119,3 +119,17 @@ test('genuine e390a1c rules18 menu and inactive closing saves retain their origi
     assert.equal(g.world.phase, phase); assert.equal(count(g, 'connection_expired'), 0); roundtrip(g);
   }
 });
+
+test('a safe shift deadline too close to the integer limit cannot be shifted by disconnection grace or a menu pause', () => {
+  const raw = structuredClone(config.raw); raw._meta.version = 'near-clock-limit';
+  raw.shift.durationMs = Number.MAX_SAFE_INTEGER - 10000;
+  const g = new Game(loadConfig(raw), 42, 0); assert.ok(send(g, { type: 'startShift' }).ok);
+  assert.ok(Number.isSafeInteger(g.world.shift!.endsAt));
+  const timers = structuredClone({ shift: g.world.shift, tables: g.world.tables, glasses: g.world.glasses, beer: g.world.beer });
+  assert.deepEqual(g.disconnect(0, g.world.shift!.id), { ok: false, reason: 'configClock' });
+  assert.equal(g.world.active, true); assert.equal(g.world.disconnection, undefined);
+  assert.deepEqual({ shift: g.world.shift, tables: g.world.tables, glasses: g.world.glasses, beer: g.world.beer }, timers); roundtrip(g);
+  send(g, { type: 'activity', active: true, paused: true }); const before = structuredClone(g.world);
+  assert.throws(() => g.advance(config.values.network.reconnectGraceMs), /clock:unsafePause/);
+  assert.deepEqual(g.world, before); roundtrip(g);
+});
