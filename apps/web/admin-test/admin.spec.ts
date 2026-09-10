@@ -30,7 +30,7 @@ async function edit(page:Page,path='menu.bia.price',reason='Browser measured adj
 async function proposal(page:Page){const response=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/admin/proposals'&&r.request().method()==='POST');await page.getByRole('button',{name:'Gửi đề xuất'}).click();const receipt=await response;expect(receipt.status()).toBe(200);const {version}=await receipt.json();await expect(page.getByLabel('Mã phiên bản',{exact:true})).toHaveValue(version);await expect(page.getByRole('heading',{name:'Chi tiết phiên bản'})).toBeVisible();return version;}
 const detail=(page:Page)=>page.getByRole('region',{name:'Chi tiết phiên bản'});
 test('arbitrary sibling versions compare as read-only snapshots with scoped labels, reverse and identical pairs in VI/EN',async({page,browser})=>{
- await login(page,'super-one');const account=await(await page.request.get('/api/admin/auth')).json(), source=await(await page.request.get('/api/admin/draft-source')).json();
+ await login(page,'super-compare');const account=await(await page.request.get('/api/admin/auth')).json(), source=await(await page.request.get('/api/admin/draft-source')).json();
  const left=structuredClone(source.snapshot),right=structuredClone(source.snapshot);left.menu.bia.price++;right.menu.lac.price+=2;right.k.value=left.k.value===2.6?2.7:2.6;
  const player=await playerContext(browser), scope={kind:'segment',id:'compare-'+player.playerId,playerIds:[player.playerId],priority:0,expiresAt:null,previousVersion:null,ticketId:null};
  const versions:string[]=[];
@@ -42,7 +42,7 @@ test('arbitrary sibling versions compare as read-only snapshots with scoped labe
  const mutations:string[]=[];page.on('request',r=>{if(r.method()==='POST')mutations.push(r.url());});
  const panel=page.getByRole('region',{name:'So sánh hai phiên bản'}), diff=panel.getByRole('region',{name:'Thay đổi thực tế'});
  await panel.getByLabel('Phiên bản trước').fill(versions[0]);await panel.getByLabel('Phiên bản sau').fill(versions[1]);await panel.getByRole('button',{name:'So sánh cấu hình'}).click();
- await expect(diff).toBeVisible();await expect(panel.locator('.admin-summary')).toContainText(versions[0]);await expect(panel.locator('.admin-summary')).toContainText(versions[1]);await expect(panel.locator('.admin-summary')).toContainText(scope.id);
+ await expect(diff).toBeVisible();const disclosure=panel.getByText('Loại phạm vi: Nhóm',{exact:true});await disclosure.click();await expect(panel.getByText(scope.id,{exact:true})).toBeVisible();await disclosure.click();await expect(panel.getByText(scope.id,{exact:true})).not.toBeVisible();await expect(panel.locator('.admin-summary')).toContainText(versions[0]);await expect(panel.locator('.admin-summary')).toContainText(versions[1]);await expect(panel.locator('.admin-summary')).toContainText(scope.id);
  const row=diff.getByRole('row').filter({has:page.getByRole('rowheader',{name:'menu.bia.price',exact:true})}), cells=row.getByRole('cell');
  await expect(cells.nth(0).locator('pre')).toHaveText(String(left.menu.bia.price));await expect(cells.nth(1).locator('pre')).toHaveText(String(right.menu.bia.price));
  const baseRow=diff.getByRole('row').filter({has:page.getByRole('rowheader',{name:'shift.dailyEarnCapBase',exact:true})});

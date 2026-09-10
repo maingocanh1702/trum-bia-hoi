@@ -13,7 +13,7 @@ Uses the existing VI/EN copy system, palette, native forms/dialogs and 44px cont
 | Review | Actual old/new raw and scaled values; select historical versions or draft versions. Immutable draft creation, approval and publication are distinct actions. Publish confirms the exact displayed version. |
 | Conflict/retry | Preserve request key through a lost response. Stale base is surfaced; importing edits against a refreshed base is deliberate, never automatic overwrite. |
 | Authentication failure | Clear protected views; keep only the original author's pending draft for reauthentication. Credential expiry/factor errors have distinct messages. |
-| Remaining | Full forecasts, scoped overrides, arbitrary version-pair comparison, lifecycle labels, emergency/compensation and admin enrollment/recovery remain explicit follow-up work. No fake forecast values or live Google setup claim. |
+| Remaining | Observed donation/VND forecasts, lifecycle labels, emergency/compensation and admin enrollment/recovery remain explicit follow-up work. Coin forecasts, scopes and version comparison are implemented; see dated verification below. No fake forecast values or live Google setup claim. |
 
 Browser acceptance uses an isolated signer/certificate service and actual server
 Google SDK, TOTP and SQLite. GIS popup rendering may be replaced in the test browser;
@@ -77,3 +77,5 @@ legacy removed groups, read-only access, failed reads and identity changes.
 This is independent of the pending emergency schedule-policy decision.
 
 | 2026-09-10 comparison intake | Recorded bounded arbitrary-version comparison and shared diff correction; implementation/verification pending. M4 remains15/18 OPEN. |
+
+| 2026-09-10 comparison implementation | 61e68d5 implements arbitrary snapshot pairs, removed paths and per-version scaling;386unit/config/build pass. Full admin run26/27: new MFA test consumed the existing Tier A actor code. Dedicated test actor fixes isolation; production MFA unchanged. Review found only stale status documentation, corrected here and in tracker. Mobile scope details are collapsed for readable diffs; final verification/review pending. |
