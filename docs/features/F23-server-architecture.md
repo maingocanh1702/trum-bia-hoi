@@ -416,3 +416,7 @@ or local credit into competitive state. See `apps/web/README.md` for startup and
 | 2026-09-10 admin auth boundary | Schema9 adds durable admin challenge/session/factor state and protected registry API. Google verification plus independent MFA establishes the trusted actor; player cookie/liveness remains separate.320full tests/config/build pass, final focused/browser/review pending; M4 remains10/18 OPEN. |
 
 | 2026-09-10 admin API verified |6f42575:Google/TOTP server identity + RBAC protects the default registry API;320tests/10remote browser/config/build PASS, independent review CLEAN/typecheck PASS. M4 remains10/18 OPEN pending browser editor and account/scoped integration. No gameplay rule change or live OAuth setup. |
+
+| Date | Change |
+|---|---|
+| 2026-09-10 moderation boundary |521e901 adds authenticated, audited Game/Super archive review and player flag/clear operations; Support inspection only. Immutable seq/key/digest checks prevent stale or duplicate decisions; engine state is unchanged. Dedicated history/review controls, rank projection and automatic detection/appeals remain. See ../competitive-eligibility.md. |

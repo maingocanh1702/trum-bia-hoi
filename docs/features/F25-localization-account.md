@@ -323,3 +323,7 @@ live Google/minute5 acceptance, historical import and competitive access checks.
 | 2026-09-10 invitations | Optional first-shift/season-entry invitations now share a player-keyed `loginPrompt.cooldownShifts` preference and exactly three benefits; explicit account access remains available. Native departure warning opens the invitation only if the guest stays; generic text/reload/mobile limitations are recorded in [login-invitations](../login-invitations.md). Current owner decision supersedes durable guest reopen and merging into an existing Google account: new Google claims this visit once, existing Google restores its own saved progress. Verification remains pending until the slice receipt. |
 
 | 2026-09-10 15:30 Steer #5 | Owner restores guest device persistence across new tabs/browser reopen; keep writer lock/exact-session guard and Google attach/restore. Account-only durable history, achievements, ranking and cross-device restore remain. Supersedes 08:18 and prior ephemeral-guest interpretation; guest departure upsell removed. See account-modes.md and current receipt for verification. |
+
+| Date | Change |
+|---|---|
+| 2026-09-10 reviewed provenance core |521e901 makes imported-history status server-owned pending/approved/rejected with protected Game/Super decisions; normal server-origin guest attachment needs no imported-history review. No duplicate game credit or original-archive rewrite; dedicated controls and competitive score eligibility remain. |

@@ -79,3 +79,7 @@ history may count once; pending history cannot count. No compensation credit is 
 | Date | Change |
 |---|---|
 | 2026-09-10 verified local claim core |51a0734 passes271tests/config/build and80MB exact import/reopen/retry; native independent code/security review found no actionable introduced defect. `.qa/local-import-verification.json`. Imported history remains pending approval; public upload, cold-read performance and web cutover remain unfinished. |
+
+| Date | Change |
+|---|---|
+| 2026-09-10 moderation prerequisite |521e901 implements server-owned imported-history review and current flag state through protected audited operations. A rank consumer must still exclude unapproved local contribution and flagged/ineligible players; no rank projection or immutable season snapshot is claimed. Full F28 remains unimplemented. |

@@ -1,6 +1,7 @@
 # M4 next slice: competitive provenance and review
 
-Status: **IMPLEMENTING review/flag core and authenticated API**. Base:51a5ab5.
+Status: **VERIFIED review/flag core and authenticated API** at521e901. Base:51a5ab5.
+Competitive baseline/projection and dedicated admin controls remain unimplemented.
 
 Read live F28 sections2/3/6, F25 owner local-history decision, F23 anti-cheat,
 BRD4.2/4.3/9, registry/admin-auth/http, store claimLocal/localImport and seasons.
@@ -14,7 +15,7 @@ Confirmed sources:
   attached device guest is server-origin progress; local_imports identifies ONLY
   replayed local archives, not every guest-to-Google attachment.
 - local_imports is immutable, one archive per account/player, digest and exact
-  command/event cutoffs, original_gzip retained. Receipt always pending today.
+  command/event cutoffs, original_gzip retained. New receipts start pending; the canonical current review is returned after a decision.
 - Existing registry_audit is immutable and can record reviewed decisions; do not rewrite the imported archive or
   add compensating engine coins to approve ranking provenance.
 - Game/Super admins already authenticate with independent MFA, reason/audit ops;
@@ -84,7 +85,7 @@ already renders the records. Browser review controls and competitive totals foll
 Future ranking reads the current review/flag state at its own boundary. These
 controls alone do not certify ranking eligibility, score projection or snapshots.
 
-## Implemented API boundary — verification in progress
+## Implemented API boundary — verified
 
 `Competition.state` reads the current decisions from immutable registry audit;
 `GameStore.localImport` returns its approved/rejected/pending value. No schema or
@@ -93,9 +94,14 @@ audited inspection with the current decision/reason. `POST /admin/competition`
 accepts only the documented request fields; actor/role/time are server-derived.
 Existing context, CSRF, rate and session gates protect both actions. Existing admin
 audit UI renders these records; dedicated review controls and score projection are
-next.45 focused core/import/registry/auth checks and config/build pass; full suite
-and independent review are pending. No complete ranking or M4 claim.
+next. Final45 focused core/import/registry/auth,367 engine/server and19 admin browser
+checks, config zero warnings and build/typecheck pass. Independent review found no
+actionable defects; core5/typecheck independently pass, host verifies the signed
+Google/MFA HTTP boundary. Receipt `.qa/competition-verification.json` records the
+interrupted initial run separately from the complete rerun. M4 stays14/18 OPEN.
 
 | Date | Change |
 |---|---|
 | 2026-09-10 core/API | Implement immutable reviewed-import and flag decisions, exact-retry/current-seq guards, shared actor validation and authenticated inspection/decision routes. Preserve source archive and game balances; dedicated controls and ranking projection remain. |
+
+| 2026-09-10 core/API verified | 521e901 passes367unit/server,19admin browser,45focused,config/build and independent review; receipt records prior interrupted run without counting it. No score projection or complete moderation UI claim; M4 stays14/18. |

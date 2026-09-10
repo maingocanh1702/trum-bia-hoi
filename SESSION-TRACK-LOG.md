@@ -5,6 +5,25 @@
 
 ---
 
+## M4 review/flag core verified — 2026-09-10
+
+Code `521e901` (base `51a5ab5`): immutable local-history approval/rejection and
+player flag decisions, current-seq conflicts, exact retry receipts, mandatory reason
+and protected audited inspection. Reuses existing Google/MFA/session/context/CSRF
+and append-only audit; no schema, engine or economy JSON change. Actual imported
+archives require review; server-origin guest attachment does not create an import.
+Final **367/367 engine/server,19/19 admin browser,45 focused, config zero warnings
+and build/typecheck PASS**. Independent review found no actionable correctness or
+security defects and independently passed5 core cases/typecheck; its HTTP checks
+hit sandbox loopback EPERM, while host signed-Google/MFA HTTP tests pass. Earlier
+full test run exited143 before completion and is not counted as passing.
+Receipt `.qa/competition-verification.json`. **M4 remains14/18 OPEN**: dedicated
+history/review controls, imported baseline and competitive ranking consumers remain.
+No merge/push/deploy or live Google consent claim.
+
+Next: canonical imported-season baseline and competitive totals, then protected
+history/review controls and ranking eligibility. Public upload/80MB tuning stayM9.
+
 ## Threshold admission verified — owner18:02 follow-up, 2026-09-10
 
 Code `03dae56` (base `25cc21c`): reject threshold-group deletion at proposal and

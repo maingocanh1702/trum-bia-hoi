@@ -483,3 +483,31 @@ response. Mobile numeric cells never wrap inside an amount.
 Verified at `a99a567` (presentation `9900505`):350engine/server tests,19admin browser
 cases and final mobile report check pass; config/build and independent reviews pass.
 Receipt: `.qa/forecast-report-verification.json`. Full M4/BRD remains open.
+
+## Competitive review and flags — M4 core/API
+
+Server operations are available at `/admin/competition`, behind the existing Google,
+MFA, admin-context, CSRF and rate checks. Game/Super may decide; Support may inspect.
+Economy/Viewer cannot access this private moderation view. Inspection is audited.
+
+- `GET /admin/competition?playerId=<id>`: account origin, current flag, imported
+  digest/cutoffs and latest review (including reason/actor/time).
+- `POST /admin/competition` with `{type:'import-review',key,playerId,digest,
+  expectedSeq,reason,value:'approved'|'rejected'}` records a review of that exact
+  archive. `expectedSeq` comes from `localImport.review.seq` (initially0).
+- The same POST with `{type:'flag',key,playerId,expectedSeq,reason,value:boolean}`
+  flags/clears a player; use `flag.seq`. This does not ban/reset the player.
+
+The immutable `registry_audit` is the only decision store. Same actor/key and exact
+request returns its original receipt; changed request conflicts. Stale decisions,
+wrong archive, missing/moved import owner and no-change intents refuse before writes.
+A later correction uses a fresh key/current seq and preserves earlier receipts.
+`GameStore.localImport` now reports current pending/approved/rejected status.
+Reviews and flags never grant coins, rewrite imports, change pins or advance shifts.
+
+Dedicated admin review/history controls, competitive totals and public board are
+separate remaining M4/M5 work. No public archive upload or real Google setup added.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 | Verified521e901 review/flag core/API:367unit/server,19admin browser,45focused,config/build and independent review pass. Receipt: .qa/competition-verification.json; remaining work in docs/competitive-eligibility.md. |

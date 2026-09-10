@@ -24,6 +24,22 @@ separate. Feature rows span milestones; their count is not milestone completion.
 Owner queue: remaining M4 registry/admin/account acceptance → M6 → M7 → M8 → M9.
 No additional M5 breadth or history-volume tuning before those dependencies.
 
+## Latest M4 review/flag closure — 2026-09-10
+
+Code `521e901` (base `51a5ab5`): immutable local-history approval/rejection and
+player flag decisions, current-seq conflicts, exact retry receipts, mandatory reason
+and protected audited inspection. Reuses existing Google/MFA/session/context/CSRF
+and append-only audit; no schema, engine or economy JSON change. Actual imported
+archives require review; server-origin guest attachment does not create an import.
+Final **367/367 engine/server,19/19 admin browser,45 focused, config zero warnings
+and build/typecheck PASS**. Independent review found no actionable correctness or
+security defects and independently passed5 core cases/typecheck; its HTTP checks
+hit sandbox loopback EPERM, while host signed-Google/MFA HTTP tests pass. Earlier
+full test run exited143 before completion and is not counted as passing.
+Receipt `.qa/competition-verification.json`. **M4 remains14/18 OPEN**: dedicated
+history/review controls, imported baseline and competitive ranking consumers remain.
+No merge/push/deploy or live Google consent claim.
+
 ## Latest validation closure — 2026-09-10
 
 Code `03dae56` (base `25cc21c`): reject threshold-group deletion at proposal and
@@ -2502,3 +2518,5 @@ M4 acceptance → M6–M9; historical upload/tuning remainsM9.
 | 2026-09-10 Steer #5 | Guest device persistencee34fd56 verified by357unit/84remote/4local/19admin/config/build and scoped review with no introduced defects. Correct prior ephemeral-guest interpretation; preserve current owner auth/transport boundaries. Invitation-config P1 remains a separate open follow-up; no extra milestone closed. |
 
 | 2026-09-10 | E21 server admission03dae56 verified; M4 guest-benefits/cooldown PASS,14/18 OPEN. No economy/engine changes. |
+
+| 2026-09-10 | E22 review/flag core/API521e901 verified:367unit/server,19admin browser,45focused,config/build and independent review PASS. M4 stays14/18; baseline/score/history controls follow. |
