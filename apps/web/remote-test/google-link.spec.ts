@@ -180,3 +180,41 @@ test('a different canonical cookie after authentication cannot attach the old st
     expect(untouched.playerId).toBe(otherId); expect(untouched.shift).toBeNull();
   } finally { await other.close(); }
 });
+
+test('lost canonical-session reads retry identity after reconnect without replaying the credential', async ({ page }) => {
+  await openTransport(page); const before = await journal(page), token = await credential(page, 'link-session-retry');
+  let cut = true, authCalls = 0;
+  page.on('request', r => { if (r.url().endsWith('/auth/google')) authCalls++; });
+  await page.route('**/api/auth/session', route => cut ? route.abort() : route.continue());
+  expect(await link(page, token)).toHaveProperty('error');
+  expect(await page.evaluate(() => window.linkTransport.state)).toBe('reconnecting');
+  expect(await page.evaluate(() => window.linkTransport.accountBusy)).toBe(true);
+  expect(await page.evaluate(() => window.linkTransport.command({ type: 'startShift' }))).toEqual({ ok: false, reason: 'accountBusy' });
+  cut = false;
+  await expect.poll(() => page.evaluate(() => ({ provider: window.linkTransport.identity.provider, state: window.linkTransport.state, busy: window.linkTransport.accountBusy }))).toEqual({ provider: 'google', state: 'online', busy: false });
+  expect(authCalls).toBe(1); expect((await journal(page)).playerId).toBe(before.playerId);
+  expect((await journal(page)).clientId).toBe(before.clientId);
+  expect(await page.evaluate(() => window.linkTransport.command({ type: 'startShift' }))).toEqual({ ok: true });
+});
+
+test('opening the account menu during event catch-up is paused on the server before verification begins', async ({ page }) => {
+  await openTransport(page); const token = await credential(page, 'link-menu-pause');
+  let held = false, release!: () => void; const barrier = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/api/player/events?*', async route => {
+    const response = await route.fetch(); held = true; await barrier; await route.fulfill({ response });
+  });
+  await page.evaluate(() => window.linkTransport.setPresence(true, false));
+  await page.evaluate(() => window.linkTransport.command({ type: 'startShift' }));
+  await expect.poll(() => held).toBe(true);
+  expect((await snapshot(page)).world.phase).toBe('open');
+  expect(Boolean((await snapshot(page)).world.paused)).toBe(false);
+  let pausedAtVerification: boolean | undefined;
+  await page.route('**/api/auth/google', async route => {
+    pausedAtVerification = (await snapshot(page)).world.paused;
+    await route.continue();
+  });
+  await page.evaluate(() => window.linkTransport.setPresence(true, true));
+  await beginLink(page, token); release();
+  await expect.poll(() => page.evaluate(() => window.linkResult)).toHaveProperty('provider', 'google');
+  expect(pausedAtVerification).toBe(true);
+});

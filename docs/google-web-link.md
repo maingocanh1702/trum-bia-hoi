@@ -35,3 +35,4 @@ independent native Codex review. No economy/sim change; reuse E13 simulation evi
 | Date | Change |
 |---|---|
 | 2026-09-10 | Pin the bounded RemoteGame Google-link handoff before its account UI and conflict-resolution successors. No milestone completion claimed. |
+| 2026-09-10 review correction | A lost canonical-session read now retains a credential-free reconciliation flag. Reconnect retries only the session read before gameplay; commands/another link wait until identity is known. This fixes stale guest status after a committed Google cookie rotation. |

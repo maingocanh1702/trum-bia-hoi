@@ -27,7 +27,8 @@ function readJournal(): Journal | null {
 export class RemoteGame {
   identity!: PlayerSession;
   private linking?: Link;
-  get accountBusy() { return Boolean(this.linking); }
+  private reconcileAccount = false;
+  get accountBusy() { return Boolean(this.linking) || this.reconcileAccount; }
   world!: WorldView & { events: DomainEvent[] };
   config!: Config;
   menu: ReturnType<typeof menuReport> = null;
@@ -124,29 +125,34 @@ export class RemoteGame {
   private rejectLink(error: unknown) {
     const link = this.linking; this.linking = undefined; link?.reject(error);
   }
+  private async reconcileSession() {
+    const owner = playerSession(await this.request('/auth/session', {}));
+    if (owner.playerId !== this.journal!.playerId) throw new RemoteError('conflict');
+    this.identity = owner; this.reconcileAccount = false; return owner;
+  }
   private async finishGoogleLink() {
     const link = this.linking!;
     try {
       let failure: unknown;
+      this.reconcileAccount = true;
       try { await this.request('/auth/google', { credential: link.credential }, BOOT_TIMEOUT_MS); }
       catch (error) {
         // An explicit rejection did not rotate our cookie. Network/5xx loss is ambiguous.
         if (error instanceof RemoteError && error.status >= 400 && error.status < 500) {
+          this.reconcileAccount = false;
           if (error.code === 'invalidSession') this.fail(error);
           throw error;
         }
         failure = error;
       }
       let owner: PlayerSession;
-      try {
-        owner = playerSession(await this.request('/auth/session', {}));
-        if (owner.playerId !== this.journal!.playerId) throw new RemoteError('conflict');
-      } catch (error) { this.fail(error); throw error; }
+      try { owner = await this.reconcileSession(); }
+      catch (error) { this.fail(error); throw error; }
       if (owner.provider !== 'google') {
         if (failure) throw failure;
         const error = new RemoteError('conflict'); this.fail(error); throw error;
       }
-      this.identity = owner; link.resolve(owner);
+      link.resolve(owner);
     } catch (error) { link.reject(error); }
     finally { if (this.linking === link) this.linking = undefined; this.again = true; this.onChange([]); }
   }
@@ -162,7 +168,7 @@ export class RemoteGame {
   }
   start() { this.watchLiveness(); this.wake(); }
   close() {
-    this.stopped = true; this.rejectLink(new RemoteError('stopped')); clearTimeout(this.timer); clearTimeout(this.monitor);
+    this.stopped = true; this.reconcileAccount = false; this.rejectLink(new RemoteError('stopped')); clearTimeout(this.timer); clearTimeout(this.monitor);
     for (const controller of this.controllers) controller.abort();
     this.release?.(); this.release = undefined;
   }
@@ -173,6 +179,7 @@ export class RemoteGame {
     const rejected = error instanceof RemoteError && error.status >= 400 && error.status < 500 && error.status !== 429;
     this.state = code === 'storage' ? 'storage' : code === 'invalidSession' ? 'invalidSession' :
       (rejected || ['conflict', 'invalidClient', 'sequenceGap', 'sequenceConflict', 'idempotencyConflict', 'presenceManaged'].includes(code)) ? 'conflict' : 'reconnecting';
+    if (['conflict', 'storage', 'invalidSession'].includes(this.state)) this.reconcileAccount = false;
     this.onChange([]);
   }
   command(command: Command): Promise<Result> {
@@ -209,6 +216,8 @@ export class RemoteGame {
     this.working = true; this.again = false;
     try {
       const j = this.journal!;
+      // After ambiguous cookie rotation, retry identity only; the credential is already discarded.
+      if (this.reconcileAccount) await this.reconcileSession();
       if (!await this.beat()) return;
       this.state = 'online'; this.onChange([]);
       // Ordered acknowledgements are never inferred from snapshots. Retry even a possibly committed head.
@@ -228,7 +237,7 @@ export class RemoteGame {
         this.onChange(page.events.map((r: { event: DomainEvent }) => r.event));
         j.cursor = page.lastEventSeq; this.persist();
       }
-      if (this.linking && !this.stopped) await this.finishGoogleLink();
+      if (this.linking && !this.stopped && await this.beat()) await this.finishGoogleLink();
     } catch (error) { this.fail(error); }
     finally { this.working = false; if (!this.stopped && !['conflict', 'storage', 'invalidSession'].includes(this.state)) this.timer = setTimeout(() => this.wake(), this.again ? 0 : this.interval); }
   }
