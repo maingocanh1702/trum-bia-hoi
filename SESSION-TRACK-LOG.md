@@ -5,6 +5,17 @@
 
 ---
 
+## M4 emergency intake — 2026-09-10
+
+Base `e5cba9d`; [bounded intake](docs/admin-emergency.md). Runtime is unchanged.
+Current registry/scopes baseline passes36/36 (`.qa/emergency-registry-baseline.txt`).
+Owner clarification is pending: does an immediate hotfix supersede published
+future schedules, or do they replace it when due? Existing sequence ordering and
+predecessor activation guards make this a material policy choice. No answer is
+inferred; dependent publication/resolution edits have not started. M4 remains15/18.
+Next: implement the chosen rule through the existing registry and admin boundary,
+with atomic24-hour post-review tickets, exact retries and pinned live shifts.
+
 ## Public leaderboard closure — E25, 2026-09-10
 
 Product628eb72 (basec53b6f0, foundation1803b85): public read-only live ranking
