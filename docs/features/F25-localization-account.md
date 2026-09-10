@@ -104,13 +104,13 @@ Logged-in account can:
 
 ## 10. Acceptance
 
-- **Sign-in mid-shift (owner 2026-09-08, F27 §1.2):** signing in with Google while a shift is running never interrupts the shift (no reload, no lost tick); the running shift and all progress before it attach to the account at once; the local `eventLog` since shift start is uploaded so no serve is counted twice (`idempotencyKey`); before the server exists the local save simply gains `accountId`.
+- **Sign-in mid-shift (owner 2026-09-08, corrected 2026-09-10):** a new Google account attaches the current guest visit without reload, lost tick or duplicate credit; account menus pause until closed and pending verification settles. An existing Google account restores its own saved progress directly, without merging the current guest visit. Historical local archives keep the separately tracked one-time import/review path.
 - Guest play is unrestricted for core gameplay; sign-in prompts state exactly three benefits (save progress · achievements · compete on the leaderboard) and respect `onboarding.loginPrompt.cooldownShifts`.
 
 - User can start first session without login.
 - User must choose or accept a locale before first gameplay screen.
 - Locale switch updates UI without corrupting save.
-- Guest progress migrates once into Google account.
+- The current guest visit attaches exactly once to a new Google account; existing Google accounts restore their own progress without merging.
 - Guest cannot enter Giải Nhậu ranking write path or claim a donation gift.
 
 
@@ -278,3 +278,23 @@ The owner explicitly replaces the extra save-choice model. See [account modes](.
 | Date | Change |
 |---|---|
 | 2026-09-10 two modes | Replace sections 3/4 with the owner correction: play without signing in (no durable history/achievements) or register/sign in with a Google account; remove the extra stall choice. Preserve same-visit reconnect, menu pause and server authority. |
+
+## Two-mode acceptance checkpoint — 2026-09-10
+
+`8c9dc64` implements the owner's two-mode correction in both languages. The current
+server guest attaches exactly once to a new Google account: live shift, history,
+coins and command receipts persist through linking/reload/server restart; duplicate
+callbacks and retries cannot grant again. This individual F25 criterion is PASS.
+Existing Google progress restores directly; new guest visits cannot resume an old
+career. Known former guest credentials recover only fresh anonymous state; historical
+Google credentials remain protected even after local import moves their mapping.
+Receipt `.qa/account-modes-verification.json`:353unit baseline, final34server/import
+and22account browser, remote62 +bootstrap3; local92/admin19 covered with recorded
+isolated reruns; config/build and final independent full-base review CLEAN.
+Live Google Client ID/consent, expired Google reauthentication, configured invitations,
+eligibility and historical local upload/approval remain separate gaps. F25 stays open;
+M4 now13/18. Internal audit/archive retention is not durable guest player history.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 two modes verified | 8c9dc64 verifies owner correction and exactly-once current-guest attachment; updates §10 to distinguish new-account attachment from existing-account restore. E18 records complete evidence and all review corrections; F25 OPEN, M4 13/18. No live consent or economy change claimed. |

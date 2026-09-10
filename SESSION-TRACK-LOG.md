@@ -5,6 +5,21 @@
 
 ---
 
+## Two play modes verified — 2026-09-10
+
+Code `8c9dc64`: guest play lasts this visit; same-tab reload/reconnect keeps actions,
+while fresh navigation starts fresh. Google is an account: new accounts attach the
+current visit once; existing accounts restore directly, with no extra stall choice.
+Five review findings fixed: lost restart headers, copied markers, duplicate bootstrap,
+historical Google identity after import, and the busy guest-mode action.
+353unit baseline; final34server/import +22account browser PASS; remote62 +bootstrap3 PASS.
+Local87+isolated5=92 and admin18+isolated1=19; mixed runs recorded explicitly.
+Config zero warnings/build/typecheck and final independent full-base review CLEAN.
+Receipt `.qa/account-modes-verification.json`; VI/EN portrait entry inspected.
+M4 now13/18 OPEN: current-visit guest claim PASS. F25 remains in progress; live Client ID
+absent. Next: Google reauthentication, configured invitations/eligibility and remaining
+M4→M6–M9. Historical public local upload remains deferredM9; internal audit retained.
+
 ## Google account panel verified — 2026-09-10
 
 Code `e5745af`: Settings now opens the VI/EN Google panel with exactly three
