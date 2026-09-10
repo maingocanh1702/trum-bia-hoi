@@ -58,3 +58,22 @@ Final independent review at56a0a44 is CLEAN; typecheck and diff-check passed ind
 | 2026-09-10 verified |56a0a44:321engine/server,11admin/10remote browser, final config/build PASS. Correction review CLEAN; typecheck/diff-check passed independently. Known receipt and all snapshot replacements preserve intended draft state. M4 one-key/effectiveAt criterion PASS (11/18 overall); receipt `.qa/admin-editor-verification.json`. |
 
 | 2026-09-10 admin history/review verified | E24 at85fbdfb: protected imported-prefix pages, Support read-only and MFA Game/Super approval/flags, per-operator exact retries and identity cleanup.378unit/server +24admin browser, final5 affected browser/config/build/review PASS. See [E24 evidence](competitive-eligibility.md#admin-historyreview-closure--e24-2026-09-10); public rank/snapshot and full M4/F28 remain open. |
+
+## Arbitrary version comparison intake — 2026-09-10
+
+Base `fdda260`; BRD §5.2.5 requires comparison of any two stored versions.
+Reuse the protected `/admin/config` reads and the existing raw/scaled diff viewer.
+Both inputs accept exact version IDs, including drafts, published and historical
+snapshots. Labels bind the result to the fetched pair; changing either input
+clears the old result. Scopes are displayed separately: a stored snapshot diff is
+not a player-effective configuration forecast. Read-only roles may compare.
+No draft mutation, publication, engine/economy change or new API is required.
+
+The shared diff must include the union of old/new paths so removed keys are not
+hidden; each snapshot uses its own recorded k for scaled values. A changed or
+expired admin context clears protected comparison data, including changes during
+an outstanding read. Tests cover sibling versions, reverse/identical comparisons,
+legacy removed groups, read-only access, failed reads and identity changes.
+This is independent of the pending emergency schedule-policy decision.
+
+| 2026-09-10 comparison intake | Recorded bounded arbitrary-version comparison and shared diff correction; implementation/verification pending. M4 remains15/18 OPEN. |

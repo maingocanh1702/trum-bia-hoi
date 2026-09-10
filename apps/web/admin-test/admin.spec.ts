@@ -1,4 +1,20 @@
 import { test,expect,type Page } from '@playwright/test';
+test('historical snapshot comparison includes removed invitation keys in both directions and each version own scaling',async({page})=>{
+ await login(page,'viewer');const {snapshot}=await(await page.request.get('/api/admin/draft-source')).json();
+ const result=await page.evaluate(async raw=>{
+  const modulePath='/src/admin-api.ts', {preview}=await import(modulePath);
+  const old=structuredClone(raw);delete old.onboarding.loginPrompt.leaveProgress;
+  const next=structuredClone(raw);next.k.value=raw.k.value===2.6?2.7:2.6;
+  return {removed:preview(raw,JSON.stringify(old)).rows,added:preview(old,JSON.stringify(raw)).rows,same:preview(old,JSON.stringify(old)).rows,
+   price:preview(raw,JSON.stringify(next)).rows.find((r:any)=>r.path==='shift.dailyEarnCapBase'),beforeScaled:preview(raw,JSON.stringify(raw)).config.values.shift.dailyEarnCapBase,afterScaled:preview(next,JSON.stringify(next)).config.values.shift.dailyEarnCapBase};
+ },snapshot);
+ for(const key of ['minCompletedShifts','minLifetimeEarned']) {
+  const path='onboarding.loginPrompt.leaveProgress.'+key;
+  expect(result.removed.find((r:any)=>r.path===path)?.before).toBeDefined();expect(result.removed.find((r:any)=>r.path===path)?.value).toBeUndefined();
+  expect(result.added.find((r:any)=>r.path===path)?.value).toBeDefined();
+ }
+ expect(result.same).toEqual([]);expect(result.price.before).toBe(result.price.value);expect(result.price.beforeScaled).toBe(result.beforeScaled);expect(result.price.scaled).toBe(result.afterScaled);expect(result.price.scaled).not.toBe(result.price.beforeScaled);
+});
 async function gis(page:Page,subject='economy') {
  await page.route('https://accounts.google.com/gsi/client',route=>route.fulfill({contentType:'application/javascript',body:`window.google={accounts:{id:{initialize(o){this.options=o},renderButton(el){const b=document.createElement('button');b.textContent='Test Google';b.onclick=async()=>{const r=await fetch('/api/__test/sign?subject=${subject}&nonce='+this.options.nonce);this.options.callback(await r.json())};el.append(b)},disableAutoSelect(){},cancel(){}}}};`}));
 }
@@ -13,6 +29,49 @@ async function edit(page:Page,path='menu.bia.price',reason='Browser measured adj
 }
 async function proposal(page:Page){const response=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/admin/proposals'&&r.request().method()==='POST');await page.getByRole('button',{name:'Gửi đề xuất'}).click();const receipt=await response;expect(receipt.status()).toBe(200);const {version}=await receipt.json();await expect(page.getByLabel('Mã phiên bản',{exact:true})).toHaveValue(version);await expect(page.getByRole('heading',{name:'Chi tiết phiên bản'})).toBeVisible();return version;}
 const detail=(page:Page)=>page.getByRole('region',{name:'Chi tiết phiên bản'});
+test('arbitrary sibling versions compare as read-only snapshots with scoped labels, reverse and identical pairs in VI/EN',async({page,browser})=>{
+ await login(page,'super-one');const account=await(await page.request.get('/api/admin/auth')).json(), source=await(await page.request.get('/api/admin/draft-source')).json();
+ const left=structuredClone(source.snapshot),right=structuredClone(source.snapshot);left.menu.bia.price++;right.menu.lac.price+=2;right.k.value=left.k.value===2.6?2.7:2.6;
+ const player=await playerContext(browser), scope={kind:'segment',id:'compare-'+player.playerId,playerIds:[player.playerId],priority:0,expiresAt:null,previousVersion:null,ticketId:null};
+ const versions:string[]=[];
+ for(const [i,snapshot] of [left,right].entries()) {
+  const response=await page.request.post('/api/admin/proposals',{headers:{Origin:'http://127.0.0.1:4181','X-TBH-Admin-Context':account.context},data:{key:crypto.randomUUID(),baseVersion:source.baseVersion,snapshot,reason:'Comparison sibling '+i,...(i===0?{scope}:{})}});
+  expect(response.status()).toBe(200);versions.push((await response.json()).version);
+ }
+ await page.getByRole('button',{name:'Đăng xuất'}).click();await login(page,'viewer');
+ const mutations:string[]=[];page.on('request',r=>{if(r.method()==='POST')mutations.push(r.url());});
+ const panel=page.getByRole('region',{name:'So sánh hai phiên bản'}), diff=panel.getByRole('region',{name:'Thay đổi thực tế'});
+ await panel.getByLabel('Phiên bản trước').fill(versions[0]);await panel.getByLabel('Phiên bản sau').fill(versions[1]);await panel.getByRole('button',{name:'So sánh cấu hình'}).click();
+ await expect(diff).toBeVisible();await expect(panel.locator('.admin-summary')).toContainText(versions[0]);await expect(panel.locator('.admin-summary')).toContainText(versions[1]);await expect(panel.locator('.admin-summary')).toContainText(scope.id);
+ const row=diff.getByRole('row').filter({has:page.getByRole('rowheader',{name:'menu.bia.price',exact:true})}), cells=row.getByRole('cell');
+ await expect(cells.nth(0).locator('pre')).toHaveText(String(left.menu.bia.price));await expect(cells.nth(1).locator('pre')).toHaveText(String(right.menu.bia.price));
+ const baseRow=diff.getByRole('row').filter({has:page.getByRole('rowheader',{name:'shift.dailyEarnCapBase',exact:true})});
+ await expect(baseRow.getByRole('cell').nth(0).locator('pre')).toHaveText(String(left.shift.dailyEarnCapBase));await expect(baseRow.getByRole('cell').nth(1).locator('pre')).toHaveText(String(right.shift.dailyEarnCapBase));
+ const scaled=await page.evaluate(async pair=>{const modulePath='/src/admin-api.ts',{preview}=await import(modulePath);return pair.map(raw=>preview(raw,JSON.stringify(raw)).config.values.shift.dailyEarnCapBase);},[left,right]);
+ await expect(baseRow.getByRole('cell').nth(0)).toContainText(String(scaled[0]));await expect(baseRow.getByRole('cell').nth(1)).toContainText(String(scaled[1]));expect(scaled[0]).not.toBe(scaled[1]);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await panel.screenshot({path:'.qa/admin-version-compare-vi-390.png'});
+ await page.getByLabel('Ngôn ngữ').selectOption('en');await expect(page.getByRole('heading',{name:'Compare two versions'})).toBeVisible();await page.getByRole('region',{name:'Compare two versions'}).screenshot({path:'.qa/admin-version-compare-en-390.png'});await page.getByLabel('Language').selectOption('vi');
+ await panel.getByLabel('Phiên bản trước').fill(versions[1]);await expect(diff).toHaveCount(0);await panel.getByLabel('Phiên bản sau').fill(versions[0]);await panel.getByRole('button',{name:'So sánh cấu hình'}).click();
+ await expect(cells.nth(0).locator('pre')).toHaveText(String(right.menu.bia.price));await expect(cells.nth(1).locator('pre')).toHaveText(String(left.menu.bia.price));
+ await panel.getByLabel('Phiên bản trước').fill(versions[0]);await panel.getByRole('button',{name:'So sánh cấu hình'}).click();await expect(diff).toContainText('Chưa có thay đổi.');await expect(diff.locator('tbody tr')).toHaveCount(0);
+ await panel.getByLabel('Phiên bản sau').fill('missing-version');await panel.getByRole('button',{name:'So sánh cấu hình'}).click();await expect(page.getByRole('alert')).toBeVisible();await expect(diff).toHaveCount(0);
+ expect(mutations).toEqual([]);await page.getByRole('button',{name:'Đăng xuất'}).click();await expect(panel).toHaveCount(0);await player.ctx.close();
+});
+
+test('comparison rejects a cookie identity switch during reads and preserves the original author draft',async({page,browser})=>{
+ await login(page);await edit(page,'menu.bia.price','Preserve draft during comparison');const saved=await page.evaluate(()=>sessionStorage.getItem('tbh.admin.draft.v1'));
+ const {latest}=await(await page.request.get('/api/admin/registry')).json();const panel=page.getByRole('region',{name:'So sánh hai phiên bản'});
+ await panel.getByLabel('Phiên bản trước').fill(latest.version);await panel.getByLabel('Phiên bản sau').fill(latest.version);await panel.getByRole('button',{name:'So sánh cấu hình'}).click();await expect(panel.getByText('Chưa có thay đổi.')).toBeVisible();
+ expect(await page.evaluate(()=>sessionStorage.getItem('tbh.admin.draft.v1'))).toBe(saved);
+ const other=await browser.newContext({baseURL:'http://127.0.0.1:4181'}), viewer=await other.newPage();await login(viewer,'viewer');
+ let release!:()=>void,count=0;const held=new Promise<void>(resolve=>{release=resolve;});
+ await page.route('**/api/admin/config?version=*',async route=>{const response=await route.fetch();count++;await held;await route.fulfill({response});});
+ try {
+  await panel.getByRole('button',{name:'So sánh cấu hình'}).click();await expect.poll(()=>count).toBe(2);await expect(panel.getByRole('region',{name:'Thay đổi thực tế'})).toHaveCount(0);
+  const cookie=(await other.cookies()).find(c=>c.name==='tbh-admin')!;await page.context().addCookies([cookie]);release();
+  await expect(page.getByRole('alert')).toContainText('đổi tài khoản');await expect(panel).toHaveCount(0);expect(await page.evaluate(()=>sessionStorage.getItem('tbh.admin.draft.v1'))).toBe(saved);
+ } finally {release();await page.unrouteAll({behavior:'wait'});await other.close();}
+});
 test('real registry edit, diff, publish confirmation, audit and pinned player saves; responsive keyboard UI',async({page,browser})=>{
  const calls:string[]=[];page.on('request',r=>calls.push(new URL(r.url()).pathname));await login(page);
  expect(calls.filter(p=>p.startsWith('/api/player')||p.startsWith('/api/auth/'))).toEqual([]);

@@ -47,7 +47,8 @@ export function atPath(value: unknown, path: string): unknown {
 }
 export function preview(before: Config['raw'], text: string) {
   const a=loadConfig(before), b=loadConfig(JSON.parse(text));
-  return {config:b, rows:configFields(b.raw).map(row=>({...row, before:atPath(a.raw,row.path), beforeScaled:atPath(a.values,row.path), scaled:atPath(b.values,row.path)}))
+  const paths=[...new Set([...configFields(a.raw),...configFields(b.raw)].map(row=>row.path))];
+  return {config:b, rows:paths.map(path=>({path,value:atPath(b.raw,path),before:atPath(a.raw,path),beforeScaled:atPath(a.values,path),scaled:atPath(b.values,path)}))
     .filter(r=>JSON.stringify(r.before)!==JSON.stringify(r.value) || JSON.stringify(r.beforeScaled)!==JSON.stringify(r.scaled))};
 }
 type GoogleApi = { initialize(options: {client_id:string; nonce:string; auto_select:false; callback:(result:{credential:string})=>void}):void;

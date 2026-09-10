@@ -15,10 +15,11 @@ export default function Admin() {
   const [error,setError]=useState(''), [message,setMessage]=useState(''), [busy,setBusy]=useState(false), busyRef=useRef(false);
   const [code,setCode]=useState(''), [search,setSearch]=useState(''), [field,setField]=useState(''), [value,setValue]=useState(''), [version,setVersion]=useState('');
   const [diff,setDiff]=useState<ReturnType<typeof preview>|null>(null), [audit,setAudit]=useState<Audit|null>(null), [confirm,setConfirm]=useState<Details|null>(null);
+  const [compareFrom,setCompareFrom]=useState(''), [compareTo,setCompareTo]=useState(''), [comparison,setComparison]=useState<{before:Details;after:Details;diff:ReturnType<typeof preview>}|null>(null);
   const [impact,setImpact]=useState<Impact|null>(null), [players,setPlayers]=useState<Players|null>(null), [tickets,setTickets]=useState<Tickets|null>(null);
   const [caseKey,setCaseKey]=useState(''), [casePlayer,setCasePlayer]=useState(''), [caseReason,setCaseReason]=useState('');
   const gis=useRef<HTMLDivElement>(null), dialog=useRef<HTMLDialogElement>(null), generation=useRef(0);
-  function clearProtected() { generation.current++;setCaseKey('');setCasePlayer('');setCaseReason('');setImpact(null);setPlayers(null);setTickets(null);setAuth({enabled:true,phase:'signedOut'});setIndex(null);setDetails(null);setBase(null);setDiff(null);setAudit(null);setConfirm(null);setField('');setValue(''); }
+  function clearProtected() { generation.current++;setComparison(null);setCompareFrom('');setCompareTo('');setCaseKey('');setCasePlayer('');setCaseReason('');setImpact(null);setPlayers(null);setTickets(null);setAuth({enabled:true,phase:'signedOut'});setIndex(null);setDetails(null);setBase(null);setDiff(null);setAudit(null);setConfirm(null);setField('');setValue(''); }
   function fail(e:unknown) {
     const code=e instanceof AdminError ? e.code : 'config';
     if(['admin:accountChanged','admin:invalidSession','invalidSession','registry:invalidActor'].includes(code)) {clearProtected();setError(t('error.session'));return;}
@@ -46,6 +47,14 @@ export default function Admin() {
   }
   async function show(v:string) { setImpact(null);const d=await request<Details>('/config?version='+encodeURIComponent(v),undefined,auth!.context);setDetails(d);setVersion(v);
     if(d.scope&&d.draft&&!d.publication)setImpact(await request<Impact>('/impact',{version:v},auth!.context));
+  }
+  async function compareVersions() {
+    setComparison(null);const context=auth!.context!, g=generation.current;
+    const [before,after]=await Promise.all([compareFrom,compareTo].map(v=>request<Details>('/config?version='+encodeURIComponent(v),undefined,context)));
+    const current=await request<Auth>('/auth');
+    if(g!==generation.current)return;
+    if(current.context!==context)throw new AdminError('admin:accountChanged');
+    setComparison({before,after,diff:preview(before.snapshot,json(after.snapshot))});
   }
   async function newDraft(sourceVersion?:string, scopePath?:string) { if(corrupt||draft?.locked)return;
     if(draft&&!window.confirm(t('discardConfirm')))return;
@@ -110,6 +119,14 @@ export default function Admin() {
       <section className="admin-panel"><h2>{t('proposals')}</h2><ul className="admin-proposals">{index?.proposals.map(p=><li key={p.version}><button disabled={busy} onClick={()=>void run(()=>show(p.version))}><strong>{p.reason}</strong><span className="admin-version">{p.version}</span><span>{t('scope.'+(p.scope?.kind??'default'))}{p.scope?' · '+p.scope.id:''} · {p.changed_by} · {t(p.effective)}</span></button></li>)}</ul>{index?.nextCursor&&<button disabled={busy} onClick={()=>void run(async()=>{const next=await request<Index>('/registry?before='+index.nextCursor,undefined,auth.context);setIndex({...next,proposals:[...index.proposals,...next.proposals]});})}>{t('more')}</button>}
         <form className="admin-toolbar" onSubmit={e=>{e.preventDefault();void run(()=>show(version));}}><label>{t('version')}<input value={version} required maxLength={128} onChange={e=>setVersion(e.target.value)}/></label><button disabled={busy}>{t('open')}</button></form></section>
       {details&&<section className="admin-panel" aria-label={t('details')}><h2>{t('details')}</h2><Detail d={details}/><div className="admin-toolbar"><button onClick={()=>download(json(details.snapshot),'tbh-config.json')}>{t('export')}</button>{canWrite&&details.publication&&<button disabled={busy||!!draft?.locked||corrupt||!!draft&&!own} onClick={()=>void run(()=>newDraft(details.snapshot._meta.version))}>{t('rollback')}</button>}{details.permissions.approve&&<button disabled={busy||!!details.scope&&impact?.version!==details.snapshot._meta.version} onClick={()=>void run(()=>mutate('approve',details))}>{t('approve')}</button>}{details.permissions.publish&&<button className="primary" disabled={busy||!!details.scope&&impact?.version!==details.snapshot._meta.version} onClick={()=>setConfirm(details)}>{t('publish')}</button>}</div></section>}
+      <section className="admin-panel" aria-label={t('compare.title')}><h2>{t('compare.title')}</h2><p>{t('compare.note')}</p>
+        <form onSubmit={e=>{e.preventDefault();void run(compareVersions);}}><fieldset disabled={busy}>
+          <label>{t('compare.from')}<input required maxLength={128} list="admin-version-options" value={compareFrom} onChange={e=>{setCompareFrom(e.target.value);setComparison(null);}}/></label>
+          <label>{t('compare.to')}<input required maxLength={128} list="admin-version-options" value={compareTo} onChange={e=>{setCompareTo(e.target.value);setComparison(null);}}/></label>
+          <datalist id="admin-version-options">{index&&[...new Set([index.activeVersion,index.latest.version,...index.proposals.map(p=>p.version)])].map(v=><option key={v} value={v}/>)}</datalist>
+          <button>{t('compare.run')}</button></fieldset></form>
+        {comparison&&<><div className="admin-summary">{(['before','after'] as const).map(side=><div key={side}><h3>{t(side)}</h3><p className="admin-version">{comparison[side].snapshot._meta.version}</p><ScopeView scope={comparison[side].scope} t={t} locale={locale}/></div>)}</div><Diff data={comparison.diff}/></>}
+      </section>
       {details?.draft&&!details.publication&&<AdminForecast key={details.snapshot._meta.version+auth.context} version={details.snapshot._meta.version} context={auth.context!} t={t} locale={locale} fail={fail}/>}
       <section className="admin-panel"><details><summary>{t('scope.players')}</summary><p>{t('scope.idsOnly')}</p><button disabled={busy} onClick={()=>void run(async()=>{const next=await request<Players>('/players'+(players?.nextCursor?'?after='+encodeURIComponent(players.nextCursor):''),undefined,auth.context);setPlayers({...next,players:players?.nextCursor?[...players.players,...next.players]:next.players});})}>{t(players?.nextCursor?'more':'refresh')}</button>{players&&<ul>{players.players.map(p=><li key={p.id}><code>{p.id}</code></li>)}</ul>}</details></section>
       {['super','game','support'].includes(auth.actor!.role)&&<AdminCompetition key={auth.context} actor={auth.actor!} context={auth.context!} t={t} locale={locale} fail={fail} download={download}/>}
