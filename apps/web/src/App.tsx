@@ -1,3 +1,4 @@
+import { Account } from './Account';
 import { Seasons } from './Seasons';
 import { Locations } from './Locations';
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
@@ -11,7 +12,7 @@ import { MenuReport } from './MenuReport';
 import { start, type StartState, type Session } from './start';
 import { createSound } from './audio';
 
-type Sheet = 'seasons' | 'locations' | 'stock' | 'upgrades' | 'book' | 'close' | 'journey' | 'settings' | 'config' | 'dog' | 'delivery' | 'signboard' | 'flyer' | 'quests' | null;
+type Sheet = 'account' | 'seasons' | 'locations' | 'stock' | 'upgrades' | 'book' | 'close' | 'journey' | 'settings' | 'config' | 'dog' | 'delivery' | 'signboard' | 'flyer' | 'quests' | null;
 const icons: Record<string, string> = {
   coin: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 4v10m3-8h-4a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4H9',
   bolt: 'M13 2 5 13h6l-1 9 9-13h-6l1-7Z',
@@ -84,7 +85,7 @@ function GameView({ session }: { session: Session }) {
   const [closeShift, setCloseShift] = useState<string | null>(null);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
-  const menuPaused = Boolean(sheet || selectedEquipment);
+  const menuPaused = Boolean(sheet || selectedEquipment || remote?.accountBusy);
   const menuPause = useRef(menuPaused);
   const [saveError, setSaveError] = useState<boolean | 'conflict'>(false);
   const [saving, setSaving] = useState(false);
@@ -316,7 +317,7 @@ function GameView({ session }: { session: Session }) {
         <div className="business-props">{BUSINESS_UNLOCKS.filter(item => w.unlocks.includes(item)).map(item => <button key={item} className={item === 'phone' && delivery ? `has-delivery ${deliveryUrgent ? 'is-urgent' : ''}` : ''} onClick={() => open(item === 'phone' ? 'delivery' : 'upgrades')} aria-label={t(item === 'phone' ? 'delivery.open' : `business.${item}`)} aria-describedby={item === 'phone' && delivery ? 'delivery-clock' : undefined}><Sprite id={item === 'qr' ? 'qr-payment' : item === 'phone' && delivery ? 'customer-shipper' : 'phone'} />{item === 'phone' && delivery && <span id="delivery-clock" className="delivery-clock"><span className="sr-only">{t(deliveryUrgent ? 'delivery.urgent' : 'delivery.deadline')}</span>{deliveryUrgent && <b aria-hidden="true">! </b>}{time(Math.ceil(delivery.remainingMs / 1000) * 1000)}</span>}</button>)}</div>
         {w.dogLevel > 0 && <button className="dog-object" aria-label={t('dog.open', { n: w.dogLevel })} aria-haspopup="dialog" onClick={() => open('dog')}><Sprite id={`dog-idle-lv${w.dogLevel}`} /><span>{t('level', { n: w.dogLevel })}</span></button>}
       </section>
-      {remote && <div className={`network-status is-${remote.state}`} role="status" aria-live="polite"><span>{t(`network.${remote.state}`)}</span>{remote.pending > 0 && <strong>{t('network.pending', { n: remote.pending })}</strong>}</div>}
+      {remote && <div className={`network-status is-${remote.state}`} role="status" aria-live="polite"><span>{t(remote.accountBusy ? 'account.confirming' : `network.${remote.state}`)}</span>{remote.pending > 0 && <strong>{t('network.pending', { n: remote.pending })}</strong>}</div>}
       <section className="yard" aria-label={t(`location.${w.location}`)}>
         {w.tables.map(renderTable)}
         {w.queue.length > 0 && <span className="queue-badge">{t('queue', { n: w.queue.length })}</span>}
@@ -343,7 +344,8 @@ function GameView({ session }: { session: Session }) {
 
 
 
-    {sheet && <SheetDialog pausedLabel={t('pause.menu')} view={sheet} title={t(sheet === 'quests' ? 'quests.title' : sheet === 'flyer' ? 'flyer.title' : sheet === 'signboard' ? 'sign.title' : sheet === 'delivery' ? 'delivery.title' : sheet === 'dog' ? 'dog.title' : sheet === 'close' ? 'close.title' : sheet === 'book' ? 'book.title' : sheet === 'journey' ? 'journey.title' : sheet === 'settings' ? 'settings.title' : sheet === 'config' ? 'config.title' : `nav.${sheet}`)} close={() => setSheet(null)}>
+    {sheet && <SheetDialog pausedLabel={t('pause.menu')} view={sheet} title={t(sheet === 'account' ? 'account.title' : sheet === 'quests' ? 'quests.title' : sheet === 'flyer' ? 'flyer.title' : sheet === 'signboard' ? 'sign.title' : sheet === 'delivery' ? 'delivery.title' : sheet === 'dog' ? 'dog.title' : sheet === 'close' ? 'close.title' : sheet === 'book' ? 'book.title' : sheet === 'journey' ? 'journey.title' : sheet === 'settings' ? 'settings.title' : sheet === 'config' ? 'config.title' : `nav.${sheet}`)} close={() => setSheet(null)}>
+      {sheet === 'account' && <Account remote={remote} locale={locale} t={t} close={() => setSheet(null)} />}
       {sheet === 'quests' && questsRevealed && <Quests world={w} config={game.config} run={run} t={t} num={num} />}
       {sheet === 'flyer' && <div className="flyer-panel">
         <div className="flyer-summary"><Sprite id="flyer-bundle" /><div><strong>{t('flyer.stock', { n: flyers.stock, cap: c.unlocks.flyer.stockCap })}</strong><p>{t('flyer.used', { n: inShift ? flyers.used : 0, cap: c.unlocks.flyer.perShift })}</p></div></div>
@@ -403,7 +405,7 @@ function GameView({ session }: { session: Session }) {
           {row.claimable && <button className="primary" onClick={() => run({ type: 'claimLifePath', level: row.index })}>{t('journey.claim', { name: levelName(row.index) })}</button>}
         </li>)}</ol><button className="secondary full" onClick={() => open('locations')}>{t('nav.locations')}</button><button className="secondary full" onClick={() => open('upgrades')}>{t('journey.upgrades')}</button>
       </>}
-      {sheet === 'settings' && <div className="settings-list"><label>{t('settings.language')}<select value={locale} onChange={e => setPrefs({ locale: e.target.value as 'vi' | 'en' })}><option value="vi">{t('language.vi')}</option><option value="en">{t('language.en')}</option></select></label><button className="setting-row" onClick={() => setPrefs({ muted: !settings.muted })}><span>{t('settings.sound')}</span><b>{t(settings.muted ? 'settings.soundOff' : 'settings.soundOn')}</b></button><p>{t('settings.saved')}</p>{!remote && <button onClick={() => download(encodeSave(game as Game), 'tbh-backup.json')}>{t('settings.export')}</button>}{remote && <p>{t('network.serverSaved')}</p>}<button onClick={() => { setPrefs({ guideDone: false, guideIndex: 0 }); setSheet(null); }}>{t('settings.guide')}</button><button onClick={() => open('config')}>{t('settings.config')}</button></div>}
+      {sheet === 'settings' && <div className="settings-list"><button className="setting-row" aria-haspopup="dialog" onClick={() => open('account')}><span>{t('account.title')}</span><b>{t(`account.${remote?.identity.provider ?? 'local'}`)}</b></button><label>{t('settings.language')}<select value={locale} onChange={e => setPrefs({ locale: e.target.value as 'vi' | 'en' })}><option value="vi">{t('language.vi')}</option><option value="en">{t('language.en')}</option></select></label><button className="setting-row" onClick={() => setPrefs({ muted: !settings.muted })}><span>{t('settings.sound')}</span><b>{t(settings.muted ? 'settings.soundOff' : 'settings.soundOn')}</b></button><p>{t('settings.saved')}</p>{!remote && <button onClick={() => download(encodeSave(game as Game), 'tbh-backup.json')}>{t('settings.export')}</button>}{remote && <p>{t('network.serverSaved')}</p>}<button onClick={() => { setPrefs({ guideDone: false, guideIndex: 0 }); setSheet(null); }}>{t('settings.guide')}</button><button onClick={() => open('config')}>{t('settings.config')}</button></div>}
       {sheet === 'config' && <><p>{t('config.pinned', { version: game.config.version })}</p><pre className="config-json">{JSON.stringify(game.config.raw, null, 2)}</pre></>}
     </SheetDialog>}
     {selectedEquipment && <SheetDialog pausedLabel={t('pause.menu')} title={t(`equipment.${selectedEquipment}`)} close={() => setSelectedEquipment(null)}><div className="equipment-detail">{(selectedEquipment === 'keg' || selectedEquipment === 'washer') && <section className="production-detail" aria-label={t('production.status')}><strong>{t(selectedEquipment === 'keg' ? 'production.ready' : 'production.clean', { count: selectedEquipment === 'keg' ? `${beer.stored}/${beer.capacity}` : `${washer.clean}/${washer.capacity}` })}</strong>{(() => { const p = selectedEquipment === 'keg' ? beer : washer; return p.busy ? <><p>{t('production.running', { n: p.busy, seconds: Math.ceil(p.remainingMs / 1000) })}</p><progress value={p.progress} max={1} aria-label={t('production.batchProgress', { n: p.busy })} /></> : <p>{t(selectedEquipment === 'keg' && !w.inventory.bia && beer.stored < beer.capacity ? 'production.noStock' : 'production.idle')}</p>; })()}{selectedEquipment === 'washer' && <><p>{t('production.washQueue', { n: washer.queued, capacity: washer.batchSize })}</p><div className="buy-glasses"><strong>{t('production.glassOwned', { n: w.glasses.length, max: Math.min(c.glasses.buyCap, c.glasses.storageCap) })}</strong>{[1, Math.max(0, Math.min(c.glasses.buyCap, c.glasses.storageCap) - w.glasses.length)].filter((count, i, counts) => counts.indexOf(count) === i && count > 0).map(count => { const q = buyGlassQuote(w, game.config, count); return <button key={count} disabled={!q.ok} onClick={() => run({ type: 'buyGlass', count })}>{t('production.buyGlass', { n: count, cost: num(q.cost) })}</button>; })}</div></>}{selectedEquipment === 'keg' && <><p>{t('production.pouring', { busy: beer.pouring, total: beer.tapSlots })}</p><p>{t(beer.enabled ? 'production.reserveHint' : 'production.legacy')}</p></>}</section>}{selectedEquipment === 'kitchen' && <Kitchen status={kitchen} t={t} onTable={tableId => { setSelectedEquipment(null); const button = document.querySelector<HTMLButtonElement>(`[data-table-id="${CSS.escape(tableId)}"] .table-object`); if (button) showTable(tableId, button); }} onStock={() => { setSelectedEquipment(null); open('stock'); }} />}{upgradeCard(selectedEquipment)}</div></SheetDialog>}

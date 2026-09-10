@@ -268,3 +268,12 @@ progress::-webkit-progress-value { background: var(--beerAmber); border-radius: 
 .language-entry legend { width:100%; font-weight:700; }.language-entry label { flex:1 1 120px; display:flex; align-items:center; justify-content:center; gap:8px; min-height:52px; padding:12px; background:var(--panelRaised); border:2px solid transparent; border-radius:16px; cursor:pointer; }
 .language-entry label:has(:checked) { border-color:var(--coinGold); }.language-entry input { margin:0; accent-color:var(--coinGold); }.language-entry label:focus-within { outline:3px solid var(--info); outline-offset:3px; }
 .language-entry .primary { min-height:52px; border-radius:16px; }.language-entry [role=alert] { color:var(--cream); font-weight:700; }
+
+.account-panel { display: grid; gap: 18px; }
+.account-profile { display: flex; align-items: center; gap: 16px; }
+.account-profile .sprite { width: 72px; height: 84px; flex: 0 0 72px; }
+.account-profile h3, .account-profile p, .account-panel > p { margin: 0; }
+.account-benefits { display: grid; gap: 10px; margin: 0; padding-left: 24px; font-weight: 800; }
+.account-google { display: flex; justify-content: center; min-height: 44px; }
+.account-google:empty { display: none; }
+.account-confirmed { color: var(--cream); font-weight: 800; }
