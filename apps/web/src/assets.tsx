@@ -8,6 +8,8 @@ export function Sprite({ id, className = '' }: { id: string; className?: string 
   const equipment = /^(keg|washer|cooler)-lv(\d+)$/.exec(id);
   // ponytail: keep equipment recognizable with the nearest finished sprite until its level art arrives.
   if (!asset?.path && equipment) asset = manifest.assets.filter(a => a.path && a.id.startsWith(`${equipment[1]}-lv`) && Number(a.id.split('-lv')[1]) <= Number(equipment[2])).at(-1);
+  // Two imagegen attempts returned a baked checkerboard; use a registered table until counter alpha is available.
+  if (!asset?.path && /^stall-lv\d+$/.test(id)) asset = manifest.assets.find(a => a.id === 'table-lv1-empty');
   const src = asset?.path ? urls[`../../../${asset.path}`] : null;
   return src ? <img src={src} className={`sprite ${asset?.source === 'imagegen_builtin' ? 'illustrated' : ''} ${className}`} alt="" draggable={false} /> : <span aria-hidden="true" className={`sprite placeholder ${className}`}></span>;
 }

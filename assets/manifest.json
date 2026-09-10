@@ -579,7 +579,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "review_notes": "Playable-v0: registered table-lv1-empty is the visible fallback. Imagegen attempts exec-67a83283-1624-420e-810c-2de9846b1291.png and exec-28150f32-2c98-4cb1-9984-5cd10c30c5ce.png both failed native alpha (RGB with baked checkerboard); originals preserved in Codex generated_images. Placeholder explicitly accepted by owner Steer12; replace after transparent export succeeds."
     },
     {
       "id": "stall-lv2",
@@ -595,7 +595,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "review_notes": "Playable-v0: registered table-lv1-empty is the visible fallback. Imagegen attempts exec-67a83283-1624-420e-810c-2de9846b1291.png and exec-28150f32-2c98-4cb1-9984-5cd10c30c5ce.png both failed native alpha (RGB with baked checkerboard); originals preserved in Codex generated_images. Placeholder explicitly accepted by owner Steer12; replace after transparent export succeeds."
     },
     {
       "id": "stall-lv3",
@@ -611,7 +611,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "review_notes": "Playable-v0: registered table-lv1-empty is the visible fallback. Imagegen attempts exec-67a83283-1624-420e-810c-2de9846b1291.png and exec-28150f32-2c98-4cb1-9984-5cd10c30c5ce.png both failed native alpha (RGB with baked checkerboard); originals preserved in Codex generated_images. Placeholder explicitly accepted by owner Steer12; replace after transparent export succeeds."
     },
     {
       "id": "stall-lv4",
@@ -627,7 +627,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "review_notes": "Playable-v0: registered table-lv1-empty is the visible fallback. Imagegen attempts exec-67a83283-1624-420e-810c-2de9846b1291.png and exec-28150f32-2c98-4cb1-9984-5cd10c30c5ce.png both failed native alpha (RGB with baked checkerboard); originals preserved in Codex generated_images. Placeholder explicitly accepted by owner Steer12; replace after transparent export succeeds."
     },
     {
       "id": "stall-lv5",
@@ -643,7 +643,7 @@
         "gameplay"
       ],
       "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "review_notes": "Playable-v0: registered table-lv1-empty is the visible fallback. Imagegen attempts exec-67a83283-1624-420e-810c-2de9846b1291.png and exec-28150f32-2c98-4cb1-9984-5cd10c30c5ce.png both failed native alpha (RGB with baked checkerboard); originals preserved in Codex generated_images. Placeholder explicitly accepted by owner Steer12; replace after transparent export succeeds."
     },
     {
       "id": "kitchen-lv1",
