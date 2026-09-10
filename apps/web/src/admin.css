@@ -21,3 +21,4 @@
 .admin-forecast .admin-table table { min-width:100%; table-layout:auto; }
 .admin-forecast .admin-table th:first-child { width:auto; }
 .admin-forecast .admin-table td { white-space:nowrap; font-variant-numeric:tabular-nums; }
+.admin-forecast details .admin-table tbody th { white-space:nowrap; font-variant-numeric:tabular-nums; }
