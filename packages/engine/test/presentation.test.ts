@@ -65,3 +65,21 @@ test('guest login invitations share the configured completed-shift cooldown with
   raw.onboarding.enabled = false;
   for (const touchpoint of ['firstShift', 'leaderboard', 'leave'] as const) assert.equal(canInvite(prefs, { world: fresh.world, config: loadConfig(raw) }, true, touchpoint), false);
 });
+
+test('departure invitations honor both configurable thresholds and read old raw pins unchanged', () => {
+  const raw = structuredClone(config.raw), prefs = readSettings();
+  assert.ok('leaveProgress' in raw.onboarding.loginPrompt);
+  raw.onboarding.loginPrompt.leaveProgress = { minCompletedShifts: 4, minLifetimeEarned: 250 };
+  const g = new Game(loadConfig(raw)); g.world.completedShifts = 3; g.world.lifetimeEarned = 249;
+  assert.equal(canInvite(prefs, g, true, 'leave'), false);
+  g.world.lifetimeEarned = 250; assert.equal(canInvite(prefs, g, true, 'leave'), true);
+  g.world.lifetimeEarned = 0; g.world.completedShifts = 4; assert.equal(canInvite(prefs, g, true, 'leave'), true);
+  const old = structuredClone(raw); delete (old.onboarding.loginPrompt as any).leaveProgress; old._meta.version = 'old-presentation-pin';
+  const original = JSON.stringify(old), pinned = loadConfig(old);
+  assert.equal(JSON.stringify(pinned.raw), original);
+  g.world.completedShifts = 0; g.world.lifetimeEarned = 1;
+  assert.equal(canInvite(prefs, { world: g.world, config: pinned }, true, 'leave'), true);
+  for (const value of [null, {}, { minCompletedShifts: 1 }, { minCompletedShifts: 0, minLifetimeEarned: 1 }, { minCompletedShifts: 1, minLifetimeEarned: 1.5 }]) {
+    (raw.onboarding.loginPrompt as any).leaveProgress = value; assert.throws(() => loadConfig(raw), /config:/);
+  }
+});

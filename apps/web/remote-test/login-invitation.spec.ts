@@ -117,3 +117,12 @@ test('accepting native departure leaves freely and a new guest visit does not in
   expect((await snapshot(page)).world.playerId).not.toBe(old);
   await closeShift(page); await expect(invitation(page)).toBeVisible();
 });
+
+test('a configured higher progress threshold suppresses departure reminders below that threshold', async ({ page }) => {
+  await enter(page, 'vi', { afterFirstShift: false, leaveProgress: { minCompletedShifts: 2, minLifetimeEarned: 1000000 } });
+  await closeShift(page); await page.keyboard.press('Escape');
+  expect(await page.evaluate(() => window.dispatchEvent(new Event('beforeunload', { cancelable: true })))).toBe(true);
+  await closeShift(page); await page.keyboard.press('Escape');
+  expect(await page.evaluate(() => window.dispatchEvent(new Event('beforeunload', { cancelable: true })))).toBe(false);
+  await expect(invitation(page)).toBeVisible();
+});

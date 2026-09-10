@@ -213,3 +213,21 @@ test('a newly published shorter heartbeat re-arms the real HTTP scheduler withou
   assert.equal(f.db.prepare('SELECT live FROM client_presence WHERE client_id=?').get(stream.clientId)!.live, 0);
   assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM events WHERE player_id=? AND json_extract(payload,\'$.type\')=\'connection_lost\'').get(a.playerId)!.n, 1);
 });
+
+test('Game Admin publishes departure invitation thresholds without repricing a live shift or rewriting old pins', t => {
+  const old = structuredClone(config.raw); delete (old.onboarding.loginPrompt as any).leaveProgress; old._meta.version = 'before-login-thresholds';
+  const f = fixture(t, loadConfig(old)), who = f.actor('game');
+  const existing = f.store.createPlayer('prompt-existing', 42); f.store.command('prompt-existing', { idempotencyKey: 'open', command: { type: 'startShift' } });
+  const original = f.store.configSnapshot(old._meta.version);
+  const d = f.draft(raw => {
+    Object.assign(raw.onboarding.loginPrompt, { leaveProgress: { minCompletedShifts: 4, minLifetimeEarned: 250 } });
+  }, who);
+  assert.equal(registryPolicy(['onboarding.loginPrompt.leaveProgress.minLifetimeEarned'], config).tier, 'C');
+  f.registry.approve(who, d.version); f.registry.publish(who, d.version);
+  const fresh = f.store.createPlayer('prompt-new', 43), next = f.registry.config(fresh.configVersion).values;
+  assert.ok('leaveProgress' in next.onboarding.loginPrompt);
+  assert.deepEqual(next.onboarding.loginPrompt.leaveProgress, { minCompletedShifts: 4, minLifetimeEarned: 250 });
+  assert.equal(f.store.read('prompt-existing').configVersion, existing.configVersion);
+  assert.equal(f.store.configSnapshot(old._meta.version), original);
+  assert.deepEqual(next.menu, config.values.menu); assert.deepEqual(next.k, config.values.k);
+});
