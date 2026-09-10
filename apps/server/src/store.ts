@@ -228,8 +228,8 @@ export class GameStore {
   }
   /** Only call with a verified Google identity; recheck authorization after verifier IO.
    * Linking a server guest retains its immutable engine/history ID, never imports local totals. */
-  signInGoogle(token: string, nonce: string, identity: GoogleIdentity, ttlMs: number, keepAccount = false) {
-    if (!validGoogleSubject(identity?.subject) || typeof keepAccount !== 'boolean') throw Error('store:invalidGoogleIdentity');
+  signInGoogle(token: string, nonce: string, identity: GoogleIdentity, ttlMs: number, keepAccount = false, expectedPlayerId?: string) {
+    if (!validGoogleSubject(identity?.subject) || typeof keepAccount !== 'boolean' || expectedPlayerId !== undefined && (typeof expectedPlayerId !== 'string' || !expectedPlayerId)) throw Error('store:invalidGoogleIdentity');
     this.db.exec('BEGIN IMMEDIATE');
     try {
       const owner = this.session(token); if (!owner) throw Error('store:invalidSession');
@@ -237,6 +237,8 @@ export class GameStore {
       const now = this.now(), expiresAt = sessionExpiry(now, ttlMs);
       const existing = this.db.prepare('SELECT player_id FROM google_accounts WHERE subject=?').get(identity.subject);
       const playerId = existing ? String(existing.player_id) : owner.playerId;
+      // A retained outbox restricts the verified target; its ID never authenticates it.
+      if (expectedPlayerId !== undefined && (!existing || playerId !== expectedPlayerId)) throw Error('store:accountConflict');
       if (!existing && owner.provider === 'google') throw Error('store:signOutRequired');
       if (playerId !== owner.playerId && !keepAccount) throw Error('store:accountConflict');
       if (!existing) {

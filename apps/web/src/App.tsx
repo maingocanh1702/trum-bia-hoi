@@ -63,8 +63,9 @@ function StartedApp() {
   const [state, setState] = useState<StartState | null>(null);
   const [mode, setMode] = useState<'guest' | 'google' | null>(null);
   const t = (key: string) => translate(readSettings().locale, key);
-  useEffect(() => { let active = true; void start().then(value => { if (active) setState(value); else if ('session' in value) { value.session.storage?.close(); if ('remote' in value.session) value.session.remote.close(); } }); return () => { active = false; }; }, []);
-  const choose = async (mode: 'local' | 'remote') => { setState(null); setState(await start(mode)); };
+  useEffect(() => { let active = true; void start().then(value => { if (active) setState(value); else if ('reauth' in value) { void value.reauth.close(); } else if ('session' in value) { value.session.storage?.close(); if ('remote' in value.session) value.session.remote.close(); } }); return () => { active = false; }; }, []);
+  const choose = async (mode: 'local' | 'remote' | 'reauthenticate') => { setState(null); setState(await start(mode)); };
+  if (state && 'reauth' in state) return <main className="recovery"><h1>{t('brand')}</h1><Account remote={state.reauth} locale={readSettings().locale} t={t} close={() => void state.reauth.close().then(() => choose('remote'))} /></main>;
   if (state && 'session' in state) {
     const remote = 'remote' in state.session ? state.session.remote : null;
     if (remote?.identity.provider === 'guest' && !mode && sessionStorage.getItem('tbh.playing') !== remote.identity.playerId) {
@@ -75,16 +76,16 @@ function StartedApp() {
         <button className="secondary" onClick={() => play('guest')}>{t('account.playGuest')}</button><p>{t('account.guestCopy')}</p>
       </section></main>;
     }
-    return <GameView session={state.session} initialAccount={mode === 'google'} onAccountChange={() => void choose('remote')} />;
+    return <GameView session={state.session} initialAccount={mode === 'google'} onAccountChange={() => void choose('remote')} onReauthenticate={() => void remote?.close().then(() => choose('reauthenticate'))} />;
   }
   return <main className="recovery"><h1>{t('brand')}</h1>{!state ? <p role="status">{t('save.loading')}</p> : 'local' in state ? <>
     <h2>{t('network.localTitle')}</h2><p>{t('network.localCopy')}</p>
     <button onClick={() => download(state.local, 'tbh-original-save.json')}>{t('save.downloadOriginal')}</button>
     {state.legacy && state.local !== state.legacy && <button onClick={() => download(state.legacy!, 'tbh-legacy-save.json')}>{t('save.downloadLegacy')}</button>}
     <button onClick={() => void choose('local')}>{t('network.keepLocal')}</button><button onClick={() => void choose('remote')}>{t('network.newServer')}</button>
-  </> : <><p role="alert">{t(`network.${['otherTab', 'invalidSession', 'conflict', 'storage'].includes(state.error) ? state.error : 'unavailable'}`)}</p><button onClick={() => location.reload()}>{t('save.retry')}</button></>}</main>;
+  </> : <><p role="alert">{t(`network.${['otherTab', 'invalidSession', 'conflict', 'storage'].includes(state.error) ? state.error : 'unavailable'}`)}</p>{['invalidSession', 'conflict'].includes(state.error) && <button className="primary" onClick={() => void choose('reauthenticate')}>{t('account.reauthenticate')}</button>}<button onClick={() => location.reload()}>{t('save.retry')}</button></>}</main>;
 }
-function GameView({ session, onAccountChange, initialAccount = false }: { session: Session; onAccountChange: () => void; initialAccount?: boolean }) {
+function GameView({ session, onAccountChange, onReauthenticate, initialAccount = false }: { session: Session; onAccountChange: () => void; onReauthenticate: () => void; initialAccount?: boolean }) {
   const remote = 'remote' in session ? session.remote : null;
   const game = session.game, w = game.world, c = game.config.values;
   const questsRevealed = !c.onboarding.enabled || w.completedShifts >= c.onboarding.featureReveal.questsAfterShifts;
@@ -332,7 +333,7 @@ function GameView({ session, onAccountChange, initialAccount = false }: { sessio
         <div className="business-props">{BUSINESS_UNLOCKS.filter(item => w.unlocks.includes(item)).map(item => <button key={item} className={item === 'phone' && delivery ? `has-delivery ${deliveryUrgent ? 'is-urgent' : ''}` : ''} onClick={() => open(item === 'phone' ? 'delivery' : 'upgrades')} aria-label={t(item === 'phone' ? 'delivery.open' : `business.${item}`)} aria-describedby={item === 'phone' && delivery ? 'delivery-clock' : undefined}><Sprite id={item === 'qr' ? 'qr-payment' : item === 'phone' && delivery ? 'customer-shipper' : 'phone'} />{item === 'phone' && delivery && <span id="delivery-clock" className="delivery-clock"><span className="sr-only">{t(deliveryUrgent ? 'delivery.urgent' : 'delivery.deadline')}</span>{deliveryUrgent && <b aria-hidden="true">! </b>}{time(Math.ceil(delivery.remainingMs / 1000) * 1000)}</span>}</button>)}</div>
         {w.dogLevel > 0 && <button className="dog-object" aria-label={t('dog.open', { n: w.dogLevel })} aria-haspopup="dialog" onClick={() => open('dog')}><Sprite id={`dog-idle-lv${w.dogLevel}`} /><span>{t('level', { n: w.dogLevel })}</span></button>}
       </section>
-      {remote && <div className={`network-status is-${remote.state}`} role="status" aria-live="polite"><span>{t(remote.accountBusy ? 'account.confirming' : `network.${remote.state}`)}</span>{remote.pending > 0 && <strong>{t('network.pending', { n: remote.pending })}</strong>}</div>}
+      {remote && <div className={`network-status is-${remote.state}`} role="status" aria-live="polite"><span>{t(remote.accountBusy ? 'account.confirming' : `network.${remote.state}`)}</span>{remote.state === 'invalidSession' && <button onClick={onReauthenticate}>{t('account.reauthenticate')}</button>}{remote.pending > 0 && <strong>{t('network.pending', { n: remote.pending })}</strong>}</div>}
       <section className="yard" aria-label={t(`location.${w.location}`)}>
         {w.tables.map(renderTable)}
         {w.queue.length > 0 && <span className="queue-badge">{t('queue', { n: w.queue.length })}</span>}

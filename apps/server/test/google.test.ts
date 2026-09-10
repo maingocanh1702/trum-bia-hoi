@@ -216,3 +216,34 @@ test('web reconciliation replaces the nonce before trusting guest identity, refu
   const fresh = await f.call('/auth/google', { credential: token({ nonce: fence.nonce }) }, a.cookie);
   assert.equal(fresh.status, 200); assert.equal((await fresh.json()).playerId, a.playerId);
 });
+
+test('signed reauthentication restores only the retained Google player after expiry, never a wrong or new account', async t => {
+  const f = await apiFixture(t), original = await f.guest(), first = await challenge(f, original.cookie);
+  const login = await f.call('/auth/google', { credential: token({ nonce: first.nonce }) }, original.cookie);
+  const oldCookie = login.headers.get('set-cookie')!.split(';')[0];
+  const other = await f.guest(), otherChallenge = await challenge(f, other.cookie);
+  assert.equal((await f.call('/auth/google', { credential: token({ nonce: otherChallenge.nonce, sub: 'other-existing-subject' }) }, other.cookie)).status, 200);
+  f.store.command(original.playerId, { idempotencyKey: 'original-shift', command: { type: 'startShift' } });
+  f.now += 86400001;
+  assert.equal((await f.call('/auth/session', {}, oldCookie)).status, 401);
+  assert.equal((await f.call('/auth/logout', {}, oldCookie)).status, 200);
+  const temporary = await f.guest(), pending = await challenge(f, temporary.cookie);
+  const before = f.store.read(original.playerId);
+  for (const value of [null, '', 123, 'x'.repeat(129)]) {
+    assert.equal((await f.call('/auth/google', { credential: token({ nonce: pending.nonce }), expectedPlayerId: value }, temporary.cookie)).status, 400);
+  }
+  for (const subject of ['different-subject', 'other-existing-subject']) {
+    const wrong = await f.call('/auth/google', { credential: token({ nonce: pending.nonce, sub: subject }), keepAccount: true, expectedPlayerId: original.playerId }, temporary.cookie);
+    assert.equal(wrong.status, 409); assert.equal(wrong.headers.get('set-cookie'), null);
+    assert.deepEqual(await wrong.json(), { error: 'accountConflict' });
+    assert.equal(f.store.session(temporary.cookie.split('=')[1])!.provider, 'guest');
+    assert.equal(f.store.googleChallenge(temporary.cookie.split('=')[1]).nonce, pending.nonce);
+    assert.deepEqual(f.store.read(original.playerId), before);
+  }
+  const restored = await f.call('/auth/google', { credential: token({ nonce: pending.nonce }), keepAccount: true, expectedPlayerId: original.playerId }, temporary.cookie);
+  assert.equal(restored.status, 200); assert.equal((await restored.json()).playerId, original.playerId);
+  const restoredCookie = restored.headers.get('set-cookie')!.split(';')[0];
+  assert.equal((await f.call('/auth/session', {}, oldCookie)).status, 401);
+  assert.equal((await (await f.call('/auth/session', {}, restoredCookie)).json()).provider, 'google');
+  assert.deepEqual(f.store.read(original.playerId), before);
+});

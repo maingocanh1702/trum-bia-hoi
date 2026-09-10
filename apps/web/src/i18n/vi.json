@@ -538,5 +538,8 @@
   "account.signIn": "Đăng ký / Đăng nhập bằng Google",
   "account.playGuest": "Chơi không đăng nhập",
   "account.guestCopy": "Không lưu lịch sử chơi, thành tích hay tiến độ sau khi đóng tab. Đăng nhập Google để lưu lại.",
-  "account.savedCopy": "Lưu tiến độ, thành tích và khôi phục trên thiết bị khác. Nếu đã có tài khoản, tiếp tục tiến độ đã lưu."
+  "account.savedCopy": "Lưu tiến độ, thành tích và khôi phục trên thiết bị khác. Nếu đã có tài khoản, tiếp tục tiến độ đã lưu.",
+  "account.reauthenticate": "Đăng nhập lại với Google",
+  "account.recoveryCopy": "Đăng nhập đúng tài khoản đã chơi để khôi phục tiến độ và các thao tác đang chờ.",
+  "account.wrongAccount": "Tài khoản Google này chưa khớp tiến độ đang chờ. Hãy chọn tài khoản đã chơi."
 }

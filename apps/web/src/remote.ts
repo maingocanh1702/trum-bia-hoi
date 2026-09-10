@@ -29,6 +29,7 @@ function readJournal(): Journal | null {
 /** Single-writer command journal. Guest resume lasts only for this tab's visit. */
 export class RemoteGame {
   identity!: PlayerSession;
+  reauthenticating = false;
   private linking?: Link;
   private reconcileAccount = false;
   get accountBusy() { return Boolean(this.linking) || this.reconcileAccount; }
@@ -73,7 +74,7 @@ export class RemoteGame {
       return data;
     } finally { clearTimeout(timer); this.controllers.delete(controller); }
   }
-  static async open() {
+  static async open(reauthenticate = false) {
     const game = new RemoteGame();
     const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
     if (!navigator.locks) throw new RemoteError('storage');
@@ -88,6 +89,14 @@ export class RemoteGame {
     });
     try {
       game.journal = readJournal();
+      if (reauthenticate) {
+        if (!game.journal) throw new RemoteError('conflict');
+        game.identity = await game.authenticationSession();
+        if (game.identity.provider !== 'google' || game.identity.playerId !== game.journal.playerId) {
+          // Authentication only: no world/connect/heartbeat or outbox mutation.
+          game.reauthenticating = true; game.state = 'online'; return game;
+        }
+      }
       let owner: PlayerSession, created = false;
       if (game.journal?.accountSwitch) {
         game.reconcileAccount = true; owner = await game.reconcileSession();
@@ -140,18 +149,45 @@ export class RemoteGame {
     this.world = { ...snapshot.world, events: snapshot.presentation }; this.menu = snapshot.menu;
     this.revision = snapshot.revision; this.frontier = snapshot.lastEventSeq;
   }
+  private async authenticationSession(): Promise<PlayerSession> {
+    try { return playerSession(await this.request('/auth/session', {})); }
+    catch (error) {
+      if (!(error instanceof RemoteError) || error.code !== 'invalidSession') throw error;
+      await this.request('/auth/logout', {});
+      return playerSession(await this.request('/auth/session', {}));
+    }
+  }
   async googleChallenge(): Promise<{ clientId: string; nonce: string; expiresAt: number }> {
-    if (this.stopped || this.accountBusy || this.state !== 'online' || this.identity.provider !== 'guest') throw new RemoteError('accountBusy');
+    if (this.stopped || this.accountBusy || this.state !== 'online' || this.identity.provider !== 'guest' && !this.reauthenticating) throw new RemoteError('accountBusy');
+    if (this.reauthenticating) await this.authenticationSession();
     const challenge = await this.request('/auth/google/challenge', {});
     if (!challenge || typeof challenge.clientId !== 'string' || !challenge.clientId || typeof challenge.nonce !== 'string' || !challenge.nonce || !Number.isSafeInteger(challenge.expiresAt)) throw new RemoteError('conflict');
     return challenge;
   }
   /** Queue cookie rotation AFTER acknowledged commands, without recreating the player/stream. */
   linkGoogle(credential: string, keepAccount = false): Promise<PlayerSession> {
-    if (this.stopped || this.accountBusy || this.state !== 'online' || this.identity.provider !== 'guest') return Promise.reject(new RemoteError('accountBusy'));
+    if (this.stopped || this.accountBusy || this.state !== 'online' || this.identity.provider !== 'guest' && !this.reauthenticating) return Promise.reject(new RemoteError('accountBusy'));
     if (typeof credential !== 'string' || !credential || typeof keepAccount !== 'boolean') return Promise.reject(new RemoteError('googleVerificationFailed'));
     const result = new Promise<PlayerSession>((resolve, reject) => { this.linking = { credential, keepAccount, resolve, reject }; });
-    this.onChange([]); this.wake(); return result;
+    this.onChange([]); if (this.reauthenticating) void this.finishGoogleRecovery(); else this.wake(); return result;
+  }
+  private async finishGoogleRecovery() {
+    const link = this.linking!;
+    try {
+      let failure: unknown;
+      try {
+        await this.request('/auth/google', { credential: link.credential, keepAccount: true, expectedPlayerId: this.journal!.playerId }, BOOT_TIMEOUT_MS);
+      } catch (error) {
+        if (error instanceof RemoteError && error.status >= 400 && error.status < 500) throw error;
+        failure = error;
+      }
+      // Fence a still-verifying request before trusting the canonical cookie.
+      await this.request('/auth/google/challenge', {});
+      const owner = playerSession(await this.request('/auth/session', {}));
+      if (owner.provider !== 'google' || owner.playerId !== this.journal!.playerId) throw failure ?? new RemoteError('accountConflict');
+      this.identity = owner; this.reauthenticating = false; link.resolve(owner);
+    } catch (error) { link.reject(error); }
+    finally { if (this.linking === link) this.linking = undefined; this.onChange([]); }
   }
   private rejectLink(error: unknown) {
     const link = this.linking; this.linking = undefined; link?.reject(error);

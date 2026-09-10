@@ -219,12 +219,13 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
         reply(200, { ...store.issueGoogleChallenge(token!), clientId: options.googleClientId }); return;
       }
       if (req.method === 'POST' && path === '/auth/google') {
-        if (!record(body) || Object.keys(body).some(k => !['credential', 'keepAccount'].includes(k)) ||
-            typeof body.credential !== 'string' || body.keepAccount !== undefined && typeof body.keepAccount !== 'boolean') throw new HttpError(400, 'invalidBody');
+        if (!record(body) || Object.keys(body).some(k => !['credential', 'keepAccount', 'expectedPlayerId'].includes(k)) ||
+            typeof body.credential !== 'string' || body.keepAccount !== undefined && typeof body.keepAccount !== 'boolean' ||
+            body.expectedPlayerId !== undefined && (typeof body.expectedPlayerId !== 'string' || !body.expectedPlayerId || body.expectedPlayerId.length > 128)) throw new HttpError(400, 'invalidBody'); // config-exempt: transport player identifier length bound
         if (!verifyGoogle) throw new HttpError(503, 'googleUnavailable');
         const { nonce } = store.googleChallenge(token!);
         const identity = await verifyGoogle(body.credential, nonce);
-        const signed = store.signInGoogle(token!, nonce, identity, options.sessionTtlMs, body.keepAccount === true);
+        const signed = store.signInGoogle(token!, nonce, identity, options.sessionTtlMs, body.keepAccount === true, body.expectedPlayerId as string | undefined);
         res.setHeader('Set-Cookie', cookie(signed.token, signed.expiresAt));
         reply(200, { playerId: signed.playerId, expiresAt: signed.expiresAt, provider: signed.provider }); return;
       }

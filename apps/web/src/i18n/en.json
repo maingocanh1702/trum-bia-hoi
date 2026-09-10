@@ -538,5 +538,8 @@
   "account.signIn": "Sign up / Sign in with Google",
   "account.playGuest": "Play without signing in",
   "account.guestCopy": "Play history, achievements and progress are not saved after you close this tab. Sign in with Google to save them.",
-  "account.savedCopy": "Save progress and achievements and restore them on another device. Existing accounts continue their saved progress."
+  "account.savedCopy": "Save progress and achievements and restore them on another device. Existing accounts continue their saved progress.",
+  "account.reauthenticate": "Sign in again with Google",
+  "account.recoveryCopy": "Use the account you played with to restore progress and pending actions.",
+  "account.wrongAccount": "This Google account does not match the pending progress. Choose the account you played with."
 }

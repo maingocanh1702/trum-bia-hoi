@@ -284,3 +284,119 @@ test('an actual opener tab cannot retain copied guest progress after lock refusa
   await expect(clone.locator('.network-status')).toContainText('Đã đồng bộ');
   expect((await snapshot(clone)).world.playerId).not.toBe(old);
 });
+
+async function signedPlayer(page: Page, subject: string, locale = 'vi') {
+  await gis(page, subject); await enter(page, locale); const dialog = await account(page, locale);
+  await dialog.getByRole('button', { name: locale === 'vi' ? 'Tiếp tục với Google' : 'Continue with Google', exact: true }).click();
+  await expect(dialog.getByRole('heading', { name: locale === 'vi' ? 'Tài khoản Google' : 'Google account', exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: locale === 'vi' ? 'Tiếp tục chơi' : 'Keep playing', exact: true }).click();
+  await expect(dialog).not.toBeVisible(); return journal(page);
+}
+for (const [kind, locale] of [['expired', 'vi'], ['missing', 'en'], ['revoked', 'vi']] as const) test(`Google reauthentication recovers the retained stream after ${kind} cookie at boot (${locale})`, async ({ page, context }) => {
+  const before = await signedPlayer(page, `reauth-${kind}`, locale), cookies = await context.cookies();
+  if (kind === 'expired') await page.request.post('/api/__test/advance?ms=3600001');
+  else if (kind === 'missing') await context.clearCookies();
+  else { await page.request.post('/api/auth/logout', { data: {}, headers: { Origin: 'http://127.0.0.1:4179' } }); await context.addCookies(cookies); }
+  await page.reload(); await expect(page.getByRole('alert')).toBeVisible(); const retained = await journal(page);
+  await page.getByRole('button', { name: locale === 'vi' ? 'Đăng nhập lại với Google' : 'Sign in again with Google', exact: true }).click();
+  const panel = page.locator('.recovery .account-panel');
+  await expect(panel).toBeVisible(); expect(await journal(page)).toEqual(retained);
+  await panel.getByRole('button', { name: locale === 'vi' ? 'Tiếp tục với Google' : 'Continue with Google', exact: true }).click();
+  await expect(panel.getByRole('heading', { name: locale === 'vi' ? 'Tài khoản Google' : 'Google account', exact: true })).toBeVisible();
+  await page.screenshot({ path: `.qa/reauth-${kind}-${locale}.png`, fullPage: true });
+  await panel.getByRole('button', { name: locale === 'vi' ? 'Tiếp tục chơi' : 'Keep playing', exact: true }).click();
+  await expect(page.locator('.network-status')).toContainText(locale === 'vi' ? 'Đã đồng bộ' : 'Synced');
+  const after = await journal(page); expect(after.playerId).toBe(before.playerId); expect(after.clientId).toBe(before.clientId); expect(after.nextSeq).toBe(before.nextSeq);
+  expect((await session(page)).provider).toBe('google');
+});
+
+test('Google reauthentication refuses a different signed account and keeps the outbox unchanged for retry', async ({ page, context }) => {
+  await signedPlayer(page, 'reauth-correct'); await context.clearCookies(); await page.reload();
+  await expect(page.getByRole('alert')).toBeVisible(); const before = await journal(page);
+  await page.getByRole('button', { name: 'Đăng nhập lại với Google', exact: true }).click();
+  const panel = page.locator('.recovery .account-panel'); await expect(panel.getByRole('button', { name: 'Tiếp tục với Google', exact: true })).toBeVisible();
+  await page.evaluate(async () => { const w = window as any, options = w.__googleOptions.at(-1), result = await (await fetch('/api/__test/sign?subject=reauth-wrong&nonce=' + options.nonce)).json(); w.__googleCallbacks.at(-1)(result); });
+  await expect(panel.getByRole('alert')).toContainText('chưa khớp tiến độ đang chờ');
+  expect(await journal(page)).toEqual(before); expect((await session(page)).provider).toBe('guest');
+  await panel.getByRole('button', { name: 'Thử lại', exact: true }).click();
+  await panel.getByRole('button', { name: 'Tiếp tục với Google', exact: true }).click();
+  await expect(panel.getByRole('heading', { name: 'Tài khoản Google', exact: true })).toBeVisible();
+  await panel.getByRole('button', { name: 'Tiếp tục chơi', exact: true }).click();
+  await expect(page.locator('.network-status')).toContainText('Đã đồng bộ'); expect((await journal(page)).clientId).toBe(before.clientId);
+});
+
+for (const committed of [false, true]) test(`Google reauthentication after service transport loss credits once (server committed=${committed})`, async ({ page, context }) => {
+  await signedPlayer(page, `reauth-service-${committed}`);
+  await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
+  const trigger = page.getByRole('button', { name: 'Xem mâm · bàn 1', exact: true }).first();
+  await expect(trigger).toBeVisible({ timeout: 20000 }); await trigger.click();
+  await expect(page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true })).toBeEnabled({ timeout: 20000 });
+  const cookies = await context.cookies(), beforeCoins = (await snapshot(page)).world.coins; let lost = false, credited: any;
+  await page.route('**/api/player/command', async route => {
+    if (!lost && route.request().postDataJSON()?.command.type === 'serve') {
+      if (committed) { const response = await route.fetch(); credited = await response.json(); } lost = true;
+      await page.request.post('/api/auth/logout', { data: {}, headers: { Origin: 'http://127.0.0.1:4179' } }); await context.addCookies(cookies);
+      await route.abort(); return;
+    }
+    await route.continue();
+  });
+  await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click(); await expect.poll(() => lost).toBe(true);
+  await expect(page.locator('.network-status')).toContainText('Đăng nhập lại với Google');
+  const pending = await journal(page); expect(pending.pending).toHaveLength(1);
+  await page.locator('.network-status').getByRole('button', { name: 'Đăng nhập lại với Google', exact: true }).click();
+  const panel = page.locator('.recovery .account-panel'); await expect(panel).toBeVisible(); expect(await journal(page)).toEqual(pending);
+  await panel.getByRole('button', { name: 'Tiếp tục với Google', exact: true }).click();
+  await panel.getByRole('button', { name: 'Tiếp tục chơi', exact: true }).click();
+  await expect(page.locator('.network-status')).toContainText('Đã đồng bộ'); await expect.poll(async () => (await journal(page)).pending.length).toBe(0);
+  const after = await snapshot(page); expect(after.world.coins).toBeGreaterThan(beforeCoins);
+  if (committed) expect(after.world.coins).toBe(credited.world.coins);
+  expect(after.menu.rows.find((r: any) => r.dish === 'bia').sold).toBe(1);
+  const retry = await page.request.post('/api/player/command', { data: pending.pending[0], headers: { Origin: 'http://127.0.0.1:4179' } });
+  expect(retry.status()).toBe(200); expect((await snapshot(page)).world.coins).toBe(after.world.coins);
+  expect((await journal(page)).clientId).toBe(pending.clientId); expect((await journal(page)).nextSeq).toBe(pending.nextSeq);
+});
+
+test('Google reauthentication with a lost authentication response resumes by canonical identity on reload', async ({ page, context }) => {
+  const before = await signedPlayer(page, 'reauth-lost-response'); await context.clearCookies(); await page.reload();
+  await page.getByRole('button', { name: 'Đăng nhập lại với Google', exact: true }).click();
+  let requests = 0;
+  await page.route('**/api/auth/google', async route => { requests++; await route.fetch(); await route.abort(); });
+  const panel = page.locator('.recovery .account-panel');
+  await panel.getByRole('button', { name: 'Tiếp tục với Google', exact: true }).click();
+  await expect(panel.getByRole('heading', { name: 'Tài khoản Google', exact: true })).toBeVisible(); expect(requests).toBe(1);
+  await page.reload(); await expect(page.locator('.network-status')).toContainText('Đã đồng bộ');
+  expect((await journal(page)).playerId).toBe(before.playerId); expect((await journal(page)).clientId).toBe(before.clientId); expect(requests).toBe(1);
+});
+
+test('Google reauthentication retries in place after losing the whole rotated-cookie response without clearing commands', async ({ page, context }) => {
+  await signedPlayer(page, 'reauth-lost-headers'); await context.clearCookies(); await page.reload();
+  await page.getByRole('button', { name: 'Đăng nhập lại với Google', exact: true }).click();
+  const panel = page.locator('.recovery .account-panel'); await expect(panel.getByRole('button', { name: 'Tiếp tục với Google', exact: true })).toBeVisible();
+  const retained = await journal(page); let posts = 0;
+  await page.route('**/api/auth/google', async route => {
+    posts++;
+    if (posts === 1) { const cookies = await context.cookies(); await route.fetch(); await context.addCookies(cookies); await route.abort(); }
+    else await route.continue();
+  });
+  await panel.getByRole('button', { name: 'Tiếp tục với Google', exact: true }).click();
+  await expect(panel.getByRole('alert')).toBeVisible(); expect(await journal(page)).toEqual(retained);
+  await panel.getByRole('button', { name: 'Thử lại', exact: true }).click();
+  await panel.getByRole('button', { name: 'Tiếp tục với Google', exact: true }).click();
+  await expect(panel.getByRole('heading', { name: 'Tài khoản Google', exact: true })).toBeVisible(); expect(posts).toBe(2);
+  await panel.getByRole('button', { name: 'Tiếp tục chơi', exact: true }).click();
+  await expect(page.locator('.network-status')).toContainText('Đã đồng bộ'); expect((await journal(page)).clientId).toBe(retained.clientId);
+});
+
+test('Google reauthentication cancellation releases its tab lock and rejects stale callbacks', async ({ page, context }) => {
+  await signedPlayer(page, 'reauth-cancel'); await context.clearCookies(); await page.reload();
+  await page.getByRole('button', { name: 'Đăng nhập lại với Google', exact: true }).click();
+  const panel = page.locator('.recovery .account-panel'); await expect(panel.getByRole('button', { name: 'Tiếp tục với Google', exact: true })).toBeVisible();
+  const before = await journal(page); let posts = 0; page.on('request', r => { if (r.url().endsWith('/auth/google')) posts++; });
+  const other = await context.newPage(); await other.goto('/'); await expect(other.getByRole('alert')).toContainText('tab khác'); await other.close();
+  await panel.getByRole('button', { name: 'Hủy', exact: true }).click(); await expect(panel).not.toBeVisible();
+  await page.evaluate(() => { const w = window as any; w.__googleCallbacks.at(-1)({ credential: 'stale' }); });
+  expect(posts).toBe(0); expect(await journal(page)).toEqual(before);
+  await page.getByRole('button', { name: 'Đăng nhập lại với Google', exact: true }).click();
+  await panel.getByRole('button', { name: 'Tiếp tục với Google', exact: true }).click();
+  await expect(panel.getByRole('heading', { name: 'Tài khoản Google', exact: true })).toBeVisible(); expect(posts).toBe(1);
+});
