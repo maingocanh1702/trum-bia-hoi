@@ -71,9 +71,9 @@ Bàn = container cho nhóm khách. Mỗi cấp đổi sprite + tăng sức chứ
 | ✓ | Asset | Cấp | Sức chứa | Giá ×k | Gate | Đổi gì nhìn thấy được | Crop | Phase |
 |:-:|-------|:---:|:--------:|-------:|------|----------------------|-----:|:-----:|
 | ⬜ | `table-lv1` | Lv1 | 2 khách | có sẵn | — | Bàn nhựa đỏ thấp, phai nắng, xước nhẹ, rẻ tiền. Phải nhìn **nhỏ và rẻ hơn hẳn** mọi cấp sau | 224×176 | P0 |
-| ⬜ | `table-lv2` | Lv2 | 4 khách | 1.750 | — | Chuyển **nhựa → inox**: mặt inox chải xước, chân ống gấp, vuông vức và chắc hơn Lv1 | 256×192 | P1 |
-| ⬜ | `table-lv3` | Lv3 | 6 khách | 6.250 | — | Kéo **dài ra**: bàn inox chữ nhật dài, chân gia cố, thêm thanh giằng dưới gầm, mặt phục vụ rộng hơn | 352×208 | P2 |
-| ⬜ | `table-lv4` | Lv4 | 8-10 khách | 43.750 | Huy hiệu Kết Nối + uy tín 3k-40k ⭐ | **Bàn tiệc VIP**: ghép nhiều bàn, khăn trải kem, đèn bàn sợi đốt kiểu cũ, viền nẹp nâng cấp | 448×240 | P3 |
+| 🟡 | `table-lv2` | Lv2 | 4 khách | 1.750 | — | Chuyển **nhựa → inox**: mặt inox chải xước, chân ống gấp, vuông vức và chắc hơn Lv1 | 256×192 | P1 |
+| 🟡 | `table-lv3` | Lv3 | 6 khách | 6.250 | — | Kéo **dài ra**: bàn inox chữ nhật dài, chân gia cố, thêm thanh giằng dưới gầm, mặt phục vụ rộng hơn | 352×208 | P2 |
+| 🟡 | `table-lv4` | Lv4 | 8-10 khách | 43.750 | Huy hiệu Kết Nối + uy tín 3k-40k ⭐ | **Bàn tiệc VIP**: ghép nhiều bàn, khăn trải kem, đèn bàn sợi đốt kiểu cũ, viền nẹp nâng cấp | 448×240 | P3 |
 
 **Prompt 4 cấp:**
 
@@ -796,3 +796,5 @@ Cập nhật lại bằng: `ls assets/*.png`
 | 2026-09-09 build | Added original native-alpha phone and qr-payment drafts, keypad/paper era styling, manifest and exact prompts. Business unlocks render these on the yard; no real payment QR or production approval is implied. |
 
 | 2026-09-09 build | Original native-alpha customer-shipper draft connected to phone order/sheet, exact prompt in reference/assets-owner-2026-09-08/shipper-prompt.md. Existing paired order/fail/early-serve SFX reused for arrival/miss/handoff. Manifest122 entries,32 audio pairs,30 sprite placeholders and84 draft files; no production approval boxes changed. |
+
+| 2026-09-10 build | Table Lv2–Lv4 empty-state imagegen drafts replace three runtime placeholders. Other states use runtime composition. Native-size exports and 128/64/32 contact sheet recorded; final family art approval pending (🟡). Four Blender source renders + studio retained and archived in manifest; Blender generation paused by owner. |

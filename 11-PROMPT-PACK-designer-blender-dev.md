@@ -1,6 +1,6 @@
 # 🎯 PROMPT PACK — Designer & Dev — Trùm Bia Hơi (v1.14)
 
-> **Mục đích:** 2 bản giao việc để dán cho 2 agent — (A) **Designer** dựng game asset bằng Blender MCP, (B) **Dev** code game. Cả hai đều **chỉ ràng buộc đầu vào / đầu ra / QA**; *cách làm, kiến trúc, layout, design do agent tự quyết*.
+> **Mục đích:** 2 bản giao việc để dán cho 2 agent — (A) **Designer** tạo game asset bằng imagegen (Blender đang tạm dừng), (B) **Dev** code game. Cả hai đều **chỉ ràng buộc đầu vào / đầu ra / QA**; *cách làm, kiến trúc, layout, design do agent tự quyết*.
 > Ngày: 2026-09-09. Nguồn sự thật: `00-HANDOFF-trum-bia-hoi.md` → `02-GDD-trum-bia-hoi.md` (quyết định) → `08-SPEC-economy-constants.md` + `docs/config/economy.tbh.json` (số) → `trum-bia-hoi-brd-admin.md` §5.2 (config admin).
 > **Thân prompt viết bằng tiếng Anh** (để dán thẳng vào Claude Code / Codex); phần hướng dẫn cho người vẫn tiếng Việt.
 
@@ -12,7 +12,7 @@
 
 | Agent | Cần có | Quyền ghi |
 |---|---|---|
-| **Designer** | Claude Code hoặc Codex + **Blender MCP plugin** (đã cài sẵn ở cả hai; Blender ≥ 4.2 mở sẵn, addon bật) + Python 3 có Pillow/numpy | `assets/`, `scripts/`, `docs/asset-*` |
+| **Designer** | Claude Code hoặc Codex + **image generation** (owner 10/09; Blender tạm dừng) + Python 3 có Pillow/numpy | `assets/`, `scripts/`, `docs/asset-*` |
 | **Dev** | Claude Code hoặc Codex, Node 22, npm | toàn repo; **tự quyết quy trình build** (branch, slice, review, merge, tooling) — Level 3/autopilot **không còn bắt buộc** (chủ dự án 08/09); ràng buộc duy nhất = "WHAT IS BINDING" ở Phần B |
 
 ### 0.2 Thứ tự & cổng (gate)
@@ -35,7 +35,9 @@ HANDOFF: <what the next task needs to know>
 
 ---
 
-## PHẦN A — DESIGNER BRIEF (paste to a Claude Code / Codex agent with Blender MCP)
+## PHẦN A — DESIGNER BRIEF (paste to a Claude Code / Codex agent)
+
+> Owner update 2026-09-10 10:50: PAUSE Blender asset generation. Built-in image generation is allowed for UI/game assets, following the existing style, naming, palette, camera, manifest and QA contract. Preserve completed Blender sources; no runtime/economy change.
 
 ```text
 ROLE
@@ -46,7 +48,7 @@ approach, batch size, post-processing. This brief fixes only the tools, the inpu
 outputs and the QA bar.
 
 TOOLS
-- Blender MCP plugin (already installed in this environment) is the main tool.
+- Built-in image generation is the current asset tool (owner, 2026-09-10). Blender generation is paused; retain existing .blend/render files.
 - Python 3 + Pillow/numpy for post-processing. `scripts/asset_postprocess.py` already exists
   (resize/crop/anchor via SIZE_RULES) — reuse, extend or replace it as you see fit.
 - `docs/asset-blender-pipeline.md` is a PROVEN SUGGESTION (studio, 3 locked ortho cameras,
@@ -276,3 +278,5 @@ referral) -> risk + dog -> events (World Cup, donation) -> QA, perf, release.
 *Nguồn: `00-HANDOFF-trum-bia-hoi.md` v1.5, `02-GDD-trum-bia-hoi.md` v1.9, `08-SPEC-economy-constants.md` v1.2.2, `10-SPEC-tech-implementation.md` v1.4, `trum-bia-hoi-brd-admin.md` v0.4, `docs/asset-production-checklist.md`, `game-extended-workflow-cl.md`.*
 
 | 2026-09-08 owner UI update | Lost-customer feedback is a numeric coin/reputation toast only; removed the earlier explanation/dialog requirement. Owner asset references: docs/reference/assets-owner-2026-09-08/. |
+
+| 2026-09-10 owner | Image generation allowed for game/UI assets; Blender generation paused. All style/export/manifest/QA constraints stay. Finished Blender source studies preserved. |

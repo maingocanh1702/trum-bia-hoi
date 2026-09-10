@@ -978,3 +978,13 @@ pixel editing. Manifest status remains draft pending final art release QA.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Added four kitchen and three hot-dish prompt/output receipts; corrected Lv2 art to two cooking positions, with no gameplay/config changes. |
+
+## Table upgrades — 2026-09-10
+
+Owner update 2026-09-10 10:50: PAUSE Blender asset generation. Built-in image generation is allowed for UI/game assets, following the existing style, naming, palette, camera, manifest and QA contract. Preserve completed Blender sources; no runtime/economy change.
+
+Three standalone built-in calls produced Lv2 square inox, Lv3 long inox and Lv4 joined VIP tables. Exact prompts, unmodified source hashes, final paths/palettes and export hashes are in `reference/assets-owner-2026-09-08/table-upgrades-imagegen.json`. Although prompts requested chroma-key, the tool returned native alpha; the existing postprocessor detects and preserves it. No tool/model switch was made. `scripts/export_table_art.py` reuses the existing crop/anchor/nearest helper, then reduces texture, fixes token shades and enforces a two-native-pixel silhouette outline. Dynamic text, capacity, state and interaction remain code-rendered.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 | Owner authorizes imagegen for all game assets; preserved native alpha returned by the built-in tool; added three table prompts and reproducible exports. Runtime IDs unchanged; production family approval remains pending. |

@@ -1,5 +1,7 @@
 # 🧊 Pipeline asset bằng Blender MCP → pixel-art — Trùm Bia Hơi (v1.0)
 
+> Owner update 2026-09-10 10:50: PAUSE Blender asset generation. Built-in image generation is allowed for UI/game assets, following the existing style, naming, palette, camera, manifest and QA contract. Preserve completed Blender sources; no runtime/economy change.
+
 > **Trạng thái (09/09):** đây là **gợi ý kỹ thuật đã kiểm nghiệm**, KHÔNG phải quy trình bắt buộc — giao việc chính thức ở `11-PROMPT-PACK` Phần A (danh sách asset + đầu ra + QA; cách làm do designer tự quyết). Lệch spec này thì ghi lý do vào changelog cuối file.
 >
 > Spec cho **designer/technical artist** dùng **Blender MCP** (Blender ≥ 4.2 + addon MCP, tool `execute_blender_code`, `get_viewport_screenshot`, `get_scene_info`) để sản xuất ~478 asset trong `docs/asset-production-checklist.md` với **cùng góc/tỉ lệ/ánh sáng**, rồi hậu kỳ thành pixel-art đúng contract `docs/asset-list-designer.md` §0.1. Thay cho pipeline ChatGPT image-gen (vẫn dùng được cho background/cut-in vẽ tay).
@@ -95,3 +97,5 @@ Viền bàn theo patience, thanh patience/freshness, popover Order, floating pil
 | Ver | Thay đổi |
 |---|---|
 | v1.0 | Bản đầu 2026-09-08: studio 3 camera + đèn + vật liệu cel; hậu kỳ pixelate/quantize/outline/shadow; calibrate theo anchor; thứ tự batch A1–A9; QA; ranh giới asset ↔ code. |
+
+| 2026-09-10 owner | Supersedes Blender-only generation: use imagegen for subsequent batches. Studio + four MCP renders retained under assets/_raw/blender/starter-mcp, archived manifest IDs only. Existing crop/anchor helper reused; batch script adds deterministic token palette and outline. |

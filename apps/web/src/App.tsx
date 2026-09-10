@@ -232,7 +232,7 @@ function GameView({ session }: { session: Session }) {
         <span className="bubble-status" aria-label={t(ready ? 'order.ready' : 'table.waiting')}>{ready ? <Icon name="check" /> : '…'}</span>
         <span className={`patience-track ${patience < c.tip.patienceThreshold ? 'is-low' : ''}`}><i style={{ width: `${patience * 100}%` }} /></span>
       </button>}
-      <button className="table-object" aria-haspopup="dialog" aria-controls={selectedTable === table.id ? 'active-table-order' : undefined} onClick={e => showTable(table.id, e.currentTarget)} aria-label={t('order.details', { n: index + 1 })}>
+      <button className="table-object" data-level={table.level} aria-haspopup="dialog" aria-controls={selectedTable === table.id ? 'active-table-order' : undefined} onClick={e => showTable(table.id, e.currentTarget)} aria-label={t('order.details', { n: index + 1 })}>
         <TableSeats capacity={table.capacity} customers={guests} feedback={feedback} />
         <Sprite id={`table-lv${table.level}-empty`} />
         <span className="table-number">{index + 1}</span>

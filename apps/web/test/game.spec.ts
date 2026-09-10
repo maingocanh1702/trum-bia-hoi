@@ -8,8 +8,11 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
     await page.setViewportSize(viewport);
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.clock.pauseAt(new Date('2026-09-08T10:00:00Z'));
+    // Lazy screen boot needs the browser scheduler; freeze only once the entry screen is ready.
+    await page.clock.install({ time: new Date('2026-09-08T10:00:00Z') });
     await page.goto('/');
+    await expect(page.getByRole('button', { name: 'Vào quán', exact: true })).toBeVisible();
+    await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 1000));
     await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
     await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
     await page.clock.runFor(11100);
@@ -36,8 +39,9 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
     await expect(page.locator('.seat')).toHaveCount(6);
     await expect(page.locator('.seat-customer')).toHaveCount(1);
     await expect(page.locator('.seat-empty')).toHaveCount(5);
-    await waitSaved(page); await page.reload();
+    await waitSaved(page); await page.clock.resume(); await page.reload();
     await expect(page.locator('.money strong')).toHaveText(coins!);
+    await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 1000));
     await expect(page.locator('.table-space.state-consuming')).toHaveCount(1);
     await page.getByRole('button', { name: 'Nhập hàng', exact: true }).click();
     const stockRow = page.locator('.stock-row').first();
@@ -58,7 +62,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
     await expect(page.getByRole('heading', { name: 'Your own corner' })).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.getByRole('button', { name: 'Restock', exact: true })).toBeVisible();
-    await waitSaved(page); await page.reload();
+    await waitSaved(page); await page.clock.resume(); await page.reload();
     await expect(page.getByRole('button', { name: 'Restock', exact: true })).toBeVisible();
     expect(errors).toEqual([]);
   });

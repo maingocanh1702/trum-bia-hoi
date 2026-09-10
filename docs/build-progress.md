@@ -2311,3 +2311,23 @@ final full-base review has no actionable finding and independently passed the le
 regression. Receipt `.qa/forecast-verification.json`. M4 remains11/18 OPEN: protected
 server snapshots/timelines, aggregation/admin UI and observed VND data still remain.
 No public upload,80MB tuning, engine/config changes or merge/push/deploy.
+
+
+## Imagegen table upgrades; Blender paused — 2026-09-10
+
+Owner decision 10:50 supersedes Blender-only generation. Four finished Blender MCP
+renders, original script and studio .blend are preserved under assets/_raw/blender;
+archive-blender-* manifest IDs do not enter the runtime. Three built-in imagegen calls
+replace table-lv2/3/4-empty placeholders through the existing level → manifest → path
+mapping. Native-size exports use the existing crop/anchor helper, token shades and
+pixel outlines; generated native alpha is preserved. Prompt/source/export hashes and
+128/64/32 contact sheet: docs/reference/assets-owner-2026-09-08/table-upgrades-imagegen.json.
+Sprites remain draft until final family production QA; F24 stays in progress.
+132 manifest entries:20 placeholders,104 drafts (including four archived studies).
+Config zero warnings/build/export checks pass. Four guest service/reload/pause/locale
+browser cases pass after unfreezing the test clock during lazy screen startup/reload;
+separate four-viewport checks confirm all new level sprites resolve and fit targets.
+Full engine/server suite passes344/344; independent native review is next.
+Forecast kernel03a6800 already verified/reviewed; M4 remains11/18 OPEN. Next protected
+forecast aggregation/admin presentation and remaining M4 acceptance, then M6–M9.
+

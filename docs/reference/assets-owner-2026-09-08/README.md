@@ -70,3 +70,13 @@ actual ledger amounts and the owner's numeric-only departure feedback.
 |---|---|
 | 2026-09-09 mobile service | Added the five owner screenshots and adapted the service sequence: actual dish bubbles, per-customer result emotions, serving readiness, table-level selection, numeric gain near HUD and consumption timer. Static-image motion interpretations are explicit; game/economy rules unchanged. |
 | 2026-09-09 designer refinement | Recorded the owner’s latest portrait casual-management direction: edge HUD, rounded skeuomorphic panels, chunky pills, bold rounded sans-serif, soft shadows, compact contextual actions and Vietnamese street-game visual language. Supersedes the earlier concise HUD wording; menu and economy remain authoritative. |
+
+## Asset tool decision — 2026-09-10 10:50
+
+Owner update 2026-09-10 10:50: PAUSE Blender asset generation. Built-in image generation is allowed for UI/game assets, following the existing style, naming, palette, camera, manifest and QA contract. Preserve completed Blender sources; no runtime/economy change.
+
+Table Lv2–Lv4 source/prompts/export receipt: `table-upgrades-imagegen.json`. Runtime maps the existing level IDs through `assets/manifest.json`; these new pixel sprites keep nearest-neighbor sampling. Prior illustrated drafts and glass anchors remain unchanged. Four original Blender studies are archived separately with `archive-blender-*` IDs and are not used by the runtime.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 | Imagegen resumes under owner authority; table-level placeholders replaced progressively; Blender source archive retained. |

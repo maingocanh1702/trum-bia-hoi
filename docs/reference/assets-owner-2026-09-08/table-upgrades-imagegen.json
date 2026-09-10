@@ -1,0 +1,157 @@
+{
+  "date": "2026-09-10",
+  "tool": "image_gen (built-in)",
+  "ownerDecision": "Pause Blender; image generation allowed for game assets; preserve finished Blender sources.",
+  "assets": [
+    {
+      "id": "table-lv2-empty",
+      "prompt": "Use case: stylized-concept. Generate one production pixel-art world-object sprite for Trum Bia Hoi, a Vietnamese sidewalk beer-stall management game. The previously shown 128px beer glass is a STYLE REFERENCE ONLY for crisp warm dark outlines, mint/cream highlights and chunky hand-pixelled clusters; do not include any glass. Match early-2000s Vietnamese street-game visual language. Camera locked: three-quarter top-down isometric-lite, 30 degrees downward, front and right faces visible, long axis pointing down-left to up-right. Light upper left. Crisp chunky pixel clusters with a consistent dark plum-brown #3a2730 outline equivalent to 2 pixels at native resolution, selective one-pixel accents. Limited palette: inox #c4cecb with no more than four light/shade steps, foam cream #fff3d2, aged wood #3a2a1c, warm yellow #f1d585 where needed. Slight age indicated by a few deliberate scratches only. No photorealism, no smooth 3D render, no gradients, no dithering, no noisy detail. Exactly ONE table, fully visible, centered, ground-contact bottom center, generous safe padding, clear silhouette when reduced to 32px. No chairs, people, food, beer, UI, labels, numbers, text, logo, watermark, extra props except explicitly requested. Solid uniform chroma-key background #00ff00, no floor plane, no cast shadow, no color variation, never use green inside the table. Final native production export will be resized by our existing game pipeline; generate a large clean image for this. Asset ID table-lv2-empty. Create one square low inox table for four people, scratched brushed-metal top, tubular folding legs, sturdier and cleaner than the low plastic starter table. Native crop 256x192. Emphasize a broad square tabletop, thin rolled edge, four stable legs with folding braces. Empty tabletop, no decoration.",
+      "rawPath": "assets/_raw/imagegen/table-upgrades-2026-09-10/table-lv2-empty.png",
+      "sourceSha256": "ad93c1698702f4560f4d3ea6c53a44cbb48c27a0bc4641666076b7e844a1236f",
+      "path": "assets/table-lv2-empty-imagegen-v1.png",
+      "dimensions": [
+        256,
+        192
+      ],
+      "palette": [
+        [
+          58,
+          39,
+          48
+        ],
+        [
+          137,
+          144,
+          142
+        ],
+        [
+          196,
+          206,
+          203
+        ],
+        [
+          219,
+          230,
+          227
+        ]
+      ],
+      "sha256": "859e4e3be2a1fbb454cc7dafad6ff659ef7d98e115a2d7f883ae2dc48bf480b9"
+    },
+    {
+      "id": "table-lv3-empty",
+      "prompt": "Use case: stylized-concept. Generate one production pixel-art world-object sprite for Trum Bia Hoi, a Vietnamese sidewalk beer-stall management game. The previously shown 128px beer glass is a STYLE REFERENCE ONLY for crisp warm dark outlines, mint/cream highlights and chunky hand-pixelled clusters; do not include any glass. Match early-2000s Vietnamese street-game visual language. Camera locked: three-quarter top-down isometric-lite, 30 degrees downward, front and right faces visible, long axis pointing down-left to up-right. Light upper left. Crisp chunky pixel clusters with a consistent dark plum-brown #3a2730 outline equivalent to 2 pixels at native resolution, selective one-pixel accents. Limited palette: inox #c4cecb with no more than four light/shade steps, foam cream #fff3d2, aged wood #3a2a1c, warm yellow #f1d585 where needed. Slight age indicated by a few deliberate scratches only. No photorealism, no smooth 3D render, no gradients, no dithering, no noisy detail. Exactly ONE table, fully visible, centered, ground-contact bottom center, generous safe padding, clear silhouette when reduced to 32px. No chairs, people, food, beer, UI, labels, numbers, text, logo, watermark, extra props except explicitly requested. Solid uniform chroma-key background #00ff00, no floor plane, no cast shadow, no color variation, never use green inside the table. Final native production export will be resized by our existing game pipeline; generate a large clean image for this. Asset ID table-lv3-empty. Create one long rectangular inox table for six people, reinforced tubular folding legs, practical under-table metal braces, wide brushed-metal serving surface. It belongs to the same family as the square inox table just generated: same rolled edge, dark rubber feet, small sparse scratches, same viewing angle and lighting; extend its width to 1.65 times the square table without making it taller. Native crop 352x208. Empty tabletop, no decoration.",
+      "rawPath": "assets/_raw/imagegen/table-upgrades-2026-09-10/table-lv3-empty.png",
+      "sourceSha256": "a49a1bdc9d5f0f548d23896cb3332ab70f0cbc7087dc3ba37aa39ad6e44890b1",
+      "path": "assets/table-lv3-empty-imagegen-v1.png",
+      "dimensions": [
+        352,
+        208
+      ],
+      "palette": [
+        [
+          58,
+          39,
+          48
+        ],
+        [
+          137,
+          144,
+          142
+        ],
+        [
+          196,
+          206,
+          203
+        ],
+        [
+          219,
+          230,
+          227
+        ]
+      ],
+      "sha256": "7ab800fa18f0617c5cf576f2569b5600c32933c1e078197cfd8fd5d7e8f19ecc"
+    },
+    {
+      "id": "table-lv4-empty",
+      "prompt": "Use case: stylized-concept. Generate one production pixel-art world-object sprite for Trum Bia Hoi, a Vietnamese sidewalk beer-stall management game. The previously shown 128px beer glass is a STYLE REFERENCE ONLY for crisp warm dark outlines, mint/cream highlights and chunky hand-pixelled clusters; do not include any glass. Match early-2000s Vietnamese street-game visual language. Camera locked: three-quarter top-down isometric-lite, 30 degrees downward, front and right faces visible, long axis pointing down-left to up-right. Light upper left. Crisp chunky pixel clusters with a consistent dark plum-brown #3a2730 outline equivalent to 2 pixels at native resolution, selective one-pixel accents. Limited palette: inox #c4cecb with no more than four light/shade steps, foam cream #fff3d2, aged wood #3a2a1c, warm yellow #f1d585 where needed. Slight age indicated by a few deliberate scratches only. No photorealism, no smooth 3D render, no gradients, no dithering, no noisy detail. Exactly ONE table, fully visible, centered, ground-contact bottom center, generous safe padding, clear silhouette when reduced to 32px. No chairs, people, food, beer, UI, labels, numbers, text, logo, watermark, extra props except explicitly requested. Solid uniform chroma-key background #00ff00, no floor plane, no cast shadow, no color variation, never use green inside the table. Final native production export will be resized by our existing game pipeline; generate a large clean image for this. Asset ID table-lv4-empty. Create one long VIP Vietnamese street-banquet table for eight to ten people, formed by joining two sturdy long inox tables, visible center join and upgraded aged-wood edge trim. A tasteful narrow cream cloth runner across the center and ONE small old-fashioned warm incandescent table lamp with cream shade near the far-back edge. Premium but still a modest early-2000s sidewalk bia-hoi stall. Match the previous inox tables in camera angle, tubular folding legs, rubber feet, metal colors, sparse scratches, and lighting. The whole joined table is ONE coherent asset, no detached pieces. Native crop 448x240. No food or guests. Keep the cream runner clearly distinct from the silver top. Lamp must remain a small accent, no glow outside the sprite.",
+      "rawPath": "assets/_raw/imagegen/table-upgrades-2026-09-10/table-lv4-empty.png",
+      "sourceSha256": "9f979186897bbb59ad4509d14d6a1d5c38712128f7ba49c9c5aa82b69ad00ae7",
+      "path": "assets/table-lv4-empty-imagegen-v1.png",
+      "dimensions": [
+        448,
+        240
+      ],
+      "palette": [
+        [
+          58,
+          39,
+          48
+        ],
+        [
+          137,
+          144,
+          142
+        ],
+        [
+          196,
+          206,
+          203
+        ],
+        [
+          219,
+          230,
+          227
+        ],
+        [
+          178,
+          170,
+          147
+        ],
+        [
+          255,
+          243,
+          210
+        ],
+        [
+          255,
+          255,
+          235
+        ],
+        [
+          40,
+          29,
+          19
+        ],
+        [
+          58,
+          42,
+          28
+        ],
+        [
+          64,
+          47,
+          31
+        ],
+        [
+          178,
+          146,
+          62
+        ],
+        [
+          255,
+          209,
+          90
+        ],
+        [
+          255,
+          234,
+          100
+        ]
+      ],
+      "sha256": "412725e847d3713f3355e34eee3d33dcacd18e7d91c942198682ad87aa6a3fc6"
+    }
+  ],
+  "exportScript": "scripts/export_table_art.py",
+  "contactSheet": "assets/_qa/contact-table-upgrades-imagegen-v1.png",
+  "qa": "Native RGBA, binary alpha, two-pixel silhouette outline, token palette with three shade steps per material, bottom anchors; production approval pending."
+}

@@ -1,5 +1,7 @@
 .sprite.illustrated { image-rendering: auto; }
-.table-object > .sprite.illustrated { width: 84px; height: 76px; left: 24px; top: 1px; border-radius: 0; box-shadow: none; }
+.table-object > img.sprite { width: 84px; height: 76px; left: 24px; top: 1px; border-radius: 0; box-shadow: none; }
+.table-object[data-level="3"] > img.sprite { width: 104px; left: 14px; }
+.table-object[data-level="4"] > img.sprite { width: 120px; left: 6px; }
 .seat { position: absolute; width: 33px; height: 33px; transform: translate(-50%, -100%); z-index: 1; }
 .seat-customer { width: 44px; height: 59px; }
 .seat .sprite { width: 100%; height: 100%; }

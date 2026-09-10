@@ -148,50 +148,59 @@
     {
       "id": "table-lv2-empty",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/table-lv2-empty-imagegen-v1.png",
+      "source": "imagegen",
       "dimensions": [
-        128,
-        128
+        256,
+        192
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "status": "draft",
+      "review_notes": "Standalone built-in imagegen; native alpha retained, token palette and two-pixel outline exported with existing crop/anchor pipeline. 128/64/32 QA contact sheet present; final production family approval pending.",
+      "raw": "assets/_raw/imagegen/table-upgrades-2026-09-10/table-lv2-empty.png",
+      "script": "scripts/export_table_art.py",
+      "prompt": "docs/reference/assets-owner-2026-09-08/table-upgrades-imagegen.json"
     },
     {
       "id": "table-lv3-empty",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/table-lv3-empty-imagegen-v1.png",
+      "source": "imagegen",
       "dimensions": [
-        128,
-        128
+        352,
+        208
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "status": "draft",
+      "review_notes": "Standalone built-in imagegen; native alpha retained, token palette and two-pixel outline exported with existing crop/anchor pipeline. 128/64/32 QA contact sheet present; final production family approval pending.",
+      "raw": "assets/_raw/imagegen/table-upgrades-2026-09-10/table-lv3-empty.png",
+      "script": "scripts/export_table_art.py",
+      "prompt": "docs/reference/assets-owner-2026-09-08/table-upgrades-imagegen.json"
     },
     {
       "id": "table-lv4-empty",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/table-lv4-empty-imagegen-v1.png",
+      "source": "imagegen",
       "dimensions": [
-        128,
-        128
+        448,
+        240
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "status": "draft",
+      "review_notes": "Standalone built-in imagegen; native alpha retained, token palette and two-pixel outline exported with existing crop/anchor pipeline. 128/64/32 QA contact sheet present; final production family approval pending.",
+      "raw": "assets/_raw/imagegen/table-upgrades-2026-09-10/table-lv4-empty.png",
+      "script": "scripts/export_table_art.py",
+      "prompt": "docs/reference/assets-owner-2026-09-08/table-upgrades-imagegen.json"
     },
     {
       "id": "chair-plastic-red",
@@ -2227,6 +2236,78 @@
       ],
       "status": "draft",
       "review_notes": "Original builtin generated paper bundle, native RGBA preserved. SHA256 e566f40195f6307b8df4c0b0297c86c51d9b21c801fc8ab23788553c1337121a. Prompt docs/reference/assets-owner-2026-09-08/flyer-prompt.json; final release art QA pending."
+    },
+    {
+      "id": "archive-blender-chair-plastic",
+      "type": "sprite",
+      "path": "assets/_raw/blender/starter-mcp/chair-plastic.png",
+      "source": "blender",
+      "dimensions": [
+        512,
+        512
+      ],
+      "transparent": true,
+      "usage": [
+        "archive.only"
+      ],
+      "status": "draft",
+      "blend": "assets/_raw/blender/starter-mcp/tbh-starter-mcp.blend",
+      "script": "scripts/blender/tbh_starter_assets.py",
+      "review_notes": "Paused by owner 2026-09-10 10:50. Original MCP render preserved only; not wired to gameplay; pixel/style QA incomplete."
+    },
+    {
+      "id": "archive-blender-table-lv1-empty",
+      "type": "sprite",
+      "path": "assets/_raw/blender/starter-mcp/table-lv1-empty.png",
+      "source": "blender",
+      "dimensions": [
+        512,
+        512
+      ],
+      "transparent": true,
+      "usage": [
+        "archive.only"
+      ],
+      "status": "draft",
+      "blend": "assets/_raw/blender/starter-mcp/tbh-starter-mcp.blend",
+      "script": "scripts/blender/tbh_starter_assets.py",
+      "review_notes": "Paused by owner 2026-09-10 10:50. Original MCP render preserved only; not wired to gameplay; pixel/style QA incomplete."
+    },
+    {
+      "id": "archive-blender-table-lv2-empty",
+      "type": "sprite",
+      "path": "assets/_raw/blender/starter-mcp/table-lv2-empty.png",
+      "source": "blender",
+      "dimensions": [
+        512,
+        512
+      ],
+      "transparent": true,
+      "usage": [
+        "archive.only"
+      ],
+      "status": "draft",
+      "blend": "assets/_raw/blender/starter-mcp/tbh-starter-mcp.blend",
+      "script": "scripts/blender/tbh_starter_assets.py",
+      "review_notes": "Paused by owner 2026-09-10 10:50. Original MCP render preserved only; not wired to gameplay; pixel/style QA incomplete."
+    },
+    {
+      "id": "archive-blender-icon-coin",
+      "type": "sprite",
+      "path": "assets/_raw/blender/starter-mcp/icon-coin.png",
+      "source": "blender",
+      "dimensions": [
+        512,
+        512
+      ],
+      "transparent": true,
+      "usage": [
+        "archive.only"
+      ],
+      "status": "draft",
+      "blend": "assets/_raw/blender/starter-mcp/tbh-starter-mcp.blend",
+      "script": "scripts/blender/tbh_starter_assets.py",
+      "review_notes": "Paused by owner 2026-09-10 10:50. Original MCP render preserved only; not wired to gameplay; pixel/style QA incomplete."
     }
   ]
 }
