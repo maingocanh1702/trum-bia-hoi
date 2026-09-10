@@ -183,6 +183,8 @@ Giá hiển thị = `round(priceBase × k)`. Mua bằng `coins`, không giảm `
 - Bom bắt đầu mẻ châm ngay khi còn chỗ và nguyên liệu, không đợi khách mới. Mẻ lấy `min(kegBatch, chỗ trống, kho bia)` lúc bắt đầu, hoàn thành sau `refillMs`; việc đến giữa mẻ chờ mẻ sau. Ly trên mâm nằm ngoài sức chứa bom.
 - Mẻ đang chạy giữ số lượng/deadline qua nâng cấp. Menu/ẩn trang tạm dừng theo quyết định owner. Không tự tặng thêm ly khi nâng thiết bị. Ca cũ giữ cấu hình đã ghim; bộ số mới áp dụng tại lần mở ca thành công kế tiếp.
 
+> Changelog 2026-09-11 — Owner Steer13, presentation only: `inventory.bia` = Bom bia / Beer keg (Mua bom / Buy keg); `beer.ready` = Cốc rót sẵn / Poured glasses; thiết bị `keg` có tiêu đề Vòi rót / Beer taps, giữ tên cấp. HUD nối ba số bom, rót sẵn và cốc sạch. Không đổi engine, config, economy, refillEnabled hay các dung lượng/thời gian.
+
 ### 8.2 Bồn rửa cốc (`washer`) 🟢 washMs/slots số gốc · 🟡 giá cân lại 09/09
 
 Tự động: cốc bẩn vào mẻ ngay; **1 mẻ = tối đa `slots` cốc, mất `washMs`** → bền vững 8,6 / 12 / 30 / 72 / 200 cốc/phút. (`slots` giữ tên key để engine không đổi; nghĩa = số cốc mỗi mẻ.)

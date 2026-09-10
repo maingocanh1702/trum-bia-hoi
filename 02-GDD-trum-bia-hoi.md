@@ -454,3 +454,5 @@ Mục tiêu: chứng minh **vòng lặp vận hành ca vui & economy cân**. KH�
 | 2026-09-09 (daily rules12) | §16 sửa điều kiện bonus từ3 lõi thành đủ5 theo `quests.daily.bonusAll5` và08§14; không đổi số JSON. Contract tiến độ/claim/local replay tạiF17§10. |
 
 | 2026-09-09 batch update | Theo owner: rót bia dự trữ/rửa theo mẻ, capacity UI, nguyên liệu cập nhật ngay. Quy tắc và số ở08§8.1; tách suất trong bom khỏi pool ly; mặc định rót bù chỗ trống/freshness từ mâm đã được thông báo, câu hỏi tùy chọn còn mở. |
+
+| 2026-09-11 | Owner Steer13 — presentation only: tồn `inventory.bia` gọi Bom bia / Beer keg, nhập bia là Mua bom / Buy keg; `beer.ready` là Cốc rót sẵn, thiết bị `keg` là Vòi rót / Beer taps (giữ tên cấp); HUD hiển thị riêng bom, rót sẵn, cốc sạch. Không đổi engine/config/economy. |

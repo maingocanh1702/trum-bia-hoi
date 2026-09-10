@@ -185,8 +185,8 @@ for (const locale of ['vi', 'en']) test(`two play modes offer direct Google sign
 
 async function openAndUpgrade(page: Page) {
   await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
-  await page.getByRole('button', { name: 'Bom bia', exact: true }).click();
-  await page.getByRole('dialog', { name: 'Bom bia', exact: true }).getByRole('button', { name: /Nâng ·/ }).click();
+  await page.getByRole('button', { name: 'Vòi rót', exact: true }).click();
+  await page.getByRole('dialog', { name: 'Vòi rót', exact: true }).getByRole('button', { name: /Nâng ·/ }).click();
   await expect.poll(async () => (await snapshot(page)).world.equipment.keg).toBe(2);
   await expect.poll(async () => (await journal(page)).pending.length).toBe(0);
   return (await snapshot(page)).world;
@@ -259,7 +259,7 @@ for (const path of ['/auth/session', '/player/connect']) test(`new-tab bootstrap
 
 for (const committed of [false, true]) test(`new-tab guest recovery applies a pending upgrade once (server committed=${committed})`, async ({ page, context }) => {
   await enter(page); await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
-  await page.getByRole('button', { name: 'Bom bia', exact: true }).click();
+  await page.getByRole('button', { name: 'Vòi rót', exact: true }).click();
   const before = (await snapshot(page)).world; let credited: any;
   await page.route('**/api/player/command', async route => {
     if (route.request().postDataJSON()?.command.type === 'upgrade') {

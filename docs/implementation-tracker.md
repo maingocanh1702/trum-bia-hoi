@@ -435,3 +435,9 @@ Assets: owner waiver 2026-09-11: draft assets accepted for release. Current plac
 ## Dev identity acceptance — 2026-09-11
 
 Explicit `TBH_AUTH_DEV=1`, loopback only and refused in production; same guest link/restore/receipts, private admin allowlist and TOTP. 406 unit/server tests, 1 dev-provider browser path, 5 normal Google browser regressions and independent auth review CLEAN. Verified via dev identity stub; real Client ID pending — owner waiver 2026-09-10. Next: Steer13 beer presentation, then playable-v0 three-viewport full-shift smoke. No engine/config/economy changes.
+
+## Beer presentation — owner Steer13, 2026-09-11
+
+Inventory is Bom bia / Beer keg and Mua bom / Buy keg. The tap station is Vòi rót / Beer taps; its buffer is Cốc rót sẵn / Poured glasses. Separate keg HUD item, live pipeline line, current/next capacity and bilingual guidance use existing state/config selectors. 47 affected local browser cases pass (including corrected label expectations and VI/EN), config/build and 406 unit/server tests pass; full verify receipt `.qa/beer-copy-verify.txt`. No engine/config/economy changes.
+
+Queued after playable-v0 only: owner Steer14 approves trying config2.0.3 buffer5/8/12/20/40; all k gates required, fallback4/7/12/20/40, otherwise retain current3/6/10/18/40. Stable current numbers stay pinned for the smoke/tag.

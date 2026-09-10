@@ -82,8 +82,8 @@ test('offline restock and in-shift upgrade use durable ordered commands and curr
   const after = await snapshot(page); expect(after.world.paused).toBe(true);
   expect(after.world.coins).toBeLessThan(before.world.coins);
   await page.getByRole('button', { name: 'Nhập hàng ×', exact: true }).click();
-  await page.getByRole('button', { name: 'Bom bia', exact: true }).click();
-  const panel = page.getByRole('dialog', { name: 'Bom bia', exact: true });
+  await page.getByRole('button', { name: 'Vòi rót', exact: true }).click();
+  const panel = page.getByRole('dialog', { name: 'Vòi rót', exact: true });
   await expect(panel).toBeVisible();
   await expect.poll(async () => (await snapshot(page)).world.paused).toBe(true);
   cut = true;

@@ -61,9 +61,9 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
       expect(b.width).toBeGreaterThanOrEqual(44); expect(b.height).toBeGreaterThanOrEqual(44);
       expect(b.x).toBeGreaterThanOrEqual(panel.x); expect(b.x + b.width).toBeLessThanOrEqual(panel.x + panel.width);
     }
-    const stockBefore = Number((await stockRow.locator('.stock-info span').textContent())!.split('/')[0]);
+    const stockBefore = Number((await stockRow.locator('.stock-info span').textContent())!.match(/\d+/)![0]);
     await stockRow.getByRole('button', { name: '+1 · 12 xu', exact: true }).click();
-    await expect(stockRow.locator('.stock-info span')).toHaveText(`${stockBefore + 1} / 15`);
+    await expect(stockRow.locator('.stock-info span')).toHaveText(`Bom bia ${stockBefore + 1}/15 cốc`);
     const before = await page.locator('.energy strong').textContent();
     await page.clock.runFor(2000);
     expect(await page.locator('.energy strong').textContent()).toBe(before);
