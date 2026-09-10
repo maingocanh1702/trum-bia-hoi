@@ -480,5 +480,6 @@
   "admin.error.expiry": "Expiry must follow activation. Campaign and player overrides require expiry.",
   "admin.error.conflict": "Conflicting overrides share a priority; review their keys.",
   "admin.error.ticket": "The ticket belongs to another player or has already been used.",
-  "admin.error.keyConflict": "This request key was used with different content."
+  "admin.error.keyConflict": "This request key was used with different content.",
+  "admin.error.staleImpact": "Impact has changed. Review the refreshed preview and confirm again."
 }

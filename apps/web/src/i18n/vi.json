@@ -480,5 +480,6 @@
   "admin.error.expiry": "Thời hạn phải sau thời điểm áp dụng. Chiến dịch và người chơi cần thời hạn.",
   "admin.error.conflict": "Có override cùng độ ưu tiên bị xung đột; kiểm tra lại các khóa.",
   "admin.error.ticket": "Ticket không khớp người chơi hoặc đã được dùng.",
-  "admin.error.keyConflict": "Mã yêu cầu đã được dùng với nội dung khác."
+  "admin.error.keyConflict": "Mã yêu cầu đã được dùng với nội dung khác.",
+  "admin.error.staleImpact": "Phạm vi tác động đã thay đổi. Đã tải lại preview; kiểm tra rồi xác nhận lại."
 }

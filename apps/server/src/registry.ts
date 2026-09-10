@@ -283,7 +283,8 @@ export class ConfigRegistry {
     const publication = this.db.prepare('SELECT * FROM registry_publications WHERE version=?').get(version) ?? null;
     const permitted = (approve: boolean) => { if (!policy) return false; try { this.permit(actor, policy, approve, this.scope(version)); return true; } catch { return false; } };
     const scope = this.scope(version), previousVersion = scope?.previousVersion;
-    return { snapshot: config.raw, scope: scope ?? null, previous: previousVersion ? { snapshot: this.config(previousVersion).raw, scope: this.scope(previousVersion)! } : null, draft: draft ?? null,
+    const previous = previousVersion ? { snapshot: this.config(previousVersion).raw, base: this.config(this.proposal(previousVersion).base_version).raw, scope: this.scope(previousVersion)! } : null;
+    return { snapshot: config.raw, scope: scope ?? null, previous, draft: draft ?? null,
       permissions: { propose: !['support', 'viewer'].includes(actor.role),
         approve: !publication && !approval && permitted(true) && (policy?.tier !== 'A' || draft?.changed_by !== actor.subject),
         publish: !publication && !!approval && permitted(false) },
@@ -385,8 +386,9 @@ export class ConfigRegistry {
     if (!last) throw Error('registry:missingScope'); return this.draftSource(actor, last.version);
   }
   impact(actor: AdminActor, version: string) {
-    return this.transaction(now => {
-      this.actor(actor, now);
+    return this.transaction(now => { this.actor(actor, now); return this.previewImpact(version, now); });
+  }
+  private previewImpact(version: string, now: number) {
       const draft = this.proposal(version), scope = this.scope(version), at = this.publicationAt(draft, now);
       if (this.db.prepare('SELECT 1 FROM registry_publications WHERE version=?').get(version)) throw Error('registry:alreadyPublished');
       const candidate: PreviewPublication = { seq: Number(this.db.prepare('SELECT MAX(seq) AS n FROM registry_publications').get()!.n) + 1,
@@ -394,9 +396,10 @@ export class ConfigRegistry {
       this.validatePublications(now, candidate);
       const previous = scope?.previousVersion ? this.scope(scope.previousVersion)?.playerIds ?? [] : [];
       const ids = scope ? [...new Set([...scope.playerIds, ...previous])] : this.db.prepare('SELECT id FROM players').all().map(p => String(p.id));
-      let changedPlayers = 0, pinnedShifts = 0; const keys = new Map<string, number>();
-      for (const id of ids) {
+      let changedPlayers = 0, pinnedShifts = 0; const keys = new Map<string, number>(), resolutions: string[][] = [];
+      for (const id of ids.sort()) {
         const before = this.compose(id, at).config, after = this.compose(id, at, candidate).config;
+        resolutions.push([id, before.version, after.version]);
         const changes = changedPaths(before.raw, after.raw).filter(k => !under(k, '_meta'));
         if (changes.length) {
           changedPlayers++; for (const key of changes) keys.set(key, (keys.get(key) ?? 0) + 1);
@@ -404,11 +407,12 @@ export class ConfigRegistry {
           if (['open', 'closing'].includes(JSON.parse(String(row.projection)).phase)) pinnedShifts++;
         }
       }
-      return { version, computedAt: now, activatesAt: at, expiresAt: scope?.expiresAt ?? null, audiencePlayers: ids.length,
+      // Bind registry revisions and time-dependent resolution, not continuously changing live-shift counts.
+      const token = createHash('sha256').update(JSON.stringify({ revision: candidate.seq - 1, activation: at > now ? at : null, resolutions })).digest('hex');
+      return { version, token, computedAt: now, activatesAt: at, expiresAt: scope?.expiresAt ?? null, audiencePlayers: ids.length,
         changedPlayers, pinnedShifts, keys: [...keys].sort(([a], [b]) => a.localeCompare(b)).map(([path, players]) => ({ path, players })) };
-    });
   }
-  publish(actor: AdminActor, version: string): Publication {
+  publish(actor: AdminActor, version: string, expectedImpact?: string | null): Publication {
     return this.transaction(now => {
       this.actor(actor, now);
       const draft = this.proposal(version), base = this.config(draft.base_version), policy = this.policy(JSON.parse(draft.keys), base, this.scope(version));
@@ -417,6 +421,7 @@ export class ConfigRegistry {
       if (!approval) throw Error('registry:approvalRequired');
       const existing = this.db.prepare('SELECT * FROM registry_publications WHERE version=?').get(version) as Publication | undefined;
       if (existing) return existing;
+      if (scope && expectedImpact !== undefined && (!expectedImpact || this.previewImpact(version, now).token !== expectedImpact)) throw Error('registry:staleImpact');
       const at = this.publicationAt(draft, now);
       const today = activation(now, 'next_day', base) - DAY_MS;
       const count = Number(this.db.prepare('SELECT COUNT(*) AS n FROM registry_publications WHERE changed_by=? AND published_at>=?').get(draft.changed_by, today)!.n);

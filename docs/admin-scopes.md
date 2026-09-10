@@ -32,3 +32,16 @@ account acceptance and M6–M9. No ClientID fabrication, public local upload or 
 | Date | Change |
 |---|---|
 | 2026-09-10 | Scope transport/editor and factual impact contract; implementation in progress. |
+
+
+Review corrections: clear support inputs at the existing protected-identity boundary.
+Show predecessor and candidate patches against their own recorded bases, so unrelated
+default edits are never presented as scoped changes. The authenticated publish route
+requires an impact token for scoped proposals. The shared publication transaction
+recomputes its registry revision, activation boundary and before/after resolutions;
+stale confirmation is refused and the editor refreshes without automatically publishing.
+Exact already-committed retries return the original receipt. Live-pin counts remain
+explicitly measured at computedAt; continuously changing shift phases do not freeze
+admin publication. Trusted internal calls without UI confirmation retain their API.
+
+| 2026-09-10 review correction | Three findings addressed with identity-boundary, overlap/expiry token and replacement-diff regressions; final verification and correction review pending. |

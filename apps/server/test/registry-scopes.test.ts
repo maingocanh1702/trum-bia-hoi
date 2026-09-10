@@ -274,3 +274,17 @@ test('impact refuses contradictory candidates and future expiry failures using r
   assert.throws(()=>r.impact(f.actor(),conflict.version),/scopeConflict/);
   assert.equal(f.db.prepare('SELECT 1 FROM registry_publications WHERE version=?').get(d.version),undefined);
 });
+
+test('preview token rejects overlapping publications and expiry drift, while exact committed retries recover once', t => {
+  const f=fixture(t),r=f.registry,who=f.actor();
+  const input=f.input(c=>{c.menu.bia.price=110;},f.scope('candidate'));
+  const d=r.propose(who,input);r.approve(who,d.version);const first=r.impact(who,d.version);
+  f.now+=100;assert.equal(r.impact(who,d.version).token,first.token,'ordinary clock movement must not force confirmation loops');
+  f.publish(c=>{c.menu.bia.price=120;},f.scope('mask',{kind:'campaign',expiresAt:NOW+1000}));
+  assert.throws(()=>r.publish(who,d.version,first.token),/staleImpact/);
+  const masked=r.impact(who,d.version);assert.equal(masked.changedPlayers,0);f.now=NOW+1000;
+  assert.throws(()=>r.publish(who,d.version,masked.token),/staleImpact/);
+  const fresh=r.impact(who,d.version);assert.equal(fresh.changedPlayers,1);
+  const pub=r.publish(who,d.version,fresh.token);f.publish(c=>{c.menu.lac.price++;});
+  assert.deepEqual(r.publish(who,d.version,fresh.token),pub);assert.equal(r.resolve('alice').raw.menu.bia.price,110);
+});

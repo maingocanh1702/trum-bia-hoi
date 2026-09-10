@@ -166,10 +166,11 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
           reply(200, { version: draft.version }); return;
         }
         if (req.method === 'POST' && ['/admin/approve', '/admin/publish'].includes(path)) {
-          const input = fields(['version']);
+          const input = fields(path === '/admin/publish' ? ['version', 'impactToken'] : ['version']);
           if (typeof input.version !== 'string' || !input.version || input.version.length > 128) throw new HttpError(400, 'invalidVersion'); // config-exempt:transport string bound
+          if (input.impactToken !== undefined && (typeof input.impactToken !== 'string' || !/^[a-f0-9]{64}$/.test(input.impactToken))) throw new HttpError(400, 'invalidBody'); // config-exempt:SHA256 receipt
           if (path === '/admin/approve') { const draft = registry.approve(actor, input.version); reply(200, { version: draft.version }); }
-          else reply(200, registry.publish(actor, input.version)); return;
+          else reply(200, registry.publish(actor, input.version, (input.impactToken as string | undefined) ?? null)); return;
         }
         throw new HttpError(404, 'notFound');
       }
@@ -246,7 +247,7 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
         'registry:invalidActor': 401, 'registry:forbidden': 403, 'registry:distinctApprover': 403,
         'store:heartbeatClock': 400, 'registry:missingVersion': 404, 'registry:missingProposal': 404, 'registry:rateLimited': 429,
         'registry:staleBase': 409, 'registry:scheduleConflict': 409, 'registry:keyConflict': 409,
-        'registry:scopeConflict': 409, 'registry:invalidTicket': 409, 'registry:alreadyPublished': 409, 'registry:missingScope': 404, 'registry:invalidScope': 400, 'registry:invalidExpiry': 400,
+        'registry:staleImpact': 409, 'registry:scopeConflict': 409, 'registry:invalidTicket': 409, 'registry:alreadyPublished': 409, 'registry:missingScope': 404, 'registry:invalidScope': 400, 'registry:invalidExpiry': 400,
         'registry:alreadyApproved': 409, 'registry:approvalRequired': 409,
       };
       if (pathIsAdmin(req.url) && error instanceof Error && (error.message.startsWith('registry:') || error.message.startsWith('config:') || error.message.startsWith('admin:') || error.message === 'store:heartbeatClock')) {

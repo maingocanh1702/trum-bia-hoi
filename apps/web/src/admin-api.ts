@@ -6,7 +6,7 @@ export type Auth = { enabled: boolean; phase: 'signedOut'|'mfa'|'authenticated';
 export type Publication = { version: string; effective_at: number; published_at: number };
 export type Proposal = { version: string; base_version: string; changed_by: string; keys: string; reason: string; effective: string; created_at: number; cursor: number; scope?:ConfigScope|null };
 export type Index = { latest: Publication; activeVersion: string; proposals: Proposal[]; nextCursor: number|null };
-export type Details = { scope?:ConfigScope|null; previous?:{scope:ConfigScope;snapshot:Config['raw']}|null; snapshot: Config['raw']; base: Config['raw']|null; draft: Proposal|null;
+export type Details = { scope?:ConfigScope|null; previous?:{scope:ConfigScope;snapshot:Config['raw'];base:Config['raw']}|null; snapshot: Config['raw']; base: Config['raw']|null; draft: Proposal|null;
   policy: {tier: string; effective: string}|null; approval: {approved_by:string; approved_at:number}|null; publication: Publication|null;
   permissions: {propose:boolean; approve:boolean; publish:boolean} };
 export type Draft = { owner: string; baseVersion: string; text: string; reason: string; effective: string; key: string; locked: boolean; scope?:ConfigScope };
@@ -65,7 +65,7 @@ export function googleScript(): Promise<GoogleApi> {
 }
 
 export type DraftSource = {baseVersion:string;base:Config['raw'];snapshot:Config['raw'];scope:ConfigScope|null};
-export type Impact = {version:string;computedAt:number;activatesAt:number;expiresAt:number|null;audiencePlayers:number;changedPlayers:number;pinnedShifts:number;keys:{path:string;players:number}[]};
+export type Impact = {version:string;token:string;computedAt:number;activatesAt:number;expiresAt:number|null;audiencePlayers:number;changedPlayers:number;pinnedShifts:number;keys:{path:string;players:number}[]};
 export type Players = {players:{id:string}[];nextCursor:string|null};
 export type Ticket = {id:string;request_key:string;player_id:string;reason:string;used_version:string|null};
 export type Tickets = {tickets:Ticket[];nextCursor:number|null};

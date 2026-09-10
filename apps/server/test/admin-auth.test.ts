@@ -238,7 +238,8 @@ test('authenticated scoped publication exposes exact metadata and read-only comp
   const counts=()=>['configs','registry_proposals','registry_publications','registry_audit','registry_resolutions','players','commands','events'].map(table=>f.db.prepare('SELECT COUNT(*) n FROM '+table).get()!.n);
   const before=counts(),impact=await f.call('/admin/impact',{version},economy);assert.equal(impact.status,200);assert.equal(impact.data.changedPlayers,1);assert.equal(impact.data.audiencePlayers,1);assert.equal(impact.data.pinnedShifts,1);assert.deepEqual(impact.data.keys,[{path:'menu.bia.price',players:1}]);assert.deepEqual(counts(),before);
   assert.deepEqual((await f.call('/admin/config?version='+version,undefined,viewer)).data.scope,scope);
-  assert.equal((await f.call('/admin/approve',{version},economy)).status,200);assert.equal((await f.call('/admin/publish',{version},economy)).status,200);
+  assert.equal((await f.call('/admin/approve',{version},economy)).status,200);assert.equal((await f.call('/admin/publish',{version},economy)).status,409);
+  assert.equal((await f.call('/admin/publish',{version,impactToken:impact.data.token},economy)).status,200);
   assert.equal(f.store.read('scope-alice').world.shift!.configVersion,baseVersion);
   assert.equal((await f.call('/admin/registry',undefined,economy)).data.proposals.find((p:any)=>p.version===version).scope.id,'explicit-club');
   const newer=structuredClone(raw);newer.menu.bia.price--;newer.menu.lac.price+=7;
@@ -263,7 +264,7 @@ test('support HTTP tickets require an admin role, recover exact retries and are 
   const input={key:'player-override',baseVersion:source.baseVersion,snapshot:source.snapshot,reason:'Support adjustment',scope};
   assert.equal((await f.call('/admin/proposals',input,support)).status,403);
   const proposal=await f.call('/admin/proposals',input,admin);assert.equal(proposal.status,200);const version=proposal.data.version;
-  const before=f.store.read('ticket-player');await f.call('/admin/approve',{version},admin);assert.equal((await f.call('/admin/publish',{version},admin)).status,200);
+  const before=f.store.read('ticket-player');await f.call('/admin/approve',{version},admin);const impact=await f.call('/admin/impact',{version},admin);assert.equal((await f.call('/admin/publish',{version,impactToken:impact.data.token},admin)).status,200);
   assert.deepEqual(f.store.read('ticket-player'),before);const tickets=await f.call('/admin/support',undefined,support);assert.equal(tickets.data.tickets.length,1);assert.equal(tickets.data.tickets[0].used_version,version);
   const replacement=await f.call('/admin/scope?kind=player&id=ticket-player',undefined,admin);assert.equal(replacement.data.scope.ticketId,null);assert.equal(replacement.data.scope.previousVersion,version);
   assert.equal((await f.call('/admin/impact',{version,changedPlayers:0},admin)).status,400);

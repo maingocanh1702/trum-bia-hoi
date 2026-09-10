@@ -2,8 +2,8 @@ import { test,expect,type Page } from '@playwright/test';
 async function gis(page:Page,subject='economy') {
  await page.route('https://accounts.google.com/gsi/client',route=>route.fulfill({contentType:'application/javascript',body:`window.google={accounts:{id:{initialize(o){this.options=o},renderButton(el){const b=document.createElement('button');b.textContent='Test Google';b.onclick=async()=>{const r=await fetch('/api/__test/sign?subject=${subject}&nonce='+this.options.nonce);this.options.callback(await r.json())};el.append(b)},disableAutoSelect(){},cancel(){}}}};`}));
 }
-async function login(page:Page,subject='economy'){
- await gis(page,subject);await page.goto('/admin');await page.getByRole('button',{name:'Tiếp tục với Google'}).click();await page.getByRole('button',{name:'Test Google'}).click();
+async function login(page:Page,subject='economy',navigate=true){
+ await gis(page,subject);if(navigate)await page.goto('/admin');await page.getByRole('button',{name:'Tiếp tục với Google'}).click();await page.getByRole('button',{name:'Test Google'}).click();
  if(subject.startsWith('super')){await expect(page.getByLabel('Mã xác thực 6 số')).toBeVisible();const code=(await (await page.request.get('/api/__test/otp?subject='+subject)).json()).code;await page.getByLabel('Mã xác thực 6 số').fill(code);await page.getByRole('button',{name:'Xác thực',exact:true}).click();}
  await expect(page.getByRole('button',{name:'Đăng xuất'})).toBeVisible();await expect(page.getByRole('button',{name:'Làm mới',exact:true})).toBeEnabled();
 }
@@ -122,9 +122,29 @@ test('loading a published scope preserves its audience and permits an explicit e
  await page.request.get('/api/__test/advance?ms=86400000');await login(page,'super-one');const a=await playerContext(browser);
  await edit(page,'menu.lac.price','Withdrawable group');await scopeFields(page,a.playerId,'segment');await page.getByRole('button',{name:'Xem diff',exact:true}).click();const old=await proposal(page);
  await detail(page).getByRole('button',{name:'Duyệt đề xuất'}).click();await detail(page).getByRole('button',{name:'Xuất bản',exact:true}).click();await page.getByRole('button',{name:'Xác nhận xuất bản',exact:true}).click();await expect(detail(page)).toContainText('Đã xuất bản');
+ await edit(page,'menu.nem.price','New default outside the scoped patch');await proposal(page);await detail(page).getByRole('button',{name:'Duyệt đề xuất'}).click();await detail(page).getByRole('button',{name:'Xuất bản',exact:true}).click();await page.getByRole('button',{name:'Xác nhận xuất bản',exact:true}).click();await expect(detail(page)).toContainText('Đã xuất bản');
+ await page.getByLabel('Mã phiên bản',{exact:true}).fill(old);await page.getByRole('button',{name:'Xem phiên bản',exact:true}).click();await expect(detail(page)).toContainText('Withdrawable group');
  await detail(page).getByRole('button',{name:'Dùng làm bản hoàn nguyên',exact:true}).click();
  await expect(page.getByRole('combobox',{name:'Loại phạm vi',exact:true})).toHaveValue('segment');await expect(page.getByRole('textbox',{name:'ID người chơi — mỗi dòng một ID',exact:true})).toHaveValue(a.playerId);
  await page.getByRole('button',{name:'Rút các khóa ghi đè',exact:true}).click();await page.getByLabel('Lý do thay đổi').fill('Withdraw this group only');await page.getByRole('button',{name:'Xem diff',exact:true}).click();const version=await proposal(page);
- const proposed=await(await page.request.get('/api/admin/config?version='+version)).json();expect(proposed.scope.previousVersion).toBe(old);expect(JSON.parse(proposed.draft.keys)).toEqual([]);
+ await expect(detail(page).getByRole('region',{name:'Thay đổi thực tế'})).not.toContainText('menu.nem.price');
+ const proposed=await(await page.request.get('/api/admin/config?version='+version)).json();expect(proposed.scope.previousVersion).toBe(old);expect(proposed.previous.snapshot.menu.nem.price).toBe(proposed.previous.base.menu.nem.price);expect(JSON.parse(proposed.draft.keys)).toEqual([]);
  await expect(detail(page).getByRole('region',{name:'Phạm vi tác động thực tế'})).toContainText('1 / 1');await detail(page).getByRole('button',{name:'Duyệt đề xuất'}).click();await detail(page).getByRole('button',{name:'Xuất bản',exact:true}).click();await page.getByRole('button',{name:'Xác nhận xuất bản',exact:true}).click();await expect(detail(page)).toContainText('Đã xuất bản');await a.ctx.close();
+});
+
+
+for(const boundary of ['logout','expiry'])test('support buffers clear at the '+boundary+' identity boundary without reloading the page',async({page})=>{
+ await page.request.get('/api/__test/advance?ms=86400000');await login(page,'support');await page.getByLabel('Mã yêu cầu',{exact:true}).fill('PRIVATE-CASE');await page.getByLabel('ID người chơi cần hỗ trợ',{exact:true}).fill('private-player');await page.getByLabel('Nội dung yêu cầu',{exact:true}).fill('Private support reason');
+ if(boundary==='logout')await page.getByRole('button',{name:'Đăng xuất',exact:true}).click();
+ else {await page.request.get('/api/__test/advance?ms=28800001');await page.getByRole('button',{name:'Làm mới',exact:true}).click();await expect(page.getByRole('alert')).toContainText('hết hạn');}
+ await login(page,'support',false);for(const label of ['Mã yêu cầu','ID người chơi cần hỗ trợ','Nội dung yêu cầu'])await expect(page.getByLabel(label,{exact:true})).toHaveValue('');
+});
+
+test('stale publication impact closes confirmation and requires inspection of the newly masked audience',async({page,browser})=>{
+ await page.request.get('/api/__test/advance?ms=86400000');await login(page,'super-one');const a=await playerContext(browser);await edit(page,'menu.lac.price','Original inspected scope');await scopeFields(page,a.playerId,'segment');await page.getByRole('button',{name:'Xem diff',exact:true}).click();const v=await proposal(page);await detail(page).getByRole('button',{name:'Duyệt đề xuất'}).click();await detail(page).getByRole('button',{name:'Xuất bản',exact:true}).click();
+ const {context}=await(await page.request.get('/api/admin/auth')).json(),source=await(await page.request.get('/api/admin/draft-source')).json(),original=await(await page.request.get('/api/admin/config?version='+v)).json();source.snapshot.menu.lac.price+=2;
+ const post=async(path:string,data:unknown)=>{const res=await page.request.post('/api/admin/'+path,{data,headers:{'X-TBH-Admin-Context':context,Origin:'http://127.0.0.1:4181'}});expect(res.status()).toBe(200);return res.json();};
+ const mask=await post('proposals',{key:'mask-original',baseVersion:source.baseVersion,snapshot:source.snapshot,reason:'Later overlapping scope',scope:{...original.scope,id:'other-'+a.playerId,priority:1}});await post('approve',mask);const impact=await post('impact',mask);await post('publish',{...mask,impactToken:impact.token});
+ await page.getByRole('button',{name:'Xác nhận xuất bản',exact:true}).click();await expect(page.getByRole('dialog')).not.toBeVisible();await expect(page.getByRole('alert')).toContainText('Phạm vi tác động đã thay đổi');await expect(detail(page).getByRole('region',{name:'Phạm vi tác động thực tế'})).toContainText('0 / 1');
+ await detail(page).getByRole('button',{name:'Xuất bản',exact:true}).click();await page.getByRole('button',{name:'Xác nhận xuất bản',exact:true}).click();await expect(detail(page)).toContainText('Đã xuất bản');await a.ctx.close();
 });
