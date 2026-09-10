@@ -5,6 +5,20 @@
 
 ---
 
+## Protected seven-day forecast verified — 2026-09-10
+
+Code `a99a567`, mobile table correction `9900505`: protected draft forecasts now
+compare seven days of actual coin flows from a private server snapshot. Source
+saves remain unchanged; scope removal, expiry and existing shift pins are retained.
+Publication/revision changes during calculation return409; logout returns401.
+350engine/server tests,19admin browser cases, config/build PASS. The final CSS-only
+correction also passed config/build and the real mobile forecast browser case.
+Independent full-diff correction and layout reviews: no actionable defects remain.
+Receipt `.qa/forecast-report-verification.json`; VI/EN screenshot inspected.
+Engine/economy JSON unchanged; verified standard/advanced k and rush evidence reused.
+M4 remains11/18 OPEN. Next: remaining admin lifecycle and account/eligibility/locale
+acceptance → M6–M9. VND forecasting awaits observed donation data; no invented income.
+
 ## Protected seven-day forecast implemented — 2026-09-10
 
 Base0238bd5. Admin draft view now requests a protected seven-day before/after report.

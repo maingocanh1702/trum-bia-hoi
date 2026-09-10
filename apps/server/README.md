@@ -479,3 +479,7 @@ it does not turn a point-in-time forecast into a continuously updated projection
 The concurrency regression uses two independent HTTP connections, receives429 while
 one worker is live, then proves publication→409 and logout→401 on that worker's
 response. Mobile numeric cells never wrap inside an amount.
+
+Verified at `a99a567` (presentation `9900505`):350engine/server tests,19admin browser
+cases and final mobile report check pass; config/build and independent reviews pass.
+Receipt: `.qa/forecast-report-verification.json`. Full M4/BRD remains open.

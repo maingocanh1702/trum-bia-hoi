@@ -1,4 +1,4 @@
-# Seven-day economic forecast — simulator foundation
+# Seven-day economic forecast
 
 Base `f41122b`. BRD §5.2 requires projected faucets/sinks, affected players and changed
 price/cap/reward keys; Tier A also needs VND revenue estimates. This slice supplies
@@ -77,3 +77,19 @@ it does not turn a point-in-time forecast into a continuously updated projection
 The concurrency regression uses two independent HTTP connections, receives429 while
 one worker is live, then proves publication→409 and logout→401 on that worker's
 response. Mobile numeric cells never wrap inside an amount.
+
+## Protected seven-day forecast verified — 2026-09-10
+
+Code `a99a567`, mobile table correction `9900505`: protected draft forecasts now
+compare seven days of actual coin flows from a private server snapshot. Source
+saves remain unchanged; scope removal, expiry and existing shift pins are retained.
+Publication/revision changes during calculation return409; logout returns401.
+350engine/server tests,19admin browser cases, config/build PASS. The final CSS-only
+correction also passed config/build and the real mobile forecast browser case.
+Independent full-diff correction and layout reviews: no actionable defects remain.
+Receipt `.qa/forecast-report-verification.json`; VI/EN screenshot inspected.
+Engine/economy JSON unchanged; verified standard/advanced k and rush evidence reused.
+M4 remains11/18 OPEN. Next: remaining admin lifecycle and account/eligibility/locale
+acceptance → M6–M9. VND forecasting awaits observed donation data; no invented income.
+
+| 2026-09-10 verified | Protected coin forecast a99a567 and mobile table9900505 complete:350tests,19admin browser plus final layout case,config/build and independent reviews PASS. M4 remains open; observed VND, emergency/admin lifecycle and account acceptance still pending. |

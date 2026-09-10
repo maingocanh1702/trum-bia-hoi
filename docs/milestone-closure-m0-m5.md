@@ -1,6 +1,6 @@
 # Milestone closure report — M0–M5
 
-2026-09-10 · implementation `13367c1` · config2.0.1/rules24/schema10.
+2026-09-10 · implementation `9900505` (forecast logic `a99a567`) · config2.0.1/rules24/schema10.
 Authority: [ROADMAP §mốc M0–M9](../06-ROADMAP-trum-bia-hoi.md), including the
 acceptance sections it references. PASS means the whole stated criterion has
 supporting evidence; FAIL includes missing implementation or missing acceptance
@@ -90,6 +90,15 @@ No new gameplay test or80MB run was added solely to make this report green.
   Real Google ClientID/directory/consent still absent. This closes the default one-key
   admin exit criterion, not full BRD scopes/forecasts/emergency or all M4 acceptance.
 
+- **E14** protected seven-day forecast `a99a567`, mobile table `9900505`:
+  `.qa/forecast-report-verification.json`:350engine/server,19admin browser and final
+  mobile report case; config/build PASS. Real worker/HTTP verifies source immutability,
+  exact audience/expiry timeline, conservation, cancellation, publication409 and
+  logout401. Initial review P2 stale report fixed; final full-diff correction and
+  layout reviews have no actionable findings. Engine/config unchanged; E13 retained.
+  VI/EN presents explicit continuously active current-population assumptions;
+  VND estimates remain unavailable without observed donation data. No full M4 claim.
+
 ## Closure decision
 
 | Milestone | Exit verdict | Closure | Remaining acceptance |
@@ -98,7 +107,7 @@ No new gameplay test or80MB run was added solely to make this report green.
 | M1 | FAIL (6/12 PASS) | OPEN | Full12min proof at all3viewports, complete7-screen coverage, measured upgrade recommendation, axe and new-player feel evidence. |
 | M2 | FAIL (4/9 PASS) | OPEN | Five-person test, real mid-shift Google browser flow and admin-editable onboarding; locale/login-prompt gaps below. |
 | M3 | FAIL (6/12 PASS) | OPEN | Advanced k criterion PASS under owner soft cap3.5; feel,32px badge acceptance and remaining equipment/football placeholders still pending. |
-| M4 | FAIL (11/18 PASS) | OPEN — next implementation priority | E7 remote authority/reconnect, E8 registry and E9/E10 admin browser workflow verified. E11/E12 scoped core/editor/factual impact verified; full forecasts/emergency and integrated account/import/eligibility/locale remain. |
+| M4 | FAIL (11/18 PASS) | OPEN — next implementation priority | E7 remote authority/reconnect, E8 registry and E9/E10 admin browser workflow verified. E11/E12 scoped core/editor/factual impact verified; E14 protected coin forecast verified; observed VND/emergency and integrated account/import/eligibility/locale remain. |
 | M5 | FAIL (9/25 PASS) | OPEN | Public seasons/ranking/shrine, rewards/referral/gifts and full integration; local LP acceptance rules pass. |
 
 ## M0 — foundation
@@ -309,3 +318,5 @@ No public upload,80MB tuning, engine/config changes or merge/push/deploy.
 | 2026-09-10 owner advanced k | M3 progressed-k criterion PASS with measured3.483282/3.318249 under04§5 soft cap3.5; M3 now6/12PASS, stillOPEN for feel/art. New automated two-seed30day/LP4 gate; no economy retuning. Re-evaluate after Alpha playtest with real player data; inflation via7-day faucet/sink reporting. Other milestone counts unchanged. |
 
 | 2026-09-10 advanced gate verified | E13 fresh two-seed30day/LP4 run exactly confirms prior3.483282/3.318249;345tests/config/build/standard/rush and independent review PASS. M3 remains6/12PASS/OPEN; no other criterion changed. |
+
+| 2026-09-10 | E14 protected coin forecast verified at9900505; M4 remains11/18 because the remaining complete exit criteria are unchanged. No economy retuning; advanced k policy remains E13. |
