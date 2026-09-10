@@ -28,7 +28,7 @@ append-only history, legacy migration and backup preservation remain required.
   retained in historical receipts, resolved by the cited final acceptance.
 - **E4** `.qa/career-verification.json`, [career report](career-simulation.md):
   two30day command-driven careers/480shifts reachLP4, full-month replay exact.
-  Advanced k3.483282/3.318249 remains outside band; owner band scope unresolved.
+  Advanced k3.483282/3.318249 PASS under owner10/09 soft cap3.5 for this profile. Standard cold/full-menu band remains2–3; no numbers retuned. Automated gate: `npm run sim:career:gate`,≥2seeds/30days/LP4 (04§5).
 - **E5** `.qa/google-session-verification.json`, `.qa/local-import-verification.json`:
   reviewed server account/session and internal one-time import. Local provenance
   remains pending approval. No real Google Client ID, public upload or cloud UI.
@@ -92,7 +92,7 @@ No new gameplay test or80MB run was added solely to make this report green.
 | M0 | PASS (3/3) | COMPLETE | All three explicit exit criteria met; E10 config/build/tests and unchanged E8 sim pass. Foundation/checkpoint reviews also passed. |
 | M1 | FAIL (6/12 PASS) | OPEN | Full12min proof at all3viewports, complete7-screen coverage, measured upgrade recommendation, axe and new-player feel evidence. |
 | M2 | FAIL (4/9 PASS) | OPEN | Five-person test, real mid-shift Google browser flow and admin-editable onboarding; locale/login-prompt gaps below. |
-| M3 | FAIL (5/12 PASS) | OPEN | Advanced economy band/feel,32px badge acceptance and remaining equipment/football placeholders. |
+| M3 | FAIL (6/12 PASS) | OPEN | Advanced k criterion PASS under owner soft cap3.5; feel,32px badge acceptance and remaining equipment/football placeholders still pending. |
 | M4 | FAIL (11/18 PASS) | OPEN — next implementation priority | E7 remote authority/reconnect, E8 registry and E9/E10 admin browser workflow verified. E11/E12 scoped core/editor/factual impact verified; full forecasts/emergency and integrated account/import/eligibility/locale remain. |
 | M5 | FAIL (9/25 PASS) | OPEN | Public seasons/ranking/shrine, rewards/referral/gifts and full integration; local LP acceptance rules pass. |
 
@@ -118,7 +118,7 @@ No new gameplay test or80MB run was added solely to make this report green.
 | Screenshot baseline | PASS | E3 mobile screenshot plus recorded yard/equipment references in `.qa`; current browser acceptance receipt preserves artifact hashes. No automated visual-diff suite implied. |
 | axe pass | FAIL | No axe dependency, invocation or result in current browser harness; keyboard/hit-target assertions are not an axe result. |
 | First30seconds playable without reading instructions | FAIL | Scripted first serve at11.1seconds passes E2; no uncoached human playtest evidence. |
-| k remains in band | PASS | E1 standard cold/full-menu profiles. Advanced meta multipliers separately FAIL under M3; not silently excluded there. |
+| k remains in band | PASS | E1 standard cold/full-menu profiles. Advanced career separately PASS under owner soft cap3.5 at M3 (04§5). |
 | Reload loses no progress | PASS | Engine “local save reload exactly replays…”; web serving/reload, storage corruption/migration/multi-tab/delta and E3 month exactness. |
 
 ## M2 — onboarding/guest
@@ -138,7 +138,7 @@ No new gameplay test or80MB run was added solely to make this report green.
 
 | Criterion (ROADMAP,04§5–§6,09§11 P2) | Verdict | Evidence or exact gap |
 | Correct k calculation and ordinary band | PASS | E1 actual per-customer payment+tip/82.5, no throughput term. |
-| Full progressed economy stays in band | FAIL | E4 advanced k3.483282/3.318249; owner scope decision pending, no numbers retuned. |
+| Full progressed economy stays in band | PASS | E4:30days/LP4 per seed42/99, k3.483282/3.318249≤3.5 under owner10/09 rule04§5; automated career gate. No numbers retuned; re-evaluate after Alpha with real player data. Endgame inflation uses7-day faucet/sink report, not k. |
 | 04§6: player controls pouring rhythm; stale warning rarely feels unfair | FAIL | Engine freshness deadlines/penalties and web stale reaction PASS; no human observation showing controlled pacing or absence of unfair-feeling penalties. |
 | 04§6: group/table serving is clear, not confusing | FAIL | Web whole-table action and multi-dish outcomes PASS; no uncoached group-order clarity study. |
 | 04§6: glass/washing bottleneck is perceptible and washer upgrade feels better immediately | FAIL | Engine production/batch and web live-capacity/upgrade tests PASS; no player comparison before/after washer upgrade. |
@@ -148,7 +148,7 @@ No new gameplay test or80MB run was added solely to make this report green.
 | Rush-type telegraph | PASS | E2 “rush warning pauses in sheets, resumes on closing, active timer wins…” at3viewports; engine rush-clock/schedule tests. |
 | Quest panel | PASS | E2 `quests.spec.ts` and `attendance.spec.ts`: real progress/claim/rollover and pause. Full social quest branches remain M5. |
 | Signboard sheet | PASS | E2 “business sign installation, ownership, reputation gate and live yard…” at mobile widths. |
-| Equipment/customer/menu asset batch replaces placeholders | FAIL | Live manifest has23placeholders, including keg/washer/cooler/stall upgrades and customer-football-fan;97drafts/8approved. M3 cannot close on missing art. |
+| Equipment/customer/menu asset batch replaces placeholders | FAIL | Live manifest has20placeholders, including keg/washer/cooler/stall upgrades and customer-football-fan;104drafts (including4archived Blender studies)/8approved. M3 cannot close on missing art. |
 
 ## M4 — server/accounts/admin
 
@@ -300,3 +300,5 @@ final full-base review has no actionable finding and independently passed the le
 regression. Receipt `.qa/forecast-verification.json`. M4 remains11/18 OPEN: protected
 server snapshots/timelines, aggregation/admin UI and observed VND data still remain.
 No public upload,80MB tuning, engine/config changes or merge/push/deploy.
+
+| 2026-09-10 owner advanced k | M3 progressed-k criterion PASS with measured3.483282/3.318249 under04§5 soft cap3.5; M3 now6/12PASS, stillOPEN for feel/art. New automated two-seed30day/LP4 gate; no economy retuning. Re-evaluate after Alpha playtest with real player data; inflation via7-day faucet/sink reporting. Other milestone counts unchanged. |

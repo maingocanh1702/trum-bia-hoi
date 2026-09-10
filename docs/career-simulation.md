@@ -3,7 +3,7 @@
 `npm run sim:career -- --days=30 --seed=42 --out=.qa/career-30-days-seed42.json`
 
 Harness: `packages/engine/sim/career.ts`. Dùng nguyên config đang được engine nạp
-(hiện 2.0.1/rules23), bắt đầu lúc 00:00 Việt Nam ngày 09/09/2026. `--days` nhận 1–90,
+(config2.0.1; rulesVersion thực tế được ghi trong từng report), bắt đầu lúc 00:00 Việt Nam ngày 09/09/2026. `--days` nhận 1–90,
 `--seed` là số nguyên; đầu ra JSON chứa chính sách, dữ liệu từng ngày, timeline
 mua/mở khóa, kết quả mùa và SHA-256 của log lệnh. Không thay save người chơi.
 
@@ -45,9 +45,19 @@ mua bàn/cốc sớm từng làm đầu game chậm hơn probe ưu tiên thiết
 `lost` là thống kê engine, còn `served` đếm lượt phục vụ qua các vòng gọi món;
 không lấy served/arrived làm tỷ lệ chuyển đổi khách.
 
-`withinKBand` giữ nguyên so sánh 2–3 từ config. Career có mặt bằng/QR/biển/tờ rơi
-báo cáo đầy đủ các ngày ngoài band; không chứng nhận cân bằng. Phạm vi band nâng
-cao đang chờ owner quyết định. Assertion của `npm run sim` vẫn giữ nguyên.
+`withinKBand` là chẩn đoán **từng ngày so với band chuẩn 2–3** trong config;
+giữ nguyên toàn bộ các ngày vượt band, không dùng cột này làm verdict advanced.
+Owner 10/09 chọn band chuẩn chỉ cho cold-menu/full-menu. Advanced career ≥30 ngày,
+đạt LP4 với meta multipliers dùng **k toàn career ≤3.5 cho từng seed**.
+
+`npm run sim:career:gate -- --out=.qa/advanced-career-k-gate.json` chạy mới hai seed
+42/99, 30 ngày/seed, tối thiểu500 lượt và LP4. Gate đã nối vào `npm run verify`;
+vượt cap hoặc thiếu bằng chứng sẽ exit khác0. K dùng helper `serveValueStats`,
+không lấy trung bình k ngày/seed và không clamp kết quả. Các con số này là protocol
+kiểm định (`config-exempt`), không phải tham số gameplay; JSON không đổi.
+**Re-evaluate after Alpha playtest with real player data.** Lạm phát endgame được
+theo dõi bằng báo cáo faucet/sink7ngày, không bằng k. Kernel báo cáo đã có;
+protected server aggregation/admin UI vẫn là phần M4 đang triển khai.
 
 ## Kết quả đã xác minh — 2026-09-09
 
@@ -69,10 +79,10 @@ ngày cũng kiểm tra replay và giao dịch thật. 250 engine/server tests, c
 10 nhóm k nền (2,4186–2,8738) và 15 ca rush đều qua; review độc lập `ca0df8b..b01f4b1`
 không chỉ ra lỗi. Thêm lượt chạy test career sau khi bổ sung timeline cũng qua.
 
-k nâng cao chưa đạt band: seed42 có 22/30 ngày ngoài band (cao nhất 4,823585), seed99
-có 20/30 ngày (cao nhất 4,479384). Không tự thay số hoặc kết luận band chỉ áp dụng cho
-cấu hình nền; quyết định này vẫn chờ owner. Đây cũng không phải chứng nhận toàn
-bộ LP0–LP7 hoặc kết quả chơi của người thật. Các thao tác quản lý của bot không
+Theo quyết định owner10/09, **k toàn career3.483282/3.318249 PASS dưới soft cap3.5**.
+Vẫn giữ chẩn đoán theo ngày: seed42 có22/30ngày ngoài band chuẩn (cao nhất4,823585),
+seed99 có20/30ngày (cao nhất4,479384). Soft cap áp dụng toàn career, không phải
+mỗi ngày. Đây không phải chứng nhận toàn bộ LP0–LP7 hoặc kết quả chơi của người thật. Các thao tác quản lý của bot không
 tiêu tốn thời gian; nó không mô phỏng độ trễ thao tác tay.
 
 Dữ liệu tại `.qa/career-30-days-seed42.json` và `career-30-days-seed99.json`;
@@ -115,3 +125,5 @@ làm lịch sử, không coi là pass. Khởi động dài/bộ nhớ và toànL
 | 2026-09-10 | Recorded reviewed IndexedDB implementation and earlier80MB acceptance, separating pending final runtime checks from code-review closure. |
 
 | 2026-09-10 final storage |91/91browser and80MB real HTTP acceptance passed; exact full history/continuation/Appboot, latest20.458s boot. Storage code unchanged from reviewed c9db016. Full-career balance and LP0–LP7 still open. |
+
+| 2026-09-10 owner decision | Advanced profile dùng gate≤3.5,≥2seed30ngày/LP4 và≥500serves/seed; standard sim2–3 không đổi. Historical3.483282/3.318249 PASS; giữ daily diagnostics và công thức. Tái đánh giá sau Alpha bằng dữ liệu người chơi; lạm phát endgame dùng faucet/sink7ngày. |

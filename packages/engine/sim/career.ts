@@ -78,7 +78,7 @@ export function simulateCareer({ days = 30, seed = 42, startAt = DEFAULT_START }
   const eventTypes = new Set(['life_path_level_reached', 'life_path_reward_claimed', 'lease_started', 'lease_expired', 'lease_deposit_refunded', 'unlock_bought', 'signboard_installed', 'signboard_bought', 'signboard_equipped', 'upgrade_bought', 'table_upgraded', 'glasses_bought', 'dog_bought', 'dog_upgraded', 'flyer_bought']);
   const report = { policy: CAREER_POLICY, days, seed, startAt, configVersion: config.version, rulesVersion: game.log.at(-1)!.rulesVersion,
     commandCount: game.log.length, commandHash: createHash('sha256').update(JSON.stringify(game.log)).digest('hex'), eventCount: w.events.length,
-    kBand: c.k.band, advancedBandDecision: 'pending-owner; report measured k without tuning numbers or certifying balance',
+    kBand: c.k.band, advancedBandDecision: 'owner-2026-09-10: standard cold/full menus keep k 2..3; advanced career aggregate k <= 3.5; re-evaluate after Alpha playtest with real player data',
     value: serveValueStats(w.serves, config), rows, milestones: w.events.filter(e => eventTypes.has(e.type)), seasonResults: w.seasons!.results };
   return { game, report };
 }
@@ -93,11 +93,40 @@ export interface CareerDay {
   ranking: { id: string; earned: number; tier: string; endsAt: number }; contest: { id: string; earned: number; tier: string; endsAt: number };
 }
 
+// config-exempt: owner acceptance protocol, not a live gameplay limit or economy retuning.
+export const ADVANCED_CAREER_K_MAX = 3.5;
+export function assertAdvancedCareerK(samples: { seed: number; days: number; lifePath: number; served: number; k: number | null }[]) {
+  assert.ok(samples.length >= 2 && samples.every(s => Number.isSafeInteger(s.seed)) &&
+    new Set(samples.map(s => s.seed >>> 0)).size === samples.length, 'advanced gate requires at least two distinct RNG seeds');
+  for (const s of samples) {
+    assert.ok(Number.isInteger(s.days) && s.days >= 30 && Number.isInteger(s.lifePath) && s.lifePath >= 4,
+      `seed ${s.seed}: advanced profile requires >=30 days and LP4`);
+    assert.ok(Number.isSafeInteger(s.served) && s.served >= 500 && s.k !== null && Number.isFinite(s.k) && s.k >= 0,
+      `seed ${s.seed}: k requires >=500 real serve measurements`);
+    assert.ok(s.k <= ADVANCED_CAREER_K_MAX, `seed ${s.seed}: advanced k=${s.k} exceeds soft cap ${ADVANCED_CAREER_K_MAX}`);
+  }
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const args = process.argv.slice(2);
-  assert.ok(args.every(a => /^--(days|seed|out)=.+$/.test(a)), 'Usage: npm run sim:career -- --days=30 --seed=42 [--out=report.json]');
+  const args = process.argv.slice(2), advanced = args.includes('--check-advanced');
+  assert.ok(args.every(a => a === '--check-advanced' || /^--(days|seed|out)=.+$/.test(a)),
+    'Usage: sim:career [--days=30 --seed=42 | --check-advanced] [--out=report.json]');
   const option = (name: string) => args.find(a => a.startsWith(`--${name}=`))?.slice(name.length + 3);
-  const { report } = simulateCareer({ days: Number(option('days') ?? 30), seed: Number(option('seed') ?? 42) }, row => console.log(JSON.stringify(row)));
-  if (option('out')) writeFileSync(option('out')!, JSON.stringify(report, null, 2) + '\n');
-  console.log(JSON.stringify({ days: report.days, commands: report.commandCount, commandHash: report.commandHash, value: report.value, advancedBandDecision: report.advancedBandDecision }));
+  assert.ok(!advanced || (!option('days') && !option('seed')), 'advanced gate uses fixed 30-day seeds 42 and 99');
+  if (advanced) {
+    const samples = [42, 99].map(seed => {
+      const { report } = simulateCareer({ days: 30, seed }, row => console.log(JSON.stringify({ seed, day: row.day, lifePath: row.lifePath, k: row.k })));
+      return { seed, days: report.days, lifePath: report.rows.at(-1)!.lifePath, served: report.value.served, k: report.value.kValue,
+        configVersion: report.configVersion, rulesVersion: report.rulesVersion, commandHash: report.commandHash };
+    });
+    assertAdvancedCareerK(samples); // each complete career, never a daily maximum or mean of daily k values
+    const result = { status: 'PASS', profile: 'advanced-progression', policy: CAREER_POLICY, maxK: ADVANCED_CAREER_K_MAX,
+      reEvaluate: 'after Alpha playtest with real player data', samples };
+    if (option('out')) writeFileSync(option('out')!, JSON.stringify(result, null, 2) + '\n');
+    console.log(JSON.stringify(result));
+  } else {
+    const { report } = simulateCareer({ days: Number(option('days') ?? 30), seed: Number(option('seed') ?? 42) }, row => console.log(JSON.stringify(row)));
+    if (option('out')) writeFileSync(option('out')!, JSON.stringify(report, null, 2) + '\n');
+    console.log(JSON.stringify({ days: report.days, commands: report.commandCount, commandHash: report.commandHash, value: report.value, advancedBandDecision: report.advancedBandDecision }));
+  }
 }

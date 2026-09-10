@@ -9,7 +9,7 @@
 
 ## 1. Mục tiêu — câu hỏi prototype phải trả lời
 
-1. **`k_value` thật là bao nhiêu?** Giả định 2.5; đo `DT_bia_mỗi_lượt` thực rồi tính `k = DT_bia_mỗi_lượt / 82.5`. Chấp nhận 2.0–3.0.
+1. **`k_value` thật là bao nhiêu?** Giả định 2.5; đo `DT_bia_mỗi_lượt` thực rồi tính `k = DT_bia_mỗi_lượt / 82.5`. Chấp nhận 2.0–3.0 cho profile chuẩn cold-menu/full-menu; profile career nâng cao theo §5.
 2. **Bia mất hơi có "feel" đúng không?** Base 12s có tạo căng thẳng "rót đúng nhịp, đừng tích cốc" mà không phạt oan?
 3. **Bàn nhóm có "feel" đúng không?** Phục vụ theo bàn (nhiều khách/đợt) sướng hay rối?
 4. **Nhịp tay ở 2 mức rush** có đủ dồn dập mà không quá tải?
@@ -136,6 +136,14 @@ Sau N lượt (mục tiêu ≥ 500 lượt mô phỏng hoặc gộp nhiều ca):
 
 **Bất biến tuyệt đối (GDD §3):** throughput (số bàn, bàn gọi nhiều đợt, tốc độ thiết bị) **không bao giờ** cộng vào k — nó chỉ là đòn bẩy giúp chạm trần nhanh hơn. k chỉ tính từ **giá trị/lượt**, không từ tốc độ.
 
+### Phạm vi band — quyết định owner 2026-09-10
+
+- **Profile chuẩn cold-menu/full-menu:** giữ band **2.0–3.0** và gate `npm run sim` hiện hành.
+- **Advanced-progression:** career từ game mới **≥30 ngày**, đạt **LP4 trở lên**, có các hệ số thưởng meta kiếm được qua lệnh thật. k được phép vượt 3.0; **soft cap k ≤3.5** là gate tự động, không phải giới hạn/clamp thu nhập trong gameplay.
+- `npm run sim:career:gate` (cũng nằm trong `npm run verify`) chạy **hai seed 42/99, 30 ngày mỗi seed**. Từng seed phải đạt LP4 và có ≥500 lượt phục vụ. Dùng `serveValueStats` trên **toàn bộ lượt của career**, không lấy trung bình k theo ngày, không bỏ các ngày/seed cao và không trộn throughput. Mỗi seed phải ≤3.5; không lấy trung bình giữa hai seed để bù một seed vượt trần.
+- Hai phép đo đã xác minh: seed42 **3.483282**, seed99 **3.318249** → PASS theo quy tắc mới. **Không chỉnh bất kỳ số kinh tế nào**; anchor82.5 và band chuẩn trong JSON giữ nguyên.
+- **Re-evaluate after Alpha playtest with real player data.** Theo dõi lạm phát endgame bằng **báo cáo faucet/sink 7 ngày** (nguồn xu vào/ra và thay đổi số dư), không dùng k làm chỉ báo lạm phát. Gate này không chứng nhận toàn bộ LP0–LP7 hay cảm nhận của người chơi.
+
 In ra cuối mỗi ca: số lượt, DT_bia_mỗi_lượt, k suy ra, % lượt có mồi, % cốc hết hơi, số khách bỏ đi.
 
 ---
@@ -144,7 +152,7 @@ In ra cuối mỗi ca: số lượt, DT_bia_mỗi_lượt, k suy ra, % lượt c
 
 | Hạng mục | PASS khi | Tín hiệu cần chỉnh |
 |---|---|---|
-| k_value | đo ra ổn định trong **2.0–3.0** qua nhiều ca | lệch xa → cập nhật k (chỉnh số, không chỉnh phương pháp) |
+| k_value | profile chuẩn cold-menu/full-menu ổn định trong **2.0–3.0**; advanced career theo soft cap §5 | lệch xa → cập nhật k (chỉnh số, không chỉnh phương pháp) |
 | Mất hơi | người chơi **chủ động giãn nhịp rót**, hiếm phạt oan nhờ cờ vàng | luôn dính phạt dù chơi tốt → tăng base 12s; không bao giờ dính → giảm |
 | Bàn nhóm | phục vụ theo bàn **rõ ràng, không rối** thao tác | rối → xem lại gom Order/UI mức bàn (`03-SPEC-he-ban.md`) |
 | Bottleneck cốc | cốc/rửa **là** điểm nghẽn cảm nhận được; nâng rửa thấy đỡ ngay | không thấy nghẽn → giảm cốc hoặc tăng wash time |
@@ -171,3 +179,5 @@ In ra cuối mỗi ca: số lượt, DT_bia_mỗi_lượt, k suy ra, % lượt c
 *Nguồn: `02-GDD-trum-bia-hoi.md` (v1.3), `economy-spec-from-bundle.md`, `03-SPEC-he-ban.md`, `scripts/measure_k.py`.*
 
 | 2026-09-09 measurement update | Current workspace headless sim uses at least1000 serves per seed/profile (the invariant still requires >=500). Owner batch production had one500-serve combined cohort at k3.0494; preserve that diagnostic and double ALL cohorts, with unchanged seed list, band, price/credit formulas and raw data. Do not treat a finite early-window excursion as hidden or delete its seed. |
+
+| 2026-09-10 advanced k | Owner chọn (a): band2.0–3.0 chỉ cho cold/full-menu chuẩn; advanced career≥30ngày/LP4 có meta reward được k≤3.5, gate≥2seed trên toàn career. Kết quả3.483282/3.318249 PASS; không retune JSON, anchor hay gameplay. Re-evaluate after Alpha playtest with real player data; lạm phát endgame theo faucet/sink7ngày. |

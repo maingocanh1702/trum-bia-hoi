@@ -46,3 +46,5 @@ server snapshots/timelines, aggregation/admin UI and observed VND data still rem
 No public upload,80MB tuning, engine/config changes or merge/push/deploy.
 
 | 2026-09-10 verified | Kernel03a6800 passed host344/config/build/parity and final independent review; full server forecast/UI remains open. |
+
+| 2026-09-10 owner decision | Endgame inflation is monitored through7-day credited faucets/sinks and wallet deltas, not k. Advanced career k≤3.5 is a separate service-value acceptance gate, to re-evaluate after Alpha with real player data. No tuning or new inflation threshold; protected reporting/UI remains M4 work. |

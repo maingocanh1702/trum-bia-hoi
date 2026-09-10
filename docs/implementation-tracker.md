@@ -1,6 +1,6 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.45.3
+> **Version:** v0.46.0
 > **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-10 (forecast kernel03a6800 đã verify/review)
 > **Trạng thái:** Active — **M0 COMPLETE theo exit criteria; xem báo cáo closure M0–M5. M1–M3 tiếp tục triển khai; M4 web server/outbox đã qua review và101browser checks; đạt11/18 tiêu chí; registry c1e953c, admin API6f42575 và editor56a0a44 đã verify/review; scoped core d91b92a đã verify/review; scope editor/impact a84f41f đã verify/review; account/import UI còn thiếu; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.3** (1 phase, mốc M0–M9).
 > **Owner:** Team
@@ -9,6 +9,7 @@
 
 ---
 
+Historical 09/09 intake below (advanced k decision resolved10/09 in milestone table):
 Owner latest handoff intake (09/09): new economy2.0 rules/numbers accepted and prioritized;
 see `docs/latest-handoff-adoption.md`. Existing config1.7.3 evidence below remains
 historical verified behavior, not proof of the new pipelines/demand/gates/lease rules.
@@ -40,7 +41,7 @@ Giữ nguyên config và full M0–M9 với20feature đang làm.
 | M0 | ✅ COMPLETE | check:config/build/334tests;10kcohorts2.4186–2.8738,5seeds; reviewed foundation/checkpoint/web. |
 | M1 | 🟡 OPEN | Core service/reload/pause pass; complete3-viewport shift, axe, recommendation and human feel evidence remain. |
 | M2 | 🟡 OPEN | Guest/guide pass; five-person study, integrated Google and admin/locale/prompt criteria remain. |
-| M3 | 🟡 OPEN | Standard k/kitchen/rush/quests/sign pass; advanced band/feel and equipment/customer assets remain. |
+| M3 | 🟡 OPEN — 6/12 PASS | Standard k and advanced career≤3.5 pass per owner10/09; kitchen/rush/quests/sign pass. Human feel and equipment/customer art acceptance remain. |
 | M4 | 🟡 OPEN — priority | 11/18 criteria PASS. Remote web936e9d5, registryc1e953c, admin API6f42575 and editor56a0a44 verified. Scoped server core d91b92a and scope UI/factual impact a84f41f verified; full forecasts/emergency and account/import/eligibility/locale remain. |
 | M5 | 🟡 OPEN | Local seasons/LP/lease/quest rules pass; community ranks/snapshot/rewards/referral/gift integration remains. |
 
@@ -342,3 +343,5 @@ rows. Follow owner queue M4→M6→M7→M8→M9; defer extra M5 breadth/performa
 | 2026-09-10 | v0.45.2 | Owner pauses Blender generation and allows imagegen. Forecast kernel already verified at03a6800. Three table upgrade placeholders replaced via existing manifest IDs; four Blender renders and studio archived without runtime use. Export/asset/config/build and four viewport service/art smoke PASS; 344engine/server tests PASS; native review next. F24 remains in progress; M4 still11/18 OPEN. |
 
 | 2026-09-10 | v0.45.3 | Table batch11ceb79 verified:344tests,4guest/4art viewport checks,export safety/config/assets/build PASS; independent correction review clears all3findings. F24 in progress; next owner advanced-career gate k≤3.5, no economy retuning, before remaining M4 forecast reporting. |
+
+| 2026-09-10 | v0.46.0 | Owner advanced-k decision recorded04§5/08changelog; new two-seed30day/LP4 gate≤3.5 in verify, standard band unchanged. M3 progressed criterion PASS from verified3.483282/3.318249;6/12PASS/OPEN. New gate full verification and review in progress; no economy retuning. |
