@@ -22,3 +22,5 @@
 .admin-forecast .admin-table th:first-child { width:auto; }
 .admin-forecast .admin-table td { white-space:nowrap; font-variant-numeric:tabular-nums; }
 .admin-forecast details .admin-table tbody th { white-space:nowrap; font-variant-numeric:tabular-nums; }
+
+.admin-history { max-height:360px; overflow:auto; padding-right:12px; overscroll-behavior:contain; }

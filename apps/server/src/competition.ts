@@ -1,4 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite';
+import type { DomainEvent, LoggedCommand } from '@tbh/engine';
 import { assertAdminActor, type AdminActor } from './registry';
 
 type Common = { key: string; playerId: string; expectedSeq: number; reason: string };
@@ -7,6 +8,7 @@ export type ImportReview = 'pending' | 'approved' | 'rejected';
 type Receipt = { seq: number; actor: string; at: number; before: boolean | ImportReview; request: CompetitionRequest };
 const TYPES = { 'import-review': 'LocalHistoryReviewed', flag: 'PlayerFlagChanged' } as const;
 const validId = (v: unknown): v is string => typeof v === 'string' && !!v.trim() && v.length <= 128; // config-exempt: identity/request protocol bound
+const HISTORY_PAGE = 50; // config-exempt: bounded admin evidence page, not gameplay tuning
 
 /** Internal service. HTTP must derive AdminActor from the authenticated admin cookie. */
 export class Competition {
@@ -48,6 +50,26 @@ export class Competition {
       const state = this.state(playerId);
       this.db.prepare('INSERT INTO registry_audit VALUES (NULL,?,?)').run('CompetitionInspected', JSON.stringify({ actor: actor.subject, playerId, at: now }));
       return state;
+    });
+  }
+  history(actor: AdminActor, playerId: string, digest: string, kind: 'commands' | 'events', after: number) {
+    return this.transaction(now => {
+      assertAdminActor(actor, now);
+      if (!['super', 'game', 'support'].includes(actor.role)) throw Error('competition:forbidden');
+      if (!['commands', 'events'].includes(kind) || !Number.isSafeInteger(after) || after < 0) throw Error('competition:invalidInput');
+      const origin = this.state(playerId).localImport;
+      if (!origin || origin.digest !== digest) throw Error('competition:importConflict');
+      const through = kind === 'commands' ? origin.commandSeq : origin.eventSeq;
+      if (!Number.isSafeInteger(through) || through < 0) throw Error('competition:invalidHistory');
+      if (after > through) throw Error('competition:invalidInput');
+      const field = kind === 'commands' ? 'entry' : 'payload';
+      const rows = this.db.prepare(`SELECT seq,${field} AS record FROM ${kind} WHERE player_id=? AND seq>? AND seq<=? ORDER BY seq LIMIT ?`)
+        .all(playerId, after, through, HISTORY_PAGE);
+      if (rows.length !== Math.min(HISTORY_PAGE, through - after) || rows.some((row, i) => row.seq !== after + i + 1)) throw Error('competition:invalidHistory');
+      const entries = rows.map(row => ({ seq: Number(row.seq), record: JSON.parse(String(row.record)) as LoggedCommand | DomainEvent }));
+      const nextCursor = after + rows.length;
+      this.db.prepare('INSERT INTO registry_audit VALUES (NULL,?,?)').run('CompetitionHistoryInspected', JSON.stringify({ actor: actor.subject, playerId, digest, kind, after, through, nextCursor, at: now }));
+      return { playerId, digest, kind, after, through, nextCursor: nextCursor < through ? nextCursor : null, entries };
     });
   }
   decide(actor: AdminActor, input: CompetitionRequest): Receipt {

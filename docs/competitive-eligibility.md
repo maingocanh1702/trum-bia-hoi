@@ -170,3 +170,29 @@ and current callers before implementation; tests must exercise real server recei
 | Date | Change |
 |---|---|
 | 2026-09-10 score verified | E23 at7e7f337:376unit/server,19admin browser,32focused,config/build and independent review PASS; P1 worker correction closed. M4 stays14/18. Next protected history/review controls then public ranking. |
+
+## Admin history and controls contract — basefaee42a
+
+One bounded source-history endpoint uses existing immutable commands/events and
+import digest/cutoffs; no replay, whole-archive transport or new score mutation.
+Every page is authorized/audited (Support/Game/Super), exact-source bound and
+limited to50 records. Missing prefix records or invalid cursors refuse. Display
+one page at a time so inspecting a career does not accumulate an entire archive.
+
+The admin panel reuses the existing auth/context/error handling and native dialog,
+with Vietnamese/English copy. Pending decisions persist per verified admin subject
+in sessionStorage before POST. No send on storage failure. An uncertain response
+keeps its exact key/payload; an ACK clears intent before any follow-up read. Stale
+revision refuses and requires fresh inspection. Context switch/unmount aborts and
+ignores late responses; a new identity never displays another operator's buffers.
+Confirmation shows player/action/digest/reason. Existing MFA/RBAC and canonical
+Competition.decide remain the only mutation authority. No engine/economy edits.
+
+
+The page shows the validated/replayed prefix stored at import, not a byte-for-byte
+viewer of the retained compressed upload. Additive legacy replay fields may be
+present; the original digest still identifies the retained source. Raw archive
+transport/reprocessing remains M9. Pending recovery is per tab and operator, with
+manual retry only; damaged records can be downloaded before explicit removal.
+
+| 2026-09-10 admin controls implementation | Add audited 50-record imported-prefix pages and VI/EN Game/Super review/flag controls; Support reads only. Native confirmation, per-operator exact-intent recovery, stale-state refresh, ACK-before-read clearing and late-response teardown reuse existing guards. Focused server3/browser5/config/build pass; full verification and independent review pending. |

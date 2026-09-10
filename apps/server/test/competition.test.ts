@@ -20,7 +20,7 @@ function fixture(t: { after(fn: () => void): void }, at = NOW) {
   t.after(() => { stores.forEach(s => s.close()); db.close(); rmSync(dir, { recursive: true, force: true }); });
   const actor = (role: AdminActor['role'] = 'game', subject: string = role): AdminActor => ({ subject, role, mfa: true, issuedAt: now, expiresAt: now + 3600000 });
   const login = () => { const g = store.createGuestSession(86400000); return store.signInGoogle(g.token, store.issueGoogleChallenge(g.token).nonce, { subject: 'player-one' }, 86400000); };
-  const imported = async (closed = false) => {
+  const imported = async (closed = false, extraCommands = 0) => {
     const account = login(), game = new Game(config, 42, now - 11100, 'local-reviewed');
     game.command({ at: game.world.now, idempotencyKey: 'open', command: { type: 'startShift' } }); game.advance(now);
     const table = game.world.tables.find(t => t.order?.items.every(i => i.state === 'ready'))!;
@@ -30,6 +30,7 @@ function fixture(t: { after(fn: () => void): void }, at = NOW) {
       game.advance(game.world.now + 3600000); now = game.world.now;
       assert.equal(game.world.completedShifts, 1);
     }
+    for (let i = 0; i < extraCommands; i++) game.command({ at: game.world.now, idempotencyKey: 'local-visibility-' + i, command: { type: 'activity', active: true, paused: true } });
     game.command({ at: game.world.now, idempotencyKey: 'pause', command: { type: 'activity', active: true, paused: true } });
     const text = encodeSave(game), receipt = await store.claimLocal(account.token, text);
     return { text, receipt, before: store.read(receipt.playerId) };
@@ -268,4 +269,49 @@ test('corrupt retained gzip or mismatched original digest cannot become a zero i
   }
   f.db.prepare('UPDATE local_imports SET original_gzip=? WHERE player_id=?').run(zlib.gzipSync(text), receipt.playerId);
   assert.ok((await f.store.competitiveStatus(receipt.token!)).periods.every(p => p.earned === 0));
+});
+
+
+test('paged import evidence excludes later server activity and audits each bounded exact source prefix', async t => {
+  const f = fixture(t), { receipt, text } = await f.imported(false, 60), source = JSON.parse(text), c = f.store.competition;
+  send(f, receipt.playerId, { type: 'activity', active: true, paused: true });
+  const current = f.store.read(receipt.playerId);
+  let pages = 0;
+  for (const kind of ['commands', 'events'] as const) {
+    let after = 0; const records: unknown[] = [];
+    do {
+      const result = c.history(f.actor('support'), receipt.playerId, receipt.digest, kind, after); pages++;
+      assert.equal(result.digest, receipt.digest); assert.equal(result.playerId, receipt.playerId);
+      assert.equal(result.through, kind === 'commands' ? receipt.commandSeq : receipt.eventSeq);
+      assert.ok(result.entries.length <= 50);
+      assert.deepEqual(result.entries.map(r => r.seq), result.entries.map((_, i) => after + i + 1));
+      records.push(...result.entries.map(r => r.record));
+      if (result.nextCursor === null) break;
+      after = result.nextCursor;
+    } while (true);
+    assert.deepEqual(records, kind === 'commands' ? source.log : source.events);
+    const end = c.history(f.actor(), receipt.playerId, receipt.digest, kind, records.length); pages++;
+    assert.deepEqual(end.entries, []); assert.equal(end.nextCursor, null);
+  }
+  const audit = f.db.prepare("SELECT payload FROM registry_audit WHERE type='CompetitionHistoryInspected'").all();
+  assert.equal(audit.length, pages);
+  for (const row of audit) { const a = JSON.parse(String(row.payload)); assert.equal(a.digest, receipt.digest); assert.equal(a.playerId, receipt.playerId); assert.equal(a.at, f.now); }
+  assert.deepEqual(f.store.read(receipt.playerId), current); assert.equal(f.audits().length, 0);
+});
+
+test('history inspection refuses wrong owners, cursors, roles, missing prefix records and failed audit writes', async t => {
+  const f = fixture(t), { receipt } = await f.imported(), c = f.store.competition;
+  const read = (actor = f.actor(), digest = receipt.digest, kind = 'commands', after = 0) => c.history(actor, receipt.playerId, digest, kind as 'commands', after);
+  for (const role of ['economy', 'viewer'] as const) assert.throws(() => read(f.actor(role)), /forbidden/);
+  assert.throws(() => read({ ...f.actor(), mfa: false }), /invalidActor/);
+  assert.throws(() => read({ ...f.actor(), expiresAt: f.now }), /invalidActor/);
+  for (const after of [-1, 0.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1, receipt.commandSeq + 1]) assert.throws(() => read(f.actor(), receipt.digest, 'commands', after), /invalidInput/);
+  assert.throws(() => read(f.actor(), 'a'.repeat(64)), /importConflict/);
+  assert.throws(() => read(f.actor(), receipt.digest, 'players'), /invalidInput/);
+  f.db.exec("CREATE TRIGGER fail_inspection BEFORE INSERT ON registry_audit WHEN NEW.type='CompetitionHistoryInspected' BEGIN SELECT RAISE(ABORT,'test:auditFailed'); END;");
+  assert.throws(() => read(), /auditFailed/);
+  assert.equal(f.db.prepare("SELECT COUNT(*) n FROM registry_audit WHERE type='CompetitionHistoryInspected'").get()!.n, 0);
+  f.db.exec('DROP TRIGGER fail_inspection; DROP TRIGGER commands_delete');
+  f.db.prepare('DELETE FROM commands WHERE player_id=? AND seq=1').run(receipt.playerId);
+  assert.throws(() => read(), /invalidHistory/);
 });

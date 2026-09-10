@@ -91,7 +91,7 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
       }
       if (!req.url?.startsWith('/') || req.url.startsWith('//')) throw new HttpError(400, 'invalidUrl');
       const route = new URL(req.url, options.origin), path = route.pathname;
-      if (route.search && !['/admin/registry', '/admin/config', '/admin/audit', '/admin/players', '/admin/support', '/admin/scope', '/admin/draft-source', '/admin/competition'].includes(path) && path !== '/player/events' && path !== '/player/config') throw new HttpError(400, 'invalidQuery');
+      if (route.search && !['/admin/registry', '/admin/config', '/admin/audit', '/admin/players', '/admin/support', '/admin/scope', '/admin/draft-source', '/admin/competition', '/admin/competition/history'].includes(path) && path !== '/player/events' && path !== '/player/config') throw new HttpError(400, 'invalidQuery');
       if (path.startsWith('/admin/')) {
         // Body IO precedes all access decisions. Actor fields never cross this boundary.
         const body = req.method === 'POST' ? await json(req, path === '/admin/proposals' ? 524288 : BODY_BYTES) : undefined; // config-exempt:512KiB bounded full-config JSON input
@@ -130,6 +130,11 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
           if (route.searchParams.size !== 1 || !value || !/^(0|[1-9]\d*)$/.test(value) || !Number.isSafeInteger(Number(value))) throw new HttpError(400, 'invalidCursor');
           return Number(value);
         };
+        if (req.method === 'GET' && path === '/admin/competition/history') {
+          const q = route.searchParams, after = q.get('after');
+          if (q.size !== 4 || !['playerId', 'digest', 'kind', 'after'].every(k => q.has(k)) || !/^(0|[1-9]\d*)$/.test(after ?? '')) throw new HttpError(400, 'invalidQuery');
+          reply(200, store.competition.history(actor, q.get('playerId')!, q.get('digest')!, q.get('kind') as 'commands' | 'events', Number(after))); return;
+        }
         if (req.method === 'GET' && path === '/admin/competition') {
           if (route.searchParams.size !== 1 || !route.searchParams.has('playerId')) throw new HttpError(400, 'invalidQuery');
           reply(200, store.competition.inspect(actor, route.searchParams.get('playerId')!)); return;

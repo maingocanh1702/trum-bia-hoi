@@ -327,6 +327,19 @@ test('moderation HTTP uses Google plus MFA, exact admin context and archive iden
     assert.equal((await f.call(path, input, cookie)).status, 403);
   }
   const admin = await f.login('game-one'), superAdmin = await f.login('super-one');
+  const history = path + '/history?' + new URLSearchParams({ playerId: receipt.playerId, digest: receipt.digest, kind: 'commands', after: '0' });
+  assert.equal((await f.call(history)).status, 401);
+  for (const cookie of [economy, viewer]) assert.equal((await f.call(history, undefined, cookie)).status, 403);
+  for (const cookie of [support, admin, superAdmin]) {
+    const page = await f.call(history, undefined, cookie); assert.equal(page.status, 200);
+    assert.equal(page.headers.get('cache-control'), 'no-store'); assert.deepEqual(page.data.entries.map((r: any) => r.record), game.log);
+  }
+  for (const suffix of ['&after=0', '&role=super']) assert.equal((await f.call(history + suffix, undefined, admin)).status, 400);
+  for (const cursor of ['-1', '1.5', '00', '1e2', '9007199254740992']) assert.equal((await f.call(history.replace('after=0', 'after=' + cursor), undefined, admin)).status, 400);
+  assert.equal((await f.call(history.replace(receipt.digest, 'f'.repeat(64)), undefined, admin)).status, 409);
+  assert.equal((await f.call(history, undefined, admin, { 'X-TBH-Admin-Context': 'old-context' })).status, 409);
+  assert.equal((await f.call(history, undefined, admin, { Origin: 'https://evil.example' })).status, 403);
+  assert.equal(f.db.prepare("SELECT COUNT(*) n FROM registry_audit WHERE type='CompetitionHistoryInspected'").get()!.n, 3);
   assert.equal((await f.call(query + '&playerId=other', undefined, admin)).status, 400);
   assert.equal((await f.call(path, { ...input, role: 'super' }, admin)).status, 400);
   assert.equal((await f.call(path, input, admin, { Origin: 'https://evil.example' })).status, 403);
@@ -346,6 +359,8 @@ test('moderation HTTP uses Google plus MFA, exact admin context and archive iden
   assert.equal(f.db.prepare("SELECT COUNT(*) n FROM registry_audit WHERE type='LocalHistoryReviewed'").get()!.n, 1);
   await f.call('/admin/auth/logout', {}, admin);
   assert.equal((await f.call(path, { ...flag, key: 'after-logout' }, admin)).status, 401);
+  assert.equal((await f.call(history, undefined, admin)).status, 401);
   f.now += 8 * 3600000;
   assert.equal((await f.call(path, { ...flag, key: 'after-expiry' }, superAdmin)).status, 401);
+  assert.equal((await f.call(history, undefined, superAdmin)).status, 401);
 });
