@@ -1,6 +1,6 @@
 # Milestone closure report — M0–M5
 
-2026-09-10 · implementation `7e7f337` · config2.0.2/rules24/schema10.
+2026-09-10 · implementation `85fbdfb` · config2.0.2/rules24/schema10.
 Authority: [ROADMAP §mốc M0–M9](../06-ROADMAP-trum-bia-hoi.md), including the
 acceptance sections it references. PASS means the whole stated criterion has
 supporting evidence; FAIL includes missing implementation or missing acceptance
@@ -268,7 +268,7 @@ now PASS. M4 is **14/18 OPEN**; public archive transport remains deferred to M9.
 | Criterion (ROADMAP, F23§8, F25§10) | Verdict | Evidence or exact gap |
 | Editing local state cannot earn authoritative coins | PASS | Server HTTP rejects identity/clock/total forgery; default remote web never constructs or advances Game. E7 account rotation/quota/queue tests prove only server receipts change balances; local archives stay separate. |
 | Duplicate serve request idempotent | PASS | Server HTTP guest/restart test, `client-sequence.test.ts` “response loss after serving…”; E1 and E6 cold-retry exactness. |
-| Leaderboard ignores flagged/ineligible writes | FAIL | E22 decisions and E23 own-score/baseline apply Google/flag/shift/review eligibility; public ranked query/filter is still absent. Caller-only eligibility does not certify a global leaderboard. |
+| Leaderboard ignores flagged/ineligible writes | FAIL | E22 decisions, E23 own-score/baseline and E24 protected history/review controls apply Google/flag/shift/review eligibility; public ranked query/filter is still absent. Caller-only eligibility does not certify a global leaderboard. |
 | Server clock handles VN midnight | PASS | Server “management pause survives a server restart and real VN midnight…” and “season rollover and old service retries…”; E1. |
 | Reconnecting within2s with yard visible | PASS | E7 silent hung-transport test exercises the configured2000ms deadline (browser assertion tolerance250ms); returning-player regression keeps the yard accessible while heartbeat is unavailable. |
 | Offline commands buffer key+clientSeq within reconnectGraceMs, no loss/duplicate | PASS | E7 real server lost-service ACK/reload test retains exact key+seq and credits once; offline restock/in-shift upgrade replay current menu flags; configured queue cap and quota refusal tested. |
@@ -473,3 +473,28 @@ admin history/review controls are not supplied by a caller-only score API.
 | Date | Change |
 |---|---|
 | 2026-09-10 score verified | E23 closes score/provenance core with current review/flag and exact-session evidence. No new whole criterion closed; M4 stays14/18. |
+
+## Admin history/review closure — E24, 2026-09-10
+
+Code `85fbdfb` (base `faee42a`): `/admin` now provides audited, paged access to
+the imported validated history, approval/rejection and flag/clear controls.
+Support reads only; Game/Super use current MFA/session/context and existing
+immutable decision receipts. Lost ACK keeps the exact request per operator/tab;
+stale decisions require inspection; logout/identity change discards late responses.
+No new wallet credits, engine rules, schema or economy JSON values.
+
+**Verification:**378/378 engine/server and24/24 admin browser passed at38c1d75.
+The final correction only translates notices at render and tightens the matching
+browser assertion/docs; engine/server are byte-identical. All5 affected browser
+cases, config zero warnings and build/typecheck pass again at85fbdfb. The locale
+regression fails before the correction and passes after. Mobile/desktop VI/EN,
+44px controls, focus, reduced motion, storage failure and exact retry are covered.
+Initial review P3 tracker/dashboard drift is fixed; final independent full-base
+review finds no actionable correctness/security defect. Receipt:
+`.qa/admin-competition-verification.json` (logs and screenshots hash-bound).
+
+**M4 remains14/18 OPEN.** No full F28 or live Google consent claim. Next: public
+rank query/filter/order using the existing canonical competitive score, then the
+remaining acceptance. Whole-archive public upload/performance remains M9.
+
+| 2026-09-10 E24 | Protected history/review controls verified. No whole exit criterion newly closes; public ranked query/filter remains absent and M4 stays14/18. |

@@ -8,10 +8,10 @@ complete-game goal; milestones below are implementation order, not scope cuts.
 |---|---|---|
 | M0 — config, pure engine, deterministic replay, k sim, workspaces | COMPLETE — exit criteria PASS | All3exit criteria PASS: current config/build/321tests,5seeds×2profiles k2.4186–2.8738; reviewed foundation/checkpoint/web. |
 | M1 — serve loop, glasses, stock, upgrades, local save, spatial UI, core audio | In progress | Playable loop, local save/replay, stock/equipment/table UI, core SFX wired; final sprites and listening QA pending |
-| M2 — guest, vi/en, onboarding | In progress | Local guest + matching vi/en keys + event-driven guide with skip/repeat cap; Google account linking and 5-person evidence pending |
+| M2 — guest, vi/en, onboarding | In progress | Device-persistent guest, vi/en, guide and Google attach/restore verified; live consent and 5-person study remain |
 | M3 — full menu, customer mix, weather, rush, business unlocks | In progress — 6/12 PASS | Standard k and advanced career≤3.5 pass under owner10/09 rule; remaining feel/32px badges/equipment and customer asset acceptance stay open. |
-| M4 — server authority, accounts, reconnect, config registry/admin | In progress | 14/18 exit criteria PASS; remote web936e9d5, registryc1e953c, admin API6f42575 and browser editor56a0a44 verified. Scoped config/forecasts/emergency and account/import/eligibility/locale remain. |
-| M5 — seasons, leaderboard/shrine, life path, leases, quests/referrals | In progress | Local LP/quests/attendance and lease calendar/UI implemented; season/peak/referrals/social and full acceptance remain |
+| M4 — server authority, accounts, reconnect, config registry/admin | In progress | 14/18 exit criteria PASS; authority/reconnect, registry/scopes/forecast, accounts/locale and E24 history/review controls verified. Public rank filtering, owner-deferred archive transport and full live account/donation acceptance remain; see criterion report. |
+| M5 — seasons, leaderboard/shrine, life path, leases, quests/referrals | In progress | Local seasons/peak, LP/quests/attendance and lease calendar/UI implemented; public ranks/snapshots, rewards/referrals/social and full acceptance remain |
 | M6 — risks, dog, emergency supplies | Pending | |
 | M7 — voluntary donations, cosmetic gifts, age notice | Pending | |
 | M8 — football events, season shop, legal-gated lottery | Pending | |
@@ -23,6 +23,15 @@ Verified engine sub-rules, missing implementation and missing human/UI evidence 
 separate. Feature rows span milestones; their count is not milestone completion.
 Owner queue: remaining M4 registry/admin/account acceptance → M6 → M7 → M8 → M9.
 No additional M5 breadth or history-volume tuning before those dependencies.
+
+## M4 admin history/review verified — 2026-09-10
+
+`85fbdfb` completes protected paged history, approve/reject and flag/clear controls.
+378engine/server +24admin browser pass; final5 affected browser/config/build and
+independent full-base review pass after locale/status corrections. Engine/economy
+unchanged. [E24 evidence and limits](competitive-eligibility.md#admin-historyreview-closure--e24-2026-09-10).
+M4 stays14/18 OPEN. Next: public rank query/filter/order using canonical scores;
+public archive transport/performance stays M9. No merge/push/deploy.
 
 ## Latest M4 competitive score closure — 2026-09-10
 
@@ -2540,3 +2549,5 @@ M4 acceptance → M6–M9; historical upload/tuning remainsM9.
 | 2026-09-10 | E22 review/flag core/API521e901 verified:367unit/server,19admin browser,45focused,config/build and independent review PASS. M4 stays14/18; baseline/score/history controls follow. |
 
 | 2026-09-10 | E23 score/baseline7e7f337 verified:376unit/server,19admin,32focused,config/build/review PASS; P1 worker correction closed. F28 in progress, M4 remains14/18. |
+
+| 2026-09-10 | E24 admin controls85fbdfb verified;378unit/server +24admin browser, final5 affected browser/config/build and native full-base review PASS. M4 stays14/18; next public rank consumer. |

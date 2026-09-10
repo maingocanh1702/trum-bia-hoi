@@ -5,6 +5,15 @@
 
 ---
 
+## M4 admin history/review verified — 2026-09-10
+
+`85fbdfb` completes protected paged history, approve/reject and flag/clear controls.
+378engine/server +24admin browser pass; final5 affected browser/config/build and
+independent full-base review pass after locale/status corrections. Engine/economy
+unchanged. [E24 evidence and limits](docs/competitive-eligibility.md#admin-historyreview-closure--e24-2026-09-10).
+M4 stays14/18 OPEN. Next: public rank query/filter/order using canonical scores;
+public archive transport/performance stays M9. No merge/push/deploy.
+
 ## M4 competitive score verified — 2026-09-10
 
 Code `7e7f337` (base `1fd89d9`): current competitive scores reuse engine seasonal

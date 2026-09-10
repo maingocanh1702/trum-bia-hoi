@@ -198,3 +198,28 @@ manual retry only; damaged records can be downloaded before explicit removal.
 | 2026-09-10 admin controls implementation | Add audited 50-record imported-prefix pages and VI/EN Game/Super review/flag controls; Support reads only. Native confirmation, per-operator exact-intent recovery, stale-state refresh, ACK-before-read clearing and late-response teardown reuse existing guards. Focused server3/browser5/config/build pass; full verification and independent review pending. |
 
 | 2026-09-10 review/visual correction | Full378unit/server +24admin browser pass. Independent review identifies P3 tracker/dashboard drift only; synchronize current state and regenerate dashboard. Visual QA additionally catches the notice retaining the previous language; regression and locale-at-render correction follow. |
+
+## Admin history/review closure — E24, 2026-09-10
+
+Code `85fbdfb` (base `faee42a`): `/admin` now provides audited, paged access to
+the imported validated history, approval/rejection and flag/clear controls.
+Support reads only; Game/Super use current MFA/session/context and existing
+immutable decision receipts. Lost ACK keeps the exact request per operator/tab;
+stale decisions require inspection; logout/identity change discards late responses.
+No new wallet credits, engine rules, schema or economy JSON values.
+
+**Verification:**378/378 engine/server and24/24 admin browser passed at38c1d75.
+The final correction only translates notices at render and tightens the matching
+browser assertion/docs; engine/server are byte-identical. All5 affected browser
+cases, config zero warnings and build/typecheck pass again at85fbdfb. The locale
+regression fails before the correction and passes after. Mobile/desktop VI/EN,
+44px controls, focus, reduced motion, storage failure and exact retry are covered.
+Initial review P3 tracker/dashboard drift is fixed; final independent full-base
+review finds no actionable correctness/security defect. Receipt:
+`.qa/admin-competition-verification.json` (logs and screenshots hash-bound).
+
+**M4 remains14/18 OPEN.** No full F28 or live Google consent claim. Next: public
+rank query/filter/order using the existing canonical competitive score, then the
+remaining acceptance. Whole-archive public upload/performance remains M9.
+
+| 2026-09-10 E24 verified |85fbdfb:378unit/server +24admin browser, final5 affected browser/config/build and independent full-base review PASS. P3 status drift and visual locale defect corrected. Protected history/review controls complete; public rank and M4 acceptance remain. |
