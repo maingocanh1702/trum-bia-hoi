@@ -79,3 +79,23 @@ This is independent of the pending emergency schedule-policy decision.
 | 2026-09-10 comparison intake | Recorded bounded arbitrary-version comparison and shared diff correction; implementation/verification pending. M4 remains15/18 OPEN. |
 
 | 2026-09-10 comparison implementation | 61e68d5 implements arbitrary snapshot pairs, removed paths and per-version scaling;386unit/config/build pass. Full admin run26/27: new MFA test consumed the existing Tier A actor code. Dedicated test actor fixes isolation; production MFA unchanged. Review found only stale status documentation, corrected here and in tracker. Mobile scope details are collapsed for readable diffs; final verification/review pending. |
+
+## Version comparison closure — E26
+
+`61e68d5` + `62e8646` (base `fdda260`) complete BRD §5.2.5 arbitrary stored
+version pairs. Viewer can compare sibling drafts, published or historical snapshots
+through the existing protected reads. Union paths include removals; Base values use
+each version's own k. Editing either ID clears the old result; failed reads or an
+identity change during loading cannot restore it. Existing author drafts survive.
+Native scope disclosure keeps both VI/EN portrait comparisons readable.
+
+Verification: **386/386 engine/server,27/27 admin browser, config and build/typecheck
+PASS**. The initial full browser26/27 failure was test-only reuse of a protected
+single-use OTP; a dedicated new-test actor fixed isolation without changing MFA.
+The initial review's documentation finding is resolved; final full-base independent
+review is **CLEAN** in `.qa/review-admin-compare-final.txt`. Receipt:
+`.qa/admin-compare-verification.json`; both390px language captures inspected.
+Engine, server runtime, schemas and economy JSON are unchanged; no new k sim.
+M4 remains15/18 OPEN. Emergency scheduling awaits the owner's separate decision.
+
+| 2026-09-10 comparison verified | E26 at62e8646:386unit/server,27admin browser,config/build and final independent review CLEAN. Arbitrary-pair BRD item complete; full M4 remains open. |

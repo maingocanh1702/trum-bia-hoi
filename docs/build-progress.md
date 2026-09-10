@@ -2577,3 +2577,20 @@ M4 acceptance → M6–M9; historical upload/tuning remainsM9.
 | 2026-09-10 | E23 score/baseline7e7f337 verified:376unit/server,19admin,32focused,config/build/review PASS; P1 worker correction closed. F28 in progress, M4 remains14/18. |
 
 | 2026-09-10 | E24 admin controls85fbdfb verified;378unit/server +24admin browser, final5 affected browser/config/build and native full-base review PASS. M4 stays14/18; next public rank consumer. |
+
+
+## 2026-09-10 — M4 arbitrary stored-config comparison verified
+
+E26 at `62e8646` (base `fdda260`, first implementation `61e68d5`) closes the
+BRD5.2.5 arbitrary version-pair viewer using existing admin reads and diff UI.
+Removed historical keys, per-snapshot Base scaling, exact fetched labels, scoped
+metadata, read-only roles and identity changes during reads are covered. Comparing
+never changes a draft or publishes. Native scope disclosure improves portrait use.
+386engine/server,27admin browser,config/build/typecheck PASS; final independent
+full-base review CLEAN after documentation status correction. Initial full browser
+26/27 exposed test-only OTP reuse; dedicated test actor fixed it, MFA unchanged.
+Receipt `.qa/admin-compare-verification.json`; VI/EN390px captures inspected.
+No engine/server runtime/economy JSON/schema change or new sim. M4 remains15/18;
+hotfix schedule policy awaits owner, full M0–M9 objective remains active.
+
+| 2026-09-10 | E26 arbitrary comparison62e8646 verified:386unit/server,27admin browser,config/build/review PASS. Full M4 and game remain open. |

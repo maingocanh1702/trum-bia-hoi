@@ -5,6 +5,20 @@
 
 ---
 
+## M4 version comparison closure — E26, 2026-09-10
+
+`61e68d5` + `62e8646`, base `fdda260`: arbitrary stored-version comparison uses
+existing protected reads, removed-key-aware raw/scaled diff and each snapshot's k.
+Viewer access, sibling/reverse/identical pairs, failed reads, draft preservation and
+identity switches during reads pass. Scope metadata folds on portrait screens.
+386engine/server,27admin browser,config/build and final independent review CLEAN.
+Initial browser OTP collision fixed with a dedicated actor; production MFA unchanged.
+Initial review doc drift corrected in tracker/dashboard/editor. Evidence:
+`.qa/admin-compare-verification.json`; VI/EN390px captures inspected.
+M4 remains15/18; engine/server/economy unchanged. Emergency schedule decision still
+pending; next finish that mechanism and remaining M4 acceptance before M6–M9.
+No merge/push/deploy or full-game completion claim.
+
 ## M4 emergency intake — 2026-09-10
 
 Base `e5cba9d`; [bounded intake](docs/admin-emergency.md). Runtime is unchanged.

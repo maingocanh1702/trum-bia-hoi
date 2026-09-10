@@ -526,3 +526,18 @@ emergency admin configuration and remaining account/operational acceptance; publ
 archive upload and history-volume tuning stay M9 by owner decision.
 
 | 2026-09-10 E25 | Live rank criteria closed with actual server/browser evidence; M4=15/18, M5=12/25. Full milestones remain OPEN. |
+
+
+## E26 — arbitrary admin version comparison, 2026-09-10
+
+`61e68d5` + `62e8646`, base `fdda260`: protected read-only arbitrary snapshot
+pairs, union paths for removals, independent Base scaling and fetched-version labels.
+Viewer/sibling/reverse/identical/failed-read and in-flight identity cases pass;
+original author drafts survive. VI/EN390px scope disclosure and diff inspected.
+`.qa/admin-compare-verification.json`:386engine/server,27admin browser,
+config/build/typecheck PASS; full-base `.qa/review-admin-compare-final.txt` CLEAN.
+Initial test-only OTP collision and documentation drift were corrected. Engine,
+server runtime and economy unchanged. This closes the BRD arbitrary-pair item;
+M4 count stays15/18 because the remaining combined acceptance is still open.
+
+| 2026-09-10 E26 | Arbitrary admin version comparison62e8646 verified;386unit/server,27admin browser,config/build/review PASS. M4 remains15/18, M5 remains12/25. |
