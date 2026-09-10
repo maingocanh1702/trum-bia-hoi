@@ -266,3 +266,31 @@ blocking the game or rewriting its live pin. Three regressions fail before the f
 No economy JSON or engine changes. Full correction verification/review pending.
 
 | 2026-09-10 public board review | P1 administrator display bounds fixed at shared server admission/consumer, with legacy draft rejection and readable/correctable published pins. |
+
+## Public leaderboard closure — E25, 2026-09-10
+
+Product628eb72 (basec53b6f0, foundation1803b85): public read-only live ranking
+uses canonical server seasonal earnings, current Google membership/flags/review,
+exact season IDs and pinned qualification. Configured refresh, stable first-reached
+ties, paging and own-tier neighbors are implemented. The VI/EN board pauses the
+shift, keeps only a dated public preview in localStorage and refuses a changed
+account before showing personal rank. Guest sees the board and optional invitation,
+never an own row; anonymous reads expose no private identity/history.
+
+Initial review P1 identified accepted invalid display values. Shared server
+admission/consumer validation now rejects zero/fractional/overflow settings, fences
+old approved drafts and preserves historical gameplay pins/corrective publication.
+Three regression cases failed before correction; final full-base review is CLEAN.
+Final386/386 engine/server,52 focused,11 affected remote and24 admin browser,
+config zero warnings and build/typecheck PASS. Foundation88/88 remote and2/2 local
+browser PASS; the correction changes server validation and one guest assertion.
+Receipt `.qa/leaderboard-verification.json`, screenshots `.qa/leaderboard-vi-390.png`
+and `.qa/leaderboard-en-390.png`. No engine/economy JSON/schema change or new k sim.
+
+M4 now15/18 OPEN; F28 stays in progress. End-season snapshots/shrine, editable
+filtered profiles and season rewards remain outside this live-board slice. No live
+Google consent or public archive transport claim; no merge/push/deploy. Next M4:
+emergency admin configuration and remaining account/operational acceptance; public
+archive upload and history-volume tuning stay M9 by owner decision.
+
+| 2026-09-10 E25 | Public leaderboard628eb72 verified; P1 display bounds corrected, final independent review CLEAN; M4 rises15/18. |

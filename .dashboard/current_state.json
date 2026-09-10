@@ -424,7 +424,9 @@
       "human_status": "IN_PROGRESS",
       "progress": 30,
       "runtime_urgency": "normal",
-      "overlays": [],
+      "overlays": [
+        "tracker-modified"
+      ],
       "signals": {
         "spec_exists": false,
         "tech_exists": false,
@@ -450,7 +452,7 @@
         "spec_modified_at": null,
         "tech_hash": null,
         "tech_modified_at": null,
-        "tracker_row_hash": "7a44ae58db91cf289f467a3e361af6323c5b545f9c49993e0e56b4e8606662b7",
+        "tracker_row_hash": "f5289193205789f54ca1f5130e4cb07d5585fcee52b3e830b220366c0f522245",
         "foundation_codex_approved": null,
         "foundation_founder_signoff": null
       },
@@ -576,7 +578,9 @@
       "human_status": "IN_PROGRESS",
       "progress": 30,
       "runtime_urgency": "normal",
-      "overlays": [],
+      "overlays": [
+        "tracker-modified"
+      ],
       "signals": {
         "spec_exists": false,
         "tech_exists": false,
@@ -602,7 +606,7 @@
         "spec_modified_at": null,
         "tech_hash": null,
         "tech_modified_at": null,
-        "tracker_row_hash": "2dd3844f3e366656f59145a62b234bf46c0f5184d8d378e2b1f65f032e9eea62",
+        "tracker_row_hash": "83f05f8a2722be437159c34fee5c88e089a6fd851c4f82580940471ba7f42cf1",
         "foundation_codex_approved": null,
         "foundation_founder_signoff": null
       },
@@ -642,7 +646,7 @@
         "spec_modified_at": null,
         "tech_hash": null,
         "tech_modified_at": null,
-        "tracker_row_hash": "ca6e9b49bbb305c327012d3a318516bcaee0b6c8aa5baac5659fe8a4dda2e412",
+        "tracker_row_hash": "09a55412f13c54fe5a01696b625e932f4d12082c34d201fa0d478495539ebee7",
         "foundation_codex_approved": null,
         "foundation_founder_signoff": null
       },
@@ -758,7 +762,7 @@
         "spec_modified_at": null,
         "tech_hash": null,
         "tech_modified_at": null,
-        "tracker_row_hash": "0e0292cd58a49541d0559de5a9f67276642f37885bcf7173c2baa47d16753009",
+        "tracker_row_hash": "5d9c58f865a0f4f4c4564f5813a6467c57e9d3af342165561cad875815e5fc08",
         "foundation_codex_approved": null,
         "foundation_founder_signoff": null
       },

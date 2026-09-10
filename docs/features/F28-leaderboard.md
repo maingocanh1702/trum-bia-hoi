@@ -95,3 +95,5 @@ history may count once; pending history cannot count. No compensation credit is 
 | Date | Change |
 |---|---|
 | 2026-09-10 public board | Implemented live query and VI/EN web on basec53b6f0: `GET /leaderboard?kind=ranking\|contest&tier&page&revision` resolves the authenticated current period, with configured pages/own neighbors, safe public aliases and dated optional cache. Pseudonymous aliases ship until editable profile names/content filtering exists. The owner all-menu pause rule supersedes §2/§4 no-pause statements: board stays paused until closed. Immutable end-season snapshots/shrine and filtered profile names remain unfinished; full F28 is not claimed. |
+
+| 2026-09-10 E25 verified | Live query/VI–EN UI628eb72 passes386unit/server,11affected remote/24admin browser,config/build and final CLEAN review; unsafe display settings rejected by shared server admission/consumer. Foundation88remote/2local pass. End snapshots/shrine/filtered profiles remain. See competitive-eligibility.md E25. |

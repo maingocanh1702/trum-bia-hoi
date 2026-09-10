@@ -10,8 +10,8 @@ complete-game goal; milestones below are implementation order, not scope cuts.
 | M1 — serve loop, glasses, stock, upgrades, local save, spatial UI, core audio | In progress | Playable loop, local save/replay, stock/equipment/table UI, core SFX wired; final sprites and listening QA pending |
 | M2 — guest, vi/en, onboarding | In progress | Device-persistent guest, vi/en, guide and Google attach/restore verified; live consent and 5-person study remain |
 | M3 — full menu, customer mix, weather, rush, business unlocks | In progress — 6/12 PASS | Standard k and advanced career≤3.5 pass under owner10/09 rule; remaining feel/32px badges/equipment and customer asset acceptance stay open. |
-| M4 — server authority, accounts, reconnect, config registry/admin | In progress | 14/18 exit criteria PASS; authority/reconnect, registry/scopes/forecast, accounts/locale and E24 history/review controls verified. Public rank filtering, owner-deferred archive transport and full live account/donation acceptance remain; see criterion report. |
-| M5 — seasons, leaderboard/shrine, life path, leases, quests/referrals | In progress | Local seasons/peak, LP/quests/attendance and lease calendar/UI implemented; public ranks/snapshots, rewards/referrals/social and full acceptance remain |
+| M4 — server authority, accounts, reconnect, config registry/admin | In progress | 15/18 exit criteria PASS; E25 live public ranking628eb72 verified with386unit/server,11affected remote/24admin browser, config/build and CLEAN review. Emergency/admin remainder, owner-deferred archive transport and live account/donation acceptance remain; see criterion report. |
+| M5 — seasons, leaderboard/shrine, life path, leases, quests/referrals | In progress | Local seasons/peak, LP/quests/attendance and lease calendar/UI implemented; public live ranks verified in E25; snapshots, rewards/referrals/social and full acceptance remain |
 | M6 — risks, dog, emergency supplies | Pending | |
 | M7 — voluntary donations, cosmetic gifts, age notice | Pending | |
 | M8 — football events, season shop, legal-gated lottery | Pending | |
@@ -23,6 +23,32 @@ Verified engine sub-rules, missing implementation and missing human/UI evidence 
 separate. Feature rows span milestones; their count is not milestone completion.
 Owner queue: remaining M4 registry/admin/account acceptance → M6 → M7 → M8 → M9.
 No additional M5 breadth or history-volume tuning before those dependencies.
+
+## Public leaderboard closure — E25, 2026-09-10
+
+Product628eb72 (basec53b6f0, foundation1803b85): public read-only live ranking
+uses canonical server seasonal earnings, current Google membership/flags/review,
+exact season IDs and pinned qualification. Configured refresh, stable first-reached
+ties, paging and own-tier neighbors are implemented. The VI/EN board pauses the
+shift, keeps only a dated public preview in localStorage and refuses a changed
+account before showing personal rank. Guest sees the board and optional invitation,
+never an own row; anonymous reads expose no private identity/history.
+
+Initial review P1 identified accepted invalid display values. Shared server
+admission/consumer validation now rejects zero/fractional/overflow settings, fences
+old approved drafts and preserves historical gameplay pins/corrective publication.
+Three regression cases failed before correction; final full-base review is CLEAN.
+Final386/386 engine/server,52 focused,11 affected remote and24 admin browser,
+config zero warnings and build/typecheck PASS. Foundation88/88 remote and2/2 local
+browser PASS; the correction changes server validation and one guest assertion.
+Receipt `.qa/leaderboard-verification.json`, screenshots `.qa/leaderboard-vi-390.png`
+and `.qa/leaderboard-en-390.png`. No engine/economy JSON/schema change or new k sim.
+
+M4 now15/18 OPEN; F28 stays in progress. End-season snapshots/shrine, editable
+filtered profiles and season rewards remain outside this live-board slice. No live
+Google consent or public archive transport claim; no merge/push/deploy. Next M4:
+emergency admin configuration and remaining account/operational acceptance; public
+archive upload and history-volume tuning stay M9 by owner decision.
 
 ## M4 admin history/review verified — 2026-09-10
 

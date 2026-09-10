@@ -1,6 +1,6 @@
 # Milestone closure report — M0–M5
 
-2026-09-10 · implementation `85fbdfb` · config2.0.2/rules24/schema10.
+2026-09-10 · implementation `628eb72` · config2.0.2/rules24/schema10.
 Authority: [ROADMAP §mốc M0–M9](../06-ROADMAP-trum-bia-hoi.md), including the
 acceptance sections it references. PASS means the whole stated criterion has
 supporting evidence; FAIL includes missing implementation or missing acceptance
@@ -164,8 +164,8 @@ No new gameplay test or80MB run was added solely to make this report green.
 | M1 | FAIL (6/12 PASS) | OPEN | Full12min proof at all3viewports, complete7-screen coverage, measured upgrade recommendation, axe and new-player feel evidence. |
 | M2 | FAIL (4/9 PASS) | OPEN | Five-person test, real mid-shift Google browser flow and admin-editable onboarding; login-prompt gaps below. |
 | M3 | FAIL (6/12 PASS) | OPEN | Advanced k criterion PASS under owner soft cap3.5; feel,32px badge acceptance and remaining equipment/football placeholders still pending. |
-| M4 | FAIL (14/18 PASS) | OPEN — next implementation priority | E7 remote authority/reconnect, E8 registry and E9/E10 admin browser workflow verified. E11/E12 scoped core/editor/factual impact verified; E14 forecast, E15 locale and E18 current-visit Google attachment/restore verified; observed VND/emergency, live consent and import/eligibility remain; E19 reauthentication and E21 invitations/validation verified. |
-| M5 | FAIL (9/25 PASS) | OPEN | Public seasons/ranking/shrine, rewards/referral/gifts and full integration; local LP acceptance rules pass. |
+| M4 | FAIL (15/18 PASS) | OPEN — next implementation priority | E7 remote authority/reconnect, E8 registry and E9/E10 admin browser workflow verified. E11/E12 scoped core/editor/factual impact verified; E14 forecast, E15 locale and E18 current-visit Google attachment/restore verified; E25 public rank eligibility verified; observed VND/emergency, live consent and deferred public import remain; E19 reauthentication and E21 invitations/validation verified. |
+| M5 | FAIL (12/25 PASS) | OPEN | Live public ranking verified in E25; snapshots/shrine, rewards/referral/gifts and full integration remain; local LP acceptance rules pass. |
 
 ## E20 — guest device persistence, owner Steer #5 (2026-09-10 15:30)
 
@@ -268,7 +268,7 @@ now PASS. M4 is **14/18 OPEN**; public archive transport remains deferred to M9.
 | Criterion (ROADMAP, F23§8, F25§10) | Verdict | Evidence or exact gap |
 | Editing local state cannot earn authoritative coins | PASS | Server HTTP rejects identity/clock/total forgery; default remote web never constructs or advances Game. E7 account rotation/quota/queue tests prove only server receipts change balances; local archives stay separate. |
 | Duplicate serve request idempotent | PASS | Server HTTP guest/restart test, `client-sequence.test.ts` “response loss after serving…”; E1 and E6 cold-retry exactness. |
-| Leaderboard ignores flagged/ineligible writes | FAIL | E22 decisions, E23 own-score/baseline and E24 protected history/review controls apply Google/flag/shift/review eligibility; public ranked query/filter is still absent. Caller-only eligibility does not certify a global leaderboard. |
+| Leaderboard ignores flagged/ineligible writes | PASS | E25 real imported careers + public HTTP/browser prove Google/shift/review eligibility, immediate admin flag/unflag invalidation, no client total submission and exact-session isolation. |
 | Server clock handles VN midnight | PASS | Server “management pause survives a server restart and real VN midnight…” and “season rollover and old service retries…”; E1. |
 | Reconnecting within2s with yard visible | PASS | E7 silent hung-transport test exercises the configured2000ms deadline (browser assertion tolerance250ms); returning-player regression keeps the yard accessible while heartbeat is unavailable. |
 | Offline commands buffer key+clientSeq within reconnectGraceMs, no loss/duplicate | PASS | E7 real server lost-service ACK/reload test retains exact key+seq and credits once; offline restock/in-shift upgrade replay current menu flags; configured queue cap and quota refusal tested. |
@@ -281,7 +281,7 @@ now PASS. M4 is **14/18 OPEN**; public archive transport remains deferred to M9.
 | Locale chosen/accepted before first game screen | PASS | E15 first-run vi/en choice, browser default and stored acceptance before local/remote boot; no player/save mutation before accepting. Legacy choices and live-shift identity are preserved across reload. |
 | Locale switch preserves save | PASS | E2 “guest serves, reloads…switches locale” at4viewports. |
 | Current guest progress attaches exactly once to a new Google account (owner10/09) | PASS | E18 account-ui links at3viewports with unchanged player/shift/coins/stamina/client stream, rejects duplicate callbacks, and reloads the account. Server accounts test preserves exact world/history/receipts across restart; existing-account restore is separate and never merges. Signed fixtures exercise real verifier/HTTP; live consent remains a separate setup gap. |
-| Guest cannot rank-write or claim donation gift | FAIL | These product paths are absent, not an exercised access-control acceptance. |
+| Guest cannot rank-write or claim donation gift | FAIL | E25 rejects client ranking writes and excludes guest own rank; donation gift acceptance awaits the M7 donation path. |
 | Admin changes1key, activates at effectiveAt | PASS | E10 browser edits menu.bia.price, reviews diff, proposes/approves/confirms publication; actual new player receives that version and old save remains pinned. Tier A distinct-MFA approval returns next-VN-day timestamp; E8 verifies exact calendar opening/replay. Live Google consent remains a setup gap, not claimed by the signed fixture. |
 | Replay event log equals state | PASS | Engine legacy/mixed-pin/replay tests, E4 month replay, E5 imported replay and E6 checkpoint exactness. |
 
@@ -307,12 +307,12 @@ now PASS. M4 is **14/18 OPEN**; public archive transport remains deferred to M9.
 | F17: quest reward never changes seasonEarned | PASS | Engine “all service and quality variants advance…earned rewards outside counted ledgers” and seasons refund/quest exclusions. |
 | F17: three gifts to one recipient cannot complete mission | FAIL | Engine distinct-recipient guard PASS in “four local quests cannot claim…”; trusted social gift producer/API not implemented, end-to-end acceptance missing. |
 | F17: expired quests cannot be claimed | PASS | Engine “VN midnight expires claims exactly…”; web quests expiry/pause/reload tests. |
-| F28: guest views board, no own row, login invitation | FAIL | Community board/API absent; local seasons panel explicitly says unavailable. |
-| F28: equal earnings use firstReached timestamp, stable refresh | FAIL | Timestamp rule exists in engine; public ranking/order/refresh absent. |
-| F28: flagged excluded from live/snapshot; unflagged returns before end | FAIL | E22 records protected decisions and E23 filters own-score eligibility; public leaderboard filtering and snapshots remain absent. |
+| F28: guest views board, no own row, login invitation | PASS | E25 public HTTP and real guest invitation/browser tests: public board visible, no personal row; optional invitation shares configured cooldown. |
+| F28: equal earnings use firstReached timestamp, stable refresh | PASS | E25 imported-career ordering test, exact tie fallback, revision-bound pages and configured refresh/deadline tests. |
+| F28: flagged excluded from live/snapshot; unflagged returns before end | FAIL | E25 live server/browser flag hiding, compacted ranks and unflag restore PASS; immutable end-season snapshots remain absent. |
 | F28: end snapshot immutable after rename/account deletion | FAIL | No global snapshot/name-at-capture lifecycle. |
-| F28: in-shift board opens without lost wait; cached data then server refresh | FAIL | Personal panel honors owner pause; community cached/server board absent. Owner pause supersedes old no-pause text. |
-| F28: admin-configured thresholds; rank/snapshot only server-side | FAIL | JSON schema coverage PASS; E10 protected default editor exists; authoritative ranking/snapshot is still absent. |
+| F28: in-shift board opens without lost wait; cached data then server refresh | PASS | E25 VI/EN in-shift browser keeps stamina paused until close; offline reopen shows only dated public cache, then verified server rank. Owner pause supersedes old no-pause text. |
+| F28: admin-configured thresholds; rank/snapshot only server-side | FAIL | E25 server live rank/qualification and validated admin page/refresh controls PASS; immutable end-season snapshot path remains absent. |
 
 F13's three enumerated acceptance rules pass at the shared-engine/local UI layer.
 Its full feature remains open because social/cosmetic unlock surfaces and full career
@@ -498,3 +498,31 @@ rank query/filter/order using the existing canonical competitive score, then the
 remaining acceptance. Whole-archive public upload/performance remains M9.
 
 | 2026-09-10 E24 | Protected history/review controls verified. No whole exit criterion newly closes; public ranked query/filter remains absent and M4 stays14/18. |
+
+## Public leaderboard closure — E25, 2026-09-10
+
+Product628eb72 (basec53b6f0, foundation1803b85): public read-only live ranking
+uses canonical server seasonal earnings, current Google membership/flags/review,
+exact season IDs and pinned qualification. Configured refresh, stable first-reached
+ties, paging and own-tier neighbors are implemented. The VI/EN board pauses the
+shift, keeps only a dated public preview in localStorage and refuses a changed
+account before showing personal rank. Guest sees the board and optional invitation,
+never an own row; anonymous reads expose no private identity/history.
+
+Initial review P1 identified accepted invalid display values. Shared server
+admission/consumer validation now rejects zero/fractional/overflow settings, fences
+old approved drafts and preserves historical gameplay pins/corrective publication.
+Three regression cases failed before correction; final full-base review is CLEAN.
+Final386/386 engine/server,52 focused,11 affected remote and24 admin browser,
+config zero warnings and build/typecheck PASS. Foundation88/88 remote and2/2 local
+browser PASS; the correction changes server validation and one guest assertion.
+Receipt `.qa/leaderboard-verification.json`, screenshots `.qa/leaderboard-vi-390.png`
+and `.qa/leaderboard-en-390.png`. No engine/economy JSON/schema change or new k sim.
+
+M4 now15/18 OPEN; F28 stays in progress. End-season snapshots/shrine, editable
+filtered profiles and season rewards remain outside this live-board slice. No live
+Google consent or public archive transport claim; no merge/push/deploy. Next M4:
+emergency admin configuration and remaining account/operational acceptance; public
+archive upload and history-volume tuning stay M9 by owner decision.
+
+| 2026-09-10 E25 | Live rank criteria closed with actual server/browser evidence; M4=15/18, M5=12/25. Full milestones remain OPEN. |
