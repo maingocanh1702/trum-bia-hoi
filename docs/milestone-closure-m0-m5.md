@@ -1,6 +1,6 @@
 # Milestone closure report — M0–M5
 
-2026-09-10 · implementation `a84f41f` · config2.0.1/rules24/schema10.
+2026-09-10 · implementation `13367c1` · config2.0.1/rules24/schema10.
 Authority: [ROADMAP §mốc M0–M9](../06-ROADMAP-trum-bia-hoi.md), including the
 acceptance sections it references. PASS means the whole stated criterion has
 supporting evidence; FAIL includes missing implementation or missing acceptance
@@ -29,6 +29,11 @@ append-only history, legacy migration and backup preservation remain required.
 - **E4** `.qa/career-verification.json`, [career report](career-simulation.md):
   two30day command-driven careers/480shifts reachLP4, full-month replay exact.
   Advanced k3.483282/3.318249 PASS under owner10/09 soft cap3.5 for this profile. Standard cold/full-menu band remains2–3; no numbers retuned. Automated gate: `npm run sim:career:gate`,≥2seeds/30days/LP4 (04§5).
+- **E13** `.qa/advanced-k-verification.json`, `.qa/advanced-career-k-gate.json`:
+  fresh30-day seeds42/99 reachLP4,29,209/28,259serves, k3.483282/3.318249≤3.5.
+  Config2.0.1/rules24;345tests/config zero warnings/build,10standard/15rush PASS.
+  `.qa/review-advanced-k.txt`: no actionable introduced defects at13367c1.
+  Gate is included in `npm run verify`; no runtime/economy JSON change.
 - **E5** `.qa/google-session-verification.json`, `.qa/local-import-verification.json`:
   reviewed server account/session and internal one-time import. Local provenance
   remains pending approval. No real Google Client ID, public upload or cloud UI.
@@ -138,7 +143,7 @@ No new gameplay test or80MB run was added solely to make this report green.
 
 | Criterion (ROADMAP,04§5–§6,09§11 P2) | Verdict | Evidence or exact gap |
 | Correct k calculation and ordinary band | PASS | E1 actual per-customer payment+tip/82.5, no throughput term. |
-| Full progressed economy stays in band | PASS | E4:30days/LP4 per seed42/99, k3.483282/3.318249≤3.5 under owner10/09 rule04§5; automated career gate. No numbers retuned; re-evaluate after Alpha with real player data. Endgame inflation uses7-day faucet/sink report, not k. |
+| Full progressed economy stays in band | PASS | E4/E13:30days/LP4 per seed42/99, k3.483282/3.318249≤3.5 under owner10/09 rule04§5; automated career gate. No numbers retuned; re-evaluate after Alpha with real player data. Endgame inflation uses7-day faucet/sink report, not k. |
 | 04§6: player controls pouring rhythm; stale warning rarely feels unfair | FAIL | Engine freshness deadlines/penalties and web stale reaction PASS; no human observation showing controlled pacing or absence of unfair-feeling penalties. |
 | 04§6: group/table serving is clear, not confusing | FAIL | Web whole-table action and multi-dish outcomes PASS; no uncoached group-order clarity study. |
 | 04§6: glass/washing bottleneck is perceptible and washer upgrade feels better immediately | FAIL | Engine production/batch and web live-capacity/upgrade tests PASS; no player comparison before/after washer upgrade. |
@@ -302,3 +307,5 @@ server snapshots/timelines, aggregation/admin UI and observed VND data still rem
 No public upload,80MB tuning, engine/config changes or merge/push/deploy.
 
 | 2026-09-10 owner advanced k | M3 progressed-k criterion PASS with measured3.483282/3.318249 under04§5 soft cap3.5; M3 now6/12PASS, stillOPEN for feel/art. New automated two-seed30day/LP4 gate; no economy retuning. Re-evaluate after Alpha playtest with real player data; inflation via7-day faucet/sink reporting. Other milestone counts unchanged. |
+
+| 2026-09-10 advanced gate verified | E13 fresh two-seed30day/LP4 run exactly confirms prior3.483282/3.318249;345tests/config/build/standard/rush and independent review PASS. M3 remains6/12PASS/OPEN; no other criterion changed. |

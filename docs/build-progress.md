@@ -2345,3 +2345,18 @@ independently passes the no-mutation regression. Receipt .qa/table-art-verificat
 Imagegen tables Lv2–Lv4 wired; Blender paused and preserved. Art remains draft.
 Next owner decision: automate advanced career k≤3.5 with two30-day/LP4 seeds, no
 retuning; then protected M4 forecast reporting and remaining M4→M6–M9 acceptance.
+
+## Advanced career k gate verified — 2026-09-10
+
+Code `13367c1`: `npm run sim:career:gate` now runs as part of `npm run verify`.
+Fresh30-day seeds42/99 both reachLP4:29,209/28,259serves, k3.483282/3.318249.
+Each whole-career value passes≤3.5 and exactly matches prior measurements;
+current reports record config2.0.1/rules24. Standard10cohorts and15rush cases,
+345engine/server tests, config zero warnings and build/typecheck PASS.
+Independent full-diff review: no actionable introduced defects. No economy JSON,
+engine runtime, payment/anchor or standard2–3 band changed. Receipt:
+`.qa/advanced-k-verification.json`; gate output `.qa/advanced-career-k-gate.json`.
+04§5/08changelog record owner policy. M3 progressed-k criterion PASS; M3 is6/12PASS
+and remainsOPEN for feel/art. Re-evaluate after Alpha playtest with real player data;
+monitor endgame inflation through7-day faucet/sink reporting, not k.
+Next: protected M4 forecast reporting/admin UI and remaining M4 acceptance → M6–M9.

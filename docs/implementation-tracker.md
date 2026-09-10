@@ -1,7 +1,7 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.46.0
-> **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-10 (forecast kernel03a6800 đã verify/review)
+> **Version:** v0.46.1
+> **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-10 (advanced career gate13367c1 đã verify/review)
 > **Trạng thái:** Active — **M0 COMPLETE theo exit criteria; xem báo cáo closure M0–M5. M1–M3 tiếp tục triển khai; M4 web server/outbox đã qua review và101browser checks; đạt11/18 tiêu chí; registry c1e953c, admin API6f42575 và editor56a0a44 đã verify/review; scoped core d91b92a đã verify/review; scope editor/impact a84f41f đã verify/review; account/import UI còn thiếu; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.3** (1 phase, mốc M0–M9).
 > **Owner:** Team
 > **Mục đích:** Master status board cho mọi feature F01–F28. Nhãn `Phase N` chỉ là **khoá parser** của dashboard-engine; mốc thật: P0 → M0 (nền) · P1 → M1–M2 · P2 → M3 · P3 → M4–M6 · P4 → M7–M8 · QA/release → M9. Là **input cho dashboard-engine** (`tools/dashboard-engine/build_dashboard.py`). Nguồn quyết định/scope = `02-GDD-trum-bia-hoi.md` + `06-ROADMAP-trum-bia-hoi.md`; tracker chỉ theo dõi **trạng thái build**.
@@ -345,3 +345,5 @@ rows. Follow owner queue M4→M6→M7→M8→M9; defer extra M5 breadth/performa
 | 2026-09-10 | v0.45.3 | Table batch11ceb79 verified:344tests,4guest/4art viewport checks,export safety/config/assets/build PASS; independent correction review clears all3findings. F24 in progress; next owner advanced-career gate k≤3.5, no economy retuning, before remaining M4 forecast reporting. |
 
 | 2026-09-10 | v0.46.0 | Owner advanced-k decision recorded04§5/08changelog; new two-seed30day/LP4 gate≤3.5 in verify, standard band unchanged. M3 progressed criterion PASS from verified3.483282/3.318249;6/12PASS/OPEN. New gate full verification and review in progress; no economy retuning. |
+
+| 2026-09-10 | v0.46.1 | Advanced gate13367c1 verified: fresh30-day seed42/99 reachLP4 and exactly reproduce k3.483282/3.318249≤3.5;345tests/config zero warnings/build/10standard cohorts/15rush PASS. Independent review no actionable findings. No economy retuning; M3 criterionPASS,6/12/OPEN. Next protected M4 forecast reporting/UI. |

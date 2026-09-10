@@ -127,3 +127,14 @@ làm lịch sử, không coi là pass. Khởi động dài/bộ nhớ và toànL
 | 2026-09-10 final storage |91/91browser and80MB real HTTP acceptance passed; exact full history/continuation/Appboot, latest20.458s boot. Storage code unchanged from reviewed c9db016. Full-career balance and LP0–LP7 still open. |
 
 | 2026-09-10 owner decision | Advanced profile dùng gate≤3.5,≥2seed30ngày/LP4 và≥500serves/seed; standard sim2–3 không đổi. Historical3.483282/3.318249 PASS; giữ daily diagnostics và công thức. Tái đánh giá sau Alpha bằng dữ liệu người chơi; lạm phát endgame dùng faucet/sink7ngày. |
+
+## Gate hiện tại — 2026-09-10
+
+`13367c1` chạy mới bằng config2.0.1/rules24: seed42 **3.483282134916905**,
+seed99 **3.3182494823317215**,30ngày/LP4 mỗi seed; số lượt29.209/28.259.
+Khớp chính xác k và số lượt của hai báo cáo trước. `advanced-career-k-gate.json`
+ghi hash lệnh mới cùng rulesVersion; không dùng hash rules23 làm chứng cứ cho rules24.
+345tests/config không cảnh báo/build/10standard cohorts/15rush PASS; review độc lập
+không có lỗi actionable. Receipt `.qa/advanced-k-verification.json`.
+
+| 2026-09-10 gate verified | Fresh two-seed gate13367c1 PASS, preserving prior k/serves with current rules24; full verification and independent review PASS. M3 progressed-k criterion closed, full M3 and LP0–LP7 acceptance remain open. |
