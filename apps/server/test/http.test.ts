@@ -152,12 +152,13 @@ test('cookie sessions expire and revoke durably, store only hashes and refuse CS
   await f.close(); f.store.close(); const reopened = await f.open(); assert.equal((await reopened.request('/player/state', undefined, a.cookie)).status, 401);
   const b = await guest({ ...f, ...reopened }); f.now += 10000;
   assert.equal((await reopened.request('/player/state', undefined, b.cookie)).status, 401);
-  assert.equal((await reopened.request('/auth/session', {}, b.cookie)).status, 401);
+  const fresh = await reopened.request('/auth/session', {}, b.cookie); assert.equal(fresh.status, 201);
+  const freshOwner = await fresh.json(); assert.equal(freshOwner.previousGuestId, b.playerId); assert.notEqual(freshOwner.playerId, b.playerId);
   for (const cookie of ['tbh-session=', 'tbh-session', 'tbh-session=forged', `tbh-session=; ${b.cookie}`]) {
     const rejected = await reopened.request('/auth/session', {}, cookie);
     assert.equal(rejected.status, 401); assert.equal(rejected.headers.get('set-cookie'), null);
   }
-  assert.equal(db.prepare('SELECT count(*) AS n FROM players').get()!.n, 2);
+  assert.equal(db.prepare('SELECT count(*) AS n FROM players').get()!.n, 3);
 });
 
 test('every public action refuses injected authority fields before durable command logging', async t => {
@@ -243,7 +244,7 @@ test('HTTPS deployment uses host-only Secure cookies and never exposes credentia
   assert.equal(response.status, 201); assert.match(response.headers.get('set-cookie')!, /^__Host-tbh-session=[a-f0-9]{64}; Path=\//);
   assert.match(response.headers.get('set-cookie')!, /; Secure$/); assert.doesNotMatch(response.headers.get('set-cookie')!, /Domain=/);
   assert.equal(response.headers.get('cache-control'), 'no-store'); assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
-  const payload = await response.json(); assert.deepEqual(Object.keys(payload).sort(), ['expiresAt', 'playerId', 'provider']);
+  const payload = await response.json(); assert.deepEqual(Object.keys(payload).sort(), ['created', 'expiresAt', 'playerId', 'provider']);
 });
 
 test('HTTP requires owned stream sequencing, returns recoverable gap/conflict acknowledgements and resumes the exact cursor after restart', async t => {

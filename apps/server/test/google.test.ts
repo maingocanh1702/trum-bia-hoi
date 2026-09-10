@@ -146,7 +146,8 @@ test('actual signed-token HTTP login rotates cookies and preserves server guest 
   const keptCookie = kept.headers.get('set-cookie')!.split(';')[0];
   assert.deepEqual((await (await f.call('/auth/session', {}, keptCookie)).json()).transition, { previousPlayerId: b.playerId });
   assert.equal((await (await f.call('/auth/session', {}, cookie)).json()).transition, undefined);
-  assert.equal((await f.call('/auth/session', {}, b.cookie)).status, 401);
+  const anonymous = await f.call('/auth/session', {}, b.cookie); assert.equal(anonymous.status, 201);
+  const anonymousOwner = await anonymous.json(); assert.equal(anonymousOwner.provider, 'guest'); assert.notEqual(anonymousOwner.playerId, b.playerId); assert.notEqual(anonymousOwner.playerId, a.playerId);
   assert.deepEqual(f.store.read(a.playerId), before); assert.ok(f.store.read(b.playerId));
 });
 

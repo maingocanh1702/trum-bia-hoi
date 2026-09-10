@@ -20,7 +20,7 @@ test('local account panel preserves the live archive and never creates a server 
   await expect(panel).toContainText('Tiến độ này đang lưu trên thiết bị');
   await expect(panel.getByRole('button', { name: 'Tiếp tục với Google', exact: true })).not.toBeVisible();
   await page.waitForTimeout(1200);
-  await panel.getByRole('button', { name: 'Để sau, chơi tiếp', exact: true }).click();
+  await panel.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
   await page.getByRole('button', { name: 'Cài đặt', exact: true }).click(); const after = await exported(page);
   expect(after.playerId).toBe(before.playerId); expect(after.shift!.id).toBe(before.shift!.id); expect(after.coins).toBe(before.coins);
   expect(after.staminaMs).toBeGreaterThan(before.staminaMs - 500); expect(after.completedShifts).toBe(before.completedShifts);

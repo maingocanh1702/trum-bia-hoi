@@ -8,7 +8,7 @@ in F25 and earlier slice contracts. No economy or engine rules change.
 | Situation | Behavior |
 |---|---|
 | New visitor, language accepted | Offer the two modes with explicit save limitations. |
-| Play without signing in | Full core gameplay for this tab's visit; no durable player history/achievements. Reload/reconnect within this visit preserves pending actions. A new tab visit starts fresh. |
+| Play without signing in | Full core gameplay for this tab's visit; no durable player history/achievements. Reload/reconnect within this visit preserves pending actions. A fresh navigation starts a new visit, including tabs copied from an opener; reload/back within the visit can resume. |
 | New visit sees an old guest cookie | Under the existing single-writer lock, replace only the exact expected guest session. Never restart or erase a Google account. Internal server command/audit records remain for integrity, not a recoverable guest career. |
 | New Google account | Attach current server guest progress once, retaining the current shift and command receipts. |
 | Existing Google account | Restore that account's progress directly after sign-in, without a second "stall" choice or merging guest totals. This is the announced default while continuing the owner's two-mode correction. |
@@ -26,3 +26,5 @@ recovery, Google restore, exact-session guard and transactional rollback.
 | Date | Change |
 |---|---|
 | 2026-09-10 | Record the owner's two-mode correction; remove the extra product-level save choice and stop durable guest resume. |
+
+| 2026-09-10 review correction | A known expired/revoked guest cookie may obtain only a fresh anonymous player, with the previous guest ID acknowledged by the server; unknown/Google credentials still fail closed. Bootstrap distinguishes newly created sessions to avoid a redundant restart. Navigation type distinguishes copied tab markers from reload/back. Tests cover dropped headers as well as dropped body, copied markers, expiry, and one first-visit creation. |

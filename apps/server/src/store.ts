@@ -186,6 +186,13 @@ export class GameStore {
       WHERE token_hash=? AND revoked_at IS NULL AND expires_at>?`).get(hash, this.now());
     return row ? { playerId: String(row.player_id), expiresAt: Number(row.expires_at), provider: row.subject === null ? 'guest' as const : 'google' as const } : null;
   }
+  /** Recognizes only a former guest credential, never grants access to its old player. */
+  guestCredentialPlayerId(token: string): string | null {
+    const hash = sessionHash(token);
+    const row = hash && this.db.prepare(`SELECT s.player_id FROM sessions s LEFT JOIN google_accounts a ON a.player_id=s.player_id
+      WHERE s.token_hash=? AND a.subject IS NULL`).get(hash);
+    return row ? String(row.player_id) : null;
+  }
   revokeSession(token: string) {
     const hash = sessionHash(token);
     if (hash) this.db.prepare('UPDATE sessions SET revoked_at=? WHERE token_hash=? AND revoked_at IS NULL').run(this.now(), hash);

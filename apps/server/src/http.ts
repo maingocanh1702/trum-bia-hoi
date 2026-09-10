@@ -188,9 +188,17 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
       const token = credential(req);
       if (req.method === 'POST' && path === '/auth/session') {
         const body = await json(req); if (!record(body) || Object.keys(body).length) throw new HttpError(400, 'invalidBody');
-        if (token !== undefined) { const owner = store.session(token); if (!owner) throw new HttpError(401, 'invalidSession'); reply(200, { ...owner, transition: store.accountTransition(token) }); return; }
+        let previousGuestId: string | null = null;
+        if (token !== undefined) {
+          const owner = store.session(token);
+          if (owner) { reply(200, { ...owner, transition: store.accountTransition(token) }); return; }
+          // A lost guest restart response may leave the revoked guest cookie.
+          // This permits only a NEW anonymous visit, never old-state/account access.
+          previousGuestId = store.guestCredentialPlayerId(token);
+          if (!previousGuestId) throw new HttpError(401, 'invalidSession');
+        }
         const created = store.createGuestSession(options.sessionTtlMs);
-        res.setHeader('Set-Cookie', cookie(created.token, created.expiresAt)); reply(201, { playerId: created.playerId, expiresAt: created.expiresAt, provider: 'guest' }); return;
+        res.setHeader('Set-Cookie', cookie(created.token, created.expiresAt)); reply(201, { playerId: created.playerId, expiresAt: created.expiresAt, provider: 'guest', created: true, ...(previousGuestId ? { previousGuestId } : {}) }); return;
       }
       // Authenticate after body IO, immediately before synchronous storage access.
       const body = req.method === 'POST' ? await json(req) : undefined;

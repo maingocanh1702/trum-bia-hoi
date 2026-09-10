@@ -182,7 +182,7 @@ for (const locale of ['vi', 'en']) test(`two play modes offer direct Google sign
 test('guest history survives a reload but is not restored when the tab visit ends', async ({ page, context }) => {
   await enter(page); await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
   await expect.poll(async () => (await snapshot(page)).world.phase).toBe('open');
-  const before = (await snapshot(page)).world, cookie = (await context.cookies()).find(c => c.name === 'tbh_session');
+  const before = (await snapshot(page)).world, cookie = (await context.cookies()).find(c => c.name === 'tbh-session');
   await page.reload(); await expect(page.locator('.network-status')).toContainText('Đã đồng bộ');
   expect((await snapshot(page)).world.shift.id).toBe(before.shift.id);
   await page.close(); const next = await context.newPage(); await next.goto('/');
@@ -192,7 +192,7 @@ test('guest history survives a reload but is not restored when the tab visit end
   const fresh = (await snapshot(next)).world;
   expect(fresh.playerId).not.toBe(before.playerId); expect(fresh.phase).toBe('resting'); expect(fresh.completedShifts).toBe(0);
   expect(fresh.lifetimeEarned).toBe(0); expect(fresh.peakLeague).toBeNull();
-  if (cookie) expect((await context.cookies()).find(c => c.name === cookie.name)?.value).not.toBe(cookie.value);
+  expect(cookie).toBeDefined(); expect((await context.cookies()).find(c => c.name === cookie!.name)?.value).not.toBe(cookie!.value);
   await next.getByRole('button', { name: 'Cài đặt', exact: true }).click();
   await expect(next.getByRole('dialog')).toContainText('Không lưu lịch sử chơi, thành tích');
   await expect(next.getByRole('dialog')).not.toContainText('Tiến độ được lưu trên server');
@@ -226,4 +226,60 @@ test('a lost restart response never strands a new guest visit behind the expired
   await next.reload(); await next.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
   await expect(next.locator('.network-status')).toContainText('Đã đồng bộ');
   expect((await snapshot(next)).world.playerId).not.toBe(old); expect((await snapshot(next)).world.phase).toBe('resting');
+});
+
+test('a restart whose entire response is lost can recover only a fresh guest from the revoked cookie', async ({ page, context }) => {
+  await enter(page); const old = (await snapshot(page)).world.playerId; await page.close();
+  const next = await context.newPage(); let beforeCookie = '';
+  await next.route('**/api/auth/guest/restart', async route => {
+    const cookies = await context.cookies(); beforeCookie = cookies.find(c => c.name === 'tbh-session')!.value;
+    const response = await route.fetch(); expect(response.status()).toBe(201);
+    // route.fetch itself updates browser cookies: restore them to model headers never arriving.
+    await context.addCookies(cookies); await route.abort();
+  });
+  await next.goto('/'); await expect(next.getByRole('alert')).toContainText('Chưa kết nối');
+  expect((await context.cookies()).find(c => c.name === 'tbh-session')!.value).toBe(beforeCookie);
+  await next.unroute('**/api/auth/guest/restart'); await next.reload();
+  await next.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
+  await expect(next.locator('.network-status')).toContainText('Đã đồng bộ');
+  const fresh = (await snapshot(next)).world; expect(fresh.playerId).not.toBe(old); expect(fresh.completedShifts).toBe(0); expect(fresh.phase).toBe('resting');
+});
+
+test('a copied tab visit marker cannot restore the old guest after its writer closes', async ({ page, context }) => {
+  await enter(page); const old = (await snapshot(page)).world.playerId;
+  const copied = await page.evaluate(() => ({ ...sessionStorage }));
+  await page.close(); const next = await context.newPage();
+  await next.addInitScript(data => { for (const [k,v] of Object.entries(data)) sessionStorage.setItem(k, v); }, copied);
+  await next.goto('/'); await expect(next.getByRole('heading', { name: 'Chọn cách chơi', exact: true })).toBeVisible();
+  await next.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
+  await expect(next.locator('.network-status')).toContainText('Đã đồng bộ');
+  expect((await snapshot(next)).world.playerId).not.toBe(old);
+});
+
+test('first visit creates one guest and never restarts the freshly created session', async ({ page }) => {
+  let resets = 0, creates = 0;
+  page.on('request', r => { if (r.url().endsWith('/auth/guest/restart')) resets++; });
+  page.on('response', r => { if (r.url().endsWith('/auth/session') && r.status() === 201) creates++; });
+  await enter(page); expect(resets).toBe(0); expect(creates).toBe(1);
+});
+
+test('a revoked guest cookie starts fresh without reusing the old outbox or blocking entry', async ({ page, context }) => {
+  await enter(page); const old = (await snapshot(page)).world.playerId, cookies = await context.cookies();
+  await page.request.post('/api/auth/logout', { data: {}, headers: { Origin: 'http://127.0.0.1:4179' } });
+  await context.addCookies(cookies); await page.reload();
+  await page.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
+  await expect(page.locator('.network-status')).toContainText('Đã đồng bộ');
+  const fresh = (await snapshot(page)).world; expect(fresh.playerId).not.toBe(old); expect(fresh.phase).toBe('resting');
+  expect((await journal(page)).playerId).toBe(fresh.playerId); expect((await journal(page)).pending).toEqual([]);
+});
+
+test('an actual opener tab cannot retain copied guest progress after lock refusal then reload', async ({ page }) => {
+  await enter(page); const old = (await snapshot(page)).world.playerId;
+  const opened = page.waitForEvent('popup'); await page.evaluate(() => { window.open('/'); });
+  const clone = await opened; await expect(clone.getByRole('alert')).toContainText('tab khác');
+  expect(await clone.evaluate(() => sessionStorage.getItem('tbh.guest.visit'))).toBeNull();
+  await page.close(); await clone.reload();
+  await clone.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
+  await expect(clone.locator('.network-status')).toContainText('Đã đồng bộ');
+  expect((await snapshot(clone)).world.playerId).not.toBe(old);
 });

@@ -75,22 +75,35 @@ export class RemoteGame {
   }
   static async open() {
     const game = new RemoteGame();
+    const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
     if (!navigator.locks) throw new RemoteError('storage');
     await new Promise<void>((resolve, reject) => {
       game.lockDone = navigator.locks.request(JOURNAL_KEY, { ifAvailable: true }, async lock => {
-        if (!lock) { reject(new RemoteError('otherTab')); return; }
+        if (!lock) {
+          if (navigation?.type === 'navigate') sessionStorage.removeItem(GUEST_VISIT_KEY);
+          reject(new RemoteError('otherTab')); return;
+        }
         await new Promise<void>(done => { game.release = done; resolve(); });
       }).catch(reject);
     });
     try {
       game.journal = readJournal();
-      let owner: PlayerSession;
+      let owner: PlayerSession, created = false;
       if (game.journal?.accountSwitch) {
         game.reconcileAccount = true; owner = await game.reconcileSession();
         if (game.world) return game; // Audited target already connected; never reconnect its old stream.
-      } else owner = game.identity = playerSession(await game.request('/auth/session', {}));
+      } else {
+        const response = await game.request('/auth/session', {});
+        owner = game.identity = playerSession(response); created = response.created === true;
+        if (created && owner.provider === 'guest' && game.journal && game.journal.playerId === response.previousGuestId) {
+          localStorage.removeItem(JOURNAL_KEY); game.journal = null;
+        }
+      }
       if (game.journal && game.journal.playerId !== owner.playerId) throw new RemoteError('conflict');
-      if (owner.provider === 'guest' && sessionStorage.getItem(GUEST_VISIT_KEY) !== owner.playerId) {
+      // A fresh navigation (including an opener/duplicate) is a new visit even
+      // when the browser copied sessionStorage. Reload/back preserves this tab.
+      const newVisit = owner.provider === 'guest' && (navigation?.type === 'navigate' || sessionStorage.getItem(GUEST_VISIT_KEY) !== owner.playerId);
+      if (owner.provider === 'guest' && !created && newVisit) {
         // An absent visit marker never authorizes replacing a Google account.
         // Probe browser storage before rotating any existing guest credential.
         sessionStorage.setItem(GUEST_VISIT_KEY, '');
