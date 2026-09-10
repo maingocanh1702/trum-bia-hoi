@@ -126,6 +126,9 @@ export class RemoteGame {
     const link = this.linking; this.linking = undefined; link?.reject(error);
   }
   private async reconcileSession() {
+    // Replacing the server nonce cancels any still-verifying POST before trusting a guest read.
+    // signInGoogle rechecks that nonce inside its transaction, so late verification cannot commit.
+    await this.request('/auth/google/challenge', {});
     const owner = playerSession(await this.request('/auth/session', {}));
     if (owner.playerId !== this.journal!.playerId) throw new RemoteError('conflict');
     this.identity = owner; this.reconcileAccount = false; return owner;

@@ -91,7 +91,7 @@ test('pre-mutation network failure stays guest and an explicit retry can link th
   expect((await journal(page)).playerId).toBe(before.playerId);
   await page.unroute('**/api/auth/google');
   await expect.poll(() => page.evaluate(() => window.linkTransport.state)).toBe('online');
-  expect(await link(page, token)).toMatchObject({ playerId: before.playerId, provider: 'google' });
+  expect(await link(page, await credential(page, 'link-before-network'))).toMatchObject({ playerId: before.playerId, provider: 'google' });
 });
 
 test('an existing Google save is never selected or merged by the guest-link transport', async ({ page, browser }) => {
@@ -217,4 +217,16 @@ test('opening the account menu during event catch-up is paused on the server bef
   await beginLink(page, token); release();
   await expect.poll(() => page.evaluate(() => window.linkResult)).toHaveProperty('provider', 'google');
   expect(pausedAtVerification).toBe(true);
+});
+
+test('an ambiguous guest result is fenced before resume so the old credential cannot arrive late', async ({ page }) => {
+  await openTransport(page); const token = await credential(page, 'link-late-verifier'), paths: string[] = [];
+  page.on('request', r => { if (r.url().includes('/api/auth/')) paths.push(new URL(r.url()).pathname); });
+  await page.route('**/api/auth/google', route => route.fulfill({ status: 503, json: { error: 'network' } }));
+  expect(await link(page, token)).toEqual({ error: 'network' });
+  expect(paths.slice(0, 3)).toEqual(['/api/auth/google', '/api/auth/google/challenge', '/api/auth/session']);
+  expect(await page.evaluate(() => window.linkTransport.identity.provider)).toBe('guest');
+  const late = await page.request.post('/api/auth/google', { data: { credential: token }, headers: { Origin: 'http://127.0.0.1:4179' } });
+  expect(late.status()).toBe(401); expect(await late.json()).toEqual({ error: 'googleVerificationFailed' });
+  expect(await page.evaluate(() => window.linkTransport.command({ type: 'startShift' }))).toEqual({ ok: true });
 });

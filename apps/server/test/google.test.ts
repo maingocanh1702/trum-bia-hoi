@@ -187,3 +187,27 @@ test('logout, expiry or a replaced challenge during real verification cannot rev
     const resumed = await f.guest(); assert.ok(resumed.playerId); assert.ok(f.store.read(a.playerId));
   }
 });
+
+test('web reconciliation replaces the nonce before trusting guest identity, refusing a late verified login', async t => {
+  const f = await apiFixture(t), a = await f.guest(), pending = await challenge(f, a.cookie);
+  f.store.command(a.playerId, { idempotencyKey: 'reconcile-open', command: { type: 'startShift' } });
+  const before = f.store.read(a.playerId);
+  let enter!: () => void, release!: () => void;
+  const entered = new Promise<void>(resolve => enter = resolve), gate = new Promise<void>(resolve => release = resolve);
+  t.after(() => release());
+  const original = f.client.getFederatedSignonCertsAsync.bind(f.client);
+  t.mock.method(f.client, 'getFederatedSignonCertsAsync', async () => { const certificates = await original(); enter(); await gate; return certificates; });
+  const response = f.call('/auth/google', { credential: token({ nonce: pending.nonce }) }, a.cookie);
+  await entered;
+  // A plain read overtakes verification; it is NOT proof that the pending POST failed.
+  assert.equal((await (await f.call('/auth/session', {}, a.cookie)).json()).provider, 'guest');
+  const fence = await challenge(f, a.cookie); assert.notEqual(fence.nonce, pending.nonce);
+  assert.equal((await (await f.call('/auth/session', {}, a.cookie)).json()).provider, 'guest');
+  release(); const late = await response;
+  assert.equal(late.status, 401); assert.equal(late.headers.get('set-cookie'), null);
+  assert.deepEqual(await late.json(), { error: 'invalidGoogleChallenge' });
+  assert.deepEqual(f.store.read(a.playerId), before);
+  assert.equal((await (await f.call('/auth/session', {}, a.cookie)).json()).provider, 'guest');
+  const fresh = await f.call('/auth/google', { credential: token({ nonce: fence.nonce }) }, a.cookie);
+  assert.equal(fresh.status, 200); assert.equal((await fresh.json()).playerId, a.playerId);
+});
