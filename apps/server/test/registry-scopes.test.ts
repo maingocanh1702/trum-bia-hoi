@@ -224,3 +224,28 @@ test('a scope replacement cannot overtake its future predecessor and expiry is r
   r.approve(f.actor(), short.version); f.now += 1000;
   assert.throws(() => r.publish(f.actor(), short.version), /invalidExpiry/);
 });
+
+test('campaign entitlement publishes immediately for new openings; other scopes and mixed day/season keys retain their floors', t => {
+  const f = fixture(t), r = f.registry;
+  // JSON import: loader accepts number|null; the seed's TypeScript type is null.
+  const edit = (c: Config['raw']) => { Object.assign(c.entitlements.freeSessionsPerDay, { campaignOverride: 5 }); };
+  const campaign = f.scope('short-campaign', { kind: 'campaign', expiresAt: NOW + 1000 });
+  const who = f.actor('game'), d = r.propose(who, { ...f.input(edit, campaign), effective: 'immediate' });
+  assert.equal(d.effective, 'immediate'); assert.throws(() => r.approve(who, d.version), /forbidden/);
+  r.approve(f.actor(), d.version); assert.equal(r.publish(who, d.version).effective_at, NOW);
+  const opening = f.store.command('alice', { idempotencyKey: 'open-campaign', command: { type: 'startShift' } });
+  assert.ok(opening.result.ok); assert.equal(r.config(opening.configVersion).raw.entitlements.freeSessionsPerDay.campaignOverride, 5);
+  const ticketId = r.requestSupport(f.actor('support'), { key: 'individual', playerId: 'alice', reason: 'Temporary policy check' });
+  for (const scope of [undefined, f.scope('segment'), f.scope('alice', { kind: 'player', ticketId, expiresAt: NOW + 2 * DAY })]) {
+    assert.throws(() => r.propose(f.actor(), { ...f.input(edit, scope), effective: 'immediate' }), /earlyActivation/);
+  }
+  const longer = { ...campaign, expiresAt: NOW + 40 * DAY, previousVersion: d.version };
+  for (const change of [(c: Config['raw']) => { edit(c); c.shift.dailyEarnCapBase++; },
+    (c: Config['raw']) => { edit(c); c.league.tiers[1].minSeasonEarnedBase++; }]) {
+    assert.throws(() => r.propose(f.actor(), { ...f.input(change, longer), effective: 'immediate' }), /earlyActivation/);
+  }
+  const withdraw = r.propose(who, f.input(() => {}, { ...campaign, previousVersion: d.version }));
+  assert.equal(withdraw.effective, 'immediate'); r.approve(f.actor(), withdraw.version); r.publish(who, withdraw.version);
+  assert.equal(r.resolve('alice').raw.entitlements.freeSessionsPerDay.campaignOverride, null);
+  assert.equal(f.store.read('alice').world.shift!.configVersion, opening.configVersion);
+});

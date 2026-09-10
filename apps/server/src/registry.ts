@@ -29,7 +29,7 @@ function changedPaths(a: unknown, b: unknown, path = ''): string[] {
   }
   return [path];
 }
-export function registryPolicy(keys: string[], c: Config) {
+export function registryPolicy(keys: string[], c: Config, scope?: ConfigScope['kind']) {
   const g = c.raw._meta.governance, tierFor = (key: string): Tier => {
     if (g.tiers.A.featureFlags.some(p => under(key, p))) return 'A';
     for (const tier of ['A', 'B', 'C'] as const) if (g.tiers[tier].sections.some(p => under(key, p))) return tier;
@@ -37,10 +37,10 @@ export function registryPolicy(keys: string[], c: Config) {
   };
   const tiers = keys.map(tierFor), tier = (['A', 'B', 'C'] as const).find(t => tiers.includes(t))!;
   const superOnly = keys.some(k => ['lottery', 'shopSeason', 'donation', 'cosmetics.donationTiersVnd', ...g.tiers.A.featureFlags].some(p => under(k, p)));
-  const effective: Effective = keys.some(k => ['league', 'lifePath', 'ledgers'].some(p => under(k, p))) ? 'next_season'
-    : tier === 'A' || keys.some(k => under(k, 'risk') || under(k, 'locations')) ? 'next_day' : tier === 'B' ? 'next_shift' : 'immediate';
-  const modes: Effective[] = keys.map(k => ['league', 'lifePath', 'ledgers'].some(p => under(k, p)) ? 'next_season'
+  const modes: Effective[] = keys.map(k => scope === 'campaign' && under(k, 'entitlements') ? 'immediate'
+    : ['league', 'lifePath', 'ledgers'].some(p => under(k, p)) ? 'next_season'
     : tierFor(k) === 'A' || under(k, 'risk') || under(k, 'locations') ? 'next_day' : tierFor(k) === 'B' ? 'next_shift' : 'immediate');
+  const effective = (['next_season', 'next_day', 'next_shift', 'immediate'] as const).find(mode => modes.includes(mode))!;
   return { tier, tiers, superOnly, effective, modes };
 }
 function activation(now: number, effective: Effective, c: Config): number {
@@ -178,7 +178,7 @@ export class ConfigRegistry {
     const prior = scope?.previousVersion ? JSON.parse(this.proposal(scope.previousVersion).keys) as string[] : [];
     const governed = [...new Set([...keys, ...prior])];
     if (!governed.length) throw Error('registry:invalidKeys');
-    return registryPolicy(governed, base);
+    return registryPolicy(governed, base, scope?.kind);
   }
   private currentBase(draft: { base_version: string }, scope?: ConfigScope) {
     if (this.latest().version !== draft.base_version || scope && (this.predecessor(scope)?.version ?? null) !== scope.previousVersion) throw Error('registry:staleBase');
