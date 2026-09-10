@@ -245,3 +245,5 @@ See [first-run contract](../first-run-locale.md); verification/review are in pro
 | Date | Change |
 |---|---|
 | 2026-09-10 language entry | Moved welcome before boot and added explicit locale acceptance; full F25 and M4 acceptance remain open pending checks and remaining account flows. |
+
+| 2026-09-10 locale verified | 5871453 passes350engine/server,3final presentation,91local/21remote/19admin browser,config/build and native independent review. First-run locale acceptance PASS, including no pre-accept player creation and preserved legacy/live-shift identity; F25 still in progress for Google web, configured login prompts, claim/conflict and eligibility. Evidence: .qa/locale-entry-verification.json. |

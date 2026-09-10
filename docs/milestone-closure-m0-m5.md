@@ -1,6 +1,6 @@
 # Milestone closure report — M0–M5
 
-2026-09-10 · implementation `9900505` (forecast logic `a99a567`) · config2.0.1/rules24/schema10.
+2026-09-10 · implementation `5871453` · config2.0.1/rules24/schema10.
 Authority: [ROADMAP §mốc M0–M9](../06-ROADMAP-trum-bia-hoi.md), including the
 acceptance sections it references. PASS means the whole stated criterion has
 supporting evidence; FAIL includes missing implementation or missing acceptance
@@ -99,15 +99,25 @@ No new gameplay test or80MB run was added solely to make this report green.
   VI/EN presents explicit continuously active current-population assumptions;
   VND estimates remain unavailable without observed donation data. No full M4 claim.
 
+- **E15** first-run language entry `5871453`:
+  `.qa/locale-entry-verification.json`:350engine/server,3final presentation,
+  91local/21remote/19admin browser, config/build PASS. Fresh vi/en/fr browser defaults,
+  immediate choice persistence, explicit acceptance before any player creation,
+  old welcomed preferences, failed writes/retry and unchanged live-shift identity
+  are covered. Native dynamic page import removes the redundant Suspense reveal
+  timer; paused-clock attendance/recovery tests pass without relaxing game clocks.
+  Independent review found no introduced actionable defect and passed3presentation
+  tests. Engine/runtime/sim/config unchanged; E13 k/rush evidence retained.
+
 ## Closure decision
 
 | Milestone | Exit verdict | Closure | Remaining acceptance |
 |---|---|---|---|
 | M0 | PASS (3/3) | COMPLETE | All three explicit exit criteria met; E10 config/build/tests and unchanged E8 sim pass. Foundation/checkpoint reviews also passed. |
 | M1 | FAIL (6/12 PASS) | OPEN | Full12min proof at all3viewports, complete7-screen coverage, measured upgrade recommendation, axe and new-player feel evidence. |
-| M2 | FAIL (4/9 PASS) | OPEN | Five-person test, real mid-shift Google browser flow and admin-editable onboarding; locale/login-prompt gaps below. |
+| M2 | FAIL (4/9 PASS) | OPEN | Five-person test, real mid-shift Google browser flow and admin-editable onboarding; login-prompt gaps below. |
 | M3 | FAIL (6/12 PASS) | OPEN | Advanced k criterion PASS under owner soft cap3.5; feel,32px badge acceptance and remaining equipment/football placeholders still pending. |
-| M4 | FAIL (11/18 PASS) | OPEN — next implementation priority | E7 remote authority/reconnect, E8 registry and E9/E10 admin browser workflow verified. E11/E12 scoped core/editor/factual impact verified; E14 protected coin forecast verified; observed VND/emergency and integrated account/import/eligibility/locale remain. |
+| M4 | FAIL (12/18 PASS) | OPEN — next implementation priority | E7 remote authority/reconnect, E8 registry and E9/E10 admin browser workflow verified. E11/E12 scoped core/editor/factual impact verified; E14 protected coin forecast and E15 first-run locale verified; observed VND/emergency and integrated account/import/eligibility remain. |
 | M5 | FAIL (9/25 PASS) | OPEN | Public seasons/ranking/shrine, rewards/referral/gifts and full integration; local LP acceptance rules pass. |
 
 ## M0 — foundation
@@ -179,7 +189,7 @@ No new gameplay test or80MB run was added solely to make this report green.
 | Google mid-shift without reload/lost tick; attach history once | FAIL | E5 transaction core PASS; public upload/GIS integration and live credential absent. |
 | Unrestricted guest core; exactly3login benefits and cooldown | FAIL | Guest core PASS E2; login-benefit prompt/cooldown UI not implemented. |
 | First session without login | PASS | E2 first-run guest scenarios. |
-| Locale chosen/accepted before first game screen | FAIL | Current welcome accepts entry, with locale only in Settings; no explicit first-run locale choice/acceptance. |
+| Locale chosen/accepted before first game screen | PASS | E15 first-run vi/en choice, browser default and stored acceptance before local/remote boot; no player/save mutation before accepting. Legacy choices and live-shift identity are preserved across reload. |
 | Locale switch preserves save | PASS | E2 “guest serves, reloads…switches locale” at4viewports. |
 | Guest progress migrates exactly once to Google | FAIL | Server account/import tests pass E5; end-to-end web claim remains absent. |
 | Guest cannot rank-write or claim donation gift | FAIL | These product paths are absent, not an exercised access-control acceptance. |
@@ -320,3 +330,5 @@ No public upload,80MB tuning, engine/config changes or merge/push/deploy.
 | 2026-09-10 advanced gate verified | E13 fresh two-seed30day/LP4 run exactly confirms prior3.483282/3.318249;345tests/config/build/standard/rush and independent review PASS. M3 remains6/12PASS/OPEN; no other criterion changed. |
 
 | 2026-09-10 | E14 protected coin forecast verified at9900505; M4 remains11/18 because the remaining complete exit criteria are unchanged. No economy retuning; advanced k policy remains E13. |
+
+| 2026-09-10 locale verified | E15 at5871453 closes the first-run locale criterion; M4 now12/18 PASS/OPEN. All other milestone verdicts unchanged; Google web/claim/invitations and full-game acceptance remain. |

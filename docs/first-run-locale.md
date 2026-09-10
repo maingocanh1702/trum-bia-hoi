@@ -28,3 +28,19 @@ config/build/unit/browser regressions and independent review before acceptance.
 | 2026-09-10 | First-run locale contract; full account/login acceptance remains open. |
 
 | 2026-09-10 bootstrap correction | A frozen-clock regression exposed the unnecessary React Suspense reveal timer at the one-page entry. Native dynamic imports now retain code splitting and mount the resolved screen directly; import failure has an explicit retry without touching player data. Old recovery tests accept locale before inspecting the unchanged archive recovery behavior. |
+
+## First-run locale verified — 2026-09-10
+
+Code `5871453`: vi/en selection and acceptance precede game/save/session boot.
+Fresh browser defaults, persisted choice, legacy welcomed preferences, storage
+refusal/retry, module-load retry and live-shift locale changes are verified.
+350engine/server tests PASS; final presentation parity3/3. Full browser regression:
+91local +21remote +19admin PASS. Current config zero warnings/build/typecheck PASS.
+Native independent review found no actionable defect and passed3presentation tests.
+Receipt `.qa/locale-entry-verification.json`; mobile/desktop screenshots inspected.
+F25 first-run locale criterion PASS; M4 now12/18 OPEN. Runtime engine, economy and
+auth transactions unchanged; existing standard/advanced k and rush evidence retained.
+Next: Google web link/claim/conflict and configured three-benefit soft invitations,
+then remaining M4 acceptance → M6–M9. Live Google Client ID still not provided.
+
+| 2026-09-10 verified | 5871453 passes350unit/3final presentation/131browser/config/build and independent review. Locale exit criterion PASS; full account and M4 acceptance remain open. |
