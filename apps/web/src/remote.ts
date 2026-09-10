@@ -7,6 +7,12 @@ type Action = { clientId: string; clientSeq: number; idempotencyKey: string; com
 type Journal = { playerId: string; clientId: string; nextSeq: number; heartbeatSeq: number; cursor: number; pending: Action[] };
 type Snapshot = { world: WorldView; configVersion: string; serverNow: number; revision: number; lastEventSeq: number; presentation: DomainEvent[]; menu: ReturnType<typeof menuReport> };
 type Reply = Snapshot & { clientId: string; acknowledgedSeq: number; heartbeatSeq: number; heartbeatUntil: number; heartbeatIntervalMs: number; heartbeatTimeoutMs: number; result?: Result; error?: string };
+export type PlayerSession = { playerId: string; provider: 'guest' | 'google'; expiresAt: number };
+type Link = { credential: string; resolve: (owner: PlayerSession) => void; reject: (error: unknown) => void };
+function playerSession(value: any): PlayerSession {
+  if (!value || typeof value.playerId !== 'string' || !value.playerId || !['guest', 'google'].includes(value.provider) || !Number.isSafeInteger(value.expiresAt)) throw new RemoteError('conflict');
+  return { playerId: value.playerId, provider: value.provider, expiresAt: value.expiresAt };
+}
 export type Connection = 'connecting' | 'online' | 'reconnecting' | 'invalidSession' | 'conflict' | 'storage';
 class RemoteError extends Error { constructor(readonly code: string, readonly status = 0) { super(code); } }
 function readJournal(): Journal | null {
@@ -19,6 +25,9 @@ function readJournal(): Journal | null {
 }
 /** A single browser writer owns this small journal; career history stays on the server. */
 export class RemoteGame {
+  identity!: PlayerSession;
+  private linking?: Link;
+  get accountBusy() { return Boolean(this.linking); }
   world!: WorldView & { events: DomainEvent[] };
   config!: Config;
   menu: ReturnType<typeof menuReport> = null;
@@ -46,9 +55,10 @@ export class RemoteGame {
     try { localStorage.setItem(JOURNAL_KEY, JSON.stringify(this.journal)); }
     catch { throw new RemoteError('storage'); }
   }
-  private async request(path: string, body?: unknown): Promise<any> {
+  private async request(path: string, body?: unknown, timeout = this.timeout): Promise<any> {
+    if (this.stopped) throw new RemoteError('stopped');
     const controller = new AbortController(); this.controllers.add(controller);
-    const timer = setTimeout(() => controller.abort(), this.timeout);
+    const timer = setTimeout(() => controller.abort(), timeout);
     try {
       const response = await fetch(`/api${path}`, { method: body === undefined ? 'GET' : 'POST', credentials: 'same-origin',
         headers: body === undefined ? {} : { 'Content-Type': 'application/json' }, ...(body === undefined ? {} : { body: JSON.stringify(body) }), signal: controller.signal });
@@ -69,7 +79,7 @@ export class RemoteGame {
     });
     try {
       game.journal = readJournal();
-      const owner = await game.request('/auth/session', {});
+      const owner = game.identity = playerSession(await game.request('/auth/session', {}));
       if (game.journal && game.journal.playerId !== owner.playerId) throw new RemoteError('conflict');
       const connected: Reply = await game.request('/player/connect', game.journal ? { clientId: game.journal.clientId } : {});
       if (connected.world.playerId !== owner.playerId) throw new RemoteError('conflict');
@@ -98,6 +108,48 @@ export class RemoteGame {
     this.world = { ...snapshot.world, events: snapshot.presentation }; this.menu = snapshot.menu;
     this.revision = snapshot.revision; this.frontier = snapshot.lastEventSeq;
   }
+  async googleChallenge(): Promise<{ clientId: string; nonce: string; expiresAt: number }> {
+    if (this.stopped || this.accountBusy || this.state !== 'online' || this.identity.provider !== 'guest') throw new RemoteError('accountBusy');
+    const challenge = await this.request('/auth/google/challenge', {});
+    if (!challenge || typeof challenge.clientId !== 'string' || !challenge.clientId || typeof challenge.nonce !== 'string' || !challenge.nonce || !Number.isSafeInteger(challenge.expiresAt)) throw new RemoteError('conflict');
+    return challenge;
+  }
+  /** Queue cookie rotation AFTER acknowledged commands, without recreating the player/stream. */
+  linkGoogle(credential: string): Promise<PlayerSession> {
+    if (this.stopped || this.accountBusy || this.state !== 'online' || this.identity.provider !== 'guest') return Promise.reject(new RemoteError('accountBusy'));
+    if (typeof credential !== 'string' || !credential) return Promise.reject(new RemoteError('googleVerificationFailed'));
+    const result = new Promise<PlayerSession>((resolve, reject) => { this.linking = { credential, resolve, reject }; });
+    this.onChange([]); this.wake(); return result;
+  }
+  private rejectLink(error: unknown) {
+    const link = this.linking; this.linking = undefined; link?.reject(error);
+  }
+  private async finishGoogleLink() {
+    const link = this.linking!;
+    try {
+      let failure: unknown;
+      try { await this.request('/auth/google', { credential: link.credential }, BOOT_TIMEOUT_MS); }
+      catch (error) {
+        // An explicit rejection did not rotate our cookie. Network/5xx loss is ambiguous.
+        if (error instanceof RemoteError && error.status >= 400 && error.status < 500) {
+          if (error.code === 'invalidSession') this.fail(error);
+          throw error;
+        }
+        failure = error;
+      }
+      let owner: PlayerSession;
+      try {
+        owner = playerSession(await this.request('/auth/session', {}));
+        if (owner.playerId !== this.journal!.playerId) throw new RemoteError('conflict');
+      } catch (error) { this.fail(error); throw error; }
+      if (owner.provider !== 'google') {
+        if (failure) throw failure;
+        const error = new RemoteError('conflict'); this.fail(error); throw error;
+      }
+      this.identity = owner; link.resolve(owner);
+    } catch (error) { link.reject(error); }
+    finally { if (this.linking === link) this.linking = undefined; this.again = true; this.onChange([]); }
+  }
   setPresence(active: boolean, paused: boolean) {
     if (this.active !== active || this.paused !== paused) { this.active = active; this.paused = paused; this.presenceVersion++; }
     this.wake();
@@ -110,12 +162,13 @@ export class RemoteGame {
   }
   start() { this.watchLiveness(); this.wake(); }
   close() {
-    this.stopped = true; clearTimeout(this.timer); clearTimeout(this.monitor);
+    this.stopped = true; this.rejectLink(new RemoteError('stopped')); clearTimeout(this.timer); clearTimeout(this.monitor);
     for (const controller of this.controllers) controller.abort();
     this.release?.(); this.release = undefined;
   }
   private fail(error: unknown) {
     if (this.stopped) return;
+    this.rejectLink(error);
     const code = error instanceof RemoteError ? error.code : '';
     const rejected = error instanceof RemoteError && error.status >= 400 && error.status < 500 && error.status !== 429;
     this.state = code === 'storage' ? 'storage' : code === 'invalidSession' ? 'invalidSession' :
@@ -123,6 +176,7 @@ export class RemoteGame {
     this.onChange([]);
   }
   command(command: Command): Promise<Result> {
+    if (this.accountBusy) return Promise.resolve({ ok: false, reason: 'accountBusy' });
     if (command.type === 'activity' || this.stopped || ['conflict', 'storage', 'invalidSession'].includes(this.state)) return Promise.resolve({ ok: false, reason: this.state });
     const j = this.journal!;
     if (j.pending.length >= this.config.values.network.commandBufferMax) return Promise.resolve({ ok: false, reason: 'bufferFull' });
@@ -174,6 +228,7 @@ export class RemoteGame {
         this.onChange(page.events.map((r: { event: DomainEvent }) => r.event));
         j.cursor = page.lastEventSeq; this.persist();
       }
+      if (this.linking && !this.stopped) await this.finishGoogleLink();
     } catch (error) { this.fail(error); }
     finally { this.working = false; if (!this.stopped && !['conflict', 'storage', 'invalidSession'].includes(this.state)) this.timer = setTimeout(() => this.wake(), this.again ? 0 : this.interval); }
   }
