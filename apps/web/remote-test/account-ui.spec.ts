@@ -101,13 +101,16 @@ test('closing while verification is pending keeps the shift paused until the lin
 
 test('a cancelled verification error retries without storing the credential or claiming success early', async ({ page }) => {
   await gis(page, 'ui-retry-verification'); await enter(page); const dialog = await account(page), before = await journal(page);
+  let posts = 0; page.on('request', r => { if (r.url().endsWith('/auth/google')) posts++; });
   let first = true;
   await page.route('**/api/auth/google', route => { if (first) { first = false; return route.fulfill({ status: 401, json: { error: 'invalidGoogleChallenge' } }); } return route.continue(); });
   await dialog.getByRole('button', { name: 'Tiếp tục với Google', exact: true }).click();
   await expect(dialog.getByRole('alert')).toContainText('không còn hợp lệ'); expect((await session(page)).provider).toBe('guest');
+  await page.evaluate(() => (window as any).__googleCallbacks[0]({ credential: 'late-duplicate' }));
   await dialog.getByRole('button', { name: 'Thử lại', exact: true }).click();
   await dialog.getByRole('button', { name: 'Tiếp tục với Google', exact: true }).click();
   await expect(dialog.getByRole('heading', { name: 'Đã kết nối Google', exact: true })).toBeVisible();
+  expect(posts).toBe(2);
   const options = await page.evaluate(() => (window as any).__googleOptions); expect(options).toHaveLength(2); expect(options[0].nonce).not.toBe(options[1].nonce); expect(options.every((o: any) => o.auto_select === false)).toBe(true);
   expect((await journal(page)).playerId).toBe(before.playerId);
   expect(await page.evaluate(() => Object.values(localStorage).some(value => String(value).includes('eyJ')))).toBe(false);

@@ -33,3 +33,4 @@ relevant unit suite and independent full-diff review. No engine/economy changes.
 | Date | Change |
 |---|---|
 | 2026-09-10 | Pin the Google panel integration; keep account switch/recovery and configured automatic invitations as separate follow-ups. |
+| 2026-09-10 callback correction | Consume each initialized callback permanently, including after a rejected verification; retry initializes a fresh generation. The signed HTTP regression reproduced three authentication POSTs instead of two before the fix. Do not reset callback consumption when the request settles. |

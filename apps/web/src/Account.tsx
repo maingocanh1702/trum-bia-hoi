@@ -6,11 +6,12 @@ import type { RemoteGame } from './remote';
 
 export function Account({ remote, locale, t, close }: { remote: RemoteGame | null; locale: Locale; t: (key: string) => string; close: () => void }) {
   const [attempt, setAttempt] = useState(0), [phase, setPhase] = useState('loading'), [error, setError] = useState('');
-  const button = useRef<HTMLDivElement>(null), generation = useRef(0), submitting = useRef(false);
+  const button = useRef<HTMLDivElement>(null), generation = useRef(0);
   const provider = remote?.identity.provider ?? 'local';
   const busy = phase === 'linking' || Boolean(remote?.accountBusy);
   useEffect(() => {
     const current = ++generation.current, live = () => current === generation.current;
+    let consumed = false;
     if (!remote || provider === 'google') return;
     setPhase('loading'); setError(''); button.current?.replaceChildren();
     void (async () => {
@@ -20,11 +21,11 @@ export function Account({ remote, locale, t, close }: { remote: RemoteGame | nul
         const api = await googleScript();
         if (!live() || !button.current) return;
         api.initialize({ client_id: challenge.clientId, nonce: challenge.nonce, auto_select: false, callback: result => {
-          if (!live() || !button.current?.isConnected || submitting.current || remote.identity.provider !== 'guest') return;
-          submitting.current = true; setPhase('linking'); setError(''); button.current?.replaceChildren();
+          if (!live() || !button.current?.isConnected || consumed || remote.identity.provider !== 'guest') return;
+          consumed = true; setPhase('linking'); setError(''); button.current?.replaceChildren();
           void remote.linkGoogle(result.credential).catch(error => {
             if (live()) setError(error instanceof Error ? error.message : 'network');
-          }).finally(() => { submitting.current = false; if (live()) setPhase('finished'); });
+          }).finally(() => { if (live()) setPhase('finished'); });
         } });
         api.renderButton(button.current, { type: 'standard', theme: 'outline', size: 'large', shape: 'pill', text: 'continue_with', locale, width: Math.min(320, button.current.parentElement!.clientWidth) }); // config-exempt: provider button layout pixels
         setPhase('ready');
