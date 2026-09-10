@@ -10,7 +10,7 @@ complete-game goal; milestones below are implementation order, not scope cuts.
 | M1 — serve loop, glasses, stock, upgrades, local save, spatial UI, core audio | In progress | Playable loop, local save/replay, stock/equipment/table UI, core SFX wired; final sprites and listening QA pending |
 | M2 — guest, vi/en, onboarding | In progress | Local guest + matching vi/en keys + event-driven guide with skip/repeat cap; Google account linking and 5-person evidence pending |
 | M3 — full menu, customer mix, weather, rush, business unlocks | In progress — 6/12 PASS | Standard k and advanced career≤3.5 pass under owner10/09 rule; remaining feel/32px badges/equipment and customer asset acceptance stay open. |
-| M4 — server authority, accounts, reconnect, config registry/admin | In progress | 13/18 exit criteria PASS; remote web936e9d5, registryc1e953c, admin API6f42575 and browser editor56a0a44 verified. Scoped config/forecasts/emergency and account/import/eligibility/locale remain. |
+| M4 — server authority, accounts, reconnect, config registry/admin | In progress | 14/18 exit criteria PASS; remote web936e9d5, registryc1e953c, admin API6f42575 and browser editor56a0a44 verified. Scoped config/forecasts/emergency and account/import/eligibility/locale remain. |
 | M5 — seasons, leaderboard/shrine, life path, leases, quests/referrals | In progress | Local LP/quests/attendance and lease calendar/UI implemented; season/peak/referrals/social and full acceptance remain |
 | M6 — risks, dog, emergency supplies | Pending | |
 | M7 — voluntary donations, cosmetic gifts, age notice | Pending | |
@@ -24,6 +24,21 @@ separate. Feature rows span milestones; their count is not milestone completion.
 Owner queue: remaining M4 registry/admin/account acceptance → M6 → M7 → M8 → M9.
 No additional M5 breadth or history-volume tuning before those dependencies.
 
+## Latest validation closure — 2026-09-10
+
+Code `03dae56` (base `25cc21c`): reject threshold-group deletion at proposal and
+preview/publication admission. Approved pre-fix drafts are fenced; already-published
+scopes remain readable and can be corrected without changing live pins. Four new
+regressions failed before their respective fixes. Final **361/361 engine/server,
+19/19 admin browser,33 focused, config zero warnings and build/typecheck PASS**.
+Initial independent review P1 about historical composition was corrected; final
+review confirms compatibility and independently passes all5 targeted cases.
+Receipt `.qa/threshold-admission-verification.json`. No economy JSON or engine
+change, merge/push/deploy, live Google consent or full-game completion claim.
+
+M4 is14/18 OPEN. Next: server-owned review/eligibility for imported local history,
+then remaining M4 acceptance and M6–M9. Keep public upload/performance work deferred.
+
 ## Latest owner correction — guest on this device (2026-09-10 15:30)
 
 Code `e34fd56` removes new-tab guest reset and journal deletion; same browser
@@ -32,8 +47,8 @@ session and Google attach/restore remain. Missing credentials keep the old journ
 and refuse mismatched state. VI/EN offers distinguish account-only history,
 achievements, ranking and cross-device restore; native guest exit upsell removed.
 357unit/server +84remote +4related local +19admin checks, config/build PASS; scoped
-review found no introduced defects. Earlier invitation/config P1 stays [OPEN](invitation-config-review.md),
-so M4 remains13/18 and full F25 is unfinished. No engine/server/config modifications
+review found no introduced defects. At that checkpoint the earlier invitation/config P1 remained open; the separate
+validation closure above now resolves it. Full F25 remains unfinished. No engine/server/config modifications
 in the correction from90d1a50. Older fresh-visit interpretations below are superseded.
 
 ## Decisions and boundaries
@@ -2485,3 +2500,5 @@ public upload or merge/deploy. Next: configured invitations/cooldown and remaini
 M4 acceptance → M6–M9; historical upload/tuning remainsM9.
 
 | 2026-09-10 Steer #5 | Guest device persistencee34fd56 verified by357unit/84remote/4local/19admin/config/build and scoped review with no introduced defects. Correct prior ephemeral-guest interpretation; preserve current owner auth/transport boundaries. Invitation-config P1 remains a separate open follow-up; no extra milestone closed. |
+
+| 2026-09-10 | E21 server admission03dae56 verified; M4 guest-benefits/cooldown PASS,14/18 OPEN. No economy/engine changes. |

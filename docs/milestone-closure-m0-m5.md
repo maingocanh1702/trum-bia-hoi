@@ -1,6 +1,6 @@
 # Milestone closure report — M0–M5
 
-2026-09-10 · implementation `ddc77a9` · config2.0.1/rules24/schema10.
+2026-09-10 · implementation `03dae56` · config2.0.2/rules24/schema10.
 Authority: [ROADMAP §mốc M0–M9](../06-ROADMAP-trum-bia-hoi.md), including the
 acceptance sections it references. PASS means the whole stated criterion has
 supporting evidence; FAIL includes missing implementation or missing acceptance
@@ -13,9 +13,10 @@ pause until closed, stock purchase keeps the menu open, in-shift upgrades work,
 whole-table service remains live, customer loss uses numeric coin/reputation toast.
 IndexedDB replaces career localStorage under the documented storage deviation;
 append-only history, legacy migration and backup preservation remain required.
-Owner10/09 two-mode correction supersedes durable guest reopen: reload/reconnect
-within a visit preserves play, fresh navigation starts fresh; Google accounts retain
-progress. Existing local archives and internal server audit remain preserved.
+Owner10/09 Steer #5 at15:30 supersedes the earlier fresh-visit interpretation:
+guest progress persists on this device across tabs/browser reopen; Google adds
+durable player history/achievements/ranking/cross-device restore. E20 verifies this.
+Existing local archives and internal server audit remain preserved.
 
 ## Evidence reused and verified
 
@@ -163,7 +164,7 @@ No new gameplay test or80MB run was added solely to make this report green.
 | M1 | FAIL (6/12 PASS) | OPEN | Full12min proof at all3viewports, complete7-screen coverage, measured upgrade recommendation, axe and new-player feel evidence. |
 | M2 | FAIL (4/9 PASS) | OPEN | Five-person test, real mid-shift Google browser flow and admin-editable onboarding; login-prompt gaps below. |
 | M3 | FAIL (6/12 PASS) | OPEN | Advanced k criterion PASS under owner soft cap3.5; feel,32px badge acceptance and remaining equipment/football placeholders still pending. |
-| M4 | FAIL (13/18 PASS) | OPEN — next implementation priority | E7 remote authority/reconnect, E8 registry and E9/E10 admin browser workflow verified. E11/E12 scoped core/editor/factual impact verified; E14 forecast, E15 locale and E18 current-visit Google attachment/restore verified; observed VND/emergency, live consent, invitations and import/eligibility remain; E19 reauthentication verified. |
+| M4 | FAIL (14/18 PASS) | OPEN — next implementation priority | E7 remote authority/reconnect, E8 registry and E9/E10 admin browser workflow verified. E11/E12 scoped core/editor/factual impact verified; E14 forecast, E15 locale and E18 current-visit Google attachment/restore verified; observed VND/emergency, live consent and import/eligibility remain; E19 reauthentication and E21 invitations/validation verified. |
 | M5 | FAIL (9/25 PASS) | OPEN | Public seasons/ranking/shrine, rewards/referral/gifts and full integration; local LP acceptance rules pass. |
 
 ## E20 — guest device persistence, owner Steer #5 (2026-09-10 15:30)
@@ -192,6 +193,21 @@ proposal validation; [separate follow-up](invitation-config-review.md) remains O
 The invitation/cooldown code is implemented, but that prior slice is not certified
 by the guest correction. M4 stays **13/18 OPEN**. No engine/server/config file
 changed from90d1a50; earlier config2.0.2 work and simulations are separate evidence.
+
+## E21 — invitation threshold admission
+
+Code `03dae56` (base `25cc21c`): reject threshold-group deletion at proposal and
+preview/publication admission. Approved pre-fix drafts are fenced; already-published
+scopes remain readable and can be corrected without changing live pins. Four new
+regressions failed before their respective fixes. Final **361/361 engine/server,
+19/19 admin browser,33 focused, config zero warnings and build/typecheck PASS**.
+Initial independent review P1 about historical composition was corrected; final
+review confirms compatibility and independently passes all5 targeted cases.
+Receipt `.qa/threshold-admission-verification.json`. No economy JSON or engine
+change, merge/push/deploy, live Google consent or full-game completion claim.
+
+With E20 invitation/browser evidence, the M4 guest-benefits/cooldown criterion is
+now PASS. M4 is **14/18 OPEN**; public archive transport remains deferred to M9.
 
 ## M0 — foundation
 
@@ -260,7 +276,7 @@ changed from90d1a50; earlier config2.0.2 work and simulations are separate evide
 | Beyond grace: server normally closes and returns ShiftClosed; no client-only ticking | PASS | Backend9f38166 exact expiry/restart/normal closing plus E7 browser grace-close/ShiftClosed book; offline yard stays frozen and returning inactive projection no longer hides it. |
 | Local-first history replays at import; no client-only rules after cutover | FAIL | Shared engine and E5 full import replay PASS; online browser authority now PASS in E7; public local archive migration remains deferred by owner, so full import acceptance stays open. |
 | Google mid-shift without reload/lost tick; attach history once | FAIL | E5/E18 new-account live-shift attachment and existing-account restore PASS with signed fixtures; literal minute5 acceptance, historical public local upload and live configured consent remain absent. |
-| Unrestricted guest core; exactly3login benefits and cooldown | FAIL | Guest core PASS E2/E20; current book/season-entry invitations show exactly3account benefits, are skippable and share the configured cooldown across tabs. The preceding invitation slice remains under a P1 config proposal validation finding; see invitation-config-review.md. Actual community board/shrine remains separate M5 work. |
+| Unrestricted guest core; exactly3login benefits and cooldown | PASS | E2/E20 guest core and84remote browser checks cover skippable book/season-entry invitations, exactly3benefits and shared configured cooldown across tabs. E21 resolves the separate config admission P1 with361unit/19admin/config/build and independent review. Actual community board/shrine remains separate M5 work. |
 | First session without login | PASS | E2 first-run guest scenarios. |
 | Locale chosen/accepted before first game screen | PASS | E15 first-run vi/en choice, browser default and stored acceptance before local/remote boot; no player/save mutation before accepting. Legacy choices and live-shift identity are preserved across reload. |
 | Locale switch preserves save | PASS | E2 “guest serves, reloads…switches locale” at4viewports. |

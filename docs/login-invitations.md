@@ -41,11 +41,13 @@ still pending. No live Google consent is claimed.
 
 ## Verification
 
-Current guest/invitation browser regression passes (84 remote cases, including seven
-invitation cases), but the full earlier invitation slice is **not review-complete**.
-A P1 config proposal validation defect in the preceding base is recorded in
-[invitation config follow-up](invitation-config-review.md). Owner Steer #5 excludes
-engine/config edits from this correction; guest persistence is reviewed separately.
+Guest/invitation browser regression passes (84 remote cases, including seven
+invitation cases; E20). The separate server admission defect is now resolved at
+`03dae56`:361unit/server,19admin browser,config/build and independent review PASS.
+Historical pins remain readable, while new/queued proposals cannot delete installed
+thresholds. No active guest-exit upsell. M4 invitation/cooldown criterion PASS;
+community board/shrine and other M4/F25 gaps remain. See
+[validation closure](invitation-config-review.md).
 
 ## Changelog
 
@@ -56,3 +58,5 @@ engine/config edits from this correction; guest persistence is reviewed separate
 | 2026-09-10 review correction | P1 addressed: departure thresholds now live in governed config2.0.2, with explicit old-snapshot compatibility and no game-economy retune. |
 
 | 2026-09-10 15:30 owner Steer #5 | Device-persistent guest progress replaces fresh-visit reset; shared cooldown survives reopening. Remove native departure warning and its dedicated sheet, clarify account-only benefits, keep skippable book/ranking-entry cards and menu pause. No config/engine changes in this correction. |
+
+| 2026-09-10 18:02 follow-up verified | Owner authorizes separate server-only schema validation.03dae56 and E21 close the prior P1; no economy values or engine rules changed. |

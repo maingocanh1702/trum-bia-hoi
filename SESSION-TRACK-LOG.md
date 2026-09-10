@@ -5,6 +5,22 @@
 
 ---
 
+## Threshold admission verified — owner18:02 follow-up, 2026-09-10
+
+Code `03dae56` (base `25cc21c`): reject threshold-group deletion at proposal and
+preview/publication admission. Approved pre-fix drafts are fenced; already-published
+scopes remain readable and can be corrected without changing live pins. Four new
+regressions failed before their respective fixes. Final **361/361 engine/server,
+19/19 admin browser,33 focused, config zero warnings and build/typecheck PASS**.
+Initial independent review P1 about historical composition was corrected; final
+review confirms compatibility and independently passes all5 targeted cases.
+Receipt `.qa/threshold-admission-verification.json`. No economy JSON or engine
+change, merge/push/deploy, live Google consent or full-game completion claim.
+
+M4 now14/18 OPEN. Continue server eligibility/review for imported history; guest
+device progress remains asE20. Imported local results require recorded approval;
+post-import server earnings must still count. No public upload or80MB tuning now.
+
 ## Owner Steer #5 — guest device persistence, 2026-09-10 15:30
 
 Correction base `90d1a50`. Guest stall/coins/upgrades/day/shift persist across new
