@@ -364,3 +364,35 @@ test('moderation HTTP uses Google plus MFA, exact admin context and archive iden
   assert.equal((await f.call(path, { ...flag, key: 'after-expiry' }, superAdmin)).status, 401);
   assert.equal((await f.call(history, undefined, superAdmin)).status, 401);
 });
+
+test('authenticated emergency transport requires Super MFA and fresh confirmation, preserves retries and records independent post-review',async t=>{
+ const f=await fixture(t),economy=await f.login('economy-one'),superOne=await f.login('super-one');
+ for(const query of ['?emergency=0','?emergency=1&emergency=1','?version=&emergency=1'])assert.equal((await f.call('/admin/draft-source'+query,undefined,superOne)).status,400);
+ assert.equal((await f.call('/admin/draft-source?emergency=1',undefined,economy)).status,403);
+ const actor=f.store.adminAuth.actor(superOne.split('=')[1],adminDirectory(f.accounts));
+ const scheduledSnapshot=structuredClone(config.raw);scheduledSnapshot.shift.dailyEarnCapBase++;
+ const scheduled=f.store.registry.propose(actor,{key:'future-source',baseVersion:config.version,snapshot:scheduledSnapshot,reason:'Future changes'});
+ assert.equal((await f.call('/admin/draft-source?version='+scheduled.version+'&emergency=1',undefined,superOne)).status,409);
+ const source=await f.call('/admin/draft-source?emergency=1',undefined,superOne);assert.equal(source.status,200);
+ source.data.snapshot.shift.dailyEarnCapBase++;
+ const input={key:'emergency-auth',baseVersion:source.data.baseVersion,snapshot:source.data.snapshot,reason:'Emergency correction',emergency:true};
+ assert.equal((await f.call('/admin/proposals',input,economy)).status,403);
+ const pending=await f.google('super-two');assert.equal(pending.data.phase,'mfa');
+ assert.equal((await f.call('/admin/proposals',input,pending.cookie)).status,401);
+ const proposed=await f.call('/admin/proposals',input,superOne);assert.equal(proposed.status,200);const version=proposed.data.version;
+ assert.equal((await f.call('/admin/proposals',input,superOne)).data.version,version);
+ assert.equal((await f.call('/admin/approve',{version},superOne)).status,400);
+ assert.equal((await f.call('/admin/publish',{version},superOne)).status,409);
+ const preview=await f.call('/admin/impact',{version},superOne);assert.equal(preview.status,200);assert.deepEqual(preview.data.supersedes,[]);
+ assert.equal((await f.call('/admin/publish',{version,impactToken:preview.data.token},economy)).status,403);
+ assert.equal((await f.call('/admin/publish',{version,impactToken:preview.data.token},superOne,{'X-TBH-Admin-Context':'stale'})).status,409);
+ const receipt=await f.call('/admin/publish',{version,impactToken:preview.data.token},superOne);assert.equal(receipt.status,200);
+ const retry=await f.call('/admin/publish',{version},superOne);assert.equal(retry.status,200);assert.deepEqual(retry.data,receipt.data);
+ const detail=await f.call('/admin/config?version='+version,undefined,superOne);assert.equal(detail.data.reviewTicket.dueAt,f.now+86400000);
+ assert.equal((await f.call('/admin/emergency-review',{version,reason:'self'},superOne)).status,403);
+ assert.equal((await f.call('/admin/emergency-review',{version,reason:'review'},economy)).status,403);
+ const factor=await f.call('/admin/auth/factor',{code:totp(defaults[1].totpSecret!,Math.floor(f.now/30000))},pending.cookie);assert.equal(factor.status,200);
+ const review=await f.call('/admin/emergency-review',{version,reason:'Checked schedule replacements'},factor.cookie);assert.equal(review.status,200);
+ assert.deepEqual((await f.call('/admin/emergency-review',{version,reason:'Checked schedule replacements'},factor.cookie)).data,review.data);
+ assert.equal((await f.call('/admin/config?version='+version,undefined,factor.cookie)).data.review.reviewedBy,'super-two');
+});

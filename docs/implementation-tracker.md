@@ -1,8 +1,11 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.61.0
+> Current owner target (Steer12): **playable-v0**, not full milestone closure. Guest full-shift smoke on three viewports + dev identity + persistence/performance; M6/M7/M8 deferred; working draft/placeholder assets accepted.
+
+> **Version:** v0.62.2
 > **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-10 (M4 registry lifecycleb5d3545 verified/reviewed;15/18)
 > **Trạng thái:** Active — **M0 COMPLETE theo exit criteria; xem báo cáo closure M0–M5. M1–M3 tiếp tục triển khai; M4 web server/outbox đã qua review và101browser checks; đạt15/18 tiêu chí; chọn ngôn ngữ trước game5871453 đã verify/review; registry c1e953c, admin API6f42575 và editor56a0a44 đã verify/review; scoped core d91b92a đã verify/review; scope editor/impact a84f41f và dự báo xu7ngày a99a567 đã verify/review; Google guest-link transport3c369aa đã verify/review; guest giữ tiến độ trên thiết bị theo Steer #5 lúc15:30; diễn giải theo phiên8c9dc64 đã bị thay thế; đăng nhập lại ddc77a9 đã verify/review; guest trên thiết bịe34fd56 đã verify/review; lời mời/cooldown và validation config03dae56 đã verify/review; core/API duyệt lịch sử local và flag521e901 đã verify/review; baseline và caller-only score7e7f337 đã verify/review; controls85fbdfb đã verify/review:378unit/server +24admin browser, final5ca liên quan/config/build qua; public rank628eb72 đã verify/review:386unit/server,11affected remote/24admin browser,config/build; review cuối CLEAN sau sửa P1 display bounds; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.3** (1 phase, mốc M0–M9).
+> **Release scope:** M6/M7/M8 DEFERRED by owner 2026-09-11 — post-release. M4 → automated gameplay M1/M2/M3/M5 → assets → gameplay-facing M9 release candidate. Free, no monetization in this build.
 > **Owner:** Team
 > **Mục đích:** Master status board cho mọi feature F01–F28. Nhãn `Phase N` chỉ là **khoá parser** của dashboard-engine; mốc thật: P0 → M0 (nền) · P1 → M1–M2 · P2 → M3 · P3 → M4–M6 · P4 → M7–M8 · QA/release → M9. Là **input cho dashboard-engine** (`tools/dashboard-engine/build_dashboard.py`). Nguồn quyết định/scope = `02-GDD-trum-bia-hoi.md` + `06-ROADMAP-trum-bia-hoi.md`; tracker chỉ theo dõi **trạng thái build**.
 > **Cập nhật:** đổi status mỗi khi 1 feature chuyển trạng thái (bắt đầu code / review / merge).
@@ -115,10 +118,10 @@ rows. Follow owner queue M4→M6→M7→M8→M9; defer extra M5 breadth/performa
 | F12 | 🎮 Code | Giải Nhậu & Vụ Bia — 8 bậc, 2 Vụ Bia song song | 🟡 | `packages/engine/src/seasons.ts` | 🔒S 🔒B | Rules23: hai mùa theo lịch, thu nhập sau daily cap, peak thật, lịch sử cá nhân và panel VI/EN. Đã verify/review tại faece69: 248 engine/server, 79 browser + 6 kiểm tra lại, config/build/k nền/rush qua. E25 public live ranking628eb72 verified/review CLEAN; snapshots và mailbox chưa xong. |
 | F13 | 🎮 Code | Đường Lên Trùm — LP0–LP7, gate tính năng & mặt bằng | 🟡 | `codex/game-build-isolated` | 🔒S | Requirements/claim-once và producers đã có. Hai seed30ngày (480ca) tớiLP4; replay tháng khớp,250tests/config/build/k nền/rush/review qua. FullLP0–LP7/balance còn mở; save tháng80MB vượt localStorage; adapter IndexedDB c9db016 đã review và qua91browser/80MB exactreopen/Appboot. |
 | F14 | 🎮 Code | Mặt Bằng Quán — 9 mặt bằng, rent/cọc 7 ngày | 🟡 | `codex/game-build-isolated` | 🔒S | Rules22 quote/purchase/early move/expiry/refund, real-calendar pause/offline, config/replay/SQLite và menu VI/EN.234 engine/server,77browser,config/build,10kcohorts+15rush pass; native review fixes verified atce7564b. Break-even/art/neighborhood/shift-report còn tiếp tục. |
-| F15 | 🎮 Code | Sự Cố Quán Nhậu — bảo kê, trộm offline, đánh nhau (kiểm tra ATTP ⏸ pending) | ⬜ | `—` | 🔒S | Spec `docs/features/F15-risk-events.md`; §4 kiểm tra pending, `risk.inspection.enabled=false`. |
+| F15 | 🎮 Code | Sự Cố Quán Nhậu — bảo kê, trộm offline, đánh nhau (kiểm tra ATTP ⏸ pending) | ⏸ | `—` | 🔒S | Spec `docs/features/F15-risk-events.md`; §4 kiểm tra pending, `risk.inspection.enabled=false`. M6/M7/M8 DEFERRED by owner 2026-09-11 — post-release. Preserve existing code/config/art; OFF/hidden for this release. |
 | F16 | 🎮 Code | Rủ Bạn & Huy Hiệu — 3 mốc, huy hiệu Kết Nối | ⬜ | `—` | 🔒S | Spec `docs/features/F16-referral-badges.md`. |
 | F28 | 🎮 Code | Bảng Xếp Hạng & Bàn Thờ Ông Địa — top N, hàng của tôi, snapshot kết Vụ | 🟡 | `apps/server/src/competitive-score.ts` | 🔒S 🔒B | Spec `docs/features/F28-leaderboard.md`; config `leaderboard` tier A. M4 prerequisite + M5. E23: caller-only score/baseline7e7f337 verified;376unit/server,19admin,32focused,config/build/review PASS. E24 admin history/review controls85fbdfb verified;378unit/server +24admin browser, final5 affected browser/config/build/review PASS. E25 public live query/VI–EN UI628eb72 verified:386unit/server,52focused,11affected remote/24admin browser,config/build and final CLEAN review. P1 display bounds fixed; M4=15/18. Immutable snapshots and profile names remain. Owner10/09: giữ tiến độ local, chỉ cộng lịch sử vào BXH sau khi duyệt, không cộng trùng. |
-| F18 | 🎮 Code | Chó Giữ Quán — combat bảo kê, bảo hiểm trộm | 🟡 | `codex/game-build-isolated` | 🔒S | Mua/nâng 3 cấp từ config, debit chung + replay; sheet VI/EN, hình cùng một chó 3 cấp và reduced motion. Review CLEAN tại 0216cb0, config/build/60 unit/28 E2E/asset/sim pass; combat/capture/theft/server chưa có. |
+| F18 | 🎮 Code | Chó Giữ Quán — combat bảo kê, bảo hiểm trộm | ⏸ | `codex/game-build-isolated` | 🔒S | Mua/nâng 3 cấp từ config, debit chung + replay; sheet VI/EN, hình cùng một chó 3 cấp và reduced motion. Review CLEAN tại 0216cb0, config/build/60 unit/28 E2E/asset/sim pass; combat/capture/theft/server chưa có. M6/M7/M8 DEFERRED by owner 2026-09-11 — post-release. Preserve existing code/config/art; OFF/hidden for this release. |
 | F22 | 🎮 Code | Bia Đấm — LLM server-side, quota 20/ngày | ⬜ | `—` | 🔒S | Spec `docs/features/F22-ai-assistant.md`. Tùy feasibility. |
 | F26 | 🎮 Code | ~~Vé Mở Ca & Thanh Toán~~ — ⛔ **bỏ 08/09: chơi free hết** | ⏸ | `—` | — | Spec `docs/features/F26-daily-session-pass-payments.md`. Cần payment/provider review. |
 
@@ -126,9 +129,9 @@ rows. Follow owner queue M4→M6→M7→M8→M9; defer extra M5 breadth/performa
 
 | PR | Wave | Feature | Status | Branch | Gates | Notes |
 |----|------|---------|:------:|--------|:-----:|-------|
-| F19 | 🎮 Code | Cúp Bóng Đá — lịch + tỉ số thật, TV, Giờ Vàng xem bóng | ⬜ | `—` | 🔒S | Spec `docs/features/F19-world-cup-event.md` + `07-SPEC-shop-mua-giai-worldcup.md`. Cần nguồn API. |
-| F20 | 🎮 Code | Mời Bia Hơi — **monetization duy nhất**, donate cho admin, cosmetic-only, KHÔNG P2W (mốc M7) | ⬜ | `—` | 🔒S | Spec `docs/features/F20-donation.md`. |
-| F21 | ⚖️ Economy | Vé Số Lấy Hên — xổ số/Vietlott, **cần legal review** | ⬜ | `—` | 🔒S | Spec `docs/features/F21-lottery.md`. EV target 0.6–0.8 (sink); blocked tới legal review. |
+| F19 | 🎮 Code | Cúp Bóng Đá — lịch + tỉ số thật, TV, Giờ Vàng xem bóng | ⏸ | `—` | 🔒S | Spec `docs/features/F19-world-cup-event.md` + `07-SPEC-shop-mua-giai-worldcup.md`. Cần nguồn API. M6/M7/M8 DEFERRED by owner 2026-09-11 — post-release. Preserve existing code/config/art; OFF/hidden for this release. |
+| F20 | 🎮 Code | Mời Bia Hơi — **monetization duy nhất**, donate cho admin, cosmetic-only, KHÔNG P2W (mốc M7) | ⏸ | `—` | 🔒S | Spec `docs/features/F20-donation.md`. M6/M7/M8 DEFERRED by owner 2026-09-11 — post-release. Preserve existing code/config/art; OFF/hidden for this release. |
+| F21 | ⚖️ Economy | Vé Số Lấy Hên — xổ số/Vietlott, **cần legal review** | ⏸ | `—` | 🔒S | Spec `docs/features/F21-lottery.md`. EV target 0.6–0.8 (sink); blocked tới legal review. M6/M7/M8 DEFERRED by owner 2026-09-11 — post-release. Preserve existing code/config/art; OFF/hidden for this release. |
 
 ---
 
@@ -139,9 +142,9 @@ rows. Follow owner queue M4→M6→M7→M8→M9; defer extra M5 breadth/performa
 | 0 — Nền (M0) | 7 | 0 | 7 | 0 | 0 | 0% |
 | 1 — Lõi + onboarding (M1–M2) | 6 | 0 | 6 | 0 | 0 | 0% |
 | 2 — Demand-mix (M3) | 2 | 0 | 2 | 0 | 0 | 0% |
-| 3 — Server + meta + risk (M4–M6) | 10 | 0 | 3 | 0 | 1 | 0% |
-| 4 — Vé Mở Ca + sự kiện (M7–M8) | 3 | 0 | 0 | 0 | 0 | 0% |
-| **MVP total** | **28** | **0** | **18** | **0** | **1** | **0%** |
+| 3 — Server + meta + risk (M4–M6) | 10 | 0 | 2 | 0 | 3 | 0% |
+| 4 — Vé Mở Ca + sự kiện (M7–M8) | 3 | 0 | 0 | 0 | 3 | 0% |
+| **MVP total** | **28** | **0** | **17** | **0** | **6** | **0%** |
 
 > **Reset 2026-09-08 theo `06-ROADMAP` v3.0:** game viết lại từ đầu, chưa mở M0 → mọi feature ⬜. Prototype (`prototype/`) là lưu trữ, không tính. Thêm F27 (onboarding, M2) và F28 (bảng xếp hạng, M5) → 28 feature. Cột "Phase" giữ tên để dashboard-engine parse; mốc thật xem ROADMAP.
 
@@ -399,3 +402,32 @@ rows. Follow owner queue M4→M6→M7→M8→M9; defer extra M5 breadth/performa
 | v0.60.1 | E27 server-derived config lifecycleb5d3545 verified:389unit/server,39focused,27admin+3final browser,config/build pass; independent full-base review found no actionable introduced issues. Scope/shift semantics unchanged; M4 remains15/18. |
 
 | v0.61.0 | Keg Lv2–5 imagegen drafts replace4placeholders via manifest; export/palette/alpha/hash tests and2stock/upgrade browser cases PASS. OwnerSteer6 resolves emergency schedule replacement; Steer7 waives human-only acceptance and realOAuth wait, requires fail-closed dev identity stub. Full verify PASS:389unit/server,10standard cohorts,15rush,2careers; no milestone marked complete by waiver alone. |
+
+| v0.62.0 | Emergency registry/admin hotfix implemented per Steer6, with exact scope-schedule replacement, stale preview rejection, atomic24h post-review and protected VI/EN confirmation/recovery. Final verification and independent review running; no engine/seed changes. M4 remains15/18. |
+
+## Owner Steer #8 — 2026-09-10 23:45
+
+M8 DEFERRED by owner 2026-09-10 — post-release. Current order: M4 remainder → M6 → M7 → M9 → release candidate. Do not implement football/World Cup match cards, season shop or team themes; lottery and inspection remain OFF. Preserve existing M8 config keys, feature flags, manifest entries and 07-SPEC content; keep M8 production/admin features OFF/hidden. Skip M8-only asset generation. M9 still includes every non-M8 art/audio asset, axe, replay/security/performance QA and release packaging. Steer7 dev identity, human-test waivers, verification/review, voluntary-only donation and persistent guest rules remain. Supersedes earlier queue entries that include M8.
+
+| 2026-09-10 Steer8 | M8 DEFERRED by owner 2026-09-10 — post-release — no M8 feature/config/asset/spec changes in this decision record. M4 hotfix review correction continues; dev identity remains next. |
+
+## Owner Steer #9 — 2026-09-11 00:05
+
+M6/M7/M8 DEFERRED by owner 2026-09-11 — post-release. Supersedes Steer7/8 queues. The release is free, with no monetization. Preserve GDD/SPEC sections, config keys, flags, content stubs and manifest entries; do not build deferred features and keep them OFF/hidden in production/admin. Inspection and lottery remain OFF. Existing dog/emergency controls require a release-visibility audit; do not claim they are hidden until checked.
+
+Current priority: finish emergency hotfix, dev identity acceptance and M4 closure; then remaining automated M1/M2/M3/M5 gameplay (full i18n, three full-shift viewports, measured upgrade suggestion, timeout feedback≤1s, onboarding off/admin thresholds, midshift sign-in, server seasons/snapshots/referral/gifts/ranks); then non-deferred art/audio via imagegen in owner critical-path order; then M9 first-playable<5s,≥30fps, zero console/missing assets, release k/replay/PWA. Human-only playtests remain WAIVED. The ~530 ROADMAP art inventory is the source target before excluding M6/M7/M8-only entries; enumerate exclusions rather than invent assets to meet a count. Placeholders only after repeated generation failures, explicitly recorded. Auth/registry and milestone reviews remain required; no economy values or engine rules change for this steering record.
+
+| 2026-09-11 Steer9 | M6/M7/M8 DEFERRED by owner 2026-09-11 — post-release — updated release queue and dashboard; current emergency verification/review continues. M4 closure must exclude deferred donation acceptance, not falsely mark that implementation PASS. |
+
+
+## Current delivery target — owner Steer12, 2026-09-11
+
+**playable-v0 supersedes full M1–M5 milestone closure as the delivery goal.** Finish the in-flight emergency hotfix only within about one hour; then explicit non-production dev identity, three-viewport full-shift happy path, blocker fixes, green verify, tag playable-v0 and pinned local5174/5175. Do not chase admin/forecast/ranking polish, extra diff viewers or additional closure evidence.
+
+Acceptance: language→guest→12-minute shift (serve, pour/wash, restock, upgrades, close/summary)→next day; reload and new tab preserve progress; no blocking bugs/console errors; mobile first playable<5s and≥30fps. Midshift dev sign-in preserves the guest shift. Existing dishes/kitchen/customers/weather/rush/unlocks/seasons/quests/account surfaces must not crash; hide unfinished/deferred surfaces. M6/M7/M8 remain deferred, free without monetization, inspection/lottery OFF, no engine/economy changes.
+
+Assets: owner waiver 2026-09-11: draft assets accepted for release. Current placeholders are also accepted by Steer12 when the happy-path fallback is visible; generate only missing/broken gameplay visuals and drop the ~530 target for this build. No polish rerolls. Human-only tests remain waived. Preview-2026-09-11 is an interim snapshot, not a claim of completed playable-v0.
+
+| 2026-09-11 Steer12 | Goal narrowed to playable-v0 and three-viewport end-to-end playability; historical milestone FAIL/PASS entries remain evidence, not additional release blockers. |
+
+| 2026-09-11 emergency complete | Registry hotfix: Super+MFA A/B, exact scheduled supersession/preview, atomic24h ticket and immutable retries.403unit/server,28adminbrowser,config/build PASS; independent full-diff CLEAN. No engine/economy changes. Next preview snapshot then dev identity/playable-v0 per Steer12; no further admin polish. |

@@ -1,4 +1,4 @@
-import type { ConfigScope, ConfigPhase } from '../../server/src/registry';
+import type { ConfigScope, ConfigPhase, SupersededSchedule, EmergencyTicket, EmergencyReview } from '../../server/src/registry';
 export type { ConfigScope };
 import { loadConfig, type Config } from '../../../packages/engine/src';
 export type Actor = { subject: string; role: 'super'|'economy'|'game'|'support'|'viewer'; mfa: boolean; issuedAt: number; expiresAt: number };
@@ -6,10 +6,10 @@ export type Auth = { enabled: boolean; phase: 'signedOut'|'mfa'|'authenticated';
 export type Publication = { version: string; effective_at: number; published_at: number };
 export type Proposal = { version: string; base_version: string; changed_by: string; keys: string; reason: string; effective: string; created_at: number; cursor: number; computedAt:number; phase:ConfigPhase; scope?:ConfigScope|null };
 export type Index = { computedAt:number; latest: Publication & {phase:ConfigPhase}; activeVersion: string; proposals: Proposal[]; nextCursor: number|null };
-export type Details = { computedAt:number; phase:ConfigPhase; scope?:ConfigScope|null; previous?:{scope:ConfigScope;snapshot:Config['raw'];base:Config['raw']}|null; snapshot: Config['raw']; base: Config['raw']|null; draft: Omit<Proposal,'phase'|'computedAt'|'cursor'>|null;
+export type Details = { emergency:boolean; supersededBy:string|null; reviewTicket:EmergencyTicket|null; review:EmergencyReview|null; computedAt:number; phase:ConfigPhase; scope?:ConfigScope|null; previous?:{scope:ConfigScope;snapshot:Config['raw'];base:Config['raw']}|null; snapshot: Config['raw']; base: Config['raw']|null; draft: Omit<Proposal,'phase'|'computedAt'|'cursor'>|null;
   policy: {tier: string; effective: string}|null; approval: {approved_by:string; approved_at:number}|null; publication: Publication|null;
   permissions: {propose:boolean; approve:boolean; publish:boolean} };
-export type Draft = { owner: string; baseVersion: string; text: string; reason: string; effective: string; key: string; locked: boolean; scope?:ConfigScope };
+export type Draft = { owner: string; baseVersion: string; text: string; reason: string; effective: string; key: string; locked: boolean; emergency?:boolean; scope?:ConfigScope };
 export const DRAFT_KEY = 'tbh.admin.draft.v1';
 // config-exempt: HTTP and local draft limits, independent of gameplay time/tuning.
 export const ADMIN_BYTES = 524288, HTTP_MS = 15000;
@@ -27,8 +27,9 @@ export async function request<T>(path: string, body?: unknown, context?: string,
 export function readDraft(): Draft|null {
   const raw = sessionStorage.getItem(DRAFT_KEY); if (!raw) return null;
   const d = JSON.parse(raw);
-  if (!d || Object.keys(d).filter(k=>k!=='scope').sort().join(',') !== 'baseVersion,effective,key,locked,owner,reason,text' ||
+  if (!d || Object.keys(d).filter(k=>!['scope','emergency'].includes(k)).sort().join(',') !== 'baseVersion,effective,key,locked,owner,reason,text' ||
       ![d.owner,d.baseVersion,d.text,d.reason,d.effective,d.key].every(x => typeof x === 'string') || typeof d.locked !== 'boolean' || !d.owner || !d.key || !d.baseVersion || raw.length > ADMIN_BYTES*2) throw new AdminError('draftCorrupt'); // config-exempt:bounded local recovery input
+  if(d.emergency!==undefined&&typeof d.emergency!=='boolean')throw new AdminError('draftCorrupt');
   if(d.scope!==undefined) {
     const s=d.scope;
     if(!s || Object.keys(s).sort().join(',')!=='expiresAt,id,kind,playerIds,previousVersion,priority,ticketId' || !['segment','campaign','player'].includes(s.kind) ||
@@ -66,7 +67,7 @@ export function googleScript(): Promise<GoogleApi> {
 }
 
 export type DraftSource = {baseVersion:string;base:Config['raw'];snapshot:Config['raw'];scope:ConfigScope|null};
-export type Impact = {version:string;token:string;computedAt:number;activatesAt:number;expiresAt:number|null;audiencePlayers:number;changedPlayers:number;pinnedShifts:number;keys:{path:string;players:number}[]};
+export type Impact = {supersedes:SupersededSchedule[]|null;version:string;token:string;computedAt:number;activatesAt:number;expiresAt:number|null;audiencePlayers:number;changedPlayers:number;pinnedShifts:number;keys:{path:string;players:number}[]};
 export type Players = {players:{id:string}[];nextCursor:string|null};
 export type Ticket = {id:string;request_key:string;player_id:string;reason:string;used_version:string|null};
 export type Tickets = {tickets:Ticket[];nextCursor:number|null};

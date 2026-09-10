@@ -1,9 +1,34 @@
 # 📋 SESSION TRACK LOG — Trùm Bia Hơi
 
+> Current owner target (Steer12): **playable-v0**, not full milestone closure. Guest full-shift smoke on three viewports + dev identity + persistence/performance; M6/M7/M8 deferred; working draft/placeholder assets accepted.
+
 > Nhật ký phiên làm việc (bản mới, mở lại từ 2026-06-04). Log cũ đã dài → đóng lại, bắt đầu sạch ở đây.
 > Mục đích: mỗi session ghi 1 block ngắn — đang ở đâu, làm gì, quyết định gì, việc tiếp theo. Đọc block mới nhất trước khi làm tiếp.
 
 ---
+
+## Owner Steer9 — 2026-09-11 00:05
+
+M6/M7/M8 DEFERRED by owner 2026-09-11 — post-release. Queue: current emergency
+commit→dev identity→M4 closure→remaining automatedM1/M2/M3/M5→imagegen art/audio
+(exclude deferred-only assets)→gameplay-facing M9 release gates. Free/no monetization.
+Preserve configs/specs/manifests, keep deferred features OFF/hidden; audit existing
+dog/emergency controls as a follow-up. Human playtests WAIVED.
+
+## Owner Steer8 — 2026-09-10 23:45
+
+M8 DEFERRED by owner 2026-09-10 — post-release. New queue M4→M6→M7→M9→release
+candidate. Preserve M8 spec/config/manifest, keep featuresOFF/hidden; skip M8-only
+art. Current emergency review correction includes all active/pending scope keys
+and audiences; dev identity next. Other Steer7 rules remain.
+
+## M4 emergency implementation — 2026-09-10
+
+Basebb2bf0d; explicit Super+MFA A/B hotfix uses active config, replaces exact-scope
+pending schedules with immutable audit and24h review ticket. Normal approval,
+republication/rollback and live pins preserved. Focused server/mobile checks pass;
+final root verify/admin suite/independent full-diff review running. Next: dev identity
+provider acceptance per Steer7, then remaining M4→M6→M7→M8→M9.
 
 ## Owner queue resolved + keg asset batch — 2026-09-10
 
@@ -969,3 +994,16 @@ Current evidence and requirements: `docs/build-progress.md`, tracker and roadmap
 - Làm gì / quyết định gì
 - Việc kế
 -->
+
+
+## Current delivery target — owner Steer12, 2026-09-11
+
+**playable-v0 supersedes full M1–M5 milestone closure as the delivery goal.** Finish the in-flight emergency hotfix only within about one hour; then explicit non-production dev identity, three-viewport full-shift happy path, blocker fixes, green verify, tag playable-v0 and pinned local5174/5175. Do not chase admin/forecast/ranking polish, extra diff viewers or additional closure evidence.
+
+Acceptance: language→guest→12-minute shift (serve, pour/wash, restock, upgrades, close/summary)→next day; reload and new tab preserve progress; no blocking bugs/console errors; mobile first playable<5s and≥30fps. Midshift dev sign-in preserves the guest shift. Existing dishes/kitchen/customers/weather/rush/unlocks/seasons/quests/account surfaces must not crash; hide unfinished/deferred surfaces. M6/M7/M8 remain deferred, free without monetization, inspection/lottery OFF, no engine/economy changes.
+
+Assets: owner waiver 2026-09-11: draft assets accepted for release. Current placeholders are also accepted by Steer12 when the happy-path fallback is visible; generate only missing/broken gameplay visuals and drop the ~530 target for this build. No polish rerolls. Human-only tests remain waived. Preview-2026-09-11 is an interim snapshot, not a claim of completed playable-v0.
+
+| 2026-09-11 Steer12 | Goal narrowed to playable-v0 and three-viewport end-to-end playability; historical milestone FAIL/PASS entries remain evidence, not additional release blockers. |
+
+| 2026-09-11 emergency complete | Registry hotfix: Super+MFA A/B, exact scheduled supersession/preview, atomic24h ticket and immutable retries.403unit/server,28adminbrowser,config/build PASS; independent full-diff CLEAN. No engine/economy changes. Next preview snapshot then dev identity/playable-v0 per Steer12; no further admin polish. |

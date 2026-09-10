@@ -228,3 +228,30 @@ test('seven-day forecast renders real protected worker totals in Vietnamese and 
  const state=await(await player.ctx.request.get('/api/player/state')).json();expect(state.world.completedShifts).toBe(0);expect(state.world.coins).toBe(player.state.world.coins);
  await page.getByRole('button',{name:'Sign out',exact:true}).click();await expect(page.getByRole('region',{name:'Seven-day economy scenario'})).toHaveCount(0);await player.ctx.close();
 });
+
+test('emergency mobile confirmation names replaced schedules, recovers a lost publish receipt and records post-review in VI/EN',async({page,browser})=>{
+ await login(page,'super-emergency');
+ const context=(await(await page.request.get('/api/admin/auth')).json()).context, headers={Origin:'http://127.0.0.1:4181','X-TBH-Admin-Context':context};
+ const source=await(await page.request.get('/api/admin/draft-source')).json();source.snapshot.shift.dailyEarnCapBase++;
+ const pending=await page.request.post('/api/admin/proposals',{headers,data:{key:crypto.randomUUID(),baseVersion:source.baseVersion,snapshot:source.snapshot,reason:'Pending emergency browser schedule'}});expect(pending.status()).toBe(200);const scheduled=(await pending.json()).version;
+ const other=await browser.newContext({baseURL:'http://127.0.0.1:4181'}),reviewPage=await other.newPage();await login(reviewPage,'super-postreview');
+ const reviewContext=(await(await other.request.get('/api/admin/auth')).json()).context,reviewHeaders={Origin:'http://127.0.0.1:4181','X-TBH-Admin-Context':reviewContext};
+ expect((await other.request.post('/api/admin/approve',{headers:reviewHeaders,data:{version:scheduled}})).status()).toBe(200);
+ const scheduledReceipt=await page.request.post('/api/admin/publish',{headers,data:{version:scheduled}});expect(scheduledReceipt.status()).toBe(200);
+ await page.getByRole('button',{name:'Tạo hotfix khẩn cấp'}).click();
+ await expect(page.getByRole('combobox',{name:/^Thời điểm áp dụng/})).toBeDisabled();
+ await page.getByLabel('Tìm khóa cấu hình').fill('menu.bia.price');await page.getByRole('combobox',{name:'Khóa cấu hình',exact:true}).selectOption('menu.bia.price');
+ const value=page.getByRole('textbox',{name:'Giá trị JSON',exact:true});await value.fill(String(Number(await value.inputValue())+1));await page.getByRole('button',{name:'Áp dụng vào bản nháp'}).click();await page.getByLabel('Lý do thay đổi').fill('Emergency browser correction');await page.getByRole('button',{name:'Xem diff',exact:true}).click();
+ expect(JSON.parse((await page.evaluate(()=>sessionStorage.getItem('tbh.admin.draft.v1')))! )).toHaveProperty('emergency',true);
+ const version=await proposal(page);await expect(detail(page).getByRole('button',{name:'Duyệt đề xuất'})).toHaveCount(0);
+ await detail(page).getByRole('button',{name:'Xuất bản',exact:true}).click();const dialog=page.getByRole('dialog');
+ await expect(dialog).toContainText(scheduled);await expect(dialog).toContainText('shift.dailyEarnCapBase');await expect(dialog).toContainText('super-emergency');await expect(dialog).toContainText('super-postreview');
+ await expect(dialog.getByRole('heading',{name:'Lịch chờ sẽ bị thay'})).toBeVisible();
+ expect(await dialog.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);await dialog.screenshot({path:'.qa/admin-emergency-confirm-390.png'});
+ let lost=true;await page.route('**/api/admin/publish',async route=>{if(lost){lost=false;const r=await route.fetch();expect(r.status()).toBe(200);await route.abort();}else await route.continue();});
+ await dialog.getByRole('button',{name:'Xác nhận xuất bản',exact:true}).click();await expect(dialog.getByRole('alert')).toBeVisible();await dialog.getByRole('button',{name:'Xác nhận xuất bản',exact:true}).click();await expect(dialog).not.toBeVisible();
+ await expect(detail(page)).toContainText('Phiếu hậu kiểm');await expect(detail(page).getByText('Đang áp dụng',{exact:true})).toBeVisible();
+ await page.getByLabel('Mã phiên bản',{exact:true}).fill(scheduled);await page.getByRole('button',{name:'Xem phiên bản',exact:true}).click();await expect(detail(page)).toContainText('Đã bị thay bởi hotfix');await expect(detail(page)).toContainText(version);
+ await reviewPage.getByLabel('Mã phiên bản',{exact:true}).fill(version);await reviewPage.getByRole('button',{name:'Xem phiên bản',exact:true}).click();await reviewPage.getByLabel('Kết luận hậu kiểm').fill('Checked schedules and live shift pins');await reviewPage.getByRole('button',{name:'Ghi nhận hậu kiểm'}).click();await expect(detail(reviewPage)).toContainText('Đã hậu kiểm bởi');
+ await reviewPage.getByLabel('Ngôn ngữ').selectOption('en');await expect(reviewPage.getByRole('region',{name:'Version details'})).toContainText('Reviewed by super-postreview');await other.close();
+});

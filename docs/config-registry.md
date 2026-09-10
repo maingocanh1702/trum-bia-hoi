@@ -73,3 +73,5 @@ schema/catalog admission, atomic 24h post-review ticket, idempotent original
 receipt and existing shift/replay pins all remain required. See admin-emergency.md.
 
 | 2026-09-10 owner Steer #6 | Pending-schedule decision resolved; implementation queued, no runtime change in this decision record. |
+
+| 2026-09-10 emergency implementation | Emergency publication now follows the resolved owner rule: explicit Super+MFA A/B proposals, active baseline, required exact-schedule preview, immutable supersession markers and atomic24h review ticket. Existing sequence resolution prevents resurrection; normal republish/rollback and pinned saves remain unchanged. See admin-emergency.md; final verification/review running. |

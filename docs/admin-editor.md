@@ -147,3 +147,5 @@ schema and activation policy unchanged. This closes lifecycle presentation only;
 M4 stays15/18 and emergency scheduling still awaits the owner's separate decision.
 
 | 2026-09-10 lifecycle verified | E27 b5d3545:389unit/server,39focused,27admin+3final affected browser,config/build pass; independent full-base review finds no actionable introduced issues. Full M4 remains open. |
+
+| 2026-09-10 emergency implementation | Emergency editor uses active draft-source, fixed immediate activation and recoverable explicit mode. Existing confirmation shows every replaced schedule; protected post-review records a distinct Super reviewer. VI/EN390px test passes including lost publication acknowledgement. Final full verification/review running. |

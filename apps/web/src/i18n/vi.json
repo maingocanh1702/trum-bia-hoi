@@ -620,5 +620,17 @@
   "rank.insufficientShifts": "Chưa đủ ca được xác nhận trong Vụ này để xếp hạng.",
   "rank.flagged": "Tài khoản đang được kiểm tra nên tạm ẩn khỏi bảng.",
   "rank.review.pending": "Lịch sử local đang chờ duyệt. Chỉ thu nhập và ca sau đăng nhập được tính trong lúc chờ.",
-  "rank.review.rejected": "Lịch sử local chưa được chấp nhận trên bảng. Tiến độ chơi vẫn được giữ."
+  "rank.review.rejected": "Lịch sử local chưa được chấp nhận trên bảng. Tiến độ chơi vẫn được giữ.",
+  "admin.emergency.new": "Tạo hotfix khẩn cấp",
+  "admin.emergency.title": "Hotfix khẩn cấp · Tier A/B",
+  "admin.emergency.note": "Áp dụng ngay từ cấu hình đang hoạt động. Thay các lịch chờ trong cùng phạm vi; tạo phiếu hậu kiểm 24 giờ.",
+  "admin.emergency.schedules": "Lịch chờ sẽ bị thay",
+  "admin.emergency.none": "Không có lịch chờ bị thay.",
+  "admin.emergency.superseded": "Đã bị thay bởi hotfix",
+  "admin.emergency.ticket": "Phiếu hậu kiểm",
+  "admin.emergency.due": "Hạn hậu kiểm",
+  "admin.emergency.reviewed": "Đã hậu kiểm bởi",
+  "admin.emergency.reviewReason": "Kết luận hậu kiểm",
+  "admin.emergency.review": "Ghi nhận hậu kiểm",
+  "admin.error.emergencyTier": "Hotfix chỉ áp dụng cho Tier A/B. Tách các khóa Tier C thành đề xuất thường."
 }

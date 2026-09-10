@@ -308,3 +308,86 @@ test('preview token rejects overlapping publications and expiry drift, while exa
   const pub=r.publish(who,d.version,fresh.token);f.publish(c=>{c.menu.lac.price++;});
   assert.deepEqual(r.publish(who,d.version,fresh.token),pub);assert.equal(r.resolve('alice').raw.menu.bia.price,110);
 });
+
+test('emergency replaces only the exact scoped schedule chain; expiry never resurrects it and other scopes keep schedules',t=>{
+ const f=fixture(t),r=f.registry,who=f.actor();
+ const active=f.publish(c=>{c.menu.bia.price++;},f.scope('festival',{kind:'campaign',expiresAt:NOW+3*DAY}));
+ const pending=f.publish(c=>{c.shift.dailyEarnCapBase++;},f.scope('festival',{kind:'campaign',expiresAt:NOW+3*DAY,previousVersion:active.version}));
+ const another=f.publish(c=>{c.shift.dailyEarnCapBase+=2;},f.scope('other',{playerIds:['bob']}));
+ const global=f.publish(c=>{c.shift.dailyEarnCapBase+=3;});
+ assert.throws(()=>r.draftSource(who,pending.version,true),/inactiveEmergencySource/);
+ const source=r.scopeSource(who,'campaign','festival',true);
+ assert.equal(source.baseVersion,config.version);assert.equal(source.snapshot.menu.bia.price,config.raw.menu.bia.price+1);
+ assert.equal(source.snapshot.shift.dailyEarnCapBase,config.raw.shift.dailyEarnCapBase);assert.equal(source.scope!.previousVersion,pending.version);
+ source.snapshot.menu.bia.price++;const scope={...source.scope!,expiresAt:NOW+1000};
+ const d=r.propose(who,{...source,scope,key:'emergency',emergency:true,reason:'Fix active campaign'}),preview=r.impact(who,d.version);
+ assert.deepEqual(preview.supersedes!.map(s=>s.version),[pending.version]);r.publish(who,d.version,preview.token);
+ assert.equal(r.resolve('alice').raw.menu.bia.price,config.raw.menu.bia.price+2);
+ f.now+=1001;assert.equal(r.resolve('alice').version,config.version);
+ f.now=global.effective_at;assert.equal(r.resolve('alice').version,global.version);
+ assert.equal(r.resolve('bob').raw.shift.dailyEarnCapBase,config.raw.shift.dailyEarnCapBase+2);
+ assert.equal(r.details(f.actor('viewer'),pending.version).supersededBy,d.version);
+ assert.equal(r.details(f.actor('viewer'),another.version).supersededBy,null);assert.equal(r.details(f.actor('viewer'),global.version).supersededBy,null);
+ const next=r.scopeSource(f.actor(),'campaign','festival');assert.equal(next.scope!.previousVersion,d.version);
+});
+
+test('emergency campaign replacement cannot skip support tickets, exact predecessors or incompatible other scopes',t=>{
+ const f=fixture(t),r=f.registry,who=f.actor();
+ f.publish(c=>{c.menu.bia.price++;},f.scope('other'));
+ const input={...f.input(c=>{c.menu.bia.price+=2;},f.scope('collision')),emergency:true};
+ const d=r.propose(who,input);assert.throws(()=>r.impact(who,d.version),/scopeConflict/);assert.throws(()=>r.publish(who,d.version,'0'.repeat(64)),/scopeConflict/);
+ const ticketless={...f.input(c=>{c.menu.bia.price++;},f.scope('alice',{kind:'player',expiresAt:NOW+DAY})),emergency:true};
+ assert.throws(()=>r.propose(who,ticketless),/invalidScope/);
+ const ticket=r.requestSupport(who,{key:'case',playerId:'alice',reason:'Correction'});
+ ticketless.scope!.ticketId=ticket;const p=r.propose(who,ticketless);r.publish(who,p.version,r.impact(who,p.version).token);
+ assert.equal(f.db.prepare('SELECT version FROM registry_support_uses WHERE ticket_id=?').get(ticket)!.version,p.version);
+ const next={...ticketless,key:'reuse',scope:{...ticketless.scope!,previousVersion:p.version}};
+ assert.throws(()=>r.propose(who,next),/invalidTicket/);
+});
+
+test('emergency scope preview expires when a pending schedule activates without a publication revision',t=>{
+ const f=fixture(t),r=f.registry,who=f.actor();
+ const pending=f.publish(c=>{c.shift.dailyEarnCapBase++;},f.scope('scheduled'));
+ const source=r.scopeSource(who,'segment','scheduled',true);assert.equal(source.snapshot.shift.dailyEarnCapBase,config.raw.shift.dailyEarnCapBase);
+ source.snapshot.menu.bia.price++;
+ const d=r.propose(who,{...source,scope:source.scope!,key:'boundary',emergency:true,reason:'Correction'}),preview=r.impact(who,d.version);
+ assert.equal(preview.supersedes!.length,1);f.now=pending.effective_at;
+ assert.throws(()=>r.publish(f.actor(),d.version,preview.token),/staleImpact/);
+ const fresh=r.impact(f.actor(),d.version);assert.deepEqual(fresh.supersedes,[]);r.publish(f.actor(),d.version,fresh.token);
+ assert.equal(r.details(f.actor('viewer'),pending.version).supersededBy,null);
+ assert.equal(r.resolve('alice').raw.menu.bia.price,config.raw.menu.bia.price+1);
+});
+
+test('emergency cannot silently remove active Tier C keys hidden behind an A/B scheduled successor',t=>{
+ const f=fixture(t),r=f.registry,who=f.actor();
+ const active=f.publish(c=>{c.audio.enabled=false;},f.scope('mixed'));
+ const pending=f.publish(c=>{c.shift.dailyEarnCapBase++;},f.scope('mixed',{playerIds:['bob'],previousVersion:active.version}));
+ const input={...f.input(c=>{c.menu.bia.price++;},f.scope('mixed',{playerIds:['carol'],previousVersion:pending.version})),key:'guard-active-C',emergency:true};
+ assert.throws(()=>r.propose(who,input),/emergencyTier/);
+ assert.equal(r.resolve('alice').raw.audio.enabled,false);assert.equal(r.details(who,pending.version).phase,'scheduled');
+});
+
+test('emergency impact and forecast include active and every pending audience; retry survives later Tier C publication',t=>{
+ const f=fixture(t),r=f.registry,who=f.actor();
+ const active=f.publish(c=>{c.menu.bia.price++;},f.scope('audience'));
+ const schedule=(previous:string,id:string,amount:number)=>{
+  const d=r.propose(f.actor(),{...f.input(c=>{c.menu.bia.price+=amount;},f.scope('audience',{playerIds:[id],previousVersion:previous})),effective:'next_day'});
+  r.approve(f.actor(),d.version);return r.publish(f.actor(),d.version);
+ };
+ const middle=schedule(active.version,'bob',2),last=schedule(middle.version,'carol',3);
+ f.store.createPlayer('dave',4);
+ f.store.command('alice',{idempotencyKey:'open-alice',command:{type:'startShift'}});
+ const input={...f.input(c=>{c.menu.bia.price+=4;},f.scope('audience',{playerIds:['dave'],previousVersion:last.version})),key:'all-audiences',emergency:true};
+ const d=r.propose(who,input),impact=r.impact(who,d.version),forecast=r.forecastPlan(who,d.version,f.now+2*DAY);
+ assert.equal(impact.audiencePlayers,4);assert.equal(impact.changedPlayers,2);assert.equal(impact.pinnedShifts,1);
+ assert.deepEqual(impact.keys,[{path:'menu.bia.price',players:2}]);
+ assert.deepEqual(forecast.players.map(p=>p.id),['alice','bob','carol','dave']);
+ assert.ok(forecast.players.find(p=>p.id==='alice')!.keys.includes('menu.bia.price'));
+ assert.deepEqual(forecast.players.find(p=>p.id==='bob')!.keys,[]); // Same-time successor already masks this pending audience in the baseline.
+ assert.ok(forecast.players.find(p=>p.id==='carol')!.keys.includes('menu.bia.price'));
+ const receipt=r.publish(who,d.version,impact.token);
+ assert.equal(r.resolve('alice').raw.menu.bia.price,config.raw.menu.bia.price);
+ assert.equal(r.resolve('dave').raw.menu.bia.price,config.raw.menu.bia.price+4);
+ f.publish(c=>{c.audio.enabled=false;},f.scope('audience',{previousVersion:d.version}));
+ assert.deepEqual(r.publish(who,d.version,'outdated'),receipt);assert.deepEqual(r.propose(who,input),d);
+});

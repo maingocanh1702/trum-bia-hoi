@@ -675,3 +675,12 @@ Quy trình phục vụ ship game vui. Nếu quy trình làm chậm việc tìm f
 | Spec | `product-management:write-spec` |
 | Telemetry review | `product-management:metrics-review` |
 | Asset tạo art tĩnh | `canvas-design`, `algorithmic-art` |
+
+
+## Owner release decision — 2026-09-11 (Steer10/12)
+
+**owner waiver 2026-09-11: draft assets accepted for release.** A generated asset that passes technical checks (required transparency, sprite dimensions/anchor, recorded checksum and check:assets) can ship as `draft`; no approval/polish pass or taste rerolls. Event id → manifest → path and imagegen source provenance remain.
+
+Steer12 further narrows this build to playable-v0: existing drafts and placeholders are acceptable when their gameplay fallback renders correctly. Generate only visibly missing/broken assets on the happy path; the ~530 inventory target is deferred. M6/M7/M8-only assets stay deferred. Missing/empty files remain defects; a manifest placeholder with a working deliberate fallback is not a missing-file claim.
+
+| 2026-09-11 Steer10/12 | owner waiver 2026-09-11: draft assets accepted for release; playable-v0 accepts existing working placeholders, no full inventory/polish gate. |

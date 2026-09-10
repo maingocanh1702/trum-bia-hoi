@@ -1,5 +1,7 @@
 # Build progress — Trùm Bia Hơi
 
+> Current owner target (Steer12): **playable-v0**, not full milestone closure. Guest full-shift smoke on three viewports + dev identity + persistence/performance; M6/M7/M8 deferred; working draft/placeholder assets accepted.
+
 Started 2026-09-08 from `30c0285`. Active worktree: `/Users/maingocanh/.codex/worktrees/trum-bia-hoi-game`, branch `codex/game-build-isolated` based on `bc79af5`. A concurrent Claude docs commit captured the first engine files in the original checkout; original files were preserved, and further work was isolated. Authority: current `00-HANDOFF-trum-bia-hoi.md` and [owner update adoption](latest-handoff-adoption.md),
 PROMPT PACK part B, GDD decisions, 03-SPEC table rules, JSON numbers. This is the
 complete-game goal; milestones below are implementation order, not scope cuts.
@@ -12,16 +14,16 @@ complete-game goal; milestones below are implementation order, not scope cuts.
 | M3 — full menu, customer mix, weather, rush, business unlocks | In progress — 6/12 PASS | Standard k and advanced career≤3.5 pass under owner10/09 rule; 5human-only criteria WAIVED by owner10/09; equipment/customer art remains tracked. |
 | M4 — server authority, accounts, reconnect, config registry/admin | In progress | 15/18 exit criteria PASS; E25 live public ranking628eb72 verified with386unit/server,11affected remote/24admin browser, config/build and CLEAN review. Emergency/admin remainder, owner-deferred archive transport and dev-stub account/donation acceptance remain; see criterion report. |
 | M5 — seasons, leaderboard/shrine, life path, leases, quests/referrals | In progress | Local seasons/peak, LP/quests/attendance and lease calendar/UI implemented; public live ranks verified in E25; snapshots, rewards/referrals/social and full acceptance remain |
-| M6 — risks, dog, emergency supplies | Pending | |
-| M7 — voluntary donations, cosmetic gifts, age notice | Pending | |
-| M8 — football events, season shop, legal-gated lottery | Pending | |
+| M6 — risks, dog, emergency supplies | M6/M7/M8 DEFERRED by owner 2026-09-11 — post-release | Retain spec/config/manifest; features OFF/hidden. No implementation for this release. |
+| M7 — voluntary donations, cosmetic gifts, age notice | M6/M7/M8 DEFERRED by owner 2026-09-11 — post-release | Retain spec/config/manifest; features OFF/hidden. No implementation for this release. |
+| M8 — football events, season shop, legal-gated lottery | M6/M7/M8 DEFERRED by owner 2026-09-11 — post-release | Retain spec/config/manifest; features OFF/hidden. No implementation for this release. |
 | M9 — complete art/audio, accessibility, replay/security/performance QA, release | Pending | |
 
 Current milestone closure (2026-09-10): **M0 COMPLETE; M1–M5 OPEN**. Every ROADMAP
 exit criterion is evaluated in [M0–M5 closure report](milestone-closure-m0-m5.md).
 Verified engine sub-rules, missing implementation and missing human/UI evidence are
 separate. Feature rows span milestones; their count is not milestone completion.
-Owner queue: remaining M4 registry/admin/account acceptance → M6 → M7 → M8 → M9.
+Owner queue (Steer9): M4 emergency → dev identity → M4 closure → remaining automated gameplay M1/M2/M3/M5 → assets → gameplay-facing M9 release candidate.
 No additional M5 breadth or history-volume tuning before those dependencies.
 
 ## Public leaderboard closure — E25, 2026-09-10
@@ -2622,3 +2624,32 @@ criteria waived for this build; affected account PASS still requires stub eviden
 No economy/engine changes. Keg Lv2–Lv5 imagegen exports replace4placeholders with
 source/prompt/hash receipt and 128/64/32 sheet.16placeholders/108drafts remain;
 2export regressions +2stock/upgrade browser cases PASS; full verify PASS: config/build,389unit/server,10standard cohorts,15rush and2x30-day careers. Receipt: `.qa/keg-asset-verification.json`.
+
+| 2026-09-10 emergency implementation | M4 emergency hotfix implementation now covers ownerSteer6 end to end.64focused server tests and1mobile browser test pass before final added boundary regression; full verify/admin suite and independent registry review running. M4 stays15/18 pending remaining account/donation/import acceptance. |
+
+## Owner Steer #8 — 2026-09-10 23:45
+
+M8 DEFERRED by owner 2026-09-10 — post-release. Current order: M4 remainder → M6 → M7 → M9 → release candidate. Do not implement football/World Cup match cards, season shop or team themes; lottery and inspection remain OFF. Preserve existing M8 config keys, feature flags, manifest entries and 07-SPEC content; keep M8 production/admin features OFF/hidden. Skip M8-only asset generation. M9 still includes every non-M8 art/audio asset, axe, replay/security/performance QA and release packaging. Steer7 dev identity, human-test waivers, verification/review, voluntary-only donation and persistent guest rules remain. Supersedes earlier queue entries that include M8.
+
+| 2026-09-10 Steer8 | M8 DEFERRED by owner 2026-09-10 — post-release — no M8 feature/config/asset/spec changes in this decision record. M4 hotfix review correction continues; dev identity remains next. |
+
+## Owner Steer #9 — 2026-09-11 00:05
+
+M6/M7/M8 DEFERRED by owner 2026-09-11 — post-release. Supersedes Steer7/8 queues. The release is free, with no monetization. Preserve GDD/SPEC sections, config keys, flags, content stubs and manifest entries; do not build deferred features and keep them OFF/hidden in production/admin. Inspection and lottery remain OFF. Existing dog/emergency controls require a release-visibility audit; do not claim they are hidden until checked.
+
+Current priority: finish emergency hotfix, dev identity acceptance and M4 closure; then remaining automated M1/M2/M3/M5 gameplay (full i18n, three full-shift viewports, measured upgrade suggestion, timeout feedback≤1s, onboarding off/admin thresholds, midshift sign-in, server seasons/snapshots/referral/gifts/ranks); then non-deferred art/audio via imagegen in owner critical-path order; then M9 first-playable<5s,≥30fps, zero console/missing assets, release k/replay/PWA. Human-only playtests remain WAIVED. The ~530 ROADMAP art inventory is the source target before excluding M6/M7/M8-only entries; enumerate exclusions rather than invent assets to meet a count. Placeholders only after repeated generation failures, explicitly recorded. Auth/registry and milestone reviews remain required; no economy values or engine rules change for this steering record.
+
+| 2026-09-11 Steer9 | M6/M7/M8 DEFERRED by owner 2026-09-11 — post-release — updated release queue and dashboard; current emergency verification/review continues. M4 closure must exclude deferred donation acceptance, not falsely mark that implementation PASS. |
+
+
+## Current delivery target — owner Steer12, 2026-09-11
+
+**playable-v0 supersedes full M1–M5 milestone closure as the delivery goal.** Finish the in-flight emergency hotfix only within about one hour; then explicit non-production dev identity, three-viewport full-shift happy path, blocker fixes, green verify, tag playable-v0 and pinned local5174/5175. Do not chase admin/forecast/ranking polish, extra diff viewers or additional closure evidence.
+
+Acceptance: language→guest→12-minute shift (serve, pour/wash, restock, upgrades, close/summary)→next day; reload and new tab preserve progress; no blocking bugs/console errors; mobile first playable<5s and≥30fps. Midshift dev sign-in preserves the guest shift. Existing dishes/kitchen/customers/weather/rush/unlocks/seasons/quests/account surfaces must not crash; hide unfinished/deferred surfaces. M6/M7/M8 remain deferred, free without monetization, inspection/lottery OFF, no engine/economy changes.
+
+Assets: owner waiver 2026-09-11: draft assets accepted for release. Current placeholders are also accepted by Steer12 when the happy-path fallback is visible; generate only missing/broken gameplay visuals and drop the ~530 target for this build. No polish rerolls. Human-only tests remain waived. Preview-2026-09-11 is an interim snapshot, not a claim of completed playable-v0.
+
+| 2026-09-11 Steer12 | Goal narrowed to playable-v0 and three-viewport end-to-end playability; historical milestone FAIL/PASS entries remain evidence, not additional release blockers. |
+
+| 2026-09-11 emergency complete | Registry hotfix: Super+MFA A/B, exact scheduled supersession/preview, atomic24h ticket and immutable retries.403unit/server,28adminbrowser,config/build PASS; independent full-diff CLEAN. No engine/economy changes. Next preview snapshot then dev identity/playable-v0 per Steer12; no further admin polish. |

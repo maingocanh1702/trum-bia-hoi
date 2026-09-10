@@ -11,11 +11,15 @@ export type ConfigPhase = 'draft' | 'approved' | 'scheduled' | 'active' | 'archi
 type Effective = 'immediate' | 'next_shift' | 'next_day' | 'next_season';
 type Tier = 'A' | 'B' | 'C';
 export type ConfigScope = { kind: 'segment' | 'campaign' | 'player'; id: string; playerIds: string[]; priority: number; expiresAt: number | null; previousVersion: string | null; ticketId: string | null };
-export type ProposalInput = { key: string; baseVersion: string; snapshot: unknown; reason: string; effective?: Effective; scope?: ConfigScope };
+export type ProposalInput = { key: string; baseVersion: string; snapshot: unknown; reason: string; effective?: Effective; scope?: ConfigScope; emergency?: boolean };
 type Proposal = { version: string; request_key: string; base_version: string; fingerprint: string; changed_by: string;
   keys: string; reason: string; effective: Effective; created_at: number };
 type PreviewPublication = Publication & { scope?: ConfigScope };
 type Publication = { seq: number; version: string; effective_at: number; published_at: number; changed_by: string; approved_by: string };
+export type SupersededSchedule = { version: string; effectiveAt: number; keys: string[]; proposer: string; approver: string };
+export type EmergencyTicket = { version: string; publishedBy: string; dueAt: number; at: number };
+export type EmergencyReview = { version: string; reviewedBy: string; reason: string; at: number };
+const emergencyDraft = (draft: Proposal) => JSON.parse(draft.fingerprint).emergency === true;
 export const ADMIN_SESSION_MS = 28800000; // config-exempt:BRD9.2 eight-hour admin authentication limit
 export function assertAdminActor(actor: AdminActor, now: number) {
   if (!actor || !validGoogleSubject(actor.subject) || !['super', 'economy', 'game', 'support', 'viewer'].includes(actor.role) ||
@@ -189,15 +193,18 @@ export class ConfigRegistry {
     return { kind: scope.kind, id: scope.id, playerIds: [...scope.playerIds].sort(), priority: scope.priority,
       expiresAt: scope.expiresAt, previousVersion: scope.previousVersion, ticketId: scope.ticketId };
   }
-  private policy(keys: string[], base: Config, scope?: ConfigScope) {
+  private policy(keys: string[], base: Config, scope?: ConfigScope, emergencyAt?: number) {
     // Replacing an entry also removes its old keys/audience: that removal keeps their approval and scheduling policy.
     const prior = scope?.previousVersion ? JSON.parse(this.proposal(scope.previousVersion).keys) as string[] : [];
-    const governed = [...new Set([...keys, ...prior])];
+    const displaced = emergencyAt === undefined ? [] : scope
+      ? this.emergencyScopeReplacements(scope, emergencyAt).flatMap(p => JSON.parse(this.proposal(p.version).keys) as string[])
+      : this.pendingSchedules(undefined, emergencyAt).flatMap(p => p.keys);
+    const governed = [...new Set([...keys, ...prior, ...displaced])];
     if (!governed.length) throw Error('registry:invalidKeys');
     return registryPolicy(governed, base, scope?.kind);
   }
-  private currentBase(draft: { base_version: string }, scope?: ConfigScope) {
-    if (this.latest().version !== draft.base_version || scope && (this.predecessor(scope)?.version ?? null) !== scope.previousVersion) throw Error('registry:staleBase');
+  private currentBase(draft: { base_version: string }, scope?: ConfigScope, emergency = false, now = this.now()) {
+    if ((emergency ? this.active(now).version : this.latest().version) !== draft.base_version || scope && (this.predecessor(scope)?.version ?? null) !== scope.previousVersion) throw Error('registry:staleBase');
   }
   private supportAvailable(scope: ConfigScope) {
     const ticket = this.db.prepare('SELECT player_id FROM registry_support WHERE id=?').get(scope.ticketId!);
@@ -222,6 +229,18 @@ export class ConfigRegistry {
     if (candidate?.scope) entries.push({ ...candidate, scope: candidate.scope });
     for (const entry of entries) if (entry.effective_at <= now) latest.set(JSON.stringify([entry.scope.kind, entry.scope.id]), entry);
     return [...latest.values()].filter(p => p.scope.expiresAt === null || p.scope.expiresAt > now);
+  }
+  private emergencyScopeReplacements(scope: ConfigScope, now: number) {
+    const matches = (p: { scope: ConfigScope }) => p.scope.kind === scope.kind && p.scope.id === scope.id;
+    const active = this.currentScopes(now).find(matches)?.version;
+    return this.scopedPublications().filter(matches).filter(p => p.version === active || p.effective_at > now && !this.supersededBy(p.version));
+  }
+  private affectedPlayers(version: string, now: number) {
+    const scope = this.scope(version);
+    if (!scope) return this.db.prepare('SELECT id FROM players ORDER BY id').all().map(p => String(p.id));
+    const previous = scope.previousVersion ? this.scope(scope.previousVersion)?.playerIds ?? [] : [];
+    const displaced = emergencyDraft(this.proposal(version)) ? this.emergencyScopeReplacements(scope, now).flatMap(p => p.scope.playerIds) : [];
+    return [...new Set([...scope.playerIds, ...previous, ...displaced])].sort();
   }
   private compose(playerId: string, now: number, candidate?: PreviewPublication): { config: Config; sources: string[] } {
     const base = candidate && !candidate.scope && candidate.effective_at <= now ? this.config(candidate.version) : this.active(now);
@@ -275,6 +294,42 @@ export class ConfigRegistry {
     if (policy.superOnly || approve && policy.tier === 'A' || policy.tiers.some(t => t === 'C' ? actor.role !== 'game' : actor.role !== 'economy')) throw Error('registry:forbidden');
   }
   private audit(type: string, data: object) { this.db.prepare('INSERT INTO registry_audit VALUES (NULL,?,?)').run(type, JSON.stringify(data)); }
+  private auditRecord<T>(type: string, version: string): T | null {
+    const row = this.db.prepare("SELECT payload FROM registry_audit WHERE type=? AND json_extract(payload,'$.version')=? ORDER BY seq LIMIT 1").get(type, version);
+    return row ? JSON.parse(String(row.payload)) as T : null;
+  }
+  private emergencyPermit(actor: AdminActor, policy?: ReturnType<typeof registryPolicy>) {
+    if (actor.role !== 'super' || !actor.mfa) throw Error('registry:forbidden');
+    if (policy?.tiers.some(t => t === 'C')) throw Error('registry:emergencyTier');
+  }
+  private supersededBy(version: string) {
+    return this.auditRecord<{ byVersion: string }>('ConfigScheduleSuperseded', version)?.byVersion ?? null;
+  }
+  private pendingSchedules(scope: ConfigScope | undefined, now: number): SupersededSchedule[] {
+    const rows = this.db.prepare(`SELECT p.*,d.keys FROM registry_publications p JOIN registry_proposals d USING(version)
+      WHERE p.effective_at>? ORDER BY p.seq`).all(now);
+    return rows.filter(p => {
+      const other = this.scope(String(p.version));
+      return scope ? other?.kind === scope.kind && other.id === scope.id : !other;
+    }).filter(p => !this.supersededBy(String(p.version))).map(p => ({ version: String(p.version), effectiveAt: Number(p.effective_at),
+      keys: JSON.parse(String(p.keys)), proposer: String(p.changed_by), approver: String(p.approved_by) }));
+  }
+  reviewEmergency(actor: AdminActor, version: string, reason: string) {
+    return this.transaction(now => {
+      this.actor(actor, now); this.emergencyPermit(actor);
+      if (typeof reason !== 'string' || !reason.trim() || reason.length > 1000) throw Error('registry:invalidInput'); // config-exempt:audit text bound
+      const ticket = this.auditRecord<EmergencyTicket>('ConfigEmergencyReviewOpened', version);
+      if (!ticket) throw Error('registry:invalidTicket');
+      if ([ticket.publishedBy, this.proposal(version).changed_by].includes(actor.subject)) throw Error('registry:distinctApprover');
+      const existing = this.auditRecord<EmergencyReview>('ConfigEmergencyReviewed', version);
+      if (existing) {
+        if (existing.reviewedBy !== actor.subject || existing.reason !== reason) throw Error('registry:alreadyApproved');
+        return existing;
+      }
+      const review = { version, reviewedBy: actor.subject, reason, at: now };
+      this.audit('ConfigEmergencyReviewed', review); return review;
+    });
+  }
   private rollbackSource(original: Config, baseVersion: string) {
     const known = this.db.prepare('SELECT snapshot FROM configs WHERE version=?').get(original.version);
     return original.version !== baseVersion && known && configContent(loadConfig(JSON.parse(String(known.snapshot)))) === configContent(original) ? original.version : null;
@@ -287,6 +342,7 @@ export class ConfigRegistry {
     return (version: string): ConfigPhase => {
       const record = row.get(version);
       if (!record) throw Error('registry:missingVersion');
+      if (this.supersededBy(version)) return 'archived';
       if (record.effective_at !== null) return Number(record.effective_at) > now ? 'scheduled' : active.has(version) ? 'active' : 'archived';
       return record.approved ? 'approved' : record.proposed ? 'draft' : 'snapshot';
     };
@@ -308,16 +364,18 @@ export class ConfigRegistry {
       const config = this.config(version);
       const draft = this.db.prepare(`SELECT version,base_version,changed_by,keys,reason,effective,created_at
         FROM registry_proposals WHERE version=?`).get(version);
-      const policy = draft ? this.policy(JSON.parse(String(draft.keys)), this.config(String(draft.base_version)), this.scope(version)) : null;
       const approval = this.db.prepare('SELECT approved_by,approved_at FROM registry_approvals WHERE version=?').get(version) ?? null;
       const publication = this.db.prepare('SELECT * FROM registry_publications WHERE version=?').get(version) ?? null;
-      const permitted = (approve: boolean) => { if (!policy) return false; try { this.permit(actor, policy, approve, this.scope(version)); return true; } catch { return false; } };
+      const emergency = draft ? emergencyDraft(this.proposal(version)) : false;
+      const policy = draft ? this.policy(JSON.parse(String(draft.keys)), this.config(String(draft.base_version)), this.scope(version), emergency && !publication ? now : undefined) : null;
+      const permitted = (approve: boolean) => { if (!policy) return false; try { this.permit(actor, policy, approve, this.scope(version)); if (emergency) this.emergencyPermit(actor, policy); return true; } catch { return false; } };
       const scope = this.scope(version), previousVersion = scope?.previousVersion;
       const previous = previousVersion ? { snapshot: this.config(previousVersion).raw, base: this.config(this.proposal(previousVersion).base_version).raw, scope: this.scope(previousVersion)! } : null;
-      return { computedAt: now, phase: this.phaseReader(now)(version), snapshot: config.raw, scope: scope ?? null, previous, draft: draft ?? null,
+      return { computedAt: now, phase: this.phaseReader(now)(version), emergency, supersededBy: this.supersededBy(version),
+        reviewTicket: this.auditRecord<EmergencyTicket>('ConfigEmergencyReviewOpened', version), review: this.auditRecord<EmergencyReview>('ConfigEmergencyReviewed', version), snapshot: config.raw, scope: scope ?? null, previous, draft: draft ?? null,
         permissions: { propose: !['support', 'viewer'].includes(actor.role),
-          approve: !publication && !approval && permitted(true) && (policy?.tier !== 'A' || draft?.changed_by !== actor.subject),
-          publish: !publication && !!approval && permitted(false) },
+          approve: !emergency && !publication && !approval && permitted(true) && (policy?.tier !== 'A' || draft?.changed_by !== actor.subject),
+          publish: !publication && (emergency || !!approval) && permitted(false) },
         base: draft ? this.config(String(draft.base_version)).raw : null,
         policy, approval, publication };
     }, true);
@@ -343,14 +401,18 @@ export class ConfigRegistry {
       const keys = changedPaths(base.raw, original.raw).filter(k => !under(k, '_meta')).sort();
       if (keys.some(k => under(k, 'prototypePhase0'))) throw Error('registry:invalidKeys');
       const scope = this.normalizeScope(input.scope), policy = this.policy(keys, base, scope); this.permit(actor, policy, false, scope);
-      const effective = input.effective ?? policy.effective;
+      if (input.emergency !== undefined && typeof input.emergency !== 'boolean') throw Error('registry:invalidInput');
+      const emergency = input.emergency === true; if (emergency) this.emergencyPermit(actor, policy);
+      const effective = input.effective ?? (emergency ? 'immediate' : policy.effective);
+      if (emergency && effective !== 'immediate') throw Error('registry:earlyActivation');
       if (!['immediate', 'next_shift', 'next_day', 'next_season'].includes(effective)) throw Error('registry:earlyActivation');
-      const fingerprint = JSON.stringify({ baseVersion: input.baseVersion, config: configContent(original), reason: input.reason, effective, ...(scope ? { scope } : {}) });
+      const fingerprint = JSON.stringify({ baseVersion: input.baseVersion, config: configContent(original), reason: input.reason, effective, ...(emergency ? { emergency: true } : {}), ...(scope ? { scope } : {}) });
       const existing = this.db.prepare('SELECT * FROM registry_proposals WHERE changed_by=? AND request_key=?').get(actor.subject, input.key) as Proposal | undefined;
       if (existing) { if (existing.fingerprint !== fingerprint) throw Error('registry:keyConflict'); return existing; }
-      const at = scheduledAt(now, effective, policy, base);
+      if (emergency) this.emergencyPermit(actor, this.policy(keys, base, scope, now));
+      const at = emergency ? now : scheduledAt(now, effective, policy, base);
       if (scope?.expiresAt !== null && scope?.expiresAt !== undefined && scope.expiresAt <= at) throw Error('registry:invalidExpiry');
-      this.currentBase({ base_version: input.baseVersion }, scope);
+      this.currentBase({ base_version: input.baseVersion }, scope, emergency, now);
       if (scope?.kind === 'player') this.supportAvailable(scope);
       const version = `registry-${randomUUID()}`, raw = structuredClone(original.raw);
       raw._meta = { ...base.raw._meta, version, date: dayKey(now, base) };
@@ -359,7 +421,7 @@ export class ConfigRegistry {
       this.db.prepare('INSERT INTO registry_proposals VALUES (?,?,?,?,?,?,?,?,?)').run(version, input.key, input.baseVersion, fingerprint,
         actor.subject, JSON.stringify(keys), input.reason, effective, now);
       if (scope) this.db.prepare('INSERT INTO registry_scopes VALUES (?,?)').run(version, JSON.stringify(scope));
-      this.audit('ConfigProposed', { version, baseVersion: input.baseVersion, keys, scope: scope ?? null, changedBy: actor.subject, reason: input.reason,
+      this.audit('ConfigProposed', { version, emergency, baseVersion: input.baseVersion, keys, scope: scope ?? null, changedBy: actor.subject, reason: input.reason,
         rollbackVersion: this.rollbackSource(original, base.version), at: now });
       return this.proposal(version);
     });
@@ -368,6 +430,7 @@ export class ConfigRegistry {
     return this.transaction(now => {
       this.actor(actor, now);
       const draft = this.proposal(version), policy = this.policy(JSON.parse(draft.keys), this.config(draft.base_version), this.scope(version));
+      if (emergencyDraft(draft)) throw Error('registry:emergencyApproval');
       const scope = this.scope(version); this.permit(actor, policy, true, scope);
       if (policy.tier === 'A' && actor.subject === draft.changed_by) throw Error('registry:distinctApprover');
       const existing = this.db.prepare('SELECT approved_by FROM registry_approvals WHERE version=?').get(version);
@@ -380,12 +443,13 @@ export class ConfigRegistry {
   }
   private publicationAt(draft: Proposal, now: number) {
     const scope = this.scope(draft.version), base = this.config(draft.base_version), policy = this.policy(JSON.parse(draft.keys), base, scope);
-    this.currentBase(draft, scope);
+    const emergency = emergencyDraft(draft);
+    this.currentBase(draft, scope, emergency, now);
     this.validateAdmission(this.config(draft.version), base); // Also fence drafts admitted before a validation fix.
     const latest = scope ? this.predecessor(scope) : this.latest();
-    const at = scheduledAt(now, draft.effective, policy, base);
+    const at = emergency ? now : scheduledAt(now, draft.effective, policy, base);
     if (scope?.expiresAt !== null && scope?.expiresAt !== undefined && scope.expiresAt <= at) throw Error('registry:invalidExpiry');
-    if (latest && at < latest.effective_at) throw Error('registry:scheduleConflict');
+    if (!emergency && latest && at < latest.effective_at) throw Error('registry:scheduleConflict');
     return at;
   }
   players(actor: AdminActor, after = '') {
@@ -402,20 +466,25 @@ export class ConfigRegistry {
       LEFT JOIN registry_support_uses u ON u.ticket_id=s.id WHERE s.rowid>? ORDER BY s.rowid LIMIT 50`).all(after); // config-exempt:admin pagination bound
     return { tickets, nextCursor: tickets.length === 50 ? Number(tickets.at(-1)!.cursor) : null }; // config-exempt:admin pagination bound
   }
-  draftSource(actor: AdminActor, version?: string) {
-    this.actor(actor, this.now());
-    const base = this.config(this.latest().version), source = version ? this.config(version) : base;
+  draftSource(actor: AdminActor, version?: string, emergency = false) {
+    const now = this.now(); this.actor(actor, now); if (emergency) this.emergencyPermit(actor);
+    const base = emergency ? this.active(now) : this.config(this.latest().version), source = version ? this.config(version) : base;
+    if (emergency && version && version !== base.version && !this.currentScopes(now).some(p => p.version === version)) throw Error('registry:inactiveEmergencySource');
     const scope = version ? this.scope(version) : undefined, snapshot = structuredClone(scope ? base.raw : source.raw);
     if (scope) patch(snapshot, source.raw, JSON.parse(this.proposal(version!).keys));
     snapshot._meta = { ...base.raw._meta };
     return { baseVersion: base.version, base: base.raw, snapshot, scope: scope ? { ...scope, previousVersion: this.predecessor(scope)?.version ?? null,
       ticketId: scope.kind === 'player' ? null : scope.ticketId } : null };
   }
-  scopeSource(actor: AdminActor, kind: string, id: string) {
-    this.actor(actor, this.now());
+  scopeSource(actor: AdminActor, kind: string, id: string, emergency = false) {
+    const now = this.now(); this.actor(actor, now); if (emergency) this.emergencyPermit(actor);
     if (!['segment', 'campaign', 'player'].includes(kind) || !id || id.length > 128) throw Error('registry:invalidInput'); // config-exempt:scope identity protocol
     const last = this.scopedPublications().filter(p => p.scope.kind === kind && p.scope.id === id).at(-1);
-    if (!last) throw Error('registry:missingScope'); return this.draftSource(actor, last.version);
+    if (!last) throw Error('registry:missingScope');
+    if (!emergency) return this.draftSource(actor, last.version);
+    const active = this.currentScopes(now).find(p => p.scope.kind === kind && p.scope.id === id);
+    const source = this.draftSource(actor, active?.version, true);
+    return { ...source, scope: { ...(active?.scope ?? last.scope), previousVersion: last.version, ticketId: kind === 'player' ? null : last.scope.ticketId } };
   }
   impact(actor: AdminActor, version: string) {
     return this.transaction(now => { this.actor(actor, now); return this.previewImpact(version, now); });
@@ -432,8 +501,7 @@ export class ConfigRegistry {
     const now = this.now(); this.actor(actor, now);
     if (!Number.isSafeInteger(through) || through <= now) throw Error('registry:invalidInput');
     const candidate = this.previewPublication(version, now), scope = candidate.scope;
-    const previous = scope?.previousVersion ? this.scope(scope.previousVersion)?.playerIds ?? [] : [];
-    const ids = scope ? [...new Set([...scope.playerIds, ...previous])].sort() : this.db.prepare('SELECT id FROM players ORDER BY id').all().map(p => String(p.id));
+    const ids = this.affectedPlayers(version, now);
     const times = [...new Set([now, candidate.effective_at, ...this.db.prepare('SELECT effective_at FROM registry_publications').all().map(p => Number(p.effective_at)),
       ...this.scopedPublications().flatMap(p => p.scope.expiresAt === null ? [] : [p.scope.expiresAt]), ...(scope?.expiresAt ? [scope.expiresAt] : [])])]
       .filter(at => at >= now && at < through).sort((a,b) => a-b);
@@ -454,8 +522,7 @@ export class ConfigRegistry {
   }
   private previewImpact(version: string, now: number) {
       const candidate = this.previewPublication(version, now), scope = candidate.scope, at = candidate.effective_at;
-      const previous = scope?.previousVersion ? this.scope(scope.previousVersion)?.playerIds ?? [] : [];
-      const ids = scope ? [...new Set([...scope.playerIds, ...previous])] : this.db.prepare('SELECT id FROM players').all().map(p => String(p.id));
+      const ids = this.affectedPlayers(version, now);
       let changedPlayers = 0, pinnedShifts = 0; const keys = new Map<string, number>(), resolutions: string[][] = [];
       for (const id of ids.sort()) {
         const before = this.compose(id, at).config, after = this.compose(id, at, candidate).config;
@@ -468,8 +535,9 @@ export class ConfigRegistry {
         }
       }
       // Bind registry revisions and time-dependent resolution, not continuously changing live-shift counts.
-      const token = createHash('sha256').update(JSON.stringify({ revision: candidate.seq - 1, activation: at > now ? at : null, resolutions })).digest('hex');
-      return { version, token, computedAt: now, activatesAt: at, expiresAt: scope?.expiresAt ?? null, audiencePlayers: ids.length,
+      const supersedes = emergencyDraft(this.proposal(version)) ? this.pendingSchedules(scope, now) : null;
+      const token = createHash('sha256').update(JSON.stringify({ revision: candidate.seq - 1, activation: at > now ? at : null, resolutions, supersedes })).digest('hex');
+      return { version, token, supersedes, computedAt: now, activatesAt: at, expiresAt: scope?.expiresAt ?? null, audiencePlayers: ids.length,
         changedPlayers, pinnedShifts, keys: [...keys].sort(([a], [b]) => a.localeCompare(b)).map(([path, players]) => ({ path, players })) };
   }
   publish(actor: AdminActor, version: string, expectedImpact?: string | null): Publication {
@@ -478,20 +546,27 @@ export class ConfigRegistry {
       const draft = this.proposal(version), base = this.config(draft.base_version), policy = this.policy(JSON.parse(draft.keys), base, this.scope(version));
       const scope = this.scope(version); this.permit(actor, policy, false, scope);
       const approval = this.db.prepare('SELECT approved_by FROM registry_approvals WHERE version=?').get(version);
-      if (!approval) throw Error('registry:approvalRequired');
+      const emergency = emergencyDraft(draft); if (emergency) this.emergencyPermit(actor, policy);
+      if (!emergency && !approval) throw Error('registry:approvalRequired');
       const existing = this.db.prepare('SELECT * FROM registry_publications WHERE version=?').get(version) as Publication | undefined;
       if (existing) return existing;
-      if (scope && expectedImpact !== undefined && (!expectedImpact || this.previewImpact(version, now).token !== expectedImpact)) throw Error('registry:staleImpact');
+      if (emergency) this.emergencyPermit(actor, this.policy(JSON.parse(draft.keys), base, scope, now));
+      if ((emergency || scope && expectedImpact !== undefined) && (!expectedImpact || this.previewImpact(version, now).token !== expectedImpact)) throw Error('registry:staleImpact');
       const at = this.publicationAt(draft, now);
       const today = activation(now, 'next_day', base) - DAY_MS;
       const count = Number(this.db.prepare('SELECT COUNT(*) AS n FROM registry_publications WHERE changed_by=? AND published_at>=?').get(draft.changed_by, today)!.n);
       if (count >= PUBLISH_PER_DAY) throw Error('registry:rateLimited');
       if (scope?.kind === 'player') this.supportAvailable(scope);
-      this.db.prepare('INSERT INTO registry_publications VALUES (NULL,?,?,?,?,?)').run(version, at, now, draft.changed_by, String(approval.approved_by));
+      const supersedes = emergency ? this.pendingSchedules(scope, now) : [], approvedBy = emergency ? actor.subject : String(approval!.approved_by);
+      this.db.prepare('INSERT INTO registry_publications VALUES (NULL,?,?,?,?,?)').run(version, at, now, draft.changed_by, approvedBy);
       this.validatePublications(now);
       if (scope?.kind === 'player') this.db.prepare('INSERT INTO registry_support_uses VALUES (?,?)').run(scope.ticketId!, version);
-      this.audit('ConfigPublished', { version, scope: scope ?? null, keys: JSON.parse(draft.keys), effectiveAt: draft.effective, activatesAt: at,
-        changedBy: draft.changed_by, publishedBy: actor.subject, approvedBy: approval.approved_by, reason: draft.reason,
+      if (emergency) {
+        for (const schedule of supersedes) this.audit('ConfigScheduleSuperseded', { ...schedule, byVersion: version, marker: `superseded by emergency ${version}`, at: now });
+        this.audit('ConfigEmergencyReviewOpened', { version, publishedBy: actor.subject, dueAt: now + DAY_MS, at: now });
+      }
+      this.audit('ConfigPublished', { version, emergency, scope: scope ?? null, keys: JSON.parse(draft.keys), effectiveAt: draft.effective, activatesAt: at,
+        changedBy: draft.changed_by, publishedBy: actor.subject, approvedBy, reason: draft.reason,
         rollbackVersion: this.rollbackSource(loadConfig(JSON.parse(JSON.parse(draft.fingerprint).config)), draft.base_version), at: now });
       return this.db.prepare('SELECT * FROM registry_publications WHERE version=?').get(version) as Publication;
     });

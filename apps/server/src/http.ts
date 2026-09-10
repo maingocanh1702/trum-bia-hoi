@@ -155,13 +155,13 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
           reply(200, { ticketId: registry.requestSupport(actor, input as {key:string; playerId:string; reason:string}) }); return;
         }
         if (req.method === 'GET' && path === '/admin/scope') {
-          if (route.searchParams.size !== 2 || !route.searchParams.has('kind') || !route.searchParams.has('id')) throw new HttpError(400, 'invalidQuery');
-          reply(200, registry.scopeSource(actor, route.searchParams.get('kind')!, route.searchParams.get('id')!)); return;
+          if (route.searchParams.size !== (route.searchParams.has('emergency') ? 3 : 2) || !route.searchParams.has('kind') || !route.searchParams.has('id') || route.searchParams.has('emergency') && route.searchParams.get('emergency') !== '1') throw new HttpError(400, 'invalidQuery');
+          reply(200, registry.scopeSource(actor, route.searchParams.get('kind')!, route.searchParams.get('id')!, route.searchParams.has('emergency'))); return;
         }
         if (req.method === 'GET' && path === '/admin/draft-source') {
           const version = route.searchParams.get('version');
-          if (route.search && (route.searchParams.size !== 1 || !version || version.length > 128)) throw new HttpError(400, 'invalidVersion'); // config-exempt:version protocol bound
-          reply(200, registry.draftSource(actor, version ?? undefined)); return;
+          if ([...route.searchParams.keys()].some(k => !['version', 'emergency'].includes(k)) || route.searchParams.getAll('version').length > 1 || route.searchParams.getAll('emergency').length > 1 || route.searchParams.has('version') && (!version || version.length > 128) || route.searchParams.has('emergency') && route.searchParams.get('emergency') !== '1') throw new HttpError(400, 'invalidVersion'); // config-exempt:version protocol bound
+          reply(200, registry.draftSource(actor, version ?? undefined, route.searchParams.has('emergency'))); return;
         }
         if (req.method === 'POST' && path === '/admin/forecast') {
           const input = fields(['version']);
@@ -184,11 +184,16 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
           reply(200, registry.details(actor, version)); return;
         }
         if (req.method === 'POST' && path === '/admin/proposals') {
-          const input = fields(['key', 'baseVersion', 'snapshot', 'reason', 'effective', 'scope']);
+          const input = fields(['key', 'baseVersion', 'snapshot', 'reason', 'effective', 'scope', 'emergency']);
           if (typeof input.baseVersion !== 'string' || input.baseVersion.length > 128) throw new HttpError(400, 'invalidVersion'); // config-exempt:transport string bound
           if (input.scope !== undefined && (!record(input.scope) || Object.keys(input.scope).sort().join(',') !== 'expiresAt,id,kind,playerIds,previousVersion,priority,ticketId')) throw new HttpError(400, 'invalidBody');
           const draft = registry.propose(actor, input as ProposalInput);
           reply(200, { version: draft.version }); return;
+        }
+        if (req.method === 'POST' && path === '/admin/emergency-review') {
+          const input = fields(['version', 'reason']);
+          if (typeof input.version !== 'string' || !input.version || input.version.length > 128) throw new HttpError(400, 'invalidVersion'); // config-exempt:version protocol bound
+          reply(200, registry.reviewEmergency(actor, input.version, input.reason as string)); return;
         }
         if (req.method === 'POST' && ['/admin/approve', '/admin/publish'].includes(path)) {
           const input = fields(path === '/admin/publish' ? ['version', 'impactToken'] : ['version']);
@@ -300,7 +305,7 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
         'store:heartbeatClock': 400, 'registry:missingVersion': 404, 'registry:missingProposal': 404, 'registry:rateLimited': 429,
         'registry:staleBase': 409, 'registry:scheduleConflict': 409, 'registry:keyConflict': 409,
         'registry:staleForecast': 409, 'registry:forecastBusy': 429, 'registry:forecastTimeout': 503, 'registry:forecastCancelled': 408, 'registry:forecastUnavailable': 503,
-        'registry:staleImpact': 409, 'registry:scopeConflict': 409, 'registry:invalidTicket': 409, 'registry:alreadyPublished': 409, 'registry:missingScope': 404, 'registry:invalidScope': 400, 'registry:invalidExpiry': 400,
+        'registry:inactiveEmergencySource': 409, 'registry:emergencyTier': 400, 'registry:emergencyApproval': 400, 'registry:staleImpact': 409, 'registry:scopeConflict': 409, 'registry:invalidTicket': 409, 'registry:alreadyPublished': 409, 'registry:missingScope': 404, 'registry:invalidScope': 400, 'registry:invalidExpiry': 400,
         'registry:alreadyApproved': 409, 'registry:approvalRequired': 409,
       };
       if (pathIsAdmin(req.url) && error instanceof Error && (error.message.startsWith('competition:') || error.message.startsWith('registry:') || error.message.startsWith('config:') || error.message.startsWith('admin:') || error.message === 'store:heartbeatClock')) {

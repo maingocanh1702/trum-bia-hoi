@@ -1,7 +1,7 @@
-# Emergency config publication — implementation intake
+# Emergency config publication
 
-Base: `e5cba9d`, `codex/game-build-isolated`. Authority: BRD §5.2.5 and
-the owner's M4-first queue. Status: owner decision resolved; implementation queued. Runtime is unchanged.
+Implementation base: `bb2bf0d`, `codex/game-build-isolated`. Authority: BRD §5.2.5 and
+the owner's M4-first queue. Status: implemented and independently reviewed; final403 unit/server and28 admin browser checks PASS.
 
 ## Established requirements
 
@@ -69,3 +69,50 @@ stale confirmation; exact retry; republish after supersede; rollback by publishi
 an old snapshot. Implement through existing registry/audit/protected transport.
 
 | 2026-09-10 Steer #6 | Owner chose replacement of future schedules in the affected scope; emergency implementation unblocked. Historical unanswered question superseded. |
+
+## Runtime contract — 2026-09-10
+
+`ConfigRegistry.propose` records an explicit emergency flag in its immutable request
+fingerprint. Super+MFA is checked at proposal and publication; every governed key
+must be Tier A/B, including keys removed from a replaced scope. Emergency drafts
+start from the active default and active named-scope patch, avoiding accidental
+application of future scheduled values. Normal drafts still start from latest.
+
+`impact` binds the exact pending schedule list, publication revision, activation
+boundary and resolved player configurations. `publish` requires that token even
+for default-scope emergencies and repeats validation under BEGIN IMMEDIATE. Zero
+pending schedules still requires confirmation. Normal role/approval/timing rules
+are unchanged; emergencies skip pre-publication approval explicitly.
+
+The higher publication sequence masks replaced schedules permanently. Each gets
+an append-only `ConfigScheduleSuperseded` record and archived lifecycle label,
+with exact `superseded by emergency <version>` marker. Original publications remain
+untouched. Other scope identities retain their schedules. Expiry cannot resurrect
+a superseded version. Normal rollback/republication creates a fresh proposal from
+the old snapshot and requires the ordinary approval flow.
+
+The same transaction adds `ConfigEmergencyReviewOpened`, keyed by publication
+version and due at publication +24h. `/admin/emergency-review` appends the findings
+from a different authenticated Super Admin (neither author nor publisher). This
+reuses the distinct-review rule after emergency publication. Exact review retries
+return the original record; overdue reviews can still be recorded and never
+silently disable gameplay. The admin detail view shows deadline and review receipt;
+the existing audit feed makes tickets durable and inspectable without new tables.
+
+VI/EN editor preserves emergency mode in locked local draft recovery. Confirmation
+lists version, activation time, keys, proposer and approver for every replacement.
+Lost publication responses retry the same version and return its original receipt.
+Server tests cover 0/1/3 pending schedules, scope isolation/expiry, stale previews,
+atomic audit failure, explicit republish/rollback, role/MFA/schema/catalog checks,
+post-review and pinned live saves/replay. Mobile browser covers exact confirmation,
+lost acknowledgement and independent post-review. No engine or seed values changed.
+
+| 2026-09-10 implementation | Owner Steer6 implemented through registry/audit/admin transports and UI; final root verification and independent review in progress. |
+
+| 2026-09-10 review correction | Independent P2 found `draft-source?version=<future>&emergency=1` could import future values. Shared source admission now rejects every non-active explicit source in emergency mode; active scoped sources still work, ordinary rollback remains unchanged. Default/scoped/HTTP regressions added. |
+
+| 2026-09-10 scope review correction | Two P1 findings: active keys/audience could be hidden behind a scheduled successor. A shared exact-scope replacement selector now includes active plus all pending versions; emergency admission/publication checks every displaced key and both impact/forecast include all displaced audiences. Exact retries bypass changing live scope policy after authentication/immutable checks. Regressions cover active TierC removal and four successive audiences. |
+
+| 2026-09-11 review correction | Default emergencies also govern the pending schedule keys they cancel, using the same pendingSchedules selector as confirmation. A future mixed A/C default cannot be canceled by an A/B emergency; proposal and publication regression PASS. |
+
+| 2026-09-11 verified | Final403 unit/server,28 admin browser, config/build PASS. Independent full-diff review CLEAN after active-source and displaced-key/audience corrections. Full verify402PASS (10standard,15rush,2career); final registry-only guard passed fresh403unit/server and config/build. Receipt `.qa/emergency-verification.json`. No M4/full-game closure claim; ownerSteer12 next: dev identity and playable happy path. |

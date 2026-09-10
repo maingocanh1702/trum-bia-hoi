@@ -620,5 +620,17 @@
   "rank.insufficientShifts": "Not enough confirmed shifts in this season to rank yet.",
   "rank.flagged": "This account is under review and temporarily hidden from the board.",
   "rank.review.pending": "Local history is awaiting review. Only earnings and shifts after sign-in count while it is pending.",
-  "rank.review.rejected": "Local history was not accepted for ranking. Your game progress is preserved."
+  "rank.review.rejected": "Local history was not accepted for ranking. Your game progress is preserved.",
+  "admin.emergency.new": "Create emergency hotfix",
+  "admin.emergency.title": "Emergency hotfix · Tier A/B",
+  "admin.emergency.note": "Apply immediately from the active configuration. Replace pending schedules in this scope and open a 24-hour review ticket.",
+  "admin.emergency.schedules": "Pending schedules to supersede",
+  "admin.emergency.none": "No pending schedules will be superseded.",
+  "admin.emergency.superseded": "Superseded by emergency",
+  "admin.emergency.ticket": "Post-review ticket",
+  "admin.emergency.due": "Review due",
+  "admin.emergency.reviewed": "Reviewed by",
+  "admin.emergency.reviewReason": "Post-review findings",
+  "admin.emergency.review": "Record post-review",
+  "admin.error.emergencyTier": "Emergency publication allows only Tier A/B. Submit Tier C keys through a normal proposal."
 }

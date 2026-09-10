@@ -800,3 +800,12 @@ Cập nhật lại bằng: `ls assets/*.png`
 | 2026-09-10 build | Table Lv2–Lv4 empty-state imagegen drafts replace three runtime placeholders. Other states use runtime composition. Native-size exports and 128/64/32 contact sheet recorded; final family art approval pending (🟡). Four Blender source renders + studio retained and archived in manifest; Blender generation paused by owner. |
 
 | 2026-09-10 keg batch | Four standalone imagegen idle sprites replace keg-lv2–5 placeholders; source/prompt/hash receipt in reference/assets-owner-2026-09-08/keg-upgrades-imagegen.json. Existing exporter reused with explicit crop/materials; native alpha retained, level3 chroma-key handles enclosed gaps. 128/64/32 sheet inspected; draft family, final art approval remains pending. No engine/economy changes. |
+
+
+## Owner release decision — 2026-09-11 (Steer10/12)
+
+**owner waiver 2026-09-11: draft assets accepted for release.** A generated asset that passes technical checks (required transparency, sprite dimensions/anchor, recorded checksum and check:assets) can ship as `draft`; no approval/polish pass or taste rerolls. Event id → manifest → path and imagegen source provenance remain.
+
+Steer12 further narrows this build to playable-v0: existing drafts and placeholders are acceptable when their gameplay fallback renders correctly. Generate only visibly missing/broken assets on the happy path; the ~530 inventory target is deferred. M6/M7/M8-only assets stay deferred. Missing/empty files remain defects; a manifest placeholder with a working deliberate fallback is not a missing-file claim.
+
+| 2026-09-11 Steer10/12 | owner waiver 2026-09-11: draft assets accepted for release; playable-v0 accepts existing working placeholders, no full inventory/polish gate. |

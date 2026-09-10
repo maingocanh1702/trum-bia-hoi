@@ -361,3 +361,107 @@ test('a pre-fix invalid leaderboard draft cannot preview or publish, while histo
   assert.throws(() => registry.publish(f.actor('economy'), version), /config:leaderboard/);
   assert.equal(registry.latest().version, good.version);
 });
+
+for (const count of [0, 1, 3]) test(`emergency replaces ${count} pending schedules, keeps their audit and pins, and never reactivates them`, t => {
+  const f=fixture(t),r=f.registry,who=f.actor('super','hotfix');
+  f.store.createPlayer('playing',42);const opened=f.store.command('playing',{idempotencyKey:'open',command:{type:'startShift'}});
+  const schedules=Array.from({length:count},(_,i)=>f.publish(c=>{c.shift.dailyEarnCapBase++;},f.actor('economy','scheduler-'+i)));
+  for (const scheduled of schedules) assert.throws(()=>r.draftSource(who,scheduled.version,true),/inactiveEmergencySource/);
+  const source=r.draftSource(who,undefined,true);assert.equal(source.baseVersion,config.version);
+  assert.equal(source.snapshot.shift.dailyEarnCapBase,config.raw.shift.dailyEarnCapBase);
+  source.snapshot.menu.bia.price++;
+  const input={key:'emergency',baseVersion:source.baseVersion,snapshot:source.snapshot,reason:'Correct current beer price',emergency:true};
+  const d=r.propose(who,input),preview=r.impact(who,d.version);
+  assert.deepEqual(preview.supersedes,schedules.map(p=>({version:p.version,effectiveAt:p.effective_at,keys:['shift.dailyEarnCapBase'],proposer:p.changed_by,approver:p.approved_by})));
+  assert.throws(()=>r.publish(who,d.version),/staleImpact/);
+  assert.throws(()=>r.publish(who,d.version,'0'.repeat(64)),/staleImpact/);
+  const receipt=r.publish(who,d.version,preview.token);assert.equal(receipt.effective_at,f.now);
+  assert.equal(r.active().version,d.version);assert.equal(r.active().raw.shift.dailyEarnCapBase,config.raw.shift.dailyEarnCapBase);
+  const details=r.details(who,d.version);assert.equal(details.emergency,true);assert.equal(details.reviewTicket!.dueAt,f.now+86400000);
+  assert.equal(details.approval,null);assert.equal(details.review,null);
+  const auditCount=f.db.prepare('SELECT COUNT(*) AS n FROM registry_audit').get()!.n;
+  assert.deepEqual(r.propose(who,input),d);assert.deepEqual(r.publish(who,d.version,'obsolete-preview'),receipt);
+  assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM registry_audit').get()!.n,auditCount);
+  for(const s of schedules){assert.equal(r.details(who,s.version).phase,'archived');assert.equal(r.details(who,s.version).supersededBy,d.version);}
+  assert.equal(f.store.read('playing').world.shift!.configVersion,opened.world.shift!.configVersion);
+  assert.deepEqual(f.store.command('playing',{idempotencyKey:'open',command:{type:'startShift'}}).result,opened.result);
+  assert.equal(f.open().registry.active().version,d.version);
+  f.now+=86400000;
+  assert.equal(r.active().version,d.version);assert.equal(f.open().createPlayer('after-schedules',43).configVersion,d.version);
+  assert.deepEqual(r.publish(f.actor('super','hotfix'),d.version,preview.token),receipt);
+  assert.throws(()=>r.reviewEmergency(f.actor('super','hotfix'),d.version,'self review'),/distinctApprover/);
+  const reviewer=f.actor('super','post-reviewer'),review=r.reviewEmergency(reviewer,d.version,'Checked pinned saves and replaced schedules');
+  assert.deepEqual(r.reviewEmergency(reviewer,d.version,review.reason),review);assert.equal(r.details(reviewer,d.version).review!.reviewedBy,reviewer.subject);
+  assert.throws(()=>r.reviewEmergency(reviewer,d.version,'different conclusion'),/alreadyApproved/);
+  const replay=new Game(config,42,NOW,'playing');
+  for(const row of f.db.prepare('SELECT entry FROM commands WHERE player_id=? ORDER BY seq').all('playing')){const entry=JSON.parse(String(row.entry));assert.deepEqual(replay.replay(entry,r.config(entry.configVersion)),entry.result);}
+});
+
+test('emergency gate rejects non-Super, missing MFA, Tier C, malformed flags, schema and catalog bypasses',t=>{
+  const f=fixture(t),r=f.registry,superActor=f.actor('super');
+  const input={key:'guard',baseVersion:config.version,snapshot:structuredClone(config.raw),reason:'Fix',emergency:true};input.snapshot.menu.bia.price++;
+  for(const role of ['economy','game','support','viewer'] as const)assert.throws(()=>r.propose(f.actor(role),input),/forbidden/);
+  assert.throws(()=>r.propose({...superActor,mfa:false},input),/invalidActor/);
+  assert.throws(()=>r.propose(superActor,{...input,emergency:'true' as never}),/invalidInput/);
+  assert.throws(()=>r.propose(superActor,{...input,effective:'next_day'}),/earlyActivation/);
+  const c=structuredClone(input);c.snapshot.audio.enabled=!c.snapshot.audio.enabled;assert.throws(()=>r.propose(superActor,c),/emergencyTier/);
+  const invalid=structuredClone(input);delete (invalid.snapshot.onboarding.loginPrompt as Record<string,unknown>).leaveProgress;assert.throws(()=>r.propose(superActor,invalid),/config:/);
+  const identity=structuredClone(input);identity.snapshot.locations.list[0].id='renamed';assert.throws(()=>r.propose(superActor,identity),/identityMigrationRequired|config:/);
+  const d=r.propose(superActor,input);assert.throws(()=>r.approve(superActor,d.version),/emergencyApproval/);
+  assert.throws(()=>r.publish(f.actor(),d.version,r.impact(superActor,d.version).token),/forbidden/);
+});
+
+test('default emergency cannot cancel pending Tier C keys at proposal or publication',t=>{
+  const f=fixture(t),r=f.registry,who=f.actor('super');
+  const snapshot=structuredClone(config.raw);snapshot.menu.bia.price++;
+  const input={key:'before-schedule',baseVersion:config.version,snapshot,reason:'Correct beer price',emergency:true};
+  const d=r.propose(who,input);
+  const scheduled=f.publish(c=>{c.shift.dailyEarnCapBase++;c.audio.enabled=!c.audio.enabled;},who);
+  assert.ok(scheduled.effective_at>f.now);
+  assert.throws(()=>r.propose(who,{...input,key:'after-schedule'}),/emergencyTier/);
+  assert.throws(()=>r.publish(who,d.version,r.impact(who,d.version).token),/emergencyTier/);
+  assert.equal(r.details(who,d.version).permissions.publish,false);
+  assert.equal(r.details(who,d.version).reviewTicket,null);
+  assert.equal(r.details(who,scheduled.version).supersededBy,null);
+  f.now=scheduled.effective_at;
+  assert.equal(r.active().version,scheduled.version);
+});
+
+test('hotfix confirmation becomes stale when another schedule is published or crosses its activation boundary',t=>{
+  const f=fixture(t),r=f.registry,who=f.actor('super');const snapshot=structuredClone(config.raw);snapshot.menu.bia.price++;
+  const d=r.propose(who,{key:'hotfix',baseVersion:config.version,snapshot,reason:'Hotfix',emergency:true}),first=r.impact(who,d.version);
+  const scheduled=f.publish(c=>{c.shift.dailyEarnCapBase++;});
+  assert.throws(()=>r.publish(who,d.version,first.token),/staleImpact/);
+  const current=r.impact(who,d.version);assert.equal(current.supersedes!.length,1);
+  f.now=scheduled.effective_at;
+  assert.throws(()=>r.publish(f.actor('super'),d.version,current.token),/staleBase/);
+  assert.equal(f.db.prepare('SELECT 1 FROM registry_publications WHERE version=?').get(d.version),undefined);
+});
+
+test('hotfix publication, supersession markers and 24-hour ticket roll back together on audit failure',t=>{
+  const f=fixture(t),r=f.registry,who=f.actor('super');const schedule=f.publish(c=>{c.shift.dailyEarnCapBase++;});
+  const snapshot=structuredClone(config.raw);snapshot.menu.bia.price++;
+  const d=r.propose(who,{key:'atomic',baseVersion:config.version,snapshot,reason:'Hotfix',emergency:true}),preview=r.impact(who,d.version);
+  f.db.exec("CREATE TRIGGER fail_ticket BEFORE INSERT ON registry_audit WHEN NEW.type='ConfigEmergencyReviewOpened' BEGIN SELECT RAISE(ABORT,'test:ticketFailure'); END;");
+  assert.throws(()=>r.publish(who,d.version,preview.token),/ticketFailure/);
+  assert.equal(r.details(who,schedule.version).phase,'scheduled');assert.equal(r.details(who,schedule.version).supersededBy,null);
+  assert.equal(r.details(who,d.version).publication,null);assert.equal(r.details(who,d.version).reviewTicket,null);
+  f.db.exec('DROP TRIGGER fail_ticket');r.publish(who,d.version,preview.token);
+  assert.ok(r.details(who,d.version).reviewTicket);
+});
+
+test('superseded schedules require explicit normal republication; rollback also publishes an old snapshot as a new version',t=>{
+  const f=fixture(t),r=f.registry,who=f.actor('super');const scheduled=f.publish(c=>{c.shift.dailyEarnCapBase++;});
+  const snapshot=structuredClone(config.raw);snapshot.menu.bia.price++;
+  const d=r.propose(who,{key:'hotfix',baseVersion:config.version,snapshot,reason:'Emergency',emergency:true});r.publish(who,d.version,r.impact(who,d.version).token);
+  const source=r.draftSource(who,scheduled.version);
+  const republished=r.propose(who,{key:'republish',...source,scope:undefined,reason:'Explicitly republish scheduled values'});
+  assert.throws(()=>r.publish(who,republished.version),/approvalRequired/);
+  assert.throws(()=>r.approve(who,republished.version),/distinctApprover/);
+  r.approve(f.actor('super','reviewer'),republished.version);const pub=r.publish(who,republished.version);
+  assert.notEqual(pub.version,scheduled.version);assert.ok(pub.effective_at>f.now);
+  assert.equal(r.active().version,d.version);f.now=pub.effective_at;assert.equal(r.active().version,pub.version);
+  const old=r.draftSource(f.actor('super'),config.version),rollback=r.propose(f.actor('super'),{key:'rollback',...old,scope:undefined,reason:'Restore original values'});
+  r.approve(f.actor('super','reviewer'),rollback.version);const rolled=r.publish(f.actor('super'),rollback.version);f.now=rolled.effective_at;
+  const {_meta:actualMeta,...actual}=r.active().raw,{_meta:seedMeta,...expected}=config.raw;assert.deepEqual(actual,expected);assert.equal(r.details(f.actor('viewer'),scheduled.version).supersededBy,d.version);
+});

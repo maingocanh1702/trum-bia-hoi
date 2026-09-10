@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-10 23:02 · **Branch hiện tại:** `codex/game-build-isolated`
+> **Cập nhật:** 2026-09-11 00:11 · **Branch hiện tại:** `codex/game-build-isolated`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -11,7 +11,7 @@
 ## Tổng quan
 
 - **MVP progress:** **0%** (0/28 PR merged)
-- **In flight:** 21 PR · **Blocked:** 0 · **Deferred:** 1
+- **In flight:** 20 PR · **Blocked:** 0 · **Deferred:** 6
 - **Lộ trình (baseline 06-ROADMAP v3.0):** 1 phase, mốc M0–M9 theo exit criteria — chưa gán ngày; Phase N ở đây = khoá parser (P0→M0 · P1→M1–M2 · P2→M3 · P3→M4–M6 · P4→M7–M8)
 
 ## Phase progress
@@ -64,10 +64,10 @@
 | `F12` | Giải Nhậu & Vụ Bia — 8 bậc, 2 Vụ Bia song song | 🟡 In progress | IN_PROGRESS ✓ normal | `packages/engine/src/seasons.ts` |
 | `F13` | Đường Lên Trùm — LP0–LP7, gate tính năng & mặt bằng | 🟡 In progress | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
 | `F14` | Mặt Bằng Quán — 9 mặt bằng, rent/cọc 7 ngày | 🟡 In progress | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
-| `F15` | Sự Cố Quán Nhậu — bảo kê, trộm offline, đánh nhau (kiểm tra ATTP ⏸ pending) | ⬜ Not started | — | `—` |
+| `F15` | Sự Cố Quán Nhậu — bảo kê, trộm offline, đánh nhau (kiểm tra ATTP ⏸ pending) | ⏸ Deferred | — | `—` |
 | `F16` | Rủ Bạn & Huy Hiệu — 3 mốc, huy hiệu Kết Nối | ⬜ Not started | — | `—` |
 | `F28` | Bảng Xếp Hạng & Bàn Thờ Ông Địa — top N, hàng của tôi, snapshot kết Vụ | 🟡 In progress | IN_PROGRESS ✓ normal | `apps/server/src/competitive-score.ts` |
-| `F18` | Chó Giữ Quán — combat bảo kê, bảo hiểm trộm | 🟡 In progress | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
+| `F18` | Chó Giữ Quán — combat bảo kê, bảo hiểm trộm | ⏸ Deferred | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
 | `F22` | Bia Đấm — LLM server-side, quota 20/ngày | ⬜ Not started | — | `—` |
 | `F26` | ~~Vé Mở Ca & Thanh Toán~~ — ⛔ **bỏ 08/09: chơi free hết** | ⏸ Deferred | — | `—` |
 
@@ -75,9 +75,9 @@
 
 | PR | Feature | Status | Computed | Branch |
 |----|---------|:------:|:--------:|--------|
-| `F19` | Cúp Bóng Đá — lịch + tỉ số thật, TV, Giờ Vàng xem bóng | ⬜ Not started | — | `—` |
-| `F20` | Mời Bia Hơi — **monetization duy nhất**, donate cho admin, cosmetic-only, KHÔNG P2W (mốc M7) | ⬜ Not started | — | `—` |
-| `F21` | Vé Số Lấy Hên — xổ số/Vietlott, **cần legal review** | ⬜ Not started | — | `—` |
+| `F19` | Cúp Bóng Đá — lịch + tỉ số thật, TV, Giờ Vàng xem bóng | ⏸ Deferred | — | `—` |
+| `F20` | Mời Bia Hơi — **monetization duy nhất**, donate cho admin, cosmetic-only, KHÔNG P2W (mốc M7) | ⏸ Deferred | — | `—` |
+| `F21` | Vé Số Lấy Hên — xổ số/Vietlott, **cần legal review** | ⏸ Deferred | — | `—` |
 
 ## Timeline
 
@@ -265,24 +265,12 @@
 - **Phase:** Phase 3
 - **Notes:** Spec `docs/features/F28-leaderboard.md`; config `leaderboard` tier A. M4 prerequisite + M5. E23: caller-only score/baseline7e7f337 verified;376unit/server,19admin,32focused,config/build/review PASS. E24 admin history/review controls85fbdfb verified;378unit/server +24admin browser, final5 affected browser/config/build/review PASS. E25 public live query/VI–EN UI628eb72 verified:386unit/server,52focused,11affected remote/24admin browser,config/build and final CLEAN review. P1 display bounds fixed; M4=15/18. Immutable snapshots and profile names remain. Owner10/09: giữ tiến độ local, chỉ cộng lịch sử vào BXH sau khi duyệt, không cộng trùng.
 
-### F18 — Chó Giữ Quán — combat bảo kê, bảo hiểm trộm
-
-- **Status:** 🟡 In progress · 🌿 đang trên branch này
-- **Branch:** `codex/game-build-isolated`
-- **Wave:** 🎮 Code
-- **Gates:** 🔒S
-- **Phase:** Phase 3
-- **Notes:** Mua/nâng 3 cấp từ config, debit chung + replay; sheet VI/EN, hình cùng một chó 3 cấp và reduced motion. Review CLEAN tại 0216cb0, config/build/60 unit/28 E2E/asset/sim pass; combat/capture/theft/server chưa có.
-
 ## Up next
 
 | PR | Feature | Phase | Status |
 |----|---------|-------|--------|
-| `F15` | Sự Cố Quán Nhậu — bảo kê, trộm offline, đánh nhau (kiểm tra ATTP ⏸ pending) | Phase 3 | ⬜ Not started |
 | `F16` | Rủ Bạn & Huy Hiệu — 3 mốc, huy hiệu Kết Nối | Phase 3 | ⬜ Not started |
 | `F22` | Bia Đấm — LLM server-side, quota 20/ngày | Phase 3 | ⬜ Not started |
-| `F19` | Cúp Bóng Đá — lịch + tỉ số thật, TV, Giờ Vàng xem bóng | Phase 4 | ⬜ Not started |
-| `F20` | Mời Bia Hơi — **monetization duy nhất**, donate cho admin, cosmetic-only, KHÔNG P2W (mốc M7) | Phase 4 | ⬜ Not started |
 
 ---
 
