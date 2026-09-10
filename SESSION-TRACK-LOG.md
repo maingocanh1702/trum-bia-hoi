@@ -5,6 +5,16 @@
 
 ---
 
+## 🧭 Current-save forecast kernel implemented — 2026-09-10
+
+Base `f41122b`; shared deterministic career policy and seven-day projection from
+a trusted Game fork. Scheduled prices/caps switch at openings; open pins and source
+save are preserved. Actual wallet income, sinks, penalties and refunds reconcile.
+Career parity and seven focused checks pass; full verification/review underway.
+Next: protected server audiences/timelines, aggregate and admin forecast UI, then
+remaining M4 accounts/admin acceptance and M6–M9. M4 stays11/18 OPEN; no public
+upload,80MB tuning, invented VND forecast or live Google configuration.
+
 ## 🧭 Scoped admin controls verified; M4 remains11/18 — 2026-09-10
 
 Producta84f41f (base22320d4, foundation5a4da74), rules24/config2.0.1/schema10.

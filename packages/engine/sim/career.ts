@@ -3,15 +3,11 @@ import { createHash } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {
-  Game, config, DISHES, EQUIPMENT, restockQuote, upgradeQuote, buyGlassQuote, dogUpgradeQuote,
-  unlockQuote, lifePathStatus, lifePathRewardQuote, deliveryQuote, nextDayAt, dayKey,
-  attendanceRewardQuote, questRewardQuote, signboardQuote, flyerQuote, leaseQuote,
-  serveValueStats, seasonTier, type Command,
-} from '../src/index';
+import { Game, config, nextDayAt, dayKey, lifePathStatus, serveValueStats, seasonTier, type Command } from '../src/index';
+import { createManagementPolicy, serveNext, STEP_MS, MANAGEMENT_MS, MAX_DAY_STEPS } from './policy';
 
 // config-exempt: reproducible diagnostic policy/sampling limits, never live gameplay or economy tuning.
-const STEP_MS = 100, MANAGEMENT_MS = 1000, MAX_DAYS = 90, MAX_DAY_STEPS = 864000;
+const MAX_DAYS = 90;
 const DEFAULT_START = Date.parse('2026-09-09T00:00:00+07:00');
 export const CAREER_POLICY = 'v1: fresh game; configured newbie shifts/day; full active stamina rest; 100ms whole-table/deadline service; 1s management; claim earned rewards; bulk restock/one when empty; keep one bulk per unlocked dish as capital reserve; dog1/phone/QR first, then cheapest eligible device/table/glass/dog/sign/neon; target two glasses per seat; upgrade existing tables only; one flyer/shift; next higher location multiplier only after lease expiry. No injected state or fabricated rewards. Diagnostic, not optimal-play or balance certification.';
 
@@ -22,7 +18,6 @@ export function simulateCareer({ days = 30, seed = 42, startAt = DEFAULT_START }
   const game = new Game(config, seed, startAt), w = game.world, c = config.values;
   const rows: CareerDay[] = [];
   let spent: Record<string, number> = {}, rewardCredits = 0, lastManagement = -Infinity;
-  let highestLocationMult = c.locations.list.find(l => l.id === w.location)!.mult;
   const send = (command: Command) => {
     const coins = w.coins, earned = w.lifetimeEarned;
     const result = game.command({ command, at: w.now, idempotencyKey: `career-${game.log.length}` });
@@ -31,53 +26,7 @@ export function simulateCareer({ days = 30, seed = 42, startAt = DEFAULT_START }
     if (other < 0) spent[command.type] = (spent[command.type] ?? 0) - other;
     else rewardCredits += other;
   };
-  const reserve = () => DISHES.filter(d => c.menu[d].unlock.kitchenLevel <= w.equipment.kitchen)
-    .reduce((sum, d) => sum + c.inventory.bulkSize * c.menu[d].bulkCost, 0);
-  const affordable = (cost: number) => cost + reserve() <= w.coins;
-  function manage() {
-    const day = dayKey(w.now, config);
-    for (const row of lifePathStatus(w, config).rows) if (row.claimable && lifePathRewardQuote(w, config, row.index)?.safe) send({ type: 'claimLifePath', level: row.index });
-    if (!attendanceRewardQuote(w, config, day).reason) send({ type: 'claimAttendance', day });
-    for (const row of w.daily?.rows ?? []) if (!questRewardQuote(w, config, day, row.id).reason) send({ type: 'claimQuest', day, questId: row.id });
-    if (!questRewardQuote(w, config, day, null).reason) send({ type: 'claimDailyBonus', day });
-    for (const dish of DISHES) {
-      if (restockQuote(w, config, dish, 'bulk').ok) send({ type: 'restock', dish, mode: 'bulk' });
-      else if (!w.inventory[dish] && restockQuote(w, config, dish, 'one').ok) send({ type: 'restock', dish, mode: 'one' });
-    }
-    const dog = dogUpgradeQuote(w, config);
-    if (!w.dogLevel && dog.ok && affordable(dog.cost!)) send({ type: 'upgradeDog', level: dog.next!.level });
-    for (const item of ['phone', 'qr'] as const) { const q = unlockQuote(w, config, item); if (q.ok && affordable(q.cost)) send({ type: 'buyUnlock', item }); }
-    const candidates: { cost: number; command: Command }[] = [];
-    for (const kind of EQUIPMENT) { const q = upgradeQuote(w, config, kind); if (q.ok) candidates.push({ cost: q.cost!, command: { type: 'upgrade', kind } }); }
-    for (const table of w.tables) {
-      const next = c.upgrades.table.levels[table.level];
-      if (table.state === 'empty' && next && (!next.requiredBadge || w.badges.includes(next.requiredBadge)) && (!next.repBase || w.reputation >= next.repBase[0])) candidates.push({ cost: next.priceBase, command: { type: 'upgradeTable', tableId: table.id } });
-    }
-    const glasses = buyGlassQuote(w, config, 1);
-    // config-exempt: bot policy targets two circulating glasses per seat, capped by the real purchase quote.
-    if (glasses.ok && w.glasses.length < w.tables.reduce((sum, t) => sum + t.capacity, 0) * 2) candidates.push({ cost: glasses.cost, command: { type: 'buyGlass', count: 1 } });
-    const nextDog = dogUpgradeQuote(w, config);
-    if (w.dogLevel && nextDog.ok) candidates.push({ cost: nextDog.cost!, command: { type: 'upgradeDog', level: nextDog.next!.level } });
-    const sign = signboardQuote(w, config), neon = signboardQuote(w, config, 'neon');
-    if (sign.ok) candidates.push({ cost: sign.cost, command: { type: 'installSignboard' } });
-    if (neon.ok) candidates.push({ cost: neon.cost, command: { type: 'setSignboard', style: 'neon' } });
-    const purchase = candidates.sort((a, b) => a.cost - b.cost).find(q => affordable(q.cost));
-    if (purchase) send(purchase.command);
-    if (w.phase === 'open' && !w.shift!.flyersUsed) {
-      const q = flyerQuote(w, config);
-      if (!q.stock && !q.buyReason) send({ type: 'buyFlyer' });
-      if (!flyerQuote(w, config).useReason) send({ type: 'activateFlyer', shiftId: w.shift!.id });
-    }
-    if (w.phase === 'resting' && !w.lease) {
-      const ordered = c.locations.list.filter(l => l.id !== c.locations.fallback).sort((a, b) => a.mult - b.mult);
-      const target = ordered.find(l => l.mult > highestLocationMult && leaseQuote(w, config, l.id).requiredLifePath <= w.lifePath)
-        ?? ordered.find(l => l.mult === highestLocationMult);
-      if (target) {
-        const q = leaseQuote(w, config, target.id);
-        if (q.ok && affordable(q.cost)) { send({ type: 'rentLocation', locationId: target.id, leaseId: q.leaseId, maxCost: q.cost }); highestLocationMult = target.mult; }
-      }
-    }
-  }
+  const manage=createManagementPolicy(game,send);
   for (let day = 0; day < days; day++) {
     const openingCoins = w.coins, earnedBefore = w.lifetimeEarned, completedBefore = w.completedShifts;
     const serveStart = w.serves.length, eventStart = w.events.length;
@@ -92,15 +41,7 @@ export function simulateCareer({ days = 30, seed = 42, startAt = DEFAULT_START }
         manage(); send({ type: 'startShift' });
       }
       if (w.now - lastManagement >= MANAGEMENT_MS) { manage(); lastManagement = w.now; }
-      // The bot respects the configured ceiling; the engine remains the authoritative guard.
-      if (w.lastServedAt === null || w.now - w.lastServedAt >= 1000 / c.spawn.playerServeCeilingPerSec) {
-        const ready: { deadline: number; command: Command }[] = w.tables.filter(t => t.order && ['pending', 'grace'].includes(t.order.state) && t.order.items.every(i => i.state === 'ready'))
-          .map(t => ({ deadline: t.order!.placedAt + t.order!.patienceMs, command: { type: 'serve', tableId: t.id, orderId: t.order!.id } }));
-        const delivery = deliveryQuote(w, config);
-        if (delivery?.ready && delivery.safe) ready.push({ deadline: delivery.order.expiresAt, command: { type: 'serveDelivery', deliveryId: delivery.order.id } });
-        ready.sort((a, b) => a.deadline - b.deadline);
-        if (ready[0]) send(ready[0].command);
-      }
+      serveNext(game,send);
       game.advance(w.now + STEP_MS);
       if (w.completedShifts > observed) {
         assert.equal(w.completedShifts, observed + 1);

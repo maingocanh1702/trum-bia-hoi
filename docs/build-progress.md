@@ -2287,3 +2287,16 @@ publication revision and time-dependent before/after resolutions. No schema, eng
 or game-config changes; previous10ordinary kcohorts2.4186–2.8738/15rush retained.
 Receipt `.qa/scope-ui-verification.json`; M4 remains11/18 OPEN. Next full forecasts,
 admin lifecycle and integrated accounts/eligibility/locale; then M6–M9.
+
+
+## Current-save economic projection kernel — 2026-09-10
+
+Base `f41122b`: shared career policy now drives both the existing diagnostic and
+a seven-day forecast from an integrity-checked Game. Config timelines apply at
+actual openings; existing shifts preserve their pin. Forked state, commands and
+calendar buckets replay exactly, with separate credited income, spending, customer
+penalties and returned deposits. Two-day career output/hash is byte-identical.
+Seven focused checks pass; full verify and native review underway. Protected server
+audience/timeline aggregation and admin presentation still follow; this is not the
+complete BRD forecast. Donation/VND data remains unavailable. M4 stays11/18 OPEN.
+Contract: [Economic forecast](economic-forecast.md). No public upload/M9 tuning.

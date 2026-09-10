@@ -274,3 +274,18 @@ unimplemented; no milestone counter advances from this partial BRD acceptance.
 | Date | Change |
 |---|---|
 | 2026-09-10 scope controls verified | a84f41f passes339tests/29focused/28browser/config/build; three full-review findings corrected and cleared. M0 3/3 COMPLETE; M1 6/12, M2 4/9, M3 5/12, M4 11/18, M5 9/25 remain OPEN. |
+
+
+## E13 — current-save forecast kernel (verification underway)
+
+The shared policy projects seven calendar days from a fork of a real saved Game,
+retains an open shift's config and selects scheduled snapshots at later openings.
+Cash reports separate income/spending/penalties/returned principal and enforce
+wallet conservation. Existing career output remains byte-identical. Seven focused
+checks pass; full suite/config/build/sim and independent review pending. This is
+the kernel only: protected server aggregation, admin forecast UI and observed
+donation/VND estimates remain. No additional ROADMAP criterion closes.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 forecast foundation | E13 added for projection kernel; M0 3/3 COMPLETE, M1 6/12, M2 4/9, M3 5/12, M4 11/18, M5 9/25 remain OPEN. |
