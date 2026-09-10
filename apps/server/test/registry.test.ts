@@ -265,3 +265,32 @@ test('an approved threshold-deletion draft from before the fix cannot preview or
   assert.deepEqual(f.store.read('old-pin-player'), before);
   assert.equal(registry.config(version).raw._meta.version, version); // Historical snapshot remains readable.
 });
+
+
+test('an already-published threshold-deletion scope still opens shifts and can be corrected after restart', t => {
+  const f = fixture(t), who = f.actor('game'), version = 'pre-fix-published-threshold-scope';
+  f.store.createPlayer('scope-player', 42);
+  const raw = structuredClone(config.raw); delete (raw.onboarding.loginPrompt as any).leaveProgress; raw._meta.version = version;
+  const scope = { kind: 'segment' as const, id: 'historic-group', playerIds: ['scope-player'], priority: 0, expiresAt: null, previousVersion: null, ticketId: null };
+  const reason = 'Pre-fix scoped publication', fingerprint = JSON.stringify({ baseVersion: config.version, config: configContent(loadConfig(raw)), reason, effective: 'immediate', scope });
+  f.db.prepare('INSERT INTO configs VALUES (?,?)').run(version, JSON.stringify(raw));
+  f.db.prepare('INSERT INTO registry_proposals VALUES (?,?,?,?,?,?,?,?,?)').run(version, 'legacy-published', config.version, fingerprint, who.subject,
+    JSON.stringify(['onboarding.loginPrompt.leaveProgress']), reason, 'immediate', f.now);
+  f.db.prepare('INSERT INTO registry_scopes VALUES (?,?)').run(version, JSON.stringify(scope));
+  f.db.prepare('INSERT INTO registry_approvals VALUES (?,?,?)').run(version, who.subject, f.now);
+  f.db.prepare('INSERT INTO registry_publications(version,effective_at,published_at,changed_by,approved_by) VALUES (?,?,?,?,?)').run(version, f.now, f.now, who.subject, who.subject);
+  const store = f.open(), registry = store.registry, receipt = registry.publish(who, version);
+  const resolved = registry.resolve('scope-player');
+  assert.equal('leaveProgress' in resolved.raw.onboarding.loginPrompt, false);
+  assert.deepEqual(registry.publish(who, version), receipt);
+  const opened = store.command('scope-player', { idempotencyKey: 'open-historic-scope', command: { type: 'startShift' } });
+  assert.ok(opened.result.ok); assert.equal(opened.configVersion, resolved.version);
+  // Withdrawing the bad override uses the existing named-scope replacement path.
+  const replacement = registry.propose(who, { key: 'correct-scope', baseVersion: config.version, snapshot: config.raw, reason: 'Restore installed thresholds', scope: { ...scope, previousVersion: version } });
+  registry.impact(who, replacement.version);
+  registry.forecastPlan(who, replacement.version, f.now + 1000);
+  registry.approve(who, replacement.version); registry.publish(who, replacement.version);
+  assert.deepEqual(registry.resolve('scope-player').raw.onboarding.loginPrompt, config.raw.onboarding.loginPrompt);
+  assert.equal(store.read('scope-player').world.shift!.configVersion, resolved.version);
+  assert.deepEqual(f.open().read('scope-player'), store.read('scope-player'));
+});

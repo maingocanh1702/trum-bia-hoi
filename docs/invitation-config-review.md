@@ -27,11 +27,11 @@ correction (`90d1a50...056cf7c`). Evidence: `.qa/review-guest-device.txt`.
 
 ## Server proposal/publication slice — base25cc21c
 
-`ConfigRegistry.validate` rejects omission of an installed `leaveProgress` group.
+`ConfigRegistry.validateAdmission` rejects omission of an installed `leaveProgress` group.
 `publicationAt` calls that same validator before preview/publication, including
 approved drafts admitted before this fix. The replay loader and config JSON stay
 unchanged. Three new regression cases fail before the fix and pass after it;
-48 registry/scope/pinning/presentation checks and config/build pass so far.
+Focused tests and final config/build checks are recorded in the closure receipt below.
 
 | Input | Outcome |
 |---|---|
@@ -43,3 +43,5 @@ unchanged. Three new regression cases fail before the fix and pass after it;
 | Exact retry of an already-published version | Return its immutable receipt as before; no new publication. |
 
 | 2026-09-10 18:02 owner follow-up | Authorizes validation-only server correction as a separate small slice; keep economy.tbh.json values and engine rules unchanged, then continue remaining M4. |
+
+| 2026-09-10 review correction | Initial review found that applying the admission guard during composition also rejected historical published scopes. The guard now runs only at proposal/publication admission; existing composition retains its prior validation. A fourth red-before/green-after regression opens a shift under a pre-fix published scope, retries its receipt, previews/forecasts/publishes a corrective withdrawal, and preserves the live pin across restart. |

@@ -139,8 +139,6 @@ export class ConfigRegistry {
   }
   private validate(original: Config, base: Config) {
     heartbeatTiming(original);
-    // Replay accepts older snapshots; new proposals cannot delete an installed threshold group.
-    if ('leaveProgress' in base.raw.onboarding.loginPrompt && !('leaveProgress' in original.raw.onboarding.loginPrompt)) throw Error('config:onboarding.loginPrompt:keys');
     const seedVersion = this.db.prepare('SELECT version FROM registry_publications ORDER BY seq LIMIT 1').get()!.version;
     const seed = this.config(String(seedVersion));
     if (original.values.shift.dayRollover.tz !== seed.values.shift.dayRollover.tz || original.values.k.value < seed.values.k.band[0] || original.values.k.value > seed.values.k.band[1]) throw Error('registry:bindingRange');
@@ -150,6 +148,11 @@ export class ConfigRegistry {
     if (!isDeepStrictEqual(identities(seed), identities(original))) throw Error('registry:identityMigrationRequired');
     const metadata = (c: Config) => ({ ...c.raw._meta, version: '', date: '' });
     if (!isDeepStrictEqual(metadata(base), metadata(original))) throw Error('registry:metadataImmutable');
+  }
+  private validateAdmission(original: Config, base: Config) {
+    this.validate(original, base);
+    // Replay accepts older snapshots; new proposals cannot delete an installed threshold group.
+    if ('leaveProgress' in base.raw.onboarding.loginPrompt && !('leaveProgress' in original.raw.onboarding.loginPrompt)) throw Error('config:onboarding.loginPrompt:keys');
   }
   private scope(version: string): ConfigScope | undefined {
     const row = this.db.prepare('SELECT scope FROM registry_scopes WHERE version=?').get(version);
@@ -310,7 +313,7 @@ export class ConfigRegistry {
       this.actor(actor, now);
       if (typeof input?.key !== 'string' || !input.key.trim() || input.key.length > 128 || typeof input.reason !== 'string' || !input.reason.trim() || input.reason.length > 1000) throw Error('registry:invalidInput'); // config-exempt: request identity/audit text bounds
       const base = this.config(input.baseVersion), original = loadConfig(input.snapshot);
-      this.validate(original, base);
+      this.validateAdmission(original, base);
       const keys = changedPaths(base.raw, original.raw).filter(k => !under(k, '_meta')).sort();
       if (keys.some(k => under(k, 'prototypePhase0'))) throw Error('registry:invalidKeys');
       const scope = this.normalizeScope(input.scope), policy = this.policy(keys, base, scope); this.permit(actor, policy, false, scope);
@@ -352,7 +355,7 @@ export class ConfigRegistry {
   private publicationAt(draft: Proposal, now: number) {
     const scope = this.scope(draft.version), base = this.config(draft.base_version), policy = this.policy(JSON.parse(draft.keys), base, scope);
     this.currentBase(draft, scope);
-    this.validate(this.config(draft.version), base); // Also fence drafts admitted before a validation fix.
+    this.validateAdmission(this.config(draft.version), base); // Also fence drafts admitted before a validation fix.
     const latest = scope ? this.predecessor(scope) : this.latest();
     const at = scheduledAt(now, draft.effective, policy, base);
     if (scope?.expiresAt !== null && scope?.expiresAt !== undefined && scope.expiresAt <= at) throw Error('registry:invalidExpiry');
