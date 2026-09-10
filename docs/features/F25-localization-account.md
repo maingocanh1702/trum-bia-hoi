@@ -260,3 +260,16 @@ this layer does not switch, merge or overwrite. See [transport contract](../goog
 | Date | Change |
 |---|---|
 | 2026-09-10 Google transport verified | 3c369aa passes351engine/server,33remote browser (12link cases),config/build/typecheck. Independent full-base review has no actionable findings after two reconciliation fixes. Evidence .qa/google-link-verification.json. Google panel, explicit save choice/recovery, invitations and eligibility remain; F25 in progress and M4 unchanged12/18 OPEN. No new server auth runtime/endpoint, local upload or live Google configuration. |
+
+## Google panel checkpoint — 2026-09-10
+
+Settings now exposes a VI/EN account sheet and the configured Google button.
+A same-player link preserves the current shift/outbox/history; authentication and
+reconciliation keep menu pause through completion. Exactly three benefits are
+shown. A callback is consumed once even after failure; explicit retry starts a
+fresh challenge. Existing-account conflicts preserve both stalls. Local saves
+remain local with backup export available. See [panel contract](../google-account-panel.md).
+
+| Date | Change |
+|---|---|
+| 2026-09-10 Google panel verified | e5745af:351engine/server,92local/44remote/19admin browser, final local1/1,config/build PASS. Native full-base correction review reports no findings. Signed HTTP/SDK fixtures cover mid-shift link and stale/duplicate callbacks; live Client ID/consent still absent. Explicit save choice/recovery, configured invitations/cooldown and competitive eligibility remain. F25 in progress; M4 unchanged12/18 OPEN. Receipt .qa/account-panel-verification.json. |

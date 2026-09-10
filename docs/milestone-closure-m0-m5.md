@@ -118,6 +118,17 @@ No new gameplay test or80MB run was added solely to make this report green.
   No Google panel/save-choice UI or complete account criterion is claimed. M4 stays
   12/18 OPEN; server auth runtime/engine/economy unchanged and E13 retained.
 
+- **E17** Google account panel `e5745af`:
+  `.qa/account-panel-verification.json`:351engine/server,92local/44remote/19admin
+  browser, final local1/1,config/build PASS. VI/EN native modal links the same live
+  player without reload; exactly three benefits, pause through verification/close,
+  SDK/config failures, nonce retries, stale callbacks and conflict preservation pass.
+  Duplicate callback after failure reproduced a third POST; permanent per-attempt
+  consumption fixes it. Final full-base native review reports no findings.
+  Signed HTTP/SDK fixtures and inspected portrait/desktop views are not live Google
+  consent. Explicit save choice, invitations/cooldown and public import remain open.
+  No engine/economy change; E13 retained. M4 remains12/18 OPEN.
+
 ## Closure decision
 
 | Milestone | Exit verdict | Closure | Remaining acceptance |
@@ -163,7 +174,7 @@ No new gameplay test or80MB run was added solely to make this report green.
 | First timeout produces customer_left+feedback≤1s and shift continues | FAIL | Engine numeric-loss event and web toast/continued-shift checks PASS; exact deadline-to-visible-toast≤1s is not separately measured. |
 | Three consecutive losses rerun guide once; serve resets counter | PASS | Engine `presentation.test.ts` “event-driven guide resets…” and “three-customer queue loss…”. |
 | First guide runs, skip continues, reload does not rerun | PASS | E2 “muting, guide skipping and reduced-motion preference survive normal play” + persisted settings/guide tests. |
-| Google sign-in at minute5 keeps live shift and credits once | FAIL | E5 server mid-shift/claim transaction passes; GIS browser flow and actual Google Client ID absent. |
+| Google sign-in at minute5 keeps live shift and credits once | FAIL | E5 server transaction and E17 signed-fixture mid-shift browser panel pass; literal minute5 acceptance and live configured Google consent remain unverified. |
 | onboarding.enabled=false behaves as returning player, k unchanged | FAIL | E1 controlled rush probe disables onboarding; ordinary sim keeps configured onboarding. No paired on/off k acceptance; formula itself is unchanged. |
 | All thresholds/steps editable in admin without deploy; config green; VI/EN; reduced motion | FAIL | JSON governs thresholds, E1 config and E2 VI/EN/motion pass; E10 default editor exists, but onboarding-specific key publication/step acceptance has not been exercised; this combined criterion remains open. |
 
@@ -195,8 +206,8 @@ No new gameplay test or80MB run was added solely to make this report green.
 | Reconnect resync from lastSeq; server wins | PASS | E7 real server state/report equality after response loss/reload and paged owner-bound events; stale account cannot replay retained commands into another player. |
 | Beyond grace: server normally closes and returns ShiftClosed; no client-only ticking | PASS | Backend9f38166 exact expiry/restart/normal closing plus E7 browser grace-close/ShiftClosed book; offline yard stays frozen and returning inactive projection no longer hides it. |
 | Local-first history replays at import; no client-only rules after cutover | FAIL | Shared engine and E5 full import replay PASS; online browser authority now PASS in E7; public local archive migration remains deferred by owner, so full import acceptance stays open. |
-| Google mid-shift without reload/lost tick; attach history once | FAIL | E5 transaction core PASS; public upload/GIS integration and live credential absent. |
-| Unrestricted guest core; exactly3login benefits and cooldown | FAIL | Guest core PASS E2; login-benefit prompt/cooldown UI not implemented. |
+| Google mid-shift without reload/lost tick; attach history once | FAIL | E5 transaction core and E16/E17 same-player GIS web integration PASS with signed fixtures; public local upload/claim and live configured consent remain absent. |
+| Unrestricted guest core; exactly3login benefits and cooldown | FAIL | Guest core PASS E2; E17 settings panel shows exactly3benefits. Automatic surface invitations and configured cooldown remain unimplemented. |
 | First session without login | PASS | E2 first-run guest scenarios. |
 | Locale chosen/accepted before first game screen | PASS | E15 first-run vi/en choice, browser default and stored acceptance before local/remote boot; no player/save mutation before accepting. Legacy choices and live-shift identity are preserved across reload. |
 | Locale switch preserves save | PASS | E2 “guest serves, reloads…switches locale” at4viewports. |
@@ -343,3 +354,5 @@ No public upload,80MB tuning, engine/config changes or merge/push/deploy.
 | 2026-09-10 locale verified | E15 at5871453 closes the first-run locale criterion; M4 now12/18 PASS/OPEN. All other milestone verdicts unchanged; Google web/claim/invitations and full-game acceptance remain. |
 
 | 2026-09-10 Google transport verified | E16 at3c369aa adds verified same-player Google/outbox handoff and nonce-fenced reconciliation. No complete UI/account criterion is closed; all milestone counts stay unchanged, including M4 12/18 OPEN. |
+
+| 2026-09-10 Google panel verified | E17 at e5745af verifies settings/GIS same-player integration and permanent callback consumption with signed fixtures. The complete account/import/invitation criteria still have explicit gaps; all milestone counts unchanged, M4 12/18 OPEN. No live consent or new economy acceptance claimed. |

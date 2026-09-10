@@ -2426,3 +2426,17 @@ fixed. Receipt `.qa/google-link-verification.json`; contract `docs/google-web-li
 F25/M4 remain OPEN (12/18): this is the transport prerequisite, not the Google panel
 or save-choice UI. Next: Google panel and explicit conflict/recovery, then configured
 three-benefit invitations and remaining M4→M6–M9. Live Client ID still unavailable.
+
+## Google account panel verified — 2026-09-10
+
+Code `e5745af`: Settings now opens the VI/EN Google panel with exactly three
+benefits. Same-player linking keeps the live shift/history/outbox; menu pause lasts
+through pending verification even if the panel closes. Local archives stay intact.
+Callback consumption is permanent per attempt; the regression reproduced a third
+POST before the fix and now requires exactly two for failure plus explicit retry.
+351engine/server,92local/44remote/19admin browser and final local1/1 PASS;
+config zero warnings/build/typecheck PASS. Final native full-base review supports
+the correction and reports no findings. Receipt `.qa/account-panel-verification.json`.
+Signed fixtures verify HTTP/SDK behavior; no live Client ID/Google consent claimed.
+F25 and M4 remain OPEN12/18. Next: explicit other-account save choice/recovery,
+configured invitations, remaining M4 → M6–M9; public local upload remains deferredM9.
