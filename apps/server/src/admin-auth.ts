@@ -80,8 +80,9 @@ export class AdminAuth {
     if (!row || row.phase === 'google') return { phase: 'signedOut' as const };
     this.account(row, directory);
     return row.phase === 'mfa' ? { phase: 'mfa' as const, expiresAt: row.expires_at }
-      : { phase: 'authenticated' as const, actor: this.actor(token, directory), expiresAt: row.expires_at };
+      : { phase: 'authenticated' as const, actor: this.actor(token, directory), context: row.token_hash, expiresAt: row.expires_at };
   }
+  context(token: unknown) { const row = this.row(token); if (!row || row.phase !== 'authenticated') throw Error('admin:invalidSession'); return row.token_hash; }
   actor(token: unknown, directory: AdminDirectory): AdminActor {
     const row = this.row(token);
     if (!row || row.phase !== 'authenticated') throw Error('admin:invalidSession');

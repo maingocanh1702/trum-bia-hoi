@@ -2217,3 +2217,15 @@ security review CLEAN with independent typecheck; reviewer socket tests blocked 
 sandbox EPERM, all host HTTP tests passed. Prior registry10kcohorts2.4186–2.8738 and
 15rush evidence retained; no engine/config changes. Receipt `.qa/admin-auth-verification.json`.
 Next browser editor/GIS/MFA on this API, then remaining M4 and M6–M9. M4 still10/18 OPEN.
+
+## Admin browser editor — 2026-09-10
+
+Base988fc33: `/admin` has its own lazy entry, Google/Authenticator flow, author-bound
+session draft, key/JSON import editor, shared raw/scaled diff, exact proposal retry,
+separate approval/publication confirmation, historical rollback draft and audit.
+Server context binding rejects another tab's changed admin cookie. Host checks:
+321engine/server,8admin browser,10remote-game browser, config zero warnings/build PASS.
+Mobile confirmation focus and before/after columns verified. Native independent review
+pending. No live Google consent claim (owner has no ClientID); scopes, forecasts,
+emergency/admin account enrollment and remaining M4 accounts/eligibility/locale remain.
+Engine/config values unchanged; preserve prior registry k/rush evidence. No M9 expansion.

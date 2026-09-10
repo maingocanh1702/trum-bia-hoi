@@ -85,7 +85,7 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
       if (!row) { if (requests.size >= RATE_KEYS) throw new HttpError(429, 'rateLimited'); requests.set(ip, row = { until: now + options.rateWindowMs, count: 0 }); }
       if (++row.count > options.rateMax) { res.setHeader('Retry-After', String(Math.max(1, Math.ceil((row.until - now) / 1000)))); throw new HttpError(429, 'rateLimited'); }
       if (req.method === 'OPTIONS') {
-        res.setHeader('Access-Control-Allow-Methods', 'GET, POST'); res.setHeader('Access-Control-Allow-Headers', 'Content-Type'); res.statusCode = 204; res.end(); return;
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST'); res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-TBH-Admin-Context'); res.statusCode = 204; res.end(); return;
       }
       if (!req.url?.startsWith('/') || req.url.startsWith('//')) throw new HttpError(400, 'invalidUrl');
       const route = new URL(req.url, options.origin), path = route.pathname;
@@ -120,6 +120,8 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
           res.setHeader('Set-Cookie', adminCookie(result.token, result.expiresAt)); reply(200, { phase: result.phase, expiresAt: result.expiresAt }); return;
         }
         const actor = auth.actor(token, directory()), registry = store.registry;
+        const context = req.headers['x-tbh-admin-context'];
+        if ((req.method === 'POST' || context !== undefined) && context !== auth.context(token)) throw Error('admin:accountChanged');
         const cursor = (name: string, fallback: number) => {
           if (!route.search) return fallback;
           const value = route.searchParams.get(name);
@@ -216,7 +218,7 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
     } catch (error) {
       const adminErrors: Record<string, number> = {
         'admin:unavailable': 503, 'admin:invalidSession': 401, 'admin:invalidChallenge': 401,
-        'admin:notAllowed': 403, 'admin:invalidFactor': 401, 'admin:rateLimited': 429,
+        'admin:accountChanged': 409, 'admin:notAllowed': 403, 'admin:invalidFactor': 401, 'admin:rateLimited': 429,
         'registry:invalidActor': 401, 'registry:forbidden': 403, 'registry:distinctApprover': 403,
         'store:heartbeatClock': 400, 'registry:missingVersion': 404, 'registry:missingProposal': 404, 'registry:rateLimited': 429,
         'registry:staleBase': 409, 'registry:scheduleConflict': 409, 'registry:keyConflict': 409,

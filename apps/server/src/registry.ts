@@ -136,11 +136,16 @@ export class ConfigRegistry {
     const config = this.config(version);
     const draft = this.db.prepare(`SELECT version,base_version,changed_by,keys,reason,effective,created_at
       FROM registry_proposals WHERE version=?`).get(version);
+    const policy = draft ? registryPolicy(JSON.parse(String(draft.keys)), this.config(String(draft.base_version))) : null;
+    const approval = this.db.prepare('SELECT approved_by,approved_at FROM registry_approvals WHERE version=?').get(version) ?? null;
+    const publication = this.db.prepare('SELECT * FROM registry_publications WHERE version=?').get(version) ?? null;
+    const permitted = (approve: boolean) => { if (!policy) return false; try { this.permit(actor, policy, approve); return true; } catch { return false; } };
     return { snapshot: config.raw, draft: draft ?? null,
+      permissions: { propose: !['support', 'viewer'].includes(actor.role),
+        approve: !publication && !approval && permitted(true) && (policy?.tier !== 'A' || draft?.changed_by !== actor.subject),
+        publish: !publication && !!approval && permitted(false) },
       base: draft ? this.config(String(draft.base_version)).raw : null,
-      policy: draft ? registryPolicy(JSON.parse(String(draft.keys)), this.config(String(draft.base_version))) : null,
-      approval: this.db.prepare('SELECT approved_by,approved_at FROM registry_approvals WHERE version=?').get(version) ?? null,
-      publication: this.db.prepare('SELECT * FROM registry_publications WHERE version=?').get(version) ?? null };
+      policy, approval, publication };
   }
   auditPage(actor: AdminActor, after = 0) {
     this.actor(actor, this.now());

@@ -41,8 +41,9 @@ async function fixture(t: TestContext, enabled = true, https = false) {
   t.after(async () => { for (const s of [server, certs]) { s.closeAllConnections(); await new Promise<void>(r => s.close(() => r())); } db.close(); stores.forEach(s => s.close()); rmSync(dir, { force: true, recursive: true }); });
   const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   const call = async (path: string, body?: unknown, cookie?: string, extra: Record<string, string> = {}) => {
+    const context = body !== undefined && path.startsWith('/admin/') && !path.startsWith('/admin/auth') && cookie ? store.adminAuth.status(cookie.split('=')[1], adminDirectory(accounts)) : null;
     const response = await fetch(url + path, { method: body === undefined ? 'GET' : 'POST',
-      headers: { Origin: origin, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(cookie ? { Cookie: cookie } : {}), ...extra },
+      headers: { Origin: origin, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(cookie ? { Cookie: cookie } : {}), ...(context?.phase === 'authenticated' ? { 'X-TBH-Admin-Context': context.context } : {}), ...extra },
       body: body === undefined ? undefined : JSON.stringify(body) });
     const data = await response.json(); return { status: response.status, data, cookie: response.headers.get('set-cookie')?.split(';')[0], headers: response.headers };
   };
@@ -209,4 +210,17 @@ test('replaced or expired Google challenge cannot consume a verified identity an
   const mfa=await f.google('super-one');f.now=mfa.data.expiresAt;
   assert.equal((await f.call('/admin/auth/factor',{code:totp(SECRET,Math.floor(f.now/30000))},mfa.cookie)).status,401);
   assert.equal(f.db.prepare("SELECT count(*) n FROM admin_sessions WHERE phase='authenticated'").get()!.n,0);
+});
+
+
+test("an admin account switch cannot apply another tab's previously confirmed registry action", async t => {
+  const f=await fixture(t), a=await f.login('economy-one'), b=await f.login('super-one');
+  const context=(await f.call('/admin/auth',undefined,a)).data.context;
+  const snapshot=structuredClone(config.raw);snapshot.menu.bia.price++;
+  const input={key:'bound',baseVersion:config.version,snapshot,reason:'A review bound to its author'};
+  const before=f.db.prepare('SELECT count(*) n FROM registry_proposals').get()!.n;
+  for(const stale of [context,''])assert.equal((await f.call('/admin/proposals',input,b,{'X-TBH-Admin-Context':stale})).status,409);
+  assert.equal((await f.call('/admin/registry',undefined,b,{'X-TBH-Admin-Context':context})).status,409);
+  assert.equal(f.db.prepare('SELECT count(*) n FROM registry_proposals').get()!.n,before);
+  assert.equal((await f.call('/admin/proposals',input,a)).status,200);
 });

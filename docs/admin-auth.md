@@ -39,3 +39,5 @@ No gameplay numbers, engine rules, public save upload or history tuning in this 
 | 2026-09-10 | Authentication/transport decision table before implementation; editor remains next. |
 
 | 2026-09-10 verified |6f42575:320full engine/server tests (10admin cases),10remote browser, config zero warnings/build PASS. Independent review CLEAN; independent typecheck PASS. Reviewer HTTP rerun blocked by sandbox EPERM; actual host tests passed. Receipt `.qa/admin-auth-verification.json`. Browser integration/editor remains next; real ClientID/directory absent. |
+
+| 2026-09-10 browser context | `/admin` integrates GIS callback and independent OTP. Registry writes require the authenticated context from GET /admin/auth via X-TBH-Admin-Context; supplied stale contexts also reject reads. The digest is not a bearer token. Account-switch regression verifies no mutation under another cookie. See admin-editor.md; review pending. |

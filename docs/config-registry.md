@@ -3,8 +3,8 @@
 Authority: BRD §2/§5.2/§9, JSON `_meta.governance`, 08-SPEC §22 and 10-SPEC §7.
 Base `732f860`. This slice implements the default registry's immutable proposal,
 approval/publication log and actual GameStore opening resolver. It does not close M4.
-Schema9 adds authenticated admin transport at6f42575. The next slices add the browser
-editor, scoped overrides/compensation, impact forecasts and emergency review. Public archive upload remains deferred.
+Schema9 adds authenticated admin transport at6f42575. The `/admin` browser editor now uses that boundary (see admin-editor.md).
+Scoped overrides/compensation, impact forecasts and emergency review remain. Public archive upload remains deferred.
 
 | Interaction | Decision |
 |---|---|
@@ -36,3 +36,5 @@ No new gameplay numbers, seed changes, engine formulas or performance work in th
 | 2026-09-10 admin transport | Trusted actors now come from the schema9 Google/TOTP admin session boundary; registry read/approval/publication routes are protected. No request actor claims are accepted. See admin-auth.md. Editor/scopes still open; verification/review in progress. |
 
 | 2026-09-10 authenticated boundary verified |6f42575 protects registry read/propose/approve/publish/audit via server-derived admin actors.320tests,10remote browser, config/build and review PASS; editor/scopes remain open. Historical internal-only rows above describe the prior slice. |
+
+| 2026-09-10 browser editor | `/admin` adds author-bound drafts, JSON diff using shared Base scaling, separate approval/publication, historical rollback draft and audit. Detail permissions derive from the existing canonical role gate; mutations still revalidate. Context-bound requests reject identity switches.321tests/8admin/10remote browser/config/build pass; independent review pending. |
