@@ -5,6 +5,27 @@
 
 ---
 
+## M4 competitive score verified — 2026-09-10
+
+Code `7e7f337` (base `1fd89d9`): current competitive scores reuse engine seasonal
+income/tier helpers and pinned config. Pending/rejected local earnings AND closed
+shifts are excluded only for the exact imported season; later server earnings count.
+Approval changes the read result once, never wallet balances or personal results.
+New imports atomically record a checksummed baseline in existing immutable audit;
+old imports recover the original cutoff through the bounded replay worker.
+Authenticated `/player/competition` accepts no player/score override and rechecks
+the exact session after recovery. Current Google/flag state gates eligibility.
+Final **376/376 engine/server,19/19 admin browser,32 focused,config zero warnings
+and build/typecheck PASS**. Review P1 synchronous inflation was fixed with a
+red-before/green-after regression; final independent full-base review found no new
+defects, confirms P1 closure, and independently passes13 targeted cases.
+Receipt `.qa/competitive-score-verification.json`. No schema/engine/economy change.
+**M4 remains14/18 OPEN**: public rank ordering/filtering/snapshots and protected
+admin history/review controls are not supplied by a caller-only score API.
+
+Next: protected source-history inspection and admin review/flag controls; reuse
+current guards/receipts. Then public rank consumer. No public upload/80MB tuning.
+
 ## M4 review/flag core verified — 2026-09-10
 
 Code `521e901` (base `51a5ab5`): immutable local-history approval/rejection and

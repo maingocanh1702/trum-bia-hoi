@@ -1,6 +1,6 @@
 # Milestone closure report — M0–M5
 
-2026-09-10 · implementation `521e901` · config2.0.2/rules24/schema10.
+2026-09-10 · implementation `7e7f337` · config2.0.2/rules24/schema10.
 Authority: [ROADMAP §mốc M0–M9](../06-ROADMAP-trum-bia-hoi.md), including the
 acceptance sections it references. PASS means the whole stated criterion has
 supporting evidence; FAIL includes missing implementation or missing acceptance
@@ -268,7 +268,7 @@ now PASS. M4 is **14/18 OPEN**; public archive transport remains deferred to M9.
 | Criterion (ROADMAP, F23§8, F25§10) | Verdict | Evidence or exact gap |
 | Editing local state cannot earn authoritative coins | PASS | Server HTTP rejects identity/clock/total forgery; default remote web never constructs or advances Game. E7 account rotation/quota/queue tests prove only server receipts change balances; local archives stay separate. |
 | Duplicate serve request idempotent | PASS | Server HTTP guest/restart test, `client-sequence.test.ts` “response loss after serving…”; E1 and E6 cold-retry exactness. |
-| Leaderboard ignores flagged/ineligible writes | FAIL | E22 protects immutable review/flag decisions; ranking query/filter and competitive score baseline are still missing. Review alone does not make a leaderboard eligible. |
+| Leaderboard ignores flagged/ineligible writes | FAIL | E22 decisions and E23 own-score/baseline apply Google/flag/shift/review eligibility; public ranked query/filter is still absent. Caller-only eligibility does not certify a global leaderboard. |
 | Server clock handles VN midnight | PASS | Server “management pause survives a server restart and real VN midnight…” and “season rollover and old service retries…”; E1. |
 | Reconnecting within2s with yard visible | PASS | E7 silent hung-transport test exercises the configured2000ms deadline (browser assertion tolerance250ms); returning-player regression keeps the yard accessible while heartbeat is unavailable. |
 | Offline commands buffer key+clientSeq within reconnectGraceMs, no loss/duplicate | PASS | E7 real server lost-service ACK/reload test retains exact key+seq and credits once; offline restock/in-shift upgrade replay current menu flags; configured queue cap and quota refusal tested. |
@@ -309,7 +309,7 @@ now PASS. M4 is **14/18 OPEN**; public archive transport remains deferred to M9.
 | F17: expired quests cannot be claimed | PASS | Engine “VN midnight expires claims exactly…”; web quests expiry/pause/reload tests. |
 | F28: guest views board, no own row, login invitation | FAIL | Community board/API absent; local seasons panel explicitly says unavailable. |
 | F28: equal earnings use firstReached timestamp, stable refresh | FAIL | Timestamp rule exists in engine; public ranking/order/refresh absent. |
-| F28: flagged excluded from live/snapshot; unflagged returns before end | FAIL | E22 records protected flag/approval decisions; the rank eligibility filter and leaderboard/snapshot implementation remain absent. |
+| F28: flagged excluded from live/snapshot; unflagged returns before end | FAIL | E22 records protected decisions and E23 filters own-score eligibility; public leaderboard filtering and snapshots remain absent. |
 | F28: end snapshot immutable after rename/account deletion | FAIL | No global snapshot/name-at-capture lifecycle. |
 | F28: in-shift board opens without lost wait; cached data then server refresh | FAIL | Personal panel honors owner pause; community cached/server board absent. Owner pause supersedes old no-pause text. |
 | F28: admin-configured thresholds; rank/snapshot only server-side | FAIL | JSON schema coverage PASS; E10 protected default editor exists; authoritative ranking/snapshot is still absent. |
@@ -451,3 +451,25 @@ No merge/push/deploy or live Google consent claim.
 | Date | Change |
 |---|---|
 | 2026-09-10 review/flag verified | E22 records server core/API and exact role/retry/audit evidence. No exit criterion newly closes; M4 stays14/18 until competitive consumers and remaining acceptance exist. |
+
+## E23 — competitive baseline and caller-only score
+
+Code `7e7f337` (base `1fd89d9`): current competitive scores reuse engine seasonal
+income/tier helpers and pinned config. Pending/rejected local earnings AND closed
+shifts are excluded only for the exact imported season; later server earnings count.
+Approval changes the read result once, never wallet balances or personal results.
+New imports atomically record a checksummed baseline in existing immutable audit;
+old imports recover the original cutoff through the bounded replay worker.
+Authenticated `/player/competition` accepts no player/score override and rechecks
+the exact session after recovery. Current Google/flag state gates eligibility.
+Final **376/376 engine/server,19/19 admin browser,32 focused,config zero warnings
+and build/typecheck PASS**. Review P1 synchronous inflation was fixed with a
+red-before/green-after regression; final independent full-base review found no new
+defects, confirms P1 closure, and independently passes13 targeted cases.
+Receipt `.qa/competitive-score-verification.json`. No schema/engine/economy change.
+**M4 remains14/18 OPEN**: public rank ordering/filtering/snapshots and protected
+admin history/review controls are not supplied by a caller-only score API.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 score verified | E23 closes score/provenance core with current review/flag and exact-session evidence. No new whole criterion closed; M4 stays14/18. |

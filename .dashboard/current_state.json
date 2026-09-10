@@ -424,7 +424,9 @@
       "human_status": "IN_PROGRESS",
       "progress": 30,
       "runtime_urgency": "normal",
-      "overlays": [],
+      "overlays": [
+        "tracker-modified"
+      ],
       "signals": {
         "spec_exists": false,
         "tech_exists": false,
@@ -450,7 +452,7 @@
         "spec_modified_at": null,
         "tech_hash": null,
         "tech_modified_at": null,
-        "tracker_row_hash": "83857eb73bf36d4c5cc51e2df41e5d2980df4f0ce14678b927f721da383cc782",
+        "tracker_row_hash": "c78eabbf580329a23e97d9dd7c354523529dccf31d80cf7ed48397e0f11670e0",
         "foundation_codex_approved": null,
         "foundation_founder_signoff": null
       },
@@ -576,7 +578,9 @@
       "human_status": "IN_PROGRESS",
       "progress": 30,
       "runtime_urgency": "normal",
-      "overlays": [],
+      "overlays": [
+        "tracker-modified"
+      ],
       "signals": {
         "spec_exists": false,
         "tech_exists": false,
@@ -602,7 +606,7 @@
         "spec_modified_at": null,
         "tech_hash": null,
         "tech_modified_at": null,
-        "tracker_row_hash": "ae1a22f8f1561e8f5b8901adc3491773a4a6774d1b7df745e3b5d227ffee5e8c",
+        "tracker_row_hash": "97f310a34adba3e97b7bcee6aa73207d714d9c26acb6302509e72f111dad2114",
         "foundation_codex_approved": null,
         "foundation_founder_signoff": null
       },
@@ -717,6 +721,44 @@
         "tech_hash": null,
         "tech_modified_at": null,
         "tracker_row_hash": "e4614d2848e569c137fee597a1aa6f7d832376e905012f81ca5b4c0e3a5fcd7a",
+        "foundation_codex_approved": null,
+        "foundation_founder_signoff": null
+      },
+      "last_event_ts": null
+    },
+    {
+      "item_id": "F28",
+      "status": "branch-created",
+      "human_status": "IN_PROGRESS",
+      "progress": 30,
+      "runtime_urgency": "normal",
+      "overlays": [],
+      "signals": {
+        "spec_exists": false,
+        "tech_exists": false,
+        "branch_exists": true,
+        "commits_count": 0,
+        "last_commit_sha": null,
+        "pr_state": "none",
+        "pr_number": null,
+        "review_state": "none",
+        "ci_state": "unknown",
+        "deploy_state": "unknown",
+        "warnings": [
+          "missing_spec_link",
+          "missing_tech_link",
+          "ci_no_commit_sha",
+          "railway_unknown"
+        ],
+        "pr_url": null,
+        "ci_check_run_count": 0,
+        "last_review_at": null,
+        "last_deploy_at": null,
+        "spec_hash": null,
+        "spec_modified_at": null,
+        "tech_hash": null,
+        "tech_modified_at": null,
+        "tracker_row_hash": "74fb818568196a7f20933bc4be1020fde03fa3772367aa88188d9be6e861fd8b",
         "foundation_codex_approved": null,
         "foundation_founder_signoff": null
       },

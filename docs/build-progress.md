@@ -24,6 +24,24 @@ separate. Feature rows span milestones; their count is not milestone completion.
 Owner queue: remaining M4 registry/admin/account acceptance → M6 → M7 → M8 → M9.
 No additional M5 breadth or history-volume tuning before those dependencies.
 
+## Latest M4 competitive score closure — 2026-09-10
+
+Code `7e7f337` (base `1fd89d9`): current competitive scores reuse engine seasonal
+income/tier helpers and pinned config. Pending/rejected local earnings AND closed
+shifts are excluded only for the exact imported season; later server earnings count.
+Approval changes the read result once, never wallet balances or personal results.
+New imports atomically record a checksummed baseline in existing immutable audit;
+old imports recover the original cutoff through the bounded replay worker.
+Authenticated `/player/competition` accepts no player/score override and rechecks
+the exact session after recovery. Current Google/flag state gates eligibility.
+Final **376/376 engine/server,19/19 admin browser,32 focused,config zero warnings
+and build/typecheck PASS**. Review P1 synchronous inflation was fixed with a
+red-before/green-after regression; final independent full-base review found no new
+defects, confirms P1 closure, and independently passes13 targeted cases.
+Receipt `.qa/competitive-score-verification.json`. No schema/engine/economy change.
+**M4 remains14/18 OPEN**: public rank ordering/filtering/snapshots and protected
+admin history/review controls are not supplied by a caller-only score API.
+
 ## Latest M4 review/flag closure — 2026-09-10
 
 Code `521e901` (base `51a5ab5`): immutable local-history approval/rejection and
@@ -2520,3 +2538,5 @@ M4 acceptance → M6–M9; historical upload/tuning remainsM9.
 | 2026-09-10 | E21 server admission03dae56 verified; M4 guest-benefits/cooldown PASS,14/18 OPEN. No economy/engine changes. |
 
 | 2026-09-10 | E22 review/flag core/API521e901 verified:367unit/server,19admin browser,45focused,config/build and independent review PASS. M4 stays14/18; baseline/score/history controls follow. |
+
+| 2026-09-10 | E23 score/baseline7e7f337 verified:376unit/server,19admin,32focused,config/build/review PASS; P1 worker correction closed. F28 in progress, M4 remains14/18. |

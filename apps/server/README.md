@@ -533,3 +533,7 @@ count; approval never credits the wallet or rewrites completed personal results.
 | Date | Change |
 |---|---|
 | 2026-09-10 score boundary | Implement own competitive totals and immutable import baseline on base1fd89d9. Verification/review in docs/competitive-eligibility.md; global rank and snapshots remain. |
+
+Verified at `7e7f337`:376engine/server,19admin browser,32focused,config/build and
+independent review PASS. P1 main-thread inflation corrected; targeted regression
+fails before/passes after. Receipt `.qa/competitive-score-verification.json`.

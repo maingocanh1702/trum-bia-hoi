@@ -327,3 +327,5 @@ live Google/minute5 acceptance, historical import and competitive access checks.
 | Date | Change |
 |---|---|
 | 2026-09-10 reviewed provenance core |521e901 makes imported-history status server-owned pending/approved/rejected with protected Game/Super decisions; normal server-origin guest attachment needs no imported-history review. No duplicate game credit or original-archive rewrite; dedicated controls and competitive score eligibility remain. |
+
+| 2026-09-10 competitive score verified | E23 at7e7f337:376unit/server,19admin browser,32focused,config/build and final independent review PASS. Exact local baseline/Google/flag eligibility and worker recovery verified; no global ordering/snapshot/admin review UI or full milestone claim. |

@@ -85,3 +85,5 @@ history may count once; pending history cannot count. No compensation credit is 
 | 2026-09-10 moderation prerequisite |521e901 implements server-owned imported-history review and current flag state through protected audited operations. A rank consumer must still exclude unapproved local contribution and flagged/ineligible players; no rank projection or immutable season snapshot is claimed. Full F28 remains unimplemented. |
 
 | 2026-09-10 score boundary | Server now derives caller-only competitive totals from engine season accounting and exact imported baseline, excludes pending/rejected local earnings/shifts, applies current Google/flag and pinned qualification rules. New authenticated read does not implement global ordering/snapshots or make F28 complete. Verification tracked in competitive-eligibility.md. |
+
+| 2026-09-10 competitive score verified | E23 at7e7f337:376unit/server,19admin browser,32focused,config/build and final independent review PASS. Exact local baseline/Google/flag eligibility and worker recovery verified; no global ordering/snapshot/admin review UI or full milestone claim. |

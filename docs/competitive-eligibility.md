@@ -1,7 +1,8 @@
 # M4 next slice: competitive provenance and review
 
 Status: **VERIFIED review/flag core and authenticated API** at521e901. Base:51a5ab5.
-Competitive baseline/projection and dedicated admin controls remain unimplemented.
+Own competitive baseline/score read is VERIFIED at7e7f337 (base1fd89d9).
+Dedicated admin controls and public rank remain.
 
 Read live F28 sections2/3/6, F25 owner local-history decision, F23 anti-cheat,
 BRD4.2/4.3/9, registry/admin-auth/http, store claimLocal/localImport and seasons.
@@ -134,3 +135,38 @@ player ID, client total or review decision. Public ordering, snapshots and admin
 history controls remain the following work; this does not close F28.
 
 | 2026-09-10 score review correction | Independent review found P1 synchronous inflation of old archives before worker admission. Move inflate/digest/replay into the existing guarded worker; a regression stubs main-thread gunzip to fail and proves concurrent recovery is refused. Corrupt gzip/digest remains a refusal, never a zero baseline. Full correction verification follows. |
+
+## Score verification closure
+
+Code `7e7f337` (base `1fd89d9`): current competitive scores reuse engine seasonal
+income/tier helpers and pinned config. Pending/rejected local earnings AND closed
+shifts are excluded only for the exact imported season; later server earnings count.
+Approval changes the read result once, never wallet balances or personal results.
+New imports atomically record a checksummed baseline in existing immutable audit;
+old imports recover the original cutoff through the bounded replay worker.
+Authenticated `/player/competition` accepts no player/score override and rechecks
+the exact session after recovery. Current Google/flag state gates eligibility.
+Final **376/376 engine/server,19/19 admin browser,32 focused,config zero warnings
+and build/typecheck PASS**. Review P1 synchronous inflation was fixed with a
+red-before/green-after regression; final independent full-base review found no new
+defects, confirms P1 closure, and independently passes13 targeted cases.
+Receipt `.qa/competitive-score-verification.json`. No schema/engine/economy change.
+**M4 remains14/18 OPEN**: public rank ordering/filtering/snapshots and protected
+admin history/review controls are not supplied by a caller-only score API.
+
+## Next bounded work: admin source-history review
+
+Read live BRD4.2/4.3/8, Competition.inspect/decide, GameStore.eventsAfter and
+existing Admin auth/context/draft/audit patterns. Add bounded, audited read access
+to the immutable command/event prefix through the imported cutoff; later server
+activity must not be presented as original local evidence. Support is read-only;
+Game/Super may review/flag using the existing canonical decision endpoint.
+Use VI/EN native controls, current player/digest/seq, mandatory reason, confirmation
+and exact pending-request persistence across lost ACK/reload. Clear private buffers
+on identity change/expiry; stale decisions require refresh. No new grants, public
+upload, full 80MB transport, score formula or engine rules. Re-read the actual base
+and current callers before implementation; tests must exercise real server receipts.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 score verified | E23 at7e7f337:376unit/server,19admin browser,32focused,config/build and independent review PASS; P1 worker correction closed. M4 stays14/18. Next protected history/review controls then public ranking. |
