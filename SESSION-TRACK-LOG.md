@@ -5,6 +5,23 @@
 
 ---
 
+## 🧭 Forecast kernel verified; Blender MCP owner priority — 2026-09-10
+
+Final kernel `03a6800`:344engine/server, config zero warnings/build/typecheck PASS.
+Two-day career still exactly matches its original report/hash. Foundation10ordinary
+kcohorts2.4186–2.8738 and15rush PASS; runtime and those simulators unchanged by
+corrections. Review identified two lease-progression edges: config retuning and
+post-expiry snapshots. Both now use attained identity from the active lease/history;
+final full-base review has no actionable finding and independently passed the lease
+regression. Receipt `.qa/forecast-verification.json`. M4 remains11/18 OPEN: protected
+server snapshots/timelines, aggregation/admin UI and observed VND data still remain.
+No public upload,80MB tuning, engine/config changes or merge/push/deploy.
+
+Owner asks to use Blender MCP for assets/UI. Existing Codex MCP installation verified;
+its native Blender connection was absent. Isolated official Blender4.5.13 runtime
+now connects successfully (addon1.6/protocol5); initial furniture/UI batch next.
+Then resume remaining M4 acceptance and M6–M9. No full-game completion claim.
+
 ## 🧭 Current-save forecast kernel implemented — 2026-09-10
 
 Base `f41122b`; shared deterministic career policy and seven-day projection from

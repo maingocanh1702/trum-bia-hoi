@@ -480,3 +480,5 @@ type AuditEntry = {
 | 2026-09-10 admin authentication verified |6f42575 passes320tests (10actual admin cases),10remote browser, config/build; review CLEAN with independent typecheck. Admin identity/MFA/RBAC/registry transport complete at server API layer. Browser login/editor, admin management/enrollment/recovery, scopes and broader BRD remain open. |
 
 | 2026-09-10 scoped controls verified | a84f41f: protected scopes/tickets/editor and factual player/key impact implemented;339tests/29focused/28browser/config/build PASS, all three review findings resolved. Impact confirmation binds registry/resolution state; previous/new patches use their own recorded bases. Full7day faucet/sink and Tier A VND forecasts, emergency/compensation and admin enrollment/recovery remain open; no full BRD completion claim. |
+
+| 2026-09-10 forecast kernel | 03a6800 provides seven-day current-save deterministic projection using actual credited money (no second k multiplier), config pins and lease history.344tests/config/build and final independent review pass. Protected aggregation/UI and donation/VND observations remain pending; no Session Pass revenue assumption. |

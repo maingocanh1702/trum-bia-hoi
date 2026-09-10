@@ -2300,3 +2300,14 @@ Seven focused checks pass; full verify and native review underway. Protected ser
 audience/timeline aggregation and admin presentation still follow; this is not the
 complete BRD forecast. Donation/VND data remains unavailable. M4 stays11/18 OPEN.
 Contract: [Economic forecast](economic-forecast.md). No public upload/M9 tuning.
+
+
+Final kernel `03a6800`:344engine/server, config zero warnings/build/typecheck PASS.
+Two-day career still exactly matches its original report/hash. Foundation10ordinary
+kcohorts2.4186–2.8738 and15rush PASS; runtime and those simulators unchanged by
+corrections. Review identified two lease-progression edges: config retuning and
+post-expiry snapshots. Both now use attained identity from the active lease/history;
+final full-base review has no actionable finding and independently passed the lease
+regression. Receipt `.qa/forecast-verification.json`. M4 remains11/18 OPEN: protected
+server snapshots/timelines, aggregation/admin UI and observed VND data still remain.
+No public upload,80MB tuning, engine/config changes or merge/push/deploy.

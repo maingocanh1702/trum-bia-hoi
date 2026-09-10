@@ -34,3 +34,15 @@ ordinary k/rush and independent review before marking this kernel complete.
 | 2026-09-10 | Review correction: retain attained location ID, read its current multiplier after each pin, and renew that identity if no higher eligible location exists. Regression first failed (Ngõ Chợ instead of Bến Xe), then passed with full command replay. Ordinary/rush passed at foundation; runtime and those simulators are unchanged by this correction. |
 
 | 2026-09-10 | Follow-up review: current snapshots after natural lease expiry recover attained location from the active contract or latest lease_started event, falling back only when no lease history exists. Regression covers both active and expired contract snapshots and full replay. |
+
+Final kernel `03a6800`:344engine/server, config zero warnings/build/typecheck PASS.
+Two-day career still exactly matches its original report/hash. Foundation10ordinary
+kcohorts2.4186–2.8738 and15rush PASS; runtime and those simulators unchanged by
+corrections. Review identified two lease-progression edges: config retuning and
+post-expiry snapshots. Both now use attained identity from the active lease/history;
+final full-base review has no actionable finding and independently passed the lease
+regression. Receipt `.qa/forecast-verification.json`. M4 remains11/18 OPEN: protected
+server snapshots/timelines, aggregation/admin UI and observed VND data still remain.
+No public upload,80MB tuning, engine/config changes or merge/push/deploy.
+
+| 2026-09-10 verified | Kernel03a6800 passed host344/config/build/parity and final independent review; full server forecast/UI remains open. |

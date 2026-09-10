@@ -289,3 +289,14 @@ donation/VND estimates remain. No additional ROADMAP criterion closes.
 | Date | Change |
 |---|---|
 | 2026-09-10 forecast foundation | E13 added for projection kernel; M0 3/3 COMPLETE, M1 6/12, M2 4/9, M3 5/12, M4 11/18, M5 9/25 remain OPEN. |
+
+
+Final kernel `03a6800`:344engine/server, config zero warnings/build/typecheck PASS.
+Two-day career still exactly matches its original report/hash. Foundation10ordinary
+kcohorts2.4186–2.8738 and15rush PASS; runtime and those simulators unchanged by
+corrections. Review identified two lease-progression edges: config retuning and
+post-expiry snapshots. Both now use attained identity from the active lease/history;
+final full-base review has no actionable finding and independently passed the lease
+regression. Receipt `.qa/forecast-verification.json`. M4 remains11/18 OPEN: protected
+server snapshots/timelines, aggregation/admin UI and observed VND data still remain.
+No public upload,80MB tuning, engine/config changes or merge/push/deploy.
