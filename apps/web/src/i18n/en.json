@@ -632,5 +632,8 @@
   "admin.emergency.reviewed": "Reviewed by",
   "admin.emergency.reviewReason": "Post-review findings",
   "admin.emergency.review": "Record post-review",
-  "admin.error.emergencyTier": "Emergency publication allows only Tier A/B. Submit Tier C keys through a normal proposal."
+  "admin.error.emergencyTier": "Emergency publication allows only Tier A/B. Submit Tier C keys through a normal proposal.",
+  "account.devName": "Test account name",
+  "account.devSignIn": "Sign in for testing",
+  "account.devOnly": "Local testing mode. This is not a real Google sign-in."
 }

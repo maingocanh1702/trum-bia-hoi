@@ -2653,3 +2653,7 @@ Assets: owner waiver 2026-09-11: draft assets accepted for release. Current plac
 | 2026-09-11 Steer12 | Goal narrowed to playable-v0 and three-viewport end-to-end playability; historical milestone FAIL/PASS entries remain evidence, not additional release blockers. |
 
 | 2026-09-11 emergency complete | Registry hotfix: Super+MFA A/B, exact scheduled supersession/preview, atomic24h ticket and immutable retries.403unit/server,28adminbrowser,config/build PASS; independent full-diff CLEAN. No engine/economy changes. Next preview snapshot then dev identity/playable-v0 per Steer12; no further admin polish. |
+
+## Dev identity acceptance — 2026-09-11
+
+Explicit `TBH_AUTH_DEV=1`, loopback only and refused in production; same guest link/restore/receipts, private admin allowlist and TOTP. 406 unit/server tests, 1 dev-provider browser path, 5 normal Google browser regressions and independent auth review CLEAN. Verified via dev identity stub; real Client ID pending — owner waiver 2026-09-10. Next: Steer13 beer presentation, then playable-v0 three-viewport full-shift smoke. No engine/config/economy changes.

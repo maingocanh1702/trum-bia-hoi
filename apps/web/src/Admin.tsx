@@ -41,7 +41,7 @@ export default function Admin() {
   useEffect(()=>{if(confirm){dialog.current?.showModal();dialog.current?.querySelector<HTMLButtonElement>('[data-cancel]')?.focus();}else dialog.current?.close();},[confirm]);
   // Check on return to this tab, but never adopt a different identity into an open editor.
   useEffect(()=>{if(auth?.phase!=='authenticated')return;const check=()=>{if(!document.hidden&&!busyRef.current)void run(async()=>{const next=await request<Auth>('/auth');if(next.context!==auth.context)throw new AdminError('admin:accountChanged');});};window.addEventListener('focus',check);document.addEventListener('visibilitychange',check);return()=>{window.removeEventListener('focus',check);document.removeEventListener('visibilitychange',check);};},[auth?.context]);
-  async function startGoogle() { const g=++generation.current; const c=await request<{clientId:string;nonce:string}>('/auth/challenge',{});const api=await googleScript();if(g!==generation.current||!gis.current)return;
+  async function startGoogle() { const g=++generation.current; const c=await request<{clientId:string;nonce:string;dev?:boolean}>('/auth/challenge',{});const api=await googleScript(c.dev===true);if(g!==generation.current||!gis.current)return;
     api.initialize({client_id:c.clientId,nonce:c.nonce,auto_select:false,callback:result=>{if(g!==generation.current)return;void run(async()=>{await request('/auth/google',{credential:result.credential});if(g!==generation.current)return;gis.current?.replaceChildren();await who();});}});
     gis.current.replaceChildren();api.renderButton(gis.current,{type:'standard',theme:'filled_blue',size:'large',text:'signin_with',locale,width:280});
   }

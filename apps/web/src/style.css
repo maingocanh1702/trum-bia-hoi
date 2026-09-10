@@ -290,3 +290,6 @@ progress::-webkit-progress-value { background: var(--beerAmber); border-radius: 
 .rank-number { color: var(--coinGold); text-align: center; }.rank-row strong { overflow-wrap: anywhere; }.rank-row small { display: block; color: var(--creamMuted); font-size: .72rem; margin-top: 4px; }.rank-earned { color: var(--coinGold); text-align: right; }
 .rank-row.is-me { background: var(--panelRaised); border: 1px solid var(--coinGold); border-radius: 14px; }.rank-personal { border-top: 2px solid var(--panelBorder); padding-top: 16px; }.rank-personal h3 { margin: 0 0 10px; }.rank-personal > p { margin: 8px 0; }
 .rank-pages { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }.rank-pages span { flex: 1 1 100%; font-size: .8rem; }.leaderboard button { min-height: 44px; }.season-details { border-top: 1px solid var(--panelBorder); margin-top: 22px; }.season-details summary { min-height: 44px; padding: 14px 0; cursor: pointer; font-weight: 800; }
+
+.dev-identity, .dev-identity label { display: grid; gap: .5rem; }
+.dev-identity input { width: 100%; min-width: 0; box-sizing: border-box; }

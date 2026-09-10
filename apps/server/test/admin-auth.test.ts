@@ -396,3 +396,19 @@ test('authenticated emergency transport requires Super MFA and fresh confirmatio
  assert.deepEqual((await f.call('/admin/emergency-review',{version,reason:'Checked schedule replacements'},factor.cookie)).data,review.data);
  assert.equal((await f.call('/admin/config?version='+version,undefined,factor.cookie)).data.review.reviewedBy,'super-two');
 });
+
+
+test('dev identities still require a private admin allowlist and server-verified TOTP before registry access',async t=>{
+  const oldFlag=process.env.TBH_AUTH_DEV;process.env.TBH_AUTH_DEV='1';let f:Awaited<ReturnType<typeof fixture>>;
+  try {f=await fixture(t,false);}finally{if(oldFlag===undefined)delete process.env.TBH_AUTH_DEV;else process.env.TBH_AUTH_DEV=oldFlag;}
+  f.setAccounts([{subject:'tbh-dev:admin-one',role:'super',totpSecret:SECRET}]);
+  const c=await f.call('/admin/auth/challenge',{});assert.equal(c.data.dev,true);
+  const signed=await f.call('/admin/auth/google',{credential:`tbh-dev:admin-one:${c.data.nonce}`},c.cookie);
+  assert.equal(signed.status,200);assert.equal(signed.data.phase,'mfa');
+  assert.equal((await f.call('/admin/registry',undefined,c.cookie)).status,401);
+  const factor=await f.call('/admin/auth/factor',{code:totp(SECRET,Math.floor(f.now/30000))},c.cookie);assert.equal(factor.status,200);
+  const status=await f.call('/admin/auth',undefined,factor.cookie);assert.equal(status.data.actor.subject,'tbh-dev:admin-one');assert.equal(status.data.actor.mfa,true);
+  assert.equal((await f.call('/admin/registry',undefined,factor.cookie)).status,200);
+  const outsider=await f.call('/admin/auth/challenge',{});
+  assert.equal((await f.call('/admin/auth/google',{credential:`tbh-dev:outsider:${outsider.data.nonce}`},outsider.cookie)).status,403);
+});

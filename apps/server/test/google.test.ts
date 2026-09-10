@@ -6,7 +6,7 @@ import type { AddressInfo } from 'node:net';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { OAuth2Client } from 'google-auth-library';
-import { googleVerifier } from '../src/google';
+import { devIdentityVerifier, googleVerifier } from '../src/google';
 import { GameStore } from '../src/store';
 import { createGameServer } from '../src/http';
 
@@ -246,4 +246,44 @@ test('signed reauthentication restores only the retained Google player after exp
   assert.equal((await f.call('/auth/session', {}, oldCookie)).status, 401);
   assert.equal((await (await f.call('/auth/session', {}, restoredCookie)).json()).provider, 'google');
   assert.deepEqual(f.store.read(original.playerId), before);
+});
+
+
+test('dev identity is explicit, loopback-only, refused in production, nonce-bound and cannot impersonate production subjects',async()=>{
+  const oldFlag=process.env.TBH_AUTH_DEV,oldMode=process.env.NODE_ENV;
+  try {
+    process.env.NODE_ENV='test';
+    for(const flag of ['', '0', 'true']){process.env.TBH_AUTH_DEV=flag;assert.equal(devIdentityVerifier('http://localhost'),undefined);}
+    process.env.TBH_AUTH_DEV='1';
+    const verify=devIdentityVerifier('http://127.0.0.1:5174')!;
+    assert.deepEqual(await verify(`tbh-dev:alice:${NONCE}`,NONCE),{subject:'tbh-dev:alice'});
+    for(const value of [`tbh-dev:alice:${'b'.repeat(64)}`,`tbh-dev:11223344556677889900:${NONCE}`,`tbh-dev:${'a'.repeat(33)}:${NONCE}`,token()])await rejected(verify(value,NONCE));
+    assert.throws(()=>devIdentityVerifier('https://game.example'),/devIdentityForbidden/);
+    process.env.NODE_ENV='production';assert.throws(()=>devIdentityVerifier('http://localhost'),/devIdentityForbidden/);
+    delete process.env.TBH_AUTH_DEV;assert.equal(devIdentityVerifier('http://localhost'),undefined);
+  } finally {if(oldFlag===undefined)delete process.env.TBH_AUTH_DEV;else process.env.TBH_AUTH_DEV=oldFlag;if(oldMode===undefined)delete process.env.NODE_ENV;else process.env.NODE_ENV=oldMode;}
+});
+
+test('dev HTTP sign-in at minute five keeps the shift and receipts once, restores the account and retains ordinary session guards',async t=>{
+  const oldFlag=process.env.TBH_AUTH_DEV;process.env.TBH_AUTH_DEV='1';let f:Awaited<ReturnType<typeof apiFixture>>;
+  try {f=await apiFixture(t,false);}finally{if(oldFlag===undefined)delete process.env.TBH_AUTH_DEV;else process.env.TBH_AUTH_DEV=oldFlag;}
+  const a=await f.guest(),opening={idempotencyKey:'dev-open',command:{type:'startShift' as const}};
+  const opened=f.store.command(a.playerId,opening);assert.ok(opened.result.ok);f.now+=300000;
+  f.store.command(a.playerId,{idempotencyKey:'dev-menu',command:{type:'activity',active:true,paused:true}});
+  const before=f.store.read(a.playerId);assert.equal(before.world.phase,'open');assert.equal(before.world.shift!.id,opened.world.shift!.id);
+  assert.equal(f.store.competition.state(a.playerId).provider,'guest');
+  const c=await (await f.call('/auth/google/challenge',{},a.cookie)).json();assert.equal(c.dev,true);assert.equal(c.clientId,'tbh-dev-identity');
+  const input={credential:`tbh-dev:alice:${c.nonce}`,keepAccount:true};
+  const signed=await f.call('/auth/google',input,a.cookie);assert.equal(signed.status,200);assert.equal((await signed.json()).playerId,a.playerId);
+  const cookie=signed.headers.get('set-cookie')!.split(';')[0];assert.deepEqual(f.store.read(a.playerId),before);
+  assert.deepEqual(f.store.command(a.playerId,opening).result,opened.result);assert.equal(f.store.competition.state(a.playerId).provider,'google');
+  assert.equal((await f.call('/auth/google',input,a.cookie)).status,401);
+  assert.equal((await f.call('/auth/google',input,cookie)).status,401);
+  assert.equal((await f.call('/auth/logout',{},cookie)).status,200);
+  const b=await f.guest(),next=await(await f.call('/auth/google/challenge',{},b.cookie)).json();
+  const restored=await f.call('/auth/google',{credential:`tbh-dev:alice:${next.nonce}`,keepAccount:true,expectedPlayerId:a.playerId},b.cookie);
+  assert.equal(restored.status,200);assert.equal((await restored.json()).playerId,a.playerId);assert.deepEqual(f.store.read(a.playerId),before);
+  const off=await apiFixture(t,false),guest=await off.guest();
+  assert.equal((await off.call('/auth/google/challenge',{},guest.cookie)).status,503);
+  assert.equal((await off.call('/auth/google',input,guest.cookie)).status,503);
 });

@@ -43,7 +43,7 @@ export function Account({ remote, locale, t, close }: { remote: RemoteGame | nul
         const challenge = await remote.googleChallenge();
         if (!live()) return;
         if (!challenge) { setPhase('finished'); return; }
-        const api = await googleScript();
+        const api = await googleScript(challenge.dev === true);
         if (!live() || !button.current) return;
         api.initialize({ client_id: challenge.clientId, nonce: challenge.nonce, auto_select: false, callback: result => {
           if (!live() || !button.current?.isConnected || consumed || remote.identity.provider !== 'guest' && !remote.reauthenticating) return;

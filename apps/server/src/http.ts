@@ -3,7 +3,7 @@ import { createServer, type IncomingMessage } from 'node:http';
 import type { OAuth2Client } from 'google-auth-library';
 import { validEnvelope, loadConfig, menuReport, type Config, type Command, type DomainEvent, type WorldView } from '@tbh/engine';
 import { GameStore, type Snapshot } from './store';
-import { googleVerifier } from './google';
+import { devIdentityVerifier, googleVerifier } from './google';
 import { adminDirectory } from './admin-auth';
 import { forecastEconomy } from './forecast';
 import type { ProposalInput } from './registry';
@@ -53,7 +53,8 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
   if (url.origin !== options.origin || !['http:', 'https:'].includes(url.protocol) ||
       url.protocol === 'http:' && !['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname)) throw Error('http:invalidOrigin');
   for (const n of [options.sessionTtlMs, options.rateWindowMs, options.rateMax]) if (!Number.isSafeInteger(n) || n <= 0) throw Error('http:invalidLimits');
-  const verifyGoogle = googleVerifier(options.googleClientId, googleClient);
+  const devVerify = devIdentityVerifier(options.origin), verifyGoogle = devVerify ?? googleVerifier(options.googleClientId, googleClient);
+  const identityProvider = devVerify ? { clientId: 'tbh-dev-identity', dev: true } : { clientId: options.googleClientId };
   const secure = url.protocol === 'https:', cookieName = secure ? '__Host-tbh-session' : 'tbh-session';
   const cookie = (token: string, expires: number) => `${cookieName}=${token}; Path=/; HttpOnly; SameSite=Lax; Expires=${new Date(expires).toUTCString()}${secure ? '; Secure' : ''}`;
   const credential = (req: IncomingMessage, name = cookieName) => {
@@ -106,7 +107,7 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
         }
         if (req.method === 'POST' && path === '/admin/auth/challenge') {
           fields([]); directory(); const { token: next, ...challenge } = auth.challenge(token);
-          res.setHeader('Set-Cookie', adminCookie(next, challenge.expiresAt)); reply(200, { ...challenge, clientId: options.googleClientId }); return;
+          res.setHeader('Set-Cookie', adminCookie(next, challenge.expiresAt)); reply(200, { ...challenge, ...identityProvider }); return;
         }
         if (req.method === 'POST' && path === '/admin/auth/google') {
           const input = fields(['credential']); directory(); const nonce = auth.nonce(token);
@@ -243,7 +244,7 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
       if (req.method === 'POST' && path === '/auth/google/challenge') {
         if (!record(body) || Object.keys(body).length) throw new HttpError(400, 'invalidBody');
         if (!verifyGoogle) throw new HttpError(503, 'googleUnavailable');
-        reply(200, { ...store.issueGoogleChallenge(token!), clientId: options.googleClientId }); return;
+        reply(200, { ...store.issueGoogleChallenge(token!), ...identityProvider }); return;
       }
       if (req.method === 'POST' && path === '/auth/google') {
         if (!record(body) || Object.keys(body).some(k => !['credential', 'keepAccount', 'expectedPlayerId'].includes(k)) ||

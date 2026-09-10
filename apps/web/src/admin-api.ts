@@ -1,6 +1,7 @@
 import type { ConfigScope, ConfigPhase, SupersededSchedule, EmergencyTicket, EmergencyReview } from '../../server/src/registry';
 export type { ConfigScope };
 import { loadConfig, type Config } from '../../../packages/engine/src';
+import { translate } from './i18n';
 export type Actor = { subject: string; role: 'super'|'economy'|'game'|'support'|'viewer'; mfa: boolean; issuedAt: number; expiresAt: number };
 export type Auth = { enabled: boolean; phase: 'signedOut'|'mfa'|'authenticated'; actor?: Actor; context?: string; expiresAt?: number };
 export type Publication = { version: string; effective_at: number; published_at: number };
@@ -55,7 +56,23 @@ export function preview(before: Config['raw'], text: string) {
 type GoogleApi = { initialize(options: {client_id:string; nonce:string; auto_select:false; callback:(result:{credential:string})=>void}):void;
   renderButton(element:HTMLElement, options:Record<string,unknown>):void; disableAutoSelect():void; cancel():void };
 let googleLoad: Promise<GoogleApi>|undefined;
-export function googleScript(): Promise<GoogleApi> {
+export function googleScript(dev = false): Promise<GoogleApi> {
+  if (dev) {
+    let options: Parameters<GoogleApi['initialize']>[0];
+    return Promise.resolve({
+      initialize(value) { options = value; },
+      renderButton(element, style) {
+        const t = (key: string) => translate(style.locale === 'en' ? 'en' : 'vi', key);
+        const form = document.createElement('form'), label = document.createElement('label'), input = document.createElement('input'), button = document.createElement('button'), note = document.createElement('p');
+        form.className = 'dev-identity'; label.textContent = t('account.devName'); input.name = 'account'; input.value = 'player-one';
+        input.required = true; input.maxLength = 32; input.pattern = '[a-z][a-z0-9-]{0,31}'; input.autocomplete = 'off'; // config-exempt: test identity protocol bound
+        label.append(input); button.type = 'submit'; button.textContent = t('account.devSignIn'); note.textContent = t('account.devOnly');
+        form.append(note, label, button); form.onsubmit = event => { event.preventDefault(); if (!form.reportValidity()) return; button.disabled = true; options.callback({ credential: `tbh-dev:${input.value}:${options.nonce}` }); };
+        element.append(form);
+      },
+      disableAutoSelect() {}, cancel() {},
+    });
+  }
   const existing=()=> (window as unknown as {google?:{accounts?:{id?:GoogleApi}}}).google?.accounts?.id;
   if(existing())return Promise.resolve(existing()!);
   return googleLoad ??= new Promise<GoogleApi>((resolve,reject)=>{

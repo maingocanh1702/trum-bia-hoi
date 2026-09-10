@@ -632,5 +632,8 @@
   "admin.emergency.reviewed": "Đã hậu kiểm bởi",
   "admin.emergency.reviewReason": "Kết luận hậu kiểm",
   "admin.emergency.review": "Ghi nhận hậu kiểm",
-  "admin.error.emergencyTier": "Hotfix chỉ áp dụng cho Tier A/B. Tách các khóa Tier C thành đề xuất thường."
+  "admin.error.emergencyTier": "Hotfix chỉ áp dụng cho Tier A/B. Tách các khóa Tier C thành đề xuất thường.",
+  "account.devName": "Tên tài khoản thử nghiệm",
+  "account.devSignIn": "Đăng nhập thử nghiệm",
+  "account.devOnly": "Chế độ thử nghiệm trên máy này. Không phải đăng nhập Google thật."
 }

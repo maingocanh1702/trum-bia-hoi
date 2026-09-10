@@ -136,7 +136,7 @@ export class RemoteGame {
       return playerSession(await this.request('/auth/session', {}));
     }
   }
-  async googleChallenge(): Promise<{ clientId: string; nonce: string; expiresAt: number } | null> {
+  async googleChallenge(): Promise<{ clientId: string; nonce: string; expiresAt: number; dev?: boolean } | null> {
     if (this.stopped || this.accountBusy || this.state !== 'online' || this.identity.provider !== 'guest' && !this.reauthenticating) throw new RemoteError('accountBusy');
     if (this.reauthenticating) {
       const owner = await this.authenticationSession();
@@ -145,7 +145,7 @@ export class RemoteGame {
       }
     }
     const challenge = await this.request('/auth/google/challenge', {});
-    if (!challenge || typeof challenge.clientId !== 'string' || !challenge.clientId || typeof challenge.nonce !== 'string' || !challenge.nonce || !Number.isSafeInteger(challenge.expiresAt)) throw new RemoteError('conflict');
+    if (!challenge || typeof challenge.clientId !== 'string' || !challenge.clientId || typeof challenge.nonce !== 'string' || !challenge.nonce || !Number.isSafeInteger(challenge.expiresAt) || challenge.dev !== undefined && typeof challenge.dev !== 'boolean') throw new RemoteError('conflict');
     return challenge;
   }
   /** Queue cookie rotation AFTER acknowledged commands, without recreating the player/stream. */

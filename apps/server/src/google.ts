@@ -6,6 +6,17 @@ export type GoogleIdentity = { subject: string };
 export const validGoogleSubject = (value: unknown): value is string =>
   typeof value === 'string' && /^[\x21-\x7e]{1,255}$/.test(value); // config-exempt: OIDC subject maximum length
 
+/** Explicit local test identities replace only verification, never sessions or MFA. */
+export function devIdentityVerifier(origin: string) {
+  if (process.env.TBH_AUTH_DEV !== '1') return undefined;
+  if (process.env.NODE_ENV === 'production' || !['localhost', '127.0.0.1', '[::1]'].includes(new URL(origin).hostname)) throw Error('auth:devIdentityForbidden');
+  return async (credential: unknown, expectedNonce: string): Promise<GoogleIdentity> => {
+    const match = typeof credential === 'string' && /^tbh-dev:([a-z][a-z0-9-]{0,31}):([a-f0-9]{64})$/.exec(credential); // config-exempt: bounded test-account name and session nonce protocol
+    if (!match || match[2] !== expectedNonce) throw Error('auth:googleVerificationFailed');
+    return { subject: `tbh-dev:${match[1]}` };
+  };
+}
+
 /** Server-only verifier. The caller must issue a session-bound nonce, then consume
  * it atomically with login. Verifying a token alone never grants a game session. */
 export function googleVerifier(clientId: string | undefined, client = new OAuth2Client({
