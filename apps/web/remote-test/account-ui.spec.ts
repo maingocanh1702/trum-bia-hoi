@@ -12,6 +12,7 @@ async function enter(page: Page, locale = 'vi') {
   await page.goto('/');
   await page.getByRole('radio', { name: locale === 'vi' ? 'Tiếng Việt' : 'English', exact: true }).check();
   await page.getByRole('button', { name: locale === 'vi' ? 'Vào quán' : 'Enter the stall', exact: true }).click();
+  await page.getByRole('button', { name: locale === 'vi' ? 'Chơi không đăng nhập' : 'Play without signing in', exact: true }).click();
   await expect(page.locator('.network-status')).toContainText(locale === 'vi' ? 'Đã đồng bộ' : 'Synced');
 }
 async function account(page: Page, locale = 'vi') {
@@ -31,7 +32,7 @@ for (const [locale, width, height] of [['vi', 360, 740], ['en', 390, 844], ['vi'
   const before = (await snapshot(page)).world, stream = await journal(page); let navigations = 0;
   page.on('framenavigated', f => { if (f === page.mainFrame()) navigations++; });
   await dialog.getByRole('button', { name: locale === 'vi' ? 'Tiếp tục với Google' : 'Continue with Google', exact: true }).click();
-  await expect(dialog.getByRole('heading', { name: locale === 'vi' ? 'Đã kết nối Google' : 'Connected to Google', exact: true })).toBeVisible();
+  await expect(dialog.getByRole('heading', { name: locale === 'vi' ? 'Tài khoản Google' : 'Google account', exact: true })).toBeVisible();
   expect((await session(page)).provider).toBe('google'); expect(navigations).toBe(0);
   const after = (await snapshot(page)).world;
   expect(after.playerId).toBe(before.playerId); expect(after.shift.id).toBe(before.shift.id); expect(after.coins).toBe(before.coins); expect(after.staminaMs).toBe(before.staminaMs); expect(after.paused).toBe(true);
@@ -43,7 +44,7 @@ for (const [locale, width, height] of [['vi', 360, 740], ['en', 390, 844], ['vi'
   await expect(dialog).not.toBeVisible(); await expect.poll(async () => Boolean((await snapshot(page)).world.paused)).toBe(false);
   await page.reload(); await expect(page.locator('.network-status')).toContainText(locale === 'vi' ? 'Đã đồng bộ' : 'Synced');
   const reopened = await account(page, locale);
-  await expect(reopened.getByRole('heading', { name: locale === 'vi' ? 'Đã kết nối Google' : 'Connected to Google', exact: true })).toBeVisible();
+  await expect(reopened.getByRole('heading', { name: locale === 'vi' ? 'Tài khoản Google' : 'Google account', exact: true })).toBeVisible();
   expect(errors).toEqual([]);
 });
 
@@ -66,7 +67,7 @@ test('SDK loading failure retries with a fresh challenge and preserves guest pro
   await page.unroute('https://accounts.google.com/gsi/client'); await gis(page, 'ui-sdk-retry');
   await dialog.getByRole('button', { name: 'Thử lại', exact: true }).click();
   await dialog.getByRole('button', { name: 'Tiếp tục với Google', exact: true }).click();
-  await expect(dialog.getByRole('heading', { name: 'Đã kết nối Google', exact: true })).toBeVisible();
+  await expect(dialog.getByRole('heading', { name: 'Tài khoản Google', exact: true })).toBeVisible();
   expect((await journal(page)).playerId).toBe(before.playerId);
 });
 
@@ -74,13 +75,13 @@ test('closing a panel rejects late and duplicate Google callbacks without postin
   await gis(page, 'ui-closed-callback'); await enter(page); const dialog = await account(page);
   await expect(dialog.getByRole('button', { name: 'Tiếp tục với Google', exact: true })).toBeVisible();
   let posts = 0; page.on('request', r => { if (r.url().endsWith('/auth/google')) posts++; });
-  await dialog.getByRole('button', { name: 'Để sau, chơi tiếp', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
   await page.evaluate(() => { const w = window as any; w.__googleCallbacks[0]({ credential: 'stale' }); w.__googleCallbacks[0]({ credential: 'stale' }); });
   expect(posts).toBe(0); expect((await session(page)).provider).toBe('guest');
   const reopened = await account(page); await expect(reopened.getByRole('button', { name: 'Tiếp tục với Google', exact: true })).toBeVisible();
   await page.evaluate(() => (window as any).__googleCallbacks[0]({ credential: 'old-generation' })); expect(posts).toBe(0);
   await reopened.getByRole('button', { name: 'Tiếp tục với Google', exact: true }).click();
-  await expect(reopened.getByRole('heading', { name: 'Đã kết nối Google', exact: true })).toBeVisible(); expect(posts).toBe(1);
+  await expect(reopened.getByRole('heading', { name: 'Tài khoản Google', exact: true })).toBeVisible(); expect(posts).toBe(1);
 });
 
 test('closing while verification is pending keeps the shift paused until the link settles', async ({ page }) => {
@@ -90,7 +91,7 @@ test('closing while verification is pending keeps the shift paused until the lin
   const barrier = new Promise<void>(resolve => { release = resolve; });
   await page.route('**/api/auth/google', async route => { held = true; await barrier; await route.continue(); });
   await dialog.getByRole('button', { name: 'Tiếp tục với Google', exact: true }).click(); await expect.poll(() => held).toBe(true);
-  await dialog.getByRole('button', { name: 'Để sau, chơi tiếp', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
   await expect(dialog).not.toBeVisible(); await expect(page.locator('.network-status')).toContainText('Đang xác nhận tài khoản');
   const paused = (await snapshot(page)).world; expect(paused.paused).toBe(true);
   await page.waitForTimeout(1200); expect((await snapshot(page)).world.staminaMs).toBe(paused.staminaMs);
@@ -109,28 +110,11 @@ test('a cancelled verification error retries without storing the credential or c
   await page.evaluate(() => (window as any).__googleCallbacks[0]({ credential: 'late-duplicate' }));
   await dialog.getByRole('button', { name: 'Thử lại', exact: true }).click();
   await dialog.getByRole('button', { name: 'Tiếp tục với Google', exact: true }).click();
-  await expect(dialog.getByRole('heading', { name: 'Đã kết nối Google', exact: true })).toBeVisible();
+  await expect(dialog.getByRole('heading', { name: 'Tài khoản Google', exact: true })).toBeVisible();
   expect(posts).toBe(2);
   const options = await page.evaluate(() => (window as any).__googleOptions); expect(options).toHaveLength(2); expect(options[0].nonce).not.toBe(options[1].nonce); expect(options.every((o: any) => o.auto_select === false)).toBe(true);
   expect((await journal(page)).playerId).toBe(before.playerId);
   expect(await page.evaluate(() => Object.values(localStorage).some(value => String(value).includes('eyJ')))).toBe(false);
-});
-
-test('an existing Google save shows a conflict and keeps both stalls unchanged', async ({ page, browser }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:4179', locale: 'vi-VN' }), other = await context.newPage();
-  try {
-    await gis(other, 'ui-account-conflict'); await enter(other); const existing = await account(other);
-    await existing.getByRole('button', { name: 'Tiếp tục với Google', exact: true }).click();
-    await expect(existing.getByRole('heading', { name: 'Đã kết nối Google', exact: true })).toBeVisible();
-    const beforeOther = (await snapshot(other)).world;
-    await gis(page, 'ui-account-conflict'); await enter(page); const dialog = await account(page), before = (await snapshot(page)).world;
-    await dialog.getByRole('button', { name: 'Tiếp tục với Google', exact: true }).click();
-    await expect(dialog.getByRole('alert')).toContainText('đã có tiến độ khác');
-    expect((await session(page)).provider).toBe('guest'); expect((await snapshot(page)).world.playerId).toBe(before.playerId);
-    expect((await snapshot(page)).world.coins).toBe(before.coins); expect((await snapshot(other)).world.coins).toBe(beforeOther.coins);
-    await dialog.getByRole('button', { name: 'Giữ quán hiện tại', exact: true }).click();
-    await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click(); await expect.poll(async () => (await snapshot(page)).world.phase).toBe('open');
-  } finally { await context.close(); }
 });
 
 test('closing during challenge loading does not initialize a late Google widget', async ({ page }) => {
@@ -139,7 +123,7 @@ test('closing during challenge loading does not initialize a late Google widget'
   page.on('request', r => { if (r.url().includes('accounts.google.com')) scripts++; });
   await page.route('**/api/auth/google/challenge', async route => { const response = await route.fetch(); held = true; await barrier; await route.fulfill({ response }); });
   await enter(page); const dialog = await account(page); await expect.poll(() => held).toBe(true);
-  await dialog.getByRole('button', { name: 'Để sau, chơi tiếp', exact: true }).click(); await expect(dialog).not.toBeVisible();
+  await dialog.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click(); await expect(dialog).not.toBeVisible();
   const response = page.waitForResponse('**/api/auth/google/challenge'); release(); await (await response).finished();
   await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
   expect(scripts).toBe(0); expect((await session(page)).provider).toBe('guest');
@@ -150,52 +134,96 @@ test('a lost identity read keeps the panel confirming until the canonical Google
   await page.route('**/api/auth/session', route => cut ? route.abort() : route.continue());
   await dialog.getByRole('button', { name: 'Tiếp tục với Google', exact: true }).click();
   await expect(dialog.getByRole('status').filter({ hasText: 'Đang xác nhận tài khoản' })).toBeVisible();
-  await expect(dialog.getByRole('heading', { name: 'Đã kết nối Google', exact: true })).not.toBeVisible();
+  await expect(dialog.getByRole('heading', { name: 'Tài khoản Google', exact: true })).not.toBeVisible();
   cut = false;
-  await expect(dialog.getByRole('heading', { name: 'Đã kết nối Google', exact: true })).toBeVisible();
+  await expect(dialog.getByRole('heading', { name: 'Tài khoản Google', exact: true })).toBeVisible();
   await expect(dialog.getByRole('alert')).not.toBeVisible(); expect((await session(page)).provider).toBe('google');
 });
 
-for (const locale of ['vi', 'en']) test(`explicit Google stall choice boots the selected save without browser navigation in ${locale}`, async ({ page, browser }) => {
+for (const locale of ['vi', 'en']) test(`Google sign-in restores the account directly without browser navigation in ${locale}`, async ({ page, browser }) => {
   const context = await browser.newContext({ baseURL: 'http://127.0.0.1:4179' }), other = await context.newPage(), subject = `ui-choice-${locale}`;
   try {
     await gis(other, subject); await enter(other); const targetPanel = await account(other);
     await targetPanel.getByRole('button', { name: 'Tiếp tục với Google', exact: true }).click();
-    await expect(targetPanel.getByRole('heading', { name: 'Đã kết nối Google', exact: true })).toBeVisible();
+    await expect(targetPanel.getByRole('heading', { name: 'Tài khoản Google', exact: true })).toBeVisible();
     const target = (await snapshot(other)).world;
     await gis(page, subject); await enter(page, locale);
     await page.getByRole('button', { name: locale === 'vi' ? 'Mở ca' : 'Open shift', exact: true }).first().click();
     const dialog = await account(page, locale), source = await journal(page); let navigations = 0;
     page.on('framenavigated', f => { if (f === page.mainFrame()) navigations++; });
     await dialog.getByRole('button', { name: locale === 'vi' ? 'Tiếp tục với Google' : 'Continue with Google', exact: true }).click();
-    const choose = dialog.getByRole('button', { name: locale === 'vi' ? 'Dùng quán Google' : 'Use Google stall', exact: true });
-    await expect(choose).toBeVisible(); expect((await journal(page)).playerId).toBe(source.playerId);
-    expect(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
-    await page.screenshot({ path: `.qa/save-choice-${locale}.png`, fullPage: true });
-    await choose.click(); await expect.poll(async () => (await journal(page)).playerId).toBe(target.playerId);
+    await expect.poll(async () => (await journal(page)).playerId).toBe(target.playerId);
     await expect(page.locator('.network-status')).toContainText(locale === 'vi' ? 'Đã đồng bộ' : 'Synced');
     expect(navigations).toBe(0); expect((await snapshot(page)).world.phase).toBe(target.phase);
     expect((await journal(page)).clientId).not.toBe(source.clientId);
     const linked = await account(page, locale);
-    await expect(linked.getByRole('heading', { name: locale === 'vi' ? 'Đã kết nối Google' : 'Connected to Google', exact: true })).toBeVisible();
+    await expect(linked.getByRole('heading', { name: locale === 'vi' ? 'Tài khoản Google' : 'Google account', exact: true })).toBeVisible();
     await page.reload(); await expect(page.locator('.network-status')).toContainText(locale === 'vi' ? 'Đã đồng bộ' : 'Synced');
     expect((await journal(page)).playerId).toBe(target.playerId);
   } finally { await context.close(); }
 });
 
-test('an expired explicit choice returns to fresh Google sign-in without losing the guest', async ({ page, browser }) => {
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:4179' }), other = await context.newPage();
-  try {
-    await gis(other, 'ui-choice-expiry'); await enter(other); const target = await account(other);
-    await target.getByRole('button', { name: 'Tiếp tục với Google', exact: true }).click(); await expect(target.getByRole('heading', { name: 'Đã kết nối Google', exact: true })).toBeVisible();
-    await gis(page, 'ui-choice-expiry'); await enter(page); const dialog = await account(page), source = await journal(page);
-    await dialog.getByRole('button', { name: 'Tiếp tục với Google', exact: true }).click();
-    await expect(dialog.getByRole('button', { name: 'Dùng quán Google', exact: true })).toBeVisible();
-    // Another challenge replaces the consumed UI attempt without altering the career clock.
-    await page.request.post('/api/auth/google/challenge', { data: {}, headers: { Origin: 'http://127.0.0.1:4179' } });
-    await dialog.getByRole('button', { name: 'Dùng quán Google', exact: true }).click();
-    await expect(dialog.getByRole('alert')).toContainText('không còn hợp lệ'); expect((await journal(page)).accountSwitch).toBeUndefined();
-    expect((await journal(page)).playerId).toBe(source.playerId);
-    await dialog.getByRole('button', { name: 'Thử lại', exact: true }).click(); await expect(dialog.getByRole('button', { name: 'Tiếp tục với Google', exact: true })).toBeVisible();
-  } finally { await context.close(); }
+for (const locale of ['vi', 'en']) test(`two play modes offer direct Google sign-in before opening a shift in ${locale}`, async ({ page }) => {
+  await gis(page, `entry-account-${locale}`); await page.goto('/');
+  await page.getByRole('radio', { name: locale === 'vi' ? 'Tiếng Việt' : 'English', exact: true }).check();
+  await page.getByRole('button', { name: locale === 'vi' ? 'Vào quán' : 'Enter the stall', exact: true }).click();
+  const entry = page.getByRole('region', { name: locale === 'vi' ? 'Chọn cách chơi' : 'Choose how to play', exact: true });
+  await expect(entry.getByRole('button')).toHaveCount(2);
+  await expect(entry).toContainText(locale === 'vi' ? 'Không lưu lịch sử chơi, thành tích' : 'Play history, achievements and progress are not saved');
+  expect(await entry.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+  await page.screenshot({ path: `.qa/account-modes-${locale}.png`, fullPage: true });
+  await entry.getByRole('button', { name: locale === 'vi' ? 'Đăng ký / Đăng nhập bằng Google' : 'Sign up / Sign in with Google', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: locale === 'vi' ? 'Tiếp tục với Google' : 'Continue with Google', exact: true }).click();
+  await expect(dialog.getByRole('heading', { name: locale === 'vi' ? 'Tài khoản Google' : 'Google account', exact: true })).toBeVisible();
+  expect((await snapshot(page)).world.phase).toBe('resting');
+});
+
+test('guest history survives a reload but is not restored when the tab visit ends', async ({ page, context }) => {
+  await enter(page); await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
+  await expect.poll(async () => (await snapshot(page)).world.phase).toBe('open');
+  const before = (await snapshot(page)).world, cookie = (await context.cookies()).find(c => c.name === 'tbh_session');
+  await page.reload(); await expect(page.locator('.network-status')).toContainText('Đã đồng bộ');
+  expect((await snapshot(page)).world.shift.id).toBe(before.shift.id);
+  await page.close(); const next = await context.newPage(); await next.goto('/');
+  await expect(next.getByRole('heading', { name: 'Chọn cách chơi', exact: true })).toBeVisible();
+  await next.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
+  await expect(next.locator('.network-status')).toContainText('Đã đồng bộ');
+  const fresh = (await snapshot(next)).world;
+  expect(fresh.playerId).not.toBe(before.playerId); expect(fresh.phase).toBe('resting'); expect(fresh.completedShifts).toBe(0);
+  expect(fresh.lifetimeEarned).toBe(0); expect(fresh.peakLeague).toBeNull();
+  if (cookie) expect((await context.cookies()).find(c => c.name === cookie.name)?.value).not.toBe(cookie.value);
+  await next.getByRole('button', { name: 'Cài đặt', exact: true }).click();
+  await expect(next.getByRole('dialog')).toContainText('Không lưu lịch sử chơi, thành tích');
+  await expect(next.getByRole('dialog')).not.toContainText('Tiến độ được lưu trên server');
+});
+
+test('a Google account restores its progress when opening a new tab visit', async ({ page, context }) => {
+  await gis(page, 'account-returning-visit'); await enter(page); const dialog = await account(page);
+  await dialog.getByRole('button', { name: 'Tiếp tục với Google', exact: true }).click();
+  await expect(dialog.getByRole('heading', { name: 'Tài khoản Google', exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Tiếp tục chơi', exact: true }).click();
+  await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
+  await expect.poll(async () => (await snapshot(page)).world.phase).toBe('open');
+  const before = (await snapshot(page)).world;
+  await page.close(); const next = await context.newPage(); await next.goto('/');
+  await expect(next.locator('.network-status')).toContainText('Đã đồng bộ');
+  const restored = (await snapshot(next)).world;
+  expect(restored.playerId).toBe(before.playerId); expect(restored.shift.id).toBe(before.shift.id);
+  expect(restored.coins).toBe(before.coins); expect((await session(next)).provider).toBe('google');
+});
+
+test('a lost restart response never strands a new guest visit behind the expired visit journal', async ({ page, context }) => {
+  await enter(page); const old = (await snapshot(page)).world.playerId; await page.close();
+  const next = await context.newPage(); let lost = false;
+  await next.route('**/api/auth/guest/restart', async route => {
+    if (lost) { await route.continue(); return; }
+    lost = true; const response = await route.fetch(); expect(response.status()).toBe(201);
+    await route.fulfill({ response, body: '{', contentType: 'application/json' });
+  });
+  await next.goto('/'); await expect(next.getByRole('alert')).toContainText('Chưa kết nối');
+  expect(await next.evaluate(() => localStorage.getItem('tbh.remote.v1'))).toBeNull();
+  await next.reload(); await next.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
+  await expect(next.locator('.network-status')).toContainText('Đã đồng bộ');
+  expect((await snapshot(next)).world.playerId).not.toBe(old); expect((await snapshot(next)).world.phase).toBe('resting');
 });

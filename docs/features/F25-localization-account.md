@@ -40,19 +40,16 @@ type GuestSave = {
 
 1. Show language screen before gameplay: `Tiếng Việt` / `English`.
 2. Persist selected locale locally immediately.
-3. Create guest profile by default.
-4. Let user start playing without account.
+3. Offer exactly two play modes: play without signing in, or register/sign in with Google.
+4. Guest progress lasts for this tab visit only. Reload/reconnect keeps the current visit; a new tab visit starts fresh. Only Google accounts have durable player progress/history/achievements.
 5. Show soft sign-in prompt after first session close and when opening Giải Nhậu/cloud/social/payment surfaces.
 
 ## 4. Login flow
 
 - `Sign in with Google` creates or links account.
-- If current user is guest with progress, server offers `Claim guest progress`.
-- Migration is one-way: guest save merges into account, guest id becomes linked/retired.
-- If Google account already has progress, show conflict screen:
-  - keep account progress;
-  - overwrite only if account has no meaningful progress;
-  - support path for edge cases.
+- A new Google account attaches the current guest visit once without interrupting its shift.
+- An existing Google account restores its saved progress directly; do not show an extra "Google stall/current stall" choice or merge guest totals.
+- Signing in identifies an account, never a different type of stall. Historical local archives retain their separate recovery/export path.
 
 ## 5. Access rules
 
@@ -273,3 +270,11 @@ remain local with backup export available. See [panel contract](../google-accoun
 | Date | Change |
 |---|---|
 | 2026-09-10 Google panel verified | e5745af:351engine/server,92local/44remote/19admin browser, final local1/1,config/build PASS. Native full-base correction review reports no findings. Signed HTTP/SDK fixtures cover mid-shift link and stale/duplicate callbacks; live Client ID/consent still absent. Explicit save choice/recovery, configured invitations/cooldown and competitive eligibility remain. F25 in progress; M4 unchanged12/18 OPEN. Receipt .qa/account-panel-verification.json. |
+
+## Owner correction — two play modes, 2026-09-10
+
+The owner explicitly replaces the extra save-choice model. See [account modes](../account-modes.md) for current decisions and operational-audit versus player-history boundaries. Guest core gameplay is unchanged; durable guest resume and the earlier conflict-screen requirement above are superseded. Existing Google progress is restored on sign-in; new accounts attach the current visit. No local archive is deleted and no live Google consent is claimed.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 two modes | Replace sections 3/4 with the owner correction: play without signing in (no durable history/achievements) or register/sign in with a Google account; remove the extra stall choice. Preserve same-visit reconnect, menu pause and server authority. |

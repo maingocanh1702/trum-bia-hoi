@@ -6,6 +6,7 @@ const snapshot = async (page: Page) => (await page.request.get('/api/player/stat
 async function enter(page: Page) {
   await page.goto('/');
   await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await page.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
   await expect(page.locator('.network-status')).toContainText('Đã đồng bộ');
 }
 async function openShift(page: Page) {
@@ -123,6 +124,7 @@ test('existing local archive is untouched and a second tab cannot overwrite the 
   await expect(page.getByRole('heading', { name: 'Tiến độ đã lưu trên máy' })).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('tbh.remote.v1'))).toBeNull();
   await page.getByRole('button', { name: 'Mở quán mới trên server' }).click();
+  await page.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
   await expect(page.locator('.network-status')).toContainText('Đã đồng bộ');
   const before = await journal(page);
   const other = await context.newPage(); await other.goto('/');
@@ -130,6 +132,7 @@ test('existing local archive is untouched and a second tab cannot overwrite the 
   expect((await journal(page)).clientId).toBe(before.clientId);
   expect(await page.evaluate(() => localStorage.getItem('tbh.save.v1'))).toBe(original);
   await page.close(); await other.reload();
+  await other.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
   await expect(other.locator('.network-status')).toContainText('Đã đồng bộ');
 });
 
@@ -192,7 +195,7 @@ test('a silent hung transport shows reconnecting at the configured deadline with
 });
 
 
-test('a visible returning player keeps the yard accessible before heartbeat recovery', async ({ page, context }) => {
+test('a fresh guest visit keeps the yard accessible before heartbeat recovery', async ({ page, context }) => {
   await enter(page); await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
   await expect.poll(async () => (await journal(page)).pending.length).toBe(0);
   await page.close();
@@ -200,6 +203,7 @@ test('a visible returning player keeps the yard accessible before heartbeat reco
   await back.request.post(`/api/__test/advance?ms=${config.network.reconnectingUiDelayMs + 1}`);
   await back.route('**/api/player/heartbeat', route => route.abort());
   await back.goto('/');
+  await back.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
   await expect(back.locator('.network-status')).toContainText('Đang kết nối lại');
   await expect(back.locator('.paused-overlay')).toHaveCount(0);
   await expect(back.locator('.yard')).toBeVisible();

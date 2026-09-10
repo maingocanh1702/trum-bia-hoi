@@ -63,6 +63,23 @@ async function guest(api: Awaited<ReturnType<typeof fixture>>, heartbeat = true)
 }
 const command = (type: string) => ({ idempotencyKey: type, command: { type } });
 
+test('guest restart validates origin, body and exact cookie owner before rotating the visit', async t => {
+  const f = await fixture(t), a = await guest(f);
+  assert.equal((await f.request('/auth/guest/restart', { playerId: a.playerId })).status, 401);
+  assert.equal((await f.request('/auth/guest/restart', { playerId: a.playerId }, a.cookie, { Origin: 'http://elsewhere.test' })).status, 403);
+  for (const body of [{}, { playerId: 1 }, { playerId: a.playerId, extra: true }]) {
+    assert.equal((await f.request('/auth/guest/restart', body, a.cookie)).status, 400);
+  }
+  assert.equal((await f.request('/auth/guest/restart', { playerId: 'wrong' }, a.cookie)).status, 409);
+  const response = await f.request('/auth/guest/restart', { playerId: a.playerId }, a.cookie);
+  assert.equal(response.status, 201); const next = await response.json();
+  assert.notEqual(next.playerId, a.playerId); assert.equal(next.provider, 'guest'); assert.equal(next.token, undefined);
+  assert.match(response.headers.get('set-cookie')!, /HttpOnly; SameSite=Lax/);
+  assert.equal((await f.request('/player/state', undefined, a.cookie)).status, 401);
+  const state = await (await f.request('/player/state', undefined, response.headers.get('set-cookie')!.split(';')[0])).json();
+  assert.equal(state.world.completedShifts, 0); assert.equal(state.world.phase, 'resting');
+});
+
 test('real HTTP guests own separate state; serving retries, paused stock purchases and event catch-up survive restart', async t => {
   const f = await fixture(t), a = await guest(f), b = await guest(f);
   assert.notEqual(a.playerId, b.playerId); assert.notEqual(a.cookie, b.cookie);

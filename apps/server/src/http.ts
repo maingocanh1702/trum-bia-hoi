@@ -199,6 +199,12 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
         if (token) store.revokeSession(token); res.setHeader('Set-Cookie', cookie('', 0)); reply(200, { ok: true }); return;
       }
       const owner = token && store.session(token); if (!owner) throw new HttpError(401, 'invalidSession');
+      if (req.method === 'POST' && path === '/auth/guest/restart') {
+        if (!record(body) || Object.keys(body).join(',') !== 'playerId' || typeof body.playerId !== 'string') throw new HttpError(400, 'invalidBody');
+        const created = store.createGuestSession(options.sessionTtlMs, { token: token!, playerId: body.playerId });
+        res.setHeader('Set-Cookie', cookie(created.token, created.expiresAt));
+        reply(201, { playerId: created.playerId, expiresAt: created.expiresAt, provider: 'guest' }); return;
+      }
       if (req.method === 'POST' && path === '/auth/google/challenge') {
         if (!record(body) || Object.keys(body).length) throw new HttpError(400, 'invalidBody');
         if (!verifyGoogle) throw new HttpError(503, 'googleUnavailable');

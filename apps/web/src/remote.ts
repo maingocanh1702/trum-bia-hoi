@@ -1,6 +1,7 @@
 import { loadConfig, validEnvelope, type Command, type Config, type DomainEvent, type Result, type WorldView, type menuReport } from '../../../packages/engine/src';
 
 const JOURNAL_KEY = 'tbh.remote.v1';
+const GUEST_VISIT_KEY = 'tbh.guest.visit';
 // config-exempt: bootstrap HTTP timeout before the pinned network configuration arrives.
 const BOOT_TIMEOUT_MS = 30000;
 type Action = { clientId: string; clientSeq: number; idempotencyKey: string; command: Command };
@@ -25,7 +26,7 @@ function readJournal(): Journal | null {
       j.accountSwitch !== undefined && (j.accountSwitch !== true || j.pending.length !== 0)) throw new RemoteError('storage');
   return j;
 }
-/** A single browser writer owns this small journal; career history stays on the server. */
+/** Single-writer command journal. Guest resume lasts only for this tab's visit. */
 export class RemoteGame {
   identity!: PlayerSession;
   private linking?: Link;
@@ -89,6 +90,15 @@ export class RemoteGame {
         if (game.world) return game; // Audited target already connected; never reconnect its old stream.
       } else owner = game.identity = playerSession(await game.request('/auth/session', {}));
       if (game.journal && game.journal.playerId !== owner.playerId) throw new RemoteError('conflict');
+      if (owner.provider === 'guest' && sessionStorage.getItem(GUEST_VISIT_KEY) !== owner.playerId) {
+        // An absent visit marker never authorizes replacing a Google account.
+        // Probe browser storage before rotating any existing guest credential.
+        sessionStorage.setItem(GUEST_VISIT_KEY, '');
+        // This guest visit ended. Retire its outbox before rotation so a lost
+        // Set-Cookie response cannot strand a fresh guest behind the old journal.
+        localStorage.removeItem(JOURNAL_KEY); game.journal = null;
+        owner = game.identity = playerSession(await game.request('/auth/guest/restart', { playerId: owner.playerId }));
+      }
       const connected: Reply = await game.request('/player/connect', game.journal ? { clientId: game.journal.clientId } : {});
       if (connected.world.playerId !== owner.playerId) throw new RemoteError('conflict');
       if (!game.journal) {
@@ -99,6 +109,7 @@ export class RemoteGame {
         game.journal.heartbeatSeq = connected.heartbeatSeq;
       }
       game.persist(); await game.apply(connected);
+      if (owner.provider === 'guest') sessionStorage.setItem(GUEST_VISIT_KEY, owner.playerId);
       return game;
     } catch (error) { await game.close(); throw error; }
   }

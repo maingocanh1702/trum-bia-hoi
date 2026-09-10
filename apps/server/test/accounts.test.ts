@@ -18,6 +18,25 @@ function fixture(t: { after(fn: () => void): void }) {
 const signIn = (s: GameStore, token: string, subject: string, keepAccount = false) =>
   s.signInGoogle(token, s.issueGoogleChallenge(token).nonce, { subject }, 86400000, keepAccount);
 
+test('a new guest visit atomically retires only the expected guest and never a Google account', t => {
+  const f = fixture(t), s = f.store, guest = s.createGuestSession(86400000);
+  s.command(guest.playerId, { idempotencyKey: 'visit-open', command: { type: 'startShift' } });
+  const before = s.read(guest.playerId), count = () => f.db.prepare('SELECT count(*) AS n FROM players').get()!.n;
+  assert.throws(() => s.createGuestSession(86400000, { token: guest.token, playerId: 'wrong' }), /accountConflict/);
+  assert.equal(count(), 1);
+  f.db.exec("CREATE TRIGGER restart_failure BEFORE INSERT ON sessions BEGIN SELECT RAISE(ABORT,'test:restartFailure'); END");
+  assert.throws(() => s.createGuestSession(86400000, { token: guest.token, playerId: guest.playerId }), /restartFailure/);
+  assert.equal(count(), 1); assert.equal(s.session(guest.token)!.playerId, guest.playerId);
+  f.db.exec('DROP TRIGGER restart_failure');
+  const next = s.createGuestSession(86400000, { token: guest.token, playerId: guest.playerId });
+  assert.notEqual(next.playerId, guest.playerId); assert.equal(s.session(guest.token), null);
+  assert.equal(s.read(next.playerId).world.completedShifts, 0); assert.equal(s.read(next.playerId).world.phase, 'resting');
+  assert.deepEqual(s.read(guest.playerId), before, 'retain internal integrity records, not a resumable guest account');
+  const google = signIn(s, next.token, 'visit-google');
+  assert.throws(() => s.createGuestSession(86400000, { token: google.token, playerId: google.playerId }), /accountConflict/);
+  assert.equal(s.session(google.token)!.provider, 'google'); assert.equal(count(), 2);
+});
+
 test('linking a server guest mid-shift preserves its exact world, history and command receipts across restart', t => {
   const f = fixture(t), s = f.store, guest = s.createGuestSession(86400000);
   const stream = s.connect(guest.playerId), request = { clientId: stream.clientId, clientSeq: 1, idempotencyKey: 'open', command: { type: 'startShift' as const } };

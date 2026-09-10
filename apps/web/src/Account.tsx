@@ -6,16 +6,15 @@ import type { RemoteGame } from './remote';
 
 export function Account({ remote, locale, t, close }: { remote: RemoteGame | null; locale: Locale; t: (key: string) => string; close: () => void }) {
   const [attempt, setAttempt] = useState(0), [phase, setPhase] = useState('loading'), [error, setError] = useState('');
-  const button = useRef<HTMLDivElement>(null), generation = useRef(0), choice = useRef<string | null>(null);
+  const button = useRef<HTMLDivElement>(null), generation = useRef(0);
   const provider = remote?.identity.provider ?? 'local';
   const busy = phase === 'linking' || Boolean(remote?.accountBusy);
-  const authenticate = async (credential: string, keepAccount: boolean, current: number) => {
-    choice.current = null; setPhase('linking'); setError(''); button.current?.replaceChildren();
-    try { await remote!.linkGoogle(credential, keepAccount); }
+  const authenticate = async (credential: string, current: number) => {
+    setPhase('linking'); setError(''); button.current?.replaceChildren();
+    try { await remote!.linkGoogle(credential, true); }
     catch (error) {
       if (generation.current === current) {
         const code = error instanceof Error ? error.message : 'network';
-        if (code === 'accountConflict' && !keepAccount) choice.current = credential;
         setError(code);
       }
     } finally { if (generation.current === current) setPhase('finished'); }
@@ -23,8 +22,8 @@ export function Account({ remote, locale, t, close }: { remote: RemoteGame | nul
   useEffect(() => {
     const current = ++generation.current, live = () => current === generation.current;
     let consumed = false;
-    if (!remote || provider === 'google') return;
-    setPhase('loading'); setError(''); choice.current = null; button.current?.replaceChildren();
+    if (!remote || provider === 'google' || remote.state !== 'online') return;
+    setPhase('loading'); setError(''); button.current?.replaceChildren();
     void (async () => {
       try {
         const challenge = await remote.googleChallenge();
@@ -33,15 +32,15 @@ export function Account({ remote, locale, t, close }: { remote: RemoteGame | nul
         if (!live() || !button.current) return;
         api.initialize({ client_id: challenge.clientId, nonce: challenge.nonce, auto_select: false, callback: result => {
           if (!live() || !button.current?.isConnected || consumed || remote.identity.provider !== 'guest') return;
-          consumed = true; void authenticate(result.credential, false, current);
+          consumed = true; void authenticate(result.credential, current);
         } });
         api.renderButton(button.current, { type: 'standard', theme: 'outline', size: 'large', shape: 'pill', text: 'continue_with', locale, width: Math.min(320, button.current.parentElement!.clientWidth) }); // config-exempt: provider button layout pixels
         setPhase('ready');
       } catch (error) { if (live()) { setError(error instanceof Error ? error.message : 'network'); setPhase('finished'); } }
     })();
-    return () => { generation.current++; choice.current = null; button.current?.replaceChildren(); };
-  }, [remote, provider, locale, attempt]);
-  const problem = error === 'accountConflict' ? 'account.conflict' : error === 'googleUnavailable' ? 'account.unavailable' :
+    return () => { generation.current++; button.current?.replaceChildren(); };
+  }, [remote, provider, locale, attempt, remote?.state]);
+  const problem = error === 'googleUnavailable' ? 'account.unavailable' :
     error === 'googleScript' ? 'account.scriptError' : ['googleVerificationFailed', 'invalidGoogleChallenge'].includes(error) ? 'account.verifyError' :
     error === 'invalidSession' ? 'network.invalidSession' : error === 'conflict' || error === 'storage' ? `network.${error}` : 'account.networkError';
   return <div className="account-panel">
@@ -53,10 +52,9 @@ export function Account({ remote, locale, t, close }: { remote: RemoteGame | nul
       {(busy || phase === 'loading') && <p role="status">{t(busy ? 'account.confirming' : 'account.loading')}</p>}
       {!busy && error && <p role="alert">{t(problem)}</p>}
       <div className="account-google" ref={button} inert={busy || remote?.state !== 'online'} />
-      {!busy && choice.current && <button className="primary full" disabled={remote?.state !== 'online'} onClick={() => { const credential = choice.current; if (credential) void authenticate(credential, true, generation.current); }}>{t('account.useGoogle')}</button>}
-      {!busy && phase === 'finished' && !choice.current && <button className="primary full" disabled={remote?.state !== 'online'} onClick={() => setAttempt(n => n + 1)}>{t('account.retry')}</button>}
+      {!busy && phase === 'finished' && <button className="primary full" disabled={remote?.state !== 'online'} onClick={() => setAttempt(n => n + 1)}>{t('account.retry')}</button>}
       {remote?.state !== 'online' && !busy && <p role="status">{t(`network.${remote?.state}`)}</p>}
     </>}
-    <button className="secondary full" onClick={close}>{t(provider === 'google' ? 'account.continue' : choice.current ? 'account.keepCurrent' : 'account.later')}</button>
+    <button className="secondary full" onClick={close}>{t(provider === 'google' ? 'account.continue' : 'account.later')}</button>
   </div>;
 }

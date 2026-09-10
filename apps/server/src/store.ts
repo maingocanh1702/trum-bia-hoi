@@ -163,13 +163,18 @@ export class GameStore {
     const state = { game, commandHash: EMPTY_HASH, eventHash: EMPTY_HASH, checkpointable: true };
     this.saveCheckpoint(id, game.checkpoint(), state); return state;
   }
-  createGuestSession(ttlMs: number) {
+  createGuestSession(ttlMs: number, previous?: { token: string; playerId: string }) {
     const now = this.now(), expiresAt = sessionExpiry(now, ttlMs);
     const token = randomBytes(32).toString('hex'), playerId = `guest-${randomUUID()}`; // config-exempt:256-bit credential, not gameplay RNG
     this.db.exec('BEGIN IMMEDIATE');
     try {
+      if (previous) {
+        const owner = this.session(previous.token);
+        if (!owner || owner.provider !== 'guest' || owner.playerId !== previous.playerId) throw Error('store:accountConflict');
+      }
       const game = this.insertPlayer(playerId, randomInt(0x100000000), now); // config-exempt:32-bit engine seed range
       this.db.prepare('INSERT INTO sessions VALUES (?,?,?,?,NULL)').run(sessionHash(token)!, playerId, now, expiresAt);
+      if (previous) this.revokeSession(previous.token);
       this.db.exec('COMMIT'); this.remember(playerId, 0, game);
       return { token, playerId, expiresAt };
     } catch (error) { if (this.db.isTransaction) this.db.exec('ROLLBACK'); throw error; }
