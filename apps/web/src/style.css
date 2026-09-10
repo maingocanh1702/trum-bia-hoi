@@ -280,3 +280,13 @@ progress::-webkit-progress-value { background: var(--beerAmber); border-radius: 
 
 .login-invitation { padding: 18px; margin-bottom: 20px; border: 1px solid var(--panelBorder); border-radius: 20px; background: var(--panelRaised); }
 .login-invitation h3 { margin: 0; }
+
+.leaderboard { display: grid; gap: 14px; margin-bottom: 22px; }
+.leaderboard p { margin: 0; }.rank-tabs { display: flex; gap: 8px; }.rank-tabs button { flex: 1; min-height: 48px; border-radius: 18px; }
+.rank-tabs [aria-pressed=true] { background: var(--coinGold); color: var(--ink); box-shadow: 0 3px 0 var(--beerAmberDeep); }
+.rank-heading { display: flex; align-items: end; justify-content: space-between; gap: 12px; }.rank-heading label { display: grid; gap: 6px; font-weight: 800; }.rank-heading select { max-width: 100%; min-height: 44px; border-radius: 12px; padding: 8px; background: var(--panelRaised); color: var(--cream); }
+.rank-heading p { text-align: right; }.rank-heading p strong { display: block; color: var(--coinGold); }.rank-asof,.rank-status { font-size: .85rem; color: var(--creamMuted); }
+.rank-list { padding: 0; margin: 0; list-style: none; }.rank-row { display: grid; grid-template-columns: 2.2rem minmax(0,1fr) auto; gap: 10px; align-items: center; padding: 14px 4px; border-bottom: 1px solid var(--panelBorder); }
+.rank-number { color: var(--coinGold); text-align: center; }.rank-row strong { overflow-wrap: anywhere; }.rank-row small { display: block; color: var(--creamMuted); font-size: .72rem; margin-top: 4px; }.rank-earned { color: var(--coinGold); text-align: right; }
+.rank-row.is-me { background: var(--panelRaised); border: 1px solid var(--coinGold); border-radius: 14px; }.rank-personal { border-top: 2px solid var(--panelBorder); padding-top: 16px; }.rank-personal h3 { margin: 0 0 10px; }.rank-personal > p { margin: 8px 0; }
+.rank-pages { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }.rank-pages span { flex: 1 1 100%; font-size: .8rem; }.leaderboard button { min-height: 44px; }.season-details { border-top: 1px solid var(--panelBorder); margin-top: 22px; }.season-details summary { min-height: 44px; padding: 14px 0; cursor: pointer; font-weight: 800; }

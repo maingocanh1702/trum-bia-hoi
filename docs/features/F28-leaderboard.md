@@ -89,3 +89,9 @@ history may count once; pending history cannot count. No compensation credit is 
 | 2026-09-10 competitive score verified | E23 at7e7f337:376unit/server,19admin browser,32focused,config/build and final independent review PASS. Exact local baseline/Google/flag eligibility and worker recovery verified; no global ordering/snapshot/admin review UI or full milestone claim. |
 
 | 2026-09-10 admin history/review verified | E24 at85fbdfb: protected imported-prefix pages, Support read-only and MFA Game/Super approval/flags, per-operator exact retries and identity cleanup.378unit/server +24admin browser, final5 affected browser/config/build/review PASS. See [E24 evidence](../competitive-eligibility.md#admin-historyreview-closure--e24-2026-09-10); public rank/snapshot and full M4/F28 remain open. |
+
+
+## Changelog (append-only)
+| Date | Change |
+|---|---|
+| 2026-09-10 public board | Implemented live query and VI/EN web on basec53b6f0: `GET /leaderboard?kind=ranking\|contest&tier&page&revision` resolves the authenticated current period, with configured pages/own neighbors, safe public aliases and dated optional cache. Pseudonymous aliases ship until editable profile names/content filtering exists. The owner all-menu pause rule supersedes §2/§4 no-pause statements: board stays paused until closed. Immutable end-season snapshots/shrine and filtered profile names remain unfinished; full F28 is not claimed. |

@@ -301,3 +301,23 @@ test('competitive status is caller-only, never accepts client totals, and rechec
   const denied = await pending; assert.equal(denied.status, 401); assert.deepEqual(await denied.json(), { error: 'invalidSession' });
   assert.equal((await f.request('/player/competition', undefined, g.cookie)).status, 200, 'another valid guest stays isolated');
 });
+
+test('public ranking is read-only, validates pages and hides private identities while authenticating its own row', async t => {
+  const f = await fixture(t), g = await guest(f);
+  const publicResponse = await f.request('/leaderboard?kind=ranking'); assert.equal(publicResponse.status, 200);
+  assert.equal(publicResponse.headers.get('cache-control'), 'no-store');
+  const empty = await publicResponse.json(); assert.equal(empty.viewer, null); assert.equal(empty.me, null);
+  const guestBoard = await (await f.request('/leaderboard?kind=contest', undefined, g.cookie)).json();
+  assert.equal(guestBoard.me, null); assert.deepEqual(guestBoard.viewer, { playerId: g.playerId, provider: 'guest' });
+  for (const q of ['', '?kind=bad', '?kind=ranking&earned=100', '?kind=ranking&kind=contest', '?kind=ranking&page=-1', '?kind=ranking&page=1.2', '?kind=ranking&page=01', '?kind=ranking&page=9999999999999999999', '?kind=ranking&tier=unknown']) assert.equal((await f.request('/leaderboard' + q)).status, 400, q);
+  assert.equal((await f.request('/leaderboard?kind=ranking&revision=' + 'f'.repeat(64))).status, 409);
+  assert.equal((await f.request('/leaderboard', { earned: 100000, playerId: g.playerId }, g.cookie)).status, 404);
+  assert.equal((await f.request('/leaderboard?kind=ranking', undefined, 'tbh-session=invalid')).status, 401);
+  assert.equal((await f.request('/leaderboard?kind=ranking', undefined, undefined, { Origin: 'http://evil.test' })).status, 403);
+  const target = f.store.createGuestSession(86400000), account = f.store.signInGoogle(target.token, f.store.issueGoogleChallenge(target.token).nonce, { subject: 'private-http-rank' }, 86400000);
+  const own = await (await f.request('/leaderboard?kind=ranking', undefined, `tbh-session=${account.token}`)).json();
+  assert.deepEqual(own.viewer, { playerId: account.playerId, provider: 'google' }); assert.equal(own.me, null); assert.equal(own.eligibility.reason, 'insufficientShifts');
+  assert.ok(!JSON.stringify(own).includes('private-http-rank'));
+  assert.deepEqual(Object.keys(own.eligibility).sort(), ['reason', 'review']);
+  assert.equal(f.store.read(g.playerId).world.coins, config.values.shift.startingCoinsBase);
+});

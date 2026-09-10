@@ -91,7 +91,7 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
       }
       if (!req.url?.startsWith('/') || req.url.startsWith('//')) throw new HttpError(400, 'invalidUrl');
       const route = new URL(req.url, options.origin), path = route.pathname;
-      if (route.search && !['/admin/registry', '/admin/config', '/admin/audit', '/admin/players', '/admin/support', '/admin/scope', '/admin/draft-source', '/admin/competition', '/admin/competition/history'].includes(path) && path !== '/player/events' && path !== '/player/config') throw new HttpError(400, 'invalidQuery');
+      if (route.search && !['/admin/registry', '/admin/config', '/admin/audit', '/admin/players', '/admin/support', '/admin/scope', '/admin/draft-source', '/admin/competition', '/admin/competition/history', '/leaderboard'].includes(path) && path !== '/player/events' && path !== '/player/config') throw new HttpError(400, 'invalidQuery');
       if (path.startsWith('/admin/')) {
         // Body IO precedes all access decisions. Actor fields never cross this boundary.
         const body = req.method === 'POST' ? await json(req, path === '/admin/proposals' ? 524288 : BODY_BYTES) : undefined; // config-exempt:512KiB bounded full-config JSON input
@@ -200,6 +200,11 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
         throw new HttpError(404, 'notFound');
       }
       const token = credential(req);
+      if (req.method === 'GET' && path === '/leaderboard') {
+        const q = route.searchParams, page = q.get('page') ?? '0';
+        if (q.size !== new Set(q.keys()).size || [...q.keys()].some(k => !['kind', 'tier', 'page', 'revision'].includes(k)) || !q.has('kind') || !/^(0|[1-9]\d*)$/.test(page)) throw new HttpError(400, 'invalidQuery');
+        reply(200, await store.leaderboard({ kind: q.get('kind') as 'ranking' | 'contest', ...(q.has('tier') ? { tier: q.get('tier')! } : {}), page: Number(page), ...(q.has('revision') ? { revision: q.get('revision')! } : {}) }, token)); return;
+      }
       if (req.method === 'POST' && path === '/auth/session') {
         const body = await json(req); if (!record(body) || Object.keys(body).length) throw new HttpError(400, 'invalidBody');
         let previousGuestId: string | null = null;
@@ -284,6 +289,7 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
       }
       throw new HttpError(404, 'notFound');
     } catch (error) {
+      if (error instanceof Error && ['leaderboard:invalidQuery', 'leaderboard:invalidPage', 'leaderboard:stalePage'].includes(error.message)) { reply(error.message === 'leaderboard:stalePage' ? 409 : 400, { error: error.message }); return; }
       const adminErrors: Record<string, number> = {
         'competition:invalidInput': 400, 'competition:missingPlayer': 404, 'competition:forbidden': 403,
         'competition:importOwnerChanged': 409, 'competition:importConflict': 409, 'competition:keyConflict': 409,

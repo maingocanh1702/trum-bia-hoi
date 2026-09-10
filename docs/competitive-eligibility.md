@@ -223,3 +223,32 @@ rank query/filter/order using the existing canonical competitive score, then the
 remaining acceptance. Whole-archive public upload/performance remains M9.
 
 | 2026-09-10 E24 verified |85fbdfb:378unit/server +24admin browser, final5 affected browser/config/build and independent full-base review PASS. P3 status drift and visual locale defect corrected. Protected history/review controls complete; public rank and M4 acceptance remain. |
+
+## Public leaderboard contract — basec53b6f0
+
+One server-owned live board reuses `competitivePeriods`, the imported baseline,
+current Google membership/moderation and pinned season qualification. No client
+rank/total submission. Guest/anonymous reads have no personal rank. Only public
+pseudonymous IDs, rank, earned amount, reputation and life-path are returned in public rows. An authenticated response separately identifies its own viewer so the browser can reject a changed cookie owner; this context is never cached. Google subjects, other internal IDs, archive digests, reasons and command history remain private.
+Public aliases are derived from player IDs; editable profile names/content filtering
+remain the profile feature and are not invented from Google identity claims.
+
+The board reads the existing committed projections, not whole event archives.
+Normal score snapshots follow `leaderboard.refreshMs`; a Google membership,
+review/flag or active registry change invalidates immediately. Old imported baselines
+reuse the bounded recovery worker before any board publication. An incomplete or
+corrupt source fails the whole rebuild; it never silently becomes zero. Source
+periods are matched by exact ID and current deadline, with default empty windows
+from `seasonWindow`. Ties use descending earnings, ascending first-reached time,
+then internal player ID as a deterministic final tie-break only. Top/page size and
+own-neighbor count use current display config; qualification and tiers stay pinned.
+
+A page binds the returned snapshot revision, so an expired/rebuilt board refuses a
+stale next-page request. Personal row and neighbors use the authenticated owner's
+actual tier even when another tier is selected. Revalidate that exact session after
+recovery. Browser display remains read-only, caches only public rows/as-of time,
+uses VI/EN and the owner's all-menu pause rule, and replaces stale cached data with
+server results. Immutable season-end snapshots/rewards stay the next dependency;
+this live board does not certify full F28. Engine/economy values remain unchanged.
+
+| 2026-09-10 public board WIP | Public server ranking and web consumer implemented;16focused,4new remote and2local browser/config/build pass. Full suite and independent review running. No economic values or engine rules changed. |

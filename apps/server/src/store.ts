@@ -5,6 +5,7 @@ import { validGoogleSubject, type GoogleIdentity } from './google';
 import { LOCAL_ARCHIVE_BYTES, validateLocalArchive } from './local-archive';
 import { AdminAuth, initializeAdmin } from './admin-auth';
 import { Competition, type ImportReview } from './competition';
+import { rankSnapshot, rankPage, validateRankQuery, type RankSnapshot, type RankQuery, type RankSource } from './leaderboard';
 import { importBaseline, competitivePeriods, type ImportBaseline } from './competitive-score';
 import { ConfigRegistry, initializeRegistry, initializeScopes, heartbeatTiming } from './registry';
 import { Game, config as seedConfig, configContent, decodeSave, loadConfig, validEnvelope, type Config, type Command, type DomainEvent, type EngineCheckpoint, type LoggedCommand, type World } from '@tbh/engine';
@@ -42,6 +43,8 @@ export class GameStore {
   readonly registry: ConfigRegistry;
   readonly adminAuth: AdminAuth;
   readonly competition: Competition;
+  private rankCache?: RankSnapshot;
+  private rankRefresh?: Promise<void>;
   private readonly cache = new Map<string, LiveGame & { revision: number }>();
   constructor(readonly path: string, config: Config = seedConfig, private readonly clock = Date.now) {
     const candidate = loadConfig(config.raw);
@@ -130,7 +133,7 @@ export class GameStore {
       this.db.close(); throw error;
     }
   }
-  close() { this.cache.clear(); if (this.db.isOpen) this.db.close(); }
+  close() { this.cache.clear(); this.rankCache = undefined; if (this.db.isOpen) this.db.close(); }
   private now() {
     const now = this.clock();
     if (!Number.isSafeInteger(now) || now < 0) throw Error('store:invalidClock');
@@ -354,6 +357,45 @@ export class GameStore {
       return { playerId: owner.playerId, serverNow: game.world.now, review: state.localImport?.review.value ?? null,
         periods: competitivePeriods(game.world, version => loadConfig(JSON.parse(this.configSnapshot(version))), state, this.importedBaseline(owner.playerId)) };
     }).result;
+  }
+  private rankSignature() {
+    const config = this.registry.active(), ids = this.db.prepare('SELECT player_id FROM google_accounts ORDER BY player_id').all().map(r => String(r.player_id));
+    const seq = this.db.prepare("SELECT COALESCE(MAX(seq),0) seq FROM registry_audit WHERE type IN ('LocalImportBaseline','LocalHistoryReviewed','PlayerFlagChanged')").get()!.seq;
+    return { config, ids, signature: JSON.stringify([config.version, ids, seq]) };
+  }
+  private async refreshRanks() {
+    for (const id of this.rankSignature().ids) await this.ensureImportBaseline(id);
+    this.db.exec('BEGIN');
+    try {
+      const now = this.now(), { config, signature } = this.rankSignature(), configs = new Map<string, Config>();
+      const configFor = (version: string) => {
+        let c = configs.get(version); if (!c) { c = loadConfig(JSON.parse(this.configSnapshot(version))); configs.set(version, c); } return c;
+      };
+      // ponytail: one process snapshot over committed projections; use indexed rank projections when measured roster size requires them.
+      const sources: RankSource[] = this.db.prepare('SELECT p.id,p.now,p.projection FROM players p JOIN google_accounts g ON g.player_id=p.id ORDER BY p.id').all().map(row => {
+        const world = { ...JSON.parse(String(row.projection)), events: [] } as World;
+        if (world.playerId !== row.id || world.now !== row.now || world.now > now ||
+          ![world.reputation, world.lifePath].every(n => Number.isSafeInteger(n) && n >= 0)) throw Error('leaderboard:invalidSource');
+        const state = this.competition.state(world.playerId);
+        return { playerId: world.playerId, reputation: world.reputation, lifePath: world.lifePath, review: state.localImport?.review.value ?? null,
+          periods: competitivePeriods(world, configFor, state, this.importedBaseline(world.playerId)) };
+      });
+      const snapshot = rankSnapshot(now, signature, config, sources);
+      this.db.exec('COMMIT'); this.rankCache = snapshot;
+    } catch (error) { if (this.db.isTransaction) this.db.exec('ROLLBACK'); throw error; }
+  }
+  async leaderboard(query: RankQuery, token?: string) {
+    const owner = token === undefined ? null : this.session(token); if (token !== undefined && !owner) throw Error('store:invalidSession');
+    validateRankQuery(query, this.registry.active());
+    const now = this.now(), { signature } = this.rankSignature();
+    if (!this.rankCache || now < this.rankCache.at || now >= this.rankCache.until || this.rankCache.signature !== signature) {
+      await (this.rankRefresh ??= this.refreshRanks().finally(() => { this.rankRefresh = undefined; }));
+    }
+    const current = token === undefined ? null : this.session(token);
+    if (owner && (!current || current.playerId !== owner.playerId || current.provider !== owner.provider)) throw Error('store:invalidSession');
+    const cache = this.rankCache!, at = this.now();
+    if (at < cache.at || at >= cache.until || cache.signature !== this.rankSignature().signature) throw Error('leaderboard:stalePage');
+    return { ...rankPage(cache, query, current, at), viewer: current ? { playerId: current.playerId, provider: current.provider } : null };
   }
   configSnapshot(version: string): string {
     const row = this.db.prepare('SELECT snapshot FROM configs WHERE version=?').get(version);
