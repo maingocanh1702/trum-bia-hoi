@@ -2263,3 +2263,16 @@ findings and independently passed its new regression. Reviewer full rerun hit
 local-listen EPERM; host full suite passed. Receipt `.qa/scopes-verification.json`.
 M4 remains11/18 OPEN. Next protected scope/audience/expiry/ticket controls and impact
 preview; automatic segment/cap policy awaits owner choice. No public upload/M9 work.
+
+
+## Scoped admin controls and factual impact — 2026-09-10
+
+Base22320d4: protected HTTP/editor for segment/campaign/player scopes, explicit
+server IDs, VN expiry, priority, predecessor and support-ticket receipts. Loading
+old scopes preserves newer defaults; empty replacement withdraws only that scope.
+Exact pending scope payload survives lost acknowledgement/reload. Impact reuses
+publication composition, counts only affected players/keys and persisted live pins,
+and rejects masked future-expiry failures. It is not a seven-day economic forecast.
+Host verification and native independent review underway. M4 remains11/18 OPEN;
+full forecasts, admin account lifecycle and integrated account/eligibility/locale
+remain. No engine/config/schema change, new public upload or performance tuning.

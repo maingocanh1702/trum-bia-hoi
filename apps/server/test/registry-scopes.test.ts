@@ -249,3 +249,28 @@ test('campaign entitlement publishes immediately for new openings; other scopes 
   assert.equal(r.resolve('alice').raw.entitlements.freeSessionsPerDay.campaignOverride, null);
   assert.equal(f.store.read('alice').world.shift!.configVersion, opening.configVersion);
 });
+
+test('impact counts unmasked keys and both audiences on replacement without persisting generated resolutions', t => {
+  const f=fixture(t),r=f.registry;
+  const old=f.publish(c=>{c.menu.bia.price=110;},f.scope('club',{playerIds:['alice','bob']}));
+  f.publish(c=>{c.menu.bia.price=120;},f.scope('mask',{kind:'campaign',expiresAt:NOW+DAY}));
+  f.store.command('bob',{idempotencyKey:'open',command:{type:'startShift'}});
+  const d=r.propose(f.actor(),f.input(c=>{c.menu.bia.price=130;},f.scope('club',{playerIds:['alice','carol'],previousVersion:old.version})));
+  const counts=()=>['configs','registry_resolutions','registry_audit','commands','events'].map(table=>f.db.prepare('SELECT COUNT(*) n FROM '+table).get()!.n);
+  const before=counts(),impact=r.impact(f.actor(),d.version);
+  assert.equal(impact.audiencePlayers,3);assert.equal(impact.changedPlayers,2);assert.equal(impact.pinnedShifts,1);
+  assert.deepEqual(impact.keys,[{path:'menu.bia.price',players:2}]);assert.deepEqual(counts(),before);
+  r.approve(f.actor(),d.version);r.publish(f.actor(),d.version);
+  assert.equal(r.resolve('alice').raw.menu.bia.price,120);assert.equal(r.resolve('bob').raw.menu.bia.price,config.raw.menu.bia.price);assert.equal(r.resolve('carol').raw.menu.bia.price,130);
+});
+
+test('impact refuses contradictory candidates and future expiry failures using real publication validation', t => {
+  const f=fixture(t),r=f.registry;
+  f.publish(c=>{c.k.band=[2,2.6];},f.scope('band'));
+  f.publish(c=>{c.k.band=[2,2.9];},f.scope('mask',{kind:'campaign',expiresAt:NOW+2*DAY}));
+  const d=r.propose(f.actor(),f.input(c=>{c.k.value=2.7;}));
+  assert.throws(()=>r.impact(f.actor(),d.version),/config:k/);
+  const conflict=r.propose(f.actor(),f.input(c=>{c.k.band=[2,2.8];},f.scope('conflict')));
+  assert.throws(()=>r.impact(f.actor(),conflict.version),/scopeConflict/);
+  assert.equal(f.db.prepare('SELECT 1 FROM registry_publications WHERE version=?').get(d.version),undefined);
+});

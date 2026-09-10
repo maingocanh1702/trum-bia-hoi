@@ -1,0 +1,19 @@
+import type { ConfigScope, Impact } from './admin-api';
+type T=(key:string)=>string;
+export const emptyScope=(kind:ConfigScope['kind']):ConfigScope=>({kind,id:'',playerIds:[],priority:0,expiresAt:null,previousVersion:null,ticketId:null});
+// config-exempt: fixed VN calendar offset, no DST; this input is explicitly labelled UTC+07:00.
+const VN_OFFSET=7*60*60*1000;
+export function scopeTime(at:number|null,locale:string) {return at===null?'—':new Intl.DateTimeFormat(locale,{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Ho_Chi_Minh'}).format(at)+' (UTC+07:00)';}
+export function ScopeEditor({scope,change,load,t,superAdmin}:{scope?:ConfigScope;change:(scope?:ConfigScope)=>void;load:()=>void;t:T;superAdmin:boolean}) {
+ const update=(p:Partial<ConfigScope>)=>scope&&change({...scope,...p});
+ return <div className="admin-scope"><h3>{t('scope.title')}</h3><label>{t('scope.kind')}<select value={scope?.kind??'default'} onChange={e=>change(e.target.value==='default'?undefined:emptyScope(e.target.value as ConfigScope['kind']))}>{['default','segment','campaign','player'].map(k=><option key={k} value={k} disabled={k==='player'&&!superAdmin}>{t('scope.'+k)}</option>)}</select></label>
+ {!scope?<p>{t('scope.global')}</p>:<><p>{t('scope.explicit')}</p><label>{t('scope.id')}<input maxLength={128} value={scope.id} onChange={e=>update({id:e.target.value,previousVersion:null,...(scope.kind==='player'?{playerIds:[e.target.value],ticketId:null}:{})})}/></label><button type="button" disabled={!scope.id} onClick={load}>{t('scope.load')}</button>
+ <p className="admin-version">{t('scope.predecessor')}: {scope.previousVersion??t('scope.new')}</p>
+ {scope.kind!=='player'&&<><label>{t('scope.audience')}<textarea rows={4} value={scope.playerIds.join('\n')} onChange={e=>update({playerIds:e.target.value.split('\n')})}/></label><label>{t('scope.priority')}<input type="number" step={1} value={scope.priority} onChange={e=>update({priority:Number(e.target.value)})}/></label></>}
+ <label>{t('scope.expiry')}<input type="datetime-local" value={scope.expiresAt===null||!Number.isFinite(new Date(scope.expiresAt+VN_OFFSET).getTime())?'':new Date(scope.expiresAt+VN_OFFSET).toISOString().slice(0,16)} onChange={e=>update({expiresAt:e.target.value?Date.parse(e.target.value+'+07:00'):null})}/></label>
+ {scope.kind==='player'&&<label>{t('scope.ticket')}<input value={scope.ticketId??''} onChange={e=>update({ticketId:e.target.value||null})}/></label>}
+ </>}
+ </div>;
+}
+export function ScopeView({scope,t,locale}:{scope?:ConfigScope|null;t:T;locale:string}) {return <dl className="admin-scope-view"><dt>{t('scope.kind')}</dt><dd>{t('scope.'+(scope?.kind??'default'))}</dd>{scope&&<><dt>{t('scope.id')}</dt><dd>{scope.id}</dd><dt>{t('scope.audience')}</dt><dd><pre>{scope.playerIds.join('\n')}</pre></dd><dt>{t('scope.priority')}</dt><dd>{scope.priority}</dd><dt>{t('scope.expiry')}</dt><dd>{scopeTime(scope.expiresAt,locale)}</dd><dt>{t('scope.predecessor')}</dt><dd>{scope.previousVersion??'—'}</dd>{scope.ticketId&&<><dt>{t('scope.ticket')}</dt><dd>{scope.ticketId}</dd></>}</>}</dl>;}
+export function ImpactView({data,t,locale}:{data:Impact;t:T;locale:string}) {return <section className="admin-impact" aria-label={t('impact.title')}><h3>{t('impact.title')}</h3><p>{t('impact.factual')}</p><dl><dt>{t('impact.changed')}</dt><dd>{data.changedPlayers} / {data.audiencePlayers}</dd><dt>{t('impact.pinned')}</dt><dd>{data.pinnedShifts}</dd><dt>{t('at')}</dt><dd>{scopeTime(data.activatesAt,locale)}</dd><dt>{t('impact.measured')}</dt><dd>{scopeTime(data.computedAt,locale)}</dd></dl><ul>{data.keys.map(k=><li key={k.path}><code>{k.path}</code> · {k.players}</li>)}</ul></section>;}

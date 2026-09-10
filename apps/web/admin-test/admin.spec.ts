@@ -11,7 +11,7 @@ async function edit(page:Page,path='menu.bia.price',reason='Browser measured adj
  await page.getByRole('button',{name:'Chỉnh sửa bản mới nhất'}).click();await page.getByLabel('Tìm khóa cấu hình').fill(path);await page.getByRole('combobox',{name:'Khóa cấu hình',exact:true}).selectOption(path);
  const input=page.getByRole('textbox',{name:'Giá trị JSON',exact:true});await input.fill(String(Number(await input.inputValue())+1));await page.getByRole('button',{name:'Áp dụng vào bản nháp'}).click();await page.getByLabel('Lý do thay đổi').fill(reason);await page.getByRole('button',{name:'Xem diff',exact:true}).click();
 }
-async function proposal(page:Page){await page.getByRole('button',{name:'Gửi đề xuất'}).click();await expect(page.getByRole('heading',{name:'Chi tiết phiên bản'})).toBeVisible();return await page.getByLabel('Mã phiên bản',{exact:true}).inputValue();}
+async function proposal(page:Page){const response=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/admin/proposals'&&r.request().method()==='POST');await page.getByRole('button',{name:'Gửi đề xuất'}).click();const receipt=await response;expect(receipt.status()).toBe(200);const {version}=await receipt.json();await expect(page.getByLabel('Mã phiên bản',{exact:true})).toHaveValue(version);await expect(page.getByRole('heading',{name:'Chi tiết phiên bản'})).toBeVisible();return version;}
 const detail=(page:Page)=>page.getByRole('region',{name:'Chi tiết phiên bản'});
 test('real registry edit, diff, publish confirmation, audit and pinned player saves; responsive keyboard UI',async({page,browser})=>{
  const calls:string[]=[];page.on('request',r=>calls.push(new URL(r.url()).pathname));await login(page);
@@ -77,4 +77,54 @@ test('re-importing identical JSON discards an unapplied field edit without chang
  await login(page);await edit(page);const text=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('tbh.admin.draft.v1')!).text);const original=JSON.parse(text).menu.bia.price;
  await page.getByRole('textbox',{name:'Giá trị JSON',exact:true}).fill(String(original+9));await page.locator('input[type=file]').setInputFiles({name:'same-backup.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.getByRole('textbox',{name:'Giá trị JSON',exact:true})).toHaveValue(String(original));
  await page.getByRole('button',{name:'Áp dụng vào bản nháp'}).click();expect(await page.evaluate(()=>JSON.parse(JSON.parse(sessionStorage.getItem('tbh.admin.draft.v1')!).text).menu.bia.price)).toBe(original);
+});
+
+async function playerContext(browser:any) {
+ const ctx=await browser.newContext({baseURL:'http://127.0.0.1:4181',extraHTTPHeaders:{Origin:'http://127.0.0.1:4181'}});
+ const session=await ctx.request.post('/api/auth/session',{data:{}});expect(session.status()).toBe(201);const {playerId}=await session.json();const state=await(await ctx.request.get('/api/player/state')).json();return {ctx,state,playerId};
+}
+async function scopeFields(page:Page,id:string,kind='campaign') {
+ await page.getByRole('combobox',{name:'Loại phạm vi',exact:true}).selectOption(kind);await page.getByLabel('Mã phạm vi / ID người chơi',{exact:true}).fill(kind==='player'?id:'browser-'+id);
+ if(kind!=='player')await page.getByRole('textbox',{name:'ID người chơi — mỗi dòng một ID',exact:true}).fill(id);
+ const actor=(await(await page.request.get('/api/admin/auth')).json()).actor;
+ await page.getByLabel('Hết hạn — giờ Việt Nam (UTC+07:00)',{exact:true}).fill(new Date(actor.issuedAt+86400000+7*3600000).toISOString().slice(0,16));
+}
+
+test('scoped admin publication previews exact audience and opens only the selected server player under its resolved config',async({page,browser})=>{
+ await page.request.get('/api/__test/advance?ms=86400000');await login(page,'super-one');const a=await playerContext(browser),b=await playerContext(browser);
+ await edit(page,'menu.bia.price','Explicit campaign audience');await scopeFields(page,a.playerId);await page.getByRole('button',{name:'Xem diff',exact:true}).click();const v=await proposal(page);
+ await expect(detail(page).getByRole('region',{name:'Phạm vi tác động thực tế'})).toContainText('1 / 1');await expect(detail(page)).toContainText(a.playerId);
+ await detail(page).getByRole('button',{name:'Duyệt đề xuất'}).click();await detail(page).getByRole('button',{name:'Xuất bản',exact:true}).click();await expect(page.getByRole('dialog')).toContainText(a.playerId);
+ await expect(page.getByRole('button',{name:'Hủy',exact:true})).toBeFocused();await page.screenshot({path:'.qa/admin-scopes-mobile.png',fullPage:false});
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.getByRole('button',{name:'Xác nhận xuất bản',exact:true}).click();await expect(detail(page)).toContainText('Đã xuất bản');
+ const connected=await(await a.ctx.request.post('/api/player/connect',{data:{}})).json();await a.ctx.request.post('/api/player/heartbeat',{data:{clientId:connected.clientId,beatSeq:1,active:true,paused:false}});
+ const opening=await(await a.ctx.request.post('/api/player/command',{data:{idempotencyKey:'scope-opening',clientId:connected.clientId,clientSeq:1,command:{type:'startShift'}}})).json();expect(opening.result.ok).toBe(true);expect(opening.configVersion).toMatch(/^resolved-/);
+ const published=await(await page.request.get('/api/admin/config?version='+v)).json();const actual=await(await a.ctx.request.get('/api/player/config?version='+opening.configVersion)).json();expect(actual.menu.bia.price).toBe(published.snapshot.menu.bia.price);
+ expect((await(await b.ctx.request.get('/api/player/state')).json()).configVersion).toBe(b.state.configVersion);
+ await page.setViewportSize({width:1280,height:900});await page.getByLabel('Ngôn ngữ').selectOption('en');await expect(page.getByRole('region',{name:'Version details',exact:true})).toContainText('Campaign');await page.screenshot({path:'.qa/admin-scopes-desktop.png',fullPage:true});await a.ctx.close();await b.ctx.close();
+});
+
+test('scope audience, expiry and priority freeze with the same request across lost acknowledgement and reload',async({page,browser})=>{
+ await page.request.get('/api/__test/advance?ms=86400000');await login(page,'super-one');const a=await playerContext(browser);await edit(page,'menu.lac.price','Scope lost acknowledgement');await scopeFields(page,a.playerId);await page.getByLabel('Độ ưu tiên trong cùng loại phạm vi').fill('3');await page.getByRole('button',{name:'Xem diff',exact:true}).click();
+ let first=true;await page.route('**/api/admin/proposals',async route=>{if(first){first=false;await route.fetch();await route.abort('failed');}else await route.continue();});await page.getByRole('button',{name:'Gửi đề xuất'}).click();await expect(page.getByRole('alert')).toContainText('Mất kết nối');
+ const saved=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('tbh.admin.draft.v1')!));await page.reload();await expect(page.getByRole('combobox',{name:'Loại phạm vi',exact:true})).toBeDisabled();await expect(page.getByLabel('Độ ưu tiên trong cùng loại phạm vi')).toHaveValue('3');await expect(page.getByRole('textbox',{name:'ID người chơi — mỗi dòng một ID',exact:true})).toHaveValue(a.playerId);
+ const v=await proposal(page);const result=await(await page.request.get('/api/admin/config?version='+v)).json();expect(result.scope).toEqual(saved.scope);const registry=await(await page.request.get('/api/admin/registry')).json();expect(registry.proposals.filter((p:any)=>p.reason==='Scope lost acknowledgement')).toHaveLength(1);await a.ctx.close();
+});
+
+test('support operator records one ticket, then Super applies it to exactly one player and the consumed receipt remains visible',async({page,browser})=>{
+ await page.request.get('/api/__test/advance?ms=86400000');await login(page,'support');const a=await playerContext(browser);await page.getByLabel('Mã yêu cầu',{exact:true}).fill('BROWSER-CASE-1');await page.getByLabel('ID người chơi cần hỗ trợ',{exact:true}).fill(a.playerId);await page.getByLabel('Nội dung yêu cầu',{exact:true}).fill('Temporary support configuration');await page.getByRole('button',{name:'Lưu yêu cầu hỗ trợ',exact:true}).click();await expect(page.locator('.admin-tickets')).toContainText('BROWSER-CASE-1');
+ await page.getByRole('button',{name:'Lưu yêu cầu hỗ trợ',exact:true}).click();expect(await page.locator('.admin-tickets>li').count()).toBe(1);const ticket=await(await page.request.get('/api/admin/support')).json();const id=ticket.tickets.find((x:any)=>x.request_key==='BROWSER-CASE-1').id;
+ const ctx=await browser.newContext({baseURL:'http://127.0.0.1:4181'}),admin=await ctx.newPage();await login(admin,'super-one');await edit(admin,'menu.nem.price','Ticketed player override');await scopeFields(admin,a.playerId,'player');await admin.getByLabel('Mã ticket hỗ trợ',{exact:true}).fill(id);await admin.getByRole('button',{name:'Xem diff',exact:true}).click();const v=await proposal(admin);await expect(detail(admin)).toContainText(id);await detail(admin).getByRole('button',{name:'Duyệt đề xuất'}).click();await detail(admin).getByRole('button',{name:'Xuất bản',exact:true}).click();await admin.getByRole('button',{name:'Xác nhận xuất bản',exact:true}).click();await expect(detail(admin)).toContainText('Đã xuất bản');
+ await page.getByRole('button',{name:'Đọc ticket đã lưu'}).click();await expect(page.locator('.admin-tickets')).toContainText(v);await expect(page.locator('.admin-tickets')).toContainText('Đã dùng');await ctx.close();await a.ctx.close();
+});
+
+test('loading a published scope preserves its audience and permits an explicit empty withdrawal',async({page,browser})=>{
+ await page.request.get('/api/__test/advance?ms=86400000');await login(page,'super-one');const a=await playerContext(browser);
+ await edit(page,'menu.lac.price','Withdrawable group');await scopeFields(page,a.playerId,'segment');await page.getByRole('button',{name:'Xem diff',exact:true}).click();const old=await proposal(page);
+ await detail(page).getByRole('button',{name:'Duyệt đề xuất'}).click();await detail(page).getByRole('button',{name:'Xuất bản',exact:true}).click();await page.getByRole('button',{name:'Xác nhận xuất bản',exact:true}).click();await expect(detail(page)).toContainText('Đã xuất bản');
+ await detail(page).getByRole('button',{name:'Dùng làm bản hoàn nguyên',exact:true}).click();
+ await expect(page.getByRole('combobox',{name:'Loại phạm vi',exact:true})).toHaveValue('segment');await expect(page.getByRole('textbox',{name:'ID người chơi — mỗi dòng một ID',exact:true})).toHaveValue(a.playerId);
+ await page.getByRole('button',{name:'Rút các khóa ghi đè',exact:true}).click();await page.getByLabel('Lý do thay đổi').fill('Withdraw this group only');await page.getByRole('button',{name:'Xem diff',exact:true}).click();const version=await proposal(page);
+ const proposed=await(await page.request.get('/api/admin/config?version='+version)).json();expect(proposed.scope.previousVersion).toBe(old);expect(JSON.parse(proposed.draft.keys)).toEqual([]);
+ await expect(detail(page).getByRole('region',{name:'Phạm vi tác động thực tế'})).toContainText('1 / 1');await detail(page).getByRole('button',{name:'Duyệt đề xuất'}).click();await detail(page).getByRole('button',{name:'Xuất bản',exact:true}).click();await page.getByRole('button',{name:'Xác nhận xuất bản',exact:true}).click();await expect(detail(page)).toContainText('Đã xuất bản');await a.ctx.close();
 });

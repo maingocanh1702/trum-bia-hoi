@@ -10,7 +10,7 @@ import { createGameServer } from '../../server/src/http';
 import { totp } from '../../server/src/admin-auth';
 const key=generateKeyPairSync('rsa',{modulusLength:2048}), clientId='browser-admin.apps.googleusercontent.com';
 const dir=mkdtempSync(join(tmpdir(),'tbh-admin-browser-')), accounts=join(dir,'accounts.json');
-const directory=[{subject:'economy',role:'economy'},{subject:'viewer',role:'viewer'},{subject:'super-one',role:'super',totpSecret:'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ'},{subject:'super-two',role:'super',totpSecret:'B'.repeat(32)}];
+const directory=[{subject:'support',role:'support'},{subject:'economy',role:'economy'},{subject:'viewer',role:'viewer'},{subject:'super-one',role:'super',totpSecret:'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ'},{subject:'super-two',role:'super',totpSecret:'B'.repeat(32)}];
 writeFileSync(accounts,JSON.stringify(directory),{mode:0o600});
 let offset=0;const now=()=>Date.now()+offset;const store=new GameStore(join(dir,'game.db'),undefined,now);
 const certs=createServer((_req,res)=>{res.setHeader('Content-Type','application/json');res.end(JSON.stringify({test:key.publicKey.export({type:'spki',format:'pem'})}));});

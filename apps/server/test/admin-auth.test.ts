@@ -224,3 +224,47 @@ test("an admin account switch cannot apply another tab's previously confirmed re
   assert.equal(f.db.prepare('SELECT count(*) n FROM registry_proposals').get()!.n,before);
   assert.equal((await f.call('/admin/proposals',input,a)).status,200);
 });
+
+test('authenticated scoped publication exposes exact metadata and read-only composed impact; rollback preserves newer defaults', async t => {
+  const f=await fixture(t), economy=await f.login('economy-one'), viewer=await f.login('viewer-one');
+  f.store.createPlayer('scope-alice',42);f.store.createPlayer('scope-bob',43);
+  f.store.command('scope-alice',{idempotencyKey:'open',command:{type:'startShift'}});
+  const initial=await f.call('/admin/registry',undefined,economy), baseVersion=initial.data.latest.version;
+  const raw=(await f.call('/admin/config?version='+baseVersion,undefined,economy)).data.snapshot;raw.menu.bia.price++;
+  const scope={kind:'segment',id:'explicit-club',playerIds:['scope-alice'],priority:0,expiresAt:null,previousVersion:null,ticketId:null};
+  assert.equal((await f.call('/admin/proposals',{key:'bad',baseVersion,snapshot:raw,reason:'bad',scope:{...scope,actor:'super'}},economy)).status,400);
+  assert.equal((await f.call('/admin/proposals',{key:'viewer',baseVersion,snapshot:raw,reason:'forbidden',scope},viewer)).status,403);
+  const proposed=await f.call('/admin/proposals',{key:'scoped-http',baseVersion,snapshot:raw,reason:'Club price',scope},economy);assert.equal(proposed.status,200);const version=proposed.data.version;
+  const counts=()=>['configs','registry_proposals','registry_publications','registry_audit','registry_resolutions','players','commands','events'].map(table=>f.db.prepare('SELECT COUNT(*) n FROM '+table).get()!.n);
+  const before=counts(),impact=await f.call('/admin/impact',{version},economy);assert.equal(impact.status,200);assert.equal(impact.data.changedPlayers,1);assert.equal(impact.data.audiencePlayers,1);assert.equal(impact.data.pinnedShifts,1);assert.deepEqual(impact.data.keys,[{path:'menu.bia.price',players:1}]);assert.deepEqual(counts(),before);
+  assert.deepEqual((await f.call('/admin/config?version='+version,undefined,viewer)).data.scope,scope);
+  assert.equal((await f.call('/admin/approve',{version},economy)).status,200);assert.equal((await f.call('/admin/publish',{version},economy)).status,200);
+  assert.equal(f.store.read('scope-alice').world.shift!.configVersion,baseVersion);
+  assert.equal((await f.call('/admin/registry',undefined,economy)).data.proposals.find((p:any)=>p.version===version).scope.id,'explicit-club');
+  const newer=structuredClone(raw);newer.menu.bia.price--;newer.menu.lac.price+=7;
+  const global=await f.call('/admin/proposals',{key:'new-default',baseVersion,snapshot:newer,reason:'Newer default'},economy);const gv=global.data.version;
+  await f.call('/admin/approve',{version:gv},economy);await f.call('/admin/publish',{version:gv},economy);
+  const source=await f.call('/admin/draft-source?version='+version,undefined,economy);assert.equal(source.status,200);assert.equal(source.data.baseVersion,gv);assert.equal(source.data.snapshot.menu.lac.price,newer.menu.lac.price);assert.equal(source.data.snapshot.menu.bia.price,raw.menu.bia.price);assert.equal(source.data.scope.previousVersion,version);
+  assert.deepEqual((await f.call('/admin/scope?kind=segment&id=explicit-club',undefined,economy)).data,source.data);
+  assert.equal((await f.call('/admin/players?after=scope-alice',undefined,viewer)).data.players[0].id,'scope-bob');
+  assert.equal((await f.call('/admin/players?after=x&other=bad',undefined,viewer)).status,400);
+  assert.equal((await f.call('/admin/scope?kind=segment&id=missing',undefined,economy)).status,404);
+});
+
+test('support HTTP tickets require an admin role, recover exact retries and are visibly consumed by a Super player override', async t => {
+  const f=await fixture(t), support=await f.login('support-one'), viewer=await f.login('viewer-one'), admin=await f.login('super-one');f.store.createPlayer('ticket-player',42);
+  const body={key:'CASE-2026-01',playerId:'ticket-player',reason:'Temporary configuration correction'};
+  assert.equal((await f.call('/admin/support',body,viewer)).status,403);assert.equal((await f.call('/admin/support',undefined,viewer)).status,403);
+  assert.equal((await f.call('/admin/support',body)).status,401);
+  const created=await f.call('/admin/support',body,support);assert.equal(created.status,200);assert.deepEqual((await f.call('/admin/support',body,support)).data,created.data);
+  assert.equal((await f.call('/admin/support',{...body,reason:'Changed'},support)).status,409);
+  const source=(await f.call('/admin/draft-source',undefined,admin)).data;source.snapshot.menu.bia.price++;
+  const scope={kind:'player',id:'ticket-player',playerIds:['ticket-player'],priority:0,expiresAt:f.now+86400000,previousVersion:null,ticketId:created.data.ticketId};
+  const input={key:'player-override',baseVersion:source.baseVersion,snapshot:source.snapshot,reason:'Support adjustment',scope};
+  assert.equal((await f.call('/admin/proposals',input,support)).status,403);
+  const proposal=await f.call('/admin/proposals',input,admin);assert.equal(proposal.status,200);const version=proposal.data.version;
+  const before=f.store.read('ticket-player');await f.call('/admin/approve',{version},admin);assert.equal((await f.call('/admin/publish',{version},admin)).status,200);
+  assert.deepEqual(f.store.read('ticket-player'),before);const tickets=await f.call('/admin/support',undefined,support);assert.equal(tickets.data.tickets.length,1);assert.equal(tickets.data.tickets[0].used_version,version);
+  const replacement=await f.call('/admin/scope?kind=player&id=ticket-player',undefined,admin);assert.equal(replacement.data.scope.ticketId,null);assert.equal(replacement.data.scope.previousVersion,version);
+  assert.equal((await f.call('/admin/impact',{version,changedPlayers:0},admin)).status,400);
+});

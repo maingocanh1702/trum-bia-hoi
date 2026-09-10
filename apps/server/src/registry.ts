@@ -12,6 +12,7 @@ export type ConfigScope = { kind: 'segment' | 'campaign' | 'player'; id: string;
 export type ProposalInput = { key: string; baseVersion: string; snapshot: unknown; reason: string; effective?: Effective; scope?: ConfigScope };
 type Proposal = { version: string; request_key: string; base_version: string; fingerprint: string; changed_by: string;
   keys: string; reason: string; effective: Effective; created_at: number };
+type PreviewPublication = Publication & { scope?: ConfigScope };
 type Publication = { seq: number; version: string; effective_at: number; published_at: number; changed_by: string; approved_by: string };
 export const ADMIN_SESSION_MS = 28800000; // config-exempt:BRD9.2 eight-hour admin authentication limit
 const DAY_MS = 86400000, PUBLISH_PER_DAY = 5; // config-exempt: calendar units and admin authentication/abuse limits (BRD9.2/9.4), not gameplay tuning
@@ -200,9 +201,11 @@ export class ConfigRegistry {
       this.audit('SupportRequested', { ticketId: id, ...input, requestedBy: actor.subject, at: now }); return id;
     });
   }
-  private compose(playerId: string, now: number): { config: Config; sources: string[] } {
-    const base = this.active(now), latest = new Map<string, ReturnType<ConfigRegistry['scopedPublications']>[number]>();
-    for (const entry of this.scopedPublications()) if (entry.effective_at <= now) latest.set(JSON.stringify([entry.scope.kind, entry.scope.id]), entry);
+  private compose(playerId: string, now: number, candidate?: PreviewPublication): { config: Config; sources: string[] } {
+    const base = candidate && !candidate.scope && candidate.effective_at <= now ? this.config(candidate.version) : this.active(now), latest = new Map<string, ReturnType<ConfigRegistry['scopedPublications']>[number]>();
+    const entries = this.scopedPublications();
+    if (candidate?.scope) entries.push({ ...candidate, scope: candidate.scope });
+    for (const entry of entries) if (entry.effective_at <= now) latest.set(JSON.stringify([entry.scope.kind, entry.scope.id]), entry);
     const rank = { segment: 0, campaign: 1, player: 2 };
     const selected = [...latest.values()].filter(p => (p.scope.expiresAt === null || p.scope.expiresAt > now) && p.scope.playerIds.includes(playerId))
       .sort((a, b) => rank[a.scope.kind] - rank[b.scope.kind] || a.scope.priority - b.scope.priority || a.seq - b.seq);
@@ -234,11 +237,13 @@ export class ConfigRegistry {
     };
     return this.db.isTransaction ? action() : this.transaction(action);
   }
-  private validatePublications(now: number) {
-    const entries = this.scopedPublications(), players = new Set(entries.flatMap(p => p.scope.playerIds));
-    const boundaries = new Set([now, ...this.db.prepare('SELECT effective_at FROM registry_publications WHERE effective_at>=?').all(now).map(r => Number(r.effective_at)),
+  private validatePublications(now: number, candidate?: PreviewPublication) {
+    const entries = this.scopedPublications();
+    if (candidate?.scope) entries.push({ ...candidate, scope: candidate.scope });
+    const players = new Set(entries.flatMap(p => p.scope.playerIds));
+    const boundaries = new Set([now, ...(candidate ? [candidate.effective_at] : []), ...this.db.prepare('SELECT effective_at FROM registry_publications WHERE effective_at>=?').all(now).map(r => Number(r.effective_at)),
       ...entries.flatMap(p => p.scope.expiresAt !== null && p.scope.expiresAt >= now ? [p.scope.expiresAt] : [])]);
-    for (const at of boundaries) for (const player of players) this.compose(player, at);
+    for (const at of boundaries) for (const player of players) this.compose(player, at, candidate);
   }
   private actor(actor: AdminActor, now: number) {
     if (!actor || !validGoogleSubject(actor.subject) || !['super', 'economy', 'game', 'support', 'viewer'].includes(actor.role) ||
@@ -264,8 +269,8 @@ export class ConfigRegistry {
     this.actor(actor, this.now());
     if (!Number.isSafeInteger(before) || before < 1) throw Error('registry:invalidInput');
     const proposals = this.db.prepare(`SELECT rowid AS cursor,version,base_version,changed_by,keys,reason,effective,created_at
-      FROM registry_proposals WHERE rowid<? AND version NOT IN (SELECT version FROM registry_scopes) ORDER BY rowid DESC LIMIT 50`).all(before); // config-exempt:admin pagination bound
-    return { latest: this.latest(), activeVersion: this.active().version, proposals,
+      FROM registry_proposals WHERE rowid<? ORDER BY rowid DESC LIMIT 50`).all(before); // config-exempt:admin pagination bound
+    return { latest: this.latest(), activeVersion: this.active().version, proposals: proposals.map(p => ({ ...p, scope: this.scope(String(p.version)) ?? null })),
       nextCursor: proposals.length === 50 ? Number(proposals.at(-1)!.cursor) : null }; // config-exempt:admin pagination bound
   }
   details(actor: AdminActor, version: string) {
@@ -277,7 +282,8 @@ export class ConfigRegistry {
     const approval = this.db.prepare('SELECT approved_by,approved_at FROM registry_approvals WHERE version=?').get(version) ?? null;
     const publication = this.db.prepare('SELECT * FROM registry_publications WHERE version=?').get(version) ?? null;
     const permitted = (approve: boolean) => { if (!policy) return false; try { this.permit(actor, policy, approve, this.scope(version)); return true; } catch { return false; } };
-    return { snapshot: config.raw, scope: this.scope(version) ?? null, draft: draft ?? null,
+    const scope = this.scope(version), previousVersion = scope?.previousVersion;
+    return { snapshot: config.raw, scope: scope ?? null, previous: previousVersion ? { snapshot: this.config(previousVersion).raw, scope: this.scope(previousVersion)! } : null, draft: draft ?? null,
       permissions: { propose: !['support', 'viewer'].includes(actor.role),
         approve: !publication && !approval && permitted(true) && (policy?.tier !== 'A' || draft?.changed_by !== actor.subject),
         publish: !publication && !!approval && permitted(false) },
@@ -340,6 +346,68 @@ export class ConfigRegistry {
       this.audit('ConfigApproved', { version, approvedBy: actor.subject, at: now }); return draft;
     });
   }
+  private publicationAt(draft: Proposal, now: number) {
+    const scope = this.scope(draft.version), base = this.config(draft.base_version), policy = this.policy(JSON.parse(draft.keys), base, scope);
+    this.currentBase(draft, scope);
+    const latest = scope ? this.predecessor(scope) : this.latest();
+    const at = scheduledAt(now, draft.effective, policy, base);
+    if (scope?.expiresAt !== null && scope?.expiresAt !== undefined && scope.expiresAt <= at) throw Error('registry:invalidExpiry');
+    if (latest && at < latest.effective_at) throw Error('registry:scheduleConflict');
+    return at;
+  }
+  players(actor: AdminActor, after = '') {
+    this.actor(actor, this.now());
+    if (typeof after !== 'string' || after.length > 128) throw Error('registry:invalidInput'); // config-exempt:identity cursor bound
+    const players = this.db.prepare('SELECT id FROM players WHERE id>? ORDER BY id LIMIT 50').all(after); // config-exempt:admin pagination bound
+    return { players, nextCursor: players.length === 50 ? String(players.at(-1)!.id) : null }; // config-exempt:admin pagination bound
+  }
+  supportPage(actor: AdminActor, after = 0) {
+    this.actor(actor, this.now());
+    if (!['super', 'game', 'support'].includes(actor.role)) throw Error('registry:forbidden');
+    if (!Number.isSafeInteger(after) || after < 0) throw Error('registry:invalidInput');
+    const tickets = this.db.prepare(`SELECT s.rowid AS cursor,s.*,u.version AS used_version FROM registry_support s
+      LEFT JOIN registry_support_uses u ON u.ticket_id=s.id WHERE s.rowid>? ORDER BY s.rowid LIMIT 50`).all(after); // config-exempt:admin pagination bound
+    return { tickets, nextCursor: tickets.length === 50 ? Number(tickets.at(-1)!.cursor) : null }; // config-exempt:admin pagination bound
+  }
+  draftSource(actor: AdminActor, version?: string) {
+    this.actor(actor, this.now());
+    const base = this.config(this.latest().version), source = version ? this.config(version) : base;
+    const scope = version ? this.scope(version) : undefined, snapshot = structuredClone(scope ? base.raw : source.raw);
+    if (scope) patch(snapshot, source.raw, JSON.parse(this.proposal(version!).keys));
+    snapshot._meta = { ...base.raw._meta };
+    return { baseVersion: base.version, base: base.raw, snapshot, scope: scope ? { ...scope, previousVersion: this.predecessor(scope)?.version ?? null,
+      ticketId: scope.kind === 'player' ? null : scope.ticketId } : null };
+  }
+  scopeSource(actor: AdminActor, kind: string, id: string) {
+    this.actor(actor, this.now());
+    if (!['segment', 'campaign', 'player'].includes(kind) || !id || id.length > 128) throw Error('registry:invalidInput'); // config-exempt:scope identity protocol
+    const last = this.scopedPublications().filter(p => p.scope.kind === kind && p.scope.id === id).at(-1);
+    if (!last) throw Error('registry:missingScope'); return this.draftSource(actor, last.version);
+  }
+  impact(actor: AdminActor, version: string) {
+    return this.transaction(now => {
+      this.actor(actor, now);
+      const draft = this.proposal(version), scope = this.scope(version), at = this.publicationAt(draft, now);
+      if (this.db.prepare('SELECT 1 FROM registry_publications WHERE version=?').get(version)) throw Error('registry:alreadyPublished');
+      const candidate: PreviewPublication = { seq: Number(this.db.prepare('SELECT MAX(seq) AS n FROM registry_publications').get()!.n) + 1,
+        version, scope, effective_at: at, published_at: now, changed_by: draft.changed_by, approved_by: 'preview' };
+      this.validatePublications(now, candidate);
+      const previous = scope?.previousVersion ? this.scope(scope.previousVersion)?.playerIds ?? [] : [];
+      const ids = scope ? [...new Set([...scope.playerIds, ...previous])] : this.db.prepare('SELECT id FROM players').all().map(p => String(p.id));
+      let changedPlayers = 0, pinnedShifts = 0; const keys = new Map<string, number>();
+      for (const id of ids) {
+        const before = this.compose(id, at).config, after = this.compose(id, at, candidate).config;
+        const changes = changedPaths(before.raw, after.raw).filter(k => !under(k, '_meta'));
+        if (changes.length) {
+          changedPlayers++; for (const key of changes) keys.set(key, (keys.get(key) ?? 0) + 1);
+          const row = this.db.prepare('SELECT projection FROM players WHERE id=?').get(id)!;
+          if (['open', 'closing'].includes(JSON.parse(String(row.projection)).phase)) pinnedShifts++;
+        }
+      }
+      return { version, computedAt: now, activatesAt: at, expiresAt: scope?.expiresAt ?? null, audiencePlayers: ids.length,
+        changedPlayers, pinnedShifts, keys: [...keys].sort(([a], [b]) => a.localeCompare(b)).map(([path, players]) => ({ path, players })) };
+    });
+  }
   publish(actor: AdminActor, version: string): Publication {
     return this.transaction(now => {
       this.actor(actor, now);
@@ -349,11 +417,7 @@ export class ConfigRegistry {
       if (!approval) throw Error('registry:approvalRequired');
       const existing = this.db.prepare('SELECT * FROM registry_publications WHERE version=?').get(version) as Publication | undefined;
       if (existing) return existing;
-      this.currentBase(draft, scope);
-      const latest = scope ? this.predecessor(scope) : this.latest();
-      const at = scheduledAt(now, draft.effective, policy, base);
-      if (scope?.expiresAt !== null && scope?.expiresAt !== undefined && scope.expiresAt <= at) throw Error('registry:invalidExpiry');
-      if (latest && at < latest.effective_at) throw Error('registry:scheduleConflict');
+      const at = this.publicationAt(draft, now);
       const today = activation(now, 'next_day', base) - DAY_MS;
       const count = Number(this.db.prepare('SELECT COUNT(*) AS n FROM registry_publications WHERE changed_by=? AND published_at>=?').get(draft.changed_by, today)!.n);
       if (count >= PUBLISH_PER_DAY) throw Error('registry:rateLimited');

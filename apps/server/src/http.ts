@@ -89,7 +89,7 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
       }
       if (!req.url?.startsWith('/') || req.url.startsWith('//')) throw new HttpError(400, 'invalidUrl');
       const route = new URL(req.url, options.origin), path = route.pathname;
-      if (route.search && !['/admin/registry', '/admin/config', '/admin/audit'].includes(path) && path !== '/player/events' && path !== '/player/config') throw new HttpError(400, 'invalidQuery');
+      if (route.search && !['/admin/registry', '/admin/config', '/admin/audit', '/admin/players', '/admin/support', '/admin/scope', '/admin/draft-source'].includes(path) && path !== '/player/events' && path !== '/player/config') throw new HttpError(400, 'invalidQuery');
       if (path.startsWith('/admin/')) {
         // Body IO precedes all access decisions. Actor fields never cross this boundary.
         const body = req.method === 'POST' ? await json(req, path === '/admin/proposals' ? 524288 : BODY_BYTES) : undefined; // config-exempt:512KiB bounded full-config JSON input
@@ -130,14 +130,38 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
         };
         if (req.method === 'GET' && path === '/admin/registry') { reply(200, registry.index(actor, cursor('before', Number.MAX_SAFE_INTEGER))); return; }
         if (req.method === 'GET' && path === '/admin/audit') { reply(200, registry.auditPage(actor, cursor('after', 0))); return; }
+        if (req.method === 'GET' && path === '/admin/players') {
+          if (route.search && (route.searchParams.size !== 1 || !route.searchParams.has('after'))) throw new HttpError(400, 'invalidQuery');
+          reply(200, registry.players(actor, route.searchParams.get('after') ?? '')); return;
+        }
+        if (req.method === 'GET' && path === '/admin/support') { reply(200, registry.supportPage(actor, cursor('after', 0))); return; }
+        if (req.method === 'POST' && path === '/admin/support') {
+          const input = fields(['key', 'playerId', 'reason']);
+          reply(200, { ticketId: registry.requestSupport(actor, input as {key:string; playerId:string; reason:string}) }); return;
+        }
+        if (req.method === 'GET' && path === '/admin/scope') {
+          if (route.searchParams.size !== 2 || !route.searchParams.has('kind') || !route.searchParams.has('id')) throw new HttpError(400, 'invalidQuery');
+          reply(200, registry.scopeSource(actor, route.searchParams.get('kind')!, route.searchParams.get('id')!)); return;
+        }
+        if (req.method === 'GET' && path === '/admin/draft-source') {
+          const version = route.searchParams.get('version');
+          if (route.search && (route.searchParams.size !== 1 || !version || version.length > 128)) throw new HttpError(400, 'invalidVersion'); // config-exempt:version protocol bound
+          reply(200, registry.draftSource(actor, version ?? undefined)); return;
+        }
+        if (req.method === 'POST' && path === '/admin/impact') {
+          const input = fields(['version']);
+          if (typeof input.version !== 'string' || !input.version || input.version.length > 128) throw new HttpError(400, 'invalidVersion'); // config-exempt:version protocol bound
+          reply(200, registry.impact(actor, input.version)); return;
+        }
         if (req.method === 'GET' && path === '/admin/config') {
           const version = route.searchParams.get('version');
           if (route.searchParams.size !== 1 || !version || version.length > 128) throw new HttpError(400, 'invalidVersion'); // config-exempt:transport string bound
           reply(200, registry.details(actor, version)); return;
         }
         if (req.method === 'POST' && path === '/admin/proposals') {
-          const input = fields(['key', 'baseVersion', 'snapshot', 'reason', 'effective']);
+          const input = fields(['key', 'baseVersion', 'snapshot', 'reason', 'effective', 'scope']);
           if (typeof input.baseVersion !== 'string' || input.baseVersion.length > 128) throw new HttpError(400, 'invalidVersion'); // config-exempt:transport string bound
+          if (input.scope !== undefined && (!record(input.scope) || Object.keys(input.scope).sort().join(',') !== 'expiresAt,id,kind,playerIds,previousVersion,priority,ticketId')) throw new HttpError(400, 'invalidBody');
           const draft = registry.propose(actor, input as ProposalInput);
           reply(200, { version: draft.version }); return;
         }
@@ -222,6 +246,7 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
         'registry:invalidActor': 401, 'registry:forbidden': 403, 'registry:distinctApprover': 403,
         'store:heartbeatClock': 400, 'registry:missingVersion': 404, 'registry:missingProposal': 404, 'registry:rateLimited': 429,
         'registry:staleBase': 409, 'registry:scheduleConflict': 409, 'registry:keyConflict': 409,
+        'registry:scopeConflict': 409, 'registry:invalidTicket': 409, 'registry:alreadyPublished': 409, 'registry:missingScope': 404, 'registry:invalidScope': 400, 'registry:invalidExpiry': 400,
         'registry:alreadyApproved': 409, 'registry:approvalRequired': 409,
       };
       if (pathIsAdmin(req.url) && error instanceof Error && (error.message.startsWith('registry:') || error.message.startsWith('config:') || error.message.startsWith('admin:') || error.message === 'store:heartbeatClock')) {

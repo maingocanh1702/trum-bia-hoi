@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-10 08:22 · **Branch hiện tại:** `codex/game-build-isolated`
+> **Cập nhật:** 2026-09-10 08:53 · **Branch hiện tại:** `codex/game-build-isolated`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -227,7 +227,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 3
-- **Notes:** Web server authority/outbox/reconnect936e9d5 đã kiểm chứng. Schema8 default registry c1e953c: immutable proposal/approval/audit, role/tier decisions, VN day/season activation và pin khi mở ca; seed mới không tự kích hoạt.310engine/server,10remote browser, config/build,10kcohorts2.4186–2.8738/15rush qua. Review P2 giới hạn tác giả đã sửa; catalog rename bị chặn trước khi ảnh hưởng career; correction CLEAN. Schema9 admin Google/TOTP API6f42575 đã qua320tests/config/build và10remote browser; review CLEAN, typecheck độc lập qua. Editor `/admin`56a0a44 đã kiểm chứng:321engine/server,11admin/10remote browser, config/build qua. Review P2 buffer khi import JSON giống hệt đã sửa; review cuối CLEAN. Scoped core d91b92a đã kiểm chứng:334engine/server,13scope cases; timing campaign đã sửa theo review, regression độc lập qua; config/build,21browser,10kcohorts/15rush qua. Scope UI/forecasts/emergency/account/import/eligibility/locale và segment/cap policy còn thiếu; xem docs/scoped-config-registry.md. M4 đạt11/18 OPEN; xem docs/admin-editor.md. Xem docs/config-registry.md và .qa/registry-verification.json.
+- **Notes:** Web server authority/outbox/reconnect936e9d5 đã kiểm chứng. Schema8 default registry c1e953c: immutable proposal/approval/audit, role/tier decisions, VN day/season activation và pin khi mở ca; seed mới không tự kích hoạt.310engine/server,10remote browser, config/build,10kcohorts2.4186–2.8738/15rush qua. Review P2 giới hạn tác giả đã sửa; catalog rename bị chặn trước khi ảnh hưởng career; correction CLEAN. Schema9 admin Google/TOTP API6f42575 đã qua320tests/config/build và10remote browser; review CLEAN, typecheck độc lập qua. Editor `/admin`56a0a44 đã kiểm chứng:321engine/server,11admin/10remote browser, config/build qua. Review P2 buffer khi import JSON giống hệt đã sửa; review cuối CLEAN. Scoped core d91b92a đã kiểm chứng:334engine/server,13scope cases; timing campaign đã sửa theo review, regression độc lập qua; config/build,21browser,10kcohorts/15rush qua. Protected scope editor + factual impact đã có, đang verify/review (docs/admin-scopes.md). Forecasts/emergency/account/import/eligibility/locale và segment/cap policy còn thiếu; xem docs/scoped-config-registry.md. M4 đạt11/18 OPEN; xem docs/admin-editor.md. Xem docs/config-registry.md và .qa/registry-verification.json.
 
 ### F12 — Giải Nhậu & Vụ Bia — 8 bậc, 2 Vụ Bia song song
 

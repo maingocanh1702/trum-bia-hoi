@@ -247,3 +247,15 @@ its regression and documentation. `.qa/review-scopes.txt` identified the campaig
 entitlement timing P2; `.qa/review-scopes-correction.txt` reports no remaining finding
 and independently passed the regression. Reviewer full HTTP run was sandbox-blocked;
 host suite passed. This internal core alone closes no additional ROADMAP criterion.
+
+
+## E12 — scoped admin transport/editor (review pending)
+
+Base22320d4: protected scope/support/source endpoints and VI/EN controls are wired
+to real registry publication/opening. Preview is factual saved-player/key impact,
+including previous audiences and masking; it does not claim seven-day economy
+forecasts. M4 acceptance count stays11/18; review and final evidence pending.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 scope UI implementation | Added protected scoped editor and factual impact; full verification/review pending. No additional milestone marked complete. |
