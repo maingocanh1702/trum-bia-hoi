@@ -91,7 +91,8 @@ test('closing while verification is pending keeps the shift paused until the lin
   const barrier = new Promise<void>(resolve => { release = resolve; });
   await page.route('**/api/auth/google', async route => { held = true; await barrier; await route.continue(); });
   await dialog.getByRole('button', { name: 'Tiếp tục với Google', exact: true }).click(); await expect.poll(() => held).toBe(true);
-  await dialog.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
+  await expect(dialog.getByRole('button', { name: 'Chơi không đăng nhập', exact: true })).toBeDisabled();
+  await dialog.getByRole('button', { name: 'Tài khoản ×', exact: true }).click();
   await expect(dialog).not.toBeVisible(); await expect(page.locator('.network-status')).toContainText('Đang xác nhận tài khoản');
   const paused = (await snapshot(page)).world; expect(paused.paused).toBe(true);
   await page.waitForTimeout(1200); expect((await snapshot(page)).world.staminaMs).toBe(paused.staminaMs);

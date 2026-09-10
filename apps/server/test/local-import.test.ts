@@ -32,13 +32,17 @@ function localGame(id = 'local-one', c = config) {
 }
 
 test('claiming a local live shift preserves its full archive, source IDs and pending review across rotation, replay and restart', async t => {
-  const f = fixture(t), s = f.store, account = f.login(), other = f.login('other'), local = localGame();
+  const f = fixture(t), s = f.store, guest = s.createGuestSession(86400000);
+  const account = s.signInGoogle(guest.token, s.issueGoogleChallenge(guest.token).nonce, { subject: 'one' }, 86400000);
+  const other = f.login('other'), local = localGame();
   const old = s.read(account.playerId);
   s.command(account.playerId, { idempotencyKey: 'empty-presence', command: { type: 'activity', active: false } });
   const receipt = await s.claimLocal(account.token, local.text);
   assert.equal(receipt.review, 'pending'); assert.equal(receipt.playerId, local.game.playerId);
   assert.equal(receipt.commandSeq, local.game.log.length); assert.equal(receipt.eventSeq, local.game.world.events.length);
   assert.equal(s.session(account.token), null); assert.ok(s.session(other.token));
+  assert.equal(s.guestCredentialPlayerId(account.token), null, 'old Google credential stays Google after the account moves');
+  assert.equal(s.guestCredentialPlayerId(guest.token), null, 'a guest credential retired by Google linking is never downgraded after import');
   assert.equal(s.session(receipt.token!)!.playerId, local.game.playerId);
   assert.deepEqual(s.read(receipt.playerId).world, local.game.world);
   assert.equal(f.db.prepare('SELECT projection FROM players WHERE id=?').get(account.playerId) !== undefined, true);
@@ -51,6 +55,8 @@ test('claiming a local live shift preserves its full archive, source IDs and pen
   assert.equal(again.token, undefined); assert.equal(again.digest, receipt.digest);
   await assert.rejects(s.claimLocal(receipt.token!, local.text + ' '), /importConflict/);
   s.close(); const restarted = f.open(); assert.deepEqual(restarted.localImport(receipt.token!), again);
+  assert.equal(restarted.guestCredentialPlayerId(account.token), null);
+  assert.equal(restarted.guestCredentialPlayerId(guest.token), null);
   assert.deepEqual(restarted.read(receipt.playerId).world, local.game.world);
   const connected = restarted.connect(receipt.playerId);
   const retry = restarted.clientCommand(receipt.playerId, { clientId: connected.clientId, clientSeq: 1,

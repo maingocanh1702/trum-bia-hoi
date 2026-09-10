@@ -190,7 +190,9 @@ export class GameStore {
   guestCredentialPlayerId(token: string): string | null {
     const hash = sessionHash(token);
     const row = hash && this.db.prepare(`SELECT s.player_id FROM sessions s LEFT JOIN google_accounts a ON a.player_id=s.player_id
-      WHERE s.token_hash=? AND a.subject IS NULL`).get(hash);
+      WHERE s.token_hash=? AND a.subject IS NULL AND NOT EXISTS (
+        SELECT 1 FROM account_logins l JOIN sessions authenticated ON authenticated.token_hash=l.session_hash
+        WHERE authenticated.player_id=s.player_id)`).get(hash);
     return row ? String(row.player_id) : null;
   }
   revokeSession(token: string) {

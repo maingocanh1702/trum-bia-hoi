@@ -55,6 +55,6 @@ export function Account({ remote, locale, t, close }: { remote: RemoteGame | nul
       {!busy && phase === 'finished' && <button className="primary full" disabled={remote?.state !== 'online'} onClick={() => setAttempt(n => n + 1)}>{t('account.retry')}</button>}
       {remote?.state !== 'online' && !busy && <p role="status">{t(`network.${remote?.state}`)}</p>}
     </>}
-    <button className="secondary full" onClick={close}>{t(provider === 'google' ? 'account.continue' : 'account.later')}</button>
+    <button className="secondary full" disabled={busy} onClick={close}>{t(provider === 'google' ? 'account.continue' : 'account.later')}</button>
   </div>;
 }
