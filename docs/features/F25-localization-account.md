@@ -2,6 +2,8 @@
 
 > Phase 1+. First-run language choice and account flow. Players can play as guest, but account login is required for durable cloud save and competitive/social surfaces.
 
+> **Current owner decision — 2026-09-10 15:30, Steer #5:** guest keeps stall, coins, upgrades and current day/shift on this device across browser/new-tab visits. Durable player history, achievements, ranking and cross-device restore require a Google account. New Google attaches current progress once; existing Google restores directly. This supersedes the 08:18 fresh-visit interpretation and conflicting historical checkpoints below. See [account modes](../account-modes.md). No guest data-loss warning on leaving.
+
 ## 1. Scope
 
 - First-launch language selection: Vietnamese (`vi`) or English (`en`).
@@ -319,3 +321,5 @@ live Google/minute5 acceptance, historical import and competitive access checks.
 | 2026-09-10 reauthentication verified | ddc77a9 adds reviewed exact-account recovery without discarding queued commands; E19 records evidence. No expired credential revival, engine/economy change or whole F25 completion claimed. |
 
 | 2026-09-10 invitations | Optional first-shift/season-entry invitations now share a player-keyed `loginPrompt.cooldownShifts` preference and exactly three benefits; explicit account access remains available. Native departure warning opens the invitation only if the guest stays; generic text/reload/mobile limitations are recorded in [login-invitations](../login-invitations.md). Current owner decision supersedes durable guest reopen and merging into an existing Google account: new Google claims this visit once, existing Google restores its own saved progress. Verification remains pending until the slice receipt. |
+
+| 2026-09-10 15:30 Steer #5 | Owner restores guest device persistence across new tabs/browser reopen; keep writer lock/exact-session guard and Google attach/restore. Account-only durable history, achievements, ranking and cross-device restore remain. Supersedes 08:18 and prior ephemeral-guest interpretation; guest departure upsell removed. See account-modes.md and current receipt for verification. |

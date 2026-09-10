@@ -519,7 +519,7 @@
   "account.free": "Chơi miễn phí, không cần đăng nhập.",
   "account.linked": "Tiến độ được lưu vào tài khoản Google của bạn.",
   "account.benefits": "Lợi ích khi đăng nhập",
-  "account.benefit.save": "Lưu tiến độ",
+  "account.benefit.save": "Lưu vào tài khoản",
   "account.benefit.achievements": "Thành tích",
   "account.benefit.leaderboard": "Đua top",
   "account.localCopy": "Tiến độ này đang lưu trên thiết bị. Liên kết tài khoản cho bản lưu này chưa sẵn sàng; bạn vẫn có thể xuất bản sao trong Cài đặt.",
@@ -537,13 +537,13 @@
   "account.modes": "Chọn cách chơi",
   "account.signIn": "Đăng ký / Đăng nhập bằng Google",
   "account.playGuest": "Chơi không đăng nhập",
-  "account.guestCopy": "Không lưu lịch sử chơi, thành tích hay tiến độ sau khi đóng tab. Đăng nhập Google để lưu lại.",
+  "account.guestCopy": "Tiến độ quán được giữ trên thiết bị này khi đóng rồi mở lại. Lịch sử chơi, thành tích, xếp hạng và khôi phục trên thiết bị khác cần tài khoản Google.",
   "account.savedCopy": "Lưu tiến độ, thành tích và khôi phục trên thiết bị khác. Nếu đã có tài khoản, tiếp tục tiến độ đã lưu.",
   "account.reauthenticate": "Đăng nhập lại với Google",
   "account.recoveryCopy": "Đăng nhập đúng tài khoản đã chơi để khôi phục tiến độ và các thao tác đang chờ.",
   "account.wrongAccount": "Tài khoản Google này chưa khớp tiến độ đang chờ. Hãy chọn tài khoản đã chơi.",
   "account.invitation": "Lưu tiến độ của bạn",
-  "onboarding.login.firstShift": "Xong ca đầu rồi! Lưu công sức hôm nay nhé.",
+  "onboarding.login.firstShift": "Xong ca đầu rồi! Tài khoản Google mở thêm lịch sử, thành tích và xếp hạng.",
   "onboarding.login.leaderboard": "Đăng nhập để ghi tên trên bảng xếp hạng.",
-  "onboarding.login.leave": "Trước khi rời quán, lưu công sức hôm nay nhé."
+  "onboarding.login.leave": "Dùng tài khoản Google để có lịch sử chơi, thành tích và xếp hạng."
 }

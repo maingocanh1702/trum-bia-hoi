@@ -1,6 +1,5 @@
-import type { Config, WorldView } from '../../../packages/engine/src';
+import { config as defaults, type Config, type WorldView } from '../../../packages/engine/src';
 import type { Settings } from './local';
-import seed from '../../../docs/config/economy.tbh.json';
 
 export type LoginTouchpoint = 'firstShift' | 'leaderboard' | 'leave';
 /** Presentation only: completed shifts and earnings come from the current server snapshot. */
@@ -10,6 +9,7 @@ export function canInvite(settings: Settings, game: { world: WorldView; config: 
   if (touchpoint === 'firstShift') return c.loginPrompt.afterFirstShift && w.completedShifts === 1; // config-exempt: the first completed shift is an ordinal, not a balance threshold
   if (touchpoint === 'leaderboard') return c.loginPrompt.onLeaderboardOpen;
   // Pinned snapshots before 2.0.2 have no presentation thresholds; the registry seed supplies them.
-  const progress = 'leaveProgress' in c.loginPrompt ? c.loginPrompt.leaveProgress : seed.onboarding.loginPrompt.leaveProgress;
-  return c.loginPrompt.onLeaveWithProgress && (w.completedShifts >= progress.minCompletedShifts || w.lifetimeEarned >= progress.minLifetimeEarned);
+  const fallback = defaults.values.onboarding.loginPrompt;
+  const progress = 'leaveProgress' in c.loginPrompt ? c.loginPrompt.leaveProgress : 'leaveProgress' in fallback ? fallback.leaveProgress : null;
+  return Boolean(progress && c.loginPrompt.onLeaveWithProgress && (w.completedShifts >= progress.minCompletedShifts || w.lifetimeEarned >= progress.minLifetimeEarned));
 }

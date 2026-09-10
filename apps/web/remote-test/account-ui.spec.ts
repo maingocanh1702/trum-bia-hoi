@@ -1,4 +1,7 @@
-import { test, expect, type Page } from '@playwright/test';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { chromium, test, expect, type Page } from '@playwright/test';
 const session = async (page: Page) => (await (await page.request.post('/api/auth/session', { data: {}, headers: { Origin: 'http://127.0.0.1:4179' } })).json());
 const snapshot = async (page: Page) => (await (await page.request.get('/api/player/state')).json());
 const journal = (page: Page) => page.evaluate(() => JSON.parse(localStorage.getItem('tbh.remote.v1')!));
@@ -27,7 +30,7 @@ for (const [locale, width, height] of [['vi', 360, 740], ['en', 390, 844], ['vi'
   await expect.poll(async () => (await snapshot(page)).world.phase).toBe('open');
   const dialog = await account(page, locale);
   await expect.poll(async () => (await snapshot(page)).world.paused).toBe(true);
-  await expect(dialog.locator('.account-benefits li')).toHaveText(locale === 'vi' ? ['Lưu tiến độ', 'Thành tích', 'Đua top'] : ['Save progress', 'Achievements', 'Compete on the leaderboard']);
+  await expect(dialog.locator('.account-benefits li')).toHaveText(locale === 'vi' ? ['Lưu vào tài khoản', 'Thành tích', 'Đua top'] : ['Save to your account', 'Achievements', 'Compete on the leaderboard']);
   await expect(dialog.getByRole('button', { name: locale === 'vi' ? 'Tiếp tục với Google' : 'Continue with Google', exact: true })).toBeVisible();
   const before = (await snapshot(page)).world, stream = await journal(page); let navigations = 0;
   page.on('framenavigated', f => { if (f === page.mainFrame()) navigations++; });
@@ -170,7 +173,7 @@ for (const locale of ['vi', 'en']) test(`two play modes offer direct Google sign
   await page.getByRole('button', { name: locale === 'vi' ? 'Vào quán' : 'Enter the stall', exact: true }).click();
   const entry = page.getByRole('region', { name: locale === 'vi' ? 'Chọn cách chơi' : 'Choose how to play', exact: true });
   await expect(entry.getByRole('button')).toHaveCount(2);
-  await expect(entry).toContainText(locale === 'vi' ? 'Không lưu lịch sử chơi, thành tích' : 'Play history, achievements and progress are not saved');
+  await expect(entry).toContainText(locale === 'vi' ? 'Lịch sử chơi, thành tích, xếp hạng' : 'Play history, achievements, ranking');
   expect(await entry.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
   await page.screenshot({ path: `.qa/account-modes-${locale}.png`, fullPage: true });
   await entry.getByRole('button', { name: locale === 'vi' ? 'Đăng ký / Đăng nhập bằng Google' : 'Sign up / Sign in with Google', exact: true }).click();
@@ -180,23 +183,49 @@ for (const locale of ['vi', 'en']) test(`two play modes offer direct Google sign
   expect((await snapshot(page)).world.phase).toBe('resting');
 });
 
-test('guest history survives a reload but is not restored when the tab visit ends', async ({ page, context }) => {
-  await enter(page); await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
-  await expect.poll(async () => (await snapshot(page)).world.phase).toBe('open');
-  const before = (await snapshot(page)).world, cookie = (await context.cookies()).find(c => c.name === 'tbh-session');
+async function openAndUpgrade(page: Page) {
+  await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Bom bia', exact: true }).click();
+  await page.getByRole('dialog', { name: 'Bom bia', exact: true }).getByRole('button', { name: /Nâng ·/ }).click();
+  await expect.poll(async () => (await snapshot(page)).world.equipment.keg).toBe(2);
+  await expect.poll(async () => (await journal(page)).pending.length).toBe(0);
+  return (await snapshot(page)).world;
+}
+function expectProgress(actual: any, saved: any) {
+  expect(actual.playerId).toBe(saved.playerId); expect(actual.coins).toBe(saved.coins);
+  expect(actual.equipment).toEqual(saved.equipment); expect(actual.shift.id).toBe(saved.shift.id);
+  expect(saved.daily.day).toBeTruthy(); expect(actual.daily.day).toBe(saved.daily.day);
+  expect(actual.dayShifts).toEqual(saved.dayShifts); expect(actual.dayEarned).toEqual(saved.dayEarned); expect(actual.completedShifts).toBe(saved.completedShifts);
+  expect(actual.phase).toBe(saved.phase);
+}
+test('guest stall, coins, upgrades and current shift survive reload and a new tab on this device', async ({ page, context }) => {
+  await enter(page); const before = await openAndUpgrade(page), stream = await journal(page);
+  const cookie = (await context.cookies()).find(c => c.name === 'tbh-session'); expect(cookie!.expires).toBeGreaterThan(Date.now() / 1000);
   await page.reload(); await expect(page.locator('.network-status')).toContainText('Đã đồng bộ');
-  expect((await snapshot(page)).world.shift.id).toBe(before.shift.id);
-  await page.close(); const next = await context.newPage(); await next.goto('/');
-  await expect(next.getByRole('heading', { name: 'Chọn cách chơi', exact: true })).toBeVisible();
-  await next.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
+  expectProgress((await snapshot(page)).world, before);
+  await page.close(); const next = await context.newPage(); let resets = 0;
+  next.on('request', r => { if (r.url().endsWith('/auth/guest/restart')) resets++; });
+  await next.goto('/'); await next.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
   await expect(next.locator('.network-status')).toContainText('Đã đồng bộ');
-  const fresh = (await snapshot(next)).world;
-  expect(fresh.playerId).not.toBe(before.playerId); expect(fresh.phase).toBe('resting'); expect(fresh.completedShifts).toBe(0);
-  expect(fresh.lifetimeEarned).toBe(0); expect(fresh.peakLeague).toBeNull();
-  expect(cookie).toBeDefined(); expect((await context.cookies()).find(c => c.name === cookie!.name)?.value).not.toBe(cookie!.value);
+  expectProgress((await snapshot(next)).world, before); expect(resets).toBe(0);
+  expect((await journal(next)).clientId).toBe(stream.clientId); expect((await journal(next)).nextSeq).toBe(stream.nextSeq);
+  expect((await context.cookies()).find(c => c.name === cookie!.name)?.value).toBe(cookie!.value);
   await next.getByRole('button', { name: 'Cài đặt', exact: true }).click();
-  await expect(next.getByRole('dialog')).toContainText('Không lưu lịch sử chơi, thành tích');
-  await expect(next.getByRole('dialog')).not.toContainText('Tiến độ được lưu trên server');
+  await expect(next.getByRole('dialog')).toContainText('Tiến độ quán được giữ trên thiết bị này');
+  await expect(next.getByRole('dialog')).toContainText('Lịch sử chơi, thành tích, xếp hạng');
+});
+
+test('guest device progress survives closing and relaunching Chromium with the same browser profile', async () => {
+  const profile = await mkdtemp(join(tmpdir(), 'tbh-guest-device-'));
+  let device = await chromium.launchPersistentContext(profile, { headless: true, baseURL: 'http://127.0.0.1:4179' });
+  try {
+    const page = await device.newPage(); await enter(page); const before = await openAndUpgrade(page), stream = await journal(page);
+    await device.close(); device = await chromium.launchPersistentContext(profile, { headless: true, baseURL: 'http://127.0.0.1:4179' });
+    const next = await device.newPage(); await next.goto('/');
+    await next.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
+    await expect(next.locator('.network-status')).toContainText('Đã đồng bộ'); expectProgress((await snapshot(next)).world, before);
+    expect((await journal(next)).clientId).toBe(stream.clientId); expect((await session(next)).provider).toBe('guest');
+  } finally { await device.close(); await rm(profile, { recursive: true, force: true }); }
 });
 
 test('a Google account restores its progress when opening a new tab visit', async ({ page, context }) => {
@@ -214,47 +243,52 @@ test('a Google account restores its progress when opening a new tab visit', asyn
   expect(restored.coins).toBe(before.coins); expect((await session(next)).provider).toBe('google');
 });
 
-test('a lost restart response never strands a new guest visit behind the expired visit journal', async ({ page, context }) => {
-  await enter(page); const old = (await snapshot(page)).world.playerId; await page.close();
-  const next = await context.newPage(); let lost = false;
-  await next.route('**/api/auth/guest/restart', async route => {
-    if (lost) { await route.continue(); return; }
-    lost = true; const response = await route.fetch(); expect(response.status()).toBe(201);
-    await route.fulfill({ response, body: '{', contentType: 'application/json' });
-  });
+for (const path of ['/auth/session', '/player/connect']) test(`new-tab bootstrap retries ${path} response loss without replacing guest progress or receipts`, async ({ page, context }) => {
+  await enter(page); const before = await openAndUpgrade(page), stream = await journal(page); await page.close();
+  const next = await context.newPage();
+  await next.route(`**/api${path}`, async route => { const response = await route.fetch(); await route.fulfill({ response, body: '{', contentType: 'application/json' }); });
+  await next.addInitScript(() => { (window as any).__entryJournal = localStorage.getItem('tbh.remote.v1'); });
   await next.goto('/'); await expect(next.getByRole('alert')).toContainText('Chưa kết nối');
-  expect(await next.evaluate(() => localStorage.getItem('tbh.remote.v1'))).toBeNull();
-  await next.reload(); await next.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
-  await expect(next.locator('.network-status')).toContainText('Đã đồng bộ');
-  expect((await snapshot(next)).world.playerId).not.toBe(old); expect((await snapshot(next)).world.phase).toBe('resting');
-});
-
-test('a restart whose entire response is lost can recover only a fresh guest from the revoked cookie', async ({ page, context }) => {
-  await enter(page); const old = (await snapshot(page)).world.playerId; await page.close();
-  const next = await context.newPage(); let beforeCookie = '';
-  await next.route('**/api/auth/guest/restart', async route => {
-    const cookies = await context.cookies(); beforeCookie = cookies.find(c => c.name === 'tbh-session')!.value;
-    const response = await route.fetch(); expect(response.status()).toBe(201);
-    // route.fetch itself updates browser cookies: restore them to model headers never arriving.
-    await context.addCookies(cookies); await route.abort();
-  });
-  await next.goto('/'); await expect(next.getByRole('alert')).toContainText('Chưa kết nối');
-  expect((await context.cookies()).find(c => c.name === 'tbh-session')!.value).toBe(beforeCookie);
-  await next.unroute('**/api/auth/guest/restart'); await next.reload();
+  expect(await journal(next)).toEqual(await next.evaluate(() => JSON.parse((window as any).__entryJournal)));
+  expect(await journal(next)).toMatchObject({ playerId: stream.playerId, clientId: stream.clientId, nextSeq: stream.nextSeq, pending: stream.pending });
+  await next.unroute(`**/api${path}`); await next.reload();
   await next.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
   await expect(next.locator('.network-status')).toContainText('Đã đồng bộ');
-  const fresh = (await snapshot(next)).world; expect(fresh.playerId).not.toBe(old); expect(fresh.completedShifts).toBe(0); expect(fresh.phase).toBe('resting');
+  expectProgress((await snapshot(next)).world, before); expect((await journal(next)).clientId).toBe(stream.clientId);
 });
 
-test('a copied tab visit marker cannot restore the old guest after its writer closes', async ({ page, context }) => {
-  await enter(page); const old = (await snapshot(page)).world.playerId;
-  const copied = await page.evaluate(() => ({ ...sessionStorage }));
-  await page.close(); const next = await context.newPage();
-  await next.addInitScript(data => { for (const [k,v] of Object.entries(data)) sessionStorage.setItem(k, v); }, copied);
-  await next.goto('/'); await expect(next.getByRole('heading', { name: 'Chọn cách chơi', exact: true })).toBeVisible();
+for (const committed of [false, true]) test(`new-tab guest recovery applies a pending upgrade once (server committed=${committed})`, async ({ page, context }) => {
+  await enter(page); await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Bom bia', exact: true }).click();
+  const before = (await snapshot(page)).world; let credited: any;
+  await page.route('**/api/player/command', async route => {
+    if (route.request().postDataJSON()?.command.type === 'upgrade') {
+      if (committed && !credited) credited = await (await route.fetch()).json();
+      await route.abort(); return;
+    }
+    await route.continue();
+  });
+  await page.getByRole('dialog').getByRole('button', { name: /Nâng ·/ }).click();
+  await expect.poll(async () => (await journal(page)).pending.length).toBe(1);
+  if (committed) await expect.poll(() => Boolean(credited)).toBe(true);
+  const pending = await journal(page); await page.close();
+  const next = await context.newPage(); await next.goto('/');
   await next.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
   await expect(next.locator('.network-status')).toContainText('Đã đồng bộ');
-  expect((await snapshot(next)).world.playerId).not.toBe(old);
+  await expect.poll(async () => (await journal(next)).pending.length).toBe(0);
+  const after = (await snapshot(next)).world;
+  expect(after.playerId).toBe(before.playerId); expect(after.shift.id).toBe(before.shift.id); expect(after.equipment.keg).toBe(2);
+  expect(after.coins).toBeLessThan(before.coins); if (committed) expect(after.coins).toBe(credited.world.coins);
+  expect((await journal(next)).clientId).toBe(pending.clientId); expect((await journal(next)).nextSeq).toBe(pending.nextSeq);
+  await next.reload(); await expect(next.locator('.network-status')).toContainText('Đã đồng bộ');
+  expect((await snapshot(next)).world.coins).toBe(after.coins);
+});
+
+test('obsolete visit markers cannot replace the authenticated guest progress', async ({ page, context }) => {
+  await enter(page); const before = await openAndUpgrade(page); await page.close(); const next = await context.newPage();
+  await next.addInitScript(() => sessionStorage.setItem('tbh.guest.visit', 'unrelated-obsolete-player'));
+  await next.goto('/'); await next.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
+  await expect(next.locator('.network-status')).toContainText('Đã đồng bộ'); expectProgress((await snapshot(next)).world, before);
 });
 
 test('first visit creates one guest and never restarts the freshly created session', async ({ page }) => {
@@ -264,25 +298,26 @@ test('first visit creates one guest and never restarts the freshly created sessi
   await enter(page); expect(resets).toBe(0); expect(creates).toBe(1);
 });
 
-test('a revoked guest cookie starts fresh without reusing the old outbox or blocking entry', async ({ page, context }) => {
-  await enter(page); const old = (await snapshot(page)).world.playerId, cookies = await context.cookies();
-  await page.request.post('/api/auth/logout', { data: {}, headers: { Origin: 'http://127.0.0.1:4179' } });
-  await context.addCookies(cookies); await page.reload();
-  await page.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
-  await expect(page.locator('.network-status')).toContainText('Đã đồng bộ');
-  const fresh = (await snapshot(page)).world; expect(fresh.playerId).not.toBe(old); expect(fresh.phase).toBe('resting');
-  expect((await journal(page)).playerId).toBe(fresh.playerId); expect((await journal(page)).pending).toEqual([]);
+for (const kind of ['revoked', 'missing', 'expired']) test(`a ${kind} guest credential cannot authorize the retained journal or discard it`, async ({ page, context }) => {
+  await enter(page); const old = await journal(page), cookies = await context.cookies();
+  if (kind === 'missing') await context.clearCookies();
+  else if (kind === 'expired') await page.request.post('/api/__test/advance?ms=3600001');
+  else { await page.request.post('/api/auth/logout', { data: {}, headers: { Origin: 'http://127.0.0.1:4179' } }); await context.addCookies(cookies); }
+  await page.addInitScript(() => { (window as any).__entryJournal = localStorage.getItem('tbh.remote.v1'); });
+  await page.reload(); await expect(page.getByRole('alert')).toContainText('Trạng thái tài khoản không khớp');
+  expect(await journal(page)).toEqual(await page.evaluate(() => JSON.parse((window as any).__entryJournal)));
+  expect(await journal(page)).toMatchObject({ playerId: old.playerId, clientId: old.clientId, nextSeq: old.nextSeq, pending: old.pending }); expect((await session(page)).playerId).not.toBe(old.playerId);
 });
 
-test('an actual opener tab cannot retain copied guest progress after lock refusal then reload', async ({ page }) => {
-  await enter(page); const old = (await snapshot(page)).world.playerId;
+test('an opener tab waits for the writer lock then resumes the same guest and command stream', async ({ page }) => {
+  await enter(page); const before = await openAndUpgrade(page), old = await journal(page);
   const opened = page.waitForEvent('popup'); await page.evaluate(() => { window.open('/'); });
   const clone = await opened; await expect(clone.getByRole('alert')).toContainText('tab khác');
-  expect(await clone.evaluate(() => sessionStorage.getItem('tbh.guest.visit'))).toBeNull();
+  expect(await journal(clone)).toEqual(old);
   await page.close(); await clone.reload();
-  await clone.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
+  // An actual opener can copy the already-chosen play mode, but never the writer lock.
   await expect(clone.locator('.network-status')).toContainText('Đã đồng bộ');
-  expect((await snapshot(clone)).world.playerId).not.toBe(old);
+  expectProgress((await snapshot(clone)).world, before); expect((await journal(clone)).clientId).toBe(old.clientId);
 });
 
 async function signedPlayer(page: Page, subject: string, locale = 'vi') {

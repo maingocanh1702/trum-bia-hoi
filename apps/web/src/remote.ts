@@ -1,7 +1,6 @@
 import { loadConfig, validEnvelope, type Command, type Config, type DomainEvent, type Result, type WorldView, type menuReport } from '../../../packages/engine/src';
 
 const JOURNAL_KEY = 'tbh.remote.v1';
-const GUEST_VISIT_KEY = 'tbh.guest.visit';
 // config-exempt: bootstrap HTTP timeout before the pinned network configuration arrives.
 const BOOT_TIMEOUT_MS = 30000;
 type Action = { clientId: string; clientSeq: number; idempotencyKey: string; command: Command };
@@ -26,7 +25,7 @@ function readJournal(): Journal | null {
       j.accountSwitch !== undefined && (j.accountSwitch !== true || j.pending.length !== 0)) throw new RemoteError('storage');
   return j;
 }
-/** Single-writer command journal. Guest resume lasts only for this tab's visit. */
+/** Device-persistent command journal; one writer and an exact authenticated owner. */
 export class RemoteGame {
   identity!: PlayerSession;
   reauthenticating = false;
@@ -76,14 +75,10 @@ export class RemoteGame {
   }
   static async open(reauthenticate = false) {
     const game = new RemoteGame();
-    const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
     if (!navigator.locks) throw new RemoteError('storage');
     await new Promise<void>((resolve, reject) => {
       game.lockDone = navigator.locks.request(JOURNAL_KEY, { ifAvailable: true }, async lock => {
-        if (!lock) {
-          if (navigation?.type === 'navigate') sessionStorage.removeItem(GUEST_VISIT_KEY);
-          reject(new RemoteError('otherTab')); return;
-        }
+        if (!lock) { reject(new RemoteError('otherTab')); return; }
         await new Promise<void>(done => { game.release = done; resolve(); });
       }).catch(reject);
     });
@@ -97,30 +92,15 @@ export class RemoteGame {
           game.reauthenticating = true; game.state = 'online'; return game;
         }
       }
-      let owner: PlayerSession, created = false;
+      let owner: PlayerSession;
       if (game.journal?.accountSwitch) {
         game.reconcileAccount = true; owner = await game.reconcileSession();
         if (game.world) return game; // Audited target already connected; never reconnect its old stream.
       } else {
         const response = await game.request('/auth/session', {});
-        owner = game.identity = playerSession(response); created = response.created === true;
-        if (created && owner.provider === 'guest' && game.journal && game.journal.playerId === response.previousGuestId) {
-          localStorage.removeItem(JOURNAL_KEY); game.journal = null;
-        }
+        owner = game.identity = playerSession(response);
       }
       if (game.journal && game.journal.playerId !== owner.playerId) throw new RemoteError('conflict');
-      // A fresh navigation (including an opener/duplicate) is a new visit even
-      // when the browser copied sessionStorage. Reload/back preserves this tab.
-      const newVisit = owner.provider === 'guest' && (navigation?.type === 'navigate' || sessionStorage.getItem(GUEST_VISIT_KEY) !== owner.playerId);
-      if (owner.provider === 'guest' && !created && newVisit) {
-        // An absent visit marker never authorizes replacing a Google account.
-        // Probe browser storage before rotating any existing guest credential.
-        sessionStorage.setItem(GUEST_VISIT_KEY, '');
-        // This guest visit ended. Retire its outbox before rotation so a lost
-        // Set-Cookie response cannot strand a fresh guest behind the old journal.
-        localStorage.removeItem(JOURNAL_KEY); game.journal = null;
-        owner = game.identity = playerSession(await game.request('/auth/guest/restart', { playerId: owner.playerId }));
-      }
       const connected: Reply = await game.request('/player/connect', game.journal ? { clientId: game.journal.clientId } : {});
       if (connected.world.playerId !== owner.playerId) throw new RemoteError('conflict');
       if (!game.journal) {
@@ -131,7 +111,6 @@ export class RemoteGame {
         game.journal.heartbeatSeq = connected.heartbeatSeq;
       }
       game.persist(); await game.apply(connected);
-      if (owner.provider === 'guest') sessionStorage.setItem(GUEST_VISIT_KEY, owner.playerId);
       return game;
     } catch (error) { await game.close(); throw error; }
   }

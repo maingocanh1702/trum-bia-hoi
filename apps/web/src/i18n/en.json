@@ -519,7 +519,7 @@
   "account.free": "Play for free, without signing in.",
   "account.linked": "Your progress is saved to your Google account.",
   "account.benefits": "Sign-in benefits",
-  "account.benefit.save": "Save progress",
+  "account.benefit.save": "Save to your account",
   "account.benefit.achievements": "Achievements",
   "account.benefit.leaderboard": "Compete on the leaderboard",
   "account.localCopy": "This progress is saved on your device. Linking this save is not available yet; you can still export a backup in Settings.",
@@ -537,13 +537,13 @@
   "account.modes": "Choose how to play",
   "account.signIn": "Sign up / Sign in with Google",
   "account.playGuest": "Play without signing in",
-  "account.guestCopy": "Play history, achievements and progress are not saved after you close this tab. Sign in with Google to save them.",
+  "account.guestCopy": "Your stall progress stays on this device when you close and reopen the game. Play history, achievements, ranking and restore on another device require a Google account.",
   "account.savedCopy": "Save progress and achievements and restore them on another device. Existing accounts continue their saved progress.",
   "account.reauthenticate": "Sign in again with Google",
   "account.recoveryCopy": "Use the account you played with to restore progress and pending actions.",
   "account.wrongAccount": "This Google account does not match the pending progress. Choose the account you played with.",
   "account.invitation": "Save your progress",
-  "onboarding.login.firstShift": "First shift finished! Save what you earned today.",
+  "onboarding.login.firstShift": "First shift finished! A Google account adds history, achievements and ranking.",
   "onboarding.login.leaderboard": "Sign in to take your place on the leaderboard.",
-  "onboarding.login.leave": "Before you leave, save what you earned today."
+  "onboarding.login.leave": "Use a Google account for play history, achievements and ranking."
 }

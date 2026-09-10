@@ -13,7 +13,7 @@ import { MenuReport } from './MenuReport';
 import { start, type StartState, type Session } from './start';
 import { createSound } from './audio';
 
-type Sheet = 'loginInvite' | 'account' | 'seasons' | 'locations' | 'stock' | 'upgrades' | 'book' | 'close' | 'journey' | 'settings' | 'config' | 'dog' | 'delivery' | 'signboard' | 'flyer' | 'quests' | null;
+type Sheet = 'account' | 'seasons' | 'locations' | 'stock' | 'upgrades' | 'book' | 'close' | 'journey' | 'settings' | 'config' | 'dog' | 'delivery' | 'signboard' | 'flyer' | 'quests' | null;
 const icons: Record<string, string> = {
   coin: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 4v10m3-8h-4a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4H9',
   bolt: 'M13 2 5 13h6l-1 9 9-13h-6l1-7Z',
@@ -181,7 +181,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   };
   useEffect(() => {
     setInvitation(null);
-    const reason = sheet === 'book' ? 'firstShift' : sheet === 'seasons' ? 'leaderboard' : sheet === 'loginInvite' ? 'leave' : null;
+    const reason = sheet === 'book' ? 'firstShift' : sheet === 'seasons' ? 'leaderboard' : null;
     const guest = remote?.identity.provider === 'guest';
     if (reason && canInvite(prefs.current, game, guest, reason)) {
       setInvitation(reason);
@@ -223,11 +223,6 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
     const online = () => remote?.setPresence(!document.hidden, menuPause.current);
     window.addEventListener('online', online);
     const beforeUnload = (event: BeforeUnloadEvent) => {
-      if (!remote?.accountBusy && canInvite(prefs.current, game, remote?.identity.provider === 'guest', 'leave')) {
-        // The browser owns this native warning. If the player stays, show our optional invitation.
-        setSelectedEquipment(null); setSelectedTable(null); setSheet('loginInvite');
-        event.preventDefault(); event.returnValue = '';
-      }
       if (session.storage?.saving) { event.preventDefault(); event.returnValue = ''; }
     };
     const click = (e: MouseEvent) => { if ((e.target as Element).closest('button,select')) sound.play('ui:tap'); };
@@ -381,8 +376,8 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
 
 
 
-    {sheet && <SheetDialog pausedLabel={t('pause.menu')} view={sheet} title={t(sheet === 'loginInvite' ? 'account.invitation' : sheet === 'account' ? 'account.title' : sheet === 'quests' ? 'quests.title' : sheet === 'flyer' ? 'flyer.title' : sheet === 'signboard' ? 'sign.title' : sheet === 'delivery' ? 'delivery.title' : sheet === 'dog' ? 'dog.title' : sheet === 'close' ? 'close.title' : sheet === 'book' ? 'book.title' : sheet === 'journey' ? 'journey.title' : sheet === 'settings' ? 'settings.title' : sheet === 'config' ? 'config.title' : `nav.${sheet}`)} close={() => setSheet(null)}>
-      {invitation && (sheet === 'loginInvite' || sheet === 'book' && invitation === 'firstShift' || sheet === 'seasons' && invitation === 'leaderboard') && remote?.identity.provider === 'guest' && <LoginInvitation reason={invitation} t={t} signIn={() => open('account')} later={() => { setInvitation(null); if (sheet === 'loginInvite') setSheet(null); }} />}
+    {sheet && <SheetDialog pausedLabel={t('pause.menu')} view={sheet} title={t(sheet === 'account' ? 'account.title' : sheet === 'quests' ? 'quests.title' : sheet === 'flyer' ? 'flyer.title' : sheet === 'signboard' ? 'sign.title' : sheet === 'delivery' ? 'delivery.title' : sheet === 'dog' ? 'dog.title' : sheet === 'close' ? 'close.title' : sheet === 'book' ? 'book.title' : sheet === 'journey' ? 'journey.title' : sheet === 'settings' ? 'settings.title' : sheet === 'config' ? 'config.title' : `nav.${sheet}`)} close={() => setSheet(null)}>
+      {invitation && (sheet === 'book' && invitation === 'firstShift' || sheet === 'seasons' && invitation === 'leaderboard') && remote?.identity.provider === 'guest' && <LoginInvitation reason={invitation} t={t} signIn={() => open('account')} later={() => setInvitation(null)} />}
       {sheet === 'account' && <Account remote={remote} locale={locale} t={t} close={() => setSheet(null)} />}
       {sheet === 'quests' && questsRevealed && <Quests world={w} config={game.config} run={run} t={t} num={num} />}
       {sheet === 'flyer' && <div className="flyer-panel">

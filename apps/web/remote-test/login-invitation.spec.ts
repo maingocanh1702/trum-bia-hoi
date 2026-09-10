@@ -34,7 +34,7 @@ for (const locale of ['vi', 'en']) test(`first closed shift offers exactly three
   await enter(page, locale); await expect(invitation(page)).not.toBeVisible();
   await closeShift(page, locale);
   await expect(invitation(page)).toBeVisible();
-  await expect(invitation(page).locator('li')).toHaveText(locale === 'vi' ? ['Lưu tiến độ', 'Thành tích', 'Đua top'] : ['Save progress', 'Achievements', 'Compete on the leaderboard']);
+  await expect(invitation(page).locator('li')).toHaveText(locale === 'vi' ? ['Lưu vào tài khoản', 'Thành tích', 'Đua top'] : ['Save to your account', 'Achievements', 'Compete on the leaderboard']);
   await expect(page.locator('.ledger')).toBeVisible(); expect(google).toBe(0);
   const before = (await snapshot(page)).world;
   expect(await prefs(page)).toMatchObject({ loginPromptPlayer: before.playerId, loginPromptShift: 1 });
@@ -73,27 +73,6 @@ test('disabled invitation flags suppress each surface while the account entry re
   await page.getByRole('button', { name: 'Tài khoản', exact: true }).click(); await expect(page.locator('.account-benefits')).toBeVisible();
 });
 
-test('cancelling native departure shows a skippable invitation, pauses the live shift, and reload respects dismissal', async ({ page }) => {
-  await enter(page);
-  expect(await page.evaluate(() => window.dispatchEvent(new Event('beforeunload', { cancelable: true })))).toBe(true);
-  await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
-  const table = page.getByRole('button', { name: 'Xem mâm · bàn 1', exact: true }).first(); await table.click();
-  await expect(page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true })).toBeEnabled({ timeout: 20000 });
-  await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
-  await expect.poll(async () => (await snapshot(page)).world.lifetimeEarned).toBeGreaterThan(0);
-  const warning = page.waitForEvent('dialog');
-  const navigation = page.evaluate(() => { window.location.href = 'about:blank'; });
-  const native = await warning; expect(native.type()).toBe('beforeunload'); await native.dismiss(); await navigation;
-  await expect(invitation(page)).toBeVisible(); expect(page.url()).toContain('4179');
-  await expect.poll(async () => (await snapshot(page)).world.paused).toBe(true);
-  const before = (await snapshot(page)).world; await page.waitForTimeout(1100);
-  expect((await snapshot(page)).world.staminaMs).toBe(before.staminaMs);
-  await invitation(page).getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
-  await expect.poll(async () => Boolean((await snapshot(page)).world.paused)).toBe(false);
-  await page.reload(); await expect(page.locator('.network-status')).toContainText('Đã đồng bộ');
-  expect((await snapshot(page)).world.playerId).toBe(before.playerId); await expect(invitation(page)).not.toBeVisible();
-});
-
 test('accepting the invitation uses the existing Google panel and unavailable login stays skippable', async ({ page }) => {
   await enter(page);
   await page.route('**/api/auth/google/challenge', route => route.fulfill({ status: 503, json: { error: 'googleUnavailable' } }));
@@ -106,23 +85,21 @@ test('accepting the invitation uses the existing Google panel and unavailable lo
   await closeShift(page); await expect(invitation(page)).not.toBeVisible();
 });
 
-test('accepting native departure leaves freely and a new guest visit does not inherit invitation cooldown', async ({ page }) => {
-  await enter(page, 'vi', { afterFirstShift: false }); await closeShift(page); await page.keyboard.press('Escape');
-  const old = (await snapshot(page)).world.playerId;
-  page.once('dialog', dialog => dialog.accept());
-  await page.goto('about:blank'); expect(page.url()).toBe('about:blank');
-  await page.unroute('**/api/player/config?*');
-  await page.goto('/'); await page.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
-  await expect(page.locator('.network-status')).toContainText('Đã đồng bộ');
-  expect((await snapshot(page)).world.playerId).not.toBe(old);
-  await closeShift(page); await expect(invitation(page)).toBeVisible();
+test('leaving with guest progress never warns of data loss and the invitation cooldown survives a new tab', async ({ page, context }) => {
+  await enter(page); await closeShift(page); await invitation(page).getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
+  await page.keyboard.press('Escape'); const before = (await snapshot(page)).world, settings = await prefs(page);
+  expect(await page.evaluate(() => window.dispatchEvent(new Event('beforeunload', { cancelable: true })))).toBe(true);
+  let dialogs = 0; page.on('dialog', dialog => { dialogs++; void dialog.accept(); });
+  await page.goto('about:blank'); expect(dialogs).toBe(0); await page.close();
+  const next = await context.newPage(); await next.goto('/');
+  await next.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
+  await expect(next.locator('.network-status')).toContainText('Đã đồng bộ');
+  expect((await snapshot(next)).world.playerId).toBe(before.playerId); expect(await prefs(next)).toMatchObject({ loginPromptPlayer: settings.loginPromptPlayer, loginPromptShift: settings.loginPromptShift });
+  await next.getByRole('button', { name: 'Sổ ca', exact: true }).click(); await expect(invitation(next)).not.toBeVisible();
 });
 
-test('a configured higher progress threshold suppresses departure reminders below that threshold', async ({ page }) => {
-  await enter(page, 'vi', { afterFirstShift: false, leaveProgress: { minCompletedShifts: 2, minLifetimeEarned: 1000000 } });
-  await closeShift(page); await page.keyboard.press('Escape');
+test('eligible departure invitations never block leaving a device-persistent guest', async ({ page }) => {
+  await enter(page, 'vi', { afterFirstShift: false }); await closeShift(page); await page.keyboard.press('Escape');
   expect(await page.evaluate(() => window.dispatchEvent(new Event('beforeunload', { cancelable: true })))).toBe(true);
-  await closeShift(page); await page.keyboard.press('Escape');
-  expect(await page.evaluate(() => window.dispatchEvent(new Event('beforeunload', { cancelable: true })))).toBe(false);
-  await expect(invitation(page)).toBeVisible();
+  await expect(invitation(page)).not.toBeVisible();
 });

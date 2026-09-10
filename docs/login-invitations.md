@@ -1,7 +1,8 @@
 # Guest login invitations
 
 Base: `f18db4e`. F25 §10 / F27 §2, with the owner's two-mode decision.
-Guests can keep playing; Google accounts save progress. This slice changes presentation
+Guests keep device progress; Google adds durable history, achievements, ranking
+and cross-device restore. Owner Steer #5 (15:30) supersedes the initial exit warning. This slice changes presentation
 and its cooldown only. It uses canonical completed shifts/earnings and the existing
 Account/Google transaction; no engine, account authorization or economy rule changes.
 
@@ -9,38 +10,34 @@ Account/Google transaction; no engine, account authorization or economy rule cha
 |---|---|
 | First completed shift, enabled, cooldown elapsed | Optional three-benefit card in the shift book; the ledger stays available. |
 | Open existing season/ranking entry, enabled, cooldown elapsed | Same card, with explicit Google action and dismiss; no forced sign-in. |
-| Guest leaving after either configured progress threshold, enabled, cooldown elapsed | Native browser warning. Choosing Stay opens the same optional card in a paused sheet. Choosing Leave proceeds. |
+| Guest leaves the page | No native warning or login upsell. Device progress already persists. |
 | Google account or local archive | No automatic invitation or guest departure warning. Explicit account controls remain available. |
 | Dismiss / close / view account manually | Seeing the benefits starts the shared configured cooldown, measured in completed shifts. Manual account access stays usable. |
 | Same guest reload | Same player-keyed cooldown; no loss of pending gameplay commands. |
-| Fresh guest visit | New player ID gives a fresh cooldown; old history is not advertised as saved. |
+| Guest reopens browser or another tab | Same player and same cooldown; no new guest is created. |
 
 `onboarding.enabled` and all `onboarding.loginPrompt` keys come from the
 current pinned config. `loginPromptPlayer`/`loginPromptShift` are presentation
 preferences, not a save, achievement, clock, eligibility or identity credential.
 Invitation display alone does not load Google or request a nonce; clicking sign-in
 opens the existing Account component. Its shared list has exactly three benefits:
-save progress, achievements, compete on the leaderboard. Controls and copy are VI/EN.
+save to your account, achievements, compete on the leaderboard. The offer also
+explains device persistence and the four account-only limitations. Controls and copy are VI/EN.
 The existing menu pause lasts until the sheet closes, as directed by the owner.
 
 ## Browser boundary
 
-[MDN beforeunload](https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event)
-documents a generic browser-owned warning, user-interaction requirements and
-unreliable firing on mobile/app termination. The application cannot customize that
-native text, detect close separately from reload, or guarantee an invitation after
-an OS kills a tab. Reload can therefore warn when the visit has not yet seen the
-invitation, although the visit itself survives reload. The three benefits appear
-in-page if the player stays. The book and ranking-entry cards do not depend on exit
-events. Do not claim guaranteed iOS/Android tab-close delivery, live Google consent,
-or the not-yet-implemented community board/shrine as tested by this slice.
+Steer #5 removes the native guest departure warning: it suggests unsaved changes
+when the stall is already retained. Book/ranking-entry cards remain optional, and
+explicit account controls remain available. Only the existing pending local-write
+warning can prevent accidental loss while an archive write is in flight.
 
-Departure thresholds `leaveProgress.minCompletedShifts` and `minLifetimeEarned`
-are positive safe integers, Tier C. Defaults1/1 preserve the initial any-progress
-behavior. Earned income uses canonical displayed coins; this is a UI threshold,
-not a payout or k-scaled Base value. A pre2.0.2 pinned snapshot may omit the entire
-new object and use seed defaults; partial/malformed objects are rejected. Raw
-snapshots and their replay versions stay unchanged.
+The earlier config2.0.2 departure thresholds remain in existing pinned snapshots;
+this correction does not change config. The compatibility helper now reads its
+fallback through the validated engine config export, never raw JSON. There is no
+active tab-close invitation consumer. A future explicit exit surface must be
+specified without misleading data-loss claims; community board/shrine work is
+still pending. No live Google consent is claimed.
 
 ## Verification
 
@@ -53,3 +50,5 @@ Pending implementation checks and independent review; receipt will pin the final
 | 2026-09-10 | Defines optional invitations and shared per-player cooldown without new authentication or gameplay paths; records the native departure limit. |
 
 | 2026-09-10 review correction | P1 addressed: departure thresholds now live in governed config2.0.2, with explicit old-snapshot compatibility and no game-economy retune. |
+
+| 2026-09-10 15:30 owner Steer #5 | Device-persistent guest progress replaces fresh-visit reset; shared cooldown survives reopening. Remove native departure warning and its dedicated sheet, clarify account-only benefits, keep skippable book/ranking-entry cards and menu pause. No config/engine changes in this correction. |

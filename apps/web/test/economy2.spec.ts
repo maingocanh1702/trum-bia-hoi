@@ -1,5 +1,6 @@
 import { readSave, waitSaved } from './storage';
-import seed from '../../../docs/config/economy.tbh.json';
+import { readFileSync } from 'node:fs';
+const seed = JSON.parse(readFileSync('docs/config/economy.tbh.json', 'utf8'));
 import { test, expect } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 const fixture = (mode: string, input?: string) => JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/economy2.ts', mode], { encoding: 'utf8', input }));

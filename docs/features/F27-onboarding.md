@@ -3,6 +3,8 @@
 > 🟢 **Ràng buộc** (chủ dự án chốt 08/09/2026, sau bản draft cùng ngày). Doc này chốt **luật + đầu vào + đầu ra + số đo + key config**; *cách trình bày* (coachmark, ghost hand, NPC nói, làm mờ UI…) do dev tự quyết theo layout của mình. Tham khảo một cách làm: `09-SPEC` §9.
 > Config: `docs/config/economy.tbh.json` → `onboarding` (tier C). Liên quan: F25 (guest/đăng nhập), 03-SPEC §9 (serve/grace), F23 §8 (mạng), 10-SPEC §9 (lưu local trước).
 
+> **Current owner decision — 2026-09-10 15:30, Steer #5:** guest keeps stall, coins, upgrades and current day/shift on this device across browser/new-tab visits. Durable player history, achievements, ranking and cross-device restore require a Google account. New Google attaches current progress once; existing Google restores directly. This supersedes the 08:18 fresh-visit interpretation and conflicting historical checkpoints below. See [account modes](../account-modes.md). No guest data-loss warning on leaving.
+
 ## 1. Luật chủ dự án (nguyên văn, đã cấu trúc)
 
 1. **Chơi không cần đăng ký.** Guest vào chơi ngay. Game **khuyến khích** đăng ký (Google) để: lưu tiến độ, lưu thành tích, đua top bảng xếp hạng (F28). Khuyến khích ≠ ép: không chặn gameplay lõi, không dark pattern (09 §11).
@@ -67,3 +69,5 @@ Funnel dashboard admin (BRD §3): mở ca 1 → serve đầu → đóng ca 1 →
 | 2026-09-10 invitations | Optional first-shift/season-entry invitations now share a player-keyed `loginPrompt.cooldownShifts` preference and exactly three benefits; explicit account access remains available. Native departure warning opens the invitation only if the guest stays; generic text/reload/mobile limitations are recorded in [login-invitations](../login-invitations.md). Current owner decision supersedes durable guest reopen and merging into an existing Google account: new Google claims this visit once, existing Google restores its own saved progress. Verification remains pending until the slice receipt. |
 
 | 2026-09-10 configurable departure threshold | JSON2.0.2 adds `loginPrompt.leaveProgress.minCompletedShifts=1` and `minLifetimeEarned=1` (displayed coins), Tier C. Either threshold qualifies; `onLeaveWithProgress` and shared cooldown still gate the optional invitation. Old snapshots retain raw data and use seed presentation defaults. No economy retune. |
+
+| 2026-09-10 15:30 Steer #5 | Owner restores guest device persistence across new tabs/browser reopen; keep writer lock/exact-session guard and Google attach/restore. Account-only durable history, achievements, ranking and cross-device restore remain. Supersedes 08:18 and prior ephemeral-guest interpretation; guest departure upsell removed. See account-modes.md and current receipt for verification. |
