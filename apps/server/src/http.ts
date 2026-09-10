@@ -216,6 +216,9 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
         if (token) store.revokeSession(token); res.setHeader('Set-Cookie', cookie('', 0)); reply(200, { ok: true }); return;
       }
       const owner = token && store.session(token); if (!owner) throw new HttpError(401, 'invalidSession');
+      if (req.method === 'GET' && path === '/player/competition') {
+        reply(200, await store.competitiveStatus(token!)); return;
+      }
       if (req.method === 'POST' && path === '/auth/guest/restart') {
         if (!record(body) || Object.keys(body).join(',') !== 'playerId' || typeof body.playerId !== 'string') throw new HttpError(400, 'invalidBody');
         const created = store.createGuestSession(options.sessionTtlMs, { token: token!, playerId: body.playerId });
@@ -297,6 +300,7 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
         'store:invalidSession': [401, 'invalidSession'], 'store:invalidGoogleChallenge': [401, 'invalidGoogleChallenge'],
         'auth:googleVerificationFailed': [401, 'googleVerificationFailed'],
         'store:accountConflict': [409, 'accountConflict'], 'store:signOutRequired': [409, 'signOutRequired'],
+        'store:importBusy': [429, 'recoveryBusy'], 'store:importInterrupted': [503, 'recoveryUnavailable'],
       }[error.message];
       if (Array.isArray(auth)) { reply(Number(auth[0]), { error: auth[1] }); req.resume(); return; }
       const input = error instanceof Error && ['store:invalidCursor', 'store:invalidCommand', 'store:invalidClient', 'store:invalidHeartbeat'].includes(error.message);

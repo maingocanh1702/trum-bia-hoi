@@ -511,3 +511,24 @@ separate remaining M4/M5 work. No public archive upload or real Google setup add
 | Date | Change |
 |---|---|
 | 2026-09-10 | Verified521e901 review/flag core/API:367unit/server,19admin browser,45focused,config/build and independent review pass. Receipt: .qa/competition-verification.json; remaining work in docs/competitive-eligibility.md. |
+
+## Own competitive totals — M4 score boundary
+
+`GET /player/competition` authenticates the current player cookie and returns only
+that player's current season totals/eligibility (`playerId,serverNow,review,periods`).
+It rejects query overrides and accepts no client score or review mutation. Expired
+or revoked credentials during worker recovery return401. Recovery contention is429;
+worker interruption is503. No public ranking or season-end snapshot is returned.
+
+`LocalImportBaseline` is a checksummed, append-only audit record derived from the
+validated world, inserted atomically with a new local claim. Old imports recover
+from their exact retained archive through the existing replay worker. Missing or
+inconsistent provenance never defaults to zero. Current review/flag and account
+ownership are read after recovery; current engine totals, tier helper and each
+period's pinned config supply the projection. Pending/rejected local earnings and
+closed shifts are subtracted only in that exact season. Later server earnings
+count; approval never credits the wallet or rewrites completed personal results.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 score boundary | Implement own competitive totals and immutable import baseline on base1fd89d9. Verification/review in docs/competitive-eligibility.md; global rank and snapshots remain. |

@@ -1,10 +1,12 @@
 import { DatabaseSync } from 'node:sqlite';
 import { createHash, randomBytes, randomInt, randomUUID } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
+import { gunzipSync } from 'node:zlib';
 import { validGoogleSubject, type GoogleIdentity } from './google';
 import { LOCAL_ARCHIVE_BYTES, validateLocalArchive } from './local-archive';
 import { AdminAuth, initializeAdmin } from './admin-auth';
 import { Competition, type ImportReview } from './competition';
+import { importBaseline, competitivePeriods, type ImportBaseline } from './competitive-score';
 import { ConfigRegistry, initializeRegistry, initializeScopes, heartbeatTiming } from './registry';
 import { Game, config as seedConfig, configContent, decodeSave, loadConfig, validEnvelope, type Config, type Command, type DomainEvent, type EngineCheckpoint, type LoggedCommand, type World } from '@tbh/engine';
 
@@ -16,6 +18,8 @@ type HistoryHashes = { commandHash: string; eventHash: string };
 type LiveGame = HistoryHashes & { game: Game; checkpointable: boolean };
 const EMPTY_HASH = createHash('sha256').digest('hex');
 const historyHash = (previous: string, key: string, text: string) => createHash('sha256').update(previous).update(JSON.stringify([key, text])).digest('hex');
+const baselineHash = (p: { digest: string; commandSeq: number; eventSeq: number; baseline: ImportBaseline }) =>
+  createHash('sha256').update(JSON.stringify([p.digest, p.commandSeq, p.eventSeq, p.baseline])).digest('hex');
 export type Snapshot = { world: World; configVersion: string; revision: number; lastEventSeq: number };
 export type ImportReceipt = { playerId: string; digest: string; importedAt: number; sourceNow: number;
   commandSeq: number; eventSeq: number; review: ImportReview };
@@ -299,6 +303,7 @@ export class GameStore {
       this.saveCheckpoint(archive.playerId, archive.checkpoint, hashes);
       this.db.prepare('INSERT INTO local_imports VALUES (?,?,?,?,?,?,?,?,?)').run(archive.playerId, owner.subject, owner.playerId,
         digest, now, archive.world.now, archive.log.length, archive.world.events.length, Buffer.from(archive.original));
+      this.recordImportBaseline(archive.world, archive.log.length, digest);
       this.db.prepare('UPDATE google_accounts SET player_id=? WHERE subject=?').run(archive.playerId, owner.subject);
       this.db.prepare('UPDATE sessions SET revoked_at=? WHERE player_id=? AND revoked_at IS NULL').run(now, owner.playerId);
       const nextToken = randomBytes(32).toString('hex'); // config-exempt: rotate credential when adopting a different game aggregate
@@ -308,6 +313,50 @@ export class GameStore {
       return { playerId: archive.playerId, digest, importedAt: now, sourceNow: archive.world.now,
         commandSeq: archive.log.length, eventSeq: archive.world.events.length, review: 'pending', token: nextToken, expiresAt: current.expiresAt };
     } catch (error) { if (this.db.isTransaction) this.db.exec('ROLLBACK'); throw error; }
+  }
+  private importedBaseline(id: string): ImportBaseline | undefined {
+    const rows = this.db.prepare("SELECT payload FROM registry_audit WHERE type='LocalImportBaseline' AND json_extract(payload,'$.baseline.playerId')=?").all(id);
+    if (!rows.length) return;
+    if (rows.length !== 1) throw Error('competition:invalidBaseline');
+    const saved = JSON.parse(String(rows[0].payload)), origin = this.db.prepare('SELECT digest,source_now,command_seq,event_seq FROM local_imports WHERE player_id=?').get(id);
+    if (!origin || saved.digest !== origin.digest || saved.baseline?.sourceNow !== origin.source_now || saved.commandSeq !== origin.command_seq || saved.eventSeq !== origin.event_seq || saved.hash !== baselineHash(saved)) throw Error('competition:invalidBaseline');
+    return saved.baseline;
+  }
+  /** Called only inside the claim/recovery transaction with the worker's replayed world. */
+  private recordImportBaseline(world: World, commandSeq: number, digest: string) {
+    const baseline = importBaseline(world), existing = this.importedBaseline(world.playerId);
+    if (existing) { if (!isDeepStrictEqual(existing, baseline)) throw Error('competition:invalidBaseline'); return; }
+    const payload = { digest, commandSeq, eventSeq: world.events.length, baseline };
+    this.db.prepare('INSERT INTO registry_audit VALUES (NULL,?,?)').run('LocalImportBaseline', JSON.stringify({ ...payload, hash: baselineHash(payload), at: this.now() }));
+  }
+  private async ensureImportBaseline(id: string) {
+    const state = this.competition.state(id);
+    if (!state.localImport || this.importedBaseline(id)) return;
+    const origin = state.localImport, row = this.db.prepare('SELECT original_gzip FROM local_imports WHERE player_id=?').get(id)!;
+    const text = gunzipSync(row.original_gzip as Uint8Array, { maxOutputLength: LOCAL_ARCHIVE_BYTES }).toString('utf8');
+    if (createHash('sha256').update(text).digest('hex') !== origin.digest) throw Error('competition:invalidBaseline');
+    const snapshots = this.db.prepare('SELECT snapshot FROM configs').all().map(row => String(row.snapshot));
+    const archive = await validateLocalArchive(text, snapshots, origin.sourceNow);
+    this.db.exec('BEGIN IMMEDIATE');
+    try {
+      const current = this.competition.state(id).localImport;
+      if (!current || current.digest !== origin.digest || archive.playerId !== id || archive.world.now !== current.sourceNow ||
+        archive.log.length !== current.commandSeq || archive.world.events.length !== current.eventSeq) throw Error('competition:invalidBaseline');
+      this.recordImportBaseline(archive.world, archive.log.length, current.digest);
+      this.db.exec('COMMIT');
+    } catch (error) { if (this.db.isTransaction) this.db.exec('ROLLBACK'); throw error; }
+  }
+  /** Caller-owned live competitive totals. Recovery never promotes local history to approval. */
+  async competitiveStatus(token: string) {
+    const owner = this.session(token); if (!owner) throw Error('store:invalidSession');
+    await this.ensureImportBaseline(owner.playerId);
+    const current = this.session(token);
+    if (!current || current.playerId !== owner.playerId || current.provider !== owner.provider) throw Error('store:invalidSession');
+    return this.operate(owner.playerId, game => {
+      const state = this.competition.state(owner.playerId);
+      return { playerId: owner.playerId, serverNow: game.world.now, review: state.localImport?.review.value ?? null,
+        periods: competitivePeriods(game.world, version => loadConfig(JSON.parse(this.configSnapshot(version))), state, this.importedBaseline(owner.playerId)) };
+    }).result;
   }
   configSnapshot(version: string): string {
     const row = this.db.prepare('SELECT snapshot FROM configs WHERE version=?').get(version);

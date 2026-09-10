@@ -105,3 +105,30 @@ interrupted initial run separately from the complete rerun. M4 stays14/18 OPEN.
 | 2026-09-10 core/API | Implement immutable reviewed-import and flag decisions, exact-retry/current-seq guards, shared actor validation and authenticated inspection/decision routes. Preserve source archive and game balances; dedicated controls and ranking projection remain. |
 
 | 2026-09-10 core/API verified | 521e901 passes367unit/server,19admin browser,45focused,config/build and independent review; receipt records prior interrupted run without counting it. No score projection or complete moderation UI claim; M4 stays14/18. |
+
+## Competitive score slice — base1fd89d9
+
+Reuse `seasonEarned` / `seasonTier` and each period's pinned config. Store one
+immutable `LocalImportBaseline` audit record alongside the existing import in the
+same transaction; use the same record type for replay recovery of pre-slice imports.
+No schema migration, new economy value, engine rule or second mutable score balance.
+The record derives solely from validated replay, never uploaded totals. Existing
+archives recover through the same bounded worker, verify digest/player/time/cutoffs,
+and refuse unverifiable provenance. Recheck current identity and moderation after
+worker completion. No public archive upload or history-size tuning.
+
+| State | Competitive result |
+|---|---|
+| Server-origin guest | Current totals retained, ineligible until Google attachment. |
+| Server-origin Google | Current totals, configured closed-shift gate and flag policy. |
+| Pending/rejected imported season matching exact current ID | Subtract imported earnings and closed shifts only; server continuation still counts. |
+| Approved imported history | Read full current totals once; never grant or rewrite coins. |
+| New season / proven legacy unwindowed source | No old-season subtraction; legacy unwindowed income never invents a current-season score. |
+| Zero counted earnings | Null tie timestamp; do not inherit the imported positive-score timestamp. |
+| Positive server-only earnings | Keep canonical last positive-credit timestamp (the first reach of the current increasing total). |
+| Missing/corrupt baseline or regressed counters | Refuse; missing provenance is not zero. |
+
+An authenticated `/player/competition` read returns only the caller's current
+eligibility/score, with exact-session revalidation after recovery. It accepts no
+player ID, client total or review decision. Public ordering, snapshots and admin
+history controls remain the following work; this does not close F28.
