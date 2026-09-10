@@ -400,3 +400,22 @@ test('Google reauthentication cancellation releases its tab lock and rejects sta
   await panel.getByRole('button', { name: 'Tiếp tục với Google', exact: true }).click();
   await expect(panel.getByRole('heading', { name: 'Tài khoản Google', exact: true })).toBeVisible(); expect(posts).toBe(1);
 });
+
+test('Google reauthentication retry recognizes a committed canonical session without a second Google consent', async ({ page, context }) => {
+  await signedPlayer(page, 'reauth-confirmed-retry'); await context.clearCookies(); await page.reload();
+  await page.getByRole('button', { name: 'Đăng nhập lại với Google', exact: true }).click();
+  const panel = page.locator('.recovery .account-panel'); await expect(panel.getByRole('button', { name: 'Tiếp tục với Google', exact: true })).toBeVisible();
+  const retained = await journal(page); let posts = 0, failedFence = false;
+  page.on('request', r => { if (r.url().endsWith('/auth/google')) posts++; });
+  await page.route('**/api/auth/google/challenge', async route => {
+    if (posts === 1 && !failedFence) { failedFence = true; await route.abort(); } else await route.continue();
+  });
+  await panel.getByRole('button', { name: 'Tiếp tục với Google', exact: true }).click();
+  await expect(panel.getByRole('alert')).toBeVisible(); expect(posts).toBe(1); expect(await journal(page)).toEqual(retained);
+  await panel.getByRole('button', { name: 'Thử lại', exact: true }).click();
+  await expect(panel.getByRole('heading', { name: 'Tài khoản Google', exact: true })).toBeVisible();
+  await expect(panel.getByRole('button', { name: 'Tiếp tục với Google', exact: true })).not.toBeVisible();
+  await panel.getByRole('button', { name: 'Tiếp tục chơi', exact: true }).click();
+  await expect(page.locator('.network-status')).toContainText('Đã đồng bộ');
+  expect(posts).toBe(1); expect((await journal(page)).clientId).toBe(retained.clientId);
+});

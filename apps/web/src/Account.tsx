@@ -28,6 +28,7 @@ export function Account({ remote, locale, t, close }: { remote: RemoteGame | nul
       try {
         const challenge = await remote.googleChallenge();
         if (!live()) return;
+        if (!challenge) { setPhase('finished'); return; }
         const api = await googleScript();
         if (!live() || !button.current) return;
         api.initialize({ client_id: challenge.clientId, nonce: challenge.nonce, auto_select: false, callback: result => {

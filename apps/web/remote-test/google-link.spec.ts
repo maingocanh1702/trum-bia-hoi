@@ -15,6 +15,7 @@ async function openTransport(page: Page) {
 }
 async function credential(page: Page, subject: string) {
   const challenge = await page.evaluate(() => window.linkTransport.googleChallenge());
+  if (!challenge) throw Error('A guest link must request a Google challenge');
   expect(challenge.clientId).toBe('browser-player.apps.googleusercontent.com');
   return (await (await page.request.get(`/api/__test/sign?subject=${subject}&nonce=${challenge.nonce}`)).json()).credential as string;
 }

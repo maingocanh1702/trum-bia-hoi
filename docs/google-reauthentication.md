@@ -32,3 +32,5 @@ code/security review. Engine/economy unchanged; reuse E13 k/rush evidence.
 | Date | Change |
 |---|---|
 | 2026-09-10 | Pin explicit reauthentication to the existing Google transaction and unchanged retained journal; no new session recovery authority. |
+
+| 2026-09-10 review correction | In-place retry now consumes a matching canonical Google identity before requesting another challenge. Lost post-auth fence response reproduced a second-consent requirement; the regression requires one authentication POST and the original stream after retry. |
