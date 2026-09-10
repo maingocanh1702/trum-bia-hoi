@@ -143,6 +143,10 @@ test('actual signed-token HTTP login rotates cookies and preserves server guest 
   assert.equal(conflict.status, 409); assert.deepEqual(await conflict.json(), { error: 'accountConflict' }); assert.equal(conflict.headers.get('set-cookie'), null);
   const kept = await f.call('/auth/google', { credential, keepAccount: true }, b.cookie);
   assert.equal(kept.status, 200); assert.equal((await kept.json()).playerId, a.playerId);
+  const keptCookie = kept.headers.get('set-cookie')!.split(';')[0];
+  assert.deepEqual((await (await f.call('/auth/session', {}, keptCookie)).json()).transition, { previousPlayerId: b.playerId });
+  assert.equal((await (await f.call('/auth/session', {}, cookie)).json()).transition, undefined);
+  assert.equal((await f.call('/auth/session', {}, b.cookie)).status, 401);
   assert.deepEqual(f.store.read(a.playerId), before); assert.ok(f.store.read(b.playerId));
 });
 

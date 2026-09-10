@@ -185,6 +185,14 @@ export class GameStore {
     const hash = sessionHash(token);
     if (hash) this.db.prepare('UPDATE sessions SET revoked_at=? WHERE token_hash=? AND revoked_at IS NULL').run(this.now(), hash);
   }
+  /** Only the authenticated destination can read its own completed switch receipt. */
+  accountTransition(token: string): { previousPlayerId: string } | undefined {
+    if (!this.session(token)) throw Error('store:invalidSession');
+    const row = this.db.prepare(`SELECT previous.player_id FROM account_logins a
+      JOIN sessions previous ON previous.token_hash=a.previous_session_hash
+      WHERE a.session_hash=? AND a.action='switch'`).get(sessionHash(token)!);
+    return row ? { previousPlayerId: String(row.player_id) } : undefined;
+  }
   issueGoogleChallenge(token: string) {
     this.db.exec('BEGIN IMMEDIATE');
     try {

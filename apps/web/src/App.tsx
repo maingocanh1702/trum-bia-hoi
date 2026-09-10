@@ -64,7 +64,7 @@ function StartedApp() {
   const t = (key: string) => translate(readSettings().locale, key);
   useEffect(() => { let active = true; void start().then(value => { if (active) setState(value); else if ('session' in value) { value.session.storage?.close(); if ('remote' in value.session) value.session.remote.close(); } }); return () => { active = false; }; }, []);
   const choose = async (mode: 'local' | 'remote') => { setState(null); setState(await start(mode)); };
-  if (state && 'session' in state) return <GameView session={state.session} />;
+  if (state && 'session' in state) return <GameView session={state.session} onAccountChange={() => void choose('remote')} />;
   return <main className="recovery"><h1>{t('brand')}</h1>{!state ? <p role="status">{t('save.loading')}</p> : 'local' in state ? <>
     <h2>{t('network.localTitle')}</h2><p>{t('network.localCopy')}</p>
     <button onClick={() => download(state.local, 'tbh-original-save.json')}>{t('save.downloadOriginal')}</button>
@@ -72,7 +72,7 @@ function StartedApp() {
     <button onClick={() => void choose('local')}>{t('network.keepLocal')}</button><button onClick={() => void choose('remote')}>{t('network.newServer')}</button>
   </> : <><p role="alert">{t(`network.${['otherTab', 'invalidSession', 'conflict', 'storage'].includes(state.error) ? state.error : 'unavailable'}`)}</p><button onClick={() => location.reload()}>{t('save.retry')}</button></>}</main>;
 }
-function GameView({ session }: { session: Session }) {
+function GameView({ session, onAccountChange }: { session: Session; onAccountChange: () => void }) {
   const remote = 'remote' in session ? session.remote : null;
   const game = session.game, w = game.world, c = game.config.values;
   const questsRevealed = !c.onboarding.enabled || w.completedShifts >= c.onboarding.featureReveal.questsAfterShifts;
@@ -185,7 +185,10 @@ function GameView({ session }: { session: Session }) {
   }, [locale]);
   useEffect(() => {
     if (session.error) return;
-    if (remote) { remote.onChange = events => { if (events.length) { processEvents(events); void save(); } setFrame(x => x + 1); }; remote.start(); }
+    if (remote) { remote.onChange = events => {
+      if (remote.world.playerId !== w.playerId) { remote.onChange = () => {}; void remote.close().then(onAccountChange); return; }
+      if (events.length) { processEvents(events); void save(); } setFrame(x => x + 1);
+    }; remote.start(); }
     const tick = remote ? undefined : setInterval(() => { (game as Game).advance(Math.max(Date.now(), w.now)); if (processEvents()) void save(); setFrame(x => x + 1); }, 100); // config-exempt: UI refresh cadence
     const checkpoint = remote ? undefined : setInterval(save, 1000); // config-exempt: local IO batching cadence
     const visibility = () => syncActivity();

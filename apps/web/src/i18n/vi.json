@@ -526,7 +526,7 @@
   "account.success": "Đã giữ nguyên tiến độ và ca đang chơi.",
   "account.loading": "Đang chuẩn bị đăng nhập…",
   "account.confirming": "Đang xác nhận tài khoản…",
-  "account.conflict": "Google này đã có tiến độ khác. Quán hiện tại vẫn được giữ nguyên. Chọn tiến độ tài khoản chưa sẵn sàng.",
+  "account.conflict": "Google này đã có tiến độ khác. Dùng quán Google hoặc giữ quán hiện tại; hai quán không bị gộp hay xóa.",
   "account.unavailable": "Đăng nhập Google chưa sẵn sàng. Bạn vẫn có thể đóng menu và chơi tiếp.",
   "account.scriptError": "Chưa tải được nút Google. Kiểm tra kết nối hoặc thử lại.",
   "account.verifyError": "Lần đăng nhập này không còn hợp lệ. Thử lại để bắt đầu một lần mới.",
@@ -534,5 +534,7 @@
   "account.retry": "Thử lại",
   "account.continue": "Tiếp tục chơi",
   "account.later": "Để sau, chơi tiếp",
-  "error.accountBusy": "Đang xác nhận tài khoản. Chờ một chút nhé."
+  "error.accountBusy": "Đang xác nhận tài khoản. Chờ một chút nhé.",
+  "account.useGoogle": "Dùng quán Google",
+  "account.keepCurrent": "Giữ quán hiện tại"
 }

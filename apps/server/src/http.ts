@@ -188,7 +188,7 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
       const token = credential(req);
       if (req.method === 'POST' && path === '/auth/session') {
         const body = await json(req); if (!record(body) || Object.keys(body).length) throw new HttpError(400, 'invalidBody');
-        if (token !== undefined) { const owner = store.session(token); if (!owner) throw new HttpError(401, 'invalidSession'); reply(200, owner); return; }
+        if (token !== undefined) { const owner = store.session(token); if (!owner) throw new HttpError(401, 'invalidSession'); reply(200, { ...owner, transition: store.accountTransition(token) }); return; }
         const created = store.createGuestSession(options.sessionTtlMs);
         res.setHeader('Set-Cookie', cookie(created.token, created.expiresAt)); reply(201, { playerId: created.playerId, expiresAt: created.expiresAt, provider: 'guest' }); return;
       }

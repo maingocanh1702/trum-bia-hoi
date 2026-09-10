@@ -4,14 +4,15 @@ const JOURNAL_KEY = 'tbh.remote.v1';
 // config-exempt: bootstrap HTTP timeout before the pinned network configuration arrives.
 const BOOT_TIMEOUT_MS = 30000;
 type Action = { clientId: string; clientSeq: number; idempotencyKey: string; command: Command };
-type Journal = { playerId: string; clientId: string; nextSeq: number; heartbeatSeq: number; cursor: number; pending: Action[] };
+type Journal = { playerId: string; clientId: string; nextSeq: number; heartbeatSeq: number; cursor: number; pending: Action[]; accountSwitch?: true };
 type Snapshot = { world: WorldView; configVersion: string; serverNow: number; revision: number; lastEventSeq: number; presentation: DomainEvent[]; menu: ReturnType<typeof menuReport> };
 type Reply = Snapshot & { clientId: string; acknowledgedSeq: number; heartbeatSeq: number; heartbeatUntil: number; heartbeatIntervalMs: number; heartbeatTimeoutMs: number; result?: Result; error?: string };
-export type PlayerSession = { playerId: string; provider: 'guest' | 'google'; expiresAt: number };
-type Link = { credential: string; resolve: (owner: PlayerSession) => void; reject: (error: unknown) => void };
+export type PlayerSession = { playerId: string; provider: 'guest' | 'google'; expiresAt: number; transition?: { previousPlayerId: string } };
+type Link = { credential: string; keepAccount: boolean; resolve: (owner: PlayerSession) => void; reject: (error: unknown) => void };
 function playerSession(value: any): PlayerSession {
   if (!value || typeof value.playerId !== 'string' || !value.playerId || !['guest', 'google'].includes(value.provider) || !Number.isSafeInteger(value.expiresAt)) throw new RemoteError('conflict');
-  return { playerId: value.playerId, provider: value.provider, expiresAt: value.expiresAt };
+  if (value.transition !== undefined && (value.provider !== 'google' || typeof value.transition?.previousPlayerId !== 'string' || !value.transition.previousPlayerId)) throw new RemoteError('conflict');
+  return { playerId: value.playerId, provider: value.provider, expiresAt: value.expiresAt, ...(value.transition ? { transition: { previousPlayerId: value.transition.previousPlayerId } } : {}) };
 }
 export type Connection = 'connecting' | 'online' | 'reconnecting' | 'invalidSession' | 'conflict' | 'storage';
 class RemoteError extends Error { constructor(readonly code: string, readonly status = 0) { super(code); } }
@@ -20,7 +21,8 @@ function readJournal(): Journal | null {
   const j = JSON.parse(raw) as Journal;
   if (!j || typeof j.playerId !== 'string' || !j.playerId || typeof j.clientId !== 'string' || !j.clientId ||
       ![j.nextSeq, j.heartbeatSeq, j.cursor].every(Number.isSafeInteger) || j.nextSeq < 1 || j.heartbeatSeq < 0 || j.cursor < 0 || !Array.isArray(j.pending) ||
-      j.pending.some((a, i) => a.clientId !== j.clientId || a.clientSeq !== j.nextSeq - j.pending.length + i || a.clientSeq < 1 || a.command?.type === 'activity' || !validEnvelope({ ...a, at: 0 }))) throw new RemoteError('storage');
+      j.pending.some((a, i) => a.clientId !== j.clientId || a.clientSeq !== j.nextSeq - j.pending.length + i || a.clientSeq < 1 || a.command?.type === 'activity' || !validEnvelope({ ...a, at: 0 })) ||
+      j.accountSwitch !== undefined && (j.accountSwitch !== true || j.pending.length !== 0)) throw new RemoteError('storage');
   return j;
 }
 /** A single browser writer owns this small journal; career history stays on the server. */
@@ -48,6 +50,7 @@ export class RemoteGame {
   private controllers = new Set<AbortController>();
   private callbacks = new Map<string, (value: Result) => void>();
   private release?: () => void;
+  private lockDone?: Promise<void>;
   private timeout = BOOT_TIMEOUT_MS;
   private interval = 1000; // config-exempt: bootstrap retry cadence, replaced by the server heartbeat interval
   private configs = new Map<string, Config>();
@@ -73,14 +76,18 @@ export class RemoteGame {
     const game = new RemoteGame();
     if (!navigator.locks) throw new RemoteError('storage');
     await new Promise<void>((resolve, reject) => {
-      void navigator.locks.request(JOURNAL_KEY, { ifAvailable: true }, async lock => {
+      game.lockDone = navigator.locks.request(JOURNAL_KEY, { ifAvailable: true }, async lock => {
         if (!lock) { reject(new RemoteError('otherTab')); return; }
         await new Promise<void>(done => { game.release = done; resolve(); });
       }).catch(reject);
     });
     try {
       game.journal = readJournal();
-      const owner = game.identity = playerSession(await game.request('/auth/session', {}));
+      let owner: PlayerSession;
+      if (game.journal?.accountSwitch) {
+        game.reconcileAccount = true; owner = await game.reconcileSession();
+        if (game.world) return game; // Audited target already connected; never reconnect its old stream.
+      } else owner = game.identity = playerSession(await game.request('/auth/session', {}));
       if (game.journal && game.journal.playerId !== owner.playerId) throw new RemoteError('conflict');
       const connected: Reply = await game.request('/player/connect', game.journal ? { clientId: game.journal.clientId } : {});
       if (connected.world.playerId !== owner.playerId) throw new RemoteError('conflict');
@@ -93,7 +100,7 @@ export class RemoteGame {
       }
       game.persist(); await game.apply(connected);
       return game;
-    } catch (error) { game.close(); throw error; }
+    } catch (error) { await game.close(); throw error; }
   }
   private async apply(snapshot: Snapshot) {
     if (!snapshot.world || snapshot.world.playerId !== this.journal?.playerId || !Number.isSafeInteger(snapshot.revision) || snapshot.serverNow !== snapshot.world.now || !Number.isSafeInteger(snapshot.lastEventSeq)) throw new RemoteError('conflict');
@@ -116,32 +123,45 @@ export class RemoteGame {
     return challenge;
   }
   /** Queue cookie rotation AFTER acknowledged commands, without recreating the player/stream. */
-  linkGoogle(credential: string): Promise<PlayerSession> {
+  linkGoogle(credential: string, keepAccount = false): Promise<PlayerSession> {
     if (this.stopped || this.accountBusy || this.state !== 'online' || this.identity.provider !== 'guest') return Promise.reject(new RemoteError('accountBusy'));
-    if (typeof credential !== 'string' || !credential) return Promise.reject(new RemoteError('googleVerificationFailed'));
-    const result = new Promise<PlayerSession>((resolve, reject) => { this.linking = { credential, resolve, reject }; });
+    if (typeof credential !== 'string' || !credential || typeof keepAccount !== 'boolean') return Promise.reject(new RemoteError('googleVerificationFailed'));
+    const result = new Promise<PlayerSession>((resolve, reject) => { this.linking = { credential, keepAccount, resolve, reject }; });
     this.onChange([]); this.wake(); return result;
   }
   private rejectLink(error: unknown) {
     const link = this.linking; this.linking = undefined; link?.reject(error);
+  }
+  private async adoptSwitch(owner: PlayerSession) {
+    const previous = this.journal!;
+    if (!previous.accountSwitch || previous.pending.length || owner.provider !== 'google' || owner.transition?.previousPlayerId !== previous.playerId) throw new RemoteError('conflict');
+    const connected: Reply = await this.request('/player/connect', {});
+    if (connected.world?.playerId !== owner.playerId || typeof connected.clientId !== 'string' || !connected.clientId ||
+      connected.acknowledgedSeq !== 0 || connected.heartbeatSeq !== 0 || !Number.isSafeInteger(connected.lastEventSeq) || connected.lastEventSeq < 0) throw new RemoteError('conflict');
+    this.journal = { playerId: owner.playerId, clientId: connected.clientId, nextSeq: 1, heartbeatSeq: 0, cursor: connected.lastEventSeq, pending: [] };
+    try { this.persist(); } catch (error) { this.journal = previous; throw error; }
+    this.revision = -1; this.frontier = 0; this.configs.clear(); await this.apply(connected);
   }
   private async reconcileSession() {
     // Replacing the server nonce cancels any still-verifying POST before trusting a guest read.
     // signInGoogle rechecks that nonce inside its transaction, so late verification cannot commit.
     await this.request('/auth/google/challenge', {});
     const owner = playerSession(await this.request('/auth/session', {}));
-    if (owner.playerId !== this.journal!.playerId) throw new RemoteError('conflict');
+    if (owner.playerId !== this.journal!.playerId) await this.adoptSwitch(owner);
+    if (this.journal!.accountSwitch) { delete this.journal!.accountSwitch; this.persist(); }
     this.identity = owner; this.reconcileAccount = false; return owner;
   }
   private async finishGoogleLink() {
     const link = this.linking!;
     try {
       let failure: unknown;
+      if (link.keepAccount) { this.journal!.accountSwitch = true; this.persist(); }
       this.reconcileAccount = true;
-      try { await this.request('/auth/google', { credential: link.credential }, BOOT_TIMEOUT_MS); }
+      try { await this.request('/auth/google', { credential: link.credential, ...(link.keepAccount ? { keepAccount: true } : {}) }, BOOT_TIMEOUT_MS); }
       catch (error) {
         // An explicit rejection did not rotate our cookie. Network/5xx loss is ambiguous.
         if (error instanceof RemoteError && error.status >= 400 && error.status < 500) {
+          if (this.journal!.accountSwitch) { delete this.journal!.accountSwitch; this.persist(); }
           this.reconcileAccount = false;
           if (error.code === 'invalidSession') this.fail(error);
           throw error;
@@ -156,7 +176,7 @@ export class RemoteGame {
         const error = new RemoteError('conflict'); this.fail(error); throw error;
       }
       link.resolve(owner);
-    } catch (error) { link.reject(error); }
+    } catch (error) { if (error instanceof RemoteError && error.code === 'storage') this.fail(error); link.reject(error); }
     finally { if (this.linking === link) this.linking = undefined; this.again = true; this.onChange([]); }
   }
   setPresence(active: boolean, paused: boolean) {
@@ -174,6 +194,7 @@ export class RemoteGame {
     this.stopped = true; this.reconcileAccount = false; this.rejectLink(new RemoteError('stopped')); clearTimeout(this.timer); clearTimeout(this.monitor);
     for (const controller of this.controllers) controller.abort();
     this.release?.(); this.release = undefined;
+    return this.lockDone ?? Promise.resolve();
   }
   private fail(error: unknown) {
     if (this.stopped) return;
@@ -218,9 +239,9 @@ export class RemoteGame {
   private async cycle() {
     this.working = true; this.again = false;
     try {
-      const j = this.journal!;
       // After ambiguous cookie rotation, retry identity only; the credential is already discarded.
       if (this.reconcileAccount) await this.reconcileSession();
+      const j = this.journal!;
       if (!await this.beat()) return;
       this.state = 'online'; this.onChange([]);
       // Ordered acknowledgements are never inferred from snapshots. Retry even a possibly committed head.

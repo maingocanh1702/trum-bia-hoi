@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import type { RemoteGame, PlayerSession } from '../src/remote';
-import type { Result } from '@tbh/engine';
+import type { Result, WorldView } from '@tbh/engine';
 declare global { interface Window { linkTransport: RemoteGame; linkResult?: PlayerSession | { error: string }; commandResult?: Result } }
 const journal = (page: Page) => page.evaluate(() => JSON.parse(localStorage.getItem('tbh.remote.v1')!));
 const snapshot = async (page: Page) => (await page.request.get('/api/player/state')).json();
@@ -18,15 +18,15 @@ async function credential(page: Page, subject: string) {
   expect(challenge.clientId).toBe('browser-player.apps.googleusercontent.com');
   return (await (await page.request.get(`/api/__test/sign?subject=${subject}&nonce=${challenge.nonce}`)).json()).credential as string;
 }
-const link = (page: Page, token: string) => page.evaluate(async token => {
-  try { return await window.linkTransport.linkGoogle(token); }
+const link = (page: Page, token: string, keepAccount = false) => page.evaluate(async ({ token, keepAccount }) => {
+  try { return await window.linkTransport.linkGoogle(token, keepAccount); }
   catch (error) { return { error: (error as Error).message }; }
-}, token);
-async function beginLink(page: Page, token: string) {
-  await page.evaluate(token => {
+}, { token, keepAccount });
+async function beginLink(page: Page, token: string, keepAccount = false) {
+  await page.evaluate(({ token, keepAccount }) => {
     delete window.linkResult;
-    void window.linkTransport.linkGoogle(token).then(result => { window.linkResult = result; }, error => { window.linkResult = { error: error.message }; });
-  }, token);
+    void window.linkTransport.linkGoogle(token, keepAccount).then(result => { window.linkResult = result; }, error => { window.linkResult = { error: error.message }; });
+  }, { token, keepAccount });
 }
 
 test('link waits for a live-shift upgrade acknowledgement and retains the exact player, stream and served order', async ({ page }) => {
@@ -229,4 +229,99 @@ test('an ambiguous guest result is fenced before resume so the old credential ca
   const late = await page.request.post('/api/auth/google', { data: { credential: token }, headers: { Origin: 'http://127.0.0.1:4179' } });
   expect(late.status()).toBe(401); expect(await late.json()).toEqual({ error: 'googleVerificationFailed' });
   expect(await page.evaluate(() => window.linkTransport.command({ type: 'startShift' }))).toEqual({ ok: true });
+});
+
+async function existingAccount(browser: import('@playwright/test').Browser, subject: string) {
+  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:4179' }), page = await context.newPage();
+  await openTransport(page); await page.evaluate(() => window.linkTransport.command({ type: 'startShift' }));
+  const owner = await link(page, await credential(page, subject));
+  return { context, page, owner, world: (await snapshot(page)).world as WorldView };
+}
+
+test('explicit Google choice drains the source outbox then uses an audited fresh target stream', async ({ page, browser }) => {
+  const target = await existingAccount(browser, 'choice-drain');
+  try {
+    await openTransport(page); await page.evaluate(() => window.linkTransport.command({ type: 'startShift' }));
+    const source = await journal(page), token = await credential(page, 'choice-drain');
+    let held = false, release!: () => void, atAuth: any;
+    const barrier = new Promise<void>(resolve => { release = resolve; });
+    await page.route('**/api/player/command', async route => { held = true; await barrier; await route.continue(); });
+    await page.route('**/api/auth/google', async route => { atAuth = await journal(page); await route.continue(); });
+    await page.evaluate(() => { void window.linkTransport.command({ type: 'upgrade', kind: 'keg' }); });
+    await expect.poll(() => held).toBe(true); await beginLink(page, token, true);
+    expect(await page.evaluate(() => window.linkTransport.command({ type: 'restock', dish: 'bia', mode: 'one' }))).toEqual({ ok: false, reason: 'accountBusy' });
+    release(); await expect.poll(() => page.evaluate(() => window.linkResult)).toMatchObject({ playerId: target.world.playerId, provider: 'google', transition: { previousPlayerId: source.playerId } });
+    expect(atAuth).toMatchObject({ playerId: source.playerId, accountSwitch: true, pending: [] });
+    const next = await journal(page); expect(next.playerId).toBe(target.world.playerId); expect(next.clientId).not.toBe(source.clientId); expect(next.accountSwitch).toBeUndefined();
+    expect((await snapshot(page)).world.equipment.keg).toBe(target.world.equipment.keg);
+    expect((await snapshot(page)).world.shift.id).toBe(target.world.shift!.id);
+    const upgraded = await page.evaluate(() => window.linkTransport.command({ type: 'upgrade', kind: 'keg' }));
+    expect(upgraded).toMatchObject({ ok: true }); expect(upgraded.amount).toBeGreaterThan(0);
+    const after = (await snapshot(target.page)).world;
+    expect(after.equipment.keg).toBe(target.world.equipment.keg + 1); expect(after.coins).toBe(target.world.coins - upgraded.amount!);
+  } finally { await target.context.close(); }
+});
+
+test('lost switch response with rotated cookie reconciles once without replaying Google or source commands', async ({ page, browser }) => {
+  const target = await existingAccount(browser, 'choice-lost');
+  try {
+    await openTransport(page); const source = await journal(page), token = await credential(page, 'choice-lost'); let posts = 0;
+    await page.route('**/api/auth/google', async route => { posts++; const response = await route.fetch(); expect(response.status()).toBe(200); await route.abort(); });
+    expect(await link(page, token, true)).toMatchObject({ playerId: target.world.playerId, transition: { previousPlayerId: source.playerId } });
+    expect(posts).toBe(1); expect((await journal(page)).pending).toEqual([]);
+    expect(await page.evaluate(() => window.linkTransport.accountBusy)).toBe(false);
+  } finally { await target.context.close(); }
+});
+
+test('a reload finishes a persisted audited switch after the canonical read failed', async ({ page, browser }) => {
+  const target = await existingAccount(browser, 'choice-reload');
+  try {
+    await openTransport(page); const source = await journal(page), token = await credential(page, 'choice-reload'); let posts = 0;
+    page.on('request', r => { if (r.url().endsWith('/auth/google')) posts++; });
+    await page.route('**/api/auth/session', route => route.abort());
+    expect(await link(page, token, true)).toHaveProperty('error');
+    expect(await journal(page)).toMatchObject({ playerId: source.playerId, accountSwitch: true, pending: [] });
+    await page.evaluate(() => window.linkTransport.close()); await page.unroute('**/api/auth/session'); await openTransport(page);
+    expect((await journal(page)).playerId).toBe(target.world.playerId); expect((await journal(page)).accountSwitch).toBeUndefined();
+    expect(await page.evaluate(() => window.linkTransport.world.playerId)).toBe(target.world.playerId); expect(posts).toBe(1);
+  } finally { await target.context.close(); }
+});
+
+test('an unrelated Google cookie cannot consume a persisted choice without its source audit receipt', async ({ page, browser, context }) => {
+  const target = await existingAccount(browser, 'choice-unrelated');
+  try {
+    await openTransport(page); const source = await journal(page), token = await credential(page, 'choice-unrelated'), cookies = await target.context.cookies();
+    await page.route('**/api/auth/google', async route => { await context.addCookies(cookies); await route.fulfill({ status: 503, json: { error: 'network' } }); });
+    expect(await link(page, token, true)).toEqual({ error: 'conflict' });
+    expect(await journal(page)).toMatchObject({ playerId: source.playerId, accountSwitch: true });
+    expect(await page.evaluate(() => window.linkTransport.command({ type: 'upgrade', kind: 'keg' }))).toEqual({ ok: false, reason: 'conflict' });
+    await page.evaluate(() => window.linkTransport.close());
+    await expect(page.evaluate(async () => { const path = '/src/remote.ts'; const { RemoteGame } = await import(path); await RemoteGame.open(); })).rejects.toThrow('conflict');
+    expect((await snapshot(target.page)).world.equipment).toEqual(target.world.equipment);
+  } finally { await target.context.close(); }
+});
+
+test('switch intent storage refusal occurs before authentication and preserves the source journal', async ({ page }) => {
+  await openTransport(page); const source = await journal(page), token = await credential(page, 'choice-storage'); let posts = 0;
+  page.on('request', r => { if (r.url().endsWith('/auth/google')) posts++; });
+  await page.evaluate(() => { const set = Storage.prototype.setItem; Storage.prototype.setItem = function(key, value) { if (key === 'tbh.remote.v1' && JSON.parse(value).accountSwitch) throw Error('quota'); set.call(this, key, value); }; });
+  expect(await link(page, token, true)).toEqual({ error: 'storage' }); expect(posts).toBe(0);
+  expect((await journal(page)).playerId).toBe(source.playerId); expect((await journal(page)).accountSwitch).toBeUndefined();
+  expect(await page.evaluate(() => window.linkTransport.state)).toBe('storage');
+});
+
+test('pre-commit choice loss cancels the old nonce and resumes the original guest', async ({ page }) => {
+  await openTransport(page); const source = await journal(page), token = await credential(page, 'choice-before');
+  await page.route('**/api/auth/google', route => route.abort()); expect(await link(page, token, true)).toHaveProperty('error');
+  expect((await journal(page)).playerId).toBe(source.playerId); expect((await journal(page)).accountSwitch).toBeUndefined();
+  await page.unroute('**/api/auth/google');
+  const late = await page.request.post('/api/auth/google', { data: { credential: token, keepAccount: true }, headers: { Origin: 'http://127.0.0.1:4179' } });
+  expect(late.status()).toBe(401); expect(await page.evaluate(() => window.linkTransport.command({ type: 'startShift' }))).toEqual({ ok: true });
+});
+
+test('a corrupted switch intent with pending old commands fails before any server request', async ({ page }) => {
+  await openTransport(page); await page.evaluate(() => { window.linkTransport.close(); const j = JSON.parse(localStorage.getItem('tbh.remote.v1')!); j.accountSwitch = true; j.nextSeq++; j.pending.push({ clientId: j.clientId, clientSeq: j.nextSeq - 1, idempotencyKey: 'pending', command: { type: 'startShift' } }); localStorage.setItem('tbh.remote.v1', JSON.stringify(j)); });
+  let requests = 0; page.on('request', r => { if (r.url().includes('/api/')) requests++; });
+  await expect(page.evaluate(async () => { const path = '/src/remote.ts'; const { RemoteGame } = await import(path); await RemoteGame.open(); })).rejects.toThrow('storage');
+  expect(requests).toBe(0); expect((await journal(page)).pending).toHaveLength(1);
 });

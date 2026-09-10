@@ -526,7 +526,7 @@
   "account.success": "Your progress and current shift are preserved.",
   "account.loading": "Preparing sign-in…",
   "account.confirming": "Confirming your account…",
-  "account.conflict": "This Google account has other progress. Your current stall is unchanged. Choosing account progress is not available yet.",
+  "account.conflict": "This Google account has other progress. Use its stall or keep your current one; neither stall is merged or deleted.",
   "account.unavailable": "Google sign-in is not available yet. You can close this menu and keep playing.",
   "account.scriptError": "The Google button could not load. Check your connection or try again.",
   "account.verifyError": "This sign-in attempt is no longer valid. Try again to start a new one.",
@@ -534,5 +534,7 @@
   "account.retry": "Try again",
   "account.continue": "Keep playing",
   "account.later": "Later, keep playing",
-  "error.accountBusy": "Your account is being confirmed. Please wait a moment."
+  "error.accountBusy": "Your account is being confirmed. Please wait a moment.",
+  "account.useGoogle": "Use Google stall",
+  "account.keepCurrent": "Keep current stall"
 }
