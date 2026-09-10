@@ -58,3 +58,5 @@ row retains its own read timestamp when the UI appends another page. No status r
 activation rule or gameplay write is added. See admin-editor.md for UI acceptance.
 
 | 2026-09-10 lifecycle implementation | Added readonly server phases/timestamps and shared current-scope selector;39focused/config/build pass, full verification/review pending. Normal publication rules and owner-pending emergency policy unchanged. |
+
+| 2026-09-10 lifecycle verified | E27 b5d3545: metadata phases/timestamps and shared selector verified by389unit/server,39registry/scopes,27admin+3final browser/config/build. Independent full-base review finds no introduced issues. No engine/economy/schema/activation changes; M4 still15/18. |

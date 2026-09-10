@@ -541,3 +541,18 @@ server runtime and economy unchanged. This closes the BRD arbitrary-pair item;
 M4 count stays15/18 because the remaining combined acceptance is still open.
 
 | 2026-09-10 E26 | Arbitrary admin version comparison62e8646 verified;386unit/server,27admin browser,config/build/review PASS. M4 remains15/18, M5 remains12/25. |
+
+
+## E27 — registry lifecycle presentation, 2026-09-10
+
+`b5d3545`, base `2ad3f66`: server-derived registry phases, readonly snapshot/time,
+per-row metadata and shared current-scope selection. Default activation, replacement,
+expiry/non-resurrection and stored composite snapshots pass; VI/EN list/details/
+comparison show actual phases and refresh after another admin's approval.
+`.qa/admin-phase-verification.json`:389engine/server,39focused,27admin browser plus
+3final affected cases,config/build PASS. Independent full-base review reports no
+introduced actionable issues. Images at390px inspected. No engine/economy/schema
+or scheduling policy change. M4 remains15/18; this closes the BRD lifecycle item,
+not the remaining combined M4 acceptance or the pending emergency policy.
+
+| 2026-09-10 E27 | Registry lifecycleb5d3545 verified;389unit/server,39focused,27admin+3final browser,config/build/review pass. M4 remains15/18. |

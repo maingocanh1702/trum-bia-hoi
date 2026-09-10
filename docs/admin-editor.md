@@ -128,3 +128,22 @@ root checks and independent review precede closure. Emergency policy stays pendi
 | 2026-09-10 lifecycle intake | Recorded existing-record phase derivation and explicit scope/snapshot meanings. Implementation and verification in progress; M4 remains15/18. |
 
 | 2026-09-10 lifecycle implementation | Server-derived phases and read timestamps now reach the admin list/details/comparison; shared current-scope selection preserves existing resolver semantics, read-only transactions keep one metadata snapshot.39registry/scopes and config/build pass; full verification/review running. No activation, engine or economy value change. |
+
+
+## Registry lifecycle closure — E27
+
+`b5d3545`, base `2ad3f66`: list/details/comparison display server-derived draft,
+approved, scheduled, active and archived phases; configurations without their own
+publication are stored snapshots. Read timestamps remain bound to each response or
+paginated row. Refresh updates an open comparison after another admin's approval.
+The resolver's current-scope selection is shared unchanged; expired replacements
+never resurrect old scopes. Read-only SQLite snapshots use one injected timestamp.
+
+**389/389 engine/server,39 focused registry/scopes,27/27 admin browser and final3/3
+affected browser cases pass; config/build/typecheck pass.** Final independent
+full-base review reports no actionable introduced issues. Receipt:
+`.qa/admin-phase-verification.json`; VI/EN390px captures inspected. Engine, economy,
+schema and activation policy unchanged. This closes lifecycle presentation only;
+M4 stays15/18 and emergency scheduling still awaits the owner's separate decision.
+
+| 2026-09-10 lifecycle verified | E27 b5d3545:389unit/server,39focused,27admin+3final affected browser,config/build pass; independent full-base review finds no actionable introduced issues. Full M4 remains open. |

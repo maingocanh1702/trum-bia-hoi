@@ -2594,3 +2594,19 @@ No engine/server runtime/economy JSON/schema change or new sim. M4 remains15/18;
 hotfix schedule policy awaits owner, full M0–M9 objective remains active.
 
 | 2026-09-10 | E26 arbitrary comparison62e8646 verified:386unit/server,27admin browser,config/build/review PASS. Full M4 and game remain open. |
+
+
+## 2026-09-10 — M4 registry lifecycle verified
+
+E27 `b5d3545` (base `2ad3f66`) closes the admin lifecycle display using immutable
+records, one injected server timestamp per read transaction and per-row timestamps
+for pagination. Shared scope selection preserves actual resolver semantics. Default
+activation, archived replacements, scope expiry/non-resurrection, stored composite
+snapshots and comparison refresh are verified. Engine/economy/schema unchanged.
+389unit/server,39focused,27admin+3final affected browser,config/build PASS;
+independent full-base review reports no actionable introduced issues. Receipt
+`.qa/admin-phase-verification.json`; VI/EN390px views inspected.
+M4 remains15/18; the hotfix scheduling decision and other remaining acceptance
+are still open. Full M0–M9 objective remains active.
+
+| 2026-09-10 | E27 lifecycleb5d3545 verified:389unit/server,39focused,27admin+3final browser,config/build and review pass; M4 remains15/18. |

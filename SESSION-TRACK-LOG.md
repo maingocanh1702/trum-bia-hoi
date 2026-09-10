@@ -5,6 +5,19 @@
 
 ---
 
+## M4 registry lifecycle closure — E27, 2026-09-10
+
+`b5d3545`, base `2ad3f66`: admin list/details/comparison expose server-derived
+lifecycle phases and per-read timestamps. Read-only transactions keep one metadata
+snapshot; shared current-scope selection preserves existing expiry/non-resurrection.
+Composed/imported configs remain stored snapshots, not active default publications.
+Refresh updates comparison phases after another operator approves a version.
+389unit/server,39focused,27admin+3final affected browser,config/build PASS;
+independent full-base review reports no actionable introduced issues. Receipt:
+`.qa/admin-phase-verification.json`; VI/EN390px images inspected.
+No engine/economy/schema/activation changes. M4 remains15/18; emergency schedule
+policy still awaits owner. Full M0–M9 remains active; no merge/push/deploy.
+
 ## M4 version comparison closure — E26, 2026-09-10
 
 `61e68d5` + `62e8646`, base `fdda260`: arbitrary stored-version comparison uses
