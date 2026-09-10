@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-10 21:04 · **Branch hiện tại:** `codex/game-build-isolated`
+> **Cập nhật:** 2026-09-10 21:19 · **Branch hiện tại:** `codex/game-build-isolated`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -236,7 +236,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S 🔒B
 - **Phase:** Phase 3
-- **Notes:** Rules23: hai mùa theo lịch, thu nhập sau daily cap, peak thật, lịch sử cá nhân và panel VI/EN. Đã verify/review tại faece69: 248 engine/server, 79 browser + 6 kiểm tra lại, config/build/k nền/rush qua. Community ranks và mailbox chưa xong.
+- **Notes:** Rules23: hai mùa theo lịch, thu nhập sau daily cap, peak thật, lịch sử cá nhân và panel VI/EN. Đã verify/review tại faece69: 248 engine/server, 79 browser + 6 kiểm tra lại, config/build/k nền/rush qua. Public live ranking1803b85 đang chờ final verification/review; snapshots và mailbox chưa xong.
 
 ### F13 — Đường Lên Trùm — LP0–LP7, gate tính năng & mặt bằng
 
@@ -263,7 +263,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S 🔒B
 - **Phase:** Phase 3
-- **Notes:** Spec `docs/features/F28-leaderboard.md`; config `leaderboard` tier A. M4 prerequisite + M5. E23: caller-only score/baseline7e7f337 verified;376unit/server,19admin,32focused,config/build/review PASS. E24 admin history/review controls85fbdfb verified;378unit/server +24admin browser, final5 affected browser/config/build/review PASS. Public ordering/filter/snapshots/player UI remain. Owner10/09: giữ tiến độ local, chỉ cộng lịch sử vào BXH sau khi duyệt, không cộng trùng.
+- **Notes:** Spec `docs/features/F28-leaderboard.md`; config `leaderboard` tier A. M4 prerequisite + M5. E23: caller-only score/baseline7e7f337 verified;376unit/server,19admin,32focused,config/build/review PASS. E24 admin history/review controls85fbdfb verified;378unit/server +24admin browser, final5 affected browser/config/build/review PASS. Public live query and VI/EN UI implemented at1803b85; P1 display-bound validation correction and final verification/review running. Immutable snapshots and profile names remain. Owner10/09: giữ tiến độ local, chỉ cộng lịch sử vào BXH sau khi duyệt, không cộng trùng.
 
 ### F18 — Chó Giữ Quán — combat bảo kê, bảo hiểm trộm
 

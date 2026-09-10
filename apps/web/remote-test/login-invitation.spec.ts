@@ -69,6 +69,8 @@ test('disabled invitation flags suppress each surface while the account entry re
   await enter(page, 'vi', { afterFirstShift: false, onLeaderboardOpen: false, onLeaveWithProgress: false });
   for (let n = 0; n < config.onboarding.featureReveal.leagueAfterShifts; n++) { await closeShift(page); await expect(invitation(page)).not.toBeVisible(); await page.keyboard.press('Escape'); }
   await board(page); await expect(invitation(page)).not.toBeVisible();
+  await expect(page.locator('.leaderboard .rank-status')).toContainText('Xếp theo thu Vụ');
+  await expect(page.locator('.rank-personal')).not.toBeVisible();
   expect(await page.evaluate(() => window.dispatchEvent(new Event('beforeunload', { cancelable: true })))).toBe(true);
   await page.getByRole('button', { name: 'Tài khoản', exact: true }).click(); await expect(page.locator('.account-benefits')).toBeVisible();
 });

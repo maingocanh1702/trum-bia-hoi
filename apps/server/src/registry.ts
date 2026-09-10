@@ -3,6 +3,7 @@ import { isDeepStrictEqual } from 'node:util';
 import type { DatabaseSync } from 'node:sqlite';
 import { configContent, dayKey, loadConfig, type Config } from '@tbh/engine';
 import { validGoogleSubject } from './google';
+import { rankSettings } from './leaderboard';
 
 // These are authenticated server claims, NOT a public request body. HTTP adapters must derive them.
 export type AdminActor = { subject: string; role: 'super' | 'economy' | 'game' | 'support' | 'viewer'; mfa: boolean; issuedAt: number; expiresAt: number };
@@ -157,6 +158,7 @@ export class ConfigRegistry {
   }
   private validateAdmission(original: Config, base: Config) {
     this.validate(original, base);
+    rankSettings(original);
     // Replay accepts older snapshots; new proposals cannot delete an installed threshold group.
     if ('leaveProgress' in base.raw.onboarding.loginPrompt && !('leaveProgress' in original.raw.onboarding.loginPrompt)) throw Error('config:onboarding.loginPrompt:keys');
   }

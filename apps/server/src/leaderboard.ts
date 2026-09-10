@@ -6,12 +6,23 @@ export type RankQuery = { kind: SeasonKind; tier?: string; page: number; revisio
 export type RankSource = { playerId: string; reputation: number; lifePath: number; review: ImportReview | null; periods: ReturnType<typeof competitivePeriods> };
 export type RankSnapshot = { at: number; until: number; signature: string; revision: string; config: Config; sources: RankSource[] };
 export const publicRankId = (id: string) => createHash('sha256').update('tbh-public-player:' + id).digest('hex');
+export function rankSettings(config: Config) {
+  const settings = config.values.leaderboard;
+  for (const key of ['topN', 'refreshMs', 'neighborsWindow'] as const) {
+    const value = settings[key];
+    if (!Number.isSafeInteger(value) || value < (key === 'neighborsWindow' ? 0 : 1) ||
+      key === 'refreshMs' && value > 2147483647) throw Error(`config:leaderboard.${key}:integerRange`); // config-exempt: native signed32 timer limit, counts must be whole
+  }
+  return settings;
+}
 export function validateRankQuery(q: RankQuery, config: Config) {
+  rankSettings(config);
   if (!q || !['ranking', 'contest'].includes(q.kind) || !Number.isSafeInteger(q.page) || q.page < 0 ||
     q.tier !== undefined && !config.values.league.tiers.some(t => t.id === q.tier) ||
     q.revision !== undefined && (typeof q.revision !== 'string' || !/^[a-f0-9]{64}$/.test(q.revision))) throw Error('leaderboard:invalidQuery'); // config-exempt: SHA256 snapshot identifier
 }
 export function rankSnapshot(at: number, signature: string, config: Config, sources: RankSource[]): RankSnapshot {
+  rankSettings(config);
   const ends = sources.flatMap(s => s.periods.map(p => p.endsAt)).filter(end => end > at);
   const until = ends.reduce((nearest, end) => Math.min(nearest, end), Math.min(at + config.values.leaderboard.refreshMs,
     ...(['ranking', 'contest'] as const).map(kind => seasonWindow(at, config, kind).endsAt)));

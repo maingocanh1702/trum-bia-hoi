@@ -252,3 +252,17 @@ server results. Immutable season-end snapshots/rewards stay the next dependency;
 this live board does not certify full F28. Engine/economy values remain unchanged.
 
 | 2026-09-10 public board WIP | Public server ranking and web consumer implemented;16focused,4new remote and2local browser/config/build pass. Full suite and independent review running. No economic values or engine rules changed. |
+
+
+## Public board review correction
+
+Review of1803b85 found a P1: historically accepted zero/fractional page counts or
+zero/overflow refresh timers could break the new board. `rankSettings` now validates
+whole positive topN/refreshMs, native timer ceiling and whole nonnegative neighbor
+count at new proposal/publication admission and at the public consumer. Existing
+config reads/replay/composition keep their historical semantics; an invalid old
+public setting refuses ranking reads until a corrective version activates, without
+blocking the game or rewriting its live pin. Three regressions fail before the fix.
+No economy JSON or engine changes. Full correction verification/review pending.
+
+| 2026-09-10 public board review | P1 administrator display bounds fixed at shared server admission/consumer, with legacy draft rejection and readable/correctable published pins. |

@@ -294,3 +294,36 @@ test('an already-published threshold-deletion scope still opens shifts and can b
   assert.equal(store.read('scope-player').world.shift!.configVersion, resolved.version);
   assert.deepEqual(f.open().read('scope-player'), store.read('scope-player'));
 });
+
+for (const scoped of [false, true]) test(`leaderboard display tuning refuses zero, fractional and overflowing timers or page counts in ${scoped ? 'scoped' : 'default'} admin drafts`, t => {
+  const f = fixture(t), who = f.actor('super'); f.store.createPlayer('rank-tuning-player', 42);
+  const invalid = [{ topN: 0 }, { topN: 0.5 }, { topN: Number.MAX_SAFE_INTEGER + 1 }, { refreshMs: 0 }, { refreshMs: 1.5 }, { refreshMs: 2147483648 }, { neighborsWindow: 0.5 }];
+  for (const [i, patch] of invalid.entries()) {
+    const raw = structuredClone(config.raw); Object.assign(raw.leaderboard, patch);
+    assert.throws(() => f.registry.propose(who, { key: 'bad-rank-' + i, baseVersion: config.version, snapshot: raw, reason: 'Leaderboard display tuning',
+      ...(scoped ? { scope: { kind: 'segment' as const, id: 'rank-tuning', playerIds: ['rank-tuning-player'], priority: 0, expiresAt: null, previousVersion: null, ticketId: null } } : {}) }), /config:leaderboard/, JSON.stringify(patch));
+  }
+  assert.equal(f.db.prepare('SELECT COUNT(*) n FROM registry_proposals').get()!.n, 0);
+});
+
+test('a pre-fix invalid leaderboard draft cannot preview or publish, while historical invalid pins stay readable and can be corrected', async t => {
+  const raw = structuredClone(config.raw); raw.leaderboard.topN = 0; raw._meta.version = 'old-invalid-rank';
+  const f = fixture(t, loadConfig(raw)), who = f.actor('economy');
+  f.store.createPlayer('old-rank-pin', 42); assert.ok(f.store.command('old-rank-pin', { idempotencyKey: 'open', command: { type: 'startShift' } }).result.ok);
+  const before = f.store.read('old-rank-pin'); await assert.rejects(f.store.leaderboard({ kind: 'ranking', page: 0 }), /config:leaderboard/);
+  const fixed = structuredClone(raw); fixed.leaderboard.topN = config.raw.leaderboard.topN;
+  const good = f.registry.propose(who, { key: 'fix-rank', baseVersion: raw._meta.version, snapshot: fixed, reason: 'Correct old display setting' });
+  f.registry.approve(f.actor('super', 'rank-reviewer'), good.version); const published = f.registry.publish(who, good.version); f.now = published.effective_at;
+  assert.ok((await f.store.leaderboard({ kind: 'ranking', page: 0 })).rows);
+  assert.equal(f.store.read('old-rank-pin').world.shift!.configVersion, before.world.shift!.configVersion);
+  assert.equal(f.registry.config(raw._meta.version).values.leaderboard.topN, 0);
+  const version = 'approved-bad-rank-draft', old = structuredClone(fixed); old._meta.version = version; old.leaderboard.refreshMs = 0;
+  const reason = 'Old approved draft', fingerprint = JSON.stringify({ baseVersion: good.version, config: configContent(loadConfig(old)), reason, effective: 'next_day' });
+  f.db.prepare('INSERT INTO configs VALUES (?,?)').run(version, JSON.stringify(old));
+  f.db.prepare('INSERT INTO registry_proposals VALUES (?,?,?,?,?,?,?,?,?)').run(version, 'old-bad-rank', good.version, fingerprint, who.subject, JSON.stringify(['leaderboard.refreshMs']), reason, 'next_day', f.now);
+  f.db.prepare('INSERT INTO registry_approvals VALUES (?,?,?)').run(version, who.subject, f.now);
+  const registry = f.open().registry;
+  assert.throws(() => registry.impact(f.actor('economy'), version), /config:leaderboard/);
+  assert.throws(() => registry.publish(f.actor('economy'), version), /config:leaderboard/);
+  assert.equal(registry.latest().version, good.version);
+});
