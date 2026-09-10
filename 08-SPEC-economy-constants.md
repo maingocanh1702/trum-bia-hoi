@@ -170,12 +170,12 @@ Giá hiển thị = `round(priceBase × k)`. Mua bằng `coins`, không giảm `
 
 ### 8.1 Bom bia + vòi rót (`keg`) — thay Ấm tích 🟡
 
-| Lv | Tên | priceBase | ×k | Vòi (`pourSlots`) | `pourMs` | Bom chứa: `kegStorage` / `kegBatch` / `refillMs` (**bật**, `refillEnabled=true`) |
+| Lv | Tên | priceBase | ×k | Vòi (`pourSlots`) | `pourMs` | Cốc rót sẵn: `kegStorage` / `kegBatch` / `refillMs` (**bật**, `refillEnabled=true`) |
 |:--:|---|--:|--:|:--:|--:|---|
-| 1 | Bom nhựa + vòi tay | 0 | 0 | 1 | 2.000 | **3 / 2 / 12.000** (10 cốc/phút) |
-| 2 | Bom inox nhỏ | **5.000** | **12.500** | 2 | 1.800 | **6 / 3 / 8.000** (22) |
-| 3 | Bom inox lớn | **20.000** | **50.000** | 3 | 1.600 | **10 / 5 / 6.000** (50) |
-| 4 | Hệ thống áp suất | **80.000** | **200.000** | 4 | 1.400 | **18 / 8 / 5.000** (96) |
+| 1 | Bom nhựa + vòi tay | 0 | 0 | 1 | 2.000 | **4 / 2 / 12.000** (10 cốc/phút) |
+| 2 | Bom inox nhỏ | **5.000** | **12.500** | 2 | 1.800 | **7 / 3 / 8.000** (22) |
+| 3 | Bom inox lớn | **20.000** | **50.000** | 3 | 1.600 | **12 / 5 / 6.000** (50) |
+| 4 | Hệ thống áp suất | **80.000** | **200.000** | 4 | 1.400 | **20 / 8 / 5.000** (96) |
 | 5 | Trạm rót công nghiệp | **300.000** | **750.000** | 6 | 1.200 | **40 / 14 / 4.000** (210) |
 
 - **Hai lớp hoạt động cùng lúc:** đầu ca châm lượng còn thiếu tới `kegStorage` từ kho bia thật, trừ cả lượng đã giữ trong mẻ đang chạy khi tính chỗ trống. Giữ bia dư và mẻ đang chạy qua ca/nâng cấp.
@@ -620,3 +620,5 @@ Các số sim/19-test trong các dòng sau thuộc engine tham chiếu của che
 | 2026-09-10 advanced-progression k | Owner chọn (a), xem04-SPEC§5: band2.0–3.0 chỉ áp dụng profile chuẩn cold-menu/full-menu; career≥30ngày đạtLP4 với meta multipliers có soft cap k≤3.5 qua gate tự động≥2seed. Hai số3.483282/3.318249 PASS theo quy tắc mới. **Không thay số kinh tế, configVersion, anchor82.5 hoặc clamp thu nhập**. Re-evaluate after Alpha playtest with real player data; theo dõi lạm phát endgame qua báo cáo faucet/sink7ngày, không qua k. |
 
 | 2026-09-10 / JSON2.0.2 | `onboarding.loginPrompt.leaveProgress.{minCompletedShifts,minLifetimeEarned}` (Tier C, Game Admin, next applicable pin) defaults1/1. The departure invitation appears when completed shifts OR canonical lifetime earned coins reach the corresponding threshold. `minLifetimeEarned` uses displayed coins, without Base/k scaling, and does not alter earnings or any economy number. Positive safe integers only. Old snapshot bytes stay unchanged; missing presentation thresholds use the registry seed. |
+
+| 2026-09-11 / JSON2.0.3 | owner 2026-09-11: pre-poured buffer 4/7/12/20/40 (Steer14 fallback; primary5/8/12/20/40 failed standard k at seeds42/99:3.0297/3.1504). After playable-v0: only kegStorage grows; kegBatch2/3/5/8/14, refillMs12/8/6/5/4s, pourSlots and pourMs unchanged. Sustained throughput unchanged; old shift/registry pins remain immutable. Accepted after full verify:406tests,10standard cohorts k2.5644–2.9168,15rush, career42/99 k3.465461/3.393197≤3.5; review CLEAN. |

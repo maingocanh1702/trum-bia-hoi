@@ -142,8 +142,10 @@ test('opening with an in-flight refill fills only unreserved capacity and never 
   const g = game(raw => { raw.onboarding.firstShift.guaranteedFirstGroupWithinMs = 60000; });
   // Isolate the carry boundary; raw stock already excludes this existing batch reservation.
   const w = g.world; w.beer = { ready: 1, batch: { quantity: 1, startedAt: 0, readyAt: 9000 } };
-  const stock = w.inventory.bia, batch = structuredClone(w.beer.batch);
-  send(g, { type: 'startShift' }, 'carry-open'); assert.equal(w.beer.ready, 2); assert.equal(w.inventory.bia, stock - 1); assert.deepEqual(w.beer.batch, batch);
+  const stock = w.inventory.bia, batch = structuredClone(w.beer.batch), capacity = g.config.values.upgrades.keg.kegStorage[0];
+  assert.ok(batch);
+  const fill = capacity - w.beer.ready - batch.quantity;
+  send(g, { type: 'startShift' }, 'carry-open'); assert.equal(w.beer.ready, capacity - batch.quantity); assert.equal(w.inventory.bia, stock - fill); assert.deepEqual(w.beer.batch, batch);
   const after = structuredClone(w); send(g, { type: 'startShift' }, 'carry-open'); assert.deepEqual(w, after);
-  g.advance(9000); assert.equal(w.beer.ready, 3); assert.equal(w.beer.batch, null); assert.equal(w.inventory.bia, stock - 1);
+  g.advance(9000); assert.equal(w.beer.ready, capacity); assert.equal(w.beer.batch, null); assert.equal(w.inventory.bia, stock - fill);
 });

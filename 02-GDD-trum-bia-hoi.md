@@ -99,7 +99,7 @@ Cốc là **tài nguyên quay vòng định danh** (`reservedGlassId`) = lõi bo
 
 | Thiết bị (gốc → bia hơi) | Vai trò | Đường cong giá (×k) | Stats theo cấp |
 |---|---|---|---|
-| Ấm tích → **Bom bia + vòi rót** | rót bia (batch + tốc độ) | 0/3k/12k/50k/200k → ×2.5 | rót sẵn5→40 suất/mẻ; 3s→1.8s (08§8.1) |
+| Ấm tích → **Vòi rót (`keg`)** | rót bia (batch + tốc độ) | 0/5k/20k/80k/300k → ×2.5 | chứa rót sẵn4/7/12/20/40 cốc; mẻ2/3/5/8/14 cốc mỗi12/8/6/5/4s; vòi2s→1.2s/cốc (08§8.1) |
 | Bộ rửa ly → **Bồn rửa cốc** | vòng đời cốc clean→dùng→bẩn→rửa | 0/2.5k/10k/40k/150k → ×2.5 | wash 7s→1.5s, slot 1→5 |
 | Thùng đá → **Hầm/tủ giữ lạnh** | giữ bia lạnh, chống mất hơi | 0/2k/8k/30k/100k → ×2.5 | freshness 12s→∞ (xem §6) |
 | Quầy → **Quầy/kho** | sức chứa kho (bia, nguyên liệu mồi) | 0/1k/5k/20k/80k → ×2.5 | cap 15→150 |
@@ -456,3 +456,5 @@ Mục tiêu: chứng minh **vòng lặp vận hành ca vui & economy cân**. KH�
 | 2026-09-09 batch update | Theo owner: rót bia dự trữ/rửa theo mẻ, capacity UI, nguyên liệu cập nhật ngay. Quy tắc và số ở08§8.1; tách suất trong bom khỏi pool ly; mặc định rót bù chỗ trống/freshness từ mâm đã được thông báo, câu hỏi tùy chọn còn mở. |
 
 | 2026-09-11 | Owner Steer13 — presentation only: tồn `inventory.bia` gọi Bom bia / Beer keg, nhập bia là Mua bom / Buy keg; `beer.ready` là Cốc rót sẵn, thiết bị `keg` là Vòi rót / Beer taps (giữ tên cấp); HUD hiển thị riêng bom, rót sẵn, cốc sạch. Không đổi engine/config/economy. |
+
+| 2026-09-11 / Steer14 | owner 2026-09-11: pre-poured buffer 4/7/12/20/40 (JSON2.0.3 fallback after primary5/8/12/20/40 failed standard k; after playable-v0). §4 keg row matches JSON; existing prices/tap/batch/refill values are reconciled in prose, not retuned. Only the ready-buffer capacity changes; standard k2.5644–2.9168 and career42/99 k3.465461/3.393197≤3.5 passed full verify (406tests,15rush), review CLEAN. |

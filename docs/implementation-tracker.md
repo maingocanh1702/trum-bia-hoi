@@ -1,9 +1,9 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> Current owner target (Steer12): **playable-v0**, not full milestone closure. Guest full-shift smoke on three viewports + dev identity + persistence/performance; M6/M7/M8 deferred; working draft/placeholder assets accepted.
+> **playable-v0 DELIVERED** (`a602af3`): three full-shift viewports and dev identity PASS; local5174/5175 pinned to that tag. Post-tag Steer14 source config2.0.3 uses the verified fallback4/7/12/20/40. Full milestone closure remains separate; M6/M7/M8 deferred.
 
-> **Version:** v0.62.2
-> **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-10 (M4 registry lifecycleb5d3545 verified/reviewed;15/18)
+> **Version:** v0.63.0
+> **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-11 (playable-v0 delivered; Steer14 config2.0.3 fallback verified)
 > **Trạng thái:** Active — **M0 COMPLETE theo exit criteria; xem báo cáo closure M0–M5. M1–M3 tiếp tục triển khai; M4 web server/outbox đã qua review và101browser checks; đạt15/18 tiêu chí; chọn ngôn ngữ trước game5871453 đã verify/review; registry c1e953c, admin API6f42575 và editor56a0a44 đã verify/review; scoped core d91b92a đã verify/review; scope editor/impact a84f41f và dự báo xu7ngày a99a567 đã verify/review; Google guest-link transport3c369aa đã verify/review; guest giữ tiến độ trên thiết bị theo Steer #5 lúc15:30; diễn giải theo phiên8c9dc64 đã bị thay thế; đăng nhập lại ddc77a9 đã verify/review; guest trên thiết bịe34fd56 đã verify/review; lời mời/cooldown và validation config03dae56 đã verify/review; core/API duyệt lịch sử local và flag521e901 đã verify/review; baseline và caller-only score7e7f337 đã verify/review; controls85fbdfb đã verify/review:378unit/server +24admin browser, final5ca liên quan/config/build qua; public rank628eb72 đã verify/review:386unit/server,11affected remote/24admin browser,config/build; review cuối CLEAN sau sửa P1 display bounds; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.3** (1 phase, mốc M0–M9).
 > **Release scope:** M6/M7/M8 DEFERRED by owner 2026-09-11 — post-release. M4 → automated gameplay M1/M2/M3/M5 → assets → gameplay-facing M9 release candidate. Free, no monetization in this build.
 > **Owner:** Team
@@ -450,3 +450,22 @@ PASS on the stable config2.0.2/rules24 build: full real-time12-minute guest shif
 Full verify:406/406unit/server,10standard cohorts k2.4186–2.8738,15rush cases, career42/99 k3.48328/3.31825≤3.5. Three legacy risk-preview regressions and check:assets pass; shipped risk controls are hidden. Dev identity acceptance is in a7331b4; beer naming in e4a4bf6. Independent release diff review CLEAN.132manifest entries,108drafts,16accepted placeholders; two failed-alpha imagegen attempts recorded and counter cards have a registered table fallback.
 
 This closes the owner-defined playable-v0 subset, not every M1–M5 milestone. M6/M7/M8 remain deferred; human-only acceptance remains WAIVED. Packaging/run instructions and exact code commit: [playable-v0](playable-v0.md). Next, only after the tag: Steer14 buffer5/8/12/20/40 with full k gates and the owner-specified fallback.
+
+
+## Steer14 complete — config2.0.3 buffer fallback, 2026-09-11
+
+After tag `playable-v0` (`a602af3`, code `d048a9c`), primary buffer5/8/12/20/40 failed standard full-menu k at seeds42/99:3.0297/3.1504. It was not committed or published. Owner-authorized fallback **4/7/12/20/40** passed full `npm run verify`:406/406unit/server,10standard cohorts,15rush cases,30-day LP4 careers42/99 **3.465460767842698 / 3.393196640939153**≤3.5. The earlier host-sleep run timed out two forecast tests; the unchanged full rerun passed all406. Three affected capacity UI cases and independent final fallback review CLEAN.
+
+Only JSON metadata and `upgrades.keg.kegStorage` changed; kegBatch2/3/5/8/14, refillMs12/8/6/5/4s, pourSlots/pourMs/refillEnabled remain identical. GDD keg row and08§8.1 now match JSON; default shift prefill and VI/EN capacity labels read config automatically. Legacy fixtures unchanged.
+
+| Seed | Cold-menu k | Full-menu k |
+|---|---:|---:|
+|20260611|2.5762|2.9005|
+|42|2.6124|2.8953|
+|20260908|2.5739|2.9168|
+|7|2.5644|2.8068|
+|99|2.6088|2.8521|
+
+Receipts: `.qa/buffer-5-verify.txt` (rejected primary), `.qa/buffer-4-final-verify.txt`, `.qa/buffer-cohorts.json`, `.qa/buffer-4-career-result.json`, `.qa/buffer-4-web-final.txt`, `.qa/review-buffer-final-verdict.txt`. The standard simulator does not print Lv1 served-per-shift, so no such delta is inferred from its1000-serve cohorts. Re-evaluate after Alpha playtest with real player data; the7-day faucet/sink report remains the endgame-inflation lens.
+
+Local5174/5175 are verified at the pinned `playable-v0` checkout, config2.0.2, with existing database/backup and explicit dev identity; real runtime midshift sign-in smoke PASS. Config2.0.3 is the new source seed, not a silent publication into that existing registry or a rewrite of open-shift pins. M6/M7/M8 remain deferred; no monetization.

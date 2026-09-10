@@ -7,6 +7,10 @@
 
 ---
 
+## Steer14 complete — 2026-09-11
+
+playable-v0 tag a602af3 is live on5174/5175 with preserved SQLite and explicit dev identity; runtime midshift sign-in PASS. After tag, primary5/8/12/20/40 failed standard k; config2.0.3 fallback4/7/12/20/40 passed full verify406tests/10standard/15rush/2careers (42:3.465461,99:3.393197),3capacity UI cases and final review CLEAN. JSON changes only metadata/storage; specs/tests reconciled. Source config2.0.3 is not published into the pinned preview registry. Owner-defined playable target is delivered; M6/M7/M8 remain deferred.
+
 ## playable-v0 acceptance — 2026-09-11
 
 PASS on the stable config2.0.2/rules24 build: full real-time12-minute guest shifts at390×844,360×740,1280×720; service/washing/restock, actual in-shift upgrade purchase, summary, next day, reload and new-tab persistence. First playable1340/1264/627ms, measured60.09/60.34/60.16fps;0console errors/failed image requests. Mobile receipts passed in the combined run; desktop passed independently after removing a stale order-bubble locator from the harness.
