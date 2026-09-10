@@ -10,7 +10,11 @@ export const STEP_MS=100, MANAGEMENT_MS=1000, MAX_DAY_STEPS=864000;
 
 export function createManagementPolicy(game:Game,send:(command:Command)=>void) {
   const w=game.world;
-  let attainedLocationId=w.location;
+  let attainedLocationId:unknown=w.lease?.locationId??w.location;
+  if(!w.lease)for(let i=w.events.length-1;i>=0;i--) {
+    const event=w.events[i];
+    if(event.type==='lease_started'){attainedLocationId=event.data.locationId;break;}
+  }
   const reserve = () => {const c=game.config.values;return DISHES.filter(d => c.menu[d].unlock.kitchenLevel <= w.equipment.kitchen)
     .reduce((sum, d) => sum + c.inventory.bulkSize * c.menu[d].bulkCost, 0);};
   const affordable = (cost: number) => cost + reserve() <= w.coins;

@@ -71,4 +71,10 @@ test('an existing signed lease separates returned principal and renews by locati
  const renewal=next.game.log.find(e=>e.at>=lease.expiresAt&&e.command.type==='rentLocation'&&e.result.ok)!;
  assert.equal((renewal.command as Extract<Command,{type:'rentLocation'}>).locationId,'ben_xe');
  assert.equal(encodeSave(source),before);assert.deepEqual(decodeSave(encodeSave(next.game)).world,next.game.world);
+ const expired=decodeSave(before);expired.advance(lease.expiresAt);
+ assert.equal(expired.world.lease,undefined);assert.equal(expired.world.location,fixture.values.locations.fallback);
+ const resumed=projectEconomy(expired,[{from:0,config:fixture}],1);
+ const afterExpiry=resumed.game.log.slice(expired.log.length).find(e=>e.command.type==='rentLocation'&&e.result.ok)!;
+ assert.equal((afterExpiry.command as Extract<Command,{type:'rentLocation'}>).locationId,'ben_xe');
+ assert.deepEqual(decodeSave(encodeSave(resumed.game)).world,resumed.game.world);
 });
