@@ -150,7 +150,7 @@ test('stale publication impact closes confirmation and requires inspection of th
 });
 
 test('seven-day forecast renders real protected worker totals in Vietnamese and English without playing the source save',async({page,browser})=>{
- test.setTimeout(240000);await login(page,'super-one');const player=await playerContext(browser);
+ test.setTimeout(240000);await page.request.get('/api/__test/advance?ms=30000');await login(page,'super-one');const player=await playerContext(browser);
  await edit(page,'menu.bia.price','Seven-day browser forecast');await scopeFields(page,player.playerId);await page.getByRole('button',{name:'Xem diff',exact:true}).click();await proposal(page);
  const panel=page.getByRole('region',{name:'Dự báo kinh tế 7 ngày'});
  const response=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/admin/forecast',{timeout:210000});
