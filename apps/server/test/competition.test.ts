@@ -4,6 +4,8 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
+import zlib from 'node:zlib';
+import { syncBuiltinESMExports } from 'node:module';
 import { Game, config, encodeSave, loadConfig, type Command, type World } from '@tbh/engine';
 import { importBaseline, competitivePeriods } from '../src/competitive-score';
 import { GameStore } from '../src/store';
@@ -239,4 +241,31 @@ test('competitive tiers and qualification reuse each active season pin; unwindow
   assert.equal(periods[0].earned, threshold); assert.equal(periods[0].tierId, 'bac'); assert.equal(periods[0].reason, 'insufficientShifts');
   const legacy = { ...world, seasons: undefined, seasonEarned: 999999 } as World;
   assert.deepEqual(competitivePeriods(legacy, () => config, { ...state, localImport: null }), []);
+});
+
+test('legacy baseline inflation runs only in the admitted worker while concurrent recovery is refused', async t => {
+  const f = fixture(t), { receipt } = await f.imported(), native = zlib.gunzipSync;
+  removeBaseline(f.db);
+  zlib.gunzipSync = (() => { throw Error('test:mainThreadInflation'); }) as typeof native;
+  syncBuiltinESMExports();
+  try {
+    const first = f.store.competitiveStatus(receipt.token!); void first.catch(() => {});
+    await assert.rejects(f.open().competitiveStatus(receipt.token!), /importBusy/);
+    const result = await first;
+    assert.equal(result.review, 'pending'); assert.ok(result.periods.every(p => p.earned === 0));
+    assert.equal(f.db.prepare("SELECT COUNT(*) n FROM registry_audit WHERE type='LocalImportBaseline'").get()!.n, 1);
+  } finally { zlib.gunzipSync = native; syncBuiltinESMExports(); }
+});
+
+test('corrupt retained gzip or mismatched original digest cannot become a zero imported baseline', async t => {
+  const f = fixture(t), { receipt, text, before } = await f.imported(); removeBaseline(f.db);
+  f.db.exec('DROP TRIGGER local_imports_update');
+  for (const bytes of [Buffer.from('broken gzip'), zlib.gzipSync(text + ' ')]) {
+    f.db.prepare('UPDATE local_imports SET original_gzip=? WHERE player_id=?').run(bytes, receipt.playerId);
+    await assert.rejects(f.store.competitiveStatus(receipt.token!), /invalidLocalArchive/);
+    assert.equal(f.db.prepare("SELECT COUNT(*) n FROM registry_audit WHERE type='LocalImportBaseline'").get()!.n, 0);
+    assert.deepEqual(f.store.read(receipt.playerId), before);
+  }
+  f.db.prepare('UPDATE local_imports SET original_gzip=? WHERE player_id=?').run(zlib.gzipSync(text), receipt.playerId);
+  assert.ok((await f.store.competitiveStatus(receipt.token!)).periods.every(p => p.earned === 0));
 });

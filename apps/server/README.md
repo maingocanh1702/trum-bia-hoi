@@ -522,7 +522,8 @@ worker interruption is503. No public ranking or season-end snapshot is returned.
 
 `LocalImportBaseline` is a checksummed, append-only audit record derived from the
 validated world, inserted atomically with a new local claim. Old imports recover
-from their exact retained archive through the existing replay worker. Missing or
+from their exact retained archive through the existing replay worker. Inflation,
+digest checking and replay all run inside its single admission guard. Missing or
 inconsistent provenance never defaults to zero. Current review/flag and account
 ownership are read after recovery; current engine totals, tier helper and each
 period's pinned config supply the projection. Pending/rejected local earnings and

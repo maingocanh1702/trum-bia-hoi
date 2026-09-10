@@ -1,7 +1,6 @@
 import { DatabaseSync } from 'node:sqlite';
 import { createHash, randomBytes, randomInt, randomUUID } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
-import { gunzipSync } from 'node:zlib';
 import { validGoogleSubject, type GoogleIdentity } from './google';
 import { LOCAL_ARCHIVE_BYTES, validateLocalArchive } from './local-archive';
 import { AdminAuth, initializeAdmin } from './admin-auth';
@@ -333,10 +332,8 @@ export class GameStore {
     const state = this.competition.state(id);
     if (!state.localImport || this.importedBaseline(id)) return;
     const origin = state.localImport, row = this.db.prepare('SELECT original_gzip FROM local_imports WHERE player_id=?').get(id)!;
-    const text = gunzipSync(row.original_gzip as Uint8Array, { maxOutputLength: LOCAL_ARCHIVE_BYTES }).toString('utf8');
-    if (createHash('sha256').update(text).digest('hex') !== origin.digest) throw Error('competition:invalidBaseline');
     const snapshots = this.db.prepare('SELECT snapshot FROM configs').all().map(row => String(row.snapshot));
-    const archive = await validateLocalArchive(text, snapshots, origin.sourceNow);
+    const archive = await validateLocalArchive({ gzip: row.original_gzip as Uint8Array, digest: origin.digest }, snapshots, origin.sourceNow);
     this.db.exec('BEGIN IMMEDIATE');
     try {
       const current = this.competition.state(id).localImport;

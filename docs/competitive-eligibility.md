@@ -132,3 +132,5 @@ An authenticated `/player/competition` read returns only the caller's current
 eligibility/score, with exact-session revalidation after recovery. It accepts no
 player ID, client total or review decision. Public ordering, snapshots and admin
 history controls remain the following work; this does not close F28.
+
+| 2026-09-10 score review correction | Independent review found P1 synchronous inflation of old archives before worker admission. Move inflate/digest/replay into the existing guarded worker; a regression stubs main-thread gunzip to fail and proves concurrent recovery is refused. Corrupt gzip/digest remains a refusal, never a zero baseline. Full correction verification follows. |

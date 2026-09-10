@@ -1,5 +1,6 @@
 import { Worker } from 'node:worker_threads';
-import { gzipSync } from 'node:zlib';
+import { gzipSync, gunzipSync } from 'node:zlib';
+import { createHash } from 'node:crypto';
 import { configContent, decodeSave, loadConfig, type EngineCheckpoint, type LoggedCommand, type World } from '@tbh/engine';
 
 // config-exempt: upload/worker resource bounds, not gameplay limits or economy tuning.
@@ -7,11 +8,14 @@ export const LOCAL_ARCHIVE_BYTES = 128 * 1024 * 1024;
 const WORKER_TIMEOUT_MS = 120000, WORKER_HEAP_MB = 1024;
 export type LocalArchive = { playerId: string; seed: number; createdAt: number; initialConfigVersion: string;
   world: World; log: LoggedCommand[]; original: Uint8Array; checkpoint: EngineCheckpoint };
+type ArchiveSource = string | { gzip: Uint8Array; digest: string };
 // ponytail: one replay per process; use a bounded shared queue before multi-host uploads.
 let validating = false;
 
 /** Worker entry only. Uploaded configuration is never admitted into the registry. */
-export function replayLocalArchive(text: string, snapshots: string[], now: number): LocalArchive {
+export function replayLocalArchive(source: ArchiveSource, snapshots: string[], now: number): LocalArchive {
+  const text = typeof source === 'string' ? source : gunzipSync(source.gzip, { maxOutputLength: LOCAL_ARCHIVE_BYTES }).toString('utf8');
+  if (typeof source !== 'string' && createHash('sha256').update(text).digest('hex') !== source.digest) throw Error('store:invalidLocalArchive');
   const save = JSON.parse(text);
   if (!save || typeof save.playerId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(save.playerId) ||
       !Number.isSafeInteger(save.now) || save.now > now || !Number.isSafeInteger(save.createdAt) || save.createdAt < 0 || save.createdAt > save.now ||
@@ -35,14 +39,16 @@ export function replayLocalArchive(text: string, snapshots: string[], now: numbe
 }
 
 /** Do not block request handling while replaying a real career archive. */
-export async function validateLocalArchive(text: string, snapshots: string[], now: number): Promise<LocalArchive> {
-  if (typeof text !== 'string' || !text.length || Buffer.byteLength(text) > LOCAL_ARCHIVE_BYTES) throw Error('store:localArchiveSize');
+export async function validateLocalArchive(source: ArchiveSource, snapshots: string[], now: number): Promise<LocalArchive> {
+  if (typeof source === 'string' ? !source.length || Buffer.byteLength(source) > LOCAL_ARCHIVE_BYTES :
+    !source || !(source.gzip instanceof Uint8Array) || !source.gzip.length || source.gzip.length > LOCAL_ARCHIVE_BYTES * 2 ||
+    typeof source.digest !== 'string' || !/^[a-f0-9]{64}$/.test(source.digest)) throw Error('store:localArchiveSize'); // config-exempt: compressed archive overhead allowance and SHA256 protocol
   if (validating) throw Error('store:importBusy');
   validating = true;
   let worker: Worker | undefined, timer: ReturnType<typeof setTimeout> | undefined;
   try {
     worker = new Worker(new URL('./local-archive-worker.mjs', import.meta.url), {
-      workerData: { text, snapshots, now }, execArgv: [], resourceLimits: { maxOldGenerationSizeMb: WORKER_HEAP_MB },
+      workerData: { text: source, snapshots, now }, execArgv: [], resourceLimits: { maxOldGenerationSizeMb: WORKER_HEAP_MB },
     });
     return await new Promise((resolve, reject) => {
       timer = setTimeout(() => reject(Error('store:importInterrupted')), WORKER_TIMEOUT_MS);
