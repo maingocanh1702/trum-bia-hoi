@@ -2253,3 +2253,13 @@ pass; full tests/browser/sim and independent review underway. Scope transport/ed
 impact forecasts and automatic segment classification remain; M4 stays11/18 OPEN.
 No new game values, public archive upload, performance tuning or live Google setup.
 Contract: [Scoped Config Registry](scoped-config-registry.md).
+
+
+Final scoped core `d91b92a`:334engine/server (13scoped cases),25focused registry
+checks, config zero warnings/build/typecheck PASS;11admin/10remote browser at the
+foundation, unchanged UI/HTTP in correction.10ordinary cohorts k2.4186–2.8738 and
+15rush PASS. Full review P2 campaign timing fixed; correction has no remaining
+findings and independently passed its new regression. Reviewer full rerun hit
+local-listen EPERM; host full suite passed. Receipt `.qa/scopes-verification.json`.
+M4 remains11/18 OPEN. Next protected scope/audience/expiry/ticket controls and impact
+preview; automatic segment/cap policy awaits owner choice. No public upload/M9 work.

@@ -56,3 +56,21 @@ segment classification/cap semantics remain separate and unimplemented.
 | Date | Change |
 |---|---|
 | 2026-09-10 | Implemented core/removal guards, then corrected campaign entitlement timing against JSON governance and SPEC22; final review pending. |
+
+
+## Verified server-core receipt
+
+Final product `d91b92a`:334engine/server tests including13scoped cases;25focused
+registry/scope cases, config zero warnings and build/typecheck PASS. Foundation
+11admin/10remote browser checks PASS; no UI/HTTP changes in the correction. Ordinary
+10cohorts k2.4186–2.8738 and15rush PASS with unchanged engine/config values.
+Full review found one P2 (campaign timing), fixed; correction review reports no
+remaining findings and independently passes the new regression. Reviewer full rerun
+was blocked by local-listen EPERM; host completed the entire suite. Receipt
+`.qa/scopes-verification.json`. Schema10 core complete, scope transport/editor and
+impact forecasts remain. M4 stays11/18 OPEN; no automatic segment/cap completion,
+public history upload, live Google setup or M9 performance claim.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 | d91b92a verification and independent correction review completed; recorded remaining scope/entitlement boundaries. |

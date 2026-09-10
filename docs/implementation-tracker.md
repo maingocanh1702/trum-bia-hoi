@@ -1,8 +1,8 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.43.0
-> **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-10 (scoped registry core đang verify/review)
-> **Trạng thái:** Active — **M0 COMPLETE theo exit criteria; xem báo cáo closure M0–M5. M1–M3 tiếp tục triển khai; M4 web server/outbox đã qua review và101browser checks; đạt11/18 tiêu chí; registry c1e953c, admin API6f42575 và editor56a0a44 đã verify/review; scoped config/account/import UI còn thiếu; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.3** (1 phase, mốc M0–M9).
+> **Version:** v0.43.1
+> **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-10 (scoped registry core đã verify/review)
+> **Trạng thái:** Active — **M0 COMPLETE theo exit criteria; xem báo cáo closure M0–M5. M1–M3 tiếp tục triển khai; M4 web server/outbox đã qua review và101browser checks; đạt11/18 tiêu chí; registry c1e953c, admin API6f42575 và editor56a0a44 đã verify/review; scoped core d91b92a đã verify/review; scope/account/import UI còn thiếu; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.3** (1 phase, mốc M0–M9).
 > **Owner:** Team
 > **Mục đích:** Master status board cho mọi feature F01–F28. Nhãn `Phase N` chỉ là **khoá parser** của dashboard-engine; mốc thật: P0 → M0 (nền) · P1 → M1–M2 · P2 → M3 · P3 → M4–M6 · P4 → M7–M8 · QA/release → M9. Là **input cho dashboard-engine** (`tools/dashboard-engine/build_dashboard.py`). Nguồn quyết định/scope = `02-GDD-trum-bia-hoi.md` + `06-ROADMAP-trum-bia-hoi.md`; tracker chỉ theo dõi **trạng thái build**.
 > **Cập nhật:** đổi status mỗi khi 1 feature chuyển trạng thái (bắt đầu code / review / merge).
@@ -37,11 +37,11 @@ Giữ nguyên config và full M0–M9 với20feature đang làm.
 
 | Milestone | Status | Acceptance evidence / remaining |
 |---|---|---|
-| M0 | ✅ COMPLETE | check:config/build/321tests;10kcohorts2.4186–2.8738,5seeds; reviewed foundation/checkpoint/web. |
+| M0 | ✅ COMPLETE | check:config/build/334tests;10kcohorts2.4186–2.8738,5seeds; reviewed foundation/checkpoint/web. |
 | M1 | 🟡 OPEN | Core service/reload/pause pass; complete3-viewport shift, axe, recommendation and human feel evidence remain. |
 | M2 | 🟡 OPEN | Guest/guide pass; five-person study, integrated Google and admin/locale/prompt criteria remain. |
 | M3 | 🟡 OPEN | Standard k/kitchen/rush/quests/sign pass; advanced band/feel and equipment/customer assets remain. |
-| M4 | 🟡 OPEN — priority | 11/18 criteria PASS. Remote web936e9d5, registryc1e953c, admin API6f42575 and editor56a0a44 verified. Scopes/forecasts/emergency and account/import/eligibility/locale remain. |
+| M4 | 🟡 OPEN — priority | 11/18 criteria PASS. Remote web936e9d5, registryc1e953c, admin API6f42575 and editor56a0a44 verified. Scoped server core d91b92a verified; scope UI/forecasts/emergency and account/import/eligibility/locale remain. |
 | M5 | 🟡 OPEN | Local seasons/LP/lease/quest rules pass; community ranks/snapshot/rewards/referral/gift integration remains. |
 
 Full criterion list and named checks: [M0–M5 closure](milestone-closure-m0-m5.md).
@@ -327,3 +327,6 @@ rows. Follow owner queue M4→M6→M7→M8→M9; defer extra M5 breadth/performa
 
 
 | 2026-09-10 | v0.43.0 | Schema10 scoped registry core: immutable explicit audiences, per-key precedence/priority, finite campaign/player expiry, ticketed overrides, removal-aware approval policy, deterministic resolved snapshots and actual opening pin.12focused cases pass; full verify/review in progress. M4 remains11/18 OPEN; protected scope controls, forecasts, automatic segment policy and account gaps remain. |
+
+
+| 2026-09-10 | v0.43.1 | Scoped core d91b92a verified:334engine/server (13scope cases),25focused,config zero warnings/build PASS;11admin/10remote browser,10ordinary kcohorts2.4186–2.8738 and15rush PASS. Full review P2 campaign timing corrected; final review no remaining findings and new regression independently PASS (full rerun blocked by local-listen EPERM). M4 remains11/18 OPEN; scope transport/editor, forecasts, automatic segment/cap policy and account gaps remain. |

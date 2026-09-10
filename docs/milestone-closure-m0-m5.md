@@ -232,3 +232,18 @@ are not milestone rows, so completing M0 does not incorrectly close all Phase0 r
 | 2026-09-10 admin API evidence |6f42575:320engine/server,10remote browser, config/build and review CLEAN. Server-side Google/TOTP/RBAC/registry transport verified; browser editor/login absent. Counts unchanged: M0 3/3, M1 6/12, M2 4/9, M3 5/12, M4 10/18, M5 9/25. |
 
 | 2026-09-10 admin browser acceptance |56a0a44 closes the one-key/effectiveAt browser criterion with11admin/10remote browser,321engine/server and config/build PASS; final independent review CLEAN. M4 becomes11/18, still OPEN. Other milestones unchanged: M0 3/3, M1 6/12, M2 4/9, M3 5/12, M5 9/25. No live Google consent claim or M9 work. |
+
+
+| 2026-09-10 scoped core evidence | d91b92a:334engine/server including13scoped cases,25focused,config/build,11admin/10remote browser,10ordinary kcohorts/15rush PASS. One full-review P2 fixed; final correction no remaining findings, regression independently PASS. Server scope core complete; HTTP/editor scope controls, forecasts and automatic segment/cap policy remain. Counts unchanged: M0 3/3, M1 6/12, M2 4/9, M3 5/12, M4 11/18, M5 9/25. |
+
+## E11 — scoped server configuration (partial M4 implementation)
+
+`d91b92a`, receipt `.qa/scopes-verification.json`: real server per-key resolution,
+immutable audiences, expiry/replacement, removal-aware approval, ticketed player
+scope and deterministic opening/replay pins. `.qa/scopes-correction-tests.txt`
+334/334; `.qa/scopes-correction-focused.txt`25/25. Config/build and ordinary/rush
+sim pass. Browser foundation remains11admin/10remote; correction edits only policy,
+its regression and documentation. `.qa/review-scopes.txt` identified the campaign
+entitlement timing P2; `.qa/review-scopes-correction.txt` reports no remaining finding
+and independently passed the regression. Reviewer full HTTP run was sandbox-blocked;
+host suite passed. This internal core alone closes no additional ROADMAP criterion.
