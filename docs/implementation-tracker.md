@@ -1,6 +1,6 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.47.1
+> **Version:** v0.48.0
 > **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-10 (protected forecast a99a567 + mobile9900505 đã verify/review)
 > **Trạng thái:** Active — **M0 COMPLETE theo exit criteria; xem báo cáo closure M0–M5. M1–M3 tiếp tục triển khai; M4 web server/outbox đã qua review và101browser checks; đạt11/18 tiêu chí; registry c1e953c, admin API6f42575 và editor56a0a44 đã verify/review; scoped core d91b92a đã verify/review; scope editor/impact a84f41f và dự báo xu7ngày a99a567 đã verify/review; account/import UI còn thiếu; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.3** (1 phase, mốc M0–M9).
 > **Owner:** Team
@@ -353,3 +353,5 @@ rows. Follow owner queue M4→M6→M7→M8→M9; defer extra M5 breadth/performa
 | 2026-09-10 | v0.47.0 correction | Review P2: live publication/registry/schedule revalidated before forecast delivery. Real overlapping HTTP tests now deterministically prove busy429, publication409 and logout401. Mobile amounts keep digits on one line. Final full verify/review running; M4 remains11/18. |
 
 | 2026-09-10 | v0.47.1 | Protected forecast a99a567 and mobile9900505 verified:350engine/server,19admin browser plus final mobile report case,config/build PASS. Initial P2 stale report fixed; independent full-diff correction/layout reviews clean. Runtime engine/economy unchanged; k/rush evidence retained. M4 stays11/18 OPEN; observed VND, remaining admin lifecycle/account/eligibility/locale acceptance precede M6–M9. |
+
+| 2026-09-10 | v0.48.0 | First-run vi/en entry now precedes local/remote boot, remembers explicit acceptance and preserves legacy locale. Config/build pass; full browser/unit/review pending. No engine/economy/auth mutation; M4 criterion unchanged until verified. |

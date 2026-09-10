@@ -505,5 +505,11 @@
   "admin.forecast.daily": "Chi tiết theo ngày",
   "admin.forecast.day": "Ngày",
   "admin.forecast.keys": "Tham số có tác động trong 7 ngày",
-  "admin.error.staleForecast": "Cấu hình đã thay đổi trong lúc mô phỏng. Làm mới đề xuất và chạy lại dự báo."
+  "admin.error.staleForecast": "Cấu hình đã thay đổi trong lúc mô phỏng. Làm mới đề xuất và chạy lại dự báo.",
+  "entry.title": "Chọn ngôn ngữ và vào quán",
+  "entry.language": "Ngôn ngữ · Language",
+  "language.vi": "Tiếng Việt",
+  "language.en": "English",
+  "entry.storageError": "Chưa lưu được lựa chọn. Kiểm tra quyền lưu của trình duyệt rồi thử lại.",
+  "entry.loadError": "Chưa tải được quán. Thử tải lại để tiếp tục."
 }

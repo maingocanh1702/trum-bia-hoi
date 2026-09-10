@@ -232,3 +232,16 @@ No HTTP upload, approval or cloud UI is active. Details: [server guide](../../ap
 | Date | Change |
 |---|---|
 | 2026-09-10 verified local claim core |51a0734 passes271tests/config/build and80MB exact import/reopen/retry; native independent code/security review found no actionable introduced defect. `.qa/local-import-verification.json`. Imported history remains pending approval; public upload, cold-read performance and web cutover remain unfinished. |
+
+## First-run language implementation — 2026-09-10
+
+The existing welcome now gates local/remote boot until a vi/en choice is accepted.
+Browser language suggests vi/en (otherwise vi); selecting persists immediately.
+Legacy welcomed settings retain their previous valid locale, with omitted locale
+meaning the old Vietnamese default. Preference storage failure keeps a retryable
+entry without creating a player. No account/claim/competitive behavior is implied.
+See [first-run contract](../first-run-locale.md); verification/review are in progress.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 language entry | Moved welcome before boot and added explicit locale acceptance; full F25 and M4 acceptance remain open pending checks and remaining account flows. |

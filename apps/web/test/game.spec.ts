@@ -207,7 +207,7 @@ for (const [mode, emoji] of [['early', '🤩'], ['late', '😐'], ['grace', '�
 
 test('corrupt saves are preserved and the app offers the original for recovery', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('tbh.save.v1', '{broken-save'));
-  await page.goto('/');
+  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('Bản lưu chưa đọc được');
   expect(await page.evaluate(() => localStorage.getItem('tbh.save.v1'))).toBe('{broken-save');
 });
@@ -280,7 +280,7 @@ test('hidden and offline time preserves the current order and remaining shift', 
 
 test('recovery rejects a bad import, accepts a valid backup and preserves the original', async ({ page }) => {
   await page.addInitScript(() => { if (!localStorage.getItem('recovery-seeded')) { localStorage.setItem('tbh.save.v1', '{bad-original'); localStorage.setItem('recovery-seeded', '1'); } });
-  await page.goto('/');
+  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
   const input = page.getByLabel('Nhập file sao lưu');
   await input.setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from('{}') });
   await expect(page.getByText('Chưa thể phục hồi.', { exact: false })).toBeVisible();
@@ -292,7 +292,7 @@ test('recovery rejects a bad import, accepts a valid backup and preserves the or
 
 test('starting fresh requires an explicit choice and retains the corrupt backup', async ({ page }) => {
   await page.addInitScript(() => { if (!localStorage.getItem('recovery-seeded')) { localStorage.setItem('tbh.save.v1', '{bad-reset'); localStorage.setItem('recovery-seeded', '1'); } });
-  await page.goto('/');
+  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
   await page.getByRole('button', { name: 'Bắt đầu lại', exact: true }).click();
   expect(await page.evaluate(() => localStorage.getItem('tbh.save.v1'))).toBe('{bad-reset');
   await page.getByRole('button', { name: 'Hủy', exact: true }).click();

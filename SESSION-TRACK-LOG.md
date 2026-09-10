@@ -5,6 +5,16 @@
 
 ---
 
+## First-run language entry implemented — 2026-09-10
+
+Base6df1228. The existing welcome now appears before game/save/session creation,
+with native vi/en choices, browser default and explicit stored acceptance. Selecting
+language persists immediately; failed writes keep an actionable entry and no player
+mutation. Legacy welcomed preferences preserve the original locale/live shift.
+Settings changes reuse the same game/session. Config/build pass; full local/remote
+browser regression and independent review are pending. No economy/auth mutation.
+F25 remains open for Google web/claims, soft invitations and competitive eligibility.
+
 ## Protected seven-day forecast verified — 2026-09-10
 
 Code `a99a567`, mobile table correction `9900505`: protected draft forecasts now

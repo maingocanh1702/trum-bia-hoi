@@ -39,6 +39,26 @@ function SheetDialog({ title, close, children, view, pausedLabel }: { title: str
 }
 
 export function App() {
+  const [settings, setSettings] = useState(readSettings);
+  const [error, setError] = useState(false);
+  const t = (key: string) => translate(settings.locale, key);
+  useEffect(() => { document.documentElement.lang = settings.locale; document.title = t('brand'); }, [settings.locale]);
+  const choose = (locale: typeof settings.locale, accept = false) => {
+    const next = { ...settings, locale, localeAccepted: accept, welcomed: accept || settings.welcomed };
+    try { writeSettings(next); setSettings(next); setError(false); }
+    catch { setSettings({ ...settings, locale }); setError(true); }
+  };
+  if (settings.localeAccepted) return <StartedApp />;
+  return <main className="language-entry"><form className="welcome-content" aria-label={t('entry.title')} onSubmit={e => { e.preventDefault(); choose(settings.locale, true); }}>
+    <Sprite id="glass-full" /><h1>{t('brand')}</h1><h2>{t('welcome.title')}</h2>
+    <fieldset><legend>{t('entry.language')}</legend>{(['vi','en'] as const).map(locale => <label key={locale} lang={locale}>
+      <input type="radio" name="locale" value={locale} checked={settings.locale === locale} onChange={() => choose(locale)} />{t(`language.${locale}`)}
+    </label>)}</fieldset>
+    <p>{t('welcome.copy')}</p>{error && <p role="alert">{t('entry.storageError')}</p>}
+    <button className="primary" type="submit">{t('continue')}</button><small>{t('rest.free')}</small>
+  </form></main>;
+}
+function StartedApp() {
   const [state, setState] = useState<StartState | null>(null);
   const t = (key: string) => translate(readSettings().locale, key);
   useEffect(() => { let active = true; void start().then(value => { if (active) setState(value); else if ('session' in value) { value.session.storage?.close(); if ('remote' in value.session) value.session.remote.close(); } }); return () => { active = false; }; }, []);
@@ -64,8 +84,7 @@ function GameView({ session }: { session: Session }) {
   const [closeShift, setCloseShift] = useState<string | null>(null);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
-  const [welcome, setWelcome] = useState(!settings.welcomed);
-  const menuPaused = Boolean(sheet || selectedEquipment || welcome);
+  const menuPaused = Boolean(sheet || selectedEquipment);
   const menuPause = useRef(menuPaused);
   const [saveError, setSaveError] = useState<boolean | 'conflict'>(false);
   const [saving, setSaving] = useState(false);
@@ -149,8 +168,8 @@ function GameView({ session }: { session: Session }) {
     setSelectedTable(id);
   };
   useEffect(() => {
-    sound.play(sheet || selectedEquipment || selectedTable || welcome ? 'ui:sheet_open' : 'ui:sheet_close');
-  }, [sheet, selectedEquipment, selectedTable, welcome]);
+    sound.play(sheet || selectedEquipment || selectedTable ? 'ui:sheet_open' : 'ui:sheet_close');
+  }, [sheet, selectedEquipment, selectedTable]);
   useEffect(() => {
     if (selectedTable) orderPanelRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
     else {
@@ -323,7 +342,6 @@ function GameView({ session }: { session: Session }) {
     </main>
 
 
-    {welcome && <SheetDialog pausedLabel={t('pause.menu')} title={t('welcome.title')} close={() => { setWelcome(false); setPrefs({ welcomed: true }); }}><div className="welcome-content"><Sprite id="glass-full" /><p>{t('welcome.copy')}</p><button className="primary" onClick={() => { setWelcome(false); setPrefs({ welcomed: true }); }}>{t('continue')}</button><small>{t('rest.free')}</small></div></SheetDialog>}
 
     {sheet && <SheetDialog pausedLabel={t('pause.menu')} view={sheet} title={t(sheet === 'quests' ? 'quests.title' : sheet === 'flyer' ? 'flyer.title' : sheet === 'signboard' ? 'sign.title' : sheet === 'delivery' ? 'delivery.title' : sheet === 'dog' ? 'dog.title' : sheet === 'close' ? 'close.title' : sheet === 'book' ? 'book.title' : sheet === 'journey' ? 'journey.title' : sheet === 'settings' ? 'settings.title' : sheet === 'config' ? 'config.title' : `nav.${sheet}`)} close={() => setSheet(null)}>
       {sheet === 'quests' && questsRevealed && <Quests world={w} config={game.config} run={run} t={t} num={num} />}
@@ -385,7 +403,7 @@ function GameView({ session }: { session: Session }) {
           {row.claimable && <button className="primary" onClick={() => run({ type: 'claimLifePath', level: row.index })}>{t('journey.claim', { name: levelName(row.index) })}</button>}
         </li>)}</ol><button className="secondary full" onClick={() => open('locations')}>{t('nav.locations')}</button><button className="secondary full" onClick={() => open('upgrades')}>{t('journey.upgrades')}</button>
       </>}
-      {sheet === 'settings' && <div className="settings-list"><label>{t('settings.language')}<select value={locale} onChange={e => setPrefs({ locale: e.target.value as 'vi' | 'en' })}><option value="vi">Tiếng Việt</option><option value="en">English</option></select></label><button className="setting-row" onClick={() => setPrefs({ muted: !settings.muted })}><span>{t('settings.sound')}</span><b>{t(settings.muted ? 'settings.soundOff' : 'settings.soundOn')}</b></button><p>{t('settings.saved')}</p>{!remote && <button onClick={() => download(encodeSave(game as Game), 'tbh-backup.json')}>{t('settings.export')}</button>}{remote && <p>{t('network.serverSaved')}</p>}<button onClick={() => { setPrefs({ guideDone: false, guideIndex: 0 }); setSheet(null); }}>{t('settings.guide')}</button><button onClick={() => open('config')}>{t('settings.config')}</button></div>}
+      {sheet === 'settings' && <div className="settings-list"><label>{t('settings.language')}<select value={locale} onChange={e => setPrefs({ locale: e.target.value as 'vi' | 'en' })}><option value="vi">{t('language.vi')}</option><option value="en">{t('language.en')}</option></select></label><button className="setting-row" onClick={() => setPrefs({ muted: !settings.muted })}><span>{t('settings.sound')}</span><b>{t(settings.muted ? 'settings.soundOff' : 'settings.soundOn')}</b></button><p>{t('settings.saved')}</p>{!remote && <button onClick={() => download(encodeSave(game as Game), 'tbh-backup.json')}>{t('settings.export')}</button>}{remote && <p>{t('network.serverSaved')}</p>}<button onClick={() => { setPrefs({ guideDone: false, guideIndex: 0 }); setSheet(null); }}>{t('settings.guide')}</button><button onClick={() => open('config')}>{t('settings.config')}</button></div>}
       {sheet === 'config' && <><p>{t('config.pinned', { version: game.config.version })}</p><pre className="config-json">{JSON.stringify(game.config.raw, null, 2)}</pre></>}
     </SheetDialog>}
     {selectedEquipment && <SheetDialog pausedLabel={t('pause.menu')} title={t(`equipment.${selectedEquipment}`)} close={() => setSelectedEquipment(null)}><div className="equipment-detail">{(selectedEquipment === 'keg' || selectedEquipment === 'washer') && <section className="production-detail" aria-label={t('production.status')}><strong>{t(selectedEquipment === 'keg' ? 'production.ready' : 'production.clean', { count: selectedEquipment === 'keg' ? `${beer.stored}/${beer.capacity}` : `${washer.clean}/${washer.capacity}` })}</strong>{(() => { const p = selectedEquipment === 'keg' ? beer : washer; return p.busy ? <><p>{t('production.running', { n: p.busy, seconds: Math.ceil(p.remainingMs / 1000) })}</p><progress value={p.progress} max={1} aria-label={t('production.batchProgress', { n: p.busy })} /></> : <p>{t(selectedEquipment === 'keg' && !w.inventory.bia && beer.stored < beer.capacity ? 'production.noStock' : 'production.idle')}</p>; })()}{selectedEquipment === 'washer' && <><p>{t('production.washQueue', { n: washer.queued, capacity: washer.batchSize })}</p><div className="buy-glasses"><strong>{t('production.glassOwned', { n: w.glasses.length, max: Math.min(c.glasses.buyCap, c.glasses.storageCap) })}</strong>{[1, Math.max(0, Math.min(c.glasses.buyCap, c.glasses.storageCap) - w.glasses.length)].filter((count, i, counts) => counts.indexOf(count) === i && count > 0).map(count => { const q = buyGlassQuote(w, game.config, count); return <button key={count} disabled={!q.ok} onClick={() => run({ type: 'buyGlass', count })}>{t('production.buyGlass', { n: count, cost: num(q.cost) })}</button>; })}</div></>}{selectedEquipment === 'keg' && <><p>{t('production.pouring', { busy: beer.pouring, total: beer.tapSlots })}</p><p>{t(beer.enabled ? 'production.reserveHint' : 'production.legacy')}</p></>}</section>}{selectedEquipment === 'kitchen' && <Kitchen status={kitchen} t={t} onTable={tableId => { setSelectedEquipment(null); const button = document.querySelector<HTMLButtonElement>(`[data-table-id="${CSS.escape(tableId)}"] .table-object`); if (button) showTable(tableId, button); }} onStock={() => { setSelectedEquipment(null); open('stock'); }} />}{upgradeCard(selectedEquipment)}</div></SheetDialog>}

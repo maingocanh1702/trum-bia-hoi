@@ -2387,3 +2387,13 @@ Receipt `.qa/forecast-report-verification.json`; VI/EN screenshot inspected.
 Engine/economy JSON unchanged; verified standard/advanced k and rush evidence reused.
 M4 remains11/18 OPEN. Next: remaining admin lifecycle and account/eligibility/locale
 acceptance → M6–M9. VND forecasting awaits observed donation data; no invented income.
+
+## First-run language entry implemented — 2026-09-10
+
+Base6df1228. The existing welcome now appears before game/save/session creation,
+with native vi/en choices, browser default and explicit stored acceptance. Selecting
+language persists immediately; failed writes keep an actionable entry and no player
+mutation. Legacy welcomed preferences preserve the original locale/live shift.
+Settings changes reuse the same game/session. Config/build pass; full local/remote
+browser regression and independent review are pending. No economy/auth mutation.
+F25 remains open for Google web/claims, soft invitations and competitive eligibility.
