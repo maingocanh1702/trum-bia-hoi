@@ -317,3 +317,5 @@ live Google/minute5 acceptance, historical import and competitive access checks.
 | Date | Change |
 |---|---|
 | 2026-09-10 reauthentication verified | ddc77a9 adds reviewed exact-account recovery without discarding queued commands; E19 records evidence. No expired credential revival, engine/economy change or whole F25 completion claimed. |
+
+| 2026-09-10 invitations | Optional first-shift/season-entry invitations now share a player-keyed `loginPrompt.cooldownShifts` preference and exactly three benefits; explicit account access remains available. Native departure warning opens the invitation only if the guest stays; generic text/reload/mobile limitations are recorded in [login-invitations](../login-invitations.md). Current owner decision supersedes durable guest reopen and merging into an existing Google account: new Google claims this visit once, existing Google restores its own saved progress. Verification remains pending until the slice receipt. |

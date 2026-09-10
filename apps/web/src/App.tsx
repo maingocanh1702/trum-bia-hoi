@@ -1,4 +1,5 @@
-import { Account } from './Account';
+import { Account, LoginInvitation } from './Account';
+import { canInvite, type LoginTouchpoint } from './login-prompt';
 import { Seasons } from './Seasons';
 import { Locations } from './Locations';
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
@@ -12,7 +13,7 @@ import { MenuReport } from './MenuReport';
 import { start, type StartState, type Session } from './start';
 import { createSound } from './audio';
 
-type Sheet = 'account' | 'seasons' | 'locations' | 'stock' | 'upgrades' | 'book' | 'close' | 'journey' | 'settings' | 'config' | 'dog' | 'delivery' | 'signboard' | 'flyer' | 'quests' | null;
+type Sheet = 'loginInvite' | 'account' | 'seasons' | 'locations' | 'stock' | 'upgrades' | 'book' | 'close' | 'journey' | 'settings' | 'config' | 'dog' | 'delivery' | 'signboard' | 'flyer' | 'quests' | null;
 const icons: Record<string, string> = {
   coin: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 4v10m3-8h-4a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4H9',
   bolt: 'M13 2 5 13h6l-1 9 9-13h-6l1-7Z',
@@ -95,6 +96,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   const [, setSettingsVersion] = useState(0);
   const settings = prefs.current;
   const [sheet, setSheet] = useState<Sheet>(initialAccount ? 'account' : null);
+  const [invitation, setInvitation] = useState<LoginTouchpoint | null>(null);
   const [closeShift, setCloseShift] = useState<string | null>(null);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
@@ -153,7 +155,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
     if (result.ok && cmd.type === 'activateFlyer') { setSheet(null); setToast({ text: t('flyer.started'), kind: 'early' }); }
     if (result.ok && cmd.type === 'buyUnlock') setToast({ text: t('business.success', { name: t(`business.${cmd.item}`) }), kind: 'early' });
     if (result.ok && cmd.type === 'claimLifePath') setToast({ text: t('journey.received', { n: num(result.amount ?? 0) }), kind: 'early', gain: result.amount });
-    if (result.ok && (cmd.type === 'endShift' || cmd.type === 'kickAll')) setSheet(null);
+    if (result.ok && (cmd.type === 'endShift' || cmd.type === 'kickAll')) setSheet(game.world.phase === 'resting' ? 'book' : null);
     if (!remote) processEvents(); void save(); setFrame(x => x + 1);
     return result;
   };
@@ -177,6 +179,18 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
     setSelectedTable(null); setSheet(value);
     if (value === 'upgrades') { advanceGuide(prefs.current, game, [], 'ui_sheet_open:upgrade'); save(); }
   };
+  useEffect(() => {
+    setInvitation(null);
+    const reason = sheet === 'book' ? 'firstShift' : sheet === 'seasons' ? 'leaderboard' : sheet === 'loginInvite' ? 'leave' : null;
+    const guest = remote?.identity.provider === 'guest';
+    if (reason && canInvite(prefs.current, game, guest, reason)) {
+      setInvitation(reason);
+      setPrefs({ loginPromptPlayer: game.world.playerId, loginPromptShift: game.world.completedShifts });
+    } else if (sheet === 'account' && guest) {
+      // An explicitly opened account panel also counts as seeing the same benefits.
+      setPrefs({ loginPromptPlayer: game.world.playerId, loginPromptShift: game.world.completedShifts });
+    }
+  }, [sheet, w.completedShifts, remote?.identity.provider]);
   const showTable = (id: string, button: HTMLButtonElement) => {
     tableTrigger.current = { button, fallback: button.closest('.table-space')?.querySelector<HTMLButtonElement>('.table-object') ?? null };
     setSelectedTable(id);
@@ -208,7 +222,14 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
     const pagehide = () => { if (remote) remote.setPresence(false, menuPause.current); else { dispatch(game as Game, { type: 'activity', active: false }); void save(); } };
     const online = () => remote?.setPresence(!document.hidden, menuPause.current);
     window.addEventListener('online', online);
-    const beforeUnload = (event: BeforeUnloadEvent) => { if (session.storage?.saving) { event.preventDefault(); event.returnValue = ''; } };
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      if (!remote?.accountBusy && canInvite(prefs.current, game, remote?.identity.provider === 'guest', 'leave')) {
+        // The browser owns this native warning. If the player stays, show our optional invitation.
+        setSelectedEquipment(null); setSelectedTable(null); setSheet('loginInvite');
+        event.preventDefault(); event.returnValue = '';
+      }
+      if (session.storage?.saving) { event.preventDefault(); event.returnValue = ''; }
+    };
     const click = (e: MouseEvent) => { if ((e.target as Element).closest('button,select')) sound.play('ui:tap'); };
     const escape = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelectedTable(null); };
     document.addEventListener('keydown', escape);
@@ -360,7 +381,8 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
 
 
 
-    {sheet && <SheetDialog pausedLabel={t('pause.menu')} view={sheet} title={t(sheet === 'account' ? 'account.title' : sheet === 'quests' ? 'quests.title' : sheet === 'flyer' ? 'flyer.title' : sheet === 'signboard' ? 'sign.title' : sheet === 'delivery' ? 'delivery.title' : sheet === 'dog' ? 'dog.title' : sheet === 'close' ? 'close.title' : sheet === 'book' ? 'book.title' : sheet === 'journey' ? 'journey.title' : sheet === 'settings' ? 'settings.title' : sheet === 'config' ? 'config.title' : `nav.${sheet}`)} close={() => setSheet(null)}>
+    {sheet && <SheetDialog pausedLabel={t('pause.menu')} view={sheet} title={t(sheet === 'loginInvite' ? 'account.invitation' : sheet === 'account' ? 'account.title' : sheet === 'quests' ? 'quests.title' : sheet === 'flyer' ? 'flyer.title' : sheet === 'signboard' ? 'sign.title' : sheet === 'delivery' ? 'delivery.title' : sheet === 'dog' ? 'dog.title' : sheet === 'close' ? 'close.title' : sheet === 'book' ? 'book.title' : sheet === 'journey' ? 'journey.title' : sheet === 'settings' ? 'settings.title' : sheet === 'config' ? 'config.title' : `nav.${sheet}`)} close={() => setSheet(null)}>
+      {invitation && (sheet === 'loginInvite' || sheet === 'book' && invitation === 'firstShift' || sheet === 'seasons' && invitation === 'leaderboard') && remote?.identity.provider === 'guest' && <LoginInvitation reason={invitation} t={t} signIn={() => open('account')} later={() => { setInvitation(null); if (sheet === 'loginInvite') setSheet(null); }} />}
       {sheet === 'account' && <Account remote={remote} locale={locale} t={t} close={() => setSheet(null)} />}
       {sheet === 'quests' && questsRevealed && <Quests world={w} config={game.config} run={run} t={t} num={num} />}
       {sheet === 'flyer' && <div className="flyer-panel">
@@ -406,7 +428,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
       </div>}
       {sheet === 'close' && <div className="close-confirm"><p>{t('close.copy')}</p><p>{t('close.guests', { n: closeQuote.guests.length })}</p><div className="close-price"><Icon name="coin" /><strong>{num(closeQuote.cost)}</strong><span>{t('coins')}</span></div>{!closeQuote.ok && <p role="status">{t(closeQuote.deliveryBlocked ? 'error.deliveryPending' : 'error.notEnoughCoins')}</p>}<div className="button-stack"><button className="primary" disabled={!closeQuote.ok || closeShift !== shift?.id} onClick={() => run({ type: 'kickAll', shiftId: closeShift!, maxCost: closeQuote.cost })}>{t('close.confirm', { cost: num(closeQuote.cost) })}</button><button onClick={() => setSheet(null)}>{t('close.wait')}</button></div></div>}
       {sheet === 'stock' && <><p className="sheet-intro">{t('stock.copy')} <b>{num(w.coins)} {t('coins')}</b></p><div className="stock-list">{DISHES.map(dish => <div className="stock-row" key={dish}><Sprite id={menuAsset[dish]} /><div className="stock-info"><strong>{t(`dish.${dish}`)}</strong><span>{w.inventory[dish]} / {stockCap(w, game.config)}</span><progress value={w.inventory[dish]} max={stockCap(w, game.config)} /></div>{c.menu[dish].unlock.kitchenLevel > w.equipment.kitchen ? <small>{t('stock.locked', { n: c.menu[dish].unlock.kitchenLevel })}</small> : <div className="stock-actions">{(['one', 'bulk', 'full'] as const).map(mode => { const q = restockQuote(w, game.config, dish, mode); return <button key={mode} disabled={!q.ok} onClick={() => run({ type: 'restock', dish, mode })}>{t('stock.buy', { action: mode === 'one' ? t('stock.one') : mode === 'bulk' ? t('stock.bulk', { n: c.inventory.bulkSize }) : t('stock.full'), cost: num(q.cost) })}</button>; })}</div>}</div>)}</div><button className="secondary full" onClick={() => run({ type: 'emergencyPack' })}>{t('stock.emergency')}</button></>}
-      {sheet === 'seasons' && (remote?.identity.provider === 'guest' ? <><p>{t('account.guestCopy')}</p><button className="primary full" onClick={() => open('account')}>{t('account.signIn')}</button></> : <Seasons world={w} config={game.config} t={t} locale={locale} num={num} />)}
+      {sheet === 'seasons' && (remote?.identity.provider === 'guest' ? <><p>{t('account.guestCopy')}</p><button className="secondary full" onClick={() => open('account')}>{t('account.title')}</button></> : <Seasons world={w} config={game.config} t={t} locale={locale} num={num} />)}
       {sheet === 'locations' && <Locations world={w} config={game.config} run={run} t={t} locale={locale} />}
       {sheet === 'upgrades' && <><button className="sign-entry full" onClick={() => open('locations')}><Icon name="star" /><span><strong>{t('nav.locations')}</strong><small>{t(`location.${w.location}`)}</small></span><span aria-hidden="true">›</span></button><button className="sign-entry full kitchen-entry" onClick={() => { setSheet(null); setSelectedEquipment('kitchen'); }}><Sprite id={`kitchen-lv${Math.max(1, kitchen.level)}`} /><span><strong>{t('kitchen.live')}</strong><small>{t('kitchen.slots', { busy: kitchen.busy, total: kitchen.slots })}</small></span><span aria-hidden="true">›</span></button><button className="sign-entry full" onClick={() => open('flyer')}><Sprite id="flyer-bundle" /><span><strong>{t('flyer.title')}</strong><small>{t('flyer.stock', { n: flyers.stock, cap: c.unlocks.flyer.stockCap })}</small></span><span aria-hidden="true">›</span></button><button className="sign-entry full" onClick={() => open('signboard')}><Sprite id={`sign-${w.signStyle ?? 'wood'}`} /><span><strong>{t('sign.title')}</strong><small>{w.signStyle ? t(`sign.${w.signStyle}`) : t('sign.notInstalled')}</small></span><span aria-hidden="true">›</span></button><button className="dog-entry full" onClick={() => open('dog')}><Sprite id={`dog-idle-lv${w.dogLevel || 1}`} /><span><strong>{t('dog.title')}</strong><small>{t(`dog.level${w.dogLevel}`)}</small></span><span aria-hidden="true">›</span></button><h3>{t('business.title')}</h3>{businessCards()}<p className="sheet-intro">{t('upgrade.copy')}</p><div className="upgrade-grid">{EQUIPMENT.map(upgradeCard)}</div><h3>{t('upgrade.tables')}</h3><div className="upgrade-grid">{w.tables.map((table, i) => { const next = c.upgrades.table.levels[table.level]; return <div className="upgrade-card" key={table.id}><Sprite id={`table-lv${table.level}-empty`} /><h3>{t('table', { n: i + 1 })}</h3><p>{t('table.seats', { n: table.capacity })}</p><button disabled={!next || table.state !== 'empty' || w.coins < next.priceBase} onClick={() => run({ type: 'upgradeTable', tableId: table.id })}>{next ? t('upgrade.buy', { cost: num(next.priceBase) }) : t('upgrade.max')}</button></div>; })}</div><button className="secondary full" onClick={() => run({ type: 'buyTable' })}>{t('upgrade.addTable')}</button></>}
       {sheet === 'book' && (shift ? <>{questsRevealed && <button className="secondary full" onClick={() => open('quests')}>{t('quests.title')}</button>}<p className="sheet-intro">{t('shift')} · {time(Math.min(shift.closedAt ?? w.now, shift.endsAt) - shift.startedAt - shift.pausedMs)}<b>{t(`weather.${shift.weather}`)}</b></p><dl className="ledger">{(['served', 'lost', 'payment', 'tip', 'penalty', 'spent'] as const).map(key => <div key={key}><dt>{t(`book.${key}`)}</dt><dd>{num(shift.stats[key])}</dd></div>)}{(shift.stats.deliveryCompleted ?? 0) > 0 && <><div><dt>{t('book.deliveryCompleted')}</dt><dd>{shift.stats.deliveryCompleted}</dd></div><div><dt>{t('book.deliveryNet')}</dt><dd>{num(shift.stats.deliveryNet ?? 0)}</dd></div></>}{(shift.stats.deliveryMissed ?? 0) > 0 && <div><dt>{t('book.deliveryMissed')}</dt><dd>{shift.stats.deliveryMissed}</dd></div>}{shift.stats.wellRestedBonus > 0 && <div><dt>{t('book.wellRestedBonus')}</dt><dd>{num(shift.stats.wellRestedBonus)}</dd></div>}<div className="ledger-total"><dt>{t('book.net')}</dt><dd>{num(shift.stats.credited - shift.stats.penalty - shift.stats.spent)}</dd></div></dl><MenuReport report={remote ? remote.menu : menuReport((game as Game).world, game.config)} t={t} num={num} /><button className="secondary full" onClick={() => open('flyer')}>{t('flyer.title')}</button>{rushReports.length > 0 && <table className="rush-report"><caption>{t('book.rushes')}</caption><thead><tr><th scope="col">{t('book.rushKind')}</th><th scope="col">{t('book.rushServed')}</th><th scope="col">{t('book.rushLost')}</th><th scope="col">{t('book.rushRevenue')}</th></tr></thead><tbody>{rushReports.map(e => <tr key={e.id}><th scope="row">{t(`rush.${e.data.kind}`)}</th><td>{num(Number(e.data.served))}</td><td>{num(Number(e.data.lost))}</td><td>{num(Number(e.data.revenue))}</td></tr>)}</tbody></table>}{inShift && <div className="button-stack"><button className="primary" onClick={() => run({ type: 'endShift' })}>{t('book.end')}</button><button className="secondary" disabled={!c.shift.kickAllAllowed} onClick={() => { setCloseShift(shift.id); open('close'); }}>{t('book.kick', { cost: num(closeQuote.cost) })}</button></div>}</> : <p>{t('book.none')}</p>)}

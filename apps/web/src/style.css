@@ -277,3 +277,6 @@ progress::-webkit-progress-value { background: var(--beerAmber); border-radius: 
 .account-google { display: flex; justify-content: center; min-height: 44px; }
 .account-google:empty { display: none; }
 .account-confirmed { color: var(--cream); font-weight: 800; }
+
+.login-invitation { padding: 18px; margin-bottom: 20px; border: 1px solid var(--panelBorder); border-radius: 20px; background: var(--panelRaised); }
+.login-invitation h3 { margin: 0; }

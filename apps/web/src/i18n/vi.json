@@ -541,5 +541,9 @@
   "account.savedCopy": "Lưu tiến độ, thành tích và khôi phục trên thiết bị khác. Nếu đã có tài khoản, tiếp tục tiến độ đã lưu.",
   "account.reauthenticate": "Đăng nhập lại với Google",
   "account.recoveryCopy": "Đăng nhập đúng tài khoản đã chơi để khôi phục tiến độ và các thao tác đang chờ.",
-  "account.wrongAccount": "Tài khoản Google này chưa khớp tiến độ đang chờ. Hãy chọn tài khoản đã chơi."
+  "account.wrongAccount": "Tài khoản Google này chưa khớp tiến độ đang chờ. Hãy chọn tài khoản đã chơi.",
+  "account.invitation": "Lưu tiến độ của bạn",
+  "onboarding.login.firstShift": "Xong ca đầu rồi! Lưu công sức hôm nay nhé.",
+  "onboarding.login.leaderboard": "Đăng nhập để ghi tên trên bảng xếp hạng.",
+  "onboarding.login.leave": "Trước khi rời quán, lưu công sức hôm nay nhé."
 }

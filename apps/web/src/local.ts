@@ -3,9 +3,9 @@ import type { Locale } from './i18n';
 import { BrowserSave } from './browser-save';
 
 const SAVE_KEY = 'tbh.save.v1', SETTINGS_KEY = 'tbh.settings.v1';
-export interface Settings { locale: Locale; localeAccepted: boolean; muted: boolean; welcomed: boolean; guideDone: boolean; guideIndex: number | null; guideRuns: number; guideDay: string; lostStreak: number }
+export interface Settings { locale: Locale; localeAccepted: boolean; muted: boolean; welcomed: boolean; guideDone: boolean; guideIndex: number | null; guideRuns: number; guideDay: string; lostStreak: number; loginPromptPlayer: string; loginPromptShift: number }
 export function readSettings(): Settings {
-  const fallback: Settings = { locale: typeof navigator !== 'undefined' && navigator.language.toLowerCase().split('-')[0] === 'en' ? 'en' : 'vi', localeAccepted: false, muted: false, welcomed: false, guideDone: false, guideIndex: null, guideRuns: 0, guideDay: '', lostStreak: 0 };
+  const fallback: Settings = { locale: typeof navigator !== 'undefined' && navigator.language.toLowerCase().split('-')[0] === 'en' ? 'en' : 'vi', localeAccepted: false, muted: false, welcomed: false, guideDone: false, guideIndex: null, guideRuns: 0, guideDay: '', lostStreak: 0, loginPromptPlayer: '', loginPromptShift: 0 };
   try {
     const data = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}');
     const validLocale = data.locale === 'vi' || data.locale === 'en';
@@ -14,7 +14,8 @@ export function readSettings(): Settings {
     return { ...fallback, ...Object.fromEntries(Object.entries(data).filter(([k, v]) => k in fallback && typeof v === typeof fallback[k as keyof Settings])),
       locale: validLocale ? data.locale : legacyAccepted ? 'vi' : fallback.locale,
       localeAccepted: data.localeAccepted === true && validLocale || legacyAccepted,
-      guideIndex: Number.isInteger(data.guideIndex) && data.guideIndex >= 0 ? data.guideIndex : null };
+      guideIndex: Number.isInteger(data.guideIndex) && data.guideIndex >= 0 ? data.guideIndex : null,
+      loginPromptShift: Number.isSafeInteger(data.loginPromptShift) && data.loginPromptShift >= 0 ? data.loginPromptShift : 0 };
   } catch { return fallback; }
 }
 export function writeSettings(settings: Settings): void { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }

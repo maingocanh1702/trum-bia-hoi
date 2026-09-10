@@ -63,3 +63,5 @@ Funnel dashboard admin (BRD §3): mở ca 1 → serve đầu → đóng ca 1 →
 | v1.1 | **Lên ràng buộc** theo 5 luật chủ dự án 08/09: guest chơi không đăng ký + khuyến khích đăng nhập Google, đăng nhập giữa ca lưu realtime, ca 1 = 1 khách 1 bia, không kịp → khách đi + thông báo, 3 lần liên tiếp → step guide, lần đầu chơi có step guide. JSON `onboarding` cập nhật. |
 
 | 2026-09-08 | Owner overrides lost-customer explanation: numeric loss toast only, without changing configured coachmark triggers. |
+
+| 2026-09-10 invitations | Optional first-shift/season-entry invitations now share a player-keyed `loginPrompt.cooldownShifts` preference and exactly three benefits; explicit account access remains available. Native departure warning opens the invitation only if the guest stays; generic text/reload/mobile limitations are recorded in [login-invitations](../login-invitations.md). Current owner decision supersedes durable guest reopen and merging into an existing Google account: new Google claims this visit once, existing Google restores its own saved progress. Verification remains pending until the slice receipt. |
