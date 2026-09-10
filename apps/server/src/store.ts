@@ -4,6 +4,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { validGoogleSubject, type GoogleIdentity } from './google';
 import { LOCAL_ARCHIVE_BYTES, validateLocalArchive } from './local-archive';
 import { AdminAuth, initializeAdmin } from './admin-auth';
+import { Competition, type ImportReview } from './competition';
 import { ConfigRegistry, initializeRegistry, initializeScopes, heartbeatTiming } from './registry';
 import { Game, config as seedConfig, configContent, decodeSave, loadConfig, validEnvelope, type Config, type Command, type DomainEvent, type EngineCheckpoint, type LoggedCommand, type World } from '@tbh/engine';
 
@@ -17,7 +18,7 @@ const EMPTY_HASH = createHash('sha256').digest('hex');
 const historyHash = (previous: string, key: string, text: string) => createHash('sha256').update(previous).update(JSON.stringify([key, text])).digest('hex');
 export type Snapshot = { world: World; configVersion: string; revision: number; lastEventSeq: number };
 export type ImportReceipt = { playerId: string; digest: string; importedAt: number; sourceNow: number;
-  commandSeq: number; eventSeq: number; review: 'pending' };
+  commandSeq: number; eventSeq: number; review: ImportReview };
 type Request = { idempotencyKey: string; command: Command };
 export type SequencedRequest = Request & { clientId: string; clientSeq: number };
 export type Heartbeat = { clientId: string; beatSeq: number; active: boolean; paused: boolean };
@@ -37,6 +38,7 @@ export class GameStore {
   private readonly db: DatabaseSync;
   readonly registry: ConfigRegistry;
   readonly adminAuth: AdminAuth;
+  readonly competition: Competition;
   private readonly cache = new Map<string, LiveGame & { revision: number }>();
   constructor(readonly path: string, config: Config = seedConfig, private readonly clock = Date.now) {
     const candidate = loadConfig(config.raw);
@@ -117,6 +119,7 @@ export class GameStore {
       if (Number(version) < 10) initializeScopes(this.db);
       this.registry = new ConfigRegistry(this.db, () => this.now());
       this.adminAuth = new AdminAuth(this.db, () => this.now());
+      this.competition = new Competition(this.db, () => this.now());
       heartbeatTiming(this.registry.active());
       this.db.exec('COMMIT');
     } catch (error) {
@@ -265,7 +268,7 @@ export class GameStore {
     if (!row) return;
     if (row.player_id !== owner.playerId) throw Error('store:importOwnerChanged');
     return { playerId: String(row.player_id), digest: String(row.digest), importedAt: Number(row.imported_at),
-      sourceNow: Number(row.source_now), commandSeq: Number(row.command_seq), eventSeq: Number(row.event_seq), review: 'pending' };
+      sourceNow: Number(row.source_now), commandSeq: Number(row.command_seq), eventSeq: Number(row.event_seq), review: this.competition.state(owner.playerId).localImport!.review.value };
   }
   private requireEmptyClaimTarget(id: string) {
     const row = this.db.prepare('SELECT * FROM players WHERE id=?').get(id) as PlayerRow;

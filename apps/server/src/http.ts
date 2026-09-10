@@ -1,3 +1,4 @@
+import type { CompetitionRequest } from './competition';
 import { createServer, type IncomingMessage } from 'node:http';
 import type { OAuth2Client } from 'google-auth-library';
 import { validEnvelope, loadConfig, menuReport, type Config, type Command, type DomainEvent, type WorldView } from '@tbh/engine';
@@ -90,7 +91,7 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
       }
       if (!req.url?.startsWith('/') || req.url.startsWith('//')) throw new HttpError(400, 'invalidUrl');
       const route = new URL(req.url, options.origin), path = route.pathname;
-      if (route.search && !['/admin/registry', '/admin/config', '/admin/audit', '/admin/players', '/admin/support', '/admin/scope', '/admin/draft-source'].includes(path) && path !== '/player/events' && path !== '/player/config') throw new HttpError(400, 'invalidQuery');
+      if (route.search && !['/admin/registry', '/admin/config', '/admin/audit', '/admin/players', '/admin/support', '/admin/scope', '/admin/draft-source', '/admin/competition'].includes(path) && path !== '/player/events' && path !== '/player/config') throw new HttpError(400, 'invalidQuery');
       if (path.startsWith('/admin/')) {
         // Body IO precedes all access decisions. Actor fields never cross this boundary.
         const body = req.method === 'POST' ? await json(req, path === '/admin/proposals' ? 524288 : BODY_BYTES) : undefined; // config-exempt:512KiB bounded full-config JSON input
@@ -129,6 +130,14 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
           if (route.searchParams.size !== 1 || !value || !/^(0|[1-9]\d*)$/.test(value) || !Number.isSafeInteger(Number(value))) throw new HttpError(400, 'invalidCursor');
           return Number(value);
         };
+        if (req.method === 'GET' && path === '/admin/competition') {
+          if (route.searchParams.size !== 1 || !route.searchParams.has('playerId')) throw new HttpError(400, 'invalidQuery');
+          reply(200, store.competition.inspect(actor, route.searchParams.get('playerId')!)); return;
+        }
+        if (req.method === 'POST' && path === '/admin/competition') {
+          const input = fields(['type', 'key', 'playerId', 'expectedSeq', 'reason', 'value', 'digest']);
+          reply(200, store.competition.decide(actor, input as CompetitionRequest)); return;
+        }
         if (req.method === 'GET' && path === '/admin/registry') { reply(200, registry.index(actor, cursor('before', Number.MAX_SAFE_INTEGER))); return; }
         if (req.method === 'GET' && path === '/admin/audit') { reply(200, registry.auditPage(actor, cursor('after', 0))); return; }
         if (req.method === 'GET' && path === '/admin/players') {
@@ -268,6 +277,9 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
       throw new HttpError(404, 'notFound');
     } catch (error) {
       const adminErrors: Record<string, number> = {
+        'competition:invalidInput': 400, 'competition:missingPlayer': 404, 'competition:forbidden': 403,
+        'competition:importOwnerChanged': 409, 'competition:importConflict': 409, 'competition:keyConflict': 409,
+        'competition:staleDecision': 409, 'competition:noChange': 409,
         'admin:unavailable': 503, 'admin:invalidSession': 401, 'admin:invalidChallenge': 401,
         'admin:accountChanged': 409, 'admin:notAllowed': 403, 'admin:invalidFactor': 401, 'admin:rateLimited': 429,
         'registry:invalidActor': 401, 'registry:forbidden': 403, 'registry:distinctApprover': 403,
@@ -277,7 +289,7 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
         'registry:staleImpact': 409, 'registry:scopeConflict': 409, 'registry:invalidTicket': 409, 'registry:alreadyPublished': 409, 'registry:missingScope': 404, 'registry:invalidScope': 400, 'registry:invalidExpiry': 400,
         'registry:alreadyApproved': 409, 'registry:approvalRequired': 409,
       };
-      if (pathIsAdmin(req.url) && error instanceof Error && (error.message.startsWith('registry:') || error.message.startsWith('config:') || error.message.startsWith('admin:') || error.message === 'store:heartbeatClock')) {
+      if (pathIsAdmin(req.url) && error instanceof Error && (error.message.startsWith('competition:') || error.message.startsWith('registry:') || error.message.startsWith('config:') || error.message.startsWith('admin:') || error.message === 'store:heartbeatClock')) {
         const status = adminErrors[error.message] ?? (error.message.startsWith('config:') || ['registry:invalidInput', 'registry:bindingRange', 'registry:identityMigrationRequired', 'registry:metadataImmutable', 'registry:invalidKeys', 'registry:earlyActivation', 'registry:unsafeSchedule', 'registry:ungovernedKey'].includes(error.message) ? 400 : 500);
         reply(status, { error: status === 500 ? 'serverError' : error.message }); req.resume(); return;
       }

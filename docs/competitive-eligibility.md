@@ -1,10 +1,10 @@
 # M4 next slice: competitive provenance and review
 
-Status: **INTAKE COMPLETE; implementation next**. Base: threshold-admission03dae56.
+Status: **IMPLEMENTING review/flag core and authenticated API**. Base:51a5ab5.
 
 Read live F28 sections2/3/6, F25 owner local-history decision, F23 anti-cheat,
 BRD4.2/4.3/9, registry/admin-auth/http, store claimLocal/localImport and seasons.
-No implementation yet. This is the implementation design, not new owner policy.
+This is the implementation design, not new owner policy.
 Source authority: F28 imported-history decision and BRD player-review roles.
 
 Confirmed sources:
@@ -59,3 +59,43 @@ is functional provenance recovery, not an80MB performance/tuning project.
 | Date | Change |
 |---|---|
 | 2026-09-10 | Continue owner queue after threshold validation: pin live provenance/role/accounting sources and next bounded M4 review/eligibility work. No rank, approval UI or score implementation claimed. |
+
+## Review/flag slice contract — base51a5ab5
+
+Scope: server review/flag state and its authenticated API, existing import receipt,
+shared admin-actor validation, focused regressions. Reuse append-only registry_audit
+as the canonical decision history; no schema migration or parallel mutable status.
+Game/Super (existing MFA requirement) may decide; Support may inspect; Economy/Viewer
+cannot inspect private moderation profiles or mutate them. Authenticated admin audit
+already renders the records. Browser review controls and competitive totals follow.
+
+| Request | Result |
+|---|---|
+| No import decision | pending; never implicitly approved. |
+| Exact archive digest + current review seq + valid role/reason | Append approved/rejected decision only; original archive and gameplay unchanged. |
+| Correct decision after earlier review | New request with current seq may reverse it; old decisions/receipts remain immutable. |
+| Flag/unflag | Separate per-player seq, mandatory reason; no account ban or gameplay reset. |
+| Same actor + request key + same entire request | Return original receipt; no duplicate audit or state change, even after a later decision. |
+| Reused key with changed operation/player/digest/value/reason/seq | Conflict, no write. |
+| Stale seq, wrong/missing import, changed import owner | Conflict/refusal, no write. |
+| New key but value already current | No-change refusal; no redundant audit. |
+| Guest cookie, forged actor fields, stale admin context, expired/revoked admin | Refuse before mutation. |
+
+Future ranking reads the current review/flag state at its own boundary. These
+controls alone do not certify ranking eligibility, score projection or snapshots.
+
+## Implemented API boundary — verification in progress
+
+`Competition.state` reads the current decisions from immutable registry audit;
+`GameStore.localImport` returns its approved/rejected/pending value. No schema or
+engine mutation is added. `GET /admin/competition?playerId=...` is a protected,
+audited inspection with the current decision/reason. `POST /admin/competition`
+accepts only the documented request fields; actor/role/time are server-derived.
+Existing context, CSRF, rate and session gates protect both actions. Existing admin
+audit UI renders these records; dedicated review controls and score projection are
+next.45 focused core/import/registry/auth checks and config/build pass; full suite
+and independent review are pending. No complete ranking or M4 claim.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 core/API | Implement immutable reviewed-import and flag decisions, exact-retry/current-seq guards, shared actor validation and authenticated inspection/decision routes. Preserve source archive and game balances; dedicated controls and ranking projection remain. |

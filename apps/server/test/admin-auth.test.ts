@@ -7,7 +7,7 @@ import { resolve } from 'node:path';
 import type { AddressInfo } from 'node:net';
 import { DatabaseSync } from 'node:sqlite';
 import { OAuth2Client } from 'google-auth-library';
-import { config } from '@tbh/engine';
+import { config, Game, encodeSave } from '@tbh/engine';
 import { GameStore } from '../src/store';
 import { createGameServer } from '../src/http';
 import { adminDirectory, totp } from '../src/admin-auth';
@@ -303,4 +303,49 @@ test('forecast HTTP accepts only authenticated version references and rechecks t
  const revoked=await competing(next.data.version);
  assert.equal((await f.call('/admin/auth/logout',{},fresh)).status,200);assert.equal(await revoked.pending,401);
  assert.equal(f.store.read('forecast-player').world.completedShifts,0);
+});
+
+
+test('moderation HTTP uses Google plus MFA, exact admin context and archive identity, with immutable retries and no game credit', async t => {
+  const f = await fixture(t), guest = f.store.createGuestSession(86400000);
+  const account = f.store.signInGoogle(guest.token, f.store.issueGoogleChallenge(guest.token).nonce, { subject: 'reviewed-player' }, 86400000);
+  const game = new Game(config, 42, f.now - 11100, 'moderation-local');
+  game.command({ at: game.world.now, idempotencyKey: 'open', command: { type: 'startShift' } }); game.advance(f.now);
+  const table = game.world.tables.find(t => t.order?.items.every(i => i.state === 'ready'))!;
+  assert.ok(game.command({ at: f.now, idempotencyKey: 'serve', command: { type: 'serve', tableId: table.id, orderId: table.order!.id } }).ok);
+  game.command({ at: f.now, idempotencyKey: 'pause', command: { type: 'activity', active: true, paused: true } });
+  const receipt = await f.store.claimLocal(account.token, encodeSave(game)), before = f.store.read(receipt.playerId);
+  const path = '/admin/competition', query = path + '?playerId=' + receipt.playerId;
+  const input = { type: 'import-review', key: 'review-http', playerId: receipt.playerId, digest: receipt.digest, expectedSeq: 0, reason: 'Inspected retained replay', value: 'approved' };
+  assert.equal((await f.call(query)).status, 401);
+  assert.equal((await f.call(path, input, 'tbh-session=' + receipt.token)).status, 401);
+  const support = await f.login('support-one'), economy = await f.login('economy-one'), viewer = await f.login('viewer-one');
+  assert.equal((await f.call(query, undefined, support)).data.localImport.review.value, 'pending');
+  assert.equal((await f.call(path, input, support)).status, 403);
+  for (const cookie of [economy, viewer]) {
+    assert.equal((await f.call(query, undefined, cookie)).status, 403);
+    assert.equal((await f.call(path, input, cookie)).status, 403);
+  }
+  const admin = await f.login('game-one'), superAdmin = await f.login('super-one');
+  assert.equal((await f.call(query + '&playerId=other', undefined, admin)).status, 400);
+  assert.equal((await f.call(path, { ...input, role: 'super' }, admin)).status, 400);
+  assert.equal((await f.call(path, input, admin, { Origin: 'https://evil.example' })).status, 403);
+  assert.equal((await f.call(path, input, admin, { 'X-TBH-Admin-Context': 'old-context' })).status, 409);
+  const done = await f.call(path, input, admin); assert.equal(done.status, 200); assert.equal(done.data.actor, 'game-one');
+  assert.deepEqual((await f.call(path, input, admin)).data, done.data);
+  assert.equal((await f.call(path, { ...input, key: 'stale-super', value: 'rejected' }, superAdmin)).status, 409);
+  const state = await f.call(query, undefined, support); assert.equal(state.status, 200);
+  assert.equal(state.data.localImport.review.value, 'approved'); assert.equal(state.data.localImport.review.decision.request.reason, input.reason);
+  assert.equal(f.store.localImport(receipt.token!)!.review, 'approved');
+  const flag = { type: 'flag', key: 'flag-http', playerId: receipt.playerId, expectedSeq: 0, reason: 'Review timing anomaly', value: true };
+  const flagged = await f.call(path, flag, admin); assert.equal(flagged.status, 200);
+  assert.equal((await f.call(query, undefined, support)).data.flag.value, true);
+  assert.equal((await f.call(path, { ...flag, key: 'clear-http', expectedSeq: flagged.data.seq, value: false, reason: 'Evidence cleared' }, superAdmin)).status, 200);
+  assert.equal((await f.call(query, undefined, support)).data.flag.value, false);
+  assert.deepEqual(f.store.read(receipt.playerId), before); assert.deepEqual(f.open().read(receipt.playerId), before);
+  assert.equal(f.db.prepare("SELECT COUNT(*) n FROM registry_audit WHERE type='LocalHistoryReviewed'").get()!.n, 1);
+  await f.call('/admin/auth/logout', {}, admin);
+  assert.equal((await f.call(path, { ...flag, key: 'after-logout' }, admin)).status, 401);
+  f.now += 8 * 3600000;
+  assert.equal((await f.call(path, { ...flag, key: 'after-expiry' }, superAdmin)).status, 401);
 });

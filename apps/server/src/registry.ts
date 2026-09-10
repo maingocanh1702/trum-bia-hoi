@@ -15,6 +15,12 @@ type Proposal = { version: string; request_key: string; base_version: string; fi
 type PreviewPublication = Publication & { scope?: ConfigScope };
 type Publication = { seq: number; version: string; effective_at: number; published_at: number; changed_by: string; approved_by: string };
 export const ADMIN_SESSION_MS = 28800000; // config-exempt:BRD9.2 eight-hour admin authentication limit
+export function assertAdminActor(actor: AdminActor, now: number) {
+  if (!actor || !validGoogleSubject(actor.subject) || !['super', 'economy', 'game', 'support', 'viewer'].includes(actor.role) ||
+    !Number.isSafeInteger(actor.issuedAt) || actor.issuedAt < 0 || !Number.isSafeInteger(actor.expiresAt) || actor.issuedAt > now || actor.expiresAt <= now ||
+    actor.expiresAt - actor.issuedAt > ADMIN_SESSION_MS || typeof actor.mfa !== 'boolean' ||
+    (actor.role === 'super' || actor.role === 'game') && !actor.mfa) throw Error('registry:invalidActor');
+}
 const DAY_MS = 86400000, PUBLISH_PER_DAY = 5; // config-exempt: calendar units and admin authentication/abuse limits (BRD9.2/9.4), not gameplay tuning
 const under = (path: string, prefix: string) => path === prefix || path.startsWith(prefix + '.');
 export function heartbeatTiming(config: Config) {
@@ -250,12 +256,7 @@ export class ConfigRegistry {
       ...entries.flatMap(p => p.scope.expiresAt !== null && p.scope.expiresAt >= now ? [p.scope.expiresAt] : [])]);
     for (const at of boundaries) for (const player of players) this.compose(player, at, candidate);
   }
-  private actor(actor: AdminActor, now: number) {
-    if (!actor || !validGoogleSubject(actor.subject) || !['super', 'economy', 'game', 'support', 'viewer'].includes(actor.role) ||
-      !Number.isSafeInteger(actor.issuedAt) || actor.issuedAt < 0 || !Number.isSafeInteger(actor.expiresAt) || actor.issuedAt > now || actor.expiresAt <= now ||
-      actor.expiresAt - actor.issuedAt > ADMIN_SESSION_MS || typeof actor.mfa !== 'boolean' ||
-      (actor.role === 'super' || actor.role === 'game') && !actor.mfa) throw Error('registry:invalidActor');
-  }
+  private actor(actor: AdminActor, now: number) { assertAdminActor(actor, now); }
   private permit(actor: AdminActor, policy: ReturnType<typeof registryPolicy>, approve = false, scope?: ConfigScope) {
     const priorAudience = scope?.previousVersion ? this.scope(scope.previousVersion)?.playerIds ?? [] : [];
     if (scope?.kind === 'player' || approve && scope && new Set([...scope.playerIds, ...priorAudience]).size > 1) {
