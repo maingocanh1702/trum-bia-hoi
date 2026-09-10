@@ -1,7 +1,7 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Version:** v0.42.1
-> **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-10 (admin browser editor đã kiểm chứng và review CLEAN)
+> **Version:** v0.43.0
+> **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-10 (scoped registry core đang verify/review)
 > **Trạng thái:** Active — **M0 COMPLETE theo exit criteria; xem báo cáo closure M0–M5. M1–M3 tiếp tục triển khai; M4 web server/outbox đã qua review và101browser checks; đạt11/18 tiêu chí; registry c1e953c, admin API6f42575 và editor56a0a44 đã verify/review; scoped config/account/import UI còn thiếu; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.3** (1 phase, mốc M0–M9).
 > **Owner:** Team
 > **Mục đích:** Master status board cho mọi feature F01–F28. Nhãn `Phase N` chỉ là **khoá parser** của dashboard-engine; mốc thật: P0 → M0 (nền) · P1 → M1–M2 · P2 → M3 · P3 → M4–M6 · P4 → M7–M8 · QA/release → M9. Là **input cho dashboard-engine** (`tools/dashboard-engine/build_dashboard.py`). Nguồn quyết định/scope = `02-GDD-trum-bia-hoi.md` + `06-ROADMAP-trum-bia-hoi.md`; tracker chỉ theo dõi **trạng thái build**.
@@ -324,3 +324,6 @@ rows. Follow owner queue M4→M6→M7→M8→M9; defer extra M5 breadth/performa
 | 2026-09-10 | v0.42.0 | Admin browser editor implemented: dedicated GIS/MFA entry, session-context binding, author-bound draft/retry, shared scale diff, approval/publication/rollback/audit.321engine/server,8admin/10remote browser, config/build pass; independent review pending. M4 remains open; no new engine/config values or M9 work. |
 
 | 2026-09-10 | v0.42.1 | Editor56a0a44 verified:321engine/server,11admin/10remote browser, config zero warnings/build PASS. Final independent review CLEAN/typecheck+diff-check PASS; reviewer config blocked by tsx IPC EPERM, host passed. M4 one-key/effectiveAt PASS, now11/18; other milestone counts unchanged. Scopes/forecasts/emergency/account gaps and M6–M9 remain; no live Google setup claim. |
+
+
+| 2026-09-10 | v0.43.0 | Schema10 scoped registry core: immutable explicit audiences, per-key precedence/priority, finite campaign/player expiry, ticketed overrides, removal-aware approval policy, deterministic resolved snapshots and actual opening pin.12focused cases pass; full verify/review in progress. M4 remains11/18 OPEN; protected scope controls, forecasts, automatic segment policy and account gaps remain. |

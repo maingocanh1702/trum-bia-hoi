@@ -2239,3 +2239,17 @@ M4 one-key/effectiveAt criterion now PASS (11/18); full M4 remains OPEN. Current
 remaining admin scope includes overrides, forecasts, arbitrary version-pair comparison,
 complete lifecycle labels, emergency/compensation and admin account enrollment/recovery.
 Owner ClientID still absent; public upload/performance deferred; no merge/push/deploy.
+
+
+## Scoped registry server core — 2026-09-10
+
+Base8a4f2c6: schema10 scoped proposals use the existing authenticated-actor service,
+approval/publication/audit and actual server opening path. Apply only changed keys;
+priority is player > campaign > segment > default. Audience, priority, expiry and
+same-scope predecessor are immutable. Player overrides consume a persisted support
+ticket once; removal of old keys keeps their approval and schedule restrictions.
+Resolved snapshots are stable and persisted for historical replay.12focused cases
+pass; full tests/browser/sim and independent review underway. Scope transport/editor,
+impact forecasts and automatic segment classification remain; M4 stays11/18 OPEN.
+No new game values, public archive upload, performance tuning or live Google setup.
+Contract: [Scoped Config Registry](scoped-config-registry.md).

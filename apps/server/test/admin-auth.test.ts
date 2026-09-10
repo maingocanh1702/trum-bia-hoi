@@ -195,8 +195,8 @@ test('disabled Google stays closed while guest play works and schema8 migration 
   assert.equal((await f.call('/admin/auth/challenge',{})).status,503);assert.equal((await f.call('/admin/registry')).status,503);
   assert.equal((await f.call('/auth/session',{})).status,201);
   const guest=f.store.createGuestSession(86400000),before=f.store.read(guest.playerId);f.store.close();
-  f.db.exec('DROP TABLE admin_sessions; DROP TABLE admin_factors; PRAGMA user_version=8');
-  const migrated=f.open();assert.equal(f.db.prepare('PRAGMA user_version').get()!.user_version,9);assert.deepEqual(migrated.read(guest.playerId),before);
+  f.db.exec('DROP TABLE registry_resolutions; DROP TABLE registry_support_uses; DROP TABLE registry_support; DROP TABLE registry_scopes; DROP TABLE admin_sessions; DROP TABLE admin_factors; PRAGMA user_version=8');
+  const migrated=f.open();assert.equal(f.db.prepare('PRAGMA user_version').get()!.user_version,10);assert.deepEqual(migrated.read(guest.playerId),before);
   assert.equal(migrated.registry.latest().version,config.version);
 });
 

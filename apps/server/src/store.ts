@@ -4,10 +4,10 @@ import { isDeepStrictEqual } from 'node:util';
 import { validGoogleSubject, type GoogleIdentity } from './google';
 import { LOCAL_ARCHIVE_BYTES, validateLocalArchive } from './local-archive';
 import { AdminAuth, initializeAdmin } from './admin-auth';
-import { ConfigRegistry, initializeRegistry, heartbeatTiming } from './registry';
+import { ConfigRegistry, initializeRegistry, initializeScopes, heartbeatTiming } from './registry';
 import { Game, config as seedConfig, configContent, decodeSave, loadConfig, validEnvelope, type Config, type Command, type DomainEvent, type EngineCheckpoint, type LoggedCommand, type World } from '@tbh/engine';
 
-const SCHEMA_VERSION = 9, CACHE_SIZE = 64; // config-exempt: persistence format and bounded process cache, not game tuning
+const SCHEMA_VERSION = 10, CACHE_SIZE = 64; // config-exempt: persistence format and bounded process cache, not game tuning
 const GOOGLE_CHALLENGE_TTL_MS = 300000; // config-exempt: five-minute authentication nonce lifetime, not gameplay time
 const EVENT_PAGE_SIZE = 100; // config-exempt: transport history page bound, not gameplay tuning
 type PlayerRow = { id: string; seed: number; created_at: number; config_version: string; now: number; revision: number; projection: string };
@@ -114,6 +114,7 @@ export class GameStore {
       const registered = this.registerConfig(candidate);
       if (Number(version) < 8) initializeRegistry(this.db, registered, this.now());
       if (Number(version) < 9) initializeAdmin(this.db);
+      if (Number(version) < 10) initializeScopes(this.db);
       this.registry = new ConfigRegistry(this.db, () => this.now());
       this.adminAuth = new AdminAuth(this.db, () => this.now());
       heartbeatTiming(this.registry.active());
@@ -387,7 +388,7 @@ export class GameStore {
     const previous = this.commandEntry(id, request.idempotencyKey)?.command;
     // JSON member order is not command identity; retain the original engine payload on an equal retry.
     const command = previous && isDeepStrictEqual(previous, request.command) ? previous as Command : request.command;
-    return game.command({ idempotencyKey: request.idempotencyKey, command, at: now }, request.command.type === 'startShift' ? this.registry.active(now) : undefined);
+    return game.command({ idempotencyKey: request.idempotencyKey, command, at: now }, request.command.type === 'startShift' && !previous ? this.registry.resolve(id, now) : undefined);
   }
   command(id: string, request: Request) {
     if (!validEnvelope({ ...request, at: 0 })) throw Error('store:invalidCommand');
