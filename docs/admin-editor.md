@@ -50,3 +50,5 @@ No engine/config values changed; prior registry k2.4186–2.8738/15rush evidence
 Independent code review is pending. Full M4 remains open.
 
 | 2026-09-10 implementation | Browser `/admin`, session-bound requests, durable author draft/retry, JSON key/import/diff, approval/publication/rollback and audit implemented. Host checks pass; independent review pending. |
+
+| 2026-09-10 self-review correction | Independent review of3d5513e found no actionable defects and typecheck passed (reviewer HTTP sockets blocked by EPERM). Two additional host regressions reproduced a post-receipt read failure resurrecting a draft and stale selected-value buffers after JSON import. Narrowed retry handling to the proposal POST and resynchronized the buffer from draft JSON; final10browser checks/config/build pass; correction review pending. |

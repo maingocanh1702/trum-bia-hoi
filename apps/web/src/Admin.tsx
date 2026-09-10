@@ -45,6 +45,7 @@ export default function Admin() {
   }
   const own=draft?.owner===auth?.actor?.subject, canWrite=auth?.actor&&!['viewer','support'].includes(auth.actor.role);
   const fields=useMemo(()=>{try{return draft?configFields(JSON.parse(draft.text)):[];}catch{return[];}},[draft?.text]);
+  useEffect(()=>{try{setValue(draft&&field?json(atPath(JSON.parse(draft.text),field)):'');}catch{setValue('');}},[draft?.text,field]);
   const filtered=fields.filter(f=>f.path.toLowerCase().includes(search.toLowerCase()));
   function update(patch:Partial<Draft>) { if(draft&&!draft.locked)persist({...draft,...patch}); }
   function apply() { if(!draft||draft.locked)return;const raw=JSON.parse(draft.text), keys=field.split('.'), leaf=keys.pop()!;
@@ -56,9 +57,11 @@ export default function Admin() {
     const payload={key:pending.key,baseVersion:pending.baseVersion,snapshot:candidate.config.raw,reason:pending.reason,...(pending.effective?{effective:pending.effective}:{})};
     if(new TextEncoder().encode(JSON.stringify(payload)).length>ADMIN_BYTES)throw new AdminError('bodyTooLarge');
     if(!persist(pending))return;
-    try{ const response=await request<{version:string}>('/proposals',payload,auth!.context);
-      discard();await show(response.version);await refresh();setMessage(t('done'));
-    }catch(e){if(e instanceof AdminError&&e.status>=400&&e.status<500&&e.status!==429)persist({...pending,locked:false});throw e;}
+    let response:{version:string};
+    try{ response=await request<{version:string}>('/proposals',payload,auth!.context); }
+    catch(e){if(e instanceof AdminError&&e.status>=400&&e.status<500&&e.status!==429)persist({...pending,locked:false});throw e;}
+    // The write receipt resolves the intent even if a later protected read fails.
+    discard();await show(response.version);await refresh();setMessage(t('done'));
   }
   async function mutate(action:'approve'|'publish',d:Details) {await request('/'+action,{version:d.snapshot._meta.version},auth!.context);setConfirm(null);await show(d.snapshot._meta.version);await refresh();setMessage(t('done'));}
   function Diff({data}:{data:ReturnType<typeof preview>}) {return <div className="admin-table" tabIndex={0} role="region" aria-label={t('changes')}><table><thead><tr><th>{t('key')}</th><th>{t('before')}</th><th>{t('after')}</th></tr></thead><tbody>{data.rows.map(r=><tr key={r.path}><th scope="row">{r.path}</th><td><pre>{json(r.before)}</pre>{JSON.stringify(r.before)!==JSON.stringify(r.beforeScaled)&&<p>{t('scaled')}: {json(r.beforeScaled)}</p>}</td><td><pre>{json(r.value)}</pre>{JSON.stringify(r.value)!==JSON.stringify(r.scaled)&&<p>{t('scaled')}: {json(r.scaled)}</p>}</td></tr>)}</tbody></table>{!data.rows.length&&<p>{t('empty')}</p>}</div>;}
@@ -77,7 +80,7 @@ export default function Admin() {
       {corrupt&&<section className="admin-panel"><p role="alert">{t('corrupt')}</p><button onClick={()=>void run(async()=>download(sessionStorage.getItem(DRAFT_KEY)??'', 'admin-draft-recovery.json'))}>{t('recover')}</button><button disabled={busy} onClick={()=>void run(async()=>{if(window.confirm(t('discardConfirm')))discard();})}>{t('discard')}</button></section>}
       {draft&&!own&&<p className="admin-alert">{t('otherOwner')}</p>}
       {draft&&own&&base&&canWrite&&<section className="admin-panel"><div className="admin-toolbar"><h2>{t('draft')}</h2><span>{t(stored?'saved':'storage')}</span></div><p className="admin-version">{t('base')} {draft.baseVersion}</p>{draft.locked&&<p role="status">{t('pending')}</p>}
-        <fieldset disabled={busy||draft.locked}><label>{t('search')}<input type="search" value={search} onChange={e=>setSearch(e.target.value)}/></label><label>{t('field')}<select value={field} onChange={e=>{setField(e.target.value);setValue(json(fields.find(f=>f.path===e.target.value)?.value));}}><option value="">—</option>{filtered.map(f=><option key={f.path} value={f.path}>{f.path}</option>)}</select></label>
+        <fieldset disabled={busy||draft.locked}><label>{t('search')}<input type="search" value={search} onChange={e=>setSearch(e.target.value)}/></label><label>{t('field')}<select value={field} onChange={e=>setField(e.target.value)}><option value="">—</option>{filtered.map(f=><option key={f.path} value={f.path}>{f.path}</option>)}</select></label>
           <label>{t('value')}<textarea rows={3} value={value} onChange={e=>setValue(e.target.value)} spellCheck={false}/></label><button type="button" disabled={!field} onClick={()=>void run(async()=>apply())}>{t('apply')}</button>
           <details><summary>{t('json')}</summary><label>{t('json')}<textarea className="admin-json" rows={12} value={draft.text} onChange={e=>update({text:e.target.value})} spellCheck={false}/></label></details>
           <label>{t('import')}<input type="file" accept=".json,application/json" onChange={e=>{const f=e.target.files?.[0];e.target.value='';if(f)void run(async()=>{if(f.size>ADMIN_BYTES)throw new AdminError('bodyTooLarge');const text=await f.text();preview(base,text);update({text});});}}/></label>

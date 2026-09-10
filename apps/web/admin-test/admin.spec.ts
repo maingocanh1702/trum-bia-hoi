@@ -62,3 +62,13 @@ test('expired authentication hides protected views and corrupted draft remains r
  await login(page);await edit(page,'menu.nem.price','Retain after expiry');await page.request.get('/api/__test/advance?ms=28800001');await page.getByRole('button',{name:'Gửi đề xuất'}).click();await expect(page.getByRole('alert')).toContainText('hết hạn');await expect(page.locator('.admin-proposals')).toHaveCount(0);expect(await page.evaluate(()=>JSON.parse(sessionStorage.getItem('tbh.admin.draft.v1')!).reason)).toBe('Retain after expiry');
  await page.evaluate(()=>sessionStorage.setItem('tbh.admin.draft.v1','{broken'));await login(page);await expect(page.getByText('Không đọc được bản nháp cũ. Tải bản sao trước khi xóa.')).toBeVisible();await expect(page.getByRole('button',{name:'Chỉnh sửa bản mới nhất'})).toBeDisabled();const download=page.waitForEvent('download');await page.getByRole('button',{name:'Tải bản nháp lưu trong tab'}).click();expect((await download).suggestedFilename()).toBe('admin-draft-recovery.json');
 });
+test('known proposal success stays resolved when the subsequent protected read fails',async({page})=>{
+ await login(page);await edit(page,'menu.bia.price','Receipt is already durable');await page.route('**/api/admin/config?version=registry-*',r=>r.fulfill({status:401,json:{error:'admin:invalidSession'}}));
+ await page.getByRole('button',{name:'Gửi đề xuất'}).click();await expect(page.getByRole('alert')).toContainText('hết hạn');expect(await page.evaluate(()=>sessionStorage.getItem('tbh.admin.draft.v1'))).toBe(null);
+ const registry=await (await page.request.get('/api/admin/registry')).json();expect(registry.proposals.filter((p:any)=>p.reason==='Receipt is already durable')).toHaveLength(1);
+});
+test('imported JSON refreshes the selected value buffer instead of applying a stale value',async({page})=>{
+ await login(page);await edit(page);const raw=await page.evaluate(()=>JSON.parse(JSON.parse(sessionStorage.getItem('tbh.admin.draft.v1')!).text));raw.menu.bia.price+=7;
+ await page.locator('input[type=file]').setInputFiles({name:'config.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(raw))});await expect(page.getByRole('textbox',{name:'Giá trị JSON',exact:true})).toHaveValue(String(raw.menu.bia.price));
+ await page.getByRole('button',{name:'Áp dụng vào bản nháp'}).click();expect(await page.evaluate(()=>JSON.parse(JSON.parse(sessionStorage.getItem('tbh.admin.draft.v1')!).text).menu.bia.price)).toBe(raw.menu.bia.price);
+});
