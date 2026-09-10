@@ -196,3 +196,5 @@ transport/reprocessing remains M9. Pending recovery is per tab and operator, wit
 manual retry only; damaged records can be downloaded before explicit removal.
 
 | 2026-09-10 admin controls implementation | Add audited 50-record imported-prefix pages and VI/EN Game/Super review/flag controls; Support reads only. Native confirmation, per-operator exact-intent recovery, stale-state refresh, ACK-before-read clearing and late-response teardown reuse existing guards. Focused server3/browser5/config/build pass; full verification and independent review pending. |
+
+| 2026-09-10 review/visual correction | Full378unit/server +24admin browser pass. Independent review identifies P3 tracker/dashboard drift only; synchronize current state and regenerate dashboard. Visual QA additionally catches the notice retaining the previous language; regression and locale-at-render correction follow. |

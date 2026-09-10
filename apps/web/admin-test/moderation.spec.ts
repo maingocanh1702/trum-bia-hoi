@@ -45,10 +45,10 @@ test('Game admin inspects bounded source pages and reviews or flags without alte
   await decide(page, 'Gắn cờ'); await expect(panel(page)).toContainText('Đang gắn cờ');
   await decide(page, 'Gỡ cờ'); await expect(panel(page)).toContainText('Không gắn cờ');
   const current = await (await page.request.get('/api/__test/moderation?playerId=' + origin.playerId)).json();
-  for (const field of ['coins', 'reputation', 'phase', 'equipment', 'served', 'completedShifts']) expect(current[field]).toEqual(origin.before[field]);
+  for (const field of ['coins', 'reputation', 'phase', 'equipment', 'serves', 'completedShifts']) expect(current[field]).toEqual(origin.before[field]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   expect(await panel(page).locator('button:visible,input:visible,textarea:visible,summary:visible').evaluateAll(elements => elements.every(e => e.getBoundingClientRect().height >= 44))).toBe(true);
-  await page.emulateMedia({ reducedMotion: 'reduce' }); await page.getByLabel('Ngôn ngữ').selectOption('en'); await expect(panel(page).getByRole('heading', { name: 'Player history review and flags' })).toBeVisible();
+  await page.emulateMedia({ reducedMotion: 'reduce' }); await page.getByLabel('Ngôn ngữ').selectOption('en'); await expect(panel(page).getByRole('heading', { name: 'Player history review and flags' })).toBeVisible(); await expect(panel(page).getByRole('status')).toHaveText('Decision recorded.');
   await page.setViewportSize({ width: 1280, height: 900 }); await panel(page).screenshot({ path: '.qa/admin-review-desktop.png' });
 });
 

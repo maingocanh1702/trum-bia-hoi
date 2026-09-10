@@ -452,7 +452,7 @@
         "spec_modified_at": null,
         "tech_hash": null,
         "tech_modified_at": null,
-        "tracker_row_hash": "c78eabbf580329a23e97d9dd7c354523529dccf31d80cf7ed48397e0f11670e0",
+        "tracker_row_hash": "0bd5752fcf659718e91f0103d66e49a52365977175843f035b286d36c801b385",
         "foundation_codex_approved": null,
         "foundation_founder_signoff": null
       },
@@ -606,7 +606,7 @@
         "spec_modified_at": null,
         "tech_hash": null,
         "tech_modified_at": null,
-        "tracker_row_hash": "97f310a34adba3e97b7bcee6aa73207d714d9c26acb6302509e72f111dad2114",
+        "tracker_row_hash": "8a88948da6ef72f41a31e560c873a3d9e30d2adca8772a673a1071e12881fa1d",
         "foundation_codex_approved": null,
         "foundation_founder_signoff": null
       },
@@ -732,7 +732,9 @@
       "human_status": "IN_PROGRESS",
       "progress": 30,
       "runtime_urgency": "normal",
-      "overlays": [],
+      "overlays": [
+        "tracker-modified"
+      ],
       "signals": {
         "spec_exists": false,
         "tech_exists": false,
@@ -758,7 +760,7 @@
         "spec_modified_at": null,
         "tech_hash": null,
         "tech_modified_at": null,
-        "tracker_row_hash": "74fb818568196a7f20933bc4be1020fde03fa3772367aa88188d9be6e861fd8b",
+        "tracker_row_hash": "338d8791a2fba9f43ac230efe9ab2d58f9e5bb81041f9aaeb1a02751d23f6231",
         "foundation_codex_approved": null,
         "foundation_founder_signoff": null
       },

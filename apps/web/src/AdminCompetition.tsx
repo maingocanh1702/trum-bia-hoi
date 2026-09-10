@@ -34,9 +34,9 @@ export function AdminCompetition({ actor, context, t, locale, fail, download }: 
     const timer = setTimeout(() => controller.abort(), HTTP_MS);
     try { await action(controller.signal); } catch (e) {
       if (live.current) {
-        if (e instanceof AdminError && e.code.startsWith('competition:')) setError(t('review.conflict'));
-        else if (e instanceof AdminError && e.code === 'reviewStorage') setError(t('review.storage'));
-        else { setError(t('review.failed')); fail(e); }
+        if (e instanceof AdminError && e.code.startsWith('competition:')) setError('review.conflict');
+        else if (e instanceof AdminError && e.code === 'reviewStorage') setError('review.storage');
+        else { setError('review.failed'); fail(e); }
       }
     } finally { clearTimeout(timer); if (live.current) setBusy(false); job.current = null; }
   }
@@ -71,14 +71,14 @@ export function AdminCompetition({ actor, context, t, locale, fail, download }: 
     }
     if (!live.current || signal.aborted) return;
     if (receipt.actor !== actor.subject || Object.keys(receipt.request).length !== Object.keys(p).length || Object.entries(p).some(([key, value]) => (receipt.request as unknown as Record<string, unknown>)[key] !== value)) throw new AdminError('network');
-    clearIntent(); setReason(''); setMessage(t('review.saved'));
+    clearIntent(); setReason(''); setMessage('review.saved');
     await inspect(p.playerId, signal);
   }
   const label = (p: CompetitionRequest) => t('review.' + (p.type === 'flag' ? p.value ? 'flag' : 'clear' : p.value === 'approved' ? 'approve' : 'reject'));
   const summary = (p: CompetitionRequest) => <dl><dt>{t('review.action')}</dt><dd>{label(p)}</dd><dt>{t('review.player')}</dt><dd>{p.playerId}</dd>{p.type === 'import-review' && <><dt>{t('review.digest')}</dt><dd className="admin-version">{p.digest}</dd></>}<dt>{t('review.reason')}</dt><dd>{p.reason}</dd></dl>;
   return <section className="admin-panel admin-review" aria-label={t('review.title')} aria-busy={busy}>
     <h2>{t('review.title')}</h2><p>{t('review.note')}</p>
-    {error && <p role="alert" className="admin-alert">{error}</p>}{message && <p role="status" className="admin-success">{message}</p>}
+    {error && <p role="alert" className="admin-alert">{t(error)}</p>}{message && <p role="status" className="admin-success">{t(message)}</p>}
     {corrupt && <><p role="alert">{t('review.corrupt')}</p><button disabled={busy} onClick={() => void run(async () => download(sessionStorage.getItem(storageKey) ?? '', 'admin-review-recovery.json'))}>{t('review.recover')}</button><button disabled={busy} onClick={() => { if (window.confirm(t('review.discardConfirm'))) void run(async () => clearIntent()); }}>{t('review.discard')}</button></>}
     {pending && <div className="admin-alert"><p>{t('review.uncertain')}</p>{summary(pending.request)}<button disabled={busy || !writable} onClick={() => void run(signal => send(pending.request, signal))}>{t('review.retry')}</button></div>}
     <form onSubmit={e => { e.preventDefault(); void run(signal => inspect(player.trim(), signal)); }}><fieldset disabled={busy || !!pending || corrupt}>
@@ -100,7 +100,7 @@ export function AdminCompetition({ actor, context, t, locale, fail, download }: 
       </div></fieldset> : <p>{t('review.readOnly')}</p>}
     </>}
     <dialog ref={dialog} className="admin-dialog" aria-labelledby="review-confirm-title" onCancel={e => { if (busy) e.preventDefault(); else setConfirm(null); }} onClose={() => setConfirm(null)}>
-      {confirm && <><h2 id="review-confirm-title">{t('review.confirm')}</h2>{summary(confirm)}<p>{t('review.note')}</p>{error && <p role="alert">{error}</p>}<div className="admin-toolbar"><button data-cancel disabled={busy} onClick={() => setConfirm(null)}>{t('cancel')}</button><button className="primary" disabled={busy} onClick={() => void run(signal => send(confirm, signal))}>{t('review.submit')}</button></div></>}
+      {confirm && <><h2 id="review-confirm-title">{t('review.confirm')}</h2>{summary(confirm)}<p>{t('review.note')}</p>{error && <p role="alert">{t(error)}</p>}<div className="admin-toolbar"><button data-cancel disabled={busy} onClick={() => setConfirm(null)}>{t('cancel')}</button><button className="primary" disabled={busy} onClick={() => void run(signal => send(confirm, signal))}>{t('review.submit')}</button></div></>}
     </dialog>
   </section>;
 }
