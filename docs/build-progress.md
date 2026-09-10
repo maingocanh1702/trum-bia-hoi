@@ -2331,3 +2331,9 @@ Full engine/server suite passes344/344; independent native review is next.
 Forecast kernel03a6800 already verified/reviewed; M4 remains11/18 OPEN. Next protected
 forecast aggregation/admin presentation and remaining M4 acceptance, then M6–M9.
 
+Review corrections: reproduction stages all outputs and refuses changed expected
+hashes before publishing; the receipt is read-only. A regression fails the last
+asset and proves every selected file/contact/receipt stays unchanged. Browser reload
+keeps Date.now fixed while allowing React timers to run; all four cases pass,
+including an intentional12second module delay. Asset/config/build still pass.
+Final correction review follows; engine/config/runtime art bytes remain unchanged.

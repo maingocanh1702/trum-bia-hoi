@@ -988,3 +988,5 @@ Three standalone built-in calls produced Lv2 square inox, Lv3 long inox and Lv4 
 | Date | Change |
 |---|---|
 | 2026-09-10 | Owner authorizes imagegen for all game assets; preserved native alpha returned by the built-in tool; added three table prompts and reproducible exports. Runtime IDs unchanged; production family approval remains pending. |
+
+| 2026-09-10 reproduction review | Table export now stages the whole batch, checks dimensions/alpha/palette and the recorded expected hashes before replacing selected sprites. It never rewrites provenance to accept drift; intentional changes need a new versioned asset/receipt. Failure regression preserves all earlier sprites, contact sheet and receipt byte-for-byte with unchanged mtimes. |

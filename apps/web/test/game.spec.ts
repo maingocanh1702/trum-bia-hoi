@@ -1,7 +1,16 @@
 import { readSave, waitSaved, readBackups } from './storage';
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+
+// Let React's lazy scheduler boot while Date.now (the engine clock) stays fixed.
+async function reloadAtSameGameTime(page: Page) {
+  const time = await page.evaluate(() => Date.now());
+  await page.clock.setFixedTime(time); await page.clock.resume();
+  await page.reload(); await expect(page.locator('.table-object').first()).toBeVisible({ timeout: 20000 });
+  await page.clock.pauseAt(time); await page.clock.setSystemTime(time);
+  expect(await page.evaluate(() => Date.now())).toBe(time);
+}
 
 for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1280, height: 720 }, { width: 1280, height: 400 }]) {
   test(`guest serves, reloads, opens paused sheets and switches locale at ${viewport.width}×${viewport.height}`, async ({ page }) => {
@@ -39,9 +48,11 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
     await expect(page.locator('.seat')).toHaveCount(6);
     await expect(page.locator('.seat-customer')).toHaveCount(1);
     await expect(page.locator('.seat-empty')).toHaveCount(5);
-    await waitSaved(page); await page.clock.resume(); await page.reload();
+    await waitSaved(page);
+    // A slow lazy module takes longer than a served guest's entire consumption time.
+    if (viewport.width === 390) await page.route('**/src/App.tsx*', async route => { await new Promise(resolve => setTimeout(resolve, 12000)); await route.continue(); }, { times: 1 });
+    await reloadAtSameGameTime(page);
     await expect(page.locator('.money strong')).toHaveText(coins!);
-    await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 1000));
     await expect(page.locator('.table-space.state-consuming')).toHaveCount(1);
     await page.getByRole('button', { name: 'Nhập hàng', exact: true }).click();
     const stockRow = page.locator('.stock-row').first();
@@ -62,7 +73,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
     await expect(page.getByRole('heading', { name: 'Your own corner' })).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.getByRole('button', { name: 'Restock', exact: true })).toBeVisible();
-    await waitSaved(page); await page.clock.resume(); await page.reload();
+    await waitSaved(page); await reloadAtSameGameTime(page);
     await expect(page.getByRole('button', { name: 'Restock', exact: true })).toBeVisible();
     expect(errors).toEqual([]);
   });
