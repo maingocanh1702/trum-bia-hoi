@@ -48,3 +48,23 @@ No public upload,80MB tuning, engine/config changes or merge/push/deploy.
 | 2026-09-10 verified | Kernel03a6800 passed host344/config/build/parity and final independent review; full server forecast/UI remains open. |
 
 | 2026-09-10 owner decision | Endgame inflation is monitored through7-day credited faucets/sinks and wallet deltas, not k. Advanced career k≤3.5 is a separate service-value acceptance gate, to re-evaluate after Alpha with real player data. No tuning or new inflation threshold; protected reporting/UI remains M4 work. |
+
+## Protected report transport — contract 2026-09-10
+
+Base `0238bd5`. Reuse registry composition/activation and the forecast kernel.
+Capture one consistent SQLite backup in a private temporary directory. A bounded
+worker uses the existing store presence/catch-up logic only on that copy, then
+projects baseline/candidate for every existing player in the affected audience.
+Include previous audience members when a scope shrinks; include all future
+publication/expiry boundaries within seven days. Keep current open-shift pins.
+Return population totals, daily faucets/sinks, key changes, snapshot time and
+version/revision provenance. Count affected players across the entire horizon.
+No sampling/extrapolation, partial totals, new-player assumptions, VND fabrication,
+extra k factor, player writes, config publication or permanent snapshot files.
+HTTP uses existing admin cookie/context checks before and after work; cancellation,
+timeout and process failure terminate the worker and remove the temporary copy.
+A single in-process job bound protects gameplay handling. UI shows this explicit
+scenario alongside the draft, keeps Vietnamese/English labels and clears results
+on identity/version change. Existing approval/publication rules are unchanged.
+Verify real worker/HTTP authorization, unchanged source DB, cancellation, scope
+expiry/removal, conservation and browser report display before closing this slice.

@@ -441,3 +441,32 @@ Browser editor, enrollment/account recovery and scoped registry UI are subsequen
 | 2026-09-10 admin transport implementation | Google SSO + independent TOTP/RBAC/session boundary and protected default registry routes implemented;320full tests/config/build pass, final role/HTTP checks and independent review underway. Real Client ID/directory remain unconfigured. |
 
 | 2026-09-10 admin API verified |6f42575:320engine/server (10admin),10remote browser, config zero warnings/build PASS. Native review CLEAN and independent typecheck PASS; reviewer socket checks blocked, host HTTP checks pass. Editor/GIS browser, enrollment/recovery and scopes remain. Receipt `.qa/admin-auth-verification.json`. |
+
+## Protected economic forecast
+
+`POST /admin/forecast` accepts only `{version}` for an unpublished registry draft,
+using the existing admin cookie and `X-TBH-Admin-Context`. No save, seed, time,
+player list or economic totals are accepted. The server authenticates before work
+and revalidates the session/context before releasing the report. Existing read
+roles may inspect scenarios; this does not grant proposal/publication permission.
+
+A single worker per process copies SQLite with its native backup API into a private
+temporary directory, reads current presence/catch-up through GameStore on that copy,
+and runs every existing member of the affected audience. Timeline resolution reuses
+the registry (including removed members, scheduled defaults, scope precedence and
+expiry). The snapshot time is the later of request time and latest saved server
+clock captured by the backup. The worker never writes to the source database.
+
+The response carries its version, snapshot/activation/window timestamps, registry
+revision, player source/simulated revisions and command hashes, affected keys and
+aggregate/daily before-after coin flows. Existing pins survive. No sampling or
+extrapolation; empty audiences return `status:empty` and `totals:null`. VND is
+unavailable without observed donation data. A forecast is a continuously active
+scenario, not observed activity or a guarantee that higher prices raise revenue.
+
+The request remains open while the worker runs, leaving the HTTP event loop free.
+The admin UI allows eleven minutes (worker limit ten minutes/1GiB heap). Busy=429;
+resource/worker failures=503. Cancellation terminates the worker; cleanup removes
+the private backup even on failure. Large populations may exceed this explicit
+limit; they fail without partial results. Shared queues/report persistence and
+population sizing remain release/performance work, not new economy parameters.

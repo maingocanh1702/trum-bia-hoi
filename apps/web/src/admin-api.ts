@@ -14,11 +14,11 @@ export const DRAFT_KEY = 'tbh.admin.draft.v1';
 // config-exempt: HTTP and local draft limits, independent of gameplay time/tuning.
 export const ADMIN_BYTES = 524288, HTTP_MS = 15000;
 export class AdminError extends Error { constructor(readonly code: string, readonly status = 0) { super(code); } }
-export async function request<T>(path: string, body?: unknown, context?: string): Promise<T> {
+export async function request<T>(path: string, body?: unknown, context?: string, signal?: AbortSignal): Promise<T> {
   try {
     const response = await fetch('/api/admin'+path, { method: body === undefined ? 'GET':'POST', credentials:'same-origin', cache:'no-store',
       headers: { ...(body === undefined ? {} : {'Content-Type':'application/json'}), ...(context ? {'X-TBH-Admin-Context':context}:{}) },
-      body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(HTTP_MS) });
+      body: body === undefined ? undefined : JSON.stringify(body), signal: signal ?? AbortSignal.timeout(HTTP_MS) });
     const data = await response.json();
     if (!response.ok) throw new AdminError(typeof data?.error === 'string' ? data.error : 'serverError', response.status);
     if (!data || typeof data !== 'object') throw new AdminError('serverError'); return data as T;

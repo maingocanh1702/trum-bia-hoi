@@ -2360,3 +2360,16 @@ engine runtime, payment/anchor or standard2–3 band changed. Receipt:
 and remainsOPEN for feel/art. Re-evaluate after Alpha playtest with real player data;
 monitor endgame inflation through7-day faucet/sink reporting, not k.
 Next: protected M4 forecast reporting/admin UI and remaining M4 acceptance → M6–M9.
+
+## Protected seven-day forecast implemented — 2026-09-10
+
+Base0238bd5. Admin draft view now requests a protected seven-day before/after report.
+Worker backs up SQLite to a private temporary copy and uses existing store presence,
+catch-up, registry composition and pure career policy. Source saves stay unchanged;
+all affected existing players, removed audience members and future expiries count.
+Aggregated credits, spending, penalties, returned deposits and balances reconcile.
+Request handling stays live; cancellation, worker limits, cleanup and admin-context
+revalidation apply. VI/EN UI shows assumptions, snapshot time and unavailable VND.
+Three new server checks and real mobile report browser case PASS. Final full suite,
+admin browser regression and independent review are running. No economy numbers,
+engine rules or publication approval semantics changed; M4 remains11/18OPEN.

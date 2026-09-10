@@ -4,6 +4,7 @@ import { validEnvelope, loadConfig, menuReport, type Config, type Command, type 
 import { GameStore, type Snapshot } from './store';
 import { googleVerifier } from './google';
 import { adminDirectory } from './admin-auth';
+import { forecastEconomy } from './forecast';
 import type { ProposalInput } from './registry';
 
 // config-exempt: deployment security/resource limits, not gameplay or economic parameters
@@ -148,6 +149,16 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
           if (route.search && (route.searchParams.size !== 1 || !version || version.length > 128)) throw new HttpError(400, 'invalidVersion'); // config-exempt:version protocol bound
           reply(200, registry.draftSource(actor, version ?? undefined)); return;
         }
+        if (req.method === 'POST' && path === '/admin/forecast') {
+          const input = fields(['version']);
+          if (typeof input.version !== 'string' || !input.version || input.version.length > 128) throw new HttpError(400, 'invalidVersion'); // config-exempt:version protocol bound
+          const cancel = new AbortController(), abort = () => cancel.abort();res.once('close',abort);
+          try {
+            const report = await forecastEconomy(store,actor,input.version,cancel.signal);
+            auth.actor(token,directory());if(context !== auth.context(token))throw Error('admin:accountChanged');
+            reply(200,report);
+          } catch(error) {if(!cancel.signal.aborted)throw error;} finally {res.removeListener('close',abort);} return;
+        }
         if (req.method === 'POST' && path === '/admin/impact') {
           const input = fields(['version']);
           if (typeof input.version !== 'string' || !input.version || input.version.length > 128) throw new HttpError(400, 'invalidVersion'); // config-exempt:version protocol bound
@@ -247,6 +258,7 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
         'registry:invalidActor': 401, 'registry:forbidden': 403, 'registry:distinctApprover': 403,
         'store:heartbeatClock': 400, 'registry:missingVersion': 404, 'registry:missingProposal': 404, 'registry:rateLimited': 429,
         'registry:staleBase': 409, 'registry:scheduleConflict': 409, 'registry:keyConflict': 409,
+        'registry:forecastBusy': 429, 'registry:forecastTimeout': 503, 'registry:forecastCancelled': 408, 'registry:forecastUnavailable': 503,
         'registry:staleImpact': 409, 'registry:scopeConflict': 409, 'registry:invalidTicket': 409, 'registry:alreadyPublished': 409, 'registry:missingScope': 404, 'registry:invalidScope': 400, 'registry:invalidExpiry': 400,
         'registry:alreadyApproved': 409, 'registry:approvalRequired': 409,
       };

@@ -269,3 +269,24 @@ test('support HTTP tickets require an admin role, recover exact retries and are 
   const replacement=await f.call('/admin/scope?kind=player&id=ticket-player',undefined,admin);assert.equal(replacement.data.scope.ticketId,null);assert.equal(replacement.data.scope.previousVersion,version);
   assert.equal((await f.call('/admin/impact',{version,changedPlayers:0},admin)).status,400);
 });
+
+test('forecast HTTP accepts only authenticated version references and rechecks the admin session before delivery',async t=>{
+ const f=await fixture(t),admin=await f.login('super-one'),second=await f.login('super-two');
+ const raw=structuredClone(config.raw);raw.shift.dailyShiftCap.newbie=1;raw.entitlements.freeSessionsPerDay.bySegment.newbie=1;
+ const d=await f.call('/admin/proposals',{key:'forecast-cap-fixture',baseVersion:config.version,snapshot:raw,reason:'One-shift forecast fixture'},admin);
+ await f.call('/admin/approve',{version:d.data.version},second);const published=await f.call('/admin/publish',{version:d.data.version},admin);f.now=published.data.effective_at;
+ const fresh=await f.login('super-one');f.store.createPlayer('forecast-player',42);
+ const source=(await f.call('/admin/draft-source',undefined,fresh)).data;source.snapshot.menu.bia.price++;
+ const draft=await f.call('/admin/proposals',{key:'forecast-price',baseVersion:source.baseVersion,snapshot:source.snapshot,reason:'Forecast route'},fresh),version=draft.data.version;
+ assert.equal((await f.call('/admin/forecast',{version})).status,401);
+ assert.equal((await f.call('/admin/forecast',{version,seed:42},fresh)).status,400);
+ assert.equal((await f.call('/admin/forecast',{version},fresh,{'X-TBH-Admin-Context':'wrong'})).status,409);
+ const result=await f.call('/admin/forecast',{version},fresh);assert.equal(result.status,200);assert.equal(result.data.audiencePlayers,1);assert.equal(result.data.changedPlayers,1);assert.ok(result.data.totals.candidate.faucet>0);assert.equal(result.data.totals.delta.faucet,result.data.totals.candidate.faucet-result.data.totals.baseline.faucet);
+ const pending=f.call('/admin/forecast',{version},fresh);
+ // A second request is handled while the forecast worker is live, then revocation blocks delivery.
+ let busy=false;
+ for(let i=0;i<30&&!busy;i++){await new Promise(r=>setTimeout(r,20));busy=(await f.call('/admin/forecast',{version},fresh)).status===429;}
+ assert.ok(busy);assert.equal((await f.call('/admin/auth/logout',{},fresh)).status,200);
+ assert.equal((await pending).status,401);
+ assert.equal(f.store.read('forecast-player').world.completedShifts,0);
+});

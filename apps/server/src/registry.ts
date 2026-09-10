@@ -388,12 +388,33 @@ export class ConfigRegistry {
   impact(actor: AdminActor, version: string) {
     return this.transaction(now => { this.actor(actor, now); return this.previewImpact(version, now); });
   }
-  private previewImpact(version: string, now: number) {
+  private previewPublication(version: string, now: number): PreviewPublication {
       const draft = this.proposal(version), scope = this.scope(version), at = this.publicationAt(draft, now);
       if (this.db.prepare('SELECT 1 FROM registry_publications WHERE version=?').get(version)) throw Error('registry:alreadyPublished');
       const candidate: PreviewPublication = { seq: Number(this.db.prepare('SELECT MAX(seq) AS n FROM registry_publications').get()!.n) + 1,
         version, scope, effective_at: at, published_at: now, changed_by: draft.changed_by, approved_by: 'preview' };
       this.validatePublications(now, candidate);
+      return candidate;
+  }
+  forecastPlan(actor: AdminActor, version: string, through: number) {
+    const now = this.now(); this.actor(actor, now);
+    if (!Number.isSafeInteger(through) || through <= now) throw Error('registry:invalidInput');
+    const candidate = this.previewPublication(version, now), scope = candidate.scope;
+    const previous = scope?.previousVersion ? this.scope(scope.previousVersion)?.playerIds ?? [] : [];
+    const ids = scope ? [...new Set([...scope.playerIds, ...previous])].sort() : this.db.prepare('SELECT id FROM players ORDER BY id').all().map(p => String(p.id));
+    const times = [...new Set([now, candidate.effective_at, ...this.db.prepare('SELECT effective_at FROM registry_publications').all().map(p => Number(p.effective_at)),
+      ...this.scopedPublications().flatMap(p => p.scope.expiresAt === null ? [] : [p.scope.expiresAt]), ...(scope?.expiresAt ? [scope.expiresAt] : [])])]
+      .filter(at => at >= now && at < through).sort((a,b) => a-b);
+    const players = ids.map(id => {
+      const before = times.map(from => ({ from, config: this.compose(id, from).config })), after = times.map(from => ({ from, config: this.compose(id, from, candidate).config }));
+      const keys = [...new Set(before.flatMap((p,i) => changedPaths(p.config.raw, after[i].config.raw).filter(k => !under(k, '_meta'))))].sort();
+      return { id, revision: Number(this.db.prepare('SELECT revision FROM players WHERE id=?').get(id)!.revision), before, after, keys };
+    });
+    return { version, computedAt: now, through, activatesAt: candidate.effective_at,
+      registryRevision: candidate.seq-1, players };
+  }
+  private previewImpact(version: string, now: number) {
+      const candidate = this.previewPublication(version, now), scope = candidate.scope, at = candidate.effective_at;
       const previous = scope?.previousVersion ? this.scope(scope.previousVersion)?.playerIds ?? [] : [];
       const ids = scope ? [...new Set([...scope.playerIds, ...previous])] : this.db.prepare('SELECT id FROM players').all().map(p => String(p.id));
       let changedPlayers = 0, pinnedShifts = 0; const keys = new Map<string, number>(), resolutions: string[][] = [];

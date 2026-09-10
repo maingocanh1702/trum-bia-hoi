@@ -38,7 +38,7 @@ export class GameStore {
   readonly registry: ConfigRegistry;
   readonly adminAuth: AdminAuth;
   private readonly cache = new Map<string, LiveGame & { revision: number }>();
-  constructor(path: string, config: Config = seedConfig, private readonly clock = Date.now) {
+  constructor(readonly path: string, config: Config = seedConfig, private readonly clock = Date.now) {
     const candidate = loadConfig(config.raw);
     heartbeatTiming(candidate);
     this.db = new DatabaseSync(path);
@@ -380,6 +380,18 @@ export class GameStore {
     }
   }
   read(id: string): Snapshot { const { result: _, ...state } = this.operate(id, () => undefined); return state; }
+  /** Detached integrity-checked snapshot for internal simulations; never a client checkpoint. */
+  fork(id: string): Game {
+    this.db.exec('BEGIN');
+    try {
+      const row = this.db.prepare('SELECT * FROM players WHERE id=?').get(id) as PlayerRow | undefined;
+      if (!row) throw Error('store:playerMissing');
+      const { game } = this.hydrate(row);
+      const fork = Game.restoreTrusted(game.configs, structuredClone({ seed: game.seed, createdAt: game.createdAt, world: game.world, log: game.log }), game.checkpoint());
+      this.db.exec('COMMIT'); return fork;
+    } catch(error) { if(this.db.isTransaction)this.db.exec('ROLLBACK'); throw error; }
+  }
+  get serverNow() { return this.now(); }
   private commandEntry(id: string, key: string) {
     const row = this.db.prepare('SELECT entry FROM commands WHERE player_id=? AND idempotency_key=?').get(id, key);
     return row ? JSON.parse(String(row.entry)) as LoggedCommand : undefined;

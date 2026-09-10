@@ -148,3 +148,20 @@ test('stale publication impact closes confirmation and requires inspection of th
  await page.getByRole('button',{name:'Xác nhận xuất bản',exact:true}).click();await expect(page.getByRole('dialog')).not.toBeVisible();await expect(page.getByRole('alert')).toContainText('Phạm vi tác động đã thay đổi');await expect(detail(page).getByRole('region',{name:'Phạm vi tác động thực tế'})).toContainText('0 / 1');
  await detail(page).getByRole('button',{name:'Xuất bản',exact:true}).click();await page.getByRole('button',{name:'Xác nhận xuất bản',exact:true}).click();await expect(detail(page)).toContainText('Đã xuất bản');await a.ctx.close();
 });
+
+test('seven-day forecast renders real protected worker totals in Vietnamese and English without playing the source save',async({page,browser})=>{
+ test.setTimeout(240000);await login(page,'super-one');const player=await playerContext(browser);
+ await edit(page,'menu.bia.price','Seven-day browser forecast');await scopeFields(page,player.playerId);await page.getByRole('button',{name:'Xem diff',exact:true}).click();await proposal(page);
+ const panel=page.getByRole('region',{name:'Dự báo kinh tế 7 ngày'});
+ const response=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/admin/forecast',{timeout:210000});
+ await panel.getByRole('button',{name:'Chạy dự báo'}).click();await expect(panel.getByRole('status')).toContainText('Đang mô phỏng');
+ // Main request loop is available while the worker simulates.
+ expect((await player.ctx.request.get('/api/player/state')).status()).toBe(200);
+ const received=await response;expect(received.status()).toBe(200);const report=await received.json();expect(report.audiencePlayers).toBe(1);expect(report.totals.candidate.faucet).toBeGreaterThan(0);
+ await expect(panel).toContainText('Đã mô phỏng toàn bộ');await expect(panel).toContainText('chưa có dữ liệu donate');await expect(panel.getByRole('table')).toBeVisible();
+ await panel.getByText('Chi tiết theo ngày',{exact:true}).click();expect(await panel.getByRole('row').count()).toBeGreaterThan(10);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:'.qa/forecast-admin-mobile.png',fullPage:true});await panel.screenshot({path:'.qa/forecast-admin-panel.png'});
+ await page.getByLabel('Ngôn ngữ').selectOption('en');await expect(page.getByRole('region',{name:'Seven-day economy scenario'})).toContainText('VND revenue unavailable');
+ const state=await(await player.ctx.request.get('/api/player/state')).json();expect(state.world.completedShifts).toBe(0);expect(state.world.coins).toBe(player.state.world.coins);
+ await page.getByRole('button',{name:'Sign out',exact:true}).click();await expect(page.getByRole('region',{name:'Seven-day economy scenario'})).toHaveCount(0);await player.ctx.close();
+});
