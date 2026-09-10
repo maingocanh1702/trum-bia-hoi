@@ -13,7 +13,7 @@ Uses the existing VI/EN copy system, palette, native forms/dialogs and 44px cont
 | Review | Actual old/new raw and scaled values; select historical versions or draft versions. Immutable draft creation, approval and publication are distinct actions. Publish confirms the exact displayed version. |
 | Conflict/retry | Preserve request key through a lost response. Stale base is surfaced; importing edits against a refreshed base is deliberate, never automatic overwrite. |
 | Authentication failure | Clear protected views; keep only the original author's pending draft for reauthentication. Credential expiry/factor errors have distinct messages. |
-| Remaining | Full forecasts, scoped overrides, emergency workflow and admin enrollment/recovery remain explicit follow-up work. No fake forecast values or live Google setup claim. |
+| Remaining | Full forecasts, scoped overrides, arbitrary version-pair comparison, lifecycle labels, emergency/compensation and admin enrollment/recovery remain explicit follow-up work. No fake forecast values or live Google setup claim. |
 
 Browser acceptance uses an isolated signer/certificate service and actual server
 Google SDK, TOTP and SQLite. GIS popup rendering may be replaced in the test browser;
@@ -36,21 +36,23 @@ Registry POST requests now require `X-TBH-Admin-Context` from `GET /admin/auth`.
 This opaque cookie digest binds confirmation to a session; it cannot authenticate
 without the separate HttpOnly cookie. A mismatched supplied context also rejects reads.
 
-`npx playwright test --config playwright.admin.config.ts` runs eight scenarios on
+`npx playwright test --config playwright.admin.config.ts` runs eleven scenarios on
 isolated ports4181–4183 and a temporary SQLite database/private test directory. It
 covers actual signed-token/TOTP auth, old/new player pins, one-key editing and diff,
 publication confirmation/focus, distinct Tier A approval/scheduling, audit, readonly
 roles, lost ACK/reload/retry, identity change, stale base, invalid JSON, storage failure,
 expiry and corrupt-draft recovery. The test-only signer is never in a production entry.
 
-321 engine/server tests, eight admin browser scenarios and ten remote-game browser
+321 engine/server tests, eleven admin browser scenarios and ten remote-game browser
 scenarios pass; config has zero warnings and build/typecheck pass. Mobile/desktop
 captures are `.qa/admin-editor-mobile.png` and `.qa/admin-editor-desktop.png`.
 No engine/config values changed; prior registry k2.4186–2.8738/15rush evidence applies.
-Independent code review is pending. Full M4 remains open.
+Final independent review at56a0a44 is CLEAN; typecheck and diff-check passed independently. Reviewer config execution was blocked by tsx IPC EPERM; host config passed. Full M4 remains open (11/18).
 
 | 2026-09-10 implementation | Browser `/admin`, session-bound requests, durable author draft/retry, JSON key/import/diff, approval/publication/rollback and audit implemented. Host checks pass; independent review pending. |
 
 | 2026-09-10 self-review correction | Independent review of3d5513e found no actionable defects and typecheck passed (reviewer HTTP sockets blocked by EPERM). Two additional host regressions reproduced a post-receipt read failure resurrecting a draft and stale selected-value buffers after JSON import. Narrowed retry handling to the proposal POST and resynchronized the buffer from draft JSON; final10browser checks/config/build pass; correction review pending. |
 
 | 2026-09-10 correction review | Review found P2 identical-text imports skipped the effect and retained an unapplied field edit. Snapshot replacement now explicitly synchronizes the selected buffer even when text is unchanged. New/rollback draft, JSON textarea/import and restored draft all synchronize; selecting a path reads its current value. Reason/effective edits retain the buffer; discard/session-clear resets it. Added identical-backup regression; verification/re-review pending. |
+
+| 2026-09-10 verified |56a0a44:321engine/server,11admin/10remote browser, final config/build PASS. Correction review CLEAN; typecheck/diff-check passed independently. Known receipt and all snapshot replacements preserve intended draft state. M4 one-key/effectiveAt criterion PASS (11/18 overall); receipt `.qa/admin-editor-verification.json`. |

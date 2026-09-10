@@ -5,6 +5,19 @@
 
 ---
 
+## 🧭 Admin browser editor verified; M4 now11/18 — 2026-09-10
+
+Product56a0a44 (base988fc33, foundation3d5513e, receipt correctionf86fc69).
+Dedicated `/admin` GIS/TOTP entry, author-bound durable draft, JSON key/import/raw-scaled
+diff, separate approval/publication/rollback and audit. Server context blocks stale
+cross-tab identity.321engine/server,11admin/10remote browser, config/build PASS.
+Final review CLEAN; independent typecheck/diff-check PASS; config execution blocked by
+reviewer tsx IPC EPERM (host passed). Two self-review defects and one review P2 buffer
+edge fixed with regressions. Receipt `.qa/admin-editor-verification.json`.
+M4 one-key/effectiveAt PASS;11/18 total, still OPEN. Next scoped registry/impact and
+admin lifecycle/account gaps, then M6–M9. No real ClientID/Google consent, public upload
+or80MB tuning. Original20sourcehashes unchanged; no merge/push/deploy. Goal active.
+
 ## 🧭 Admin identity/registry API verified; editor next — 2026-09-10
 
 Product6f42575, base291264c; schema9/config2.0.1/rules24.

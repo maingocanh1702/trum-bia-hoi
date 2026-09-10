@@ -38,3 +38,5 @@ No new gameplay numbers, seed changes, engine formulas or performance work in th
 | 2026-09-10 authenticated boundary verified |6f42575 protects registry read/propose/approve/publish/audit via server-derived admin actors.320tests,10remote browser, config/build and review PASS; editor/scopes remain open. Historical internal-only rows above describe the prior slice. |
 
 | 2026-09-10 browser editor | `/admin` adds author-bound drafts, JSON diff using shared Base scaling, separate approval/publication, historical rollback draft and audit. Detail permissions derive from the existing canonical role gate; mutations still revalidate. Context-bound requests reject identity switches.321tests/8admin/10remote browser/config/build pass; independent review pending. |
+
+| 2026-09-10 editor verified |56a0a44 browser GIS/TOTP/editor workflow verified:321engine/server,11admin/10remote browser, config/build PASS and final review CLEAN. Context binding prevents stale identity actions; durable drafts/retries and snapshot replacement regressions pass. M4 now11/18 OPEN; scopes/full admin and live setup remain. See admin-editor.md. |

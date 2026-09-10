@@ -1,16 +1,16 @@
 # Build progress — Trùm Bia Hơi
 
-Started 2026-09-08 from `30c0285`. Active worktree: `/Users/maingocanh/.codex/worktrees/trum-bia-hoi-game`, branch `codex/game-build-isolated` based on `bc79af5`. A concurrent Claude docs commit captured the first engine files in the original checkout; original files were preserved, and further work was isolated. Authority: HANDOFF v1.15,
+Started 2026-09-08 from `30c0285`. Active worktree: `/Users/maingocanh/.codex/worktrees/trum-bia-hoi-game`, branch `codex/game-build-isolated` based on `bc79af5`. A concurrent Claude docs commit captured the first engine files in the original checkout; original files were preserved, and further work was isolated. Authority: current `00-HANDOFF-trum-bia-hoi.md` and [owner update adoption](latest-handoff-adoption.md),
 PROMPT PACK part B, GDD decisions, 03-SPEC table rules, JSON numbers. This is the
 complete-game goal; milestones below are implementation order, not scope cuts.
 
 | Milestone | Status | Evidence / remaining |
 |---|---|---|
-| M0 — config, pure engine, deterministic replay, k sim, workspaces | COMPLETE — exit criteria PASS | All3exit criteria PASS: current config/build/320tests,5seeds×2profiles k2.4186–2.8738; reviewed foundation/checkpoint/web. |
+| M0 — config, pure engine, deterministic replay, k sim, workspaces | COMPLETE — exit criteria PASS | All3exit criteria PASS: current config/build/321tests,5seeds×2profiles k2.4186–2.8738; reviewed foundation/checkpoint/web. |
 | M1 — serve loop, glasses, stock, upgrades, local save, spatial UI, core audio | In progress | Playable loop, local save/replay, stock/equipment/table UI, core SFX wired; final sprites and listening QA pending |
 | M2 — guest, vi/en, onboarding | In progress | Local guest + matching vi/en keys + event-driven guide with skip/repeat cap; Google account linking and 5-person evidence pending |
 | M3 — full menu, customer mix, weather, rush, business unlocks | In progress | 6 menu entries and hot prep, 5 seated types, 5 weather states, basic scheduled rush. Local phone/QR progression reviewed; shipper local reviewed CLEAN at307a3b0. Football, remaining business upgrades and exhaustive balance/edge QA remain |
-| M4 — server authority, accounts, reconnect, config registry/admin | In progress | 10/18 exit criteria PASS; web server authority/pinned config/outbox/reconnect verified936e9d5. Default registry verifiedc1e953c; admin auth/API verified6f42575; browser editor/scopes and integrated account/import/eligibility/locale remain. |
+| M4 — server authority, accounts, reconnect, config registry/admin | In progress | 11/18 exit criteria PASS; remote web936e9d5, registryc1e953c, admin API6f42575 and browser editor56a0a44 verified. Scoped config/forecasts/emergency and account/import/eligibility/locale remain. |
 | M5 — seasons, leaderboard/shrine, life path, leases, quests/referrals | In progress | Local LP/quests/attendance and lease calendar/UI implemented; season/peak/referrals/social and full acceptance remain |
 | M6 — risks, dog, emergency supplies | Pending | |
 | M7 — voluntary donations, cosmetic gifts, age notice | Pending | |
@@ -2229,3 +2229,13 @@ Mobile confirmation focus and before/after columns verified. Native independent 
 pending. No live Google consent claim (owner has no ClientID); scopes, forecasts,
 emergency/admin account enrollment and remaining M4 accounts/eligibility/locale remain.
 Engine/config values unchanged; preserve prior registry k/rush evidence. No M9 expansion.
+
+Final editor56a0a44:321engine/server tests,11admin browser and10remote-game browser
+PASS; final config zero warnings/build PASS. Source remains frozen from final review:
+CLEAN, independent typecheck/diff-check PASS; reviewer config execution hit tsx IPC
+EPERM while host config passed. Known-success read failure, changed/identical JSON
+import buffers all have regressions. Receipt `.qa/admin-editor-verification.json`.
+M4 one-key/effectiveAt criterion now PASS (11/18); full M4 remains OPEN. Current
+remaining admin scope includes overrides, forecasts, arbitrary version-pair comparison,
+complete lifecycle labels, emergency/compensation and admin account enrollment/recovery.
+Owner ClientID still absent; public upload/performance deferred; no merge/push/deploy.

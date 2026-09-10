@@ -69,15 +69,31 @@ Test paths below are relative to `packages/engine/test`, `apps/web/test` or
 `apps/server/test` as labelled. Their quoted names identify runnable assertions.
 No new gameplay test or80MB run was added solely to make this report green.
 
+- **E10** admin browser editor `3d5513e`, receipt correction `f86fc69`, final buffer
+  correction `56a0a44`: `.qa/admin-editor-tests.txt`321engine/server (11admin auth cases);
+  `.qa/admin-editor-buffer-browser.txt`11admin browser scenarios;
+  `.qa/admin-editor-remote.txt`10remote-game browser scenarios. Final config/build
+  `.qa/admin-editor-buffer-config.txt`/`-build.txt`PASS, zero literal warnings.
+  Browser uses signed test tokens through the real Google SDK, independent TOTP and
+  SQLite; popup rendering is replaced only in tests. Actual edit/diff/proposal/approval/
+  publication, old/new player pins, scheduled timestamp, audit and recovery paths pass.
+  Original full-base review found no actionable defects; two self-review regressions
+  failed before correction. Correction review found P2 identical-JSON buffer drift;
+  fixed at snapshot replacement with regression. `.qa/review-admin-editor-buffer.txt`:
+  CLEAN, independent typecheck/diff-check PASS; config execution blocked by reviewer
+  sandbox tsx IPC EPERM (host config PASS). Engine/config unchanged; E8 k/rush retained.
+  Real Google ClientID/directory/consent still absent. This closes the default one-key
+  admin exit criterion, not full BRD scopes/forecasts/emergency or all M4 acceptance.
+
 ## Closure decision
 
 | Milestone | Exit verdict | Closure | Remaining acceptance |
 |---|---|---|---|
-| M0 | PASS (3/3) | COMPLETE | All three explicit exit criteria met; E9 config/build/tests and unchanged E8 sim pass. Foundation/checkpoint reviews also passed. |
+| M0 | PASS (3/3) | COMPLETE | All three explicit exit criteria met; E10 config/build/tests and unchanged E8 sim pass. Foundation/checkpoint reviews also passed. |
 | M1 | FAIL (6/12 PASS) | OPEN | Full12min proof at all3viewports, complete7-screen coverage, measured upgrade recommendation, axe and new-player feel evidence. |
 | M2 | FAIL (4/9 PASS) | OPEN | Five-person test, real mid-shift Google browser flow and admin-editable onboarding; locale/login-prompt gaps below. |
 | M3 | FAIL (5/12 PASS) | OPEN | Advanced economy band/feel,32px badge acceptance and remaining equipment/football placeholders. |
-| M4 | FAIL (10/18 PASS) | OPEN — next implementation priority | Remote web authority/reconnect verified in E7; internal default registry/pins/scheduling verified in E8. Admin auth/API verified in E9; browser editor/scopes and integrated account/import/eligibility/locale remain. |
+| M4 | FAIL (11/18 PASS) | OPEN — next implementation priority | E7 remote authority/reconnect, E8 registry and E9/E10 admin browser workflow verified. Scoped config/forecasts/emergency and integrated account/import/eligibility/locale remain. |
 | M5 | FAIL (9/25 PASS) | OPEN | Public seasons/ranking/shrine, rewards/referral/gifts and full integration; local LP acceptance rules pass. |
 
 ## M0 — foundation
@@ -116,7 +132,7 @@ No new gameplay test or80MB run was added solely to make this report green.
 | First guide runs, skip continues, reload does not rerun | PASS | E2 “muting, guide skipping and reduced-motion preference survive normal play” + persisted settings/guide tests. |
 | Google sign-in at minute5 keeps live shift and credits once | FAIL | E5 server mid-shift/claim transaction passes; GIS browser flow and actual Google Client ID absent. |
 | onboarding.enabled=false behaves as returning player, k unchanged | FAIL | E1 controlled rush probe disables onboarding; ordinary sim keeps configured onboarding. No paired on/off k acceptance; formula itself is unchanged. |
-| All thresholds/steps editable in admin without deploy; config green; VI/EN; reduced motion | FAIL | JSON governs thresholds, E1 config and E2 VI/EN/motion pass; actual admin editor absent; E8 default service activation is verified independently. |
+| All thresholds/steps editable in admin without deploy; config green; VI/EN; reduced motion | FAIL | JSON governs thresholds, E1 config and E2 VI/EN/motion pass; E10 default editor exists, but onboarding-specific key publication/step acceptance has not been exercised; this combined criterion remains open. |
 
 ## M3 — full demand mix
 
@@ -153,7 +169,7 @@ No new gameplay test or80MB run was added solely to make this report green.
 | Locale switch preserves save | PASS | E2 “guest serves, reloads…switches locale” at4viewports. |
 | Guest progress migrates exactly once to Google | FAIL | Server account/import tests pass E5; end-to-end web claim remains absent. |
 | Guest cannot rank-write or claim donation gift | FAIL | These product paths are absent, not an exercised access-control acceptance. |
-| Admin changes1key, activates at effectiveAt | FAIL | E8 default registry/pinning/scheduling and E9 authenticated Google/TOTP/RBAC HTTP workflow pass. Browser login/editor are not integrated and live ClientID is absent; this end-to-end criterion remains FAIL. |
+| Admin changes1key, activates at effectiveAt | PASS | E10 browser edits menu.bia.price, reviews diff, proposes/approves/confirms publication; actual new player receives that version and old save remains pinned. Tier A distinct-MFA approval returns next-VN-day timestamp; E8 verifies exact calendar opening/replay. Live Google consent remains a setup gap, not claimed by the signed fixture. |
 | Replay event log equals state | PASS | Engine legacy/mixed-pin/replay tests, E4 month replay, E5 imported replay and E6 checkpoint exactness. |
 
 ## M5 — meta
@@ -183,7 +199,7 @@ No new gameplay test or80MB run was added solely to make this report green.
 | F28: flagged excluded from live/snapshot; unflagged returns before end | FAIL | No flag/approval eligibility filter or leaderboard implementation. |
 | F28: end snapshot immutable after rename/account deletion | FAIL | No global snapshot/name-at-capture lifecycle. |
 | F28: in-shift board opens without lost wait; cached data then server refresh | FAIL | Personal panel honors owner pause; community cached/server board absent. Owner pause supersedes old no-pause text. |
-| F28: admin-configured thresholds; rank/snapshot only server-side | FAIL | JSON schema coverage PASS; protected editor and authoritative ranking/snapshot absent. |
+| F28: admin-configured thresholds; rank/snapshot only server-side | FAIL | JSON schema coverage PASS; E10 protected default editor exists; authoritative ranking/snapshot is still absent. |
 
 F13's three enumerated acceptance rules pass at the shared-engine/local UI layer.
 Its full feature remains open because social/cosmetic unlock surfaces and full career
@@ -193,7 +209,7 @@ are not milestone rows, so completing M0 does not incorrectly close all Phase0 r
 
 ## Next queue fixed by owner
 
-1. M4 browser Google/Authenticator flow and editor, then scoped Config Registry per
+1. M4 scoped Config Registry, impact forecasts and emergency/admin account workflow per
    BRD§5.2; default service/pins and authenticated transport verified in E8/E9.
 2. Integrated accounts/eligibility/locale remain explicit M4 exit gaps; preserve
    server authority and the owner-deferred public import boundary. No fabricated Google setup.
@@ -214,3 +230,5 @@ are not milestone rows, so completing M0 does not incorrectly close all Phase0 r
 | 2026-09-10 default registry evidence | c1e953c:310engine/server,10remote browser, config/build,10ordinary kcohorts/15rush PASS; correction review CLEAN. Internal default registry/scheduling verified, authenticated editor still missing. Counts unchanged: M0 3/3, M1 6/12, M2 4/9, M3 5/12, M4 10/18, M5 9/25. |
 
 | 2026-09-10 admin API evidence |6f42575:320engine/server,10remote browser, config/build and review CLEAN. Server-side Google/TOTP/RBAC/registry transport verified; browser editor/login absent. Counts unchanged: M0 3/3, M1 6/12, M2 4/9, M3 5/12, M4 10/18, M5 9/25. |
+
+| 2026-09-10 admin browser acceptance |56a0a44 closes the one-key/effectiveAt browser criterion with11admin/10remote browser,321engine/server and config/build PASS; final independent review CLEAN. M4 becomes11/18, still OPEN. Other milestones unchanged: M0 3/3, M1 6/12, M2 4/9, M3 5/12, M5 9/25. No live Google consent claim or M9 work. |
