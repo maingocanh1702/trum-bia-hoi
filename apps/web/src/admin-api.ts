@@ -1,12 +1,12 @@
-import type { ConfigScope } from '../../server/src/registry';
+import type { ConfigScope, ConfigPhase } from '../../server/src/registry';
 export type { ConfigScope };
 import { loadConfig, type Config } from '../../../packages/engine/src';
 export type Actor = { subject: string; role: 'super'|'economy'|'game'|'support'|'viewer'; mfa: boolean; issuedAt: number; expiresAt: number };
 export type Auth = { enabled: boolean; phase: 'signedOut'|'mfa'|'authenticated'; actor?: Actor; context?: string; expiresAt?: number };
 export type Publication = { version: string; effective_at: number; published_at: number };
-export type Proposal = { version: string; base_version: string; changed_by: string; keys: string; reason: string; effective: string; created_at: number; cursor: number; scope?:ConfigScope|null };
-export type Index = { latest: Publication; activeVersion: string; proposals: Proposal[]; nextCursor: number|null };
-export type Details = { scope?:ConfigScope|null; previous?:{scope:ConfigScope;snapshot:Config['raw'];base:Config['raw']}|null; snapshot: Config['raw']; base: Config['raw']|null; draft: Proposal|null;
+export type Proposal = { version: string; base_version: string; changed_by: string; keys: string; reason: string; effective: string; created_at: number; cursor: number; computedAt:number; phase:ConfigPhase; scope?:ConfigScope|null };
+export type Index = { computedAt:number; latest: Publication & {phase:ConfigPhase}; activeVersion: string; proposals: Proposal[]; nextCursor: number|null };
+export type Details = { computedAt:number; phase:ConfigPhase; scope?:ConfigScope|null; previous?:{scope:ConfigScope;snapshot:Config['raw'];base:Config['raw']}|null; snapshot: Config['raw']; base: Config['raw']|null; draft: Omit<Proposal,'phase'|'computedAt'|'cursor'>|null;
   policy: {tier: string; effective: string}|null; approval: {approved_by:string; approved_at:number}|null; publication: Publication|null;
   permissions: {propose:boolean; approve:boolean; publish:boolean} };
 export type Draft = { owner: string; baseVersion: string; text: string; reason: string; effective: string; key: string; locked: boolean; scope?:ConfigScope };

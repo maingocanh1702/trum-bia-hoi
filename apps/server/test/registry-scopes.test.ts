@@ -75,6 +75,26 @@ test('named-scope replacement changes audience and expiry never resurrects its o
   assert.equal(r.resolve('alice').version, config.version); assert.equal(r.resolve('bob').version, config.version);
 });
 
+test('scoped lifecycle agrees with resolver replacement and expiry, while a pinned resolution is only a stored snapshot', t => {
+  const f = fixture(t), r = f.registry, old = f.publish(c => { c.menu.bia.price = 110; }, f.scope('club'));
+  const snapshot = r.resolve('alice');
+  assert.equal(r.details(f.actor('viewer'), old.version).phase, 'active');
+  assert.equal(r.details(f.actor('viewer'), snapshot.version).phase, 'snapshot');
+  const next = f.publish(c => { c.menu.bia.price = 120; }, f.scope('club', { previousVersion: old.version, playerIds: ['bob'], expiresAt: NOW + 1000 }));
+  assert.equal(r.details(f.actor('viewer'), old.version).phase, 'archived');
+  assert.equal(r.details(f.actor('viewer'), next.version).phase, 'active');
+  assert.equal(r.resolve('alice').version, config.version); assert.equal(r.resolve('bob').raw.menu.bia.price, 120);
+  f.now += 1000;
+  assert.equal(r.details(f.actor('viewer'), old.version).phase, 'archived');
+  assert.equal(r.details(f.actor('viewer'), next.version).phase, 'archived');
+  assert.equal(r.details(f.actor('viewer'), config.version).phase, 'active');
+  assert.equal(r.details(f.actor('viewer'), snapshot.version).phase, 'snapshot');
+  assert.equal(r.resolve('bob').version, config.version);
+  const rows = r.index(f.actor('viewer')).proposals;
+  assert.equal(rows.find(p => p.version === old.version)!.phase, 'archived');
+  assert.equal(rows.find(p => p.version === next.version)!.phase, 'archived');
+});
+
 test('campaign expiry falls through to segment; live shifts retain their generated snapshot and public replay survives restart', async t => {
   const f = fixture(t), r = f.registry, s = f.store;
   f.publish(c => { c.menu.bia.price = 110; }, f.scope('club'));

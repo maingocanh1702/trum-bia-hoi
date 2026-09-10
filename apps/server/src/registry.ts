@@ -7,6 +7,7 @@ import { rankSettings } from './leaderboard';
 
 // These are authenticated server claims, NOT a public request body. HTTP adapters must derive them.
 export type AdminActor = { subject: string; role: 'super' | 'economy' | 'game' | 'support' | 'viewer'; mfa: boolean; issuedAt: number; expiresAt: number };
+export type ConfigPhase = 'draft' | 'approved' | 'scheduled' | 'active' | 'archived' | 'snapshot';
 type Effective = 'immediate' | 'next_shift' | 'next_day' | 'next_season';
 type Tier = 'A' | 'B' | 'C';
 export type ConfigScope = { kind: 'segment' | 'campaign' | 'player'; id: string; playerIds: string[]; priority: number; expiresAt: number | null; previousVersion: string | null; ticketId: string | null };
@@ -123,8 +124,9 @@ export class ConfigRegistry {
     if (!Number.isSafeInteger(now) || now < 0 || !Number.isFinite(new Date(now).getTime())) throw Error('registry:invalidClock');
     return now;
   }
-  private transaction<T>(action: (now: number) => T): T {
-    this.db.exec('BEGIN IMMEDIATE');
+  private transaction<T>(action: (now: number) => T, readOnly = false): T {
+    if (readOnly && this.db.isTransaction) return action(this.now());
+    this.db.exec(readOnly ? 'BEGIN' : 'BEGIN IMMEDIATE');
     try { const value = action(this.now()); this.db.exec('COMMIT'); return value; }
     catch (error) { if (this.db.isTransaction) this.db.exec('ROLLBACK'); throw error; }
   }
@@ -214,13 +216,17 @@ export class ConfigRegistry {
       this.audit('SupportRequested', { ticketId: id, ...input, requestedBy: actor.subject, at: now }); return id;
     });
   }
-  private compose(playerId: string, now: number, candidate?: PreviewPublication): { config: Config; sources: string[] } {
-    const base = candidate && !candidate.scope && candidate.effective_at <= now ? this.config(candidate.version) : this.active(now), latest = new Map<string, ReturnType<ConfigRegistry['scopedPublications']>[number]>();
+  private currentScopes(now: number, candidate?: PreviewPublication) {
+    const latest = new Map<string, ReturnType<ConfigRegistry['scopedPublications']>[number]>();
     const entries = this.scopedPublications();
     if (candidate?.scope) entries.push({ ...candidate, scope: candidate.scope });
     for (const entry of entries) if (entry.effective_at <= now) latest.set(JSON.stringify([entry.scope.kind, entry.scope.id]), entry);
+    return [...latest.values()].filter(p => p.scope.expiresAt === null || p.scope.expiresAt > now);
+  }
+  private compose(playerId: string, now: number, candidate?: PreviewPublication): { config: Config; sources: string[] } {
+    const base = candidate && !candidate.scope && candidate.effective_at <= now ? this.config(candidate.version) : this.active(now);
     const rank = { segment: 0, campaign: 1, player: 2 };
-    const selected = [...latest.values()].filter(p => (p.scope.expiresAt === null || p.scope.expiresAt > now) && p.scope.playerIds.includes(playerId))
+    const selected = this.currentScopes(now, candidate).filter(p => p.scope.playerIds.includes(playerId))
       .sort((a, b) => rank[a.scope.kind] - rank[b.scope.kind] || a.scope.priority - b.scope.priority || a.seq - b.seq);
     if (!selected.length) return { config: base, sources: [base.version] };
     const sources = [base.version, ...selected.map(p => p.version)], raw = structuredClone(base.raw);
@@ -273,31 +279,48 @@ export class ConfigRegistry {
     const known = this.db.prepare('SELECT snapshot FROM configs WHERE version=?').get(original.version);
     return original.version !== baseVersion && known && configContent(loadConfig(JSON.parse(String(known.snapshot)))) === configContent(original) ? original.version : null;
   }
+  private phaseReader(now: number) {
+    const active = new Set([this.active(now).version, ...this.currentScopes(now).map(p => p.version)]);
+    const row = this.db.prepare(`SELECT p.version AS proposed,a.version AS approved,u.effective_at FROM configs c
+      LEFT JOIN registry_proposals p ON p.version=c.version LEFT JOIN registry_approvals a ON a.version=c.version
+      LEFT JOIN registry_publications u ON u.version=c.version WHERE c.version=?`);
+    return (version: string): ConfigPhase => {
+      const record = row.get(version);
+      if (!record) throw Error('registry:missingVersion');
+      if (record.effective_at !== null) return Number(record.effective_at) > now ? 'scheduled' : active.has(version) ? 'active' : 'archived';
+      return record.approved ? 'approved' : record.proposed ? 'draft' : 'snapshot';
+    };
+  }
   index(actor: AdminActor, before = Number.MAX_SAFE_INTEGER) {
-    this.actor(actor, this.now());
-    if (!Number.isSafeInteger(before) || before < 1) throw Error('registry:invalidInput');
-    const proposals = this.db.prepare(`SELECT rowid AS cursor,version,base_version,changed_by,keys,reason,effective,created_at
-      FROM registry_proposals WHERE rowid<? ORDER BY rowid DESC LIMIT 50`).all(before); // config-exempt:admin pagination bound
-    return { latest: this.latest(), activeVersion: this.active().version, proposals: proposals.map(p => ({ ...p, scope: this.scope(String(p.version)) ?? null })),
-      nextCursor: proposals.length === 50 ? Number(proposals.at(-1)!.cursor) : null }; // config-exempt:admin pagination bound
+    return this.transaction(now => {
+      this.actor(actor, now);
+      if (!Number.isSafeInteger(before) || before < 1) throw Error('registry:invalidInput');
+      const phase = this.phaseReader(now), latest = this.latest();
+      const proposals = this.db.prepare(`SELECT rowid AS cursor,version,base_version,changed_by,keys,reason,effective,created_at
+        FROM registry_proposals WHERE rowid<? ORDER BY rowid DESC LIMIT 50`).all(before) as (Omit<Proposal, 'request_key' | 'fingerprint'> & { cursor: number })[]; // config-exempt:admin pagination bound
+      return { computedAt: now, latest: { ...latest, phase: phase(latest.version) }, activeVersion: this.active(now).version, proposals: proposals.map(p => ({ ...p, computedAt: now, phase: phase(String(p.version)), scope: this.scope(String(p.version)) ?? null })),
+        nextCursor: proposals.length === 50 ? Number(proposals.at(-1)!.cursor) : null }; // config-exempt:admin pagination bound
+    }, true);
   }
   details(actor: AdminActor, version: string) {
-    this.actor(actor, this.now());
-    const config = this.config(version);
-    const draft = this.db.prepare(`SELECT version,base_version,changed_by,keys,reason,effective,created_at
-      FROM registry_proposals WHERE version=?`).get(version);
-    const policy = draft ? this.policy(JSON.parse(String(draft.keys)), this.config(String(draft.base_version)), this.scope(version)) : null;
-    const approval = this.db.prepare('SELECT approved_by,approved_at FROM registry_approvals WHERE version=?').get(version) ?? null;
-    const publication = this.db.prepare('SELECT * FROM registry_publications WHERE version=?').get(version) ?? null;
-    const permitted = (approve: boolean) => { if (!policy) return false; try { this.permit(actor, policy, approve, this.scope(version)); return true; } catch { return false; } };
-    const scope = this.scope(version), previousVersion = scope?.previousVersion;
-    const previous = previousVersion ? { snapshot: this.config(previousVersion).raw, base: this.config(this.proposal(previousVersion).base_version).raw, scope: this.scope(previousVersion)! } : null;
-    return { snapshot: config.raw, scope: scope ?? null, previous, draft: draft ?? null,
-      permissions: { propose: !['support', 'viewer'].includes(actor.role),
-        approve: !publication && !approval && permitted(true) && (policy?.tier !== 'A' || draft?.changed_by !== actor.subject),
-        publish: !publication && !!approval && permitted(false) },
-      base: draft ? this.config(String(draft.base_version)).raw : null,
-      policy, approval, publication };
+    return this.transaction(now => {
+      this.actor(actor, now);
+      const config = this.config(version);
+      const draft = this.db.prepare(`SELECT version,base_version,changed_by,keys,reason,effective,created_at
+        FROM registry_proposals WHERE version=?`).get(version);
+      const policy = draft ? this.policy(JSON.parse(String(draft.keys)), this.config(String(draft.base_version)), this.scope(version)) : null;
+      const approval = this.db.prepare('SELECT approved_by,approved_at FROM registry_approvals WHERE version=?').get(version) ?? null;
+      const publication = this.db.prepare('SELECT * FROM registry_publications WHERE version=?').get(version) ?? null;
+      const permitted = (approve: boolean) => { if (!policy) return false; try { this.permit(actor, policy, approve, this.scope(version)); return true; } catch { return false; } };
+      const scope = this.scope(version), previousVersion = scope?.previousVersion;
+      const previous = previousVersion ? { snapshot: this.config(previousVersion).raw, base: this.config(this.proposal(previousVersion).base_version).raw, scope: this.scope(previousVersion)! } : null;
+      return { computedAt: now, phase: this.phaseReader(now)(version), snapshot: config.raw, scope: scope ?? null, previous, draft: draft ?? null,
+        permissions: { propose: !['support', 'viewer'].includes(actor.role),
+          approve: !publication && !approval && permitted(true) && (policy?.tier !== 'A' || draft?.changed_by !== actor.subject),
+          publish: !publication && !!approval && permitted(false) },
+        base: draft ? this.config(String(draft.base_version)).raw : null,
+        policy, approval, publication };
+    }, true);
   }
   auditPage(actor: AdminActor, after = 0) {
     this.actor(actor, this.now());

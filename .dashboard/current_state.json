@@ -576,9 +576,7 @@
       "human_status": "IN_PROGRESS",
       "progress": 30,
       "runtime_urgency": "normal",
-      "overlays": [
-        "tracker-modified"
-      ],
+      "overlays": [],
       "signals": {
         "spec_exists": false,
         "tech_exists": false,

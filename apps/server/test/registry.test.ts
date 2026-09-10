@@ -68,6 +68,40 @@ test('Tier A requires a distinct Super approval and becomes active exactly at VN
   f.now++; assert.equal(f.open().createPlayer('at', 2).configVersion, publication.version);
 });
 
+test('admin lifecycle distinguishes draft approval scheduled activation and archival without advancing saves or creating audit', t => {
+  const f = fixture(t), r = f.registry;
+  assert.equal(r.details(f.actor('viewer'), config.version).phase, 'active');
+  const d = f.draft(raw => { raw.shift.dailyEarnCapBase++; });
+  assert.equal(r.details(f.actor('viewer'), d.version).phase, 'draft');
+  r.approve(f.actor('super', 'reviewer'), d.version);
+  assert.equal(r.details(f.actor('viewer'), d.version).phase, 'approved');
+  const p = r.publish(f.actor(), d.version);
+  const count = () => Number(f.db.prepare('SELECT COUNT(*) AS n FROM registry_audit').get()!.n), before = count();
+  f.now = p.effective_at - 1;
+  const scheduled = r.index(f.actor('viewer'));
+  assert.equal(scheduled.latest.phase, 'scheduled'); assert.equal(scheduled.activeVersion, config.version);
+  assert.equal(scheduled.proposals.find(row => row.version === d.version)!.phase, 'scheduled');
+  assert.equal(scheduled.proposals.find(row => row.version === d.version)!.computedAt, f.now);
+  assert.equal(r.details(f.actor('viewer'), d.version).computedAt, f.now);
+  f.now++;
+  assert.equal(r.details(f.actor('viewer'), d.version).phase, 'active');
+  assert.equal(r.details(f.actor('viewer'), config.version).phase, 'archived');
+  assert.equal(r.active().version, d.version); assert.equal(count(), before);
+  assert.equal(r.index(f.actor('viewer')).latest.phase, 'active');
+  const restarted = f.open(); assert.equal(restarted.registry.details(f.actor('viewer'), d.version).phase, 'active');
+});
+
+test('admin metadata shares one server clock and retains an outer transaction without writing', t => {
+  const f = fixture(t); let reads = 0;
+  const registry = new ConfigRegistry(f.db, () => f.now + reads++), actor = f.actor('viewer');
+  const index = registry.index(actor); assert.equal(reads, 1); assert.equal(index.computedAt, f.now);
+  const details = registry.details(actor, config.version); assert.equal(reads, 2); assert.equal(details.computedAt, f.now + 1);
+  assert.equal(f.db.isTransaction, false);
+  f.db.exec('BEGIN'); registry.details(actor, config.version); assert.equal(f.db.isTransaction, true); f.db.exec('ROLLBACK');
+  assert.throws(() => registry.details({ ...actor, expiresAt: f.now }, config.version), /invalidActor/);
+  assert.equal(f.db.isTransaction, false);
+});
+
 test('tier classifier covers every section, flags beat broad balance groups, and mixed changes require all roles', t => {
   const f = fixture(t);
   for (const [tier, rule] of Object.entries(config.raw._meta.governance.tiers)) {

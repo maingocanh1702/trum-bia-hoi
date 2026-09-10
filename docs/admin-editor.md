@@ -13,7 +13,7 @@ Uses the existing VI/EN copy system, palette, native forms/dialogs and 44px cont
 | Review | Actual old/new raw and scaled values; select historical versions or draft versions. Immutable draft creation, approval and publication are distinct actions. Publish confirms the exact displayed version. |
 | Conflict/retry | Preserve request key through a lost response. Stale base is surfaced; importing edits against a refreshed base is deliberate, never automatic overwrite. |
 | Authentication failure | Clear protected views; keep only the original author's pending draft for reauthentication. Credential expiry/factor errors have distinct messages. |
-| Remaining | Observed donation/VND forecasts, lifecycle labels, emergency/compensation and admin enrollment/recovery remain explicit follow-up work. Coin forecasts, scopes and version comparison are implemented; see dated verification below. No fake forecast values or live Google setup claim. |
+| Remaining | Observed donation/VND forecasts, emergency/compensation and admin enrollment/recovery remain explicit follow-up work. Coin forecasts, scopes, version comparison and lifecycle labels are implemented; see dated verification below. No fake forecast values or live Google setup claim. |
 
 Browser acceptance uses an isolated signer/certificate service and actual server
 Google SDK, TOTP and SQLite. GIS popup rendering may be replaced in the test browser;
@@ -99,3 +99,32 @@ Engine, server runtime, schemas and economy JSON are unchanged; no new k sim.
 M4 remains15/18 OPEN. Emergency scheduling awaits the owner's separate decision.
 
 | 2026-09-10 comparison verified | E26 at62e8646:386unit/server,27admin browser,config/build and final independent review CLEAN. Arbitrary-pair BRD item complete; full M4 remains open. |
+
+## Registry lifecycle intake — 2026-09-10
+
+Base `2ad3f66`; BRD §5.2.5 requires the immutable version lifecycle to be visible.
+Derive status from existing proposal/approval/publication records; add no mutable
+status column or new activation policy. Reuse the same current-scope selection as
+the resolver. Read metadata in one SQLite snapshot with one server timestamp.
+
+| Stored record | Display phase |
+|---|---|
+| Proposal without approval/publication | Draft |
+| Approval without publication | Approved (publication still revalidates base/permissions) |
+| Publication with activation later than the read time | Scheduled |
+| Current default or current unexpired named scope | Active in its registry scope |
+| Replaced or expired publication | Archived; older scope versions never reactivate |
+| Imported/resolved snapshot without its own registry publication | Stored snapshot, not a new active default |
+
+Scope precedence still determines each player's actual configuration; an active
+scope can be masked by a higher-priority scope. Live shifts retain their old pins.
+The admin list, details and version comparison display server phases with their
+read timestamps; manual refresh obtains new metadata, with no browser-clock phase
+calculation. No save, publication, engine or economy values change from reading.
+Test default activation, replacement, scope expiry/non-resurrection, resolved
+snapshots, same-clock consistency and authenticated VI/EN phase rendering. Full
+root checks and independent review precede closure. Emergency policy stays pending.
+
+| 2026-09-10 lifecycle intake | Recorded existing-record phase derivation and explicit scope/snapshot meanings. Implementation and verification in progress; M4 remains15/18. |
+
+| 2026-09-10 lifecycle implementation | Server-derived phases and read timestamps now reach the admin list/details/comparison; shared current-scope selection preserves existing resolver semantics, read-only transactions keep one metadata snapshot.39registry/scopes and config/build pass; full verification/review running. No activation, engine or economy value change. |

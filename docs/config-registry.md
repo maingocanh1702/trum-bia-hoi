@@ -44,3 +44,17 @@ No new gameplay numbers, seed changes, engine formulas or performance work in th
 | 2026-09-10 threshold admission | Validation distinguishes old replay snapshots from new admin proposals: reject deletion of installed invitation thresholds. Revalidate at the shared preview/publication boundary to fence already-approved pre-fix drafts; old snapshots and exact publication receipts remain readable. Regression3cases red-before/green-after;48focused/config/build PASS, final review/full suite pending. No engine or economic values changed. |
 
 | 2026-09-10 threshold admission verified |03dae56 uses admission-only validation so historical scoped composition remains valid.361unit/server,19admin,33focused,config zero warnings/build PASS; final independent review confirms correction and passes5 targeted cases. Immutable publication receipts/live pins retained; economy JSON and engine unchanged. |
+
+
+## Lifecycle read model — 2026-09-10
+
+Admin list/details derive draft, approved, scheduled, active and archived phases
+from immutable registry records. Imported/resolved configurations without their own
+publication are labelled stored snapshots. Active named scopes reuse the resolver's
+latest-version-before-expiry selection; expiry never resurrects an older version.
+These labels describe registry scope, not each player's overridden or pinned world.
+One read transaction and injected server timestamp cover each response; each page
+row retains its own read timestamp when the UI appends another page. No status row,
+activation rule or gameplay write is added. See admin-editor.md for UI acceptance.
+
+| 2026-09-10 lifecycle implementation | Added readonly server phases/timestamps and shared current-scope selector;39focused/config/build pass, full verification/review pending. Normal publication rules and owner-pending emergency policy unchanged. |
