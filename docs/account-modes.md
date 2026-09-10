@@ -36,6 +36,9 @@ Verification: real browser close/relaunch, new tab/reload, exact-session refusal
 single writer, lost bootstrap response, pending upgrade applied once, Google
 attachment/restore/reauthentication and VI/EN wording. See the current slice receipt
 and milestone closure for measured results; this contract is not release proof.
+Implementatione34fd56:357unit/server,84remote,4related local,19admin,config/build
+PASS; scoped review90d1a50...056cf7c found no introduced defects. The prior config
+proposal finding remains separate in invitation-config-review.md.
 
 ## Changelog
 | Date | Change |

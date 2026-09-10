@@ -166,6 +166,33 @@ No new gameplay test or80MB run was added solely to make this report green.
 | M4 | FAIL (13/18 PASS) | OPEN — next implementation priority | E7 remote authority/reconnect, E8 registry and E9/E10 admin browser workflow verified. E11/E12 scoped core/editor/factual impact verified; E14 forecast, E15 locale and E18 current-visit Google attachment/restore verified; observed VND/emergency, live consent, invitations and import/eligibility remain; E19 reauthentication verified. |
 | M5 | FAIL (9/25 PASS) | OPEN | Public seasons/ranking/shrine, rewards/referral/gifts and full integration; local LP acceptance rules pass. |
 
+## E20 — guest device persistence, owner Steer #5 (2026-09-10 15:30)
+
+Correction base `90d1a50`, implementation `e34fd56`, dashboard `056cf7c`.
+Owner decision supersedes the 08:18 interpretation and E18 fresh-visit reset.
+Guest keeps stall, coins, upgrades and current day/shift across new tabs and real
+Chromium profile close/relaunch. Same writer lock and exact-session guard remain;
+bootstrap failures and credential mismatches preserve the journal, and pending
+upgrades apply once before/after server acknowledgement. Google attach/restore
+and reauthentication remain covered. VI/EN copy separates device progress from
+account-only history/achievements/ranking/cross-device restore. No lost-progress
+upsell on exit; existing archive-write protection remains.
+
+Current tests: **357/357 unit/server, 84/84 remote browser, 4/4 related local,
+19/19 admin, config (zero warnings), build/typecheck PASS**. Portrait VI/EN entry
+and invitation screenshots inspected. The first five failed browser assertions
+captured heartbeat counters before pagehide; corrected tests capture the exact
+journal at document entry before bootstrap and assert no subsequent mutation.
+Full remote regression then passed without timeout changes.
+
+Native scoped review90d1a50...056cf7c: **no introduced defects**; independent
+typecheck PASS. Reviewer test rerun hit sandbox tsx socket EPERM; host verification
+above passed. Receipt `.qa/guest-device-verification.json` pins the code and results. The earlier full invitation review found a P1 in base config
+proposal validation; [separate follow-up](invitation-config-review.md) remains OPEN.
+The invitation/cooldown code is implemented, but that prior slice is not certified
+by the guest correction. M4 stays **13/18 OPEN**. No engine/server/config file
+changed from90d1a50; earlier config2.0.2 work and simulations are separate evidence.
+
 ## M0 — foundation
 
 | Criterion (ROADMAP) | Verdict | Evidence |
@@ -189,13 +216,13 @@ No new gameplay test or80MB run was added solely to make this report green.
 | axe pass | FAIL | No axe dependency, invocation or result in current browser harness; keyboard/hit-target assertions are not an axe result. |
 | First30seconds playable without reading instructions | FAIL | Scripted first serve at11.1seconds passes E2; no uncoached human playtest evidence. |
 | k remains in band | PASS | E1 standard cold/full-menu profiles. Advanced career separately PASS under owner soft cap3.5 at M3 (04§5). |
-| Same-visit reload loses no progress (owner10/09) | PASS | E18 guest reload retains the visit and pending commands; a fresh navigation starts fresh. Google account reopen retains progress. Engine legacy replay/backup and E3 month exactness remain archive evidence. |
+| Reload/new tab/browser reopen retain device progress (owner10/09 15:30) | PASS | E20 real Chromium profile relaunch, new tab, reload and pending-command receipt checks retain the same guest/coins/upgrades/day/shift. E18 fresh-visit reset is superseded. Credential loss remains fail-closed with journal retained; archive replay evidence remains separate. |
 
 ## M2 — onboarding/guest
 
 | Criterion (ROADMAP and F27§6) | Verdict | Evidence or exact gap |
 | Five new users:≥4/5 first serve≤30s and≥4/5 complete first shift | FAIL | No five-person uncoached study; browser automation is not human evidence. |
-| Guest completes first shift without registration; reload preserves this visit, fresh navigation starts fresh (owner10/09) | PASS | E2 full guest shift; E18 guest reload, fresh-tab, real opener, copied marker and dropped-response checks. Legacy archives remain intact; durable guest reopening is superseded. |
+| Guest completes first shift without registration; progress persists on this device (owner10/09 15:30) | PASS | E2 full guest shift; E20 retains progress on real browser restart/new tab, enforces the opener lock and recovers dropped responses once. Account-only durable player history/achievements/ranking/cross-device restore stay separate. |
 | Fixed-seed first guest within config deadline, one bia, no rush/risk | PASS | Engine `game.test.ts` “first guest gets one customer and one beer, with auto pour…”; onboarding config and E2 first serve. |
 | First timeout produces customer_left+feedback≤1s and shift continues | FAIL | Engine numeric-loss event and web toast/continued-shift checks PASS; exact deadline-to-visible-toast≤1s is not separately measured. |
 | Three consecutive losses rerun guide once; serve resets counter | PASS | Engine `presentation.test.ts` “event-driven guide resets…” and “three-customer queue loss…”. |
@@ -233,11 +260,11 @@ No new gameplay test or80MB run was added solely to make this report green.
 | Beyond grace: server normally closes and returns ShiftClosed; no client-only ticking | PASS | Backend9f38166 exact expiry/restart/normal closing plus E7 browser grace-close/ShiftClosed book; offline yard stays frozen and returning inactive projection no longer hides it. |
 | Local-first history replays at import; no client-only rules after cutover | FAIL | Shared engine and E5 full import replay PASS; online browser authority now PASS in E7; public local archive migration remains deferred by owner, so full import acceptance stays open. |
 | Google mid-shift without reload/lost tick; attach history once | FAIL | E5/E18 new-account live-shift attachment and existing-account restore PASS with signed fixtures; literal minute5 acceptance, historical public local upload and live configured consent remain absent. |
-| Unrestricted guest core; exactly3login benefits and cooldown | FAIL | Guest core PASS E2; E17 settings panel shows exactly3benefits. Automatic surface invitations and configured cooldown remain unimplemented. |
+| Unrestricted guest core; exactly3login benefits and cooldown | FAIL | Guest core PASS E2/E20; current book/season-entry invitations show exactly3account benefits, are skippable and share the configured cooldown across tabs. The preceding invitation slice remains under a P1 config proposal validation finding; see invitation-config-review.md. Actual community board/shrine remains separate M5 work. |
 | First session without login | PASS | E2 first-run guest scenarios. |
 | Locale chosen/accepted before first game screen | PASS | E15 first-run vi/en choice, browser default and stored acceptance before local/remote boot; no player/save mutation before accepting. Legacy choices and live-shift identity are preserved across reload. |
 | Locale switch preserves save | PASS | E2 “guest serves, reloads…switches locale” at4viewports. |
-| Current guest visit attaches exactly once to a new Google account (owner10/09) | PASS | E18 account-ui links at3viewports with unchanged player/shift/coins/stamina/client stream, rejects duplicate callbacks, and reloads the account. Server accounts test preserves exact world/history/receipts across restart; existing-account restore is separate and never merges. Signed fixtures exercise real verifier/HTTP; live consent remains a separate setup gap. |
+| Current guest progress attaches exactly once to a new Google account (owner10/09) | PASS | E18 account-ui links at3viewports with unchanged player/shift/coins/stamina/client stream, rejects duplicate callbacks, and reloads the account. Server accounts test preserves exact world/history/receipts across restart; existing-account restore is separate and never merges. Signed fixtures exercise real verifier/HTTP; live consent remains a separate setup gap. |
 | Guest cannot rank-write or claim donation gift | FAIL | These product paths are absent, not an exercised access-control acceptance. |
 | Admin changes1key, activates at effectiveAt | PASS | E10 browser edits menu.bia.price, reviews diff, proposes/approves/confirms publication; actual new player receives that version and old save remains pinned. Tier A distinct-MFA approval returns next-VN-day timestamp; E8 verifies exact calendar opening/replay. Live Google consent remains a setup gap, not claimed by the signed fixture. |
 | Replay event log equals state | PASS | Engine legacy/mixed-pin/replay tests, E4 month replay, E5 imported replay and E6 checkpoint exactness. |
@@ -386,3 +413,5 @@ No public upload,80MB tuning, engine/config changes or merge/push/deploy.
 | 2026-09-10 two modes verified | E18 at8c9dc64 applies owner guest-visit/Google-account correction, supersedes durable guest reopen and extra save choice, and closes current-visit exactly-once Google attachment. M4 rises13/18; other counts unchanged. Mixed-run regression evidence is explicit; live consent/recovery, invitations, local import/eligibility remain open. |
 
 | 2026-09-10 reauthentication verified | E19 atddc77a9 closes explicit Google recovery with unchanged old outbox/stream and exact verified-account target. Current complete-criterion counts remain13/18 for M4; no live Google or full F25 claim. |
+
+| 2026-09-10 Steer #5 | E20 records device-persistent guest correctione34fd56 and357unit/84remote/4local/19admin/config/build PASS; scoped review found no introduced defects. E18 fresh-visit reset is superseded. Current M4 stays13/18 because prior invitation-config P1 and other acceptance gaps remain open. |

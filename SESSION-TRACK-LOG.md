@@ -8,14 +8,18 @@
 ## Owner Steer #5 — guest device persistence, 2026-09-10 15:30
 
 Correction base `90d1a50`. Guest stall/coins/upgrades/day/shift persist across new
- tabs and browser reopen; no navigation-triggered restart or journal deletion.
+tabs and browser reopen; no navigation-triggered restart or journal deletion.
 Keep writer lock/exact-session guard and current Google attach/restore. Missing
 credentials preserve the journal and refuse another player. Native lost-progress
 upsell removed; VI/EN offers explain account-only history/achievements/ranking/
-cross-device restore. First real close/relaunch and pending-upgrade probes pass;
-full regression/review running. No engine/economy/config changes in this correction.
+cross-device restore. Codee34fd56:357unit/server,84remote,4related local,19admin andconfig/build PASS.
+Native scoped review90d1a50...056cf7c found no introduced defects; receipt
+`.qa/guest-device-verification.json`. Prior invitation config P1 remains OPEN in
+`docs/invitation-config-review.md`; M4 stays13/18. No engine/economy/config changes in this correction.
 Older ephemeral-guest snapshots below are historical and superseded. Current
-invitation work uses validated config fallback; no further economy tuning.
+invitation work uses validated config fallback; next resolve its recorded proposal
+validation defect in a separate slice before remaining M4 acceptance, thenM6–M9.
+Steer #5 makes no engine/server/config changes. No merge/push/deploy.
 
 ## Google reauthentication verified — 2026-09-10
 

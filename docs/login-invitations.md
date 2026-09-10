@@ -41,7 +41,11 @@ still pending. No live Google consent is claimed.
 
 ## Verification
 
-Pending implementation checks and independent review; receipt will pin the final code.
+Current guest/invitation browser regression passes (84 remote cases, including seven
+invitation cases), but the full earlier invitation slice is **not review-complete**.
+A P1 config proposal validation defect in the preceding base is recorded in
+[invitation config follow-up](invitation-config-review.md). Owner Steer #5 excludes
+engine/config edits from this correction; guest persistence is reviewed separately.
 
 ## Changelog
 
