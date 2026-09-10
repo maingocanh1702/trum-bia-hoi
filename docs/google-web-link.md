@@ -47,3 +47,5 @@ and a guest read overtaking pending verification. The existing nonce transaction
 the authoritative cancellation boundary; no new server runtime or endpoint is needed.
 Receipt `.qa/google-link-verification.json`. No Google UI, explicit save switching,
 local upload or full F25/M4 acceptance is claimed; M4 stays12/18 OPEN.
+
+| 2026-09-10 reauthentication | Explicit exact-account recovery now implemented/verified atddc77a9; see google-reauthentication.md. Revoked/expired credentials themselves still grant no old-world access; original outbox is kept until fresh Google verification matches it. |

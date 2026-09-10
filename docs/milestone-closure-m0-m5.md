@@ -1,6 +1,6 @@
 # Milestone closure report — M0–M5
 
-2026-09-10 · implementation `8c9dc64` · config2.0.1/rules24/schema10.
+2026-09-10 · implementation `ddc77a9` · config2.0.1/rules24/schema10.
 Authority: [ROADMAP §mốc M0–M9](../06-ROADMAP-trum-bia-hoi.md), including the
 acceptance sections it references. PASS means the whole stated criterion has
 supporting evidence; FAIL includes missing implementation or missing acceptance
@@ -145,6 +145,16 @@ No new gameplay test or80MB run was added solely to make this report green.
   Engine/economy untouched; E13 reused. Current-visit guest claim criterion PASS;
   M4 now13/18 OPEN, F25 remains in progress for the explicit gaps below.
 
+- **E19** Google reauthentication `ddc77a9`:
+  `.qa/reauth-verification.json`:354engine/server, final35API/import,72remote browser
+  (10new recovery cases),1local archive regression, config zero warnings/build PASS.
+  Existing native lock/outbox are retained; wrong registered/unregistered signed
+  subjects cannot authenticate the retained player. Expired/revoked/missing cookies,
+  lost service before/after commit, whole-cookie auth response loss/retry, canonical
+  reload and stale callback/cancellation pass. Review P2 redundant consent was reproduced and fixed; final full-base review PASS.
+  Signed Google SDK/HTTP fixtures are not live consent. No engine/config changes;
+  E13 retained. Recovery gap closes; whole M4 count stays13/18 OPEN.
+
 ## Closure decision
 
 | Milestone | Exit verdict | Closure | Remaining acceptance |
@@ -153,7 +163,7 @@ No new gameplay test or80MB run was added solely to make this report green.
 | M1 | FAIL (6/12 PASS) | OPEN | Full12min proof at all3viewports, complete7-screen coverage, measured upgrade recommendation, axe and new-player feel evidence. |
 | M2 | FAIL (4/9 PASS) | OPEN | Five-person test, real mid-shift Google browser flow and admin-editable onboarding; login-prompt gaps below. |
 | M3 | FAIL (6/12 PASS) | OPEN | Advanced k criterion PASS under owner soft cap3.5; feel,32px badge acceptance and remaining equipment/football placeholders still pending. |
-| M4 | FAIL (13/18 PASS) | OPEN — next implementation priority | E7 remote authority/reconnect, E8 registry and E9/E10 admin browser workflow verified. E11/E12 scoped core/editor/factual impact verified; E14 forecast, E15 locale and E18 current-visit Google attachment/restore verified; observed VND/emergency, live consent/recovery, invitations and import/eligibility remain. |
+| M4 | FAIL (13/18 PASS) | OPEN — next implementation priority | E7 remote authority/reconnect, E8 registry and E9/E10 admin browser workflow verified. E11/E12 scoped core/editor/factual impact verified; E14 forecast, E15 locale and E18 current-visit Google attachment/restore verified; observed VND/emergency, live consent, invitations and import/eligibility remain; E19 reauthentication verified. |
 | M5 | FAIL (9/25 PASS) | OPEN | Public seasons/ranking/shrine, rewards/referral/gifts and full integration; local LP acceptance rules pass. |
 
 ## M0 — foundation
@@ -374,3 +384,5 @@ No public upload,80MB tuning, engine/config changes or merge/push/deploy.
 | 2026-09-10 Google panel verified | E17 at e5745af verifies settings/GIS same-player integration and permanent callback consumption with signed fixtures. The complete account/import/invitation criteria still have explicit gaps; all milestone counts unchanged, M4 12/18 OPEN. No live consent or new economy acceptance claimed. |
 
 | 2026-09-10 two modes verified | E18 at8c9dc64 applies owner guest-visit/Google-account correction, supersedes durable guest reopen and extra save choice, and closes current-visit exactly-once Google attachment. M4 rises13/18; other counts unchanged. Mixed-run regression evidence is explicit; live consent/recovery, invitations, local import/eligibility remain open. |
+
+| 2026-09-10 reauthentication verified | E19 atddc77a9 closes explicit Google recovery with unchanged old outbox/stream and exact verified-account target. Current complete-criterion counts remain13/18 for M4; no live Google or full F25 claim. |

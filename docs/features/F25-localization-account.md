@@ -298,3 +298,22 @@ M4 now13/18. Internal audit/archive retention is not durable guest player histor
 | Date | Change |
 |---|---|
 | 2026-09-10 two modes verified | 8c9dc64 verifies owner correction and exactly-once current-guest attachment; updates §10 to distinguish new-account attachment from existing-account restore. E18 records complete evidence and all review corrections; F25 OPEN, M4 13/18. No live consent or economy change claimed. |
+
+## Reauthentication checkpoint — 2026-09-10
+
+`ddc77a9` closes the expired/revoked/missing-cookie recovery gap. The sign-in button
+is available on failed boot and live invalid-session status; recovery reuses Account,
+nonce-bound Google verification and the original command journal. The verified
+subject must own its existing retained player ID; a client-supplied ID only narrows
+that transaction. Temporary guest cookies never authorize retained-world commands.
+Lost service receipts recover once, including commands not yet processed. A matching
+canonical session after response loss resumes without another Google consent. Lost auth
+headers retry without leaving the panel; reload, cancellation and native lock pass.
+See [contract](../google-reauthentication.md) and `.qa/reauth-verification.json`:
+354unit/server, final35API/import,72remote/1local browser, config/build and native
+review PASS. F25 and M4 (13/18) remain OPEN for configured invitations/cooldown,
+live Google/minute5 acceptance, historical import and competitive access checks.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 reauthentication verified | ddc77a9 adds reviewed exact-account recovery without discarding queued commands; E19 records evidence. No expired credential revival, engine/economy change or whole F25 completion claimed. |

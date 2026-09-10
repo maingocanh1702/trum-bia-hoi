@@ -35,3 +35,5 @@ independent native full-base code/security review. Engine/config unchanged: reus
 | 2026-09-10 | Pin explicit save choice to existing server audit evidence and durable journal intent; no automatic merge or permission inferred from a mismatched cookie. |
 | 2026-09-10 native lock correction | The first VI/EN choice test exposed new boot racing the old Web Lock release. RemoteGame.close now exposes the native lock completion; the game remount awaits it. No retry timer or relaxed single-writer protection. |
 | 2026-09-10 owner supersedes choice UI | Owner rejects "Google stall/current stall"; account-modes.md replaces the product choice with direct account sign-in. The audited transport, nonce fence and journal handoff remain shared implementation. |
+
+| 2026-09-10 reauthentication | Explicit exact-account recovery now implemented/verified atddc77a9; see google-reauthentication.md. Revoked/expired credentials themselves still grant no old-world access; original outbox is kept until fresh Google verification matches it. |

@@ -5,6 +5,22 @@
 
 ---
 
+## Google reauthentication verified — 2026-09-10
+
+Code `ddc77a9`: expired/revoked/missing Google cookies now have an explicit sign-in
+path at boot and during play. The original journal/client stream stays intact; confirmed retries need no new consent.
+The existing verified transaction restricts recovery to that exact Google player;
+wrong/new subjects refuse before mutation, and old credentials grant no authority.
+Review P2 second-consent retry fixed with a red-before/green-after regression.
+Serve requests lost before or after commit credit once after recovery. Whole-cookie
+response loss retries in place; cancellation/stale callbacks and tab lock are covered.
+354engine/server, final35API/import,72remote browser (10new),1local archive PASS;
+config zero warnings/build/typecheck and native full-base review PASS.
+Receipt `.qa/reauth-verification.json`; inspected VI/EN recovery screens.
+M4 remains13/18 OPEN; F25 in progress. No live Client ID/consent, economy change,
+public upload or merge/deploy. Next: configured invitations/cooldown and remaining
+M4 acceptance → M6–M9; historical upload/tuning remainsM9.
+
 ## Two play modes verified — 2026-09-10
 
 Code `8c9dc64`: guest play lasts this visit; same-tab reload/reconnect keeps actions,

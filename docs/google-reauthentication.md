@@ -34,3 +34,16 @@ code/security review. Engine/economy unchanged; reuse E13 k/rush evidence.
 | 2026-09-10 | Pin explicit reauthentication to the existing Google transaction and unchanged retained journal; no new session recovery authority. |
 
 | 2026-09-10 review correction | In-place retry now consumes a matching canonical Google identity before requesting another challenge. Lost post-auth fence response reproduced a second-consent requirement; the regression requires one authentication POST and the original stream after retry. |
+
+## Verified checkpoint
+
+`ddc77a9`:354engine/server tests, final35affected API/import tests,72remote browser
+cases (10new recovery scenarios),1local archive regression, config zero warnings,
+build/typecheck and final independent full-base review PASS. Recovery reuses the
+same Account component and native lock; no gameplay request precedes exact canonical
+Google identity. Whole-cookie response loss refreshes only the temporary auth context
+on explicit retry. Review P2 redundant consent on committed-session retry was reproduced before the
+fix and passes after; no local archive mutation, engine change or new auth provider. Receipt `.qa/reauth-verification.json`; M4 stays13/18 OPEN, F25 in progress.
+Live Google Client ID/consent is still absent; signed fixtures are explicitly labelled.
+
+| 2026-09-10 verified | Closed reauthentication gap with real signed-token HTTP and retained-command browser checks. Old guest-link behavior stays covered; current M4 criterion counts unchanged. |
