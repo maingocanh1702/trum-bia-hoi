@@ -13,7 +13,7 @@ export default function Admin() {
   const [code,setCode]=useState(''), [search,setSearch]=useState(''), [field,setField]=useState(''), [value,setValue]=useState(''), [version,setVersion]=useState('');
   const [diff,setDiff]=useState<ReturnType<typeof preview>|null>(null), [audit,setAudit]=useState<Audit|null>(null), [confirm,setConfirm]=useState<Details|null>(null);
   const gis=useRef<HTMLDivElement>(null), dialog=useRef<HTMLDialogElement>(null), generation=useRef(0);
-  function clearProtected() { generation.current++;setAuth({enabled:true,phase:'signedOut'});setIndex(null);setDetails(null);setBase(null);setDiff(null);setAudit(null);setConfirm(null); }
+  function clearProtected() { generation.current++;setAuth({enabled:true,phase:'signedOut'});setIndex(null);setDetails(null);setBase(null);setDiff(null);setAudit(null);setConfirm(null);setField('');setValue(''); }
   function fail(e:unknown) {
     const code=e instanceof AdminError ? e.code : 'config';
     if(['admin:accountChanged','admin:invalidSession','invalidSession','registry:invalidActor'].includes(code)) {clearProtected();setError(t('error.session'));return;}
@@ -22,10 +22,12 @@ export default function Admin() {
   }
   async function run(action:()=>Promise<void>) { if(busyRef.current)return;busyRef.current=true;setBusy(true);setError('');setMessage('');try {await action();}catch(e){fail(e);}finally{busyRef.current=false;setBusy(false);} }
   function persist(d:Draft) { setDraft(d);setDiff(null);try{sessionStorage.setItem(DRAFT_KEY,JSON.stringify(d));setStored(true);return true;}catch{setStored(false);return false;} }
-  function discard() {sessionStorage.removeItem(DRAFT_KEY);setDraft(null);setBase(null);setDiff(null);setCorrupt(false);setStored(true);}
+  function syncValue(text:string,path=field) {try{setValue(path?json(atPath(JSON.parse(text),path)):'');}catch{setValue('');}}
+  function replaceDraft(d:Draft) {persist(d);syncValue(d.text);}
+  function discard() {sessionStorage.removeItem(DRAFT_KEY);setDraft(null);setBase(null);setDiff(null);setCorrupt(false);setStored(true);setField('');setValue('');}
   async function refresh(a=auth) { if(!a?.context)return; const next=await request<Index>('/registry',undefined,a.context);setIndex(next); }
   async function who() { const next=await request<Auth>('/auth');setAuth(next);if(next.phase==='authenticated'){
-    await refresh(next);let saved:Draft|null=null;try{saved=readDraft();setDraft(saved);setCorrupt(false);}catch{setCorrupt(true);}
+    await refresh(next);let saved:Draft|null=null;try{saved=readDraft();setDraft(saved);syncValue(saved?.text??'');setCorrupt(false);}catch{setCorrupt(true);}
     if(saved && saved.owner===next.actor?.subject){const d=await request<Details>('/config?version='+encodeURIComponent(saved.baseVersion),undefined,next.context);setBase(d.snapshot);}
   } }
   useEffect(()=>{void run(who);return()=>{generation.current++;};},[]);
@@ -41,13 +43,12 @@ export default function Admin() {
   async function newDraft(snapshot?:Details['snapshot']) { if(corrupt||draft?.locked)return;
     if(draft&&!window.confirm(t('discardConfirm')))return;
     const latest=await request<Index>('/registry',undefined,auth!.context), b=await request<Details>('/config?version='+encodeURIComponent(latest.latest.version),undefined,auth!.context);
-    setIndex(latest);setBase(b.snapshot);persist({owner:auth!.actor!.subject,baseVersion:latest.latest.version,text:json(snapshot??b.snapshot),reason:'',effective:'',key:crypto.randomUUID(),locked:false});
+    setIndex(latest);setBase(b.snapshot);replaceDraft({owner:auth!.actor!.subject,baseVersion:latest.latest.version,text:json(snapshot??b.snapshot),reason:'',effective:'',key:crypto.randomUUID(),locked:false});
   }
   const own=draft?.owner===auth?.actor?.subject, canWrite=auth?.actor&&!['viewer','support'].includes(auth.actor.role);
   const fields=useMemo(()=>{try{return draft?configFields(JSON.parse(draft.text)):[];}catch{return[];}},[draft?.text]);
-  useEffect(()=>{try{setValue(draft&&field?json(atPath(JSON.parse(draft.text),field)):'');}catch{setValue('');}},[draft?.text,field]);
   const filtered=fields.filter(f=>f.path.toLowerCase().includes(search.toLowerCase()));
-  function update(patch:Partial<Draft>) { if(draft&&!draft.locked)persist({...draft,...patch}); }
+  function update(patch:Partial<Draft>) { if(draft&&!draft.locked){const next={...draft,...patch};if(Object.hasOwn(patch,'text'))replaceDraft(next);else persist(next);} }
   function apply() { if(!draft||draft.locked)return;const raw=JSON.parse(draft.text), keys=field.split('.'), leaf=keys.pop()!;
     const parent=keys.length?atPath(raw,keys.join('.')):raw;if(!parent||typeof parent!=='object'||!Object.hasOwn(parent,leaf))throw new AdminError('config');
     Object.defineProperty(parent,leaf,{value:JSON.parse(value),enumerable:true,writable:true,configurable:true});update({text:json(raw)});
@@ -80,7 +81,7 @@ export default function Admin() {
       {corrupt&&<section className="admin-panel"><p role="alert">{t('corrupt')}</p><button onClick={()=>void run(async()=>download(sessionStorage.getItem(DRAFT_KEY)??'', 'admin-draft-recovery.json'))}>{t('recover')}</button><button disabled={busy} onClick={()=>void run(async()=>{if(window.confirm(t('discardConfirm')))discard();})}>{t('discard')}</button></section>}
       {draft&&!own&&<p className="admin-alert">{t('otherOwner')}</p>}
       {draft&&own&&base&&canWrite&&<section className="admin-panel"><div className="admin-toolbar"><h2>{t('draft')}</h2><span>{t(stored?'saved':'storage')}</span></div><p className="admin-version">{t('base')} {draft.baseVersion}</p>{draft.locked&&<p role="status">{t('pending')}</p>}
-        <fieldset disabled={busy||draft.locked}><label>{t('search')}<input type="search" value={search} onChange={e=>setSearch(e.target.value)}/></label><label>{t('field')}<select value={field} onChange={e=>setField(e.target.value)}><option value="">—</option>{filtered.map(f=><option key={f.path} value={f.path}>{f.path}</option>)}</select></label>
+        <fieldset disabled={busy||draft.locked}><label>{t('search')}<input type="search" value={search} onChange={e=>setSearch(e.target.value)}/></label><label>{t('field')}<select value={field} onChange={e=>{setField(e.target.value);syncValue(draft.text,e.target.value);}}><option value="">—</option>{filtered.map(f=><option key={f.path} value={f.path}>{f.path}</option>)}</select></label>
           <label>{t('value')}<textarea rows={3} value={value} onChange={e=>setValue(e.target.value)} spellCheck={false}/></label><button type="button" disabled={!field} onClick={()=>void run(async()=>apply())}>{t('apply')}</button>
           <details><summary>{t('json')}</summary><label>{t('json')}<textarea className="admin-json" rows={12} value={draft.text} onChange={e=>update({text:e.target.value})} spellCheck={false}/></label></details>
           <label>{t('import')}<input type="file" accept=".json,application/json" onChange={e=>{const f=e.target.files?.[0];e.target.value='';if(f)void run(async()=>{if(f.size>ADMIN_BYTES)throw new AdminError('bodyTooLarge');const text=await f.text();preview(base,text);update({text});});}}/></label>

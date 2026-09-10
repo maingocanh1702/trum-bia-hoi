@@ -72,3 +72,9 @@ test('imported JSON refreshes the selected value buffer instead of applying a st
  await page.locator('input[type=file]').setInputFiles({name:'config.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(raw))});await expect(page.getByRole('textbox',{name:'Giá trị JSON',exact:true})).toHaveValue(String(raw.menu.bia.price));
  await page.getByRole('button',{name:'Áp dụng vào bản nháp'}).click();expect(await page.evaluate(()=>JSON.parse(JSON.parse(sessionStorage.getItem('tbh.admin.draft.v1')!).text).menu.bia.price)).toBe(raw.menu.bia.price);
 });
+
+test('re-importing identical JSON discards an unapplied field edit without changing the saved value',async({page})=>{
+ await login(page);await edit(page);const text=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('tbh.admin.draft.v1')!).text);const original=JSON.parse(text).menu.bia.price;
+ await page.getByRole('textbox',{name:'Giá trị JSON',exact:true}).fill(String(original+9));await page.locator('input[type=file]').setInputFiles({name:'same-backup.json',mimeType:'application/json',buffer:Buffer.from(text)});await expect(page.getByRole('textbox',{name:'Giá trị JSON',exact:true})).toHaveValue(String(original));
+ await page.getByRole('button',{name:'Áp dụng vào bản nháp'}).click();expect(await page.evaluate(()=>JSON.parse(JSON.parse(sessionStorage.getItem('tbh.admin.draft.v1')!).text).menu.bia.price)).toBe(original);
+});
