@@ -241,7 +241,7 @@ are not milestone rows, so completing M0 does not incorrectly close all Phase0 r
 `d91b92a`, receipt `.qa/scopes-verification.json`: real server per-key resolution,
 immutable audiences, expiry/replacement, removal-aware approval, ticketed player
 scope and deterministic opening/replay pins. `.qa/scopes-correction-tests.txt`
-334/334; `.qa/scopes-correction-focused.txt`25/25. Config/build and ordinary/rush
+334/334; `.qa/scopes-correction-focused-final.txt`25/25. Config/build and ordinary/rush
 sim pass. Browser foundation remains11admin/10remote; correction edits only policy,
 its regression and documentation. `.qa/review-scopes.txt` identified the campaign
 entitlement timing P2; `.qa/review-scopes-correction.txt` reports no remaining finding
