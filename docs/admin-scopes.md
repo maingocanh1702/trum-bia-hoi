@@ -44,4 +44,20 @@ Exact already-committed retries return the original receipt. Live-pin counts rem
 explicitly measured at computedAt; continuously changing shift phases do not freeze
 admin publication. Trusted internal calls without UI confirmation retain their API.
 
+| Date | Change |
+|---|---|
 | 2026-09-10 review correction | Three findings addressed with identity-boundary, overlap/expiry token and replacement-diff regressions; final verification and correction review pending. |
+
+
+Verified product `a84f41f` (foundation5a4da74):339 engine/server tests,29 focused
+admin/scopes,18 admin browser and10 remote-game browser PASS. Config coverage has
+zero literal warnings; build/typecheck pass. Full review found the three issues
+above; final correction review reports all resolved and no new actionable regression.
+No additional engine/sim tuning: unchanged engine/config retain prior10-cohort
+k2.4186–2.8738 and15rush evidence. Receipt `.qa/scope-ui-verification.json`.
+M4 stays11/18 OPEN. Next full economic previews/admin lifecycle and integrated
+account/eligibility/locale acceptance, then M6–M9. No live Google consent claim.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 verified | a84f41f:339tests,29focused,28browser,config/build PASS; correction review clears all three findings. This scoped-controls slice is complete; full BRD/M4 is still open. |

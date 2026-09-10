@@ -5,6 +5,19 @@
 
 ---
 
+## 🧭 Scoped admin controls verified; M4 remains11/18 — 2026-09-10
+
+Producta84f41f (base22320d4, foundation5a4da74), rules24/config2.0.1/schema10.
+Protected scope/audience/expiry/priority and ticket controls, exact pending retries,
+scoped rollback/withdrawal and factual affected-player preview wired to server.
+339engine/server,29focused,18admin/10remote browser,config/build PASS. Three review
+findings corrected; final independent review reports no actionable regression.
+Receipt `.qa/scope-ui-verification.json`. M0 COMPLETE; M4 still11/18 OPEN.
+Next: full7day economic previews/admin lifecycle and account/eligibility/locale,
+then M6–M9. Owner automatic segment/cap policy unanswered; Google ClientID absent.
+No public local upload,80MB tuning,engine/config changes or merge/push/deploy.
+Original20sourcehashes unchanged; worktree source frozen through correction review.
+
 ## 🧭 Admin browser editor verified; M4 now11/18 — 2026-09-10
 
 Product56a0a44 (base988fc33, foundation3d5513e, receipt correctionf86fc69).

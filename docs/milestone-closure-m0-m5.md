@@ -1,6 +1,6 @@
 # Milestone closure report — M0–M5
 
-2026-09-10 · implementation `6f42575` · config2.0.1/rules24/schema9.
+2026-09-10 · implementation `a84f41f` · config2.0.1/rules24/schema10.
 Authority: [ROADMAP §mốc M0–M9](../06-ROADMAP-trum-bia-hoi.md), including the
 acceptance sections it references. PASS means the whole stated criterion has
 supporting evidence; FAIL includes missing implementation or missing acceptance
@@ -93,7 +93,7 @@ No new gameplay test or80MB run was added solely to make this report green.
 | M1 | FAIL (6/12 PASS) | OPEN | Full12min proof at all3viewports, complete7-screen coverage, measured upgrade recommendation, axe and new-player feel evidence. |
 | M2 | FAIL (4/9 PASS) | OPEN | Five-person test, real mid-shift Google browser flow and admin-editable onboarding; locale/login-prompt gaps below. |
 | M3 | FAIL (5/12 PASS) | OPEN | Advanced economy band/feel,32px badge acceptance and remaining equipment/football placeholders. |
-| M4 | FAIL (11/18 PASS) | OPEN — next implementation priority | E7 remote authority/reconnect, E8 registry and E9/E10 admin browser workflow verified. Scoped config/forecasts/emergency and integrated account/import/eligibility/locale remain. |
+| M4 | FAIL (11/18 PASS) | OPEN — next implementation priority | E7 remote authority/reconnect, E8 registry and E9/E10 admin browser workflow verified. E11/E12 scoped core/editor/factual impact verified; full forecasts/emergency and integrated account/import/eligibility/locale remain. |
 | M5 | FAIL (9/25 PASS) | OPEN | Public seasons/ranking/shrine, rewards/referral/gifts and full integration; local LP acceptance rules pass. |
 
 ## M0 — foundation
@@ -209,7 +209,7 @@ are not milestone rows, so completing M0 does not incorrectly close all Phase0 r
 
 ## Next queue fixed by owner
 
-1. M4 scoped Config Registry, impact forecasts and emergency/admin account workflow per
+1. M4 full economic impact forecasts and emergency/admin account workflow per
    BRD§5.2; default service/pins and authenticated transport verified in E8/E9.
 2. Integrated accounts/eligibility/locale remain explicit M4 exit gaps; preserve
    server authority and the owner-deferred public import boundary. No fabricated Google setup.
@@ -249,13 +249,28 @@ and independently passed the regression. Reviewer full HTTP run was sandbox-bloc
 host suite passed. This internal core alone closes no additional ROADMAP criterion.
 
 
-## E12 — scoped admin transport/editor (review pending)
+## E12 — scoped admin transport/editor (verified)
 
 Base22320d4: protected scope/support/source endpoints and VI/EN controls are wired
 to real registry publication/opening. Preview is factual saved-player/key impact,
 including previous audiences and masking; it does not claim seven-day economy
-forecasts. M4 acceptance count stays11/18; review and final evidence pending.
+forecasts. M4 acceptance count stays11/18; final evidence is recorded below.
 
 | Date | Change |
 |---|---|
 | 2026-09-10 scope UI implementation | Added protected scoped editor and factual impact; full verification/review pending. No additional milestone marked complete. |
+
+
+E12 final evidence: product `a84f41f`, `.qa/scope-ui-verification.json` and
+`.qa/scope-ui-correction-{tests,focused,browser,remote-browser,config,build}.txt`:
+339/339engine-server,29/29focused,18/18admin browser,10/10remote browser and
+config/build PASS. Token regression rejects overlapping publication and time-triggered
+expiry, exact retry recovers once; browser refreshes stale confirmation. Support
+logout/expiry clears private inputs without reload. Replacement after newer default
+shows only recorded scoped patches. `.qa/review-scope-ui-correction.txt` clears all
+three prior findings without new actionable regression. Full7day forecast remains
+unimplemented; no milestone counter advances from this partial BRD acceptance.
+
+| Date | Change |
+|---|---|
+| 2026-09-10 scope controls verified | a84f41f passes339tests/29focused/28browser/config/build; three full-review findings corrected and cleared. M0 3/3 COMPLETE; M1 6/12, M2 4/9, M3 5/12, M4 11/18, M5 9/25 remain OPEN. |

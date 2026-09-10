@@ -2276,3 +2276,14 @@ and rejects masked future-expiry failures. It is not a seven-day economic foreca
 Host verification and native independent review underway. M4 remains11/18 OPEN;
 full forecasts, admin account lifecycle and integrated account/eligibility/locale
 remain. No engine/config/schema change, new public upload or performance tuning.
+
+
+Final scoped controls `a84f41f`:339engine/server,29focused,18admin/10remote browser,
+config zero warnings/build/typecheck PASS. Native full review identified three issues;
+identity buffer clearing, transaction-bound impact confirmation and separately based
+patch diffs resolve them. Correction review reports no new actionable regression.
+Recorded live-pin counts are an observation at computedAt; confirmation instead binds
+publication revision and time-dependent before/after resolutions. No schema, engine
+or game-config changes; previous10ordinary kcohorts2.4186–2.8738/15rush retained.
+Receipt `.qa/scope-ui-verification.json`; M4 remains11/18 OPEN. Next full forecasts,
+admin lifecycle and integrated accounts/eligibility/locale; then M6–M9.
