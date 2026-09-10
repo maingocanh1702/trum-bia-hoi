@@ -5,6 +5,16 @@
 
 ---
 
+## Owner queue resolved + keg asset batch — 2026-09-10
+
+Steer #6 selects hotfix supersession of exact-scope future schedules; implementation
+unblocked, exact preview/MFA/atomic24h ticket/pins remain required. Steer #7 waives
+realOAuth wait and human-only playtests, requires explicit non-production dev
+identity provider acceptance. Any-two-version diff E26 is already complete.
+Finish current4keg imagegen exports (2export+2browser PASS, full verify PASS:389unit/server,10kcohorts/15rush/2careers),
+then M4 emergency → dev identity/remainder → M6 → M7 → M8 → M9.16placeholders remain;
+Blender archive preserved. No engine/economy edits or merge/push/deploy.
+
 ## M4 registry lifecycle closure — E27, 2026-09-10
 
 `b5d3545`, base `2ad3f66`: admin list/details/comparison expose server-derived

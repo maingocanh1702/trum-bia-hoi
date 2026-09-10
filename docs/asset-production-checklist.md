@@ -136,10 +136,10 @@ Rót bia: batch size + tốc độ rót. Vòi = pipeline auto + progress bar.
 | ✓ | Asset | Cấp | Giá ×k | Storage | Batch | Pour | Đổi gì nhìn thấy được | Crop | Phase |
 |:-:|-------|:---:|-------:|:-------:|:-----:|:----:|----------------------|-----:|:-----:|
 | ⬜ | `keg-lv1` | Lv1 | có sẵn | 3 cốc | 1 | ~15s | Bom **nhựa** xanh lục, 1 vòi đồng vặn tay, xước xát tạm bợ. Trạm rót rẻ nhất | 192×192 | P1 |
-| ⬜ | `keg-lv2` | Lv2 | 7.500 | 5 cốc | 2 | ~13s | Chuyển **nhựa → inox**: bom inox móp nhỏ, vòi đồng chắc hơn, thêm **khay hứng**, chỗ cho 2 cốc | 224×208 | P1 |
-| ⬜ | `keg-lv3` | Lv3 | 30.000 | 8 cốc | 3 | ~11s | Bom inox **to hơn hẳn**, **2 vòi** thay vì 1, chân đế gia cố, khay hứng rộng | 256×224 | P2 |
-| ⬜ | `keg-lv4` | Lv4 | 125.000 | 18 cốc | 6 | ~8s | **Nhảy bậc công nghệ**: tháp rót đôi cao kiểu cũ, đồng hồ áp suất, bình CO2 giấu phía sau. Không màn hình số | 320×240 | P3 |
-| ⬜ | `keg-lv5` | Lv5 | 500.000 | 40 cốc | 12 | ~6s | Trạm rót công nghiệp: nhiều vòi đồng đồng bộ, bể inox lớn, khay rộng, van cơ khí. Vẫn analog, không màn hình | 384×256 | P4 |
+| 🟡 | `keg-lv2` | Lv2 | 7.500 | 5 cốc | 2 | ~13s | Chuyển **nhựa → inox**: bom inox móp nhỏ, vòi đồng chắc hơn, thêm **khay hứng**, chỗ cho 2 cốc | 224×208 | P1 |
+| 🟡 | `keg-lv3` | Lv3 | 30.000 | 8 cốc | 3 | ~11s | Bom inox **to hơn hẳn**, **2 vòi** thay vì 1, chân đế gia cố, khay hứng rộng | 256×224 | P2 |
+| 🟡 | `keg-lv4` | Lv4 | 125.000 | 18 cốc | 6 | ~8s | **Nhảy bậc công nghệ**: tháp rót đôi cao kiểu cũ, đồng hồ áp suất, bình CO2 giấu phía sau. Không màn hình số | 320×240 | P3 |
+| 🟡 | `keg-lv5` | Lv5 | 500.000 | 40 cốc | 12 | ~6s | Trạm rót công nghiệp: nhiều vòi đồng đồng bộ, bể inox lớn, khay rộng, van cơ khí. Vẫn analog, không màn hình | 384×256 | P4 |
 
 **Prompt 4 cấp:**
 
@@ -798,3 +798,5 @@ Cập nhật lại bằng: `ls assets/*.png`
 | 2026-09-09 build | Original native-alpha customer-shipper draft connected to phone order/sheet, exact prompt in reference/assets-owner-2026-09-08/shipper-prompt.md. Existing paired order/fail/early-serve SFX reused for arrival/miss/handoff. Manifest122 entries,32 audio pairs,30 sprite placeholders and84 draft files; no production approval boxes changed. |
 
 | 2026-09-10 build | Table Lv2–Lv4 empty-state imagegen drafts replace three runtime placeholders. Other states use runtime composition. Native-size exports and 128/64/32 contact sheet recorded; final family art approval pending (🟡). Four Blender source renders + studio retained and archived in manifest; Blender generation paused by owner. |
+
+| 2026-09-10 keg batch | Four standalone imagegen idle sprites replace keg-lv2–5 placeholders; source/prompt/hash receipt in reference/assets-owner-2026-09-08/keg-upgrades-imagegen.json. Existing exporter reused with explicit crop/materials; native alpha retained, level3 chroma-key handles enclosed gaps. 128/64/32 sheet inspected; draft family, final art approval remains pending. No engine/economy changes. |

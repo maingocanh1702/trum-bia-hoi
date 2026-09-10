@@ -60,3 +60,16 @@ activation rule or gameplay write is added. See admin-editor.md for UI acceptanc
 | 2026-09-10 lifecycle implementation | Added readonly server phases/timestamps and shared current-scope selector;39focused/config/build pass, full verification/review pending. Normal publication rules and owner-pending emergency policy unchanged. |
 
 | 2026-09-10 lifecycle verified | E27 b5d3545: metadata phases/timestamps and shared selector verified by389unit/server,39registry/scopes,27admin+3final browser/config/build. Independent full-base review finds no introduced issues. No engine/economy/schema/activation changes; M4 still15/18. |
+
+
+## Owner emergency scheduling decision — 2026-09-10
+
+Steer #6 chooses replacement: emergency hotfixes supersede pending future schedules
+for their exact scope, preserving an immutable `superseded by emergency <version>`
+audit marker. Those schedules cannot activate later; normal explicit republication
+is required. Confirmation must enumerate exact versions/effective times/keys/
+proposers/approvers and reject stale previews. Super Admin + verified MFA, Tier A/B,
+schema/catalog admission, atomic 24h post-review ticket, idempotent original
+receipt and existing shift/replay pins all remain required. See admin-emergency.md.
+
+| 2026-09-10 owner Steer #6 | Pending-schedule decision resolved; implementation queued, no runtime change in this decision record. |

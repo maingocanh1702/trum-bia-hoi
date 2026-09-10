@@ -1,7 +1,7 @@
 # Emergency config publication — implementation intake
 
 Base: `e5cba9d`, `codex/game-build-isolated`. Authority: BRD §5.2.5 and
-the owner's M4-first queue. Status: design intake; runtime is unchanged.
+the owner's M4-first queue. Status: owner decision resolved; implementation queued. Runtime is unchanged.
 
 ## Established requirements
 
@@ -20,7 +20,7 @@ the owner's M4-first queue. Status: design intake; runtime is unchanged.
 - This slice changes admin policy/validation only. It does not edit engine rules
   or the values in `docs/config/economy.tbh.json`.
 
-## Decision still pending
+## Historical intake (resolved by owner below)
 
 The owner has been asked what happens to already-published future schedules:
 
@@ -28,8 +28,7 @@ The owner has been asked what happens to already-published future schedules:
    and must be explicitly republished if still wanted.
 2. Pending schedules remain and replace the emergency version when due.
 
-No default is inferred from silence. The publication/resolution change waits for
-this choice. Its confirmation must show the exact affected schedules and reject
+The intake awaited this choice; owner Steer #6 below resolves it. Its confirmation must show the exact affected schedules and reject
 stale previews. Scope precedence and existing support-ticket requirements remain.
 
 The current resolver selects the greatest publication sequence among versions
@@ -52,3 +51,21 @@ unchanged economy and engine rules.
 | Date | Change |
 |---|---|
 | 2026-09-10 | Recorded bounded M4 emergency intake and the unresolved pending-schedule policy; no implementation or milestone completion claim. |
+
+## Owner decision 2026-09-10 — Steer #6 (21:50)
+
+Option 1: a Super Admin emergency hotfix with server-verified MFA, Tier A/B,
+REPLACES pending future schedules for the affected scope. Preserve each old
+schedule in immutable audit with `superseded by emergency <version>`; never
+activate it automatically. Reuse requires explicit republication through normal
+approval. Confirmation lists exact version, effectiveAt, changed keys and
+proposer/approver for every superseded schedule; reject a stale preview.
+
+Create the 24h post-review ticket in the same transaction. Exact retries return
+original receipts. Existing shifts, command receipts and replay retain config
+pins. Admission and catalog-identity checks cannot be bypassed. No economic value
+or engine rule changes. Regressions: zero, one, several schedules; scoped isolation;
+stale confirmation; exact retry; republish after supersede; rollback by publishing
+an old snapshot. Implement through existing registry/audit/protected transport.
+
+| 2026-09-10 Steer #6 | Owner chose replacement of future schedules in the affected scope; emergency implementation unblocked. Historical unanswered question superseded. |

@@ -990,3 +990,22 @@ Three standalone built-in calls produced Lv2 square inox, Lv3 long inox and Lv4 
 | 2026-09-10 | Owner authorizes imagegen for all game assets; preserved native alpha returned by the built-in tool; added three table prompts and reproducible exports. Runtime IDs unchanged; production family approval remains pending. |
 
 | 2026-09-10 reproduction review | Table export now stages the whole batch, checks dimensions/alpha/palette and the recorded expected hashes before replacing selected sprites. It never rewrites provenance to accept drift; intentional changes need a new versioned asset/receipt. Failure regression preserves all earlier sprites, contact sheet and receipt byte-for-byte with unchanged mtimes. |
+
+
+## Keg upgrades — 2026-09-10
+
+Four standalone built-in imagegen calls supply the accepted Lv2–Lv5 idle sprites.
+Exact prompts (including rejected attempts), source files/hashes and native export
+hashes are in `reference/assets-owner-2026-09-08/keg-upgrades-imagegen.json`.
+Lv2: small single-tap inox barrel; Lv3: wider two-tap barrel; Lv4: twin-tap pressure
+tower/CO2; Lv5: four-tap industrial station. Capacity is dynamic UI, not tap count.
+Lv2/4/5 retain native alpha; two Lv3 RGB checkerboard attempts were rejected, then
+a flat-key regeneration used the existing Python pipeline explicitly authorized
+by 11-PROMPT-PACK Part A. Only Lv3 opts into clearing enclosed key-colour holes;
+there is no green material in that source. No model/tool substitution occurred.
+Shared export applies the same token shade/outline/crop logic as the table batch;
+old table exports must reproduce byte-for-byte. All files remain draft.
+
+| 2026-09-10 keg imagegen | Added four level-specific sprites with exact prompts and production-size exports. Requested native transparency when possible; used documented flat-key pipeline for rejected Lv3 transparency. Runtime manifest IDs and Blender archives unchanged. |
+
+| 2026-09-10 keg verified | Full verify PASS (389unit/server,10standard cohorts,15rush,2x30day careers);2export regressions/table reproducibility and2stock/upgrade browser checks PASS.16placeholders/108drafts. Self-reviewed asset diff; milestone independent review per ownerSteer7, no runtime registry/auth/money change. Receipt `.qa/keg-asset-verification.json`. |

@@ -25,6 +25,8 @@ for (const width of [360, 390]) test(`stocked beer capacity and upgrade comparis
   await expect(panel.getByText('5 ly/mẻ · 2.7s', { exact: true })).toBeVisible();
   await panel.getByRole('button', { name: /^Nâng ·/ }).click(); await page.clock.runFor(40000);
   const held = await snapshot(); expect(held.paused).toBe(true); expect(held.beer.remainingMs).toBe(before.beer.remainingMs); expect(held.beer.progress).toBe(before.beer.progress); expect(held.inventory).toEqual(before.inventory); expect(held.remaining).toBe(before.remaining); expect(held.equipment.keg).toBe(2);
+  await expect(keg.locator('img')).toHaveAttribute('src', /keg-lv2-imagegen-v1\.png/);
+  await expect(panel.locator('img[src*="keg-lv3-imagegen-v1"]')).toHaveCount(1);
   await page.screenshot({ path: `.qa/batch-panel-${width}.png` });
   await panel.getByRole('button', { name: 'Bom bia ×', exact: true }).click(); await page.clock.runFor(held.beer.remainingMs);
   await expect(keg.locator('.capacity-badge')).toHaveText('5/5'); expect((await snapshot()).beer.busy).toBe(0);

@@ -336,66 +336,74 @@
     {
       "id": "keg-lv2",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/keg-lv2-imagegen-v1.png",
+      "source": "imagegen",
       "dimensions": [
-        128,
-        128
+        224,
+        208
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "status": "draft",
+      "review_notes": "Imagegen idle level sprite; token palette, two-pixel outline, transparent native-size export and bottom anchor. 128/64/32 contact sheet reviewed. Runtime capacity/state remains code-rendered. Production family approval pending.",
+      "raw": "assets/_raw/imagegen/keg-upgrades-2026-09-10/keg-lv2.png",
+      "prompt": "docs/reference/assets-owner-2026-09-08/keg-upgrades-imagegen.json"
     },
     {
       "id": "keg-lv3",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/keg-lv3-imagegen-v1.png",
+      "source": "imagegen",
       "dimensions": [
-        128,
-        128
+        256,
+        224
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "status": "draft",
+      "review_notes": "Imagegen idle level sprite; token palette, two-pixel outline, transparent native-size export and bottom anchor. 128/64/32 contact sheet reviewed. Runtime capacity/state remains code-rendered. Production family approval pending.",
+      "raw": "assets/_raw/imagegen/keg-upgrades-2026-09-10/keg-lv3.png",
+      "prompt": "docs/reference/assets-owner-2026-09-08/keg-upgrades-imagegen.json"
     },
     {
       "id": "keg-lv4",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/keg-lv4-imagegen-v1.png",
+      "source": "imagegen",
       "dimensions": [
-        128,
-        128
+        320,
+        240
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "status": "draft",
+      "review_notes": "Imagegen idle level sprite; token palette, two-pixel outline, transparent native-size export and bottom anchor. 128/64/32 contact sheet reviewed. Runtime capacity/state remains code-rendered. Production family approval pending.",
+      "raw": "assets/_raw/imagegen/keg-upgrades-2026-09-10/keg-lv4.png",
+      "prompt": "docs/reference/assets-owner-2026-09-08/keg-upgrades-imagegen.json"
     },
     {
       "id": "keg-lv5",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/keg-lv5-imagegen-v1.png",
+      "source": "imagegen",
       "dimensions": [
-        128,
-        128
+        384,
+        256
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "status": "draft",
+      "review_notes": "Imagegen idle level sprite; token palette, two-pixel outline, transparent native-size export and bottom anchor. 128/64/32 contact sheet reviewed. Runtime capacity/state remains code-rendered. Production family approval pending.",
+      "raw": "assets/_raw/imagegen/keg-upgrades-2026-09-10/keg-lv5.png",
+      "prompt": "docs/reference/assets-owner-2026-09-08/keg-upgrades-imagegen.json"
     },
     {
       "id": "washer-lv1",

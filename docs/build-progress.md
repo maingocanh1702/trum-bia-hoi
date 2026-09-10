@@ -8,9 +8,9 @@ complete-game goal; milestones below are implementation order, not scope cuts.
 |---|---|---|
 | M0 — config, pure engine, deterministic replay, k sim, workspaces | COMPLETE — exit criteria PASS | All3exit criteria PASS: current config/build/321tests,5seeds×2profiles k2.4186–2.8738; reviewed foundation/checkpoint/web. |
 | M1 — serve loop, glasses, stock, upgrades, local save, spatial UI, core audio | In progress | Playable loop, local save/replay, stock/equipment/table UI, core SFX wired; final sprites and listening QA pending |
-| M2 — guest, vi/en, onboarding | In progress | Device-persistent guest, vi/en, guide and Google attach/restore verified; live consent and 5-person study remain |
-| M3 — full menu, customer mix, weather, rush, business unlocks | In progress — 6/12 PASS | Standard k and advanced career≤3.5 pass under owner10/09 rule; remaining feel/32px badges/equipment and customer asset acceptance stay open. |
-| M4 — server authority, accounts, reconnect, config registry/admin | In progress | 15/18 exit criteria PASS; E25 live public ranking628eb72 verified with386unit/server,11affected remote/24admin browser, config/build and CLEAN review. Emergency/admin remainder, owner-deferred archive transport and live account/donation acceptance remain; see criterion report. |
+| M2 — guest, vi/en, onboarding | In progress | Device-persistent guest, vi/en, guide and Google attach/restore verified; dev identity acceptance remains; live consent/five-person study waived by owner10/09 |
+| M3 — full menu, customer mix, weather, rush, business unlocks | In progress — 6/12 PASS | Standard k and advanced career≤3.5 pass under owner10/09 rule; 5human-only criteria WAIVED by owner10/09; equipment/customer art remains tracked. |
+| M4 — server authority, accounts, reconnect, config registry/admin | In progress | 15/18 exit criteria PASS; E25 live public ranking628eb72 verified with386unit/server,11affected remote/24admin browser, config/build and CLEAN review. Emergency/admin remainder, owner-deferred archive transport and dev-stub account/donation acceptance remain; see criterion report. |
 | M5 — seasons, leaderboard/shrine, life path, leases, quests/referrals | In progress | Local seasons/peak, LP/quests/attendance and lease calendar/UI implemented; public live ranks verified in E25; snapshots, rewards/referrals/social and full acceptance remain |
 | M6 — risks, dog, emergency supplies | Pending | |
 | M7 — voluntary donations, cosmetic gifts, age notice | Pending | |
@@ -2610,3 +2610,15 @@ M4 remains15/18; the hotfix scheduling decision and other remaining acceptance
 are still open. Full M0–M9 objective remains active.
 
 | 2026-09-10 | E27 lifecycleb5d3545 verified:389unit/server,39focused,27admin+3final browser,config/build and review pass; M4 remains15/18. |
+
+
+## Owner queue / asset handoff — 2026-09-10 Steer #6/#7
+
+Emergency policy resolved: hotfix replaces exact-scope pending schedules, immutable
+supersession audit and stale-preview rejection required (admin-emergency.md).
+Next implement that registry path, then explicit dev identity stub and M4 closure;
+E26 any-two-version diff is already done. Real ClientID and all human-only playtest
+criteria waived for this build; affected account PASS still requires stub evidence.
+No economy/engine changes. Keg Lv2–Lv5 imagegen exports replace4placeholders with
+source/prompt/hash receipt and 128/64/32 sheet.16placeholders/108drafts remain;
+2export regressions +2stock/upgrade browser cases PASS; full verify PASS: config/build,389unit/server,10standard cohorts,15rush and2x30-day careers. Receipt: `.qa/keg-asset-verification.json`.

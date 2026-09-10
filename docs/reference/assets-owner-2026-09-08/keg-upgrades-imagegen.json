@@ -1,0 +1,294 @@
+{
+  "date": "2026-09-10",
+  "tool": "image_gen (built-in)",
+  "ownerDecision": "Image generation allowed; Blender paused, existing sources retained.",
+  "assets": [
+    {
+      "id": "keg-lv2",
+      "prompt": "Use case: stylized-concept. Generate exactly ONE standalone production pixel-art world-object sprite for Trum Bia Hoi, an early-2000s Hanoi sidewalk beer-stall game. Asset keg-lv2. A small slightly dented inox beer keg, single hand-operated brass tap, short sturdy metal feet and a simple integrated drip tray wide enough for two glasses (tray EMPTY). It should look more capable than a makeshift plastic barrel, but humble and entirely mechanical. STYLE: crisp chunky hand-pixelled clusters like the previously viewed 128px green bia-hoi glass anchor, warm nostalgic controlled colors, no painterly texture, no photorealism or glossy 3D. Camera fixed three-quarter top-down isometric-lite 28 degrees downward, front and right sides visible. Upper-left light. Centered, fully visible with 8% safe padding, ground-contact bottom center, native production footprint 224x208. Strong dark plum-brown #3a2730 outer silhouette equivalent to two native pixels, sparse scratches, no tiny noise, no dithering. Palette inox #c4cecb/#97a3a0/#69736f, brass amber #eaa31a/#c07a12 and cream #fff3d2 highlights; at most four shade steps per material. Keep taps countable at 64px, silhouette readable at 32px. Background genuinely TRANSPARENT RGBA, no checkerboard baked in, no floor, no cast/contact shadows outside silhouette, no background color. No glasses, beer stream, people, furniture, badges, progress bars, lettering, numbers, logos, watermark. This is one idle equipment asset only, not a sheet.",
+      "dimensions": [
+        224,
+        208
+      ],
+      "generatedFile": "exec-b12f969f-294c-49c0-a468-df79146627c3.png",
+      "materials": [
+        "inox",
+        "beerAmber",
+        "beerFoam"
+      ],
+      "rawPath": "assets/_raw/imagegen/keg-upgrades-2026-09-10/keg-lv2.png",
+      "sourceSha256": "a1f6827d067e7d336d6093649c779a38e0375accb49be7a89e1e1556ef7cb9ca",
+      "path": "assets/keg-lv2-imagegen-v1.png",
+      "palette": [
+        [
+          58,
+          39,
+          48
+        ],
+        [
+          137,
+          144,
+          142
+        ],
+        [
+          196,
+          206,
+          203
+        ],
+        [
+          219,
+          230,
+          227
+        ],
+        [
+          163,
+          114,
+          18
+        ],
+        [
+          234,
+          163,
+          26
+        ],
+        [
+          255,
+          182,
+          29
+        ],
+        [
+          178,
+          170,
+          147
+        ],
+        [
+          255,
+          243,
+          210
+        ],
+        [
+          255,
+          255,
+          235
+        ]
+      ],
+      "sha256": "e354f2421771cf2b5f53463f43bfd83fe5aac6df1b2849afbd8a4b1e07b97ec8"
+    },
+    {
+      "id": "keg-lv3",
+      "prompt": "Use case: stylized-concept. Generate exactly ONE standalone pixel-art equipment sprite keg-lv3 for Trum Bia Hoi, a nostalgic early-2000s Hanoi sidewalk beer game. Match the previous keg-lv2 image in camera, metal, lighting and warm dark pixel outline. Image 1 is that SAME-FAMILY STYLE REFERENCE only, not an edit target. Create a larger wider aged inox beer keg on a reinforced low metal stand. Exactly TWO clearly separated brass taps on its front, a broad empty drip tray for a three-glass batch. Larger and more professional than the single-tap level2, no pressure gauge or CO2 tower yet. Camera three-quarter top-down isometric-lite 28 degrees downward, front and right faces visible; upper-left light. Crisp chunky pixel clusters, selective sparse scratches, flat hard-edged shading. Native footprint 256x224, centered bottom anchor, 8% safe margin. Two-native-pixel dark plum-brown #3a2730 silhouette. Limited token palette: inox #c4cecb/#97a3a0/#69736f, brass #eaa31a/#c07a12, cream #fff3d2, max four shades per material. No dithering, antialiasing, noise, painterly/photoreal rendering or smooth glossy 3D. Taps distinct at 64px, silhouette at32px. Genuinely TRANSPARENT RGBA background, no baked checkerboard, floor or cast/contact shadow outside object. Empty tray; no glasses, beer stream, people, food, loose props, logos, labels, numbers, progress bars or watermark. ONE complete idle machine only.",
+      "dimensions": [
+        256,
+        224
+      ],
+      "replacementPrompt": "Use case: stylized-concept. Generate ONE new game sprite, keg-lv3, for an early-2000s Hanoi beer stall. Wide low aged inox barrel with exactly TWO front brass beer taps, reinforced short metal stand, broad integrated EMPTY drip tray. Isometric-lite three-quarter camera28deg down, front/right visible, lightupperleft. Compact crisp pixel art with 2px-equivalent warm plum #3a2730 outline, simple broad tonal bands and very few scratches; inox #c4cecb/#97a3a0/#69736f, brass #eaa31a/#c07a12, cream #fff3d2. No smooth3D, soft blur, noise, dithering, text, numbers, labels, glasses, people, streams or other objects. Centered fully visible object,8% padding, native footprint256x224, two taps readable64px. Render on a perfectly uniform solid bright GREEN #00ff00 background for the project's existing chroma-key asset pipeline. The background and EVERY gap through handle holes and between legs must be this exact flat green. No green on the machine. No gradient, shadows, reflections or checkerboard. Single idle sprite only. Do not copy any background from previous images.",
+      "generatedFile": "exec-6da0adab-d46a-4a12-a6ec-0769294e11ca.png",
+      "materials": [
+        "inox",
+        "beerAmber",
+        "beerFoam"
+      ],
+      "keyColor": "green",
+      "rejectedNativeAlphaPrompt": "Use case: background-extraction. Edit the attached keg-lv3 sprite only by removing the baked-in grey checkerboard. Preserve the machine's identity: exactly two brass taps, same broad inox body, reinforced stand, empty drip tray, same camera, silhouette, lighting and pixel colors. Return a PNG with GENUINE TRANSPARENT ALPHA outside the object, including handle holes and the clear gaps beneath the tray and between legs. Transparent means alpha zero, NOT a drawn checkerboard and NOT a white/black/color background. Keep opaque machine pixels intact. No added shadow, reflection, outline box, text or other change. Do not recreate or redesign the machine.",
+      "rejectionReason": "Two earlier exports baked grey checkerboard into RGB; excluded from runtime.",
+      "rawPath": "assets/_raw/imagegen/keg-upgrades-2026-09-10/keg-lv3.png",
+      "sourceSha256": "3300bd87a2a4a3b6902fcd988732c7663e52dba762ae005b623b945512afed79",
+      "path": "assets/keg-lv3-imagegen-v1.png",
+      "palette": [
+        [
+          58,
+          39,
+          48
+        ],
+        [
+          137,
+          144,
+          142
+        ],
+        [
+          196,
+          206,
+          203
+        ],
+        [
+          219,
+          230,
+          227
+        ],
+        [
+          163,
+          114,
+          18
+        ],
+        [
+          234,
+          163,
+          26
+        ],
+        [
+          255,
+          182,
+          29
+        ],
+        [
+          178,
+          170,
+          147
+        ],
+        [
+          255,
+          243,
+          210
+        ],
+        [
+          255,
+          255,
+          235
+        ]
+      ],
+      "sha256": "0ba8f019d39ccc7facc2b7f0fd1ff320522c49fb0f13224c90eeb8ec0971cf84"
+    },
+    {
+      "id": "keg-lv4",
+      "prompt": "Use case: stylized-concept. Create a NEW standalone production sprite keg-lv4 for a pixel-art early-2000s Hanoi bia-hoi management game. One semi-professional mechanical pressure beer dispensing system: a low wide inox reservoir with a tall old-fashioned TWO-brass-tap tower mounted on top, one small visible cream analog pressure dial without text or numbers, a compact CO2 cylinder tucked behind at the right and connected by a simple hose. All parts mounted to ONE low metal stand and integrated broad EMPTY drip tray. No glasses. Clearly more advanced in silhouette than a simple two-tap barrel; no digital screens. Crisp chunky hand-drawn pixel clusters, dark plum-brown #3a2730 outer outline equivalent to 2px at native320x240, four flat shade steps max per material, no dithering/noisy texture. Inox #c4cecb/#97a3a0/#69736f, brass #eaa31a/#c07a12, cream #fff3d2 highlights. Warm faded palette matching an old green handleless beer-glass game sprite. Camera isometric-lite 28deg downward, front/right surfaces visible, upper-left lighting. Fully visible centered object, bottom-center ground contact,8% padding; readable at32px, two taps distinct at64px. TRANSPARENT PNG RGBA background with actual alpha-zero pixels, NO patterned checkerboard, colored background, floor, cast shadow or glow. No environment, people, text, labels, real brand, watermark, beer stream, progress bar or level badge. Exactly ONE coherent idle equipment sprite, not a sheet.",
+      "dimensions": [
+        320,
+        240
+      ],
+      "generatedFile": "exec-49ddf78f-44f5-4209-af14-8343b2b691c9.png",
+      "materials": [
+        "inox",
+        "beerAmber",
+        "beerFoam"
+      ],
+      "rawPath": "assets/_raw/imagegen/keg-upgrades-2026-09-10/keg-lv4.png",
+      "sourceSha256": "ce1b780e9f8b148a4206909a8c7bc3568b46d283bc6e14ae147d2442037bc5d2",
+      "path": "assets/keg-lv4-imagegen-v1.png",
+      "palette": [
+        [
+          58,
+          39,
+          48
+        ],
+        [
+          137,
+          144,
+          142
+        ],
+        [
+          196,
+          206,
+          203
+        ],
+        [
+          219,
+          230,
+          227
+        ],
+        [
+          163,
+          114,
+          18
+        ],
+        [
+          234,
+          163,
+          26
+        ],
+        [
+          255,
+          182,
+          29
+        ],
+        [
+          178,
+          170,
+          147
+        ],
+        [
+          255,
+          243,
+          210
+        ],
+        [
+          255,
+          255,
+          235
+        ]
+      ],
+      "sha256": "52f57591b31f97f22c6c7d5c927ec5eaa486dc66b0961f02a69c617d0fb2cf29"
+    },
+    {
+      "id": "keg-lv5",
+      "prompt": "Use case: stylized-concept. Generate a NEW standalone pixel-art production game sprite, keg-lv5 for Trum Bia Hoi early-2000s Hanoi sidewalk beer management game. One premium industrial mechanical bia-hoi pouring station: large aged inox rectangular reservoir with curved corners on a stout low metal cabinet, one horizontal brass manifold carrying FOUR plainly separated identical hand-pull tap handles and FOUR downturned nozzles, a broad integrated EMPTY drip tray below, one small cream analog pressure dial, simple mechanical valve. ONE coherent piece of equipment, wide and substantial, an upgrade over a twin-tap pressure tower. No screen or modern POS technology. Camera fixed isometric-lite 28 degrees down, front and right faces visible, upper-left light. Warm nostalgic crisp chunky hand-pixelled clusters, strong dark plum-brown #3a2730 two-native-pixel outline. Limited palette inox #c4cecb/#97a3a0/#69736f, brass #eaa31a/#c07a12, cream #fff3d2; max four shades per material, sparse deliberate wear, no dithering, grain, painterly blur or glossy smooth 3D. Native footprint384x256, fully visible centered bottom anchor with8% padding; all FOUR taps readable at64px and clean outline at32px. TRANSPARENT RGBA PNG with genuine alpha-zero background, absolutely no checkerboard, backdrop color, floor plane, cast shadow or external glow. No people, glasses, food, beer flow, loose props, labels, text, numbers, badges, logos or watermark. Exactly one idle sprite, not a sheet.",
+      "dimensions": [
+        384,
+        256
+      ],
+      "generatedFile": "exec-4afc3db1-9b71-4a5a-80cd-6c96896768fc.png",
+      "materials": [
+        "inox",
+        "beerAmber",
+        "beerFoam"
+      ],
+      "rawPath": "assets/_raw/imagegen/keg-upgrades-2026-09-10/keg-lv5.png",
+      "sourceSha256": "144a7b284e01ae532df2dbaadc142423e07117bdfa690ccbac2f1d7d13c4165e",
+      "path": "assets/keg-lv5-imagegen-v1.png",
+      "palette": [
+        [
+          58,
+          39,
+          48
+        ],
+        [
+          137,
+          144,
+          142
+        ],
+        [
+          196,
+          206,
+          203
+        ],
+        [
+          219,
+          230,
+          227
+        ],
+        [
+          163,
+          114,
+          18
+        ],
+        [
+          234,
+          163,
+          26
+        ],
+        [
+          255,
+          182,
+          29
+        ],
+        [
+          178,
+          170,
+          147
+        ],
+        [
+          255,
+          243,
+          210
+        ],
+        [
+          255,
+          255,
+          235
+        ]
+      ],
+      "sha256": "68386c5df02d1a2997c45c3e7eaa2617719c32a841893df5961209c7bf9236e0"
+    }
+  ],
+  "exportScript": "scripts/export_table_art.py --receipt docs/reference/assets-owner-2026-09-08/keg-upgrades-imagegen.json",
+  "contactSheet": "assets/_qa/contact-keg-upgrades-imagegen-v1.png",
+  "qa": "Draft; production family approval pending. Four materials or fewer, token-derived shade steps, two-pixel outline, transparent PNG, bottom anchor."
+}

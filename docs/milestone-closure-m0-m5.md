@@ -230,14 +230,14 @@ now PASS. M4 is **14/18 OPEN**; public archive transport remains deferred to M9.
 | i18n keys100%, no hardcoded product copy | FAIL | Engine `presentation.test.ts` locale-key/interpolation parity and E2 VI/EN pass; no exhaustive hardcoded-copy inventory for all P1surfaces. |
 | Screenshot baseline | PASS | E3 mobile screenshot plus recorded yard/equipment references in `.qa`; current browser acceptance receipt preserves artifact hashes. No automated visual-diff suite implied. |
 | axe pass | FAIL | No axe dependency, invocation or result in current browser harness; keyboard/hit-target assertions are not an axe result. |
-| First30seconds playable without reading instructions | FAIL | Scripted first serve at11.1seconds passes E2; no uncoached human playtest evidence. |
+| First30seconds playable without reading instructions | WAIVED | WAIVED by owner 2026-09-10 — post-release playtest. Automated evidence retained: Scripted first serve at11.1seconds passes E2; no uncoached human playtest evidence. |
 | k remains in band | PASS | E1 standard cold/full-menu profiles. Advanced career separately PASS under owner soft cap3.5 at M3 (04§5). |
 | Reload/new tab/browser reopen retain device progress (owner10/09 15:30) | PASS | E20 real Chromium profile relaunch, new tab, reload and pending-command receipt checks retain the same guest/coins/upgrades/day/shift. E18 fresh-visit reset is superseded. Credential loss remains fail-closed with journal retained; archive replay evidence remains separate. |
 
 ## M2 — onboarding/guest
 
 | Criterion (ROADMAP and F27§6) | Verdict | Evidence or exact gap |
-| Five new users:≥4/5 first serve≤30s and≥4/5 complete first shift | FAIL | No five-person uncoached study; browser automation is not human evidence. |
+| Five new users:≥4/5 first serve≤30s and≥4/5 complete first shift | WAIVED | WAIVED by owner 2026-09-10 — post-release playtest. Automated evidence retained: No five-person uncoached study; browser automation is not human evidence. |
 | Guest completes first shift without registration; progress persists on this device (owner10/09 15:30) | PASS | E2 full guest shift; E20 retains progress on real browser restart/new tab, enforces the opener lock and recovers dropped responses once. Account-only durable player history/achievements/ranking/cross-device restore stay separate. |
 | Fixed-seed first guest within config deadline, one bia, no rush/risk | PASS | Engine `game.test.ts` “first guest gets one customer and one beer, with auto pour…”; onboarding config and E2 first serve. |
 | First timeout produces customer_left+feedback≤1s and shift continues | FAIL | Engine numeric-loss event and web toast/continued-shift checks PASS; exact deadline-to-visible-toast≤1s is not separately measured. |
@@ -252,16 +252,16 @@ now PASS. M4 is **14/18 OPEN**; public archive transport remains deferred to M9.
 | Criterion (ROADMAP,04§5–§6,09§11 P2) | Verdict | Evidence or exact gap |
 | Correct k calculation and ordinary band | PASS | E1 actual per-customer payment+tip/82.5, no throughput term. |
 | Full progressed economy stays in band | PASS | E4/E13:30days/LP4 per seed42/99, k3.483282/3.318249≤3.5 under owner10/09 rule04§5; automated career gate. No numbers retuned; re-evaluate after Alpha with real player data. Endgame inflation uses7-day faucet/sink report, not k. |
-| 04§6: player controls pouring rhythm; stale warning rarely feels unfair | FAIL | Engine freshness deadlines/penalties and web stale reaction PASS; no human observation showing controlled pacing or absence of unfair-feeling penalties. |
-| 04§6: group/table serving is clear, not confusing | FAIL | Web whole-table action and multi-dish outcomes PASS; no uncoached group-order clarity study. |
-| 04§6: glass/washing bottleneck is perceptible and washer upgrade feels better immediately | FAIL | Engine production/batch and web live-capacity/upgrade tests PASS; no player comparison before/after washer upgrade. |
-| 04§6: peak rush feels intense but manageable | FAIL | E1 pressure/floor/serve-ceiling checks and per-window loss/stale reports PASS; no human rush-handling observation.04§6 gives no numeric loss threshold to invent. |
+| 04§6: player controls pouring rhythm; stale warning rarely feels unfair | WAIVED | WAIVED by owner 2026-09-10 — post-release playtest. Automated evidence retained: Engine freshness deadlines/penalties and web stale reaction PASS; no human observation showing controlled pacing or absence of unfair-feeling penalties. |
+| 04§6: group/table serving is clear, not confusing | WAIVED | WAIVED by owner 2026-09-10 — post-release playtest. Automated evidence retained: Web whole-table action and multi-dish outcomes PASS; no uncoached group-order clarity study. |
+| 04§6: glass/washing bottleneck is perceptible and washer upgrade feels better immediately | WAIVED | WAIVED by owner 2026-09-10 — post-release playtest. Automated evidence retained: Engine production/batch and web live-capacity/upgrade tests PASS; no player comparison before/after washer upgrade. |
+| 04§6: peak rush feels intense but manageable | WAIVED | WAIVED by owner 2026-09-10 — post-release playtest. Automated evidence retained: E1 pressure/floor/serve-ceiling checks and per-window loss/stale reports PASS; no human rush-handling observation.04§6 gives no numeric loss threshold to invent. |
 | Kitchen panel and separate beer/hot-food bubbles | PASS | E2 `kitchen.spec.ts` “live kitchen shows real timers…” and multi-dish service; actual job deadlines and whole-table links. |
-| Special customer badges distinguishable at32px | FAIL | Urgent identity is tested at normal yard scale; no complete32px recognizability acceptance, football customer still placeholder. |
+| Special customer badges distinguishable at32px | WAIVED | WAIVED by owner 2026-09-10 — post-release playtest. Automated evidence retained: Urgent identity is tested at normal yard scale; no complete32px recognizability acceptance, football customer still placeholder. |
 | Rush-type telegraph | PASS | E2 “rush warning pauses in sheets, resumes on closing, active timer wins…” at3viewports; engine rush-clock/schedule tests. |
 | Quest panel | PASS | E2 `quests.spec.ts` and `attendance.spec.ts`: real progress/claim/rollover and pause. Full social quest branches remain M5. |
 | Signboard sheet | PASS | E2 “business sign installation, ownership, reputation gate and live yard…” at mobile widths. |
-| Equipment/customer/menu asset batch replaces placeholders | FAIL | Live manifest has20placeholders, including keg/washer/cooler/stall upgrades and customer-football-fan;104drafts (including4archived Blender studies)/8approved. M3 cannot close on missing art. |
+| Equipment/customer/menu asset batch replaces placeholders | FAIL | Current manifest has16placeholders and108drafts (including4archived Blender studies)/8approved after keg Lv2–5 exports. Owner allows listed placeholders where generation fails; remaining family production work is tracked for M9, not represented as finished art. |
 
 ## M4 — server/accounts/admin
 
@@ -556,3 +556,31 @@ or scheduling policy change. M4 remains15/18; this closes the BRD lifecycle item
 not the remaining combined M4 acceptance or the pending emergency policy.
 
 | 2026-09-10 E27 | Registry lifecycleb5d3545 verified;389unit/server,39focused,27admin+3final browser,config/build/review pass. M4 remains15/18. |
+
+
+## Owner acceptance update — 2026-09-10 22:00 (Steer #7)
+
+Human-only criteria above are **WAIVED by owner 2026-09-10 — post-release playtest**:
+five newcomers, uncoached first30seconds, four04§6feel observations and32px badge
+recognition. Keep scripted first-serve time, viewport screenshots and accessibility
+checks; do not mislabel waivers as observed human PASS. No five-person wait remains.
+
+Real Google ClientID/consent is no longer a build blocker. Implement an explicit
+server dev identity provider (`TBH_AUTH_DEV=1`), refused in production. It must use
+the same session/link/restore paths and deterministic test accounts; flag off never
+simulates login. Verify minute5 shift/once-only credits, restore, reauth, ranking
+membership and admin MFA through this stub before marking affected criteria PASS
+with: "verified via dev identity stub; real Client ID pending — owner waiver
+2026-09-10". Existing signed fixtures remain evidence; this new runtime stub is not
+yet implemented or certified by this record.
+
+Queue: M4 emergency hotfix per Steer #6 → dev identity acceptance and other M4
+remainder → M6 → M7 → M8 → M9. Any-two-version comparison already passed E26.
+Independent full-diff review is required once per milestone closure and for auth,
+money/donation or registry changes, rather than every small slice. Keep
+`npm run verify` green at commits; do not repeat unaffected checks unnecessarily.
+Generation failures may retain explicit manifest placeholders; check:assets stays
+green. Inspection/lottery OFF; voluntary donation only; no paywall/dark patterns;
+device-persistent guest and exactly two account modes remain binding.
+
+| 2026-09-10 owner Steer #7 | Human-only criteria explicitly WAIVED; real OAuth replaced by required dev-stub acceptance (implementation pending), not fabricated consent. Hotfix policy resolved; E26 arbitrary comparison already complete. |
