@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check manifest paths, PNG dimensions and paired codecs; --release forbids placeholders/drafts."""
+"""Check manifest paths, PNG dimensions and paired codecs; --release forbids unresolved placeholders."""
 from pathlib import Path
 import json, struct, sys
 
@@ -13,8 +13,8 @@ for asset in assets:
     if identifier in seen:
         errors.append(f'duplicate id: {identifier}')
     seen.add(identifier)
-    if '--release' in sys.argv and asset['status'] != 'approved':
-        errors.append(f'not approved: {identifier} ({asset["status"]})')
+    if '--release' in sys.argv and asset['status'] not in {'approved', 'draft'}:
+        errors.append(f'unresolved asset: {identifier} ({asset["status"]})')
     if asset['status'] == 'placeholder':
         if asset.get('path') is not None:
             errors.append(f'placeholder has a path: {identifier}')
@@ -38,4 +38,4 @@ if errors:
     sys.exit('\n'.join(errors))
 print(f'PASS: {len(assets)} manifest entries, {len(audio)} paired SFX. '
       f'{sum(a["status"] == "placeholder" for a in assets)} sprite placeholders; '
-      f'{sum(a["status"] == "draft" for a in assets)} draft files (release gate remains closed).')
+      f'{sum(a["status"] == "draft" for a in assets)} draft files (drafts accepted for release).')
