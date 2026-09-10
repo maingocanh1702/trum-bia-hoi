@@ -413,6 +413,13 @@ export class ConfigRegistry {
     return { version, computedAt: now, through, activatesAt: candidate.effective_at,
       registryRevision: candidate.seq-1, players };
   }
+  assertForecastCurrent(actor: AdminActor, report: { version: string; registryRevision: number; computedAt: number; activatesAt: number }) {
+    const now=this.now();this.actor(actor,now);
+    const candidate=this.previewPublication(report.version,now);
+    const activation=candidate.effective_at>now?candidate.effective_at:null;
+    const expected=report.activatesAt>report.computedAt?report.activatesAt:null;
+    if(candidate.seq-1!==report.registryRevision || activation!==expected)throw Error('registry:staleForecast');
+  }
   private previewImpact(version: string, now: number) {
       const candidate = this.previewPublication(version, now), scope = candidate.scope, at = candidate.effective_at;
       const previous = scope?.previousVersion ? this.scope(scope.previousVersion)?.playerIds ?? [] : [];

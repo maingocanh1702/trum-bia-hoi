@@ -59,3 +59,12 @@ test('forecast cancellation releases its worker slot and empty audiences do not 
  assert.equal(report.status,'empty');assert.equal(report.totals,null);assert.deepEqual(report.members,[]);
  await assert.rejects(forecastEconomy(f.store,{...f.actor,expiresAt:NOW},version,new AbortController().signal),/invalidActor/);
 });
+
+test('a later scoped publication invalidates the report even while its default proposal base remains current',t=>{
+ const f=fixture(t);f.store.createPlayer('alice',42);const draft=f.propose();
+ const report=f.registry.forecastPlan(f.actor,draft.version,NOW+7*DAY);
+ assert.doesNotThrow(()=>f.registry.assertForecastCurrent(f.actor,report));
+ f.publish(f.scope('later-campaign',['alice'],{kind:'campaign',expiresAt:NOW+DAY}));
+ assert.equal(f.registry.latest().version,draft.base_version);
+ assert.throws(()=>f.registry.assertForecastCurrent(f.actor,report),/staleForecast/);
+});

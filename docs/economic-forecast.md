@@ -68,3 +68,12 @@ scenario alongside the draft, keeps Vietnamese/English labels and clears results
 on identity/version change. Existing approval/publication rules are unchanged.
 Verify real worker/HTTP authorization, unchanged source DB, cancellation, scope
 expiry/removal, conservation and browser report display before closing this slice.
+
+Review correction: before delivery, revalidate the live proposal, publication
+revision and scheduled activation as well as the admin session/context. A publish
+or changed schedule during computation returns409 instead of an obsolete report.
+Player activity after the backup remains outside the explicitly captured scenario;
+it does not turn a point-in-time forecast into a continuously updated projection.
+The concurrency regression uses two independent HTTP connections, receives429 while
+one worker is live, then proves publication→409 and logout→401 on that worker's
+response. Mobile numeric cells never wrap inside an amount.

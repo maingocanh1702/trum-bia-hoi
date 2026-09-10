@@ -349,3 +349,5 @@ rows. Follow owner queue M4→M6→M7→M8→M9; defer extra M5 breadth/performa
 | 2026-09-10 | v0.46.1 | Advanced gate13367c1 verified: fresh30-day seed42/99 reachLP4 and exactly reproduce k3.483282/3.318249≤3.5;345tests/config zero warnings/build/10standard cohorts/15rush PASS. Independent review no actionable findings. No economy retuning; M3 criterionPASS,6/12/OPEN. Next protected M4 forecast reporting/UI. |
 
 | 2026-09-10 | v0.47.0 | Protected7day forecast worker/HTTP/admin VI/EN report implemented from an isolated SQLite backup;3server cases and one real browser report PASS. Full verification/review running. M4 stays11/18OPEN; observed VND, emergency and remaining account/eligibility/locale acceptance remain. |
+
+| 2026-09-10 | v0.47.0 correction | Review P2: live publication/registry/schedule revalidated before forecast delivery. Real overlapping HTTP tests now deterministically prove busy429, publication409 and logout401. Mobile amounts keep digits on one line. Final full verify/review running; M4 remains11/18. |

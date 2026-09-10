@@ -504,5 +504,6 @@
   "admin.forecast.closingCoins": "Closing balance",
   "admin.forecast.daily": "Daily breakdown",
   "admin.forecast.day": "Day",
-  "admin.forecast.keys": "Keys affecting the seven-day window"
+  "admin.forecast.keys": "Keys affecting the seven-day window",
+  "admin.error.staleForecast": "Configuration changed during simulation. Refresh the proposal and rerun the scenario."
 }

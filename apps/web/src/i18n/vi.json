@@ -504,5 +504,6 @@
   "admin.forecast.closingCoins": "Số dư cuối kỳ",
   "admin.forecast.daily": "Chi tiết theo ngày",
   "admin.forecast.day": "Ngày",
-  "admin.forecast.keys": "Tham số có tác động trong 7 ngày"
+  "admin.forecast.keys": "Tham số có tác động trong 7 ngày",
+  "admin.error.staleForecast": "Cấu hình đã thay đổi trong lúc mô phỏng. Làm mới đề xuất và chạy lại dự báo."
 }

@@ -1,6 +1,6 @@
 import { test, type TestContext } from 'node:test';
 import assert from 'node:assert/strict';
-import { createServer } from 'node:http';
+import { createServer, request as httpRequest } from 'node:http';
 import { generateKeyPairSync, sign } from 'node:crypto';
 import { chmodSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -61,7 +61,7 @@ async function fixture(t: TestContext, enabled = true, https = false) {
     }
     return g.cookie!;
   };
-  return { dir, file, accounts, setAccounts, store, open, db, call, google, login, get now() { return now; }, set now(v: number) { now = v; } };
+  return { dir, file, accounts, setAccounts, store, open, db, call, google, login, url, origin, get now() { return now; }, set now(v: number) { now = v; } };
 }
 
 test('RFC6238 published SHA1 vectors match six-digit authenticator codes, including beyond2038', () => {
@@ -282,11 +282,25 @@ test('forecast HTTP accepts only authenticated version references and rechecks t
  assert.equal((await f.call('/admin/forecast',{version,seed:42},fresh)).status,400);
  assert.equal((await f.call('/admin/forecast',{version},fresh,{'X-TBH-Admin-Context':'wrong'})).status,409);
  const result=await f.call('/admin/forecast',{version},fresh);assert.equal(result.status,200);assert.equal(result.data.audiencePlayers,1);assert.equal(result.data.changedPlayers,1);assert.ok(result.data.totals.candidate.faucet>0);assert.equal(result.data.totals.delta.faucet,result.data.totals.candidate.faucet-result.data.totals.baseline.faucet);
- const pending=f.call('/admin/forecast',{version},fresh);
- // A second request is handled while the forecast worker is live, then revocation blocks delivery.
- let busy=false;
- for(let i=0;i<30&&!busy;i++){await new Promise(r=>setTimeout(r,20));busy=(await f.call('/admin/forecast',{version},fresh)).status===429;}
- assert.ok(busy);assert.equal((await f.call('/admin/auth/logout',{},fresh)).status,200);
- assert.equal((await pending).status,401);
+ const competing=async(v:string)=>{
+  const context=f.store.adminAuth.context(fresh.split('=')[1]);
+  const post=()=>new Promise<number>((resolve,reject)=>{
+   const request=httpRequest(f.url+'/admin/forecast',{method:'POST',agent:false,headers:{Origin:f.origin,Cookie:fresh,'Content-Type':'application/json','X-TBH-Admin-Context':context}},response=>{
+    response.resume();response.once('end',()=>resolve(response.statusCode!));
+   });request.once('error',reject);request.end(JSON.stringify({version:v}));
+  });
+  const requests=[post(),post()];
+  const first=await Promise.race(requests.map((request,index)=>request.then(status=>({status,index}))));
+  assert.equal(first.status,429);return {pending:requests[1-first.index]};
+ };
+ // Independent connections guarantee overlapping requests; no timing-sensitive fetch polling.
+ const stale=await competing(version);
+ assert.equal((await f.call('/admin/approve',{version},fresh)).status,200);
+ assert.equal((await f.call('/admin/publish',{version},fresh)).status,200);
+ assert.equal(await stale.pending,409);
+ const newer=(await f.call('/admin/draft-source',undefined,fresh)).data;newer.snapshot.menu.bia.price++;
+ const next=await f.call('/admin/proposals',{key:'forecast-after-publish',baseVersion:newer.baseVersion,snapshot:newer.snapshot,reason:'Recheck revoked session'},fresh);
+ const revoked=await competing(next.data.version);
+ assert.equal((await f.call('/admin/auth/logout',{},fresh)).status,200);assert.equal(await revoked.pending,401);
  assert.equal(f.store.read('forecast-player').world.completedShifts,0);
 });

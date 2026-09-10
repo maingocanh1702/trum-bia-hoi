@@ -155,8 +155,8 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
           const cancel = new AbortController(), abort = () => cancel.abort();res.once('close',abort);
           try {
             const report = await forecastEconomy(store,actor,input.version,cancel.signal);
-            auth.actor(token,directory());if(context !== auth.context(token))throw Error('admin:accountChanged');
-            reply(200,report);
+            const current=auth.actor(token,directory());if(context !== auth.context(token))throw Error('admin:accountChanged');
+            registry.assertForecastCurrent(current,report);reply(200,report);
           } catch(error) {if(!cancel.signal.aborted)throw error;} finally {res.removeListener('close',abort);} return;
         }
         if (req.method === 'POST' && path === '/admin/impact') {
@@ -258,7 +258,7 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
         'registry:invalidActor': 401, 'registry:forbidden': 403, 'registry:distinctApprover': 403,
         'store:heartbeatClock': 400, 'registry:missingVersion': 404, 'registry:missingProposal': 404, 'registry:rateLimited': 429,
         'registry:staleBase': 409, 'registry:scheduleConflict': 409, 'registry:keyConflict': 409,
-        'registry:forecastBusy': 429, 'registry:forecastTimeout': 503, 'registry:forecastCancelled': 408, 'registry:forecastUnavailable': 503,
+        'registry:staleForecast': 409, 'registry:forecastBusy': 429, 'registry:forecastTimeout': 503, 'registry:forecastCancelled': 408, 'registry:forecastUnavailable': 503,
         'registry:staleImpact': 409, 'registry:scopeConflict': 409, 'registry:invalidTicket': 409, 'registry:alreadyPublished': 409, 'registry:missingScope': 404, 'registry:invalidScope': 400, 'registry:invalidExpiry': 400,
         'registry:alreadyApproved': 409, 'registry:approvalRequired': 409,
       };
