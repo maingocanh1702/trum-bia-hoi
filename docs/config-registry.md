@@ -17,7 +17,7 @@ Scoped overrides/compensation, impact forecasts and emergency review remain. Pub
 | Schedule | Default A next VN day; league/Life Path/ledgers next common season boundary. B next shift except risk/locations next day; C immediate. Explicit delay may be later, never earlier. |
 | Queued versions | Default versions form one optimistic-concurrency chain. Stale base or activation before its predecessor is rejected; rebase the draft explicitly. |
 | Active shift/retry | Select registry only at creation/opening. Engine owns per-shift pins; replay and repeated commands retain original results/configs. Publishing never rewrites a running world. |
-| Rollback | Propose an earlier snapshot under a new version and the same approval/schedule rules. No update/delete of history. |
+| Rollback | Propose an earlier snapshot under a new version and the same approval/schedule rules. It must retain threshold groups installed on its base; incompatible deletion is rejected. No update/delete of history. |
 | Heartbeat configuration | Existing leases use their pinned config. The scheduler follows the earliest durable lease and re-arms after heartbeat, including after a shorter interval is published. |
 | Alerts | `ConfigPublished` is durable and available to a future ops delivery worker; no external message is sent without owner authorization. |
 
@@ -40,3 +40,5 @@ No new gameplay numbers, seed changes, engine formulas or performance work in th
 | 2026-09-10 browser editor | `/admin` adds author-bound drafts, JSON diff using shared Base scaling, separate approval/publication, historical rollback draft and audit. Detail permissions derive from the existing canonical role gate; mutations still revalidate. Context-bound requests reject identity switches.321tests/8admin/10remote browser/config/build pass; independent review pending. |
 
 | 2026-09-10 editor verified |56a0a44 browser GIS/TOTP/editor workflow verified:321engine/server,11admin/10remote browser, config/build PASS and final review CLEAN. Context binding prevents stale identity actions; durable drafts/retries and snapshot replacement regressions pass. M4 now11/18 OPEN; scopes/full admin and live setup remain. See admin-editor.md. |
+
+| 2026-09-10 threshold admission | Validation distinguishes old replay snapshots from new admin proposals: reject deletion of installed invitation thresholds. Revalidate at the shared preview/publication boundary to fence already-approved pre-fix drafts; old snapshots and exact publication receipts remain readable. Regression3cases red-before/green-after;48focused/config/build PASS, final review/full suite pending. No engine or economic values changed. |

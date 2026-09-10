@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { AddressInfo } from 'node:net';
 import { setTimeout as delay } from 'node:timers/promises';
-import { config, Game, loadConfig, seasonWindow, type Config } from '@tbh/engine';
+import { config, configContent, Game, loadConfig, seasonWindow, type Config } from '@tbh/engine';
 import { GameStore } from '../src/store';
 import { createGameServer } from '../src/http';
 import { ConfigRegistry, registryPolicy, type AdminActor } from '../src/registry';
@@ -230,4 +230,38 @@ test('Game Admin publishes departure invitation thresholds without repricing a l
   assert.equal(f.store.read('prompt-existing').configVersion, existing.configVersion);
   assert.equal(f.store.configSnapshot(old._meta.version), original);
   assert.deepEqual(next.menu, config.values.menu); assert.deepEqual(next.k, config.values.k);
+});
+
+for (const scoped of [false, true]) test(`an admin cannot delete existing invitation thresholds from a ${scoped ? 'scoped' : 'default'} proposal`, t => {
+  const f = fixture(t), who = f.actor('game'); f.store.createPlayer('threshold-player', 42);
+  const raw = structuredClone(config.raw); delete (raw.onboarding.loginPrompt as any).leaveProgress;
+  // The replay loader deliberately accepts an old shape; proposal admission must be stricter.
+  assert.doesNotThrow(() => loadConfig(raw));
+  const before = f.db.prepare('SELECT snapshot FROM configs ORDER BY version').all();
+  assert.throws(() => f.registry.propose(who, { key: 'delete-thresholds', baseVersion: config.version, snapshot: raw, reason: 'Remove threshold group',
+    ...(scoped ? { scope: { kind: 'segment' as const, id: 'group', playerIds: ['threshold-player'], priority: 0, expiresAt: null, previousVersion: null, ticketId: null } } : {}) }), /config:onboarding.loginPrompt:keys/);
+  assert.deepEqual(f.db.prepare('SELECT snapshot FROM configs ORDER BY version').all(), before);
+  assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM registry_proposals').get()!.n, 0);
+  assert.equal(f.registry.latest().version, config.version);
+  assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM registry_audit WHERE type='ConfigProposed'").get()!.n, 0);
+});
+
+test('an approved threshold-deletion draft from before the fix cannot preview or publish after restart', t => {
+  const f = fixture(t), who = f.actor('game'), version = 'pre-fix-threshold-deletion';
+  const raw = structuredClone(config.raw); delete (raw.onboarding.loginPrompt as any).leaveProgress; raw._meta.version = version;
+  const reason = 'Pre-fix approved proposal', fingerprint = JSON.stringify({ baseVersion: config.version, config: configContent(loadConfig(raw)), reason, effective: 'immediate' });
+  // Immutable rows shaped exactly like a draft admitted by the previous release.
+  f.db.prepare('INSERT INTO configs VALUES (?,?)').run(version, JSON.stringify(raw));
+  f.db.prepare('INSERT INTO registry_proposals VALUES (?,?,?,?,?,?,?,?,?)').run(version, 'legacy-draft', config.version, fingerprint, who.subject,
+    JSON.stringify(['onboarding.loginPrompt.leaveProgress']), reason, 'immediate', f.now);
+  f.db.prepare('INSERT INTO registry_approvals VALUES (?,?,?)').run(version, who.subject, f.now);
+  f.store.createPlayer('old-pin-player', 42); const before = f.store.read('old-pin-player');
+  f.open(); const registry = new ConfigRegistry(f.db, () => f.now);
+  assert.throws(() => registry.impact(who, version), /config:onboarding.loginPrompt:keys/);
+  assert.throws(() => registry.publish(who, version), /config:onboarding.loginPrompt:keys/);
+  assert.equal(registry.latest().version, config.version);
+  assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM registry_publications').get()!.n, 1);
+  assert.equal(f.db.prepare("SELECT COUNT(*) AS n FROM registry_audit WHERE type='ConfigPublished'").get()!.n, 0);
+  assert.deepEqual(f.store.read('old-pin-player'), before);
+  assert.equal(registry.config(version).raw._meta.version, version); // Historical snapshot remains readable.
 });

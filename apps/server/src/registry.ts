@@ -139,6 +139,8 @@ export class ConfigRegistry {
   }
   private validate(original: Config, base: Config) {
     heartbeatTiming(original);
+    // Replay accepts older snapshots; new proposals cannot delete an installed threshold group.
+    if ('leaveProgress' in base.raw.onboarding.loginPrompt && !('leaveProgress' in original.raw.onboarding.loginPrompt)) throw Error('config:onboarding.loginPrompt:keys');
     const seedVersion = this.db.prepare('SELECT version FROM registry_publications ORDER BY seq LIMIT 1').get()!.version;
     const seed = this.config(String(seedVersion));
     if (original.values.shift.dayRollover.tz !== seed.values.shift.dayRollover.tz || original.values.k.value < seed.values.k.band[0] || original.values.k.value > seed.values.k.band[1]) throw Error('registry:bindingRange');
@@ -350,6 +352,7 @@ export class ConfigRegistry {
   private publicationAt(draft: Proposal, now: number) {
     const scope = this.scope(draft.version), base = this.config(draft.base_version), policy = this.policy(JSON.parse(draft.keys), base, scope);
     this.currentBase(draft, scope);
+    this.validate(this.config(draft.version), base); // Also fence drafts admitted before a validation fix.
     const latest = scope ? this.predecessor(scope) : this.latest();
     const at = scheduledAt(now, draft.effective, policy, base);
     if (scope?.expiresAt !== null && scope?.expiresAt !== undefined && scope.expiresAt <= at) throw Error('registry:invalidExpiry');
