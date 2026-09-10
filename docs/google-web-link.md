@@ -37,3 +37,13 @@ independent native Codex review. No economy/sim change; reuse E13 simulation evi
 | 2026-09-10 | Pin the bounded RemoteGame Google-link handoff before its account UI and conflict-resolution successors. No milestone completion claimed. |
 | 2026-09-10 review correction | A lost canonical-session read now retains a credential-free reconciliation flag. Reconnect retries only the session read before gameplay; commands/another link wait until identity is known. This fixes stale guest status after a committed Google cookie rotation. |
 | 2026-09-10 ambiguity correction | Reconciliation first renews the existing server challenge, then reads identity. Existing signInGoogle transaction rechecks the nonce, so a still-verifying old POST cannot commit after this fence; a confirmed guest can resume and retry with a fresh challenge. No new endpoint/schema is needed. A real-SDK HTTP regression in apps/server/test/google.test.ts pins the held-verification race; browser regression pins request ordering and late credential refusal. |
+
+## Verified transport checkpoint
+
+`3c369aa` passes351engine/server,33remote browser (12link cases),config/build/typecheck.
+The final independent full-base review reports no actionable introduced defects.
+Two earlier review findings are fixed: stale guest state after a failed identity read,
+and a guest read overtaking pending verification. The existing nonce transaction is
+the authoritative cancellation boundary; no new server runtime or endpoint is needed.
+Receipt `.qa/google-link-verification.json`. No Google UI, explicit save switching,
+local upload or full F25/M4 acceptance is claimed; M4 stays12/18 OPEN.

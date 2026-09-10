@@ -5,6 +5,21 @@
 
 ---
 
+## Google guest-link transport verified — 2026-09-10
+
+Code `3c369aa`: the web transport queues Google cookie rotation after acknowledged
+commands and confirms the same player without replacing the journal, shift or history.
+Lost responses reconcile without credential replay; renewal of the existing server
+nonce prevents a still-verifying old request from committing after a guest read.
+Current menu presence is confirmed before verification; existing-account conflicts
+preserve both saves. No new endpoint/schema, engine rule or economy value changed.
+351engine/server +33remote browser tests and config/build/typecheck PASS. Native
+full-base review has no actionable findings after both reconciliation defects were
+fixed. Receipt `.qa/google-link-verification.json`; contract `docs/google-web-link.md`.
+F25/M4 remain OPEN (12/18): this is the transport prerequisite, not the Google panel
+or save-choice UI. Next: Google panel and explicit conflict/recovery, then configured
+three-benefit invitations and remaining M4→M6–M9. Live Client ID still unavailable.
+
 ## First-run locale verified — 2026-09-10
 
 Code `5871453`: vi/en selection and acceptance precede game/save/session boot.

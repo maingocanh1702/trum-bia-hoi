@@ -247,3 +247,16 @@ See [first-run contract](../first-run-locale.md); verification/review are in pro
 | 2026-09-10 language entry | Moved welcome before boot and added explicit locale acceptance; full F25 and M4 acceptance remain open pending checks and remaining account flows. |
 
 | 2026-09-10 locale verified | 5871453 passes350engine/server,3final presentation,91local/21remote/19admin browser,config/build and native independent review. First-run locale acceptance PASS, including no pre-accept player creation and preserved legacy/live-shift identity; F25 still in progress for Google web, configured login prompts, claim/conflict and eligibility. Evidence: .qa/locale-entry-verification.json. |
+
+## Google guest-link transport checkpoint — 2026-09-10
+
+`RemoteGame` now retains the server identity and exposes challenge/link handoff.
+Queued commands finish before cookie rotation; a same-player session is reconciled
+without resetting the journal or live shift. Reconciliation renews the existing
+nonce before trusting guest status, preventing a still-verifying old request from
+committing afterward. Stored Google accounts with another save return conflict;
+this layer does not switch, merge or overwrite. See [transport contract](../google-web-link.md).
+
+| Date | Change |
+|---|---|
+| 2026-09-10 Google transport verified | 3c369aa passes351engine/server,33remote browser (12link cases),config/build/typecheck. Independent full-base review has no actionable findings after two reconciliation fixes. Evidence .qa/google-link-verification.json. Google panel, explicit save choice/recovery, invitations and eligibility remain; F25 in progress and M4 unchanged12/18 OPEN. No new server auth runtime/endpoint, local upload or live Google configuration. |

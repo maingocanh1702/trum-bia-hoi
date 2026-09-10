@@ -1,6 +1,6 @@
 # Milestone closure report — M0–M5
 
-2026-09-10 · implementation `5871453` · config2.0.1/rules24/schema10.
+2026-09-10 · implementation `3c369aa` · config2.0.1/rules24/schema10.
 Authority: [ROADMAP §mốc M0–M9](../06-ROADMAP-trum-bia-hoi.md), including the
 acceptance sections it references. PASS means the whole stated criterion has
 supporting evidence; FAIL includes missing implementation or missing acceptance
@@ -108,6 +108,15 @@ No new gameplay test or80MB run was added solely to make this report green.
   timer; paused-clock attendance/recovery tests pass without relaxing game clocks.
   Independent review found no introduced actionable defect and passed3presentation
   tests. Engine/runtime/sim/config unchanged; E13 k/rush evidence retained.
+
+- **E16** same-player Google-link transport `3c369aa`:
+  `.qa/google-link-verification.json`:351engine/server and33remote browser tests,
+  config/build/typecheck PASS. Twelve browser cases plus held real-SDK verification
+  cover outbox/shift retention, response loss, nonce fencing, current menu pause,
+  failed/cancelled attempts and conflicting/mismatched accounts. Final independent
+  full-base review has no actionable findings after both reconciliation fixes.
+  No Google panel/save-choice UI or complete account criterion is claimed. M4 stays
+  12/18 OPEN; server auth runtime/engine/economy unchanged and E13 retained.
 
 ## Closure decision
 
@@ -332,3 +341,5 @@ No public upload,80MB tuning, engine/config changes or merge/push/deploy.
 | 2026-09-10 | E14 protected coin forecast verified at9900505; M4 remains11/18 because the remaining complete exit criteria are unchanged. No economy retuning; advanced k policy remains E13. |
 
 | 2026-09-10 locale verified | E15 at5871453 closes the first-run locale criterion; M4 now12/18 PASS/OPEN. All other milestone verdicts unchanged; Google web/claim/invitations and full-game acceptance remain. |
+
+| 2026-09-10 Google transport verified | E16 at3c369aa adds verified same-player Google/outbox handoff and nonce-fenced reconciliation. No complete UI/account criterion is closed; all milestone counts stay unchanged, including M4 12/18 OPEN. |
