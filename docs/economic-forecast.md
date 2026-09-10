@@ -30,3 +30,5 @@ ordinary k/rush and independent review before marking this kernel complete.
 | Date | Change |
 |---|---|
 | 2026-09-10 | Simulator foundation contract; full forecast UI/M4 remains open. |
+
+| 2026-09-10 | Review correction: retain attained location ID, read its current multiplier after each pin, and renew that identity if no higher eligible location exists. Regression first failed (Ngõ Chợ instead of Bến Xe), then passed with full command replay. Ordinary/rush passed at foundation; runtime and those simulators are unchanged by this correction. |

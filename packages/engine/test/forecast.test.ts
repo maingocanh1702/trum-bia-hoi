@@ -43,7 +43,7 @@ test('forecast rejects unsupported horizons and ambiguous timelines before proje
  assert.equal(source.log.length,0);
 });
 
-test('an existing signed lease refunds principal separately from service income and customer penalties',()=>{
+test('an existing signed lease separates returned principal and renews by location identity after multiplier tuning',()=>{
  const fixture=changed('forecast-lease-fixture',raw=>{
   assert.ok(isEconomy2(raw));raw.shift.startingCoinsBase=1000000;
   raw.lifePath[1].lifetimeBase=1;raw.lifePath[1].requires=raw.lifePath[1].requires!.map(()=>'LP0');
@@ -63,4 +63,12 @@ test('an existing signed lease refunds principal separately from service income 
  assert.equal(events.filter(e=>e.type==='lease_deposit_refunded').length,1);
  assert.equal(result.report.totals.penalties,events.filter(e=>e.type==='order_expired'||e.type==='shipper_missed').reduce((n,e)=>n+Number(e.data.penalty),0));
  assert.equal(encodeSave(source),before);assert.deepEqual(decodeSave(encodeSave(result.game)).world,result.game.world);
+ const raw=structuredClone(fixture.raw);raw._meta.version='forecast-retuned-locations';
+ for(const location of raw.locations.list)location.mult+=1;
+ const retuned=loadConfig(raw),next=projectEconomy(source,[{from:0,config:retuned}],1);
+ const opening=next.game.log.slice(source.log.length).find(e=>e.command.type==='startShift'&&e.result.ok)!;
+ assert.equal(opening.configVersion,retuned.version);assert.ok(opening.at<lease.expiresAt);
+ const renewal=next.game.log.find(e=>e.at>=lease.expiresAt&&e.command.type==='rentLocation'&&e.result.ok)!;
+ assert.equal((renewal.command as Extract<Command,{type:'rentLocation'}>).locationId,'ben_xe');
+ assert.equal(encodeSave(source),before);assert.deepEqual(decodeSave(encodeSave(next.game)).world,next.game.world);
 });

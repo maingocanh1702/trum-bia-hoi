@@ -10,7 +10,7 @@ export const STEP_MS=100, MANAGEMENT_MS=1000, MAX_DAY_STEPS=864000;
 
 export function createManagementPolicy(game:Game,send:(command:Command)=>void) {
   const w=game.world;
-  let highestLocationMult=game.config.values.locations.list.find(l=>l.id===w.location)!.mult;
+  let attainedLocationId=w.location;
   const reserve = () => {const c=game.config.values;return DISHES.filter(d => c.menu[d].unlock.kitchenLevel <= w.equipment.kitchen)
     .reduce((sum, d) => sum + c.inventory.bulkSize * c.menu[d].bulkCost, 0);};
   const affordable = (cost: number) => cost + reserve() <= w.coins;
@@ -50,12 +50,14 @@ export function createManagementPolicy(game:Game,send:(command:Command)=>void) {
       if (!flyerQuote(w, config).useReason) send({ type: 'activateFlyer', shiftId: w.shift!.id });
     }
     if (w.phase === 'resting' && !w.lease) {
+      const attained=c.locations.list.find(l=>l.id===attainedLocationId);
+      if(!attained)throw Error('policy:locationMissing');
       const ordered = c.locations.list.filter(l => l.id !== c.locations.fallback).sort((a, b) => a.mult - b.mult);
-      const target = ordered.find(l => l.mult > highestLocationMult && leaseQuote(w, config, l.id).requiredLifePath <= w.lifePath)
-        ?? ordered.find(l => l.mult === highestLocationMult);
+      const target = ordered.find(l => l.mult > attained.mult && leaseQuote(w, config, l.id).requiredLifePath <= w.lifePath)
+        ?? ordered.find(l => l.id === attainedLocationId);
       if (target) {
         const q = leaseQuote(w, config, target.id);
-        if (q.ok && affordable(q.cost)) { send({ type: 'rentLocation', locationId: target.id, leaseId: q.leaseId, maxCost: q.cost }); highestLocationMult = target.mult; }
+        if (q.ok && affordable(q.cost)) { send({ type: 'rentLocation', locationId: target.id, leaseId: q.leaseId, maxCost: q.cost }); attainedLocationId = target.id; }
       }
     }
   }
