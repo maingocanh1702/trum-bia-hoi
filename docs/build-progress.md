@@ -2696,3 +2696,8 @@ Local5174/5175 are verified at the pinned `playable-v0` checkout, config2.0.2, w
 ### Steer15 (1a–d) — UI copy, 2026-09-11
 
 Kitchen upgrade value and raw ingredient labels are implemented in VI/EN. Slots, portions, unlocks, speed, phone gate and QR multiplier derive from existing config. No engine/config changes. Focused label/browser results and full verify receipt are recorded in implementation-tracker; remaining scope is13 equipment sprites then normal config2.0.3 publication to the pinned preview.
+
+
+## Steer15 (2) — equipment drafts, 2026-09-11
+
+All13 requested per-level sprites generated via built-in imagegen and exported through the existing keyed-alpha/native-crop/token-palette pipeline: washer2–5, cooler2–5, stall1–5. Manifest paths resolve with source, draft status and SHA-256; no fallback needed for this batch.132entries/121drafts/3remaining placeholders; check:assets PASS. Prompt/export provenance and128/64/32px contact sheet are in the asset checklist. Full verify PASS406/406, standard10cohorts k2.5644–2.9168,15rush cases, career42/99 k3.46546/3.39320. Per-level upgrade-image browser regression PASS; independent source/art review CLEAN. The playable smoke passed360×740 and1280×720;390×844 is retrying after a test-only popup/receipt synchronization correction. Tag and preview cutover remain gated on that result. No engine/config or kitchen art changes.

@@ -424,66 +424,70 @@
     {
       "id": "washer-lv2",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/washer-lv2-imagegen-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        224,
+        176
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "status": "draft",
+      "review_notes": "Steer15 2026-09-11: imagegen draft, genuine RGBA alpha after existing green-key export; native crop, bottom anchor, fixed token palette and 2px outline checked. Source/prompt/checksums in equipment-upgrades-2026-09-11-imagegen.json. Owner accepts drafts; no polish reroll.",
+      "sha256": "72a9c20a2f839df8e96eb95821bd8045e370a648cb91a70b16b06e912d2f66ff"
     },
     {
       "id": "washer-lv3",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/washer-lv3-imagegen-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        256,
+        192
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "status": "draft",
+      "review_notes": "Steer15 2026-09-11: imagegen draft, genuine RGBA alpha after existing green-key export; native crop, bottom anchor, fixed token palette and 2px outline checked. Source/prompt/checksums in equipment-upgrades-2026-09-11-imagegen.json. Owner accepts drafts; no polish reroll.",
+      "sha256": "00d4ad50c1e632b5f683cb8b49413b93d43e0939fd4cfaeaccce08484ecb741b"
     },
     {
       "id": "washer-lv4",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/washer-lv4-imagegen-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        320,
+        224
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "status": "draft",
+      "review_notes": "Steer15 2026-09-11: imagegen draft, genuine RGBA alpha after existing green-key export; native crop, bottom anchor, fixed token palette and 2px outline checked. Source/prompt/checksums in equipment-upgrades-2026-09-11-imagegen.json. Owner accepts drafts; no polish reroll.",
+      "sha256": "8e66b8b5dd3140ee70c3151ccefee91189f6d4d81c1cc054f3025fb40495cfdf"
     },
     {
       "id": "washer-lv5",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/washer-lv5-imagegen-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        384,
+        256
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "status": "draft",
+      "review_notes": "Steer15 2026-09-11: imagegen draft, genuine RGBA alpha after existing green-key export; native crop, bottom anchor, fixed token palette and 2px outline checked. Source/prompt/checksums in equipment-upgrades-2026-09-11-imagegen.json. Owner accepts drafts; no polish reroll.",
+      "sha256": "ef1c33315ed6defd21bb417d3edcf1f08cfd4a7691197c0a2fce2fbb75df2355"
     },
     {
       "id": "cooler-lv1",
@@ -504,146 +508,155 @@
     {
       "id": "cooler-lv2",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/cooler-lv2-imagegen-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        224,
+        176
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "status": "draft",
+      "review_notes": "Steer15 2026-09-11: imagegen draft, genuine RGBA alpha after existing green-key export; native crop, bottom anchor, fixed token palette and 2px outline checked. Source/prompt/checksums in equipment-upgrades-2026-09-11-imagegen.json. Owner accepts drafts; no polish reroll.",
+      "sha256": "8f5a5ab279ba46451d0bf204df722df33b00d1f62df0b2e8d4691b4a89cb851f"
     },
     {
       "id": "cooler-lv3",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/cooler-lv3-imagegen-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        224,
+        256
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "status": "draft",
+      "review_notes": "Steer15 2026-09-11: imagegen draft, genuine RGBA alpha after existing green-key export; native crop, bottom anchor, fixed token palette and 2px outline checked. Source/prompt/checksums in equipment-upgrades-2026-09-11-imagegen.json. Owner accepts drafts; no polish reroll.",
+      "sha256": "e4c16a8c2bf944b3f8568344e1b17ce1388d9bfa499223179e0a7d5665daac08"
     },
     {
       "id": "cooler-lv4",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/cooler-lv4-imagegen-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        352,
+        224
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "status": "draft",
+      "review_notes": "Steer15 2026-09-11: imagegen draft, genuine RGBA alpha after existing green-key export; native crop, bottom anchor, fixed token palette and 2px outline checked. Source/prompt/checksums in equipment-upgrades-2026-09-11-imagegen.json. Owner accepts drafts; no polish reroll.",
+      "sha256": "168a7274742d9eacd9ef60bf4ac6b21ee7bfc14ee469a2fa9ea6c7d9df21c708"
     },
     {
       "id": "cooler-lv5",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/cooler-lv5-imagegen-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        448,
+        288
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Neutral placeholder; metadata ID remains in manifest. Replace progressively after art QA."
+      "status": "draft",
+      "review_notes": "Steer15 2026-09-11: imagegen draft, genuine RGBA alpha after existing green-key export; native crop, bottom anchor, fixed token palette and 2px outline checked. Source/prompt/checksums in equipment-upgrades-2026-09-11-imagegen.json. Owner accepts drafts; no polish reroll.",
+      "sha256": "85b8e383a9776e01607e323d0384d457f6614dad379998b27c62323b86c4da57"
     },
     {
       "id": "stall-lv1",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/stall-lv1-imagegen-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        256,
+        176
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Playable-v0: registered table-lv1-empty is the visible fallback. Imagegen attempts exec-67a83283-1624-420e-810c-2de9846b1291.png and exec-28150f32-2c98-4cb1-9984-5cd10c30c5ce.png both failed native alpha (RGB with baked checkerboard); originals preserved in Codex generated_images. Placeholder explicitly accepted by owner Steer12; replace after transparent export succeeds."
+      "status": "draft",
+      "review_notes": "Steer15 2026-09-11: imagegen draft, genuine RGBA alpha after existing green-key export; native crop, bottom anchor, fixed token palette and 2px outline checked. Source/prompt/checksums in equipment-upgrades-2026-09-11-imagegen.json. Owner accepts drafts; no polish reroll.",
+      "sha256": "b787b4d4b21d3b47de9cf691ce4b09a2a8a013c00697ba80356dcff4f329c531"
     },
     {
       "id": "stall-lv2",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/stall-lv2-imagegen-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        256,
+        224
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Playable-v0: registered table-lv1-empty is the visible fallback. Imagegen attempts exec-67a83283-1624-420e-810c-2de9846b1291.png and exec-28150f32-2c98-4cb1-9984-5cd10c30c5ce.png both failed native alpha (RGB with baked checkerboard); originals preserved in Codex generated_images. Placeholder explicitly accepted by owner Steer12; replace after transparent export succeeds."
+      "status": "draft",
+      "review_notes": "Steer15 2026-09-11: imagegen draft, genuine RGBA alpha after existing green-key export; native crop, bottom anchor, fixed token palette and 2px outline checked. Source/prompt/checksums in equipment-upgrades-2026-09-11-imagegen.json. Owner accepts drafts; no polish reroll.",
+      "sha256": "a3245e4c1d1eed56edb339c4a13d8d589cef229a4270aa0c4d2ff23f318df1a4"
     },
     {
       "id": "stall-lv3",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/stall-lv3-imagegen-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        304,
+        256
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Playable-v0: registered table-lv1-empty is the visible fallback. Imagegen attempts exec-67a83283-1624-420e-810c-2de9846b1291.png and exec-28150f32-2c98-4cb1-9984-5cd10c30c5ce.png both failed native alpha (RGB with baked checkerboard); originals preserved in Codex generated_images. Placeholder explicitly accepted by owner Steer12; replace after transparent export succeeds."
+      "status": "draft",
+      "review_notes": "Steer15 2026-09-11: imagegen draft, genuine RGBA alpha after existing green-key export; native crop, bottom anchor, fixed token palette and 2px outline checked. Source/prompt/checksums in equipment-upgrades-2026-09-11-imagegen.json. Owner accepts drafts; no polish reroll.",
+      "sha256": "9e5aa5cf6c98994bf5b98f3c4aa96da1a11d2da49e7f7488ac995e036e14a3d5"
     },
     {
       "id": "stall-lv4",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/stall-lv4-imagegen-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        384,
+        256
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Playable-v0: registered table-lv1-empty is the visible fallback. Imagegen attempts exec-67a83283-1624-420e-810c-2de9846b1291.png and exec-28150f32-2c98-4cb1-9984-5cd10c30c5ce.png both failed native alpha (RGB with baked checkerboard); originals preserved in Codex generated_images. Placeholder explicitly accepted by owner Steer12; replace after transparent export succeeds."
+      "status": "draft",
+      "review_notes": "Steer15 2026-09-11: imagegen draft, genuine RGBA alpha after existing green-key export; native crop, bottom anchor, fixed token palette and 2px outline checked. Source/prompt/checksums in equipment-upgrades-2026-09-11-imagegen.json. Owner accepts drafts; no polish reroll.",
+      "sha256": "4ee5d95d32bffc2ecb5482209b4089cfeed06df43da2cbedc1a5f13bb02ba5fe"
     },
     {
       "id": "stall-lv5",
       "type": "sprite",
-      "path": null,
-      "source": "placeholder",
+      "path": "assets/stall-lv5-imagegen-v1.png",
+      "source": "imagegen_builtin",
       "dimensions": [
-        128,
-        128
+        480,
+        304
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
-      "status": "placeholder",
-      "review_notes": "Playable-v0: registered table-lv1-empty is the visible fallback. Imagegen attempts exec-67a83283-1624-420e-810c-2de9846b1291.png and exec-28150f32-2c98-4cb1-9984-5cd10c30c5ce.png both failed native alpha (RGB with baked checkerboard); originals preserved in Codex generated_images. Placeholder explicitly accepted by owner Steer12; replace after transparent export succeeds."
+      "status": "draft",
+      "review_notes": "Steer15 2026-09-11: imagegen draft, genuine RGBA alpha after existing green-key export; native crop, bottom anchor, fixed token palette and 2px outline checked. Source/prompt/checksums in equipment-upgrades-2026-09-11-imagegen.json. Owner accepts drafts; no polish reroll.",
+      "sha256": "816c17037ca34314a45b20ad1d15feac15fff042f6c119c258c3579995ac8f72"
     },
     {
       "id": "kitchen-lv1",

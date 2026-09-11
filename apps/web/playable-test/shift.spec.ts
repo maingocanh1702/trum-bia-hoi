@@ -38,11 +38,13 @@ test('default guest full shift', async ({ page, context }) => {
     for(const table of w.tables.filter((t:{order?:{state:string,items:{state:string}[]}})=>t.order&&['pending','grace'].includes(t.order.state)&&t.order.items.every(i=>i.state==='ready'))){
       // Table buttons persist when the order bubble disappears at its deadline.
       await page.locator(`[data-table-id="${table.id}"] .table-object`).click();const serve=page.getByRole('button',{name:'Phục vụ cả mâm',exact:true});
-      if(await serve.count()&&await serve.isEnabled())await serve.click();else await page.keyboard.press('Escape');
+      if(await serve.count()&&await serve.isEnabled())await purchase(page,serve);
+      // A cooldown/rejected order can leave its context panel open; dismiss it before the next table.
+      await page.keyboard.press('Escape');
     }
     if(!restored&&w.shift.stats.served>0){
       await page.getByRole('button',{name:'Nhập hàng',exact:true}).click();await expect(page.getByRole('button',{name:/Thùng Cấp Cứu/})).toHaveCount(0);await expect.poll(async()=>(await snapshot(page)).paused).toBe(true);
-      const before=await snapshot(page);const row=page.locator('.stock-row').first();const full=row.getByRole('button',{name:/^Đầy kho/});
+      const before=await snapshot(page);const row=page.locator('.stock-row').first();const full=row.getByRole('button',{name:/^(Mua bom )?Đầy kho/});
       if(await full.isEnabled()){await purchase(page,full);restocked=true;}
       await page.waitForTimeout(1500);const after=await snapshot(page);expect(after.staminaMs).toBe(before.staminaMs);expect(after.paused).toBe(true);
       await page.reload();await synced(page);expect((await snapshot(page)).shift.id).toBe(firstShift);expect((await snapshot(page)).playerId).toBe(playerId);restored=true;
@@ -55,7 +57,7 @@ test('default guest full shift', async ({ page, context }) => {
     }
     if(Object.entries(w.inventory).some(([dish,n])=>config.menu[dish].unlock.kitchenLevel<=w.equipment.kitchen&&typeof n==='number'&&n<=2)&&w.phase==='open'){
       await page.getByRole('button',{name:'Nhập hàng',exact:true}).click();
-      for(const row of await page.locator('.stock-row').all()){const full=row.getByRole('button',{name:/^Đầy kho/});if(await full.count()&&await full.isEnabled()){await purchase(page,full);restocked=true;}}
+      for(const row of await page.locator('.stock-row').all()){const full=row.getByRole('button',{name:/^(Mua bom )?Đầy kho/});if(await full.count()&&await full.isEnabled()){await purchase(page,full);restocked=true;}}
       await page.keyboard.press('Escape');
     }
     if(w.shift.stats.served>0&&await page.getByRole('button',{name:'Bỏ qua',exact:true}).isVisible())await page.getByRole('button',{name:'Bỏ qua',exact:true}).click();

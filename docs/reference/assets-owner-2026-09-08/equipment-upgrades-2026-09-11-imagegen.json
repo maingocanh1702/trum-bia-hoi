@@ -1,0 +1,898 @@
+{
+  "date": "2026-09-11",
+  "tool": "image_gen (built-in)",
+  "ownerDecision": "Steer15 step2: thirteen per-level equipment drafts, one accepted generation per asset, existing chroma-key/palette export, no kitchen changes.",
+  "assets": [
+    {
+      "id": "washer-lv2",
+      "dimensions": [
+        224,
+        176
+      ],
+      "description": "Create one paired aluminum-and-inox basin setup with a simple faucet and draining basket, still one active washing position but quicker and tidier than Lv1.",
+      "prompt": "Use case: stylized-concept. Generate exactly ONE standalone production pixel-art world-object sprite for Trum Bia Hoi, a nostalgic early-2000s Hanoi sidewalk beer management game. Image 1 is a STYLE REFERENCE ONLY: learn its crisp pixel clusters, warm dark outline, mint/cream highlights and scale; do NOT include the glass in this new object. Crisp chunky hand-pixelled clusters, hard edges, no dithering, no noisy microtexture, no painterly blur, no glossy mobile 3D. Camera consistent isometric-lite 28 degrees downward, front and right sides visible; upper-left lighting. Fully visible, centered, bottom-center ground contact, 8% padding. Two native-pixel dark plum-brown outline #3a2730, inox #c4cecb/#97a3a0/#69736f, aged wood #3a2a1c, cream #fff3d2, worn red #de4126; max four shade steps per material, sparse purposeful wear. Early-2000s mechanical design, no screens or real brands. No people, extra furniture, floating props, UI, lettering, labels, numbers, logos or watermark. No floor plane, cast/contact shadow outside the silhouette, reflections or glow. Render against a perfectly flat solid bright GREEN #00ff00 chroma-key background, including every enclosed gap between legs and racks, for the documented existing transparent sprite export pipeline. No green on the object itself. No checkerboard or gradient. ONE idle asset only, never a sheet. Asset washer-lv2. Create one paired aluminum-and-inox basin setup with a simple faucet and draining basket, still one active washing position but quicker and tidier than Lv1. Native production footprint 224x176.",
+      "generatedFile": "exec-5cd104d1-92d1-4f67-814a-9f527de108be.png",
+      "keyColor": "green",
+      "materials": [
+        "inox",
+        "beerFoam"
+      ],
+      "sourceSha256": "aca55326fdaedfcff1f02763485859bc282f73eac2b21744d3400f7a9ddbce35",
+      "rawPath": "assets/_raw/imagegen/equipment-upgrades-2026-09-11/washer-lv2.png",
+      "path": "assets/washer-lv2-imagegen-v1.png",
+      "palette": [
+        [
+          58,
+          39,
+          48
+        ],
+        [
+          137,
+          144,
+          142
+        ],
+        [
+          196,
+          206,
+          203
+        ],
+        [
+          219,
+          230,
+          227
+        ],
+        [
+          178,
+          170,
+          147
+        ],
+        [
+          255,
+          243,
+          210
+        ],
+        [
+          255,
+          255,
+          235
+        ]
+      ],
+      "sha256": "72a9c20a2f839df8e96eb95821bd8045e370a648cb91a70b16b06e912d2f66ff"
+    },
+    {
+      "id": "washer-lv3",
+      "dimensions": [
+        256,
+        192
+      ],
+      "description": "Create one scratched two-basin inox street-stall sink with faucet, visible drainboard and two parallel glass-washing positions. Larger and more capable than Lv2, still fully open and manual.",
+      "prompt": "Use case: stylized-concept. Generate exactly ONE standalone production pixel-art world-object sprite for Trum Bia Hoi, a nostalgic early-2000s Hanoi sidewalk beer management game. Image 1 is a STYLE REFERENCE ONLY: learn its crisp pixel clusters, warm dark outline, mint/cream highlights and scale; do NOT include the glass in this new object. Crisp chunky hand-pixelled clusters, hard edges, no dithering, no noisy microtexture, no painterly blur, no glossy mobile 3D. Camera consistent isometric-lite 28 degrees downward, front and right sides visible; upper-left lighting. Fully visible, centered, bottom-center ground contact, 8% padding. Two native-pixel dark plum-brown outline #3a2730, inox #c4cecb/#97a3a0/#69736f, aged wood #3a2a1c, cream #fff3d2, worn red #de4126; max four shade steps per material, sparse purposeful wear. Early-2000s mechanical design, no screens or real brands. No people, extra furniture, floating props, UI, lettering, labels, numbers, logos or watermark. No floor plane, cast/contact shadow outside the silhouette, reflections or glow. Render against a perfectly flat solid bright GREEN #00ff00 chroma-key background, including every enclosed gap between legs and racks, for the documented existing transparent sprite export pipeline. No green on the object itself. No checkerboard or gradient. ONE idle asset only, never a sheet. Asset washer-lv3. Create one scratched two-basin inox street-stall sink with faucet, visible drainboard and two parallel glass-washing positions. Larger and more capable than Lv2, still fully open and manual. Native production footprint 256x192.",
+      "generatedFile": "exec-47896ec1-a973-4387-984a-4188e15880a7.png",
+      "keyColor": "green",
+      "materials": [
+        "inox",
+        "beerFoam"
+      ],
+      "sourceSha256": "20a47732e0b622fd572369821801bba2d4df5edbda97c575ce796d6c96cc9da7",
+      "rawPath": "assets/_raw/imagegen/equipment-upgrades-2026-09-11/washer-lv3.png",
+      "path": "assets/washer-lv3-imagegen-v1.png",
+      "palette": [
+        [
+          58,
+          39,
+          48
+        ],
+        [
+          137,
+          144,
+          142
+        ],
+        [
+          196,
+          206,
+          203
+        ],
+        [
+          219,
+          230,
+          227
+        ],
+        [
+          178,
+          170,
+          147
+        ],
+        [
+          255,
+          243,
+          210
+        ],
+        [
+          255,
+          255,
+          235
+        ]
+      ],
+      "sha256": "00d4ad50c1e632b5f683cb8b49413b93d43e0939fd4cfaeaccce08484ecb741b"
+    },
+    {
+      "id": "washer-lv4",
+      "dimensions": [
+        320,
+        224
+      ],
+      "description": "Create one compact semi-automatic glass washer, waist-high inox cabinet, three circular washing slots, mechanical lever and drain tray. No screen, no futuristic controls.",
+      "prompt": "Use case: stylized-concept. Generate exactly ONE standalone production pixel-art world-object sprite for Trum Bia Hoi, a nostalgic early-2000s Hanoi sidewalk beer management game. Image 1 is a STYLE REFERENCE ONLY: learn its crisp pixel clusters, warm dark outline, mint/cream highlights and scale; do NOT include the glass in this new object. Crisp chunky hand-pixelled clusters, hard edges, no dithering, no noisy microtexture, no painterly blur, no glossy mobile 3D. Camera consistent isometric-lite 28 degrees downward, front and right sides visible; upper-left lighting. Fully visible, centered, bottom-center ground contact, 8% padding. Two native-pixel dark plum-brown outline #3a2730, inox #c4cecb/#97a3a0/#69736f, aged wood #3a2a1c, cream #fff3d2, worn red #de4126; max four shade steps per material, sparse purposeful wear. Early-2000s mechanical design, no screens or real brands. No people, extra furniture, floating props, UI, lettering, labels, numbers, logos or watermark. No floor plane, cast/contact shadow outside the silhouette, reflections or glow. Render against a perfectly flat solid bright GREEN #00ff00 chroma-key background, including every enclosed gap between legs and racks, for the documented existing transparent sprite export pipeline. No green on the object itself. No checkerboard or gradient. ONE idle asset only, never a sheet. Asset washer-lv4. Create one compact semi-automatic glass washer, waist-high inox cabinet, three circular washing slots, mechanical lever and drain tray. No screen, no futuristic controls. Native production footprint 320x224.",
+      "generatedFile": "exec-0151fb76-759a-4ddd-a859-38300138c037.png",
+      "keyColor": "green",
+      "materials": [
+        "inox",
+        "beerFoam"
+      ],
+      "sourceSha256": "bd1b56bf94fffcf92f4875c9edef808a674a0428d82651c2d6debc6d03ac9869",
+      "rawPath": "assets/_raw/imagegen/equipment-upgrades-2026-09-11/washer-lv4.png",
+      "path": "assets/washer-lv4-imagegen-v1.png",
+      "palette": [
+        [
+          58,
+          39,
+          48
+        ],
+        [
+          137,
+          144,
+          142
+        ],
+        [
+          196,
+          206,
+          203
+        ],
+        [
+          219,
+          230,
+          227
+        ],
+        [
+          178,
+          170,
+          147
+        ],
+        [
+          255,
+          243,
+          210
+        ],
+        [
+          255,
+          255,
+          235
+        ]
+      ],
+      "sha256": "8e66b8b5dd3140ee70c3151ccefee91189f6d4d81c1cc054f3025fb40495cfdf"
+    },
+    {
+      "id": "washer-lv5",
+      "dimensions": [
+        384,
+        256
+      ],
+      "description": "Create one large industrial glass-washing station with enclosed inox body, five visible rack positions, analog buttons and side drain racks. Cleanest and most automated level while preserving 2000s mechanical design.",
+      "prompt": "Use case: stylized-concept. Generate exactly ONE standalone production pixel-art world-object sprite for Trum Bia Hoi, a nostalgic early-2000s Hanoi sidewalk beer management game. Image 1 is a STYLE REFERENCE ONLY: learn its crisp pixel clusters, warm dark outline, mint/cream highlights and scale; do NOT include the glass in this new object. Crisp chunky hand-pixelled clusters, hard edges, no dithering, no noisy microtexture, no painterly blur, no glossy mobile 3D. Camera consistent isometric-lite 28 degrees downward, front and right sides visible; upper-left lighting. Fully visible, centered, bottom-center ground contact, 8% padding. Two native-pixel dark plum-brown outline #3a2730, inox #c4cecb/#97a3a0/#69736f, aged wood #3a2a1c, cream #fff3d2, worn red #de4126; max four shade steps per material, sparse purposeful wear. Early-2000s mechanical design, no screens or real brands. No people, extra furniture, floating props, UI, lettering, labels, numbers, logos or watermark. No floor plane, cast/contact shadow outside the silhouette, reflections or glow. Render against a perfectly flat solid bright GREEN #00ff00 chroma-key background, including every enclosed gap between legs and racks, for the documented existing transparent sprite export pipeline. No green on the object itself. No checkerboard or gradient. ONE idle asset only, never a sheet. Asset washer-lv5. Create one large industrial glass-washing station with enclosed inox body, five visible rack positions, analog buttons and side drain racks. Cleanest and most automated level while preserving 2000s mechanical design. Native production footprint 384x256.",
+      "generatedFile": "exec-dd79ab7c-80ce-44f1-a877-6e6061aef829.png",
+      "keyColor": "green",
+      "materials": [
+        "inox",
+        "beerFoam"
+      ],
+      "sourceSha256": "f4eec9624f8693460d404f7eca464128e46031e33797a630d384b63b5fdd27d2",
+      "rawPath": "assets/_raw/imagegen/equipment-upgrades-2026-09-11/washer-lv5.png",
+      "path": "assets/washer-lv5-imagegen-v1.png",
+      "palette": [
+        [
+          58,
+          39,
+          48
+        ],
+        [
+          137,
+          144,
+          142
+        ],
+        [
+          196,
+          206,
+          203
+        ],
+        [
+          219,
+          230,
+          227
+        ],
+        [
+          178,
+          170,
+          147
+        ],
+        [
+          255,
+          243,
+          210
+        ],
+        [
+          255,
+          255,
+          235
+        ]
+      ],
+      "sha256": "ef1c33315ed6defd21bb417d3edcf1f08cfd4a7691197c0a2fce2fbb75df2355"
+    },
+    {
+      "id": "cooler-lv2",
+      "dimensions": [
+        224,
+        176
+      ],
+      "description": "Create one lidded scratched inox ice chest with side handles, visible ice and better insulation than Lv1. No electricity or display.",
+      "prompt": "Use case: stylized-concept. Generate exactly ONE standalone production pixel-art world-object sprite for Trum Bia Hoi, a nostalgic early-2000s Hanoi sidewalk beer management game. Image 1 is a STYLE REFERENCE ONLY: learn its crisp pixel clusters, warm dark outline, mint/cream highlights and scale; do NOT include the glass in this new object. Crisp chunky hand-pixelled clusters, hard edges, no dithering, no noisy microtexture, no painterly blur, no glossy mobile 3D. Camera consistent isometric-lite 28 degrees downward, front and right sides visible; upper-left lighting. Fully visible, centered, bottom-center ground contact, 8% padding. Two native-pixel dark plum-brown outline #3a2730, inox #c4cecb/#97a3a0/#69736f, aged wood #3a2a1c, cream #fff3d2, worn red #de4126; max four shade steps per material, sparse purposeful wear. Early-2000s mechanical design, no screens or real brands. No people, extra furniture, floating props, UI, lettering, labels, numbers, logos or watermark. No floor plane, cast/contact shadow outside the silhouette, reflections or glow. Render against a perfectly flat solid bright GREEN #00ff00 chroma-key background, including every enclosed gap between legs and racks, for the documented existing transparent sprite export pipeline. No green on the object itself. No checkerboard or gradient. ONE idle asset only, never a sheet. Asset cooler-lv2. Create one lidded scratched inox ice chest with side handles, visible ice and better insulation than Lv1. No electricity or display. Native production footprint 224x176.",
+      "generatedFile": "exec-2b7dc004-3dc2-480c-b917-1757c63be079.png",
+      "keyColor": "green",
+      "materials": [
+        "inox",
+        "beerFoam"
+      ],
+      "sourceSha256": "4fdd37703828d4b3adaf9cdc6505b4e422a8c770f0375ee2d4b15182cd270f67",
+      "rawPath": "assets/_raw/imagegen/equipment-upgrades-2026-09-11/cooler-lv2.png",
+      "path": "assets/cooler-lv2-imagegen-v1.png",
+      "palette": [
+        [
+          58,
+          39,
+          48
+        ],
+        [
+          137,
+          144,
+          142
+        ],
+        [
+          196,
+          206,
+          203
+        ],
+        [
+          219,
+          230,
+          227
+        ],
+        [
+          178,
+          170,
+          147
+        ],
+        [
+          255,
+          243,
+          210
+        ],
+        [
+          255,
+          255,
+          235
+        ]
+      ],
+      "sha256": "8f5a5ab279ba46451d0bf204df722df33b00d1f62df0b2e8d4691b4a89cb851f"
+    },
+    {
+      "id": "cooler-lv3",
+      "dimensions": [
+        224,
+        256
+      ],
+      "description": "Create one compact old mini cooler cabinet with rounded corners, small glass-front door and analog thermostat knob, slightly yellowed from age.",
+      "prompt": "Use case: stylized-concept. Generate exactly ONE standalone production pixel-art world-object sprite for Trum Bia Hoi, a nostalgic early-2000s Hanoi sidewalk beer management game. Image 1 is a STYLE REFERENCE ONLY: learn its crisp pixel clusters, warm dark outline, mint/cream highlights and scale; do NOT include the glass in this new object. Crisp chunky hand-pixelled clusters, hard edges, no dithering, no noisy microtexture, no painterly blur, no glossy mobile 3D. Camera consistent isometric-lite 28 degrees downward, front and right sides visible; upper-left lighting. Fully visible, centered, bottom-center ground contact, 8% padding. Two native-pixel dark plum-brown outline #3a2730, inox #c4cecb/#97a3a0/#69736f, aged wood #3a2a1c, cream #fff3d2, worn red #de4126; max four shade steps per material, sparse purposeful wear. Early-2000s mechanical design, no screens or real brands. No people, extra furniture, floating props, UI, lettering, labels, numbers, logos or watermark. No floor plane, cast/contact shadow outside the silhouette, reflections or glow. Render against a perfectly flat solid bright GREEN #00ff00 chroma-key background, including every enclosed gap between legs and racks, for the documented existing transparent sprite export pipeline. No green on the object itself. No checkerboard or gradient. ONE idle asset only, never a sheet. Asset cooler-lv3. Create one compact old mini cooler cabinet with rounded corners, small glass-front door and analog thermostat knob, slightly yellowed from age. Native production footprint 224x256.",
+      "generatedFile": "exec-bc0f6fa2-302e-4460-8e44-1ffa2684bc0e.png",
+      "keyColor": "green",
+      "materials": [
+        "inox",
+        "beerFoam"
+      ],
+      "sourceSha256": "7dc6d7d02fa0dbd879facdfd15030e861a561db4fbf7a27d5490232b9f646614",
+      "rawPath": "assets/_raw/imagegen/equipment-upgrades-2026-09-11/cooler-lv3.png",
+      "path": "assets/cooler-lv3-imagegen-v1.png",
+      "palette": [
+        [
+          58,
+          39,
+          48
+        ],
+        [
+          137,
+          144,
+          142
+        ],
+        [
+          196,
+          206,
+          203
+        ],
+        [
+          219,
+          230,
+          227
+        ],
+        [
+          178,
+          170,
+          147
+        ],
+        [
+          255,
+          243,
+          210
+        ],
+        [
+          255,
+          255,
+          235
+        ]
+      ],
+      "sha256": "e4c16a8c2bf944b3f8568344e1b17ce1388d9bfa499223179e0a7d5665daac08"
+    },
+    {
+      "id": "cooler-lv4",
+      "dimensions": [
+        352,
+        224
+      ],
+      "description": "Create one horizontal under-counter refrigerator with two doors, brushed inox body, sturdy worktop and old analog temperature dial. Larger capacity than Lv3.",
+      "prompt": "Use case: stylized-concept. Generate exactly ONE standalone production pixel-art world-object sprite for Trum Bia Hoi, a nostalgic early-2000s Hanoi sidewalk beer management game. Image 1 is a STYLE REFERENCE ONLY: learn its crisp pixel clusters, warm dark outline, mint/cream highlights and scale; do NOT include the glass in this new object. Crisp chunky hand-pixelled clusters, hard edges, no dithering, no noisy microtexture, no painterly blur, no glossy mobile 3D. Camera consistent isometric-lite 28 degrees downward, front and right sides visible; upper-left lighting. Fully visible, centered, bottom-center ground contact, 8% padding. Two native-pixel dark plum-brown outline #3a2730, inox #c4cecb/#97a3a0/#69736f, aged wood #3a2a1c, cream #fff3d2, worn red #de4126; max four shade steps per material, sparse purposeful wear. Early-2000s mechanical design, no screens or real brands. No people, extra furniture, floating props, UI, lettering, labels, numbers, logos or watermark. No floor plane, cast/contact shadow outside the silhouette, reflections or glow. Render against a perfectly flat solid bright GREEN #00ff00 chroma-key background, including every enclosed gap between legs and racks, for the documented existing transparent sprite export pipeline. No green on the object itself. No checkerboard or gradient. ONE idle asset only, never a sheet. Asset cooler-lv4. Create one horizontal under-counter refrigerator with two doors, brushed inox body, sturdy worktop and old analog temperature dial. Larger capacity than Lv3. Native production footprint 352x224.",
+      "generatedFile": "exec-16f22939-b3fe-44a7-ac77-6fa2bee2338b.png",
+      "keyColor": "green",
+      "materials": [
+        "inox",
+        "beerFoam"
+      ],
+      "sourceSha256": "6e0940606a2cab9ab506d77f01ecf8a812342c579b735c976a5671b828a82fea",
+      "rawPath": "assets/_raw/imagegen/equipment-upgrades-2026-09-11/cooler-lv4.png",
+      "path": "assets/cooler-lv4-imagegen-v1.png",
+      "palette": [
+        [
+          58,
+          39,
+          48
+        ],
+        [
+          137,
+          144,
+          142
+        ],
+        [
+          196,
+          206,
+          203
+        ],
+        [
+          219,
+          230,
+          227
+        ],
+        [
+          178,
+          170,
+          147
+        ],
+        [
+          255,
+          243,
+          210
+        ],
+        [
+          255,
+          255,
+          235
+        ]
+      ],
+      "sha256": "168a7274742d9eacd9ef60bf4ac6b21ee7bfc14ee469a2fa9ea6c7d9df21c708"
+    },
+    {
+      "id": "cooler-lv5",
+      "dimensions": [
+        448,
+        288
+      ],
+      "description": "Create one industrial cold-room entrance and cooling unit for the stall, thick insulated door, exposed pipe, analog gauge and stacked beer containers visible inside. It must suggest effectively permanent freshness without looking futuristic.",
+      "prompt": "Use case: stylized-concept. Generate exactly ONE standalone production pixel-art world-object sprite for Trum Bia Hoi, a nostalgic early-2000s Hanoi sidewalk beer management game. Image 1 is a STYLE REFERENCE ONLY: learn its crisp pixel clusters, warm dark outline, mint/cream highlights and scale; do NOT include the glass in this new object. Crisp chunky hand-pixelled clusters, hard edges, no dithering, no noisy microtexture, no painterly blur, no glossy mobile 3D. Camera consistent isometric-lite 28 degrees downward, front and right sides visible; upper-left lighting. Fully visible, centered, bottom-center ground contact, 8% padding. Two native-pixel dark plum-brown outline #3a2730, inox #c4cecb/#97a3a0/#69736f, aged wood #3a2a1c, cream #fff3d2, worn red #de4126; max four shade steps per material, sparse purposeful wear. Early-2000s mechanical design, no screens or real brands. No people, extra furniture, floating props, UI, lettering, labels, numbers, logos or watermark. No floor plane, cast/contact shadow outside the silhouette, reflections or glow. Render against a perfectly flat solid bright GREEN #00ff00 chroma-key background, including every enclosed gap between legs and racks, for the documented existing transparent sprite export pipeline. No green on the object itself. No checkerboard or gradient. ONE idle asset only, never a sheet. Asset cooler-lv5. Create one industrial cold-room entrance and cooling unit for the stall, thick insulated door, exposed pipe, analog gauge and stacked beer containers visible inside. It must suggest effectively permanent freshness without looking futuristic. Native production footprint 448x288.",
+      "generatedFile": "exec-758ad31f-33cc-4551-9769-d16ed5515964.png",
+      "keyColor": "green",
+      "materials": [
+        "inox",
+        "beerFoam"
+      ],
+      "sourceSha256": "f0a6e9b771dba60568fb7f6376e3906760470b2ff064cc3ac6ae4686bd38489d",
+      "rawPath": "assets/_raw/imagegen/equipment-upgrades-2026-09-11/cooler-lv5.png",
+      "path": "assets/cooler-lv5-imagegen-v1.png",
+      "palette": [
+        [
+          58,
+          39,
+          48
+        ],
+        [
+          137,
+          144,
+          142
+        ],
+        [
+          196,
+          206,
+          203
+        ],
+        [
+          219,
+          230,
+          227
+        ],
+        [
+          178,
+          170,
+          147
+        ],
+        [
+          255,
+          243,
+          210
+        ],
+        [
+          255,
+          255,
+          235
+        ]
+      ],
+      "sha256": "85b8e383a9776e01607e323d0384d457f6614dad379998b27c62323b86c4da57"
+    },
+    {
+      "id": "stall-lv1",
+      "dimensions": [
+        256,
+        176
+      ],
+      "description": "Create one small raw-wood display table with two mismatched boxes and a few ingredient bundles, storage capacity visibly limited.",
+      "prompt": "Use case: stylized-concept. Generate exactly ONE standalone production pixel-art world-object sprite for Trum Bia Hoi, a nostalgic early-2000s Hanoi sidewalk beer management game. Image 1 is a STYLE REFERENCE ONLY: learn its crisp pixel clusters, warm dark outline, mint/cream highlights and scale; do NOT include the glass in this new object. Crisp chunky hand-pixelled clusters, hard edges, no dithering, no noisy microtexture, no painterly blur, no glossy mobile 3D. Camera consistent isometric-lite 28 degrees downward, front and right sides visible; upper-left lighting. Fully visible, centered, bottom-center ground contact, 8% padding. Two native-pixel dark plum-brown outline #3a2730, inox #c4cecb/#97a3a0/#69736f, aged wood #3a2a1c, cream #fff3d2, worn red #de4126; max four shade steps per material, sparse purposeful wear. Early-2000s mechanical design, no screens or real brands. No people, extra furniture, floating props, UI, lettering, labels, numbers, logos or watermark. No floor plane, cast/contact shadow outside the silhouette, reflections or glow. Render against a perfectly flat solid bright GREEN #00ff00 chroma-key background, including every enclosed gap between legs and racks, for the documented existing transparent sprite export pipeline. No green on the object itself. No checkerboard or gradient. ONE idle asset only, never a sheet. Asset stall-lv1. Create one small raw-wood display table with two mismatched boxes and a few ingredient bundles, storage capacity visibly limited. Native production footprint 256x176. Use cream ingredient bags and worn-red crates, NO green produce or green glass.",
+      "generatedFile": "exec-61749030-197d-4d97-b119-aa4c99f70c26.png",
+      "keyColor": "green",
+      "materials": [
+        "inox",
+        "panel",
+        "beerFoam",
+        "danger"
+      ],
+      "sourceSha256": "4a09835d8d8b419975cd7e8158c506ee601152c0de9e4678edd191c8d7374390",
+      "rawPath": "assets/_raw/imagegen/equipment-upgrades-2026-09-11/stall-lv1.png",
+      "path": "assets/stall-lv1-imagegen-v1.png",
+      "palette": [
+        [
+          58,
+          39,
+          48
+        ],
+        [
+          137,
+          144,
+          142
+        ],
+        [
+          196,
+          206,
+          203
+        ],
+        [
+          219,
+          230,
+          227
+        ],
+        [
+          40,
+          29,
+          19
+        ],
+        [
+          58,
+          42,
+          28
+        ],
+        [
+          64,
+          47,
+          31
+        ],
+        [
+          178,
+          170,
+          147
+        ],
+        [
+          255,
+          243,
+          210
+        ],
+        [
+          255,
+          255,
+          235
+        ],
+        [
+          147,
+          40,
+          29
+        ],
+        [
+          210,
+          58,
+          42
+        ],
+        [
+          235,
+          64,
+          47
+        ]
+      ],
+      "sha256": "b787b4d4b21d3b47de9cf691ce4b09a2a8a013c00697ba80356dcff4f329c531"
+    },
+    {
+      "id": "stall-lv2",
+      "dimensions": [
+        256,
+        224
+      ],
+      "description": "Create one two-tier aluminum shelf with organized ingredient bags, chipped plastic crates and a narrow prep top. More capacity than Lv1.",
+      "prompt": "Use case: stylized-concept. Generate exactly ONE standalone production pixel-art world-object sprite for Trum Bia Hoi, a nostalgic early-2000s Hanoi sidewalk beer management game. Image 1 is a STYLE REFERENCE ONLY: learn its crisp pixel clusters, warm dark outline, mint/cream highlights and scale; do NOT include the glass in this new object. Crisp chunky hand-pixelled clusters, hard edges, no dithering, no noisy microtexture, no painterly blur, no glossy mobile 3D. Camera consistent isometric-lite 28 degrees downward, front and right sides visible; upper-left lighting. Fully visible, centered, bottom-center ground contact, 8% padding. Two native-pixel dark plum-brown outline #3a2730, inox #c4cecb/#97a3a0/#69736f, aged wood #3a2a1c, cream #fff3d2, worn red #de4126; max four shade steps per material, sparse purposeful wear. Early-2000s mechanical design, no screens or real brands. No people, extra furniture, floating props, UI, lettering, labels, numbers, logos or watermark. No floor plane, cast/contact shadow outside the silhouette, reflections or glow. Render against a perfectly flat solid bright GREEN #00ff00 chroma-key background, including every enclosed gap between legs and racks, for the documented existing transparent sprite export pipeline. No green on the object itself. No checkerboard or gradient. ONE idle asset only, never a sheet. Asset stall-lv2. Create one two-tier aluminum shelf with organized ingredient bags, chipped plastic crates and a narrow prep top. More capacity than Lv1. Native production footprint 256x224. Use cream ingredient bags and worn-red crates, NO green produce or green glass.",
+      "generatedFile": "exec-b06fd284-1a63-480f-8f00-a842e856b893.png",
+      "keyColor": "green",
+      "materials": [
+        "inox",
+        "panel",
+        "beerFoam",
+        "danger"
+      ],
+      "sourceSha256": "c91bafaa2524cff4efdb843b7bcbeda97936bcb94919945d46c6e0422cd29cb3",
+      "rawPath": "assets/_raw/imagegen/equipment-upgrades-2026-09-11/stall-lv2.png",
+      "path": "assets/stall-lv2-imagegen-v1.png",
+      "palette": [
+        [
+          58,
+          39,
+          48
+        ],
+        [
+          137,
+          144,
+          142
+        ],
+        [
+          196,
+          206,
+          203
+        ],
+        [
+          219,
+          230,
+          227
+        ],
+        [
+          40,
+          29,
+          19
+        ],
+        [
+          58,
+          42,
+          28
+        ],
+        [
+          64,
+          47,
+          31
+        ],
+        [
+          178,
+          170,
+          147
+        ],
+        [
+          255,
+          243,
+          210
+        ],
+        [
+          255,
+          255,
+          235
+        ],
+        [
+          147,
+          40,
+          29
+        ],
+        [
+          210,
+          58,
+          42
+        ],
+        [
+          235,
+          64,
+          47
+        ]
+      ],
+      "sha256": "a3245e4c1d1eed56edb339c4a13d8d589cef229a4270aa0c4d2ff23f318df1a4"
+    },
+    {
+      "id": "stall-lv3",
+      "dimensions": [
+        304,
+        256
+      ],
+      "description": "Create one three-tier scratched inox storage cabinet with open shelves, labeled only by color-coded blank tags, enough organization to unlock signage. No readable text.",
+      "prompt": "Use case: stylized-concept. Generate exactly ONE standalone production pixel-art world-object sprite for Trum Bia Hoi, a nostalgic early-2000s Hanoi sidewalk beer management game. Image 1 is a STYLE REFERENCE ONLY: learn its crisp pixel clusters, warm dark outline, mint/cream highlights and scale; do NOT include the glass in this new object. Crisp chunky hand-pixelled clusters, hard edges, no dithering, no noisy microtexture, no painterly blur, no glossy mobile 3D. Camera consistent isometric-lite 28 degrees downward, front and right sides visible; upper-left lighting. Fully visible, centered, bottom-center ground contact, 8% padding. Two native-pixel dark plum-brown outline #3a2730, inox #c4cecb/#97a3a0/#69736f, aged wood #3a2a1c, cream #fff3d2, worn red #de4126; max four shade steps per material, sparse purposeful wear. Early-2000s mechanical design, no screens or real brands. No people, extra furniture, floating props, UI, lettering, labels, numbers, logos or watermark. No floor plane, cast/contact shadow outside the silhouette, reflections or glow. Render against a perfectly flat solid bright GREEN #00ff00 chroma-key background, including every enclosed gap between legs and racks, for the documented existing transparent sprite export pipeline. No green on the object itself. No checkerboard or gradient. ONE idle asset only, never a sheet. Asset stall-lv3. Create one three-tier scratched inox storage cabinet with open shelves, labeled only by color-coded blank tags, enough organization to unlock signage. No readable text. Native production footprint 304x256. Use cream ingredient bags and worn-red crates, NO green produce or green glass.",
+      "generatedFile": "exec-2824ddfb-23be-47c5-a887-cac0256e4f0a.png",
+      "keyColor": "green",
+      "materials": [
+        "inox",
+        "panel",
+        "beerFoam",
+        "danger"
+      ],
+      "sourceSha256": "431652f345a94bf2286476123fc9b73cd135b3050d8b88fca0357a7db60c3787",
+      "rawPath": "assets/_raw/imagegen/equipment-upgrades-2026-09-11/stall-lv3.png",
+      "path": "assets/stall-lv3-imagegen-v1.png",
+      "palette": [
+        [
+          58,
+          39,
+          48
+        ],
+        [
+          137,
+          144,
+          142
+        ],
+        [
+          196,
+          206,
+          203
+        ],
+        [
+          219,
+          230,
+          227
+        ],
+        [
+          40,
+          29,
+          19
+        ],
+        [
+          58,
+          42,
+          28
+        ],
+        [
+          64,
+          47,
+          31
+        ],
+        [
+          178,
+          170,
+          147
+        ],
+        [
+          255,
+          243,
+          210
+        ],
+        [
+          255,
+          255,
+          235
+        ],
+        [
+          147,
+          40,
+          29
+        ],
+        [
+          210,
+          58,
+          42
+        ],
+        [
+          235,
+          64,
+          47
+        ]
+      ],
+      "sha256": "9e5aa5cf6c98994bf5b98f3c4aa96da1a11d2da49e7f7488ac995e036e14a3d5"
+    },
+    {
+      "id": "stall-lv4",
+      "dimensions": [
+        384,
+        256
+      ],
+      "description": "Create one compact old-style wood-and-inox service counter with rear shelves, ingredient bins, paper ledger space and a small glass display section. No POS or screen.",
+      "prompt": "Use case: stylized-concept. Generate exactly ONE standalone production pixel-art world-object sprite for Trum Bia Hoi, a nostalgic early-2000s Hanoi sidewalk beer management game. Image 1 is a STYLE REFERENCE ONLY: learn its crisp pixel clusters, warm dark outline, mint/cream highlights and scale; do NOT include the glass in this new object. Crisp chunky hand-pixelled clusters, hard edges, no dithering, no noisy microtexture, no painterly blur, no glossy mobile 3D. Camera consistent isometric-lite 28 degrees downward, front and right sides visible; upper-left lighting. Fully visible, centered, bottom-center ground contact, 8% padding. Two native-pixel dark plum-brown outline #3a2730, inox #c4cecb/#97a3a0/#69736f, aged wood #3a2a1c, cream #fff3d2, worn red #de4126; max four shade steps per material, sparse purposeful wear. Early-2000s mechanical design, no screens or real brands. No people, extra furniture, floating props, UI, lettering, labels, numbers, logos or watermark. No floor plane, cast/contact shadow outside the silhouette, reflections or glow. Render against a perfectly flat solid bright GREEN #00ff00 chroma-key background, including every enclosed gap between legs and racks, for the documented existing transparent sprite export pipeline. No green on the object itself. No checkerboard or gradient. ONE idle asset only, never a sheet. Asset stall-lv4. Create one compact old-style wood-and-inox service counter with rear shelves, ingredient bins, paper ledger space and a small glass display section. No POS or screen. Native production footprint 384x256. Use cream ingredient bags and worn-red crates, NO green produce or green glass.",
+      "generatedFile": "exec-ac55d082-6a3e-497a-9d93-5cc8a8081628.png",
+      "keyColor": "green",
+      "materials": [
+        "inox",
+        "panel",
+        "beerFoam",
+        "danger"
+      ],
+      "sourceSha256": "c4d800aa88931017704c3038c35ef67cf533273839c11ad79d6400ecaa703f44",
+      "rawPath": "assets/_raw/imagegen/equipment-upgrades-2026-09-11/stall-lv4.png",
+      "path": "assets/stall-lv4-imagegen-v1.png",
+      "palette": [
+        [
+          58,
+          39,
+          48
+        ],
+        [
+          137,
+          144,
+          142
+        ],
+        [
+          196,
+          206,
+          203
+        ],
+        [
+          219,
+          230,
+          227
+        ],
+        [
+          40,
+          29,
+          19
+        ],
+        [
+          58,
+          42,
+          28
+        ],
+        [
+          64,
+          47,
+          31
+        ],
+        [
+          178,
+          170,
+          147
+        ],
+        [
+          255,
+          243,
+          210
+        ],
+        [
+          255,
+          255,
+          235
+        ],
+        [
+          147,
+          40,
+          29
+        ],
+        [
+          210,
+          58,
+          42
+        ],
+        [
+          235,
+          64,
+          47
+        ]
+      ],
+      "sha256": "4ee5d95d32bffc2ecb5482209b4089cfeed06df43da2cbedc1a5f13bb02ba5fe"
+    },
+    {
+      "id": "stall-lv5",
+      "dimensions": [
+        480,
+        304
+      ],
+      "description": "Create one premium full street-stall bar counter with polished aged wood, inox worktop, glass-front storage, organized crates and analog cash drawer. Impressive maximum capacity, still warm and non-modern.",
+      "prompt": "Use case: stylized-concept. Generate exactly ONE standalone production pixel-art world-object sprite for Trum Bia Hoi, a nostalgic early-2000s Hanoi sidewalk beer management game. Image 1 is a STYLE REFERENCE ONLY: learn its crisp pixel clusters, warm dark outline, mint/cream highlights and scale; do NOT include the glass in this new object. Crisp chunky hand-pixelled clusters, hard edges, no dithering, no noisy microtexture, no painterly blur, no glossy mobile 3D. Camera consistent isometric-lite 28 degrees downward, front and right sides visible; upper-left lighting. Fully visible, centered, bottom-center ground contact, 8% padding. Two native-pixel dark plum-brown outline #3a2730, inox #c4cecb/#97a3a0/#69736f, aged wood #3a2a1c, cream #fff3d2, worn red #de4126; max four shade steps per material, sparse purposeful wear. Early-2000s mechanical design, no screens or real brands. No people, extra furniture, floating props, UI, lettering, labels, numbers, logos or watermark. No floor plane, cast/contact shadow outside the silhouette, reflections or glow. Render against a perfectly flat solid bright GREEN #00ff00 chroma-key background, including every enclosed gap between legs and racks, for the documented existing transparent sprite export pipeline. No green on the object itself. No checkerboard or gradient. ONE idle asset only, never a sheet. Asset stall-lv5. Create one premium full street-stall bar counter with polished aged wood, inox worktop, glass-front storage, organized crates and analog cash drawer. Impressive maximum capacity, still warm and non-modern. Native production footprint 480x304. Use cream ingredient bags and worn-red crates, NO green produce or green glass.",
+      "generatedFile": "exec-0fe8e154-f18e-4be9-aaa8-6678f83e6f40.png",
+      "keyColor": "green",
+      "materials": [
+        "inox",
+        "panel",
+        "beerFoam",
+        "danger"
+      ],
+      "sourceSha256": "69f897f2fa06e8eb273d0bb75843af9ec35bd6b0ddf2765e7456aa9658da8881",
+      "rawPath": "assets/_raw/imagegen/equipment-upgrades-2026-09-11/stall-lv5.png",
+      "path": "assets/stall-lv5-imagegen-v1.png",
+      "palette": [
+        [
+          58,
+          39,
+          48
+        ],
+        [
+          137,
+          144,
+          142
+        ],
+        [
+          196,
+          206,
+          203
+        ],
+        [
+          219,
+          230,
+          227
+        ],
+        [
+          40,
+          29,
+          19
+        ],
+        [
+          58,
+          42,
+          28
+        ],
+        [
+          64,
+          47,
+          31
+        ],
+        [
+          178,
+          170,
+          147
+        ],
+        [
+          255,
+          243,
+          210
+        ],
+        [
+          255,
+          255,
+          235
+        ],
+        [
+          147,
+          40,
+          29
+        ],
+        [
+          210,
+          58,
+          42
+        ],
+        [
+          235,
+          64,
+          47
+        ]
+      ],
+      "sha256": "816c17037ca34314a45b20ad1d15feac15fff042f6c119c258c3579995ac8f72"
+    }
+  ],
+  "exportScript": "scripts/export_table_art.py --receipt docs/reference/assets-owner-2026-09-08/equipment-upgrades-2026-09-11-imagegen.json",
+  "contactSheet": "assets/_qa/contact-equipment-upgrades-2026-09-11.png",
+  "failed": []
+}

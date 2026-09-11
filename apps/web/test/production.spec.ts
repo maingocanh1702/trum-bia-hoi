@@ -102,3 +102,18 @@ test('reload immediately after a completed beer batch warns while its save is pe
   await page.evaluate(() => (window as unknown as { releaseTestWrite: () => void }).releaseTestWrite());
   await waitSaved(page); await page.reload(); await expect(keg.locator('.capacity-badge')).toHaveText('Rót sẵn 5/5 cốc');
 });
+
+test('washer, cooler and counter upgrade cards show their own per-level draft sprites', async ({ page }) => {
+  const f = fixture(); await page.setViewportSize({ width: 360, height: 740 }); await page.clock.pauseAt(new Date(f.now));
+  await page.addInitScript(save => { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('tbh.settings.v1', JSON.stringify({ welcomed: true, guideDone: true })); }, f.save);
+  await page.goto('/'); await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click();
+  for (const [id, name] of [['washer', 'Bồn rửa'], ['cooler', 'Hầm lạnh'], ['stall', 'Quầy hàng']]) {
+    const card = page.locator('.upgrade-card').filter({ has: page.getByRole('heading', { name, exact: true }) });
+    await expect(card.locator('img').last()).toHaveAttribute('src', new RegExp(`${id}-lv2-imagegen-v1`));
+    await card.getByRole('button').click();
+    await expect(card.locator('img').first()).toHaveAttribute('src', new RegExp(`${id}-lv2-imagegen-v1`));
+    await expect(card.locator('img').last()).toHaveAttribute('src', new RegExp(`${id}-lv3-imagegen-v1`));
+    expect(await card.locator('img').evaluateAll(imgs => imgs.every(img => (img as HTMLImageElement).complete && (img as HTMLImageElement).naturalWidth > 0))).toBe(true);
+  }
+  await page.screenshot({ path: '.qa/steer15-equipment-cards.png' });
+});

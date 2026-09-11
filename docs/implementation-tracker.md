@@ -478,3 +478,8 @@ Kitchen cards now display config-derived new hot dishes, parallel pans, portions
 Label/browser checks:18 passes in the focused kitchen/economy2/production/pause run; the only failure was the old beer-button label in pause.spec.ts, updated and passed with both business-card regressions (3/3). Full verification receipt: `.qa/steer15-copy-verify.txt`. Assets and preview publication are the next two owner-authorized steps.
 
 Steer15 (1) final verification: full verify PASS406/406, standard10cohorts k2.5644–2.9168,15rush cases, career42/99 k3.46546/3.39320. Final VI/EN label2/2 and guest flow4/4 PASS; final build refreshed after matching the finished dish name Tóp mỡ Triều Khúc to its config label. Engine/config diff is empty.
+
+
+## Steer15 (2) — equipment drafts, 2026-09-11
+
+All13 requested per-level sprites generated via built-in imagegen and exported through the existing keyed-alpha/native-crop/token-palette pipeline: washer2–5, cooler2–5, stall1–5. Manifest paths resolve with source, draft status and SHA-256; no fallback needed for this batch.132entries/121drafts/3remaining placeholders; check:assets PASS. Prompt/export provenance and128/64/32px contact sheet are in the asset checklist. Full verify PASS406/406, standard10cohorts k2.5644–2.9168,15rush cases, career42/99 k3.46546/3.39320. Per-level upgrade-image browser regression PASS; independent source/art review CLEAN. The playable smoke passed360×740 and1280×720;390×844 is retrying after a test-only popup/receipt synchronization correction. Tag and preview cutover remain gated on that result. No engine/config or kitchen art changes.

@@ -172,10 +172,10 @@ Vòng đời cốc: clean → in_use → dirty → washing → clean. **Đây l�
 | ✓ | Asset | Cấp | Giá ×k | Thời gian rửa | Slot song song | Đổi gì nhìn thấy được | Crop | Phase |
 |:-:|-------|:---:|-------:|:-------------:|:--------------:|----------------------|-----:|:-----:|
 | ⬜ | `washer-lv1` | Lv1 | có sẵn | 7s | 1 | Chậu **nhôm móp** đặt trên ghế thấp, 1 bàn chải tay, 1 gáo múc. Rửa tay thủ công hoàn toàn | 192×160 | P1 |
-| ⬜ | `washer-lv2` | Lv2 | 6.250 | 5s | 1 | Bộ chậu nhôm + inox ghép đôi, thêm **vòi nước** và rổ ráo. Vẫn 1 chỗ rửa nhưng nhanh và gọn hơn | 224×176 | P1 |
-| ⬜ | `washer-lv3` | Lv3 | 25.000 | 4s | **2** | Bồn inox **2 ngăn** xước, vòi, mặt ráo nước thấy rõ, **2 vị trí rửa song song**. Vẫn hở và thủ công | 256×192 | P2 |
-| ⬜ | `washer-lv4` | Lv4 | 100.000 | 2.5s | **3** | **Chuyển sang máy**: tủ inox cao ngang hông, **3 khe rửa tròn**, cần gạt cơ khí, khay thoát. Không màn hình | 320×224 | P3 |
-| ⬜ | `washer-lv5` | Lv5 | 375.000 | 1.5s | **5** | Trạm rửa công nghiệp: thân inox **kín**, 5 vị trí giá, nút bấm analog, giá ráo hai bên | 384×256 | P4 |
+| 🟡 | `washer-lv2` | Lv2 | 6.250 | 5s | 1 | Bộ chậu nhôm + inox ghép đôi, thêm **vòi nước** và rổ ráo. Vẫn 1 chỗ rửa nhưng nhanh và gọn hơn | 224×176 | P1 |
+| 🟡 | `washer-lv3` | Lv3 | 25.000 | 4s | **2** | Bồn inox **2 ngăn** xước, vòi, mặt ráo nước thấy rõ, **2 vị trí rửa song song**. Vẫn hở và thủ công | 256×192 | P2 |
+| 🟡 | `washer-lv4` | Lv4 | 100.000 | 2.5s | **3** | **Chuyển sang máy**: tủ inox cao ngang hông, **3 khe rửa tròn**, cần gạt cơ khí, khay thoát. Không màn hình | 320×224 | P3 |
+| 🟡 | `washer-lv5` | Lv5 | 375.000 | 1.5s | **5** | Trạm rửa công nghiệp: thân inox **kín**, 5 vị trí giá, nút bấm analog, giá ráo hai bên | 384×256 | P4 |
 
 **Prompt 5 cấp:**
 
@@ -201,10 +201,10 @@ Giữ bia lạnh, chống mất hơi. **Lv5 = freshness vĩnh viễn** (bia khô
 | ✓ | Asset | Cấp | Giá ×k | Freshness cốc | Freshness bom | Đổi gì nhìn thấy được | Crop | Phase |
 |:-:|-------|:---:|-------:|:-------------:|:-------------:|----------------------|-----:|:-----:|
 | ⬜ | `fridge-lv1` | Lv1 | có sẵn | 12s | ~4 phút | Thùng **xốp trắng** rẻ tiền đầy đá cục, nắp lệch, đọng nước. Rõ ràng tạm bợ, làm lạnh thủ công | 192×160 | P1 |
-| ⬜ | `fridge-lv2` | Lv2 | 5.000 | 20s | ~6 phút | Chuyển **xốp → inox**: thùng đá inox xước có nắp và quai bên, cách nhiệt tốt hơn. **Chưa có điện** | 224×176 | P1 |
-| ⬜ | `fridge-lv3` | Lv3 | 20.000 | 35s | ~9 phút | **Có điện lần đầu**: tủ mát mini góc bo tròn, cửa kính nhỏ, núm chỉnh nhiệt analog, hơi ố vàng vì cũ | 224×256 | P2 |
-| ⬜ | `fridge-lv4` | Lv4 | 75.000 | 60s | ~15 phút | Tủ lạnh **nằm ngang** gầm quầy, 2 cánh, thân inox chải, mặt bàn làm việc chắc, đồng hồ nhiệt analog | 352×224 | P3 |
-| ⬜ | `fridge-lv5` | Lv5 | 250.000 | **∞** | **∞** | **Hầm lạnh**: cửa cách nhiệt dày, ống lộ, đồng hồ analog, thấy thùng bia xếp bên trong. Gợi ý "tươi vĩnh viễn" mà không viễn tưởng | 448×288 | P4 |
+| 🟡 | `fridge-lv2` | Lv2 | 5.000 | 20s | ~6 phút | Chuyển **xốp → inox**: thùng đá inox xước có nắp và quai bên, cách nhiệt tốt hơn. **Chưa có điện** | 224×176 | P1 |
+| 🟡 | `fridge-lv3` | Lv3 | 20.000 | 35s | ~9 phút | **Có điện lần đầu**: tủ mát mini góc bo tròn, cửa kính nhỏ, núm chỉnh nhiệt analog, hơi ố vàng vì cũ | 224×256 | P2 |
+| 🟡 | `fridge-lv4` | Lv4 | 75.000 | 60s | ~15 phút | Tủ lạnh **nằm ngang** gầm quầy, 2 cánh, thân inox chải, mặt bàn làm việc chắc, đồng hồ nhiệt analog | 352×224 | P3 |
+| 🟡 | `fridge-lv5` | Lv5 | 250.000 | **∞** | **∞** | **Hầm lạnh**: cửa cách nhiệt dày, ống lộ, đồng hồ analog, thấy thùng bia xếp bên trong. Gợi ý "tươi vĩnh viễn" mà không viễn tưởng | 448×288 | P4 |
 
 **Prompt 5 cấp:**
 
@@ -229,11 +229,11 @@ Sức chứa nguyên liệu. **Quầy Lv3 = gate mở hệ biển hiệu** — c
 
 | ✓ | Asset | Cấp | Giá ×k | Sức chứa NL | Đổi gì nhìn thấy được | Crop | Phase |
 |:-:|-------|:---:|-------:|:-----------:|----------------------|-----:|:-----:|
-| ⬜ | `counter-lv1` | Lv1 | có sẵn | 15 | Bàn **gỗ mộc** nhỏ, 2 thùng lệch bộ, vài bó nguyên liệu. Sức chứa nhìn là thấy ít | 256×176 | P1 |
-| ⬜ | `counter-lv2` | Lv2 | 2.500 | 25 | Kệ **nhôm 2 tầng**, bao nguyên liệu xếp gọn, két nhựa sứt, mặt sơ chế hẹp | 256×224 | P1 |
-| ⬜ | `counter-lv3` | Lv3 | 12.500 | 45 | Tủ **inox 3 tầng** kệ hở, thẻ dán mã màu (không chữ đọc được). **Đủ ngăn nắp để mở khoá biển hiệu** | 304×256 | P2 |
-| ⬜ | `counter-lv4` | Lv4 | 50.000 | 80 | **Thành quầy phục vụ**: gỗ + inox kiểu cũ, kệ sau, thùng nguyên liệu, chỗ để sổ giấy, ngăn kính nhỏ. Không POS/màn hình | 384×256 | P3 |
-| ⬜ | `counter-lv5` | Lv5 | 200.000 | 150 | Quầy bar vỉa hè đầy đủ: gỗ cũ đánh bóng, mặt inox, tủ kính, két xếp gọn, ngăn kéo tiền cơ khí | 480×304 | P4 |
+| 🟡 | `counter-lv1` | Lv1 | có sẵn | 15 | Bàn **gỗ mộc** nhỏ, 2 thùng lệch bộ, vài bó nguyên liệu. Sức chứa nhìn là thấy ít | 256×176 | P1 |
+| 🟡 | `counter-lv2` | Lv2 | 2.500 | 25 | Kệ **nhôm 2 tầng**, bao nguyên liệu xếp gọn, két nhựa sứt, mặt sơ chế hẹp | 256×224 | P1 |
+| 🟡 | `counter-lv3` | Lv3 | 12.500 | 45 | Tủ **inox 3 tầng** kệ hở, thẻ dán mã màu (không chữ đọc được). **Đủ ngăn nắp để mở khoá biển hiệu** | 304×256 | P2 |
+| 🟡 | `counter-lv4` | Lv4 | 50.000 | 80 | **Thành quầy phục vụ**: gỗ + inox kiểu cũ, kệ sau, thùng nguyên liệu, chỗ để sổ giấy, ngăn kính nhỏ. Không POS/màn hình | 384×256 | P3 |
+| 🟡 | `counter-lv5` | Lv5 | 200.000 | 150 | Quầy bar vỉa hè đầy đủ: gỗ cũ đánh bóng, mặt inox, tủ kính, két xếp gọn, ngăn kéo tiền cơ khí | 480×304 | P4 |
 
 **Prompt 5 cấp:**
 
@@ -809,3 +809,10 @@ Cập nhật lại bằng: `ls assets/*.png`
 Steer12 further narrows this build to playable-v0: existing drafts and placeholders are acceptable when their gameplay fallback renders correctly. Generate only visibly missing/broken assets on the happy path; the ~530 inventory target is deferred. M6/M7/M8-only assets stay deferred. Missing/empty files remain defects; a manifest placeholder with a working deliberate fallback is not a missing-file claim.
 
 | 2026-09-11 Steer10/12 | owner waiver 2026-09-11: draft assets accepted for release; playable-v0 accepts existing working placeholders, no full inventory/polish gate. |
+
+
+## Steer15 equipment batch — 2026-09-11
+
+13/13 imagegen drafts exported: washer-lv2–5, cooler-lv2–5 (fridge family), stall-lv1–5 (counter family). One generation per asset; native crops, bottom anchors, true RGBA transparency after the existing green-key export, token palette and two-pixel outline checked. Source PNGs retained; prompts, source/output SHA-256 and reproducible export in `docs/reference/assets-owner-2026-09-08/equipment-upgrades-2026-09-11-imagegen.json`. Contact sheet: `assets/_qa/contact-equipment-upgrades-2026-09-11.png`. Kitchen unchanged.
+
+Owner waiver2026-09-11: drafts accepted for release; no approval/polish pass. This batch replaces all13 targeted placeholders, with0 export failures. Manifest now132entries,121drafts,3remaining placeholders; check:assets PASS. The remaining placeholders are outside Steer15 scope.
