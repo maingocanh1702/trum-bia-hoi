@@ -1,6 +1,6 @@
 # Build progress — Trùm Bia Hơi
 
-> **Local v0.2 preparation — 2026-09-11:** M0 and M1 COMPLETE (M1: 11 PASS, 1 owner-WAIVED). Trimmed gameplay/UI batch is implemented; final verify/smoke is running. Live preview remains `playable-v0.1` until cutover. M6/M7/M8 and production deployment remain pending/deferred.
+> **Local v0.2 preparation — 2026-09-11:** M0 and M1 COMPLETE (M1: 11 PASS, 1 owner-WAIVED). Trimmed gameplay/UI batch is implemented; final verify/smoke PASS. Live preview remains `playable-v0.1` until cutover. M6/M7/M8 and production deployment remain pending/deferred.
 
 Started 2026-09-08 from `30c0285`. Active worktree: `/Users/maingocanh/.codex/worktrees/trum-bia-hoi-game`, branch `codex/game-build-isolated` based on `bc79af5`. A concurrent Claude docs commit captured the first engine files in the original checkout; original files were preserved, and further work was isolated. Authority: current `00-HANDOFF-trum-bia-hoi.md` and [owner update adoption](latest-handoff-adoption.md),
 PROMPT PACK part B, GDD decisions, 03-SPEC table rules, JSON numbers. This is the
@@ -2750,3 +2750,19 @@ Measured current-shift stale/overflow customer counts now drive one contextual r
 ### M1-AXE / M1-UPGRADE — keyboard follow-up, 2026-09-11
 
 Independent v0.2 diff review found one focus defect in the measured Tables suggestion. Both navigation paths now focus the Tables heading; Tab reaches the next enabled table action. Red regression reproduced in VI/EN, then9/9 focused tests PASS (`.qa/playable-v02-focus-{red,green}.txt`). Production change is limited to the existing App navigation; no engine/config changes. Final current-code verify PASS: 406/406, all standard/rush/career gates; assets PASS. Three full-shift viewports PASS (first playable 659–1154 ms, 60.22–60.25 fps, zero console/errors or missing assets); axe 6/6 and independent follow-up CLEAN. Receipts: `.qa/playable-v02-final-{verify,assets,smoke,axe}.txt`.
+
+
+## E29 — Local v0.2 acceptance, 2026-09-11
+
+Code `422560ebdc3450fb7891501ec4d80d1d42a39b1b`; full verify and assets PASS, 406/406 tests, 10 standard k cohorts, 15 rush cases, career seeds 42/99 within 3.5. Final three real 12-minute shifts PASS; current axe 6/6 (102 scans) and review follow-up CLEAN. See [release notes](playable-v0.md). Tagging/cutover and master fast-forward are separate operations; no production deployment.
+
+| Viewport | First playable | RAF fps | Served | Full shift / restock / upgrade / next day / reload / new tab | Console / failed requests |
+|---|---:|---:|---:|---|---|
+| 390×844 | 1154 ms | 60.25 | 58 | PASS | 0 / 0 |
+| 360×740 | 659 ms | 60.25 | 83 | PASS | 0 / 0 |
+| 1280×720 | 974 ms | 60.22 | 83 | PASS | 0 / 0 |
+
+Receipt SHA-256:
+- `.qa/playable-390.json`: `5887863df72e8b507d6ce44bc471cda8460ad687e314e6c1ad384429e81313ea`.
+- `.qa/playable-360.json`: `907fa4a3eaf065950f5729f38c4f4264babe543783a65718b604b2d75a3c5b65`.
+- `.qa/playable-1280.json`: `6f05e58ac80795f7f32788da4cbbfe5550581f181086d73d5db783d6f4095379`.

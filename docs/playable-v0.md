@@ -1,6 +1,6 @@
 # playable-v0
 
-Latest client acceptance: [playable-v0.1](#playable-v01--steer15-2026-09-11). Historical v0 evidence is retained below.
+Latest client acceptance: **playable-v0.2**, documented in “Local release v0.2” below. Historical v0/v0.1 evidence is retained.
 
 Status: **PASS — playable-v0 acceptance**. Code commit: **d048a9c296815f2b0813da9bb21207906cc73899**. The tag `playable-v0` adds this release note; resolve its exact snapshot SHA with `git rev-parse playable-v0`.
 Owner scope: Steer12/13. Config remains **2.0.2**, rules24; the Steer14 buffer change runs only after this tag.
@@ -118,3 +118,36 @@ Local v0.2 is for owner testing only. Do not begin these production tasks as par
 - [ ] Remaining assets/backgrounds.
 
 Owner authorizes fast-forwarding `codex/game-build-isolated` into master only after local v0.2 is tagged and serving, via a clean temporary master worktree; full verify there, then remove that temporary worktree. No push. The main checkout on codex/build-game and its uncommitted docs must remain untouched.
+
+## Local release v0.2 — owner decision 2026-09-11
+
+**PASS — local playable acceptance.** Runtime code: `422560ebdc3450fb7891501ec4d80d1d42a39b1b`; tag `playable-v0.2` includes this release note. Resolve its commit with `git rev-parse 'playable-v0.2^{commit}'`. The immutable tag is the preview build; later operation notes may exist on the writing branch.
+
+Included: corrected dev-account form validation; explicit unowned kitchen state and compact kitchen sprites; cooler freshness/weather explanation; seven core screens; prompt numeric-only timeout penalties; measured current-shift upgrade suggestions with keyboard navigation; VI/EN copy gate and accessible control contrast. Guest gift/referral actions remain unavailable. M1 is 11 PASS / 1 human-test WAIVED; M5-F14-SUMMARY is PENDING post-v0.2. M6/M7/M8 stay deferred/hidden; no monetization.
+
+Config remains 2.0.3 / rules24. No engine/config values changed in this batch, so no new registry publication is needed; the existing normal `next_shift` publication `registry-183f67c7-2c6e-489a-94d5-0862e29bb0f7` and current shift pins are retained. All 132 manifest entries resolve: 121 draft files / 3 working placeholders, 32 paired SFX. Draft assets are release-ready under the owner's waiver; art polish is pending.
+
+| Viewport | First playable | RAF fps | Served | Full shift / restock / upgrade / next day / reload / new tab | Console / failed requests |
+|---|---:|---:|---:|---|---|
+| 390×844 | 1154 ms | 60.25 | 58 | PASS | 0 / 0 |
+| 360×740 | 659 ms | 60.25 | 83 | PASS | 0 / 0 |
+| 1280×720 | 974 ms | 60.22 | 83 | PASS | 0 / 0 |
+
+
+Full verify:406/406 unit/server tests, 10 standard cohorts k 2.5644–2.9168, 15 rush cases, 30-day career seeds 42/99 k 3.465460767842698 / 3.393196640939153 ≤ 3.5. `check:assets` and 804 VI/EN key checks PASS. Axe:6/6 tests, 17 screens × 2 locales × 3 viewports = 102 scans, 0 violations. Focused upgrade checks 9/9, timeout/pause/reconnect 6/6, seven-screen smoke 3/3. Independent full-diff review's single keyboard-focus finding was fixed and its follow-up is CLEAN.
+
+Fresh gate receipts: `.qa/playable-v02-final-{verify,assets,smoke}.txt`, `.qa/playable-{390,360,1280}.json`; review `.qa/playable-v02-review-verdict.txt` plus `.qa/playable-v02-review-followup.txt`; focus `.qa/playable-v02-focus-{red,green}.txt`; axe `.qa/playable-v02-final-axe.txt`; guest visibility `.qa/steer17-quests-visibility.txt`. Timing/FPS are desktop Chromium at mobile viewport sizes, not physical-device results.
+
+### Start / stop the pinned local game
+
+Open [Trùm Bia Hơi local](http://127.0.0.1:5174/). Pinned checkout: `/Users/maingocanh/.codex/worktrees/trum-bia-hoi-playable-v0.2`; API 5175. After cutover, these commands control both dedicated launchd jobs. They leave the same player database and cookies in place:
+
+```sh
+python3 /Users/maingocanh/.codex/worktrees/trum-bia-hoi-playable-v0.2/.qa/playable-runtime/control.py status
+python3 /Users/maingocanh/.codex/worktrees/trum-bia-hoi-playable-v0.2/.qa/playable-runtime/control.py stop
+python3 /Users/maingocanh/.codex/worktrees/trum-bia-hoi-playable-v0.2/.qa/playable-runtime/control.py start
+```
+
+Use one action at a time. `start` is idempotent and can load the jobs after logging in again; jobs are registered for the current login session, not installed as login items. The helper refuses jobs owned by another checkout. Logs, backup and actual runtime receipt live beside the helper. Do not run a second API process against `.qa/game-api.sqlite`.
+
+Known limits: **localhost dev identity only; real Google Client ID/consent pending; no CAPTCHA or production hosting**. Admin requires a private allowlist/TOTP and is disabled in the owner preview. No external release or human playtest is claimed. The Production deployment checklist in this document remains PENDING. The cutover and master fast-forward will be recorded only after their checks finish.
