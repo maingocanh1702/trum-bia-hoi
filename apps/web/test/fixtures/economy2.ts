@@ -7,7 +7,9 @@ if (mode === 'inspect') {
   console.log(JSON.stringify({ now: w.now, version: g.config.version, raw: g.config.raw, beer: beerStatus(w, g.config), glasses: w.glasses.length, coins: w.coins, paused: !!w.paused, remaining: w.shift ? w.shift.endsAt - w.now : null }));
 } else {
   const raw = structuredClone(mode === 'legacy' ? legacy : config.raw); raw.shift.startingCoinsBase = 1000000;
-  for (const weather of ['sunny', 'hot', 'humid', 'rain', 'cold'] as const) raw.weather[weather].weight = weather === 'sunny' ? 1 : 0;
+  // Label-only fixture: make every cooler level purchasable without changing the release config.
+  if (mode.startsWith('cooler-') && 'lifePathGate' in raw.upgrades) raw.upgrades.lifePathGate.cooler = raw.upgrades.lifePathGate.cooler.map(() => 0);
+  for (const weather of ['sunny', 'hot', 'humid', 'rain', 'cold'] as const) raw.weather[weather].weight = weather === (mode.startsWith('cooler-') ? mode.slice(7) : 'sunny') ? 1 : 0;
   const g = new Game(loadConfig(raw), 42, Date.parse('2026-09-09T04:00:00Z'));
   const send = (command: Command) => g.command({ at: g.world.now, command, idempotencyKey: `web-eco-${g.log.length}` });
   send({ type: 'startShift' });

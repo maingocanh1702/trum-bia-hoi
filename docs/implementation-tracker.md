@@ -498,3 +498,8 @@ Steps1/2:af9d287/7dc5998. Local preview now serves tagplayable-v0.1 b3cfb34. Nor
 ### Steer16 · M4-DEV-PATTERN — PASS, 2026-09-11
 
 Escaped the HTML Unicode-v literal hyphen in the shared dev-account form. Native invalid-name rejection, same-shift link and fresh-context restore pass with0console/page errors (1browser regression); independent auth review CLEAN. Full verify406/406,10standard k2.5644–2.9168,15rush,2career k3.46546/3.39320 PASS. No server/engine/config change; preview stays playable-v0.1. Ordered remaining queue and the11:05 equipment UI addendum are in milestone-closure-m0-m5.md.
+
+
+### M1-EQUIPMENT-UI — PASS, owner addendum 2026-09-11
+
+Kitchen Lv0 has an explicit empty slot and locked copy; an unavailable level never borrows another level's art in upgrade comparisons. Four retained imagegen kitchen originals have compact v2 exports (7,289,987→59,845 bytes total), true alpha, native sizes and manifest checksums. Cooler cards explain configured baseline freshness, stale tip/reputation outcome and hot/humid multipliers; HUD uses the actual weather-adjusted duration with a seconds unit. VI/EN label8/8, kitchen7/7, production5/5 PASS; typecheck/build/config and406unit/server tests PASS. Two old production assertions were updated for baseline card values and spaced seconds. Engine/config untouched; standard/rush/career gates reuse the full green M4-DEV-PATTERN source result, with an additional full verify still running in `.qa/steer16-equipment-verify-final.txt`. Preview remains v0.1 until batch release.

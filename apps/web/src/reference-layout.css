@@ -336,3 +336,5 @@
 .beer-pipeline { margin: 0 66px 5px 12px; padding: 5px 8px; border-radius: 12px; background: #456760; color: #fff6de; font-size: 11px; font-weight: 750; line-height: 1.4; font-variant-numeric: tabular-nums; }
 .stock-strip > .beer-stock { border-bottom: 2px solid #b9ccb6; border-radius: 15px 15px 0 0; padding-bottom: 5px; margin-bottom: 5px; }
 .equipment-object.keg .capacity-badge { white-space: nowrap; right: 0; }
+
+.equipment-empty { min-height: 59px; padding: 8px; border: 2px dashed var(--panelBorder); border-radius: 12px; background: var(--panelDeep); color: var(--creamMuted); font-size: 11px; line-height: 1.6; }

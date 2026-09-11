@@ -656,5 +656,11 @@
   "equipment.keg.level2": "Small stainless keg",
   "equipment.keg.level3": "Large stainless keg",
   "equipment.keg.level4": "Pressure system",
-  "equipment.keg.level5": "Industrial tap station"
+  "equipment.keg.level5": "Industrial tap station",
+  "equipment.unowned": "Not owned yet",
+  "equipment.noArt": "No artwork for this level yet",
+  "cooler.seconds": "{seconds} s",
+  "cooler.staleAfter": "Beer left unserved for over {seconds} s after pouring → no tip, {reputation} reputation.",
+  "cooler.forever": "Poured beer stays fresh indefinitely.",
+  "cooler.weather": "Weather shortens freshness: hot ×{hot}, humid ×{humid}."
 }

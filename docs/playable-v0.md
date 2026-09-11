@@ -101,3 +101,20 @@ Read-only comparison to the original pre-switch backup:4existing players preserv
 Runtime checks:6stock rows, deferred risk UI hidden, new4/4buffer,0core-game console errors; midshift dev sign-in preserves player/shift/coins. **Known pre-existing limitation:** opening the dev identity form logs one invalid HTML `pattern` regex in `apps/web/src/admin-api.ts:68` (`[a-z][a-z0-9-]{0,31}`, also present at7418c7b). The broader account-console smoke therefore reports FAIL for that one console error; login state checks pass. This is outside the three owner-authorized Steer15 items and was recorded without changing auth UI. The three guest full-shift acceptance paths remain PASS with0console errors.
 
 Operation evidence in the writing checkout `.qa/`: `steer15-runtime-cutover-final.txt`, `steer15-publication-receipt.json`, `steer15-publication-run.txt`, `steer15-preservation-receipt.json`, `steer15-admin-revocation.json`, `steer15-runtime-smoke.json`, `steer15-runtime-smoke-final.txt`, `steer15-launchd-review-verdict.txt`. Reload the preview tab to load the new client; the new buffer applies when the next shift starts. Steer15(1)af9d287 and(2)7dc5998 are complete; no M6/M7/M8 or other feature work started.
+
+
+## Production deployment — PENDING (owner decision 2026-09-11)
+
+Local v0.2 is for owner testing only. Do not begin these production tasks as part of this batch:
+
+- [ ] Hosting, HTTPS and domain.
+- [ ] Production environment (`NODE_ENV=production`), dev identity stub OFF.
+- [ ] Real `TBH_GOOGLE_CLIENT_ID` and Google consent acceptance.
+- [ ] Production admin accounts file and TOTP enrollment.
+- [ ] SQLite backups, restore checks and monitoring.
+- [ ] CAPTCHA.
+- [ ] PWA installation and performance on real devices.
+- [ ] Human playtest (existing owner waiver retained).
+- [ ] Remaining assets/backgrounds.
+
+Owner authorizes fast-forwarding `codex/game-build-isolated` into master only after local v0.2 is tagged and serving, via a clean temporary master worktree; full verify there, then remove that temporary worktree. No push. The main checkout on codex/build-game and its uncommitted docs must remain untouched.

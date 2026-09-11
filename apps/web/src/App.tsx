@@ -5,7 +5,7 @@ import { Leaderboard } from './Leaderboard';
 import { Locations } from './Locations';
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { buyGlassQuote, isEconomy2, BUSINESS_UNLOCKS, menuReport, beerStatus, washerStatus, kitchenStatus, flyerQuote, SIGN_STYLES, signboardQuote, DISHES, EQUIPMENT, currentGuests, deliveryQuote, dogUpgradeQuote, encodeSave, freshnessMs, kickAllQuote, lifePathStatus, restockQuote, rushStatus, stockCap, unlockQuote, upgradeQuote, wellRestedRemaining, type Command, type Equipment, type Order, type RequirementStatus, type Table, type DomainEvent, type Game } from '../../../packages/engine/src';
-import { Sprite, TableSeats, menuAsset, reactions } from './assets';
+import { Sprite, TableSeats, menuAsset, reactions, hasSpriteArt } from './assets';
 import { translate } from './i18n';
 import { advanceGuide, dispatch, download, readSettings, writeSettings, replaceSave, type BootSession } from './local';
 import { Quests } from './Quests';
@@ -300,7 +300,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   function equipmentButton(kind: Equipment) {
     const production = kind === 'keg' ? beer : kind === 'washer' ? washer : null;
     const cold = freshnessMs(w, game.config);
-    const count = kind === 'keg' ? `${beer.stored}/${beer.capacity}` : kind === 'washer' ? `${washer.busy}/${washer.batchSize}` : kind === 'kitchen' ? `${kitchen.busy}/${kitchen.slots}` : Number.isFinite(cold) ? `${Math.round(cold) / 1000}s` : '∞';
+    const count = kind === 'keg' ? `${beer.stored}/${beer.capacity}` : kind === 'washer' ? `${washer.busy}/${washer.batchSize}` : kind === 'kitchen' ? `${kitchen.busy}/${kitchen.slots}` : Number.isFinite(cold) ? t('cooler.seconds', { seconds: Math.round(cold) / 1000 }) : '∞';
     return <button className={`equipment-object ${kind} ${kind === 'kitchen' && kitchen.busy ? 'is-cooking' : ''}`} key={kind} onClick={() => { setSelectedTable(null); setSelectedEquipment(kind); }} aria-label={t(`equipment.${kind}`)}>
       <Sprite id={`${kind}-lv${Math.max(1, w.equipment[kind])}`} /><span>{t(`equipment.${kind}`)}</span><b className="capacity-badge" aria-label={t(`production.${kind === 'washer' ? 'washing' : kind === 'keg' ? 'ready' : kind === 'cooler' ? 'freshness' : 'busy'}`, { count })}>{kind === 'keg' ? t('production.ready', { count }) : count}</b>
       {production && production.busy > 0 && <progress className="equipment-progress" aria-label={t('production.batchProgress', { n: production.busy })} value={production.progress} max={1} />}
@@ -324,18 +324,18 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
     const q = upgradeQuote(w, game.config, kind);
     const metrics = (level: number) => {
       const i = level - 1;
+      if (!level) return null;
       if (kind === 'keg') return <><small>{t(`equipment.keg.level${level}`)}</small><p>{t('production.taps', { n: c.upgrades.keg.pourSlots[i], seconds: c.upgrades.keg.pourMs[i] / 1000, max: c.upgrades.keg.refillEnabled ? c.upgrades.keg.kegStorage[i] : c.upgrades.keg.pourSlots[i] })}</p><p>{t('production.batch', { n: c.upgrades.keg.refillEnabled ? c.upgrades.keg.kegBatch[i] : c.upgrades.keg.pourSlots[i], seconds: (c.upgrades.keg.refillEnabled ? c.upgrades.keg.refillMs[i] : c.upgrades.keg.pourMs[i]) / 1000 })}</p></>;
       if (kind === 'washer') return <p>{t('production.batch', { n: c.upgrades.washer.slots[i], seconds: c.upgrades.washer.washMs[i] / 1000 })}</p>;
       if (kind === 'cooler') {
-        const cold = freshnessMs({ ...w, equipment: { ...w.equipment, cooler: level } }, game.config);
-        return <p>{t('production.freshness', { count: Number.isFinite(cold) ? `${Math.round(cold) / 1000}s` : '∞' })}</p>;
+        const cold = c.upgrades.cooler.freshnessMs[i];
+        return <><p>{t('production.freshness', { count: cold === null ? '∞' : t('cooler.seconds', { seconds: cold / 1000 }) })}</p><p>{cold === null ? t('cooler.forever') : t('cooler.staleAfter', { seconds: cold / 1000, reputation: num(c.reputation.staleGlass).replace('-', '−') })}</p></>;
       }
       if (kind === 'stall') return <p>{t('production.stockCap', { n: c.upgrades.stall.stockCap[i] })}</p>;
-      if (!level) return <p>{t('kitchen.locked')}</p>;
       const dishes = c.upgrades.kitchen.unlocks[level];
       return <><p>{t(dishes.length ? 'kitchen.unlocks' : 'kitchen.noNewDishes', { dishes: dishes.map(dish => t(`dish.${dish}`)).join(' + ') })}</p><p>{t('production.kitchenSlots', { n: c.upgrades.kitchen.slots[level] })}</p>{isEconomy2(c) && <p>{t('production.portions', { n: c.upgrades.kitchen.portionsPerPan[level] })}</p>}<p>{t('kitchen.speed', { percent: Math.round((1 - (c.upgrades.kitchen.prepMult[level] ?? 1)) * 100) })}</p></>;
     };
-    return <div className="upgrade-card" key={kind}><h3>{t(`equipment.${kind}`)}</h3>{kind === 'kitchen' && <p>{t('kitchen.rawStock')}</p>}<div className="equipment-comparison">{[w.equipment[kind], ...(q.cost !== null ? [q.next] : [])].map((level, i) => <section key={i}><Sprite id={`${kind}-lv${Math.max(1, level)}`} /><strong>{t(i ? 'production.next' : 'level', { n: level })}</strong>{metrics(level)}</section>)}</div><button disabled={!q.ok} onClick={() => run({ type: 'upgrade', kind })}>{q.cost === null ? t('upgrade.max') : t('upgrade.buy', { cost: num(q.cost) })}</button>{q.reason && q.cost !== null && <p role="status">{q.reason === 'lifePathRequired' ? t('upgrade.lifePath', { name: levelName(q.requiredLifePath) }) : t(`error.${q.reason}`)}</p>}</div>;
+    return <div className="upgrade-card" key={kind}><h3>{t(`equipment.${kind}`)}</h3>{kind === 'kitchen' && <p>{t('kitchen.rawStock')}</p>}{kind === 'cooler' && <p>{t('cooler.weather', { hot: c.weather.hot.freshnessMult, humid: c.weather.humid.freshnessMult })}</p>}<div className="equipment-comparison">{[w.equipment[kind], ...(q.cost !== null ? [q.next] : [])].map((level, i) => <section key={i}>{level > 0 && hasSpriteArt(`${kind}-lv${level}`) ? <Sprite id={`${kind}-lv${level}`} /> : <div className="equipment-empty">{t(!level ? kind === 'kitchen' ? 'kitchen.locked' : 'equipment.unowned' : 'equipment.noArt')}</div>}<strong>{t(i ? 'production.next' : 'level', { n: level })}</strong>{metrics(level)}</section>)}</div><button disabled={!q.ok} onClick={() => run({ type: 'upgrade', kind })}>{q.cost === null ? t('upgrade.max') : t('upgrade.buy', { cost: num(q.cost) })}</button>{q.reason && q.cost !== null && <p role="status">{q.reason === 'lifePathRequired' ? t('upgrade.lifePath', { name: levelName(q.requiredLifePath) }) : t(`error.${q.reason}`)}</p>}</div>;
   }
 
   return <div className="game-shell" data-save-state={saveError ? 'error' : saving ? 'saving' : 'saved'} data-frame={frame}>

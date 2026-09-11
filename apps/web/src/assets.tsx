@@ -3,6 +3,7 @@ import manifest from '../../../assets/manifest.json';
 import type { Customer, Dish } from '../../../packages/engine/src';
 const urls = import.meta.glob('../../../assets/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 export const menuAsset: Record<Dish, string> = { bia: 'menu-beer', lac: 'menu-peanut', nem: 'menu-nemchua', dau: 'menu-friedbean', topmo: 'menu-crackle', long: 'menu-intestine' };
+export const hasSpriteArt = (id: string) => manifest.assets.some(a => a.id === id && a.type === 'sprite' && a.status !== 'placeholder' && !!a.path);
 export function Sprite({ id, className = '' }: { id: string; className?: string }) {
   let asset = manifest.assets.find(a => a.type === 'sprite' && a.id === id);
   const equipment = /^(keg|washer|cooler)-lv(\d+)$/.exec(id);

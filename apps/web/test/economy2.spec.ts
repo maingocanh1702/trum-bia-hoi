@@ -60,6 +60,11 @@ for (const lang of ['vi', 'en']) test(`upgrade and stock labels distinguish ingr
   const card = page.locator('.equipment-detail .upgrade-card');
   await expect(page.locator('.kitchen-panel header')).toHaveCount(0);
   await expect(card).toContainText(labels['kitchen.rawStock']);
+  const unowned = card.locator('.equipment-comparison section').first();
+  await expect(unowned.locator('img')).toHaveCount(0);
+  await expect(unowned.locator('.equipment-empty')).toHaveText(labels['kitchen.locked']);
+  await expect(card.locator('.equipment-comparison section').last().locator('img')).toHaveAttribute('src', /kitchen-lv1-illustrated-v2/);
+  await page.screenshot({ path: `.qa/kitchen-zero-${lang}.png` });
   for (let level = 1; level <= 3; level++) {
     const next = card.locator('.equipment-comparison section').last();
     await expect(next).toContainText(copy('production.kitchenSlots', { n: seed.upgrades.kitchen.slots[level] }));
@@ -79,4 +84,28 @@ for (const lang of ['vi', 'en']) test(`upgrade and stock labels distinguish ingr
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: `.qa/upgrade-stock-copy-${lang}.png` });
+});
+
+for (const lang of ['vi', 'en']) for (const weather of ['sunny', 'hot', 'humid']) test(`cooler explains each level and weather-adjusted HUD seconds in ${lang}/${weather}`, async ({ page }) => {
+  const f = fixture(`cooler-${weather}`), labels = JSON.parse(readFileSync(`apps/web/src/i18n/${lang}.json`, 'utf8'));
+  const copy = (key: string, params: Record<string, string | number> = {}) => labels[key].replace(/\{(\w+)\}/g, (_: string, key: string) => String(params[key]));
+  await page.setViewportSize({ width: 360, height: 740 }); await page.clock.pauseAt(new Date(f.now));
+  await page.addInitScript(save => { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('tbh.settings.v1', JSON.stringify({ welcomed: true, guideDone: true })); }, f.save);
+  await page.goto('/'); await page.getByRole('button', { name: /^(Cài đặt|Settings)$/ }).click();
+  await page.locator('select').first().selectOption(lang); await page.keyboard.press('Escape');
+  for (const [index, ms] of seed.upgrades.cooler.freshnessMs.entries()) {
+    const duration = ms === null ? '∞' : copy('cooler.seconds', { seconds: Math.round(ms * seed.weather[weather].freshnessMult) / 1000 });
+    await expect(page.locator('.cooler .capacity-badge')).toHaveText(duration);
+    await expect(page.locator('.cooler .capacity-badge')).toHaveAccessibleName(copy('production.freshness', { count: duration }));
+    await page.getByRole('button', { name: labels['equipment.cooler'], exact: true }).click();
+    const card = page.locator('.equipment-detail .upgrade-card'), current = card.locator('.equipment-comparison section').first();
+    await expect(current).toContainText(copy('level', { n: index + 1 }));
+    await expect(current).toContainText(ms === null ? labels['cooler.forever'] : copy('cooler.staleAfter', { seconds: ms / 1000, reputation: String(seed.reputation.staleGlass).replace('-', '−') }));
+    await expect(card).toContainText(copy('cooler.weather', { hot: seed.weather.hot.freshnessMult, humid: seed.weather.humid.freshnessMult }));
+    if (index === 0 || ms === null) await page.screenshot({ path: `.qa/cooler-${lang}-${weather}-${index + 1}.png` });
+    if (ms !== null) await card.getByRole('button').click();
+    else await expect(card.getByRole('button')).toBeDisabled();
+    await page.keyboard.press('Escape');
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

@@ -661,70 +661,74 @@
     {
       "id": "kitchen-lv1",
       "type": "sprite",
-      "path": "assets/kitchen-lv1-illustrated-v1.png",
+      "path": "assets/kitchen-lv1-illustrated-v2.png",
       "source": "imagegen_builtin",
       "dimensions": [
-        1254,
-        1254
+        224,
+        192
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
       "status": "draft",
-      "review_notes": "Native RGBA generated from owner style direction. Full alpha preserved; compact UI QA required. Illustrated art draft, not final pixel-art release approval.",
-      "license_note": "Original built-in image generation for this project; no extracted third-party sprite."
+      "review_notes": "Owner Steer16 2026-09-11: compact v2 export of the retained original imagegen source; Lanczos contain, centered bottom anchor with 4px padding, 128-color PNG with true alpha. Draft accepted for local release. Provenance in kitchen-art.json.",
+      "license_note": "Original built-in image generation for this project; no extracted third-party sprite.",
+      "sha256": "8165934e2b43a218f09255a9b0b479e0bd25ddaa228f924bbe59049fccfd7244"
     },
     {
       "id": "kitchen-lv2",
       "type": "sprite",
-      "path": "assets/kitchen-lv2-illustrated-v1.png",
+      "path": "assets/kitchen-lv2-illustrated-v2.png",
       "source": "imagegen_builtin",
       "dimensions": [
-        1254,
-        1254
+        240,
+        192
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
       "status": "draft",
-      "review_notes": "Native RGBA generated from owner style direction. Full alpha preserved; compact UI QA required. Illustrated art draft, not final pixel-art release approval.",
-      "license_note": "Original built-in image generation for this project; no extracted third-party sprite."
+      "review_notes": "Owner Steer16 2026-09-11: compact v2 export of the retained original imagegen source; Lanczos contain, centered bottom anchor with 4px padding, 128-color PNG with true alpha. Draft accepted for local release. Provenance in kitchen-art.json.",
+      "license_note": "Original built-in image generation for this project; no extracted third-party sprite.",
+      "sha256": "c94c718d02e205e299699bf22b81193063b72b1d3eb5417cddd7646cc6efc80b"
     },
     {
       "id": "kitchen-lv3",
       "type": "sprite",
-      "path": "assets/kitchen-lv3-illustrated-v1.png",
+      "path": "assets/kitchen-lv3-illustrated-v2.png",
       "source": "imagegen_builtin",
       "dimensions": [
-        1254,
-        1254
+        304,
+        208
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
       "status": "draft",
-      "review_notes": "Native RGBA generated from owner style direction. Full alpha preserved; compact UI QA required. Illustrated art draft, not final pixel-art release approval.",
-      "license_note": "Original built-in image generation for this project; no extracted third-party sprite."
+      "review_notes": "Owner Steer16 2026-09-11: compact v2 export of the retained original imagegen source; Lanczos contain, centered bottom anchor with 4px padding, 128-color PNG with true alpha. Draft accepted for local release. Provenance in kitchen-art.json.",
+      "license_note": "Original built-in image generation for this project; no extracted third-party sprite.",
+      "sha256": "7acfb087dc1963d6c1ac01213c6a31509fd13efe5c47162e51921a0bd6ff4b31"
     },
     {
       "id": "kitchen-lv4",
       "type": "sprite",
-      "path": "assets/kitchen-lv4-illustrated-v1.png",
+      "path": "assets/kitchen-lv4-illustrated-v2.png",
       "source": "imagegen_builtin",
       "dimensions": [
-        1254,
-        1254
+        400,
+        288
       ],
       "transparent": true,
       "usage": [
         "gameplay"
       ],
       "status": "draft",
-      "review_notes": "Native RGBA generated from owner style direction. Full alpha preserved; compact UI QA required. Illustrated art draft, not final pixel-art release approval.",
-      "license_note": "Original built-in image generation for this project; no extracted third-party sprite."
+      "review_notes": "Owner Steer16 2026-09-11: compact v2 export of the retained original imagegen source; Lanczos contain, centered bottom anchor with 4px padding, 128-color PNG with true alpha. Draft accepted for local release. Provenance in kitchen-art.json.",
+      "license_note": "Original built-in image generation for this project; no extracted third-party sprite.",
+      "sha256": "afddce21fcc8ca7d9cfb4c28ace7f5589cc89ad52f901aabc0aae41b5f1510c2"
     },
     {
       "id": "customer-thuong",

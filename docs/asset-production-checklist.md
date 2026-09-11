@@ -816,3 +816,8 @@ Steer12 further narrows this build to playable-v0: existing drafts and placehold
 13/13 imagegen drafts exported: washer-lv2–5, cooler-lv2–5 (fridge family), stall-lv1–5 (counter family). One generation per asset; native crops, bottom anchors, true RGBA transparency after the existing green-key export, token palette and two-pixel outline checked. Source PNGs retained; prompts, source/output SHA-256 and reproducible export in `docs/reference/assets-owner-2026-09-08/equipment-upgrades-2026-09-11-imagegen.json`. Contact sheet: `assets/_qa/contact-equipment-upgrades-2026-09-11.png`. Kitchen unchanged.
 
 Owner waiver2026-09-11: drafts accepted for release; no approval/polish pass. This batch replaces all13 targeted placeholders, with0 export failures. Manifest now132entries,121drafts,3remaining placeholders; check:assets PASS. The remaining placeholders are outside Steer15 scope.
+
+
+### Owner Steer16 addendum — compact kitchen export v2, 2026-09-11
+
+Re-exported the four existing imagegen kitchen drafts at the checklist native sizes224×192,240×192,304×208,400×288. Source v1 files remain unchanged; manifest IDs/source/status remain, paths advance to v2 with dimensions and SHA-256.128-color PNG with real alpha and bottom padding:1691761→9801,1461471→9417,1945438→14112,2191317→26515bytes (7289987→59845 total). Source/output provenance is recorded in kitchen-art.json. check:assets PASS132entries/121drafts/3existing placeholders; alpha extrema0/255 and padding≥2px asserted for all4 exports. Owner requested compression; no regeneration or art polish.

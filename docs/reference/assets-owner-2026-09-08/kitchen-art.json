@@ -10,7 +10,18 @@
     "sha256": "f76c1b6155755f8b846107bb32f64b06339bcb48155ab9bb9a21f93a01828be2",
     "tool": "image_gen (builtin)",
     "status": "draft",
-    "processing": "Original RGBA bytes copied unchanged; no raster editing."
+    "processing": "Original RGBA bytes copied unchanged; no raster editing.",
+    "compactExport": {
+      "path": "assets/kitchen-lv1-illustrated-v2.png",
+      "dimensions": [
+        224,
+        192
+      ],
+      "sha256": "8165934e2b43a218f09255a9b0b479e0bd25ddaa228f924bbe59049fccfd7244",
+      "bytes": 9801,
+      "sourceBytes": 1691761,
+      "processing": "Pillow contain with Lanczos in canvas minus8px; centered x, bottom4px; FASTOCTREE128 without dithering; palette alpha>=250 restored to255; optimized PNG."
+    }
   },
   {
     "id": "kitchen-lv2",
@@ -23,7 +34,18 @@
     "sha256": "b627430875580c8e3b659523dd4af3f4d8a8153f52bbd207d1a141d5a76c3420",
     "tool": "image_gen (builtin)",
     "status": "draft",
-    "processing": "Original RGBA bytes copied unchanged; no raster editing."
+    "processing": "Original RGBA bytes copied unchanged; no raster editing.",
+    "compactExport": {
+      "path": "assets/kitchen-lv2-illustrated-v2.png",
+      "dimensions": [
+        240,
+        192
+      ],
+      "sha256": "c94c718d02e205e299699bf22b81193063b72b1d3eb5417cddd7646cc6efc80b",
+      "bytes": 9417,
+      "sourceBytes": 1461471,
+      "processing": "Pillow contain with Lanczos in canvas minus8px; centered x, bottom4px; FASTOCTREE128 without dithering; palette alpha>=250 restored to255; optimized PNG."
+    }
   },
   {
     "id": "kitchen-lv3",
@@ -36,7 +58,18 @@
     "sha256": "d62b661673856ebaecdf6615926cd2a78e3f7e11884574eadffef5cc951a5f0d",
     "tool": "image_gen (builtin)",
     "status": "draft",
-    "processing": "Original RGBA bytes copied unchanged; no raster editing."
+    "processing": "Original RGBA bytes copied unchanged; no raster editing.",
+    "compactExport": {
+      "path": "assets/kitchen-lv3-illustrated-v2.png",
+      "dimensions": [
+        304,
+        208
+      ],
+      "sha256": "7acfb087dc1963d6c1ac01213c6a31509fd13efe5c47162e51921a0bd6ff4b31",
+      "bytes": 14112,
+      "sourceBytes": 1945438,
+      "processing": "Pillow contain with Lanczos in canvas minus8px; centered x, bottom4px; FASTOCTREE128 without dithering; palette alpha>=250 restored to255; optimized PNG."
+    }
   },
   {
     "id": "kitchen-lv4",
@@ -49,7 +82,18 @@
     "sha256": "c78708f651b55dfb436fa9a9b77821a5326a1eb94e9227997ddfe1e439c84eb7",
     "tool": "image_gen (builtin)",
     "status": "draft",
-    "processing": "Original RGBA bytes copied unchanged; no raster editing."
+    "processing": "Original RGBA bytes copied unchanged; no raster editing.",
+    "compactExport": {
+      "path": "assets/kitchen-lv4-illustrated-v2.png",
+      "dimensions": [
+        400,
+        288
+      ],
+      "sha256": "afddce21fcc8ca7d9cfb4c28ace7f5589cc89ad52f901aabc0aae41b5f1510c2",
+      "bytes": 26515,
+      "sourceBytes": 2191317,
+      "processing": "Pillow contain with Lanczos in canvas minus8px; centered x, bottom4px; FASTOCTREE128 without dithering; palette alpha>=250 restored to255; optimized PNG."
+    }
   },
   {
     "id": "menu-friedbean",

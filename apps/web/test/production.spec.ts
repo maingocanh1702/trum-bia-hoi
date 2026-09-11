@@ -11,10 +11,10 @@ for (const width of [360, 390]) test(`stocked beer capacity and upgrade comparis
   const snapshot = async () => fixture(await readSave(page));
   await expect(washer.locator('.capacity-badge')).toHaveText('0/1');
   const cooler = page.locator('.equipment-object.cooler');
-  await expect(cooler.locator('.capacity-badge')).toHaveText('8.04s');
+  await expect(cooler.locator('.capacity-badge')).toHaveText('8.04 s');
   await cooler.click(); const coldPanel = page.getByRole('dialog');
-  await expect(coldPanel.getByText('Giữ tươi 8.04s', { exact: true })).toBeVisible();
-  await expect(coldPanel.getByText('Giữ tươi 13.4s', { exact: true })).toBeVisible();
+  await expect(coldPanel.getByText('Giữ tươi 12 s', { exact: true })).toBeVisible();
+  await expect(coldPanel.getByText('Giữ tươi 20 s', { exact: true })).toBeVisible();
   await coldPanel.getByRole('button', { name: /×$/ }).click();
   await expect(keg.locator('.capacity-badge')).toHaveText('Rót sẵn 0/5 cốc'); await expect(keg.getByRole('progressbar')).toBeVisible();
   await page.screenshot({ path: `.qa/batch-yard-${width}.png` });

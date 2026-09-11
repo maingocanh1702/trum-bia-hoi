@@ -1,6 +1,6 @@
 # Milestone closure report — M0–M5
 
-> Current owner target (Steer16, 2026-09-11): improve the open M1–M5 gameplay criteria one at a time, then verify and publish **playable-v0.2**. Existing WAIVED rows stay waived; M6/M7/M8 stay deferred; working drafts/placeholders remain accepted. The live preview stays on playable-v0.1 until the next release gates pass.
+> Current owner target (Steer17, 2026-09-11): **local release playable-v0.2** for owner testing. Kept criteria: equipment UI, shift/screens, timeout, measured upgrade hint, location summary, i18n/axe. Production/internet, OAuth/minute5, referral/gifts, admin/registry polish and large season snapshots are PENDING. WAIVED rows stay waived; M6/M7/M8 remain deferred. Preview stays on v0.1 until the release gates pass; then fast-forward master through a clean temporary worktree, without pushing or touching the main checkout WIP.
 
 2026-09-10 · implementation `628eb72` · config2.0.2/rules24/schema10.
 Authority: [ROADMAP §mốc M0–M9](../06-ROADMAP-trum-bia-hoi.md), including the
@@ -646,3 +646,13 @@ Ordered by player impact; each id gets its own evidence/commit. Existing evidenc
 ### M4-DEV-PATTERN
 
 Native HTML pattern uses Unicode-v set syntax: the literal hyphen is now escaped in the shared dev form. Browser regression rejects malformed names, accepts a hyphenated name, links the same live shift and restores the account in a fresh context with zero console/page errors and no Google requests. Red/green receipts: `.qa/steer16-pattern-red.txt` / `.qa/steer16-pattern-green.txt` (1PASS); independent auth review `.qa/steer16-pattern-review-verdict.txt` CLEAN. Server identity admission, flags and production behavior are unchanged. **PASS**: `.qa/steer16-pattern-verify.txt` full verify406/406, build/config,10standard cohorts k2.5644–2.9168,15rush and career42/99 k3.46546/3.39320. Source fixed; pinned playable-v0.1 is unchanged until the next batch release.
+
+
+### Steer17 trimmed execution — 2026-09-11
+
+Supersedes the unstarted portions of the Steer16 queue above. Ordered ids: M1-EQUIPMENT-UI → M1-SHIFT → M1-SCREENS → M1-TIMEOUT (formerly M2-TIMEOUT) → M1-UPGRADE → M5-F14-SUMMARY → M1-I18N/AXE → local v0.2 verify/smoke/release → master fast-forward and verification. Referral/gift UI is only checked for guest hiding/coming-soon wording. F12/F28 global snapshots/rewards are not a small local fix and remain PENDING. M2-ONBOARDING/GOOGLE5, M5-F16/F17 and M2-ADMIN/M4-REGISTRY are not part of this batch. No WAIVED row is reopened.
+
+
+### M1-EQUIPMENT-UI — PASS, owner addendum 2026-09-11
+
+Kitchen Lv0 has an explicit empty slot and locked copy; an unavailable level never borrows another level's art in upgrade comparisons. Four retained imagegen kitchen originals have compact v2 exports (7,289,987→59,845 bytes total), true alpha, native sizes and manifest checksums. Cooler cards explain configured baseline freshness, stale tip/reputation outcome and hot/humid multipliers; HUD uses the actual weather-adjusted duration with a seconds unit. VI/EN label8/8, kitchen7/7, production5/5 PASS; typecheck/build/config and406unit/server tests PASS. Two old production assertions were updated for baseline card values and spaced seconds. Engine/config untouched; standard/rush/career gates reuse the full green M4-DEV-PATTERN source result, with an additional full verify still running in `.qa/steer16-equipment-verify-final.txt`. Preview remains v0.1 until batch release.

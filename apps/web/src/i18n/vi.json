@@ -656,5 +656,11 @@
   "equipment.keg.level2": "Bom inox nhỏ",
   "equipment.keg.level3": "Bom inox lớn",
   "equipment.keg.level4": "Hệ thống áp suất",
-  "equipment.keg.level5": "Trạm rót công nghiệp"
+  "equipment.keg.level5": "Trạm rót công nghiệp",
+  "equipment.unowned": "Chưa có thiết bị",
+  "equipment.noArt": "Chưa có hình cấp này",
+  "cooler.seconds": "{seconds} s",
+  "cooler.staleAfter": "Bia rót xong quá {seconds} s mà chưa bưng → mất boa, {reputation} uy tín.",
+  "cooler.forever": "Bia rót xong không mất hơi theo thời gian.",
+  "cooler.weather": "Thời tiết rút ngắn thời gian giữ tươi: nóng ×{hot}, oi bức ×{humid}."
 }
