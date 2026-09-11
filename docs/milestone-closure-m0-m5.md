@@ -808,3 +808,23 @@ All37main-checkout WIP hashes and its `codex/build-game` branch are unchanged. E
 ### Local v0.3 master landing / verification record
 
 Next authorized operation: fast-forward `master` from `7d1c25595af86067a63d5a43a48c47bf80c09814` to this writing branch through the clean temporary worktree `trum-bia-hoi-master-v03-verify`, then full `npm run verify` in that worktree. The main checkout is never switched or stashed. Exact ff commit is recorded in `.qa/playable-v03-master-ff.json`; success-only `.qa/playable-v03-master-verified.json` records the final master hash,418test result and log SHA256 after completion. Retain `.qa/playable-v03-master-verify.txt`, then remove the temporary worktree only after PASS. These receipt files distinguish a completed check from this planned record. The preview stays on its immutable v0.3 tag independently of later documentation commits.
+
+
+## Final local release 1.0 — owner decision 2026-09-11
+
+**FINAL LOCAL RELEASE accepted.** Annotated tag `release-1.0-local` and `playable-v0.3` both point to runtime commit `261f23316e025ea56e88f372c884c5c50ab4cdbd`. The existing launchd jobs keep serving [the game on 5174](http://127.0.0.1:5174/) and API on 5175 from the v0.3 checkout; no rebuild, restart, config publication or progress reset accompanies this documentation-only closure.
+
+Included: guest device persistence; full 12-minute shifts with serving, stock/restock, washing, upgrades, shift book, summary and next day; six dishes/kitchen, seven customer types, weather/rush, quests/progression; local dev-account link/restore, live ranking and immutable season history; location summaries and configurable onboarding. Google-dependent acceptance uses the localhost-only, non-production dev identity stub. The game remains free, with no monetization, inspection or lottery.
+
+Start/stop the existing launchd jobs (`local.tbh.playable-web` / `local.tbh.playable-api`):
+
+```sh
+python3 '/Users/maingocanh/.codex/worktrees/trum-bia-hoi-playable-v0.3/.qa/playable-runtime/control.py' start
+python3 '/Users/maingocanh/.codex/worktrees/trum-bia-hoi-playable-v0.3/.qa/playable-runtime/control.py' stop
+```
+
+SQLite remains `/Users/maingocanh/.codex/worktrees/trum-bia-hoi-game/.qa/game-api.sqlite`. Cutover backup: `/Users/maingocanh/.codex/worktrees/trum-bia-hoi-playable-v0.3/.qa/playable-runtime/game-api-before-playable-v0.3.sqlite`.
+
+Verification: full `npm run verify` on merged master `4b7cbeb653958692c13bcda5f7292092f92cd129` PASS (418/418 tests, 20 paired standard cohorts, 15 rush cases, career seeds 42/99 within the gate). Receipt `.qa/playable-v03-master-verified.json` confirms success and temporary-worktree removal. Assets and all three full-shift viewport smokes already PASS as recorded above. This final two-file docs commit is fast-forwarded separately; the runtime stays pinned. The main `codex/build-game` checkout and owner WIP are untouched. No push; the owner pushes.
+
+**PENDING / outside this final local release:** F12-CLAIM rewards/claim/mailbox; real Google OAuth; production hosting/HTTPS, TOTP, backup/monitoring; CAPTCHA; PWA/device QA; F16/F17 social/referral; three placeholder assets plus one background (M9); human playtest (acceptance waived for this build); account deletion/privacy; M6/M7/M8. These remain tracked, not release blockers. Work stops after this closure pending owner feedback.
