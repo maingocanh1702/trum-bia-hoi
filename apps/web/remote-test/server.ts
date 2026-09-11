@@ -7,6 +7,8 @@ import { GameStore } from '../../server/src/store';
 import { createGameServer } from '../../server/src/http';
 let offset = 0;
 const raw = structuredClone(config.raw); raw._meta.version = 'remote-browser-fixture'; raw.shift.startingCoinsBase = 100000; raw.leaderboard.topN = 2;
+// Accessibility coverage reveals later menus without changing progress, purchases or production config.
+if (process.env.TBH_A11Y_TEST === '1') { raw.onboarding.featureReveal.questsAfterShifts = 0; raw.onboarding.featureReveal.leagueAfterShifts = 0; }
 const store = new GameStore(':memory:', loadConfig(raw), () => Date.now() + offset);
 const key = generateKeyPairSync('rsa', { modulusLength: 2048 }), clientId = 'browser-player.apps.googleusercontent.com';
 const certs = createServer((_req, res) => {

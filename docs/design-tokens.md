@@ -193,3 +193,5 @@ Khi gen asset bằng AI, dùng **đúng hex §2** trong prompt. Ngoài ra:
 
 | 2026-09-09 owner layout | Áp dụng ảnh tham khảo mới `docs/reference/assets-owner-2026-09-08/layout-owner.png`: sân `#aed0d8`, bóng sân `#90b6c2`, panel `#173c30`, panel sâu `#10291f`, nút `#456760`, viền `#748273`. Override tại `apps/web/src/reference-layout.css`; màu cốc/bia, semantic feedback và luật chơi giữ nguyên. |
 | 2026-09-09 owner HUD refinement | Portrait casual-management UI: HUD bám mép, panel skeuomorphic bo tròn, nút pill dày, sans-serif tròn đậm, bóng mềm, thao tác ngữ cảnh gọn và hình ảnh game vỉa hè Việt Nam. Brief hiện hành tại F24; không thay đổi kinh tế hoặc luật phục vụ cả mâm. |
+
+| 2026-09-11 M1-AXE | Local street palette contrast: muted text `#f0ddc7` on raised green, primary controls use existing stoolRedDeep, pause copy uses cream, normal customer tag `#466341`, serve gradient `#b34b30`→`#8d2d1c`.102WCAG axe scans PASS; owner layout/asset palette and gameplay unchanged. |

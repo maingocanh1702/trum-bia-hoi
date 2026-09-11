@@ -1,7 +1,7 @@
 import { defineConfig } from '@playwright/test';
 export default defineConfig({
   outputDir: '.qa/test-results-remote',
-  testDir: 'apps/web/remote-test', testMatch: '**/*.spec.ts', testIgnore: 'dev-identity.spec.ts', fullyParallel: false, workers: 1, timeout: 60000,
+  testDir: 'apps/web/remote-test', testMatch: '**/*.spec.ts', testIgnore: ['dev-identity.spec.ts', 'accessibility.spec.ts'], fullyParallel: false, workers: 1, timeout: 60000,
   use: { locale: 'vi-VN', baseURL: 'http://127.0.0.1:4179', viewport: { width: 390, height: 844 }, trace: 'retain-on-failure' },
   webServer: [
     { command: 'npx tsx apps/web/remote-test/server.ts', url: 'http://127.0.0.1:4180/auth/session', reuseExistingServer: false },

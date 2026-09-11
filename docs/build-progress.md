@@ -2741,3 +2741,8 @@ Client deadline-aware authoritative polling; loss toast40/46/71ms on three viewp
 ### M1-UPGRADE — PASS, 2026-09-11
 
 Measured current-shift stale/overflow customer counts now drive one contextual recommendation in Shift book/Upgrades, opening the existing Cooler or Tables controls. No observed problem → no upsell; fresh shifts reset the evidence. VI/EN8browser +1max/legacy check PASS, config/build/typecheck PASS; no engine/config changes. M1 now9PASS/1WAIVED/2open (i18n/axe).
+
+
+### M1-I18N / M1-AXE — PASS; M1 COMPLETE, 2026-09-11
+
+12player/native-form files,804VI/EN key pairs audited; `check:i18n` joins verify.6axe browser tests cover17screens in both locales on3viewports (102scans),0WCAG violations/console errors/external requests. Shared contrast fixed;3quest visibility regressions retain unavailable-gift copy and no guest referral/send action. M1 now11PASS/1owner-WAIVED. No engine/config change; fresh full verify and three real12-minute shifts are running before v0.2 release. M6/M7/M8 remain deferred; F14 summary PENDING post-v0.2.

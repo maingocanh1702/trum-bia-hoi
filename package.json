@@ -16,8 +16,10 @@
     "test": "tsx --test packages/engine/test/*.test.ts apps/server/test/*.test.ts",
     "test:server": "tsx --test apps/server/test/*.test.ts",
     "sim": "tsx packages/engine/sim/headless.ts",
-    "verify": "npm run check:config && npm run build && npm test && npm run sim && npm run sim:rush && npm run sim:career:gate",
+    "verify": "npm run check:config && npm run check:i18n && npm run build && npm test && npm run sim && npm run sim:rush && npm run sim:career:gate",
     "test:e2e": "playwright test",
+    "test:a11y": "playwright test --config playwright.accessibility.config.ts",
+    "check:i18n": "node scripts/check_web_copy.mjs",
     "check:assets": "python3 scripts/check_assets.py",
     "sim:rush": "tsx packages/engine/sim/rush-pressure.ts",
     "dev:server": "tsx apps/server/src/main.ts",
@@ -33,6 +35,7 @@
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.63.0",
     "@types/node": "^26.5.0",
     "@types/react": "^19.2.18",

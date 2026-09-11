@@ -163,7 +163,7 @@ No new gameplay test or80MB run was added solely to make this report green.
 | Milestone | Exit verdict | Closure | Remaining acceptance |
 |---|---|---|---|
 | M0 | PASS (3/3) | COMPLETE | All three explicit exit criteria met; E10 config/build/tests and unchanged E8 sim pass. Foundation/checkpoint reviews also passed. |
-| M1 | OPEN (9/12 PASS;1 WAIVED) | OPEN | i18n inventory and axe. Human first30seconds criterion remains WAIVED. |
+| M1 | COMPLETE (11/12 PASS;1 WAIVED) | COMPLETE | All code/automated criteria pass; human first30seconds remains WAIVED by owner2026-09-10, post-release. Local v0.2 packaging still has its own fresh verify/smoke gates. |
 | M2 | FAIL (4/9 PASS) | OPEN | Five-person test, real mid-shift Google browser flow and admin-editable onboarding; login-prompt gaps below. |
 | M3 | FAIL (6/12 PASS) | OPEN | Advanced k criterion PASS under owner soft cap3.5; feel,32px badge acceptance and remaining equipment/football placeholders still pending. |
 | M4 | FAIL (15/18 PASS) | OPEN — next implementation priority | E7 remote authority/reconnect, E8 registry and E9/E10 admin browser workflow verified. E11/E12 scoped core/editor/factual impact verified; E14 forecast, E15 locale and E18 current-visit Google attachment/restore verified; E25 public rank eligibility verified; observed VND/emergency, live consent and deferred public import remain; E19 reauthentication and E21 invitations/validation verified. |
@@ -229,9 +229,9 @@ now PASS. M4 is **14/18 OPEN**; public archive transport remains deferred to M9.
 | Four visually distinct serve outcomes | PASS | Web “multi-dish service shows the actual early/late/grace/stale reward and guest reaction”; separate emoji, actual amounts, reduced-motion and reload checks. |
 | Management sheets pause (owner override) | PASS | Web `pause.spec.ts` all3tests; stock purchase retains sheet/pause, visibility cannot resume it, equipment switch/reload preserve wait. |
 | Upgrade suggestion reflects measured bottleneck (M1-UPGRADE) | PASS | Shift-book/upgrade recommendation uses current-shift stale serves or queue-overflow customer count;9tests cover VI/EN, exact counts, reload, fresh/next shift, max level and missing legacy provenance. |
-| i18n keys100%, no hardcoded product copy | FAIL | Engine `presentation.test.ts` locale-key/interpolation parity and E2 VI/EN pass; no exhaustive hardcoded-copy inventory for all P1surfaces. |
+| i18n keys100%, no hardcoded product copy (M1-I18N) | PASS | `check:i18n`:12player/native-form sources,804paired keys and matching placeholders; no JSX/native-form copy literals or missing static keys. VI/EN17screen browser coverage has no unresolved tokens or missing-copy warnings. |
 | Screenshot baseline | PASS | E3 mobile screenshot plus recorded yard/equipment references in `.qa`; current browser acceptance receipt preserves artifact hashes. No automated visual-diff suite implied. |
-| axe pass | FAIL | No axe dependency, invocation or result in current browser harness; keyboard/hit-target assertions are not an axe result. |
+| axe pass (M1-AXE) | PASS | `npm run test:a11y`:17screens ×2locales ×3viewports,6/6tests,102scans,0violations for WCAG2A/AA/2.1AA/2.2AA; no rule or selector exclusions. |
 | First30seconds playable without reading instructions | WAIVED | WAIVED by owner 2026-09-10 — post-release playtest. Automated evidence retained: Scripted first serve at11.1seconds passes E2; no uncoached human playtest evidence. |
 | k remains in band | PASS | E1 standard cold/full-menu profiles. Advanced career separately PASS under owner soft cap3.5 at M3 (04§5). |
 | Reload/new tab/browser reopen retain device progress (owner10/09 15:30) | PASS | E20 real Chromium profile relaunch, new tab, reload and pending-command receipt checks retain the same guest/coins/upgrades/day/shift. E18 fresh-visit reset is superseded. Credential loss remains fail-closed with journal retained; archive replay evidence remains separate. |
@@ -691,3 +691,12 @@ Equipment full verification also finished with exit0:406/406 tests,10standard k2
 ### M1-UPGRADE — PASS, 2026-09-11
 
 One contextual suggestion uses the larger observed customer count: stale serves from the current shift's complete serve cursor → Cooler, or rejected customers with a full table/queue → Tables. No observation, maxed capacity, or absent legacy serve provenance produces no fabricated recommendation. The existing quote and purchase sheets own affordability/prerequisites; the hint never buys or promises a simulated gain. VI/EN tests8/8 cover stale/crowded/fresh/next-shift, exact counts, reload and the target panel/scroll; one boundary test checks maxed/legacy states (9total). Config/build/typecheck PASS; engine/server406-test and k evidence unchanged from M1-TIMEOUT/equipment. No engine/config edits.
+
+
+### M1-I18N / M1-AXE — PASS, 2026-09-11
+
+`check:i18n` uses the existing Vite/Rolldown parser to inventory12player/native-form source files: JSX text, accessible attributes, inline conditional/template copy, native text setters and static translation calls.804VI/EN keys and interpolation tokens match. Dynamic catalog coverage retains the engine presentation tests; live VI/EN screens check missing-key warnings and unresolved tokens. Admin screens remain outside the local-player scope.
+
+`test:a11y` uses axe4.13 (WCAG2A/AA/2.1AA/2.2AA), no disabled rules/excluded selectors: language, guest choice, rest, yard, order, stock, upgrades, kitchen, cooler, book, settings, account, close, quests, journey, ranking, locations.6/6 tests at390×844/360×740/1280×720 ×VI/EN;102scans,0violations/console errors/external requests. The isolated accessibility fixture reveals quest/ranking menus via zero reveal thresholds; actual gameplay/progression/config remains unchanged. Normal reduced-motion support remains; axe waits for the active panel's entrance animation, not paused background sprites. Native red controls, customer tags and muted/pause copy now meet contrast on their backgrounds.
+
+Guest referral/send-gift actions are absent; an existing gift quest explicitly says unavailable and its claim stays disabled. Existing deterministic quest fixture checks this on3viewports, PASS; no F16/F17 implementation. Receipts `.qa/steer17-axe-final2.txt`, `.qa/axe-{vi,en}-{390,360,1280}.json`, `.qa/steer17-quests-visibility.txt`. M1 closes11PASS/1owner-WAIVED; full local release verify/smoke remains in flight. M5-F14-SUMMARY stays PENDING post-v0.2.

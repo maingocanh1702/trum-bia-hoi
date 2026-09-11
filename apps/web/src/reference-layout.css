@@ -1,5 +1,6 @@
 /* Owner layout reference: central street game, compact HUD and a tapped-order panel. */
-:root { --panel: #173c30; --panelDeep: #10291f; --panelRaised: #456760; --panelBorder: #748273; --streetBg: #aed0d8; --streetBgShade: #90b6c2; }
+:root { --panel: #173c30; --panelDeep: #10291f; --panelRaised: #456760;
+  --creamMuted: #f0ddc7; --panelBorder: #748273; --streetBg: #aed0d8; --streetBgShade: #90b6c2; }
 .game-shell { position: relative; isolation: isolate; }
 .street-backdrop { position: fixed; inset: 0; z-index: -1; background: #34443b; }
 .street-backdrop > .sprite { width: 100%; height: 100%; object-fit: cover; filter: brightness(.75); }
@@ -86,7 +87,7 @@
 .order-panel { position: fixed; z-index: 30; width: min(330px,calc(100vw - 26px)); max-height: calc(100dvh - 24px); overflow-y: auto; left: 50%; top: min(36dvh, 240px); transform: translateX(-50%); background: #123b2bf5; color: #f6efbd; border: 2px solid #9c8050; border-radius: 17px; padding: 5px 12px 13px; box-shadow: 0 5px 0 #17392b5c, 0 10px 24px #17392b33; animation: order-in 160ms cubic-bezier(.2,.7,.3,1); }
 .order-panel header { display: flex; align-items: center; gap: 9px; font-size: 10px; color: #c5d4bd; }
 .order-panel header .icon-button { margin-left: auto; padding: 12px; background: transparent; }
-.customer-tag { background: #647d58; padding: 3px 7px; color: #fff9da; border-radius: 12px; font-weight: 750; }
+.customer-tag { background: #466341; padding: 3px 7px; color: #fff9da; border-radius: 12px; font-weight: 750; }
 .customer-tag.type-vip { background: #ffd635; color: #263625; }
 .customer-tag.type-ngoily { background: #387eac; }
 .customer-tag.type-voi { background: #a9482e; }
@@ -101,7 +102,7 @@
 .order-dishes > div > span { font-variant-numeric: tabular-nums; color: #e6efc9; }
 .order-dishes > .dish-ready strong, .order-dishes > .dish-ready > svg { color: #92d59a; }
 .order-dishes > div > svg { width: 18px; height: 18px; flex-shrink: 0; }
-.order-panel .primary { min-height: 51px; margin-top: 11px; font-size: 15px; background: linear-gradient(#d35f40,#a63a22); box-shadow: 0 4px 0 #712d1e; }
+.order-panel .primary { min-height: 51px; margin-top: 11px; font-size: 15px; background: linear-gradient(#b34b30,#8d2d1c); box-shadow: 0 4px 0 #712d1e; }
 .order-warning { color: #ffdd7b; font-size: 11px; margin-top: 6px; }
 .idle-table-info { padding: 5px 0 16px; }
 .toast-gain { top: 112px; bottom: auto; min-height: 46px; width: max-content; max-width: calc(100% - 28px); min-width: 170px; padding: 8px 22px; border: 1px solid #d6ffc2; border-radius: 40px; background: linear-gradient(#c6ffa8eb,#9bde86eb); color: #254d2c; justify-content: center; gap: 6px; pointer-events: none; font-size: 21px; animation: gain-in 240ms ease-out; }
