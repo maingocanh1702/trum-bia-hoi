@@ -279,7 +279,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   const path = lifePathStatus(w, game.config), nextMilestone = path.rows[w.lifePath + 1];
   const claimCount = path.rows.filter(row => row.claimable).length;
   const guide = settings.guideIndex === null ? null : c.onboarding.stepGuide.steps[settings.guideIndex];
-  const showGuide = guide && (!guide.onlyAfter || w.completedShifts > 0);
+  const showGuide = c.onboarding.enabled && guide && (!guide.onlyAfter || w.completedShifts > 0);
   const cleanGlasses = w.glasses.filter(g => g.state === 'clean').length;
   const restedMs = wellRestedRemaining(w);
   const closeQuote = kickAllQuote(w, game.config);

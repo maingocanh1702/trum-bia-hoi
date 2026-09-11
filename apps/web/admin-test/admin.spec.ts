@@ -255,3 +255,70 @@ test('emergency mobile confirmation names replaced schedules, recovers a lost pu
  await reviewPage.getByLabel('Mã phiên bản',{exact:true}).fill(version);await reviewPage.getByRole('button',{name:'Xem phiên bản',exact:true}).click();await reviewPage.getByLabel('Kết luận hậu kiểm').fill('Checked schedules and live shift pins');await reviewPage.getByRole('button',{name:'Ghi nhận hậu kiểm'}).click();await expect(detail(reviewPage)).toContainText('Đã hậu kiểm bởi');
  await reviewPage.getByLabel('Ngôn ngữ').selectOption('en');await expect(reviewPage.getByRole('region',{name:'Version details'})).toContainText('Reviewed by super-postreview');await other.close();
 });
+
+test('M2-ONBOARDING local editor publishes thresholds and guide steps; disabled mode hides a retained guide in VI/EN', async ({ page, browser }) => {
+ test.setTimeout(120000);
+ await login(page, 'super-one');
+ const source = await (await page.request.get('/api/admin/draft-source')).json();
+ const onboarding = structuredClone(source.snapshot.onboarding);
+ onboarding.firstShift.guaranteedFirstGroupWithinMs += 1000;
+ onboarding.lostStreakToGuide += 1;
+ onboarding.stepGuide.steps[0].copyKey = 'onboarding.step.wait_ready';
+ const changes: Record<string, unknown> = {
+  'onboarding.enabled': true,
+  'onboarding.firstShift.guaranteedFirstGroupWithinMs': onboarding.firstShift.guaranteedFirstGroupWithinMs,
+  'onboarding.lostStreakToGuide': onboarding.lostStreakToGuide,
+  'onboarding.stepGuide.steps': onboarding.stepGuide.steps,
+ };
+ const publish = async (values: Record<string, unknown>) => {
+  await page.getByRole('button', { name: 'Chỉnh sửa bản mới nhất' }).click();
+  await page.getByLabel('Tìm khóa cấu hình').fill('onboarding.');
+  const paths = await page.getByRole('combobox', { name: 'Khóa cấu hình', exact: true }).locator('option').evaluateAll(options => options.map(o => (o as HTMLOptionElement).value));
+  for (const key of ['enabled', 'lostStreakToGuide', 'stepGuide.steps', 'stepGuide.maxAutoRepeatsPerDay', 'firstShift.guaranteedFirstGroupWithinMs', 'featureReveal.questsAfterShifts', 'loginPrompt.cooldownShifts']) expect(paths).toContain('onboarding.' + key);
+  for (const [path, value] of Object.entries(values)) {
+   await page.getByRole('combobox', { name: 'Khóa cấu hình', exact: true }).selectOption(path);
+   await page.getByRole('textbox', { name: 'Giá trị JSON', exact: true }).fill(JSON.stringify(value));
+   await page.getByRole('button', { name: 'Áp dụng vào bản nháp' }).click();
+  }
+  await page.getByLabel('Lý do thay đổi').fill('M2 local onboarding acceptance');
+  await page.getByRole('button', { name: 'Xem diff', exact: true }).click();
+  const version = await proposal(page);
+  await detail(page).getByRole('button', { name: 'Duyệt đề xuất' }).click();
+  await detail(page).getByRole('button', { name: 'Xuất bản', exact: true }).click();
+  await page.getByRole('button', { name: 'Xác nhận xuất bản', exact: true }).click();
+  await expect(detail(page)).toContainText('Đã xuất bản');
+  return version;
+ };
+ const old = await playerContext(browser);
+ const oldVersion = (await (await old.ctx.request.get('/api/player/state')).json()).configVersion;
+ const onVersion = await publish(changes);
+ expect((await (await old.ctx.request.get('/api/player/state')).json()).configVersion).toBe(oldVersion);
+ await old.ctx.close();
+ const inspect = async (locale: string, enabled: boolean, version: string) => {
+  const ctx = await browser.newContext({ baseURL: 'http://127.0.0.1:4181', viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+  // Persisted in-progress guide reproduces turning off onboarding on a previously used device.
+  await ctx.addInitScript(locale => localStorage.setItem('tbh.settings.v1', JSON.stringify({ locale, localeAccepted: true, welcomed: true, muted: true, guideDone: false, guideIndex: 0 })), locale);
+  const game = await ctx.newPage(), errors: string[] = []; game.on('pageerror', e => errors.push(e.message));
+  await game.goto('/'); await game.getByRole('button', { name: locale === 'vi' ? 'Chơi không đăng nhập' : 'Play without signing in', exact: true }).click(); await expect(game.locator('.network-status')).toContainText(locale === 'vi' ? 'Đã đồng bộ' : 'Synced');
+  const state = async () => (await game.request.get('/api/player/state')).json();
+  expect((await state()).configVersion).toBe(version);
+  const config = await (await game.request.get('/api/player/config?version=' + version)).json();
+  expect(config.onboarding).toMatchObject({ enabled, lostStreakToGuide: onboarding.lostStreakToGuide, stepGuide: { steps: onboarding.stepGuide.steps } });
+  await game.getByRole('button', { name: locale === 'vi' ? 'Mở ca' : 'Open shift', exact: true }).first().click();
+  await expect.poll(async () => (await state()).world.phase).toBe('open');
+  const world = (await state()).world; expect(world.shift.onboarding).toBe(enabled);
+  if (enabled) {
+   await expect(game.locator('.guide')).toContainText(locale === 'vi' ? 'Đợi' : 'Wait');
+   expect(world.shift.nextSpawnAt - world.shift.startedAt).toBe(onboarding.firstShift.guaranteedFirstGroupWithinMs - config.runtime.tableSeatingMs);
+  } else {
+   await expect(game.locator('.guide')).toHaveCount(0);
+   expect(world.shift.nextSpawnAt - world.shift.startedAt).toBe(Math.round(config.spawn.baseMs * config.spawn.warmupMult));
+  }
+  expect(await game.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await game.screenshot({ path: `.qa/v03-onboarding-${locale}-${enabled ? 'on' : 'off'}.png` });
+  expect(errors).toEqual([]); await ctx.close();
+ };
+ for (const locale of ['vi', 'en']) await inspect(locale, true, onVersion);
+ const offVersion = await publish({ 'onboarding.enabled': false });
+ for (const locale of ['vi', 'en']) await inspect(locale, false, offVersion);
+});

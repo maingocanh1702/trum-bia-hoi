@@ -8,9 +8,12 @@ const signStyle = process.argv.find(arg => arg.startsWith('--sign='))?.slice('--
 if (signStyle && !SIGN_STYLES.includes(signStyle)) throw Error('Unknown sign style');
 const flyerStart = process.argv.includes('--flyer');
 const rows = [];
+const onboardingModes = process.argv.includes('--onboarding-pair') ? [true, false] : [seedConfig.raw.onboarding.enabled];
+for (const onboardingEnabled of onboardingModes) {
 for (const kitchenLevel of [seedConfig.raw.runtime.initialKitchenLevel, seedConfig.raw.upgrades.kitchen.priceBase.length - 1]) {
   const raw = structuredClone(seedConfig.raw);
   raw.runtime.initialKitchenLevel = kitchenLevel;
+  raw.onboarding.enabled = onboardingEnabled;
   const config = loadConfig(raw);
 for (const seed of SEEDS) {
   const game = new Game(config, seed, 0);
@@ -60,7 +63,8 @@ for (const seed of SEEDS) {
   if (shipperStart) assert.ok(deliveries > 0, `seed ${seed}: must complete an actual delivery`);
   const campaigns = w.events.filter(e => e.type === 'flyer_ended');
   if (flyerStart) { assert.ok(campaigns.length > 0); assert.ok(campaigns.some(e => Number(e.data.served) > 0)); }
-  rows.push({ flyerStart, campaigns: campaigns.length, profile: kitchenLevel ? 'full-menu' : 'cold-menu', seed, signStyle, restedStart, qrStart, shipperStart, deliveries, bonus, serves: w.serves.length, mean: +mean.toFixed(2), k: +k.toFixed(4), stale: w.serves.filter(e => e.stale).length, days: Object.keys(w.dayShifts).length, configVersion: config.version, day: dayKey(w.now, config) });
+  rows.push({ onboardingEnabled, flyerStart, campaigns: campaigns.length, profile: kitchenLevel ? 'full-menu' : 'cold-menu', seed, signStyle, restedStart, qrStart, shipperStart, deliveries, bonus, serves: w.serves.length, mean: +mean.toFixed(2), k: +k.toFixed(4), stale: w.serves.filter(e => e.stale).length, days: Object.keys(w.dayShifts).length, configVersion: config.version, day: dayKey(w.now, config) });
+}
 }
 }
 console.table(rows);

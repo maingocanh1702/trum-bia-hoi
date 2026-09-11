@@ -164,7 +164,7 @@ No new gameplay test or80MB run was added solely to make this report green.
 |---|---|---|---|
 | M0 | PASS (3/3) | COMPLETE | All three explicit exit criteria met; E10 config/build/tests and unchanged E8 sim pass. Foundation/checkpoint reviews also passed. |
 | M1 | COMPLETE (11/12 PASS;1 WAIVED) | COMPLETE | All code/automated criteria pass; human first30seconds remains WAIVED by owner2026-09-10, post-release. Local v0.2 packaging still has its own fresh verify/smoke gates. |
-| M2 | FAIL (4/9 PASS) | OPEN | Five-person test, real mid-shift Google browser flow and admin-editable onboarding; login-prompt gaps below. |
+| M2 | OPEN (7/9 PASS;1 WAIVED;1 FAIL) | LOCAL ONBOARDING PASS | Paired on/off k, existing admin thresholds/step publication, retained-guide correction PASS. Real Google minute5/consent stays PENDING outside local v0.3; human test WAIVED. |
 | M3 | FAIL (6/12 PASS) | OPEN | Advanced k criterion PASS under owner soft cap3.5; feel,32px badge acceptance and remaining equipment/football placeholders still pending. |
 | M4 | FAIL (15/18 PASS) | OPEN — next implementation priority | E7 remote authority/reconnect, E8 registry and E9/E10 admin browser workflow verified. E11/E12 scoped core/editor/factual impact verified; E14 forecast, E15 locale and E18 current-visit Google attachment/restore verified; E25 public rank eligibility verified; observed VND/emergency, live consent and deferred public import remain; E19 reauthentication and E21 invitations/validation verified. |
 | M5 | OPEN (18/25 PASS;1 PENDING;6 FAIL) | LOCAL SCOPE IMPLEMENTED; review/release pending | F14 summary, live rank and immutable snapshot/history pass. F12-CLAIM owner-deferred; remaining donation/referral/gift integration belongs to deferred work. |
@@ -246,8 +246,8 @@ now PASS. M4 is **14/18 OPEN**; public archive transport remains deferred to M9.
 | Three consecutive losses rerun guide once; serve resets counter | PASS | Engine `presentation.test.ts` “event-driven guide resets…” and “three-customer queue loss…”. |
 | First guide runs, skip continues, reload does not rerun | PASS | E2 “muting, guide skipping and reduced-motion preference survive normal play” + persisted settings/guide tests. |
 | Google sign-in at minute5 keeps live shift and credits once | FAIL | E5 server transaction and E17 signed-fixture mid-shift browser panel pass; literal minute5 acceptance and live configured Google consent remain unverified. |
-| onboarding.enabled=false behaves as returning player, k unchanged | FAIL | E1 controlled rush probe disables onboarding; ordinary sim keeps configured onboarding. No paired on/off k acceptance; formula itself is unchanged. |
-| All thresholds/steps editable in admin without deploy; config green; VI/EN; reduced motion | FAIL | JSON governs thresholds, E1 config and E2 VI/EN/motion pass; E10 default editor exists, but onboarding-specific key publication/step acceptance has not been exercised; this combined criterion remains open. |
+| onboarding.enabled=false behaves as returning player, k unchanged | PASS | M2-ONBOARDING:20 paired standard cohorts (5seeds × cold/full × on/off), all k2–3; same canonical formula. Real server/browser confirms ordinary first-spawn cadence and no retained guide when disabled. |
+| All thresholds/steps editable in admin without deploy; config green; VI/EN; reduced motion | PASS | M2-ONBOARDING uses the existing editor to publish configured first-guest deadline, lost-streak threshold and guide step copy through normal approval; old pins remain, new VI/EN guests adopt, reduced-motion/width/console checks pass. Existing fixed catalog structure is retained; no new editor or config values. |
 
 ## M3 — full demand mix
 
@@ -776,3 +776,12 @@ Evidence: `.qa/v03-snapshot-final-focused.txt`, `.qa/v03-snapshot-browser-final.
 `.qa/v03-snapshot-verify-final418.txt`, `.qa/v03-season-axe-*.json`. Engine rules and
 economy.tbh.json are unchanged. F12-CLAIM/rewards/mailbox remain PENDING by owner
 2026-09-11; production/social/M6–M8 remain outside this release.
+
+
+## Steer18 — M2-ONBOARDING local, 2026-09-11
+
+Retained guide rendering now observes onboarding.enabled; one shared UI guard fixes the reproduced disabled-guide case. Existing admin JSON editor publishes thresholds/step contents and on/off versions through normal proposal/approval/publication. Four new VI/EN guests prove pinned config adoption, first-spawn behavior, disabled stored-guide hiding, reduced motion, no horizontal overflow or page errors. Old player pins remain unchanged. The test failed on the visible guide before the fix, then passed.
+
+Full verify418/418 PASS; paired standard cohorts on=[2.5644, 2.9168], off=[2.4866, 2.959] (5seeds × cold/full × both modes),15rush and career42/99≤3.5 PASS. Only the measurement harness gains paired mode; no engine rule, economy value, config version or live publication changes. Existing fixed catalog identities/shape remain governed by registry admission.
+
+Receipts: `.qa/v03-onboarding-{red2,green,verify}.txt`, `.qa/v03-onboarding-receipt.json`, four `.qa/v03-onboarding-*.png`. Real Google/consent and human tests remain PENDING/WAIVED; no new work under those rows.

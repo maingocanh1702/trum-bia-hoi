@@ -2820,3 +2820,12 @@ unavailability; same pinned reviewer retried. No onboarding files changed.
 ### M5-F12/F28-SNAPSHOT — PASS, 2026-09-11
 
 Final418/418 unit/server,43focused,6browser/6axe scans PASS; full verify standard k2.5644–2.9168,15rush,career42=3.465461/99=3.393197≤3.5. Independent correction review CLEAN. Archive reads retained season settings, worker replay leaves live saves unchanged; startup/heartbeat/slow-history regressions pass. No engine/economy changes. Next: M2-ONBOARDING, then read-only M1/M3 reconciliation and local v0.3 release.
+
+
+## Steer18 — M2-ONBOARDING local, 2026-09-11
+
+Retained guide rendering now observes onboarding.enabled; one shared UI guard fixes the reproduced disabled-guide case. Existing admin JSON editor publishes thresholds/step contents and on/off versions through normal proposal/approval/publication. Four new VI/EN guests prove pinned config adoption, first-spawn behavior, disabled stored-guide hiding, reduced motion, no horizontal overflow or page errors. Old player pins remain unchanged. The test failed on the visible guide before the fix, then passed.
+
+Full verify418/418 PASS; paired standard cohorts on=[2.5644, 2.9168], off=[2.4866, 2.959] (5seeds × cold/full × both modes),15rush and career42/99≤3.5 PASS. Only the measurement harness gains paired mode; no engine rule, economy value, config version or live publication changes. Existing fixed catalog identities/shape remain governed by registry admission.
+
+Receipts: `.qa/v03-onboarding-{red2,green,verify}.txt`, `.qa/v03-onboarding-receipt.json`, four `.qa/v03-onboarding-*.png`. Real Google/consent and human tests remain PENDING/WAIVED; no new work under those rows.
