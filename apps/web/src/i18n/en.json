@@ -662,5 +662,10 @@
   "cooler.seconds": "{seconds} s",
   "cooler.staleAfter": "Beer left unserved for over {seconds} s after pouring → no tip, {reputation} reputation.",
   "cooler.forever": "Poured beer stays fresh indefinitely.",
-  "cooler.weather": "Weather shortens freshness: hot ×{hot}, humid ×{humid}."
+  "cooler.weather": "Weather shortens freshness: hot ×{hot}, humid ×{humid}.",
+  "upgrade.hintTitle": "From this shift",
+  "upgrade.hint.cooler": "Served {n} guests with stale beer. A cooler keeps beer fresh longer; serving sooner also helps keep tips.",
+  "upgrade.hint.tables": "{n} guests could not join because the tables and queue were full. Consider another table or more seats.",
+  "upgrade.hintOpen.cooler": "View cooler upgrade",
+  "upgrade.hintOpen.tables": "View tables & seats"
 }

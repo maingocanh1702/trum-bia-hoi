@@ -662,5 +662,10 @@
   "cooler.seconds": "{seconds} s",
   "cooler.staleAfter": "Bia rót xong quá {seconds} s mà chưa bưng → mất boa, {reputation} uy tín.",
   "cooler.forever": "Bia rót xong không mất hơi theo thời gian.",
-  "cooler.weather": "Thời tiết rút ngắn thời gian giữ tươi: nóng ×{hot}, oi bức ×{humid}."
+  "cooler.weather": "Thời tiết rút ngắn thời gian giữ tươi: nóng ×{hot}, oi bức ×{humid}.",
+  "upgrade.hintTitle": "Gợi ý từ ca này",
+  "upgrade.hint.cooler": "Đã phục vụ {n} khách với bia mất hơi. Hầm lạnh giữ bia tươi lâu hơn; bưng sớm cũng giúp tránh mất boa.",
+  "upgrade.hint.tables": "{n} khách không có chỗ vì bàn và hàng chờ đã đầy. Xem thêm bàn hoặc tăng số ghế.",
+  "upgrade.hintOpen.cooler": "Xem nâng cấp Hầm lạnh",
+  "upgrade.hintOpen.tables": "Xem Bàn & ghế"
 }

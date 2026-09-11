@@ -258,3 +258,5 @@ Bếp uses stable `Item.kitchenBatchId` (the first portion's existing item ID), 
 `buyGlass {count}` quotes total owned glasses against min(buyCap,storageCap), spends exact price once, and allocates distinct glass IDs. Existing menu pause remains active after buying. Equipment quotes include the next-level LP gate; kitchen arrays include level0, other devices start at level1. Reached LP suffices without claiming its reward. UI reads the same quote and counts.
 
 Old1.x active shifts retain their complete raw config. New2.0.1 config is pinned only at a successful next opening; a refused opening never reprices assets or registers its candidate.
+
+| 2026-09-11 | M1-UPGRADE: local Shift book/Upgrades show one measured suggestion from current-shift stale serves or full-queue rejection counts. Existing sheets/quotes own purchases. Missing legacy history/maxed devices do not create suggestions;9focused checks PASS. No economy or engine change. |

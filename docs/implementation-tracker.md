@@ -518,3 +518,8 @@ Seven core screens ×3viewports verified through real server transport:3/3 brows
 ### M1-TIMEOUT — PASS, 2026-09-11
 
 Client deadline-aware authoritative polling; loss toast40/46/71ms on three viewports,6/6 browser regressions including pause/reconnect PASS. No engine/config change. Equipment full verify completed406/406 plus all standard/rush/career gates. Owner11:40 drops M5-F14-SUMMARY from v0.2: PENDING post-v0.2; no location implementation started.
+
+
+### M1-UPGRADE — PASS, 2026-09-11
+
+Measured current-shift stale/overflow customer counts now drive one contextual recommendation in Shift book/Upgrades, opening the existing Cooler or Tables controls. No observed problem → no upsell; fresh shifts reset the evidence. VI/EN8browser +1max/legacy check PASS, config/build/typecheck PASS; no engine/config changes. M1 now9PASS/1WAIVED/2open (i18n/axe).

@@ -163,7 +163,7 @@ No new gameplay test or80MB run was added solely to make this report green.
 | Milestone | Exit verdict | Closure | Remaining acceptance |
 |---|---|---|---|
 | M0 | PASS (3/3) | COMPLETE | All three explicit exit criteria met; E10 config/build/tests and unchanged E8 sim pass. Foundation/checkpoint reviews also passed. |
-| M1 | OPEN (8/12 PASS;1 WAIVED) | OPEN | Measured upgrade recommendation, i18n inventory and axe. Human first30seconds criterion remains WAIVED. |
+| M1 | OPEN (9/12 PASS;1 WAIVED) | OPEN | i18n inventory and axe. Human first30seconds criterion remains WAIVED. |
 | M2 | FAIL (4/9 PASS) | OPEN | Five-person test, real mid-shift Google browser flow and admin-editable onboarding; login-prompt gaps below. |
 | M3 | FAIL (6/12 PASS) | OPEN | Advanced k criterion PASS under owner soft cap3.5; feel,32px badge acceptance and remaining equipment/football placeholders still pending. |
 | M4 | FAIL (15/18 PASS) | OPEN — next implementation priority | E7 remote authority/reconnect, E8 registry and E9/E10 admin browser workflow verified. E11/E12 scoped core/editor/factual impact verified; E14 forecast, E15 locale and E18 current-visit Google attachment/restore verified; E25 public rank eligibility verified; observed VND/emergency, live consent and deferred public import remain; E19 reauthentication and E21 invitations/validation verified. |
@@ -228,7 +228,7 @@ now PASS. M4 is **14/18 OPEN**; public archive transport remains deferred to M9.
 | Whole-table contextual service per03§9.5 | PASS | Web “tapped order stays live, returns keyboard focus, and closes on customer expiry”; one Phục vụ cả mâm action in “guest serves…”. |
 | Four visually distinct serve outcomes | PASS | Web “multi-dish service shows the actual early/late/grace/stale reward and guest reaction”; separate emoji, actual amounts, reduced-motion and reload checks. |
 | Management sheets pause (owner override) | PASS | Web `pause.spec.ts` all3tests; stock purchase retains sheet/pause, visibility cannot resume it, equipment switch/reload preserve wait. |
-| Upgrade suggestion reflects measured bottleneck | FAIL | Equipment quotes/capacity panels exist; no metric-driven recommendation producer or comparison test in current web flow. |
+| Upgrade suggestion reflects measured bottleneck (M1-UPGRADE) | PASS | Shift-book/upgrade recommendation uses current-shift stale serves or queue-overflow customer count;9tests cover VI/EN, exact counts, reload, fresh/next shift, max level and missing legacy provenance. |
 | i18n keys100%, no hardcoded product copy | FAIL | Engine `presentation.test.ts` locale-key/interpolation parity and E2 VI/EN pass; no exhaustive hardcoded-copy inventory for all P1surfaces. |
 | Screenshot baseline | PASS | E3 mobile screenshot plus recorded yard/equipment references in `.qa`; current browser acceptance receipt preserves artifact hashes. No automated visual-diff suite implied. |
 | axe pass | FAIL | No axe dependency, invocation or result in current browser harness; keyboard/hit-target assertions are not an axe result. |
@@ -686,3 +686,8 @@ M5-F14-SUMMARY removed from the local v0.2 queue: **PENDING — owner decision 2
 Remote polling now wakes at the nearest pending order expiry when online, visible and playing, instead of waiting the remainder of the heartbeat interval. Loss remains server-authoritative; paused/background/offline cadence is unchanged.6/6 remote browser checks PASS: three expiry-to-painted-toast receipts40/46/71ms plus lost-acknowledgement, paused restock/upgrade and disconnected grace recovery. Test clock-offset metadata isolates the previous reconnect test's time jump; animation visibility is observed every frame, not only on DOM mutation. Receipts `.qa/steer17-timeout-regression.txt`, screenshots `.qa/m1-timeout-{390,360,1280}.png`. Config/build PASS; no engine/config changes.
 
 Equipment full verification also finished with exit0:406/406 tests,10standard k2.5644–2.9168,15rush,career42/99 k3.465460767842698/3.393196640939153. Source receipt `.qa/steer16-equipment-verify-final.txt`.
+
+
+### M1-UPGRADE — PASS, 2026-09-11
+
+One contextual suggestion uses the larger observed customer count: stale serves from the current shift's complete serve cursor → Cooler, or rejected customers with a full table/queue → Tables. No observation, maxed capacity, or absent legacy serve provenance produces no fabricated recommendation. The existing quote and purchase sheets own affordability/prerequisites; the hint never buys or promises a simulated gain. VI/EN tests8/8 cover stale/crowded/fresh/next-shift, exact counts, reload and the target panel/scroll; one boundary test checks maxed/legacy states (9total). Config/build/typecheck PASS; engine/server406-test and k evidence unchanged from M1-TIMEOUT/equipment. No engine/config edits.
