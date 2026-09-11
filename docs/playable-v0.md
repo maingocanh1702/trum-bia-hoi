@@ -173,3 +173,34 @@ Dedicated check: `npm run verify` in that temporary master worktree, with output
 
 Release work is in progress;5174/5175 still serve accepted playable-v0.2.
 **F12-CLAIM: PENDING (owner decision 2026-09-11 13:33), OUT of playable-v0.3.** Season reward grants, idempotent prize claims and the mailbox wait for a defined per-tier prize table. No prizes or reward config will be invented. Immutable season snapshots, captured names and history remain in scope.
+
+
+## Local release v0.3 — 2026-09-11
+
+**PASS — local playable acceptance.** Source/evidence commit `b67470fe01730f5197c2d808faf3458d92b1e13d`; tag `playable-v0.3` adds this note. Resolve its exact commit with `git rev-parse 'playable-v0.3^{commit}'`. The tag is immutable; cutover and master verification receipts are recorded separately below after completion.
+
+Included: v0.2 gameplay plus historical location multipliers in the shift book; stable/paginated live ranks; immutable end-season public names/scores, podium/wall and history; admin-edited onboarding thresholds/step contents; disabled onboarding hides a retained guide. Existing guest progress, mid-shift localhost dev sign-in, pause/restock/upgrade behavior remain. No engine rule or economy/config value changed; current2.0.3 buffer remains4/7/12/20/40, so no registry publication is required.
+
+| Viewport | First playable | Measured FPS | Served in full shift | Shift/book/next-day/reload/new-tab |
+|---|---:|---:|---:|---|
+| 390×844 | 1436 ms | 60.44 | 76 | PASS |
+| 360×740 | 1154 ms | 60.25 | 90 | PASS |
+| 1280×720 | 1159 ms | 60.35 | 64 | PASS |
+
+All three tests ran full12-minute shifts with real UI serving, stock/restock, washing and an actual upgrade; zero console/page errors and zero missing assets. Chromium viewport measurements are local desktop evidence, not a physical-phone benchmark.
+
+Full `npm run verify`:418/418 tests;20 paired onboarding cohorts (on2.5644–2.9168; off2.4866–2.9590);15rush cases;30-day career42/99 k3.465460767842698/3.393196640939153≤3.5. `check:assets`:132entries,121drafts,3placeholders,32pairedSFX PASS. Snapshot6browser/6axe scans zero violations; onboarding normal-admin publication test covers four VI/EN×on/off combinations. Independent batch/correction and local-operation review CLEAN.
+
+Run after cutover: open [the game](http://127.0.0.1:5174/), API on5175. Start/stop/status commands:
+
+```sh
+python3 '/Users/maingocanh/.codex/worktrees/trum-bia-hoi-playable-v0.3/.qa/playable-runtime/control.py' start
+python3 '/Users/maingocanh/.codex/worktrees/trum-bia-hoi-playable-v0.3/.qa/playable-runtime/control.py' stop
+python3 '/Users/maingocanh/.codex/worktrees/trum-bia-hoi-playable-v0.3/.qa/playable-runtime/control.py' status
+```
+
+The login-session launchd jobs remain `local.tbh.playable-web` / `local.tbh.playable-api`. Existing SQLite stays at the writing checkout `.qa/game-api.sqlite`; cookies/progress are retained. The pinned checkout contains built web output; API runs its matching TypeScript through the installed runtime.
+
+**F12-CLAIM PENDING (owner2026-09-11), OUT of v0.3:** no season prize quantities, grant/claim or mailbox is invented. M6/M7/M8 remain deferred/hidden; no monetization, inspection or lottery. Production hosting/HTTPS/domain, real Google OAuth/consent, CAPTCHA, PWA/physical-device acceptance and social/referral remain PENDING. Local dev identity is explicitly enabled only on localhost/non-production. Owner preview admin remains disabled without a private allowlist/TOTP. M1/M3 reconciliation adds no assets or new gameplay: the sole M3 art-batch FAIL stays tracked for M9; human rows remain WAIVED.
+
+Receipts in the writing checkout `.qa/`: `v03-onboarding-verify.txt`, `playable-v03-{assets,smoke}.txt`, `playable-v03-{390,360,1280}.json`, `v03-snapshot-receipt.json`, `v03-onboarding-receipt.json`, `v03-release-review.txt`, and `playable-v03-control-tests.txt`. Cutover backup/preservation and exact master verification are separate success-only receipts. No push or production operation.

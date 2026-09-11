@@ -586,3 +586,5 @@ Dedicated check: `npm run verify` in that temporary master worktree, with output
 | 2026-09-11 | M2-ONBOARDING local PASS: one UI guard, existing editor publication test,20 on/off sim cohorts;418tests + full verify green. No engine/economy/config changes. |
 
 | 2026-09-11 owner14:50 | M1/M3 local reconciliation complete:11PASS/1WAIVED and6PASS/5WAIVED/1assetFAIL respectively. Asset row stays M9; no new work under item d. Production/Google/CAPTCHA/PWA/social remain outside v0.3. |
+
+| 2026-09-11 | Local v0.3 acceptance PASS:418tests,20paired k,15rush/2career,assets,3full-shift viewports; independent review CLEAN. Release tag and local SQLite-preserving cutover follow. |

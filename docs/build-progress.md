@@ -2834,3 +2834,8 @@ Receipts: `.qa/v03-onboarding-{red2,green,verify}.txt`, `.qa/v03-onboarding-rece
 ## Steer18 item d — read-only M1/M3 reconciliation, 2026-09-11
 
 Owner14:50 scope confirmed against the criterion tables: M1=11PASS/1WAIVED; M3=6PASS/5WAIVED/1FAIL. The only M3 FAIL is the asset-production batch, retained for M9. No open in-scope local M1/M3 criterion remains, no WAIVED row is reopened, and no assets or gameplay changes were made. `check:assets` remains green (132entries,121drafts,3placeholders). Next is the local v0.3 verify/assets/three-viewport release gate, preserving SQLite and the main checkout.
+
+
+### Local v0.3 acceptance — 2026-09-11
+
+Source `b67470fe01730f5197c2d808faf3458d92b1e13d`:418tests/full verify,20paired k,15rush/2career,assets and three full-shift viewport smokes PASS. Independent review CLEAN. [Local release notes](playable-v0.md) contain measurements, run instructions and explicit deferrals. Tag/cutover/master verification are the next separately recorded operations.
