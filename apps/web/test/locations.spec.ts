@@ -26,3 +26,24 @@ for (const [locale, width] of [['vi', 360], ['en', 390]] as const) test(`rental 
   expect((await snapshot()).location).toBe('hem_nho'); expect((await snapshot()).coins).toBe(moved.coins + (vi ? 0 : moved.lease.deposit));
   await expect(dialog).toBeVisible(); expect(errors).toEqual([]);
 });
+
+for (const [locale, width] of [['vi', 360], ['en', 390], ['vi', 1280]] as const) test(`closed shift location stays historical after moving and reloading in ${locale} at ${width}px`, async ({ page }) => {
+  const f = fixture('book'), vi = locale === 'vi', errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  await page.setViewportSize({ width, height: width === 360 ? 740 : 844 }); await page.clock.pauseAt(new Date(f.now));
+  await page.addInitScript(({ save, locale }) => { if (!localStorage.getItem('lease-book-seeded')) {
+    localStorage.setItem('tbh.save.v1', save); localStorage.setItem('tbh.settings.v1', JSON.stringify({ welcomed: true, guideDone: true, locale })); localStorage.setItem('lease-book-seeded', '1');
+  } }, { save: f.save, locale });
+  await page.goto('/');
+  for (const reload of [false, true]) {
+    if (reload) { await waitSaved(page); await page.reload(); }
+    await page.getByRole('button', { name: vi ? 'Sổ ca' : 'Shift book', exact: true }).click();
+    const panel = page.getByRole('region', { name: vi ? 'Địa điểm trong ca' : 'Locations this shift', exact: true });
+    await expect(panel.locator('[data-shift-location]')).toHaveCount(1);
+    await expect(panel.locator('[data-shift-location="ngo_cho"]')).toHaveText(vi ? 'Ngõ Chợ ×1,1' : 'Market Lane ×1.1');
+    expect(fixture('inspect', await readSave(page)).location).toBe('ben_xe');
+    await panel.scrollIntoViewIfNeeded(); expect(await panel.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+    if (!reload) await panel.screenshot({ path: `.qa/v03-f14-${locale}-${width}.png` });
+    await page.keyboard.press('Escape');
+  }
+  expect(errors).toEqual([]);
+});

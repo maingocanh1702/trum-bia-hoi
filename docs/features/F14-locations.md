@@ -101,3 +101,8 @@ Verified throughce7564b:234 engine/server checks,77browser checks,config/build,1
 | 2026-09-09 | Review found fallback identity reuse and unsafe service multipliers. A successful modern pin now relocates unleased players to the new free fallback, active contracts reject fallback changes, and config validates the maximum whole-order value including all service boosts.12 focused regressions pass; final verification/review rerunning. |
 
 | 2026-09-09 | Checkpointce7564b verified:234 engine/server,77browser,config/build,10 k cohorts and15rush; native review resolves both findings. Test-only alignment preserves legacy overflow checks and asserts modern fallback migration. Full F14 follow-ups remain listed above. |
+
+
+| Date | Change |
+|---|---|
+| 2026-09-11 Steer18 / M5-F14-SUMMARY | Shift book shows the historical location multiplier from existing shift/lease events and the pinned config, including rented→fallback on calendar expiry. Moving after closing leaves the old book intact; missing legacy provenance is labeled unavailable. Shared readonly server/local presentation; rules and economy unchanged. |

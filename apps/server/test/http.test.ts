@@ -88,6 +88,7 @@ test('real HTTP guests own separate state; serving retries, paused stock purchas
   assert.equal(opened.world.now, f.now); assert.equal(opened.configVersion, config.version);
   assert.equal(opened.world.rng, undefined); assert.equal(opened.world.nextId, undefined); assert.equal(opened.world.events, undefined);
   assert.equal(opened.world.shift.rushScheduleSeed, undefined); assert.equal(opened.config, undefined);
+  assert.deepEqual(opened.shiftLocation, { shiftId: opened.world.shift.id, locations: [{ id: 'hem_nho', mult: config.values.locations.list[0].mult }] });
   await f.advance(11100);
   const ready = await (await f.request('/player/state', undefined, a.cookie)).json(), table = ready.world.tables.find((t: any) => t.order?.items.every((i: any) => i.state === 'ready'));
   const payload = { idempotencyKey: 'serve-one', command: { type: 'serve', tableId: table.id, orderId: table.order.id } };

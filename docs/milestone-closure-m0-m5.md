@@ -294,13 +294,13 @@ now PASS. M4 is **14/18 OPEN**; public archive transport remains deferred to M9.
 | F12: quest/lottery/donate never change seasonEarned | FAIL | Quest/reward/refund exclusions PASS engine season tests; lottery/donate paths disabled/unimplemented, full3-source integration not exercised. |
 | F12: deterministic VN midnight/epoch rollover | PASS | Engine “exact ranking boundary resets only ranking…” and server season restart/retry test, E1. |
 | F12: stable tie-break across pages | FAIL | Local tie timestamp exists; paginated ranking absent. |
-| F12: rewards claimed exactly once | FAIL | Season reward mailbox/grant/claim path absent; concrete prizes not supplied. |
+| F12: rewards claimed exactly once | PENDING | F12-CLAIM OUT of playable-v0.3 — owner decision 2026-09-11 13:33. No per-tier prize quantities/IDs are defined; grant, idempotent claim and mailbox deferred. No reward config changes or invented prizes. |
 | F13: spending cannot lower Life Path | PASS | Engine `progression.test.ts` subsidiary gates and reward-ledger tests; `locations.test.ts` lease spend keeps lifetime earnings; full careerE4. |
 | F13: no duplicate reward claims | PASS | Engine “every configured reward uses the same overflow conversion…cannot be claimed twice” tests LP1–LP7 rewards and retry. |
 | F13: location gates update immediately after level-up | PASS | Engine “actual v5 history…current progression unlocks…” + configured gates; lease tests reject locked targets; web life-path/rental gate scenarios. |
 | F14: locked location cannot be rented | PASS | Engine “rent prepays seven scaled daily rents…failed or stale move preserves…” plus mobile rental quote test. |
 | F14: deposit refunded only normal end/renewal, not early leave | PASS | Engine “early switch and departure forfeit…” and “calendar expiry is identical under fine/coarse ticks…”; server paid-lease restart test. |
-| F14: multiplier server-side and shown in shift summary | PENDING | owner decision 2026-09-11 — post v0.2. Shared engine/server multiplier and rental UI already exist; summary presentation deferred. |
+| F14: multiplier server-side and shown in shift summary | PASS | Steer18: shared readonly shift-location report, real HTTP/remote book and VI/EN lease-book tests. Retains the closed shift location after moving/reload; calendar expiry during a paused shift shows both pinned multipliers. No engine/config changes. |
 | F16: donate cannot grant ket_noi | FAIL | Referral qualification/badge service and donate path absent. |
 | F16: self-referral never qualifies | FAIL | No referral service/endpoint or test. |
 | F16: claim idempotent | FAIL | No referral claim path. |
@@ -737,3 +737,15 @@ Evidence: `.qa/playable-v02-{cutover.txt,preservation-receipt.json,runtime-smoke
 `master` was fast-forwarded from `30c0285e40ee6d922f44ef8412bce50892a84f75` to the first local landing `51c852dbe6fdef80a561530db891c2ed6cb67206` using `git merge --ff-only codex/game-build-isolated` in `/Users/maingocanh/.codex/worktrees/trum-bia-hoi-master-v02-verify`. This documentation-only receipt is also fast-forwarded before the dedicated merged-master check; it changes no runtime code. No merge commit, rebase, history rewrite or push.
 
 Dedicated check: `npm run verify` in that temporary master worktree, with output retained in the writing checkout `.qa/playable-v02-master-verify.txt`. The success-only receipt `.qa/playable-v02-master-verified.json` records the final master hash and test result after command completion; remove the temporary worktree only after PASS. The main checkout remains on `codex/build-game` with its WIP untouched. The running preview stays at immutable tag `playable-v0.2` (`ad94161`), independently of these documentation commits.
+
+
+## Steer18 — M5-F14-SUMMARY, 2026-09-11
+
+Local v0.3 queue reopens F14. `apps/shared/shift-location.ts` derives location history from the existing shift-open/close and lease events, using the shift-pinned config. Server includes that public report; local play uses the same helper. It never relabels a past shift from the current resting location. Expiry mid-shift lists the rented location then fallback; missing provenance has explicit VI/EN unavailable copy. No engine/config/economy changes.
+
+Verification:409/409 engine/server tests;3 focused report/replay regressions;5 lease/book browser tests including360/390/1280px;1 real HTTP browser lost-ACK/reload/pause/report test. Receipt logs `.qa/v03-f14-{verify,browser,remote}.txt`; visual checks `.qa/v03-f14-{vi-360,en-390,vi-1280}.png`. Full `npm run verify` PASS:409/409,10 standard k cohorts2.5644–2.9168,15rush rows,career42=3.465461/99=3.393197≤3.5. v0.2 preview remains pinned until the entire v0.3 release batch passes.
+
+
+| Date | Change |
+|---|---|
+| 2026-09-11 13:33 owner / Steer18 addendum | F12-CLAIM rewards grant/idempotent claim/mailbox PENDING and OUT of playable-v0.3. Continue F14 → F28 live rank → immutable season snapshot/name-at-capture/history → local onboarding → remaining local non-WAIVED M1/M3 → release. No reward config edits. |

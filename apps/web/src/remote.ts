@@ -1,3 +1,4 @@
+import type { shiftLocationReport } from '../../shared/shift-location';
 import { loadConfig, validEnvelope, type Command, type Config, type DomainEvent, type Result, type WorldView, type menuReport } from '../../../packages/engine/src';
 
 const JOURNAL_KEY = 'tbh.remote.v1';
@@ -5,7 +6,7 @@ const JOURNAL_KEY = 'tbh.remote.v1';
 const BOOT_TIMEOUT_MS = 30000;
 type Action = { clientId: string; clientSeq: number; idempotencyKey: string; command: Command };
 type Journal = { playerId: string; clientId: string; nextSeq: number; heartbeatSeq: number; cursor: number; pending: Action[]; accountSwitch?: true };
-type Snapshot = { world: WorldView; configVersion: string; serverNow: number; revision: number; lastEventSeq: number; presentation: DomainEvent[]; menu: ReturnType<typeof menuReport> };
+type Snapshot = { world: WorldView; configVersion: string; serverNow: number; revision: number; lastEventSeq: number; presentation: DomainEvent[]; menu: ReturnType<typeof menuReport>; shiftLocation: ReturnType<typeof shiftLocationReport> };
 type Reply = Snapshot & { clientId: string; acknowledgedSeq: number; heartbeatSeq: number; heartbeatUntil: number; heartbeatIntervalMs: number; heartbeatTimeoutMs: number; result?: Result; error?: string };
 export type PlayerSession = { playerId: string; provider: 'guest' | 'google'; expiresAt: number; transition?: { previousPlayerId: string } };
 type Link = { credential: string; keepAccount: boolean; resolve: (owner: PlayerSession) => void; reject: (error: unknown) => void };
@@ -35,6 +36,7 @@ export class RemoteGame {
   world!: WorldView & { events: DomainEvent[] };
   config!: Config;
   menu: ReturnType<typeof menuReport> = null;
+  shiftLocation: ReturnType<typeof shiftLocationReport> = null;
   state: Connection = 'connecting';
   onChange: (events: DomainEvent[]) => void = () => {};
   private journal: Journal | null = null;
@@ -125,7 +127,7 @@ export class RemoteGame {
       this.configs.set(config.version, config);
     }
     this.config = config; this.timeout = config.values.network.reconnectingUiDelayMs;
-    this.world = { ...snapshot.world, events: snapshot.presentation }; this.menu = snapshot.menu;
+    this.world = { ...snapshot.world, events: snapshot.presentation }; this.menu = snapshot.menu; this.shiftLocation = snapshot.shiftLocation ?? null;
     this.revision = snapshot.revision; this.frontier = snapshot.lastEventSeq;
   }
   private async authenticationSession(): Promise<PlayerSession> {

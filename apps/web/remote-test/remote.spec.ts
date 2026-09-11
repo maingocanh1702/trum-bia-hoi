@@ -60,6 +60,10 @@ test('real server serves once after lost acknowledgement, retains queue across r
   expect(later.world.rng).toBeUndefined(); expect(later.world.events).toBeUndefined();
   expect(errors).toEqual([]);
   await page.screenshot({ path: '.qa/m4-remote-mobile.png', fullPage: true });
+  await page.keyboard.press('Escape'); await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
+  const location = page.getByRole('region', { name: 'Địa điểm trong ca', exact: true });
+  await expect(location.locator('[data-shift-location="hem_nho"]')).toHaveText('HẺM NHỎ ×1');
+  expect((await snapshot(page)).shiftLocation.locations).toEqual([{ id: 'hem_nho', mult: 1 }]);
 });
 
 test('offline restock and in-shift upgrade use durable ordered commands and current menu presence on return', async ({ page }) => {

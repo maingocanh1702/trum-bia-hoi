@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { Game, config, loadConfig, decodeSave, encodeSave, type Command } from '../../../../packages/engine/src';
+import { Game, config, loadConfig, decodeSave, encodeSave, leaseQuote, type Command } from '../../../../packages/engine/src';
 if (process.argv[2] === 'inspect') {
   const g = decodeSave(readFileSync(0, 'utf8')), w = g.world;
   console.log(JSON.stringify({ now: w.now, coins: w.coins, paused: !!w.paused, location: w.location, lease: w.lease, phase: w.phase, earned: w.lifetimeEarned }));
@@ -11,5 +11,12 @@ if (process.argv[2] === 'inspect') {
   send({ type: 'startShift' }); g.advance(g.world.now + 11000);
   const table = g.world.tables.find(t => t.order?.items.every(i => i.state === 'ready'))!;
   send({ type: 'serve', tableId: table.id, orderId: table.order!.id }); send({ type: 'endShift' }); g.advance(g.world.now + 3600000);
+  if (process.argv[2] === 'book') {
+    for (const locationId of ['ngo_cho', 'ben_xe']) {
+      const q = leaseQuote(g.world, g.config, locationId);
+      send({ type: 'rentLocation', locationId, leaseId: q.leaseId, maxCost: q.cost });
+      if (locationId === 'ngo_cho') { send({ type: 'startShift' }); send({ type: 'endShift' }); g.advance(g.world.now + 1000); }
+    }
+  }
   console.log(JSON.stringify({ now: g.world.now, save: encodeSave(g) }));
 }

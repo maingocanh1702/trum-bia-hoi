@@ -167,3 +167,9 @@ Evidence: `.qa/playable-v02-{cutover.txt,preservation-receipt.json,runtime-smoke
 `master` was fast-forwarded from `30c0285e40ee6d922f44ef8412bce50892a84f75` to the first local landing `51c852dbe6fdef80a561530db891c2ed6cb67206` using `git merge --ff-only codex/game-build-isolated` in `/Users/maingocanh/.codex/worktrees/trum-bia-hoi-master-v02-verify`. This documentation-only receipt is also fast-forwarded before the dedicated merged-master check; it changes no runtime code. No merge commit, rebase, history rewrite or push.
 
 Dedicated check: `npm run verify` in that temporary master worktree, with output retained in the writing checkout `.qa/playable-v02-master-verify.txt`. The success-only receipt `.qa/playable-v02-master-verified.json` records the final master hash and test result after command completion; remove the temporary worktree only after PASS. The main checkout remains on `codex/build-game` with its WIP untouched. The running preview stays at immutable tag `playable-v0.2` (`ad94161`), independently of these documentation commits.
+
+
+## Local v0.3 scope — owner update 2026-09-11
+
+Release work is in progress;5174/5175 still serve accepted playable-v0.2.
+**F12-CLAIM: PENDING (owner decision 2026-09-11 13:33), OUT of playable-v0.3.** Season reward grants, idempotent prize claims and the mailbox wait for a defined per-tier prize table. No prizes or reward config will be invented. Immutable season snapshots, captured names and history remain in scope.

@@ -2782,3 +2782,17 @@ Evidence: `.qa/playable-v02-{cutover.txt,preservation-receipt.json,runtime-smoke
 `master` was fast-forwarded from `30c0285e40ee6d922f44ef8412bce50892a84f75` to the first local landing `51c852dbe6fdef80a561530db891c2ed6cb67206` using `git merge --ff-only codex/game-build-isolated` in `/Users/maingocanh/.codex/worktrees/trum-bia-hoi-master-v02-verify`. This documentation-only receipt is also fast-forwarded before the dedicated merged-master check; it changes no runtime code. No merge commit, rebase, history rewrite or push.
 
 Dedicated check: `npm run verify` in that temporary master worktree, with output retained in the writing checkout `.qa/playable-v02-master-verify.txt`. The success-only receipt `.qa/playable-v02-master-verified.json` records the final master hash and test result after command completion; remove the temporary worktree only after PASS. The main checkout remains on `codex/build-game` with its WIP untouched. The running preview stays at immutable tag `playable-v0.2` (`ad94161`), independently of these documentation commits.
+
+
+## Steer18 — local v0.3 intake, 2026-09-11
+
+v0.2 accepted. Master7d1c255 full verify406/406 plus ordinary/rush/career gates PASS; temporary master worktree removed,5174/5175 still serve playable-v0.2/ad94161,37 pre-existing main-checkout WIP file hashes unchanged; no push. Receipt: `.qa/playable-v02-master-verified.json`.
+
+Ordered local-only queue: M5-F14-SUMMARY → M5-F28-RANK → M5-F12/F28-SNAPSHOT → M2-ONBOARDING → any actually open local/non-WAIVED M1/M3 rows → v0.3 release. F12 reward claim/mailbox is PENDING and OUT of v0.3 (owner13:33 addendum): config has no complete prize IDs/amounts. No rewards or reward config will be invented. Production/real Google/CAPTCHA/social remain PENDING; M6/M7/M8 remain deferred.
+
+F14 writing slice base7d1c255, isolated branch codex/game-build-isolated. Scope: readonly location report shared by local/server presentation, shift-book VI/EN labels, lease/book regressions and closure docs. Derive from existing lease/shift events and the shift-pinned config, including expiry during a paused shift; never use the later resting location for a closed shift. No engine rules, config, economy, auth or registry changes.
+
+
+### M5-F14-SUMMARY — PASS, 2026-09-11
+
+Historical location multipliers in live/closed shift book, shared readonly server/local report; calendar expiry mid-shift and later moves retain correct history. Full verify409/409 +10ordinary k cohorts2.5644–2.9168 +15rush +career42=3.465461/99=3.393197≤3.5 PASS.5lease/book browser and1real-server lost-ACK/reload/report tests PASS;360/390/1280px visual checks. Engine/config unchanged; independent batch review and v0.3 cutover still follow.

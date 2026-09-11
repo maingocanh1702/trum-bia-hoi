@@ -1,3 +1,4 @@
+import { shiftLocationReport } from '../../shared/shift-location';
 import type { CompetitionRequest } from './competition';
 import { createServer, type IncomingMessage } from 'node:http';
 import type { OAuth2Client } from 'google-auth-library';
@@ -34,7 +35,7 @@ function publicState(state: Snapshot, config: Config) {
   const presentation = state.world.events.filter(e => e.type === 'order_served' && orders.has(String(e.data.orderId)) || e.type === 'rush_ended' && e.data.shiftId === world.shift?.id);
   const flyer = state.world.events.filter(e => e.type === 'flyer_ended').at(-1);
   if (flyer) presentation.push(flyer);
-  return { world: view, presentation: presentation.map(publicEvent), menu: menuReport(state.world, config),
+  return { world: view, presentation: presentation.map(publicEvent), menu: menuReport(state.world, config), shiftLocation: shiftLocationReport(state.world, config),
     configVersion: state.configVersion, serverNow: world.now, revision: state.revision, lastEventSeq: state.lastEventSeq };
 }
 async function json(req: IncomingMessage, maxBytes = BODY_BYTES): Promise<unknown> {
