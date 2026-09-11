@@ -570,3 +570,8 @@ Dedicated check: `npm run verify` in that temporary master worktree, with output
 | Date | Change |
 |---|---|
 | 2026-09-11 Steer18 / M5-F14-SUMMARY | Location multipliers now appear in the live/closed shift book, shared server/local readonly report with lease provenance and pinned config.3 report tests,5 local browsers and1 real-server browser PASS; no engine/economy changes. v0.3 batch remains in progress; production/social/M6–M8 unchanged. |
+
+
+| Date | Change |
+|---|---|
+| 2026-09-11 | M5-F28-RANK: existing live ranking acceptance verified again (4 real-server browsers +409unit/server). Stable ties/pages, immediate live flag/unflag and pinned server eligibility PASS; immutable end-season snapshot/history remains the next slice. |

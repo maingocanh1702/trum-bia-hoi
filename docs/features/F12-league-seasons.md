@@ -133,3 +133,8 @@ this implementation does not invent or grant those rewards. F12/F28 are not comp
 | 2026-09-09 | Review corrections: a window with no income and no closed shifts can accept an opening config (including a new calendar at rollover); a participated period remains pinned. First adoption compares permanent tier IDs against the prior gameplay config. Whole seated-order credits are preflighted through the canonical credit path before any mutation, including tip/bonus/later guests and daily-cap clipping. |
 
 | 2026-09-09 | Core accounting/peak/personal UI verified at faece69: 248 engine/server, 79 browser plus 6 correction checks, config/build, 10 ordinary k cohorts and 15 rush pass. Native correction review confirms all 3 findings resolved. Full ranking/reward acceptance remains open. |
+
+
+| Date | Change |
+|---|---|
+| 2026-09-11 | Steer18 F12 stable tie-break/page criterion PASS on existing E25 code: actual imported histories, timestamp/ID ties, revision-bound pages, refresh/restart and VI/EN real-server UI. Reward grant/claim/mailbox remains PENDING by owner13:33; no new rewards or config. |

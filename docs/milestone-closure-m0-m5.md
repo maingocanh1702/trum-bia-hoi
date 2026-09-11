@@ -293,7 +293,7 @@ now PASS. M4 is **14/18 OPEN**; public archive transport remains deferred to M9.
 | Automatic season end and immutable global snapshot | FAIL | Local deterministic season outcomes PASS (`seasons.test.ts`); global ranks/shrine snapshot absent. |
 | F12: quest/lottery/donate never change seasonEarned | FAIL | Quest/reward/refund exclusions PASS engine season tests; lottery/donate paths disabled/unimplemented, full3-source integration not exercised. |
 | F12: deterministic VN midnight/epoch rollover | PASS | Engine “exact ranking boundary resets only ranking…” and server season restart/retry test, E1. |
-| F12: stable tie-break across pages | FAIL | Local tie timestamp exists; paginated ranking absent. |
+| F12: stable tie-break across pages | PASS | M5-F28-RANK/Steer18: real imported careers sort by earned, firstReached timestamp then stable ID; revision-bound pages/restart and own neighbors. Existing leaderboard.test.ts +4 real-server browser tests rerun PASS. |
 | F12: rewards claimed exactly once | PENDING | F12-CLAIM OUT of playable-v0.3 — owner decision 2026-09-11 13:33. No per-tier prize quantities/IDs are defined; grant, idempotent claim and mailbox deferred. No reward config changes or invented prizes. |
 | F13: spending cannot lower Life Path | PASS | Engine `progression.test.ts` subsidiary gates and reward-ledger tests; `locations.test.ts` lease spend keeps lifetime earnings; full careerE4. |
 | F13: no duplicate reward claims | PASS | Engine “every configured reward uses the same overflow conversion…cannot be claimed twice” tests LP1–LP7 rewards and retry. |
@@ -749,3 +749,10 @@ Verification:409/409 engine/server tests;3 focused report/replay regressions;5 l
 | Date | Change |
 |---|---|
 | 2026-09-11 13:33 owner / Steer18 addendum | F12-CLAIM rewards grant/idempotent claim/mailbox PENDING and OUT of playable-v0.3. Continue F14 → F28 live rank → immutable season snapshot/name-at-capture/history → local onboarding → remaining local non-WAIVED M1/M3 → release. No reward config edits. |
+
+
+## Steer18 — M5-F28-RANK acceptance, 2026-09-11
+
+The old F12 pagination FAIL was stale: E25 already implements it. `leaderboard.test.ts` proves actual imported careers order by earnings, first reached, stable ID; pages carry a snapshot revision, stale pages refuse, own-neighbor rows are tier-correct, restart preserves ordering. Live flag/unflag and approval reversal invalidate cached pages immediately; guest/anonymous users have no own row and cannot submit totals. `competition.test.ts` “competitive tiers and qualification reuse each active season pin” proves configured minShiftsToRank and tier gates are server-side.
+
+Fresh evidence: full verify409/409 (same runtime code as8119e32),10ordinary/15rush/2career gates PASS;4 real-server VI/EN leaderboard browser tests PASS in `.qa/v03-f28-rank-browser.txt`. No runtime, engine or config change is needed for this criterion. The combined F28 snapshot/flag/threshold rows remain open specifically for immutable end-season capture and history; F12-CLAIM is owner-deferred.

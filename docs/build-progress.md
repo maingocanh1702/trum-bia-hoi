@@ -2796,3 +2796,8 @@ F14 writing slice base7d1c255, isolated branch codex/game-build-isolated. Scope:
 ### M5-F14-SUMMARY — PASS, 2026-09-11
 
 Historical location multipliers in live/closed shift book, shared readonly server/local report; calendar expiry mid-shift and later moves retain correct history. Full verify409/409 +10ordinary k cohorts2.5644–2.9168 +15rush +career42=3.465461/99=3.393197≤3.5 PASS.5lease/book browser and1real-server lost-ACK/reload/report tests PASS;360/390/1280px visual checks. Engine/config unchanged; independent batch review and v0.3 cutover still follow.
+
+
+### M5-F28-RANK — PASS, 2026-09-11
+
+Existing E25 live ranking already satisfies stable tie-break/page and current flag/unflag behavior. Fresh409/409 full verify +4 real-server leaderboard browsers PASS, including VI/EN, paused shift, stale-page recovery, private-row isolation and offline cache. No runtime/config changes. Corrected stale F12 pagination FAIL; immutable end-season snapshot/name-at-capture/history remains next; rewards/mailbox owner-deferred.
