@@ -151,3 +151,12 @@ python3 /Users/maingocanh/.codex/worktrees/trum-bia-hoi-playable-v0.2/.qa/playab
 Use one action at a time. `start` is idempotent and can load the jobs after logging in again; jobs are registered for the current login session, not installed as login items. The helper refuses jobs owned by another checkout. Logs, backup and actual runtime receipt live beside the helper. Do not run a second API process against `.qa/game-api.sqlite`.
 
 Known limits: **localhost dev identity only; real Google Client ID/consent pending; no CAPTCHA or production hosting**. Admin requires a private allowlist/TOTP and is disabled in the owner preview. No external release or human playtest is claimed. The Production deployment checklist in this document remains PENDING. The cutover and master fast-forward will be recorded only after their checks finish.
+
+
+### Local v0.2 cutover complete — 2026-09-11
+
+Launchd `local.tbh.playable-web` / `local.tbh.playable-api` now serve tag **playable-v0.2**, commit **ad94161ab25185ed6e40107a770c4070810fd9d7**, from `/Users/maingocanh/.codex/worktrees/trum-bia-hoi-playable-v0.2` on localhost 5174/5175. Served index SHA-256 `38464756630f628c5ea4fbff229ba0c058b0a8b2a364b4e4dbe76f01e8a77cb5` equals the tested build. The start/stop/status helper is installed beside the runtime plists; use the commands above.
+
+The existing SQLite path and cookies are unchanged. Backup: pinned checkout `.qa/playable-runtime/game-api-before-playable-v0.2.sqlite`. Read-only comparison preserved all 6 prior players, 7,150 commands, 4,942 events, 36 client receipts, 4 config snapshots, 8 registry audit records and 2 publication records; all 5 same-shift pins match, no shift advanced during cutover. No new config publication was necessary. Runtime smoke confirms buffer 4/4, six stock rows, risk UI hidden and mid-shift dev sign-in preserving player/shift/coins with **zero core or account-console errors**. This fixes the historical v0.1 dev-form console limitation.
+
+Evidence: `.qa/playable-v02-{cutover.txt,preservation-receipt.json,runtime-smoke.json,runtime-smoke.txt}` and pinned `.qa/playable-runtime/receipt.json`. Helper mocked start/stop/rollback/wrong-checkout tests PASS; operation review CLEAN. All 37 original-checkout WIP hashes and its `codex/build-game` branch are unchanged. Master fast-forward/full verification is the remaining local delivery step; no push or production operation.

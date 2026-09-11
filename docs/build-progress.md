@@ -1,6 +1,6 @@
 # Build progress — Trùm Bia Hơi
 
-> **Local v0.2 preparation — 2026-09-11:** M0 and M1 COMPLETE (M1: 11 PASS, 1 owner-WAIVED). Trimmed gameplay/UI batch is implemented; final verify/smoke PASS. Live preview remains `playable-v0.1` until cutover. M6/M7/M8 and production deployment remain pending/deferred.
+> **Local v0.2 DELIVERED — 2026-09-11:** M0 and M1 COMPLETE (M1: 11 PASS, 1 owner-WAIVED). Trimmed gameplay/UI batch is implemented; final verify/smoke PASS. Live preview now serves `playable-v0.2` at ad94161. M6/M7/M8 and production deployment remain pending/deferred.
 
 Started 2026-09-08 from `30c0285`. Active worktree: `/Users/maingocanh/.codex/worktrees/trum-bia-hoi-game`, branch `codex/game-build-isolated` based on `bc79af5`. A concurrent Claude docs commit captured the first engine files in the original checkout; original files were preserved, and further work was isolated. Authority: current `00-HANDOFF-trum-bia-hoi.md` and [owner update adoption](latest-handoff-adoption.md),
 PROMPT PACK part B, GDD decisions, 03-SPEC table rules, JSON numbers. This is the
@@ -2766,3 +2766,12 @@ Receipt SHA-256:
 - `.qa/playable-390.json`: `5887863df72e8b507d6ce44bc471cda8460ad687e314e6c1ad384429e81313ea`.
 - `.qa/playable-360.json`: `907fa4a3eaf065950f5729f38c4f4264babe543783a65718b604b2d75a3c5b65`.
 - `.qa/playable-1280.json`: `6f05e58ac80795f7f32788da4cbbfe5550581f181086d73d5db783d6f4095379`.
+
+
+### Local v0.2 cutover complete — 2026-09-11
+
+Launchd `local.tbh.playable-web` / `local.tbh.playable-api` now serve tag **playable-v0.2**, commit **ad94161ab25185ed6e40107a770c4070810fd9d7**, from `/Users/maingocanh/.codex/worktrees/trum-bia-hoi-playable-v0.2` on localhost 5174/5175. Served index SHA-256 `38464756630f628c5ea4fbff229ba0c058b0a8b2a364b4e4dbe76f01e8a77cb5` equals the tested build. The start/stop/status helper is installed beside the runtime plists; use the commands above.
+
+The existing SQLite path and cookies are unchanged. Backup: pinned checkout `.qa/playable-runtime/game-api-before-playable-v0.2.sqlite`. Read-only comparison preserved all 6 prior players, 7,150 commands, 4,942 events, 36 client receipts, 4 config snapshots, 8 registry audit records and 2 publication records; all 5 same-shift pins match, no shift advanced during cutover. No new config publication was necessary. Runtime smoke confirms buffer 4/4, six stock rows, risk UI hidden and mid-shift dev sign-in preserving player/shift/coins with **zero core or account-console errors**. This fixes the historical v0.1 dev-form console limitation.
+
+Evidence: `.qa/playable-v02-{cutover.txt,preservation-receipt.json,runtime-smoke.json,runtime-smoke.txt}` and pinned `.qa/playable-runtime/receipt.json`. Helper mocked start/stop/rollback/wrong-checkout tests PASS; operation review CLEAN. All 37 original-checkout WIP hashes and its `codex/build-game` branch are unchanged. Master fast-forward/full verification is the remaining local delivery step; no push or production operation.
