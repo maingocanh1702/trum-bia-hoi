@@ -1,6 +1,6 @@
 # Milestone closure report — M0–M5
 
-> Current owner target (Steer17, 2026-09-11): **local release playable-v0.2** for owner testing. Kept criteria: equipment UI, shift/screens, timeout, measured upgrade hint, location summary, i18n/axe. Production/internet, OAuth/minute5, referral/gifts, admin/registry polish and large season snapshots are PENDING. WAIVED rows stay waived; M6/M7/M8 remain deferred. Preview stays on v0.1 until the release gates pass; then fast-forward master through a clean temporary worktree, without pushing or touching the main checkout WIP.
+> Current owner target (Steer17, 2026-09-11): **local release playable-v0.2** for owner testing. Kept criteria: equipment UI, shift/screens, timeout, measured upgrade hint, i18n/axe. Production/internet, OAuth/minute5, referral/gifts, admin/registry polish and large season snapshots are PENDING. WAIVED rows stay waived; M6/M7/M8 remain deferred. Preview stays on v0.1 until the release gates pass; then fast-forward master through a clean temporary worktree, without pushing or touching the main checkout WIP.
 
 2026-09-10 · implementation `628eb72` · config2.0.2/rules24/schema10.
 Authority: [ROADMAP §mốc M0–M9](../06-ROADMAP-trum-bia-hoi.md), including the
@@ -242,7 +242,7 @@ now PASS. M4 is **14/18 OPEN**; public archive transport remains deferred to M9.
 | Five new users:≥4/5 first serve≤30s and≥4/5 complete first shift | WAIVED | WAIVED by owner 2026-09-10 — post-release playtest. Automated evidence retained: No five-person uncoached study; browser automation is not human evidence. |
 | Guest completes first shift without registration; progress persists on this device (owner10/09 15:30) | PASS | E2 full guest shift; E20 retains progress on real browser restart/new tab, enforces the opener lock and recovers dropped responses once. Account-only durable player history/achievements/ranking/cross-device restore stay separate. |
 | Fixed-seed first guest within config deadline, one bia, no rush/risk | PASS | Engine `game.test.ts` “first guest gets one customer and one beer, with auto pour…”; onboarding config and E2 first serve. |
-| First timeout produces customer_left+feedback≤1s and shift continues | FAIL | Engine numeric-loss event and web toast/continued-shift checks PASS; exact deadline-to-visible-toast≤1s is not separately measured. |
+| First timeout produces customer_left+feedback≤1s and shift continues (M1-TIMEOUT) | PASS | Remote browser deadline-to-painted loss toast40/46/71ms at390×844/360×740/1280×720; exact server penalty/reputation, no narrative text, shift continues. |
 | Three consecutive losses rerun guide once; serve resets counter | PASS | Engine `presentation.test.ts` “event-driven guide resets…” and “three-customer queue loss…”. |
 | First guide runs, skip continues, reload does not rerun | PASS | E2 “muting, guide skipping and reduced-motion preference survive normal play” + persisted settings/guide tests. |
 | Google sign-in at minute5 keeps live shift and credits once | FAIL | E5 server transaction and E17 signed-fixture mid-shift browser panel pass; literal minute5 acceptance and live configured Google consent remain unverified. |
@@ -300,7 +300,7 @@ now PASS. M4 is **14/18 OPEN**; public archive transport remains deferred to M9.
 | F13: location gates update immediately after level-up | PASS | Engine “actual v5 history…current progression unlocks…” + configured gates; lease tests reject locked targets; web life-path/rental gate scenarios. |
 | F14: locked location cannot be rented | PASS | Engine “rent prepays seven scaled daily rents…failed or stale move preserves…” plus mobile rental quote test. |
 | F14: deposit refunded only normal end/renewal, not early leave | PASS | Engine “early switch and departure forfeit…” and “calendar expiry is identical under fine/coarse ticks…”; server paid-lease restart test. |
-| F14: multiplier server-side and shown in shift summary | FAIL | Shared engine/server multiplier is authoritative for server commands; rental UI shows multiplier, but explicit shift-summary multiplier presentation is missing. |
+| F14: multiplier server-side and shown in shift summary | PENDING | owner decision 2026-09-11 — post v0.2. Shared engine/server multiplier and rental UI already exist; summary presentation deferred. |
 | F16: donate cannot grant ket_noi | FAIL | Referral qualification/badge service and donate path absent. |
 | F16: self-referral never qualifies | FAIL | No referral service/endpoint or test. |
 | F16: claim idempotent | FAIL | No referral claim path. |
@@ -674,3 +674,15 @@ Receipts: `.qa/playable-{390,360,1280}.json`, `.qa/steer15-playable-smoke-final.
 ### M1-SCREENS — PASS, 2026-09-11
 
 `npx playwright test --config playwright.remote.config.ts apps/web/remote-test/remote.spec.ts -g M1-SCREENS` passes3/3 (47.2s). Each viewport390×844,360×740,1280×720 opens all seven core surfaces against real HTTP/store, serves a customer, observes paused management sheets, confirms early close and reaches rest with exactly one completed shift. Every screen checks image completion, horizontal overflow and contextual-panel bounds;0console/page errors.21screenshots `.qa/m1-screens-{width}-{yard,order,stock,upgrades,book,close,rest}.png`; receipt `.qa/steer17-screens.txt`; typecheck PASS. No production source, engine or config changed. Human first-use criterion remains WAIVED.
+
+
+### Steer17 addendum — 11:40, 2026-09-11
+
+M5-F14-SUMMARY removed from the local v0.2 queue: **PENDING — owner decision 2026-09-11 — post v0.2**. Read-only diagnosis only; no location implementation or WIP. Continue M1-TIMEOUT → M1-UPGRADE → M1-I18N/AXE (guest referral/gift visibility) → verify/three-viewport smoke → tag/serve v0.2 → temporary-worktree master fast-forward, no push. Production remains PENDING.
+
+
+### M1-TIMEOUT — PASS, 2026-09-11
+
+Remote polling now wakes at the nearest pending order expiry when online, visible and playing, instead of waiting the remainder of the heartbeat interval. Loss remains server-authoritative; paused/background/offline cadence is unchanged.6/6 remote browser checks PASS: three expiry-to-painted-toast receipts40/46/71ms plus lost-acknowledgement, paused restock/upgrade and disconnected grace recovery. Test clock-offset metadata isolates the previous reconnect test's time jump; animation visibility is observed every frame, not only on DOM mutation. Receipts `.qa/steer17-timeout-regression.txt`, screenshots `.qa/m1-timeout-{390,360,1280}.png`. Config/build PASS; no engine/config changes.
+
+Equipment full verification also finished with exit0:406/406 tests,10standard k2.5644–2.9168,15rush,career42/99 k3.465460767842698/3.393196640939153. Source receipt `.qa/steer16-equipment-verify-final.txt`.

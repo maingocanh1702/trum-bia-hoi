@@ -307,6 +307,15 @@ export class RemoteGame {
       }
       if (this.linking && !this.stopped && await this.beat()) await this.finishGoogleLink();
     } catch (error) { this.fail(error); }
-    finally { this.working = false; if (!this.stopped && !['conflict', 'storage', 'invalidSession'].includes(this.state)) this.timer = setTimeout(() => this.wake(), this.again ? 0 : this.interval); }
+    finally {
+      this.working = false;
+      // Pull the authoritative expiry at its deadline instead of waiting another heartbeat.
+      // Menus/background/offline retain the normal cadence; this never predicts a loss locally.
+      const deadlines = this.state === 'online' && this.active && !this.paused && this.world?.phase === 'open'
+        ? this.world.tables.flatMap(table => table.order && ['pending', 'grace'].includes(table.order.state)
+          ? [table.order.placedAt + table.order.patienceMs + this.config.values.patience.graceMs - this.world.now] : []).filter(ms => ms > 0) : [];
+      if (!this.stopped && !['conflict', 'storage', 'invalidSession'].includes(this.state))
+        this.timer = setTimeout(() => this.wake(), this.again ? 0 : Math.min(this.interval, ...deadlines));
+    }
   }
 }

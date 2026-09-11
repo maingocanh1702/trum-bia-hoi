@@ -20,6 +20,9 @@ const handler = server.listeners('request')[0] as (...args: any[]) => void;
 server.removeAllListeners('request');
 server.on('request', async (req, res) => {
   const url = new URL(req.url!, 'http://localhost');
+  if (url.pathname === '/__test/clock') {
+    res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ offset })); return;
+  }
   if (url.pathname === '/__test/rank' && req.method === 'POST') {
     try {
       const at = Date.now() + offset, subject = url.searchParams.get('subject')!, action = url.searchParams.get('action') ?? 'seed';

@@ -513,3 +513,8 @@ Reconciled the stale closure row using the accepted v0.1 three real12-minute vie
 ### M1-SCREENS — PASS, 2026-09-11
 
 Seven core screens ×3viewports verified through real server transport:3/3 browser tests,21screenshots,0console/page errors, no missing images or viewport overflow; typecheck PASS. Source/engine/config unchanged. M1 now8PASS/1WAIVED/3open criteria; see closure for exact evidence.
+
+
+### M1-TIMEOUT — PASS, 2026-09-11
+
+Client deadline-aware authoritative polling; loss toast40/46/71ms on three viewports,6/6 browser regressions including pause/reconnect PASS. No engine/config change. Equipment full verify completed406/406 plus all standard/rush/career gates. Owner11:40 drops M5-F14-SUMMARY from v0.2: PENDING post-v0.2; no location implementation started.

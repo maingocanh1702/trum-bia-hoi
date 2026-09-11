@@ -296,3 +296,41 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
     expect((await snapshot(page)).world.completedShifts).toBe(1); expect(errors).toEqual([]);
   });
 }
+
+for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1280, height: 720 }]) {
+  test(`M1-TIMEOUT first loss is painted within one second of authoritative expiry at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    const errors: string[] = []; page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+    await openShift(page);
+    const before = (await snapshot(page)).world, orderId = before.tables[0].order.id;
+    const { offset } = await (await page.request.get('/api/__test/clock')).json();
+    const expired = page.waitForResponse(async response => response.url().includes('/api/player/events?') && response.ok() &&
+      (await response.json()).events.some((row: any) => row.event.type === 'order_expired' && row.event.data.orderId === orderId), { timeout: 45000 });
+    const painted = page.evaluate(() => new Promise<number>(resolve => {
+      const observer = new MutationObserver(() => {
+        if (!document.querySelector('.toast-loss')) return;
+        observer.disconnect();
+        const frame = () => {
+          const node = document.querySelector('.toast-loss');
+          if (node && Number(getComputedStyle(node).opacity) > 0) resolve(Date.now());
+          else requestAnimationFrame(frame);
+        };
+        requestAnimationFrame(frame);
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    }));
+    const [response, visibleAt] = await Promise.all([expired, painted]);
+    const event = (await response.json()).events.find((row: any) => row.event.type === 'order_expired' && row.event.data.orderId === orderId).event;
+    const latencyMs = visibleAt + offset - event.at;
+    expect(latencyMs).toBeGreaterThanOrEqual(0); expect(latencyMs).toBeLessThanOrEqual(1000);
+    const toast = page.locator('.toast-loss');
+    await expect(toast).toHaveAccessibleName(`Trừ ${event.data.penalty} xu và ${event.data.reputation} uy tín`);
+    await expect(toast).toHaveText(/^[−\d\s.,]+$/); await expect(page.locator('.order-panel')).toHaveCount(0);
+    const after = (await snapshot(page)).world;
+    expect(after.phase).toBe('open'); expect(!!after.paused).toBe(false); expect(after.shift.stats.lost).toBeGreaterThan(0);
+    expect(after.staminaMs).toBeLessThan(before.staminaMs);
+    expect(errors).toEqual([]); await page.screenshot({ path: `.qa/m1-timeout-${viewport.width}.png` });
+    await test.info().attach('timeout-latency', { body: JSON.stringify({ viewport, eventId: event.id, expiredAt: event.at, visibleAt, latencyMs, penalty: event.data.penalty, reputation: event.data.reputation }), contentType: 'application/json' });
+    console.log('M1-TIMEOUT', JSON.stringify({ viewport, latencyMs, penalty: event.data.penalty, reputation: event.data.reputation }));
+  });
+}
