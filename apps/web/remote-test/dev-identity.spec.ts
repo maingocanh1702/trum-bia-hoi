@@ -17,11 +17,16 @@ async function account(page: Page) {
 // Run only with playwright.dev-identity.config.ts: no mocked Google SDK or credential endpoint.
 test('explicit dev provider links a live shift once and restores it in a fresh browser context without loading Google', async ({ page, browser }) => {
   const errors: string[] = [], google: string[] = [];
-  page.on('pageerror', e => errors.push(e.message)); page.on('request', r => { if (r.url().startsWith('https://accounts.google.com/')) google.push(r.url()); });
+  page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); }); page.on('request', r => { if (r.url().startsWith('https://accounts.google.com/')) google.push(r.url()); });
   await enter(page); await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
   await expect.poll(async () => (await snapshot(page)).world.phase).toBe('open');
   const dialog = await account(page);
   await expect(dialog).toContainText('Không phải đăng nhập Google thật');
+  const input = dialog.getByRole('textbox', { name: 'Tên tài khoản thử nghiệm' });
+  for (const invalid of ['bad name', '1player', 'player_one']) {
+    await input.fill(invalid); expect(await input.evaluate(el => (el as HTMLInputElement).checkValidity())).toBe(false);
+  }
+  await input.fill('browser-alice'); expect(await input.evaluate(el => (el as HTMLInputElement).checkValidity())).toBe(true);
   await expect.poll(async () => (await snapshot(page)).world.paused).toBe(true);
   const before = (await snapshot(page)).world;
   await page.screenshot({ path: '.qa/dev-identity-390.png' });
@@ -34,7 +39,7 @@ test('explicit dev provider links a live shift once and restores it in a fresh b
   await page.close();
   const context = await browser.newContext({ baseURL: 'http://127.0.0.1:4179', locale: 'vi-VN', viewport: { width: 360, height: 740 } });
   try {
-    const restored = await context.newPage(); restored.on('pageerror', e => errors.push(e.message));
+    const restored = await context.newPage(); restored.on('pageerror', e => errors.push(e.message)); restored.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
     await enter(restored); const panel = await account(restored);
     await panel.getByRole('button', { name: 'Đăng nhập thử nghiệm', exact: true }).click();
     await expect.poll(async () => (await snapshot(restored)).world?.playerId).toBe(before.playerId);

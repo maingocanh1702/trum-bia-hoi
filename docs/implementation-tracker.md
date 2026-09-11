@@ -493,3 +493,8 @@ All three real12-minute viewport paths PASS:390×844561ms/60.25fps/68served;360�
 ### Steer15 complete — pinned preview and config publication, 2026-09-11
 
 Steps1/2:af9d287/7dc5998. Local preview now serves tagplayable-v0.1 b3cfb34. Normal next_shift publicationregistry-183f67c7-2c6e-489a-94d5-0862e29bb0f7 (source2.0.3,7418c7b; base2.0.1), ordinary audit seq5/6/7, identical retry receipt. Backups retained;4old profiles,7054commands,4842events,30receipts and3old shift pins preserved. New Lv1 buffer4/4 verified. Temporary dev Super/TOTP operator logged out and removed; original disabled admin state restored. Full verify406/406 +all economic gates and3guest viewport shifts PASS,121drafts/3remaining placeholders; runtime core console0. Broader dev-account console smoke found the pre-existing HTML pattern error in admin-api.ts:68; sign-in still preserves the same shift/coins. This out-of-scope defect is recorded in docs/playable-v0.md, not silently waived or fixed. No other feature work started.
+
+
+### Steer16 · M4-DEV-PATTERN — PASS, 2026-09-11
+
+Escaped the HTML Unicode-v literal hyphen in the shared dev-account form. Native invalid-name rejection, same-shift link and fresh-context restore pass with0console/page errors (1browser regression); independent auth review CLEAN. Full verify406/406,10standard k2.5644–2.9168,15rush,2career k3.46546/3.39320 PASS. No server/engine/config change; preview stays playable-v0.1. Ordered remaining queue and the11:05 equipment UI addendum are in milestone-closure-m0-m5.md.

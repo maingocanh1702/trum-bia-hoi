@@ -65,7 +65,7 @@ export function googleScript(dev = false): Promise<GoogleApi> {
         const t = (key: string) => translate(style.locale === 'en' ? 'en' : 'vi', key);
         const form = document.createElement('form'), label = document.createElement('label'), input = document.createElement('input'), button = document.createElement('button'), note = document.createElement('p');
         form.className = 'dev-identity'; label.textContent = t('account.devName'); input.name = 'account'; input.value = 'player-one';
-        input.required = true; input.maxLength = 32; input.pattern = '[a-z][a-z0-9-]{0,31}'; input.autocomplete = 'off'; // config-exempt: test identity protocol bound
+        input.required = true; input.maxLength = 32; input.pattern = '[a-z][a-z0-9\\-]{0,31}'; input.autocomplete = 'off'; // config-exempt: test identity protocol bound
         label.append(input); button.type = 'submit'; button.textContent = t('account.devSignIn'); note.textContent = t('account.devOnly');
         form.append(note, label, button); form.onsubmit = event => { event.preventDefault(); if (!form.reportValidity()) return; button.disabled = true; options.callback({ credential: `tbh-dev:${input.value}:${options.nonce}` }); };
         element.append(form);

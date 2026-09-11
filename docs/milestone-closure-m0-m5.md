@@ -1,6 +1,6 @@
 # Milestone closure report — M0–M5
 
-> Current owner target (Steer12): **playable-v0**, not full milestone closure. Guest full-shift smoke on three viewports + dev identity + persistence/performance; M6/M7/M8 deferred; working draft/placeholder assets accepted.
+> Current owner target (Steer16, 2026-09-11): improve the open M1–M5 gameplay criteria one at a time, then verify and publish **playable-v0.2**. Existing WAIVED rows stay waived; M6/M7/M8 stay deferred; working drafts/placeholders remain accepted. The live preview stays on playable-v0.1 until the next release gates pass.
 
 2026-09-10 · implementation `628eb72` · config2.0.2/rules24/schema10.
 Authority: [ROADMAP §mốc M0–M9](../06-ROADMAP-trum-bia-hoi.md), including the
@@ -622,3 +622,27 @@ PASS on the stable config2.0.2/rules24 build: full real-time12-minute guest shif
 Full verify:406/406unit/server,10standard cohorts k2.4186–2.8738,15rush cases, career42/99 k3.48328/3.31825≤3.5. Three legacy risk-preview regressions and check:assets pass; shipped risk controls are hidden. Dev identity acceptance is in a7331b4; beer naming in e4a4bf6. Independent release diff review CLEAN.132manifest entries,108drafts,16accepted placeholders; two failed-alpha imagegen attempts recorded and counter cards have a registered table fallback.
 
 This closes the owner-defined playable-v0 subset, not every M1–M5 milestone. M6/M7/M8 remain deferred; human-only acceptance remains WAIVED. Packaging/run instructions and exact code commit: [playable-v0](playable-v0.md). Next, only after the tag: Steer14 buffer5/8/12/20/40 with full k gates and the owner-specified fallback.
+
+
+## Steer16 queue — 2026-09-11
+
+Ordered by player impact; each id gets its own evidence/commit. Existing evidence is reconciled before adding code. A criterion that needs an unsettled product decision stops for owner input.
+
+| Id | Scope / likely files |
+|---|---|
+| M4-DEV-PATTERN | Native dev-account validation and console regression; admin-api.ts, remote-test/dev-identity.spec.ts. |
+| M1-EQUIPMENT-UI | Owner11:05 addendum: kitchen unowned state, four compressed sprites, cooler mechanics/HUD units; App.tsx, i18n, assets/manifest and label tests. One commit before the remaining queue. |
+| M1-SHIFT | Reconcile already-passing three-viewport full-shift evidence; closure/tracker. |
+| M1-SCREENS | Seven-screen three-viewport coverage; existing browser tests. |
+| M2-TIMEOUT | Measure numeric loss feedback within1s; remote browser test, App.tsx/remote.ts only if needed. |
+| M1-UPGRADE | Measured bottleneck suggestion; App.tsx, presentation/i18n, browser regression. |
+| M5-F14-SUMMARY | Authoritative location multiplier in shift book; App.tsx/i18n and lease/book tests. |
+| M1-I18N / M1-AXE | Player-facing copy inventory and accessibility checks/fixes; web source and browser tests. |
+| M2-ONBOARDING / M2-GOOGLE5 | Disabled-guide path and minute5 dev-account attachment; onboarding/account tests. |
+| M5-F12 / M5-F28 | Season snapshot, pagination and eligibility gaps; server ranking and season tests. |
+| M5-F16 / M5-F17 | Referral/quest gates only within non-deferred scope; progression source/tests. |
+| M2-ADMIN / M4-REGISTRY | Onboarding editor acceptance and remaining relevant registry polish last. |
+
+### M4-DEV-PATTERN
+
+Native HTML pattern uses Unicode-v set syntax: the literal hyphen is now escaped in the shared dev form. Browser regression rejects malformed names, accepts a hyphenated name, links the same live shift and restores the account in a fresh context with zero console/page errors and no Google requests. Red/green receipts: `.qa/steer16-pattern-red.txt` / `.qa/steer16-pattern-green.txt` (1PASS); independent auth review `.qa/steer16-pattern-review-verdict.txt` CLEAN. Server identity admission, flags and production behavior are unchanged. **PASS**: `.qa/steer16-pattern-verify.txt` full verify406/406, build/config,10standard cohorts k2.5644–2.9168,15rush and career42/99 k3.46546/3.39320. Source fixed; pinned playable-v0.1 is unchanged until the next batch release.
