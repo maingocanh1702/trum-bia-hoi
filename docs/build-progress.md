@@ -4,7 +4,7 @@
 
 Started 2026-09-08 from `30c0285`. Active worktree: `/Users/maingocanh/.codex/worktrees/trum-bia-hoi-game`, branch `codex/game-build-isolated` based on `bc79af5`. A concurrent Claude docs commit captured the first engine files in the original checkout; original files were preserved, and further work was isolated. Authority: current `00-HANDOFF-trum-bia-hoi.md` and [owner update adoption](latest-handoff-adoption.md),
 PROMPT PACK part B, GDD decisions, 03-SPEC table rules, JSON numbers. This is the
-historical complete-game baseline; the current owner target is the trimmed local v0.2 release, not full milestone closure.
+historical complete-game baseline; the current owner target is local v0.3 (Steer18), not full milestone closure.
 
 | Milestone | Status | Evidence / remaining |
 |---|---|---|
@@ -23,7 +23,7 @@ Current milestone closure (2026-09-11): **M0/M1 COMPLETE; M2–M5 retain scoped 
 exit criterion is evaluated in [M0–M5 closure report](milestone-closure-m0-m5.md).
 Verified engine sub-rules, missing implementation and missing human/UI evidence are
 separate. Feature rows span milestones; their count is not milestone completion.
-Current owner queue (Steer17 and 11:40 addendum): final local verification → tag/serve v0.2 → master fast-forward and full verification, no push. F14 summary is PENDING post-v0.2; production and other deferred criteria are not part of this batch.
+Current owner queue (Steer18 +14:50 addendum): F14 summary → live rank → immutable snapshots/history → local onboarding → read-only M1/M3 reconciliation → verify/assets/smoke → tag/serve v0.3 → master fast-forward and full verification, no push. F12-CLAIM and production/social/M6–M8 remain pending/deferred.
 
 ## Public leaderboard closure — E25, 2026-09-10
 
@@ -2801,3 +2801,22 @@ Historical location multipliers in live/closed shift book, shared readonly serve
 ### M5-F28-RANK — PASS, 2026-09-11
 
 Existing E25 live ranking already satisfies stable tie-break/page and current flag/unflag behavior. Fresh409/409 full verify +4 real-server leaderboard browsers PASS, including VI/EN, paused shift, stale-page recovery, private-row isolation and offline cache. No runtime/config changes. Corrected stale F12 pagination FAIL; immutable end-season snapshot/name-at-capture/history remains next; rewards/mailbox owner-deferred.
+
+### M5-F12/F28-SNAPSHOT — in progress, base f4802f7
+
+Scope: shared live/snapshot rank ordering, server cutoff moderation and immutable audit capture, local timer/read catch-up, public history and VI/EN view. Replay existing trusted commands to endsAt−1; normal SaveStore catch-up resolves due presence first. Freeze public aliases (the shipped display names), score/rep/LP and configured podium/wall, with no later profile/account joins. Tests cover boundary, flags before/after end, imported-history approval cutoff, retry/restart, public privacy and history UI. No engine/economy/reward/config-value changes; claim/mailbox remain PENDING.
+
+Snapshot pre-commit review found three defects: pre-registry cutoff must use published_at (seed effective_at is0); synchronous replay held the live writer lock; history stored beyond wallSize. Correcting with a native consistent SQLite backup and bounded worker (same pattern as forecast), short live audit insertion, publication-time fallback and per-tier wall bound. Wallet/engine/config unchanged; regressions and verification are rerun before commit.
+
+
+Snapshot correction review2: fixed next-season archive/eligibility publication,
+kept frozen fields on the retained season pin, separated capture scheduling from
+resettable heartbeats, and shared the worker timeout with the history client.
+42focused checks and6browser cases (delayed3-second response included) PASS.
+Full verify417tests is running. Independent review was interrupted by model-capacity
+unavailability; same pinned reviewer retried. No onboarding files changed.
+
+
+### M5-F12/F28-SNAPSHOT — PASS, 2026-09-11
+
+Final418/418 unit/server,43focused,6browser/6axe scans PASS; full verify standard k2.5644–2.9168,15rush,career42=3.465461/99=3.393197≤3.5. Independent correction review CLEAN. Archive reads retained season settings, worker replay leaves live saves unchanged; startup/heartbeat/slow-history regressions pass. No engine/economy changes. Next: M2-ONBOARDING, then read-only M1/M3 reconciliation and local v0.3 release.

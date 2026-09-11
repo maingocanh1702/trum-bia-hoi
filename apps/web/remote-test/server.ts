@@ -29,6 +29,11 @@ server.on('request', async (req, res) => {
     try {
       const at = Date.now() + offset, subject = url.searchParams.get('subject')!, action = url.searchParams.get('action') ?? 'seed';
       const actor = { subject: 'rank-test-admin', role: 'game' as const, mfa: true, issuedAt: at, expiresAt: at + 3600000 };
+      if (action === 'end') {
+        const board = await store.leaderboard({ kind: 'ranking', page: 0 });
+        offset += board.period.endsAt - at;
+        await store.sweepSeasons(); res.end('{}'); return;
+      }
       if (action === 'flag' || action === 'clear') {
         const id = url.searchParams.get('playerId')!, state = store.competition.state(id);
         store.competition.decide(actor, { type: 'flag', playerId: id, key: crypto.randomUUID(), reason: 'Browser fixture moderation', expectedSeq: state.flag.seq, value: action === 'flag' });

@@ -138,3 +138,10 @@ this implementation does not invent or grant those rewards. F12/F28 are not comp
 | Date | Change |
 |---|---|
 | 2026-09-11 | Steer18 F12 stable tie-break/page criterion PASS on existing E25 code: actual imported histories, timestamp/ID ties, revision-bound pages, refresh/restart and VI/EN real-server UI. Reward grant/claim/mailbox remains PENDING by owner13:33; no new rewards or config. |
+
+
+| Date | Change |
+|---|---|
+| 2026-09-11 Steer18 | Local immutable season archive implemented: startup/timer capture, cutoff membership/review/flags, server tie ordering, captured public aliases, configured podium/wall and VI/EN history. Replay runs on a private SQLite backup and only the final append-only snapshot enters the live database. F12-CLAIM/reward grants/mailbox remain PENDING by owner 2026-09-11; no reward configuration changes. Verification receipt will be recorded in the milestone closure report. |
+
+| 2026-09-11 acceptance | Snapshot local slice PASS:418unit/server,6browser,6axe scans, full verify and independent correction review CLEAN. Evidence: milestone-closure-m0-m5.md, M5-F12/F28-SNAPSHOT. |

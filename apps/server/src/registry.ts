@@ -51,7 +51,7 @@ export function registryPolicy(keys: string[], c: Config, scope?: ConfigScope['k
   const tiers = keys.map(tierFor), tier = (['A', 'B', 'C'] as const).find(t => tiers.includes(t))!;
   const superOnly = keys.some(k => ['lottery', 'shopSeason', 'donation', 'cosmetics.donationTiersVnd', ...g.tiers.A.featureFlags].some(p => under(k, p)));
   const modes: Effective[] = keys.map(k => scope === 'campaign' && under(k, 'entitlements') ? 'immediate'
-    : ['league', 'lifePath', 'ledgers'].some(p => under(k, p)) ? 'next_season'
+    : ['league', 'lifePath', 'ledgers'].some(p => under(k, p)) || under(k, 'leaderboard') && !['leaderboard.topN', 'leaderboard.refreshMs', 'leaderboard.displayNameFilter'].includes(k) ? 'next_season'
     : tierFor(k) === 'A' || under(k, 'risk') || under(k, 'locations') ? 'next_day' : tierFor(k) === 'B' ? 'next_shift' : 'immediate');
   const effective = (['next_season', 'next_day', 'next_shift', 'immediate'] as const).find(mode => modes.includes(mode))!;
   return { tier, tiers, superOnly, effective, modes };

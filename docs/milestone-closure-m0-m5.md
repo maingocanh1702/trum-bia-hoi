@@ -1,6 +1,6 @@
 # Milestone closure report — M0–M5
 
-> Current owner target (Steer17, 2026-09-11): **local release playable-v0.2** for owner testing. Kept criteria: equipment UI, shift/screens, timeout, measured upgrade hint, i18n/axe. Production/internet, OAuth/minute5, referral/gifts, admin/registry polish and large season snapshots are PENDING. WAIVED rows stay waived; M6/M7/M8 remain deferred. Preview now serves v0.2 after passing release gates; next fast-forward master through a clean temporary worktree, without pushing or touching the main checkout WIP.
+> Current owner target (Steer18 +14:50 addendum, 2026-09-11): **local release playable-v0.3**. F14 summary → live ranks → immutable season snapshots/history → local onboarding → read-only M1/M3 reconciliation. F12-CLAIM/rewards/mailbox, production/Google/CAPTCHA/social stay PENDING; M6/M7/M8 deferred; WAIVED rows stay waived. v0.2 remains the running preview until v0.3 passes release gates and the SQLite-preserving cutover.
 
 2026-09-10 · implementation `628eb72` · config2.0.2/rules24/schema10.
 Authority: [ROADMAP §mốc M0–M9](../06-ROADMAP-trum-bia-hoi.md), including the
@@ -167,7 +167,7 @@ No new gameplay test or80MB run was added solely to make this report green.
 | M2 | FAIL (4/9 PASS) | OPEN | Five-person test, real mid-shift Google browser flow and admin-editable onboarding; login-prompt gaps below. |
 | M3 | FAIL (6/12 PASS) | OPEN | Advanced k criterion PASS under owner soft cap3.5; feel,32px badge acceptance and remaining equipment/football placeholders still pending. |
 | M4 | FAIL (15/18 PASS) | OPEN — next implementation priority | E7 remote authority/reconnect, E8 registry and E9/E10 admin browser workflow verified. E11/E12 scoped core/editor/factual impact verified; E14 forecast, E15 locale and E18 current-visit Google attachment/restore verified; E25 public rank eligibility verified; observed VND/emergency, live consent and deferred public import remain; E19 reauthentication and E21 invitations/validation verified. |
-| M5 | FAIL (12/25 PASS) | OPEN | Live public ranking verified in E25; snapshots/shrine, rewards/referral/gifts and full integration remain; local LP acceptance rules pass. |
+| M5 | OPEN (18/25 PASS;1 PENDING;6 FAIL) | LOCAL SCOPE IMPLEMENTED; review/release pending | F14 summary, live rank and immutable snapshot/history pass. F12-CLAIM owner-deferred; remaining donation/referral/gift integration belongs to deferred work. |
 
 ## E20 — guest device persistence, owner Steer #5 (2026-09-10 15:30)
 
@@ -290,7 +290,7 @@ now PASS. M4 is **14/18 OPEN**; public archive transport remains deferred to M9.
 ## M5 — meta
 
 | Criterion (ROADMAP and referenced feature acceptance) | Verdict | Evidence or exact gap |
-| Automatic season end and immutable global snapshot | FAIL | Local deterministic season outcomes PASS (`seasons.test.ts`); global ranks/shrine snapshot absent. |
+| Automatic season end and immutable global snapshot | PASS | Startup/independent timer captures ended ranking/contest periods without player reads. SQLite-copy replay, exact immutable audit key, concurrent retry/restart tests and public VI/EN history PASS (Steer18 snapshot receipt). |
 | F12: quest/lottery/donate never change seasonEarned | FAIL | Quest/reward/refund exclusions PASS engine season tests; lottery/donate paths disabled/unimplemented, full3-source integration not exercised. |
 | F12: deterministic VN midnight/epoch rollover | PASS | Engine “exact ranking boundary resets only ranking…” and server season restart/retry test, E1. |
 | F12: stable tie-break across pages | PASS | M5-F28-RANK/Steer18: real imported careers sort by earned, firstReached timestamp then stable ID; revision-bound pages/restart and own neighbors. Existing leaderboard.test.ts +4 real-server browser tests rerun PASS. |
@@ -311,10 +311,10 @@ now PASS. M4 is **14/18 OPEN**; public archive transport remains deferred to M9.
 | F17: expired quests cannot be claimed | PASS | Engine “VN midnight expires claims exactly…”; web quests expiry/pause/reload tests. |
 | F28: guest views board, no own row, login invitation | PASS | E25 public HTTP and real guest invitation/browser tests: public board visible, no personal row; optional invitation shares configured cooldown. |
 | F28: equal earnings use firstReached timestamp, stable refresh | PASS | E25 imported-career ordering test, exact tie fallback, revision-bound pages and configured refresh/deadline tests. |
-| F28: flagged excluded from live/snapshot; unflagged returns before end | FAIL | E25 live server/browser flag hiding, compacted ranks and unflag restore PASS; immutable end-season snapshots remain absent. |
-| F28: end snapshot immutable after rename/account deletion | FAIL | No global snapshot/name-at-capture lifecycle. |
+| F28: flagged excluded from live/snapshot; unflagged returns before end | PASS | Cutoff-time membership/import review/flag state tested on real imported careers: pre-end unflag returns, post-end flag/unflag/approval cannot rewrite frozen ranks. Live-board E25 remains unchanged. |
+| F28: end snapshot immutable after rename/account deletion | PASS | Captured public aliases, score/rep/LP survive source identity rename/removal, restart and retry; SQL UPDATE/DELETE rejected by append-only audit. Editable profile names/deletion UI are not implemented or claimed. |
 | F28: in-shift board opens without lost wait; cached data then server refresh | PASS | E25 VI/EN in-shift browser keeps stamina paused until close; offline reopen shows only dated public cache, then verified server rank. Owner pause supersedes old no-pause text. |
-| F28: admin-configured thresholds; rank/snapshot only server-side | FAIL | E25 server live rank/qualification and validated admin page/refresh controls PASS; immutable end-season snapshot path remains absent. |
+| F28: admin-configured thresholds; rank/snapshot only server-side | PASS | Shared canonical server rank ordering/qualification; registry validates wall/podium/history bounds, next-season archive/eligibility activation and unchanged season pins. VI/EN history displays server rows; no client scores or prize writes. |
 
 F13's three enumerated acceptance rules pass at the shared-engine/local UI layer.
 Its full feature remains open because social/cosmetic unlock surfaces and full career
@@ -756,3 +756,23 @@ Verification:409/409 engine/server tests;3 focused report/replay regressions;5 l
 The old F12 pagination FAIL was stale: E25 already implements it. `leaderboard.test.ts` proves actual imported careers order by earnings, first reached, stable ID; pages carry a snapshot revision, stale pages refuse, own-neighbor rows are tier-correct, restart preserves ordering. Live flag/unflag and approval reversal invalidate cached pages immediately; guest/anonymous users have no own row and cannot submit totals. `competition.test.ts` “competitive tiers and qualification reuse each active season pin” proves configured minShiftsToRank and tier gates are server-side.
 
 Fresh evidence: full verify409/409 (same runtime code as8119e32),10ordinary/15rush/2career gates PASS;4 real-server VI/EN leaderboard browser tests PASS in `.qa/v03-f28-rank-browser.txt`. No runtime, engine or config change is needed for this criterion. The combined F28 snapshot/flag/threshold rows remain open specifically for immutable end-season capture and history; F12-CLAIM is owner-deferred.
+
+## Steer18 — M5-F12/F28-SNAPSHOT evidence, 2026-09-11
+
+Full verify418/418 and43/43 focused server checks PASS. Six real-server browser cases
+cover VI/EN live rank/history with delayed3-second history responses and six whole-page
+axe scans across390×844/360×740/1280×720 (zero violations). Snapshot startup, continuous
+HTTP heartbeats, frozen names/scores, pre-end unflag, post-end decisions, source
+account removal, concurrent stores/restart, bounded wall/history and old config pins
+are verified. No live player projection or wallet is changed by snapshot capture.
+
+Three review rounds found eight defects, corrected with regressions: pre-registry config,
+blocking replay, unlimited wall rows, next-season config activation, timer starvation
+and premature client timeout; historical live-only display settings no longer block
+archive capture, and the delayed-browser regression installs its route before mount. Correction review retried after Sol capacity failures
+via the same pinned wrapper with GPT-5.5. Final independent correction review: CLEAN; all standard/rush/career gates PASS.
+
+Evidence: `.qa/v03-snapshot-final-focused.txt`, `.qa/v03-snapshot-browser-final.txt`,
+`.qa/v03-snapshot-verify-final418.txt`, `.qa/v03-season-axe-*.json`. Engine rules and
+economy.tbh.json are unchanged. F12-CLAIM/rewards/mailbox remain PENDING by owner
+2026-09-11; production/social/M6–M8 remain outside this release.

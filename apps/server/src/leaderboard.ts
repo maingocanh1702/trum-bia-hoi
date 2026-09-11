@@ -6,13 +6,21 @@ export type RankQuery = { kind: SeasonKind; tier?: string; page: number; revisio
 export type RankSource = { playerId: string; reputation: number; lifePath: number; review: ImportReview | null; periods: ReturnType<typeof competitivePeriods> };
 export type RankSnapshot = { at: number; until: number; signature: string; revision: string; config: Config; sources: RankSource[] };
 export const publicRankId = (id: string) => createHash('sha256').update('tbh-public-player:' + id).digest('hex');
-export function rankSettings(config: Config) {
+export function archiveSettings(config: Config) {
   const settings = config.values.leaderboard;
-  for (const key of ['topN', 'refreshMs', 'neighborsWindow'] as const) {
+  for (const key of ['shrineTop', 'wallSize', 'historySeasonsKept'] as const)
+    if (!Number.isSafeInteger(settings[key]) || settings[key] < 1) throw Error(`config:leaderboard.${key}:integerRange`);
+  if (settings.shrineTop > settings.wallSize) throw Error('config:leaderboard.historyRange');
+  return settings;
+}
+export function rankSettings(config: Config) {
+  const settings = archiveSettings(config);
+  for (const key of ['topN', 'refreshMs', 'neighborsWindow', 'minShiftsToRank'] as const) {
     const value = settings[key];
-    if (!Number.isSafeInteger(value) || value < (key === 'neighborsWindow' ? 0 : 1) ||
+    if (!Number.isSafeInteger(value) || value < (key === 'neighborsWindow' || key === 'minShiftsToRank' ? 0 : 1) ||
       key === 'refreshMs' && value > 2147483647) throw Error(`config:leaderboard.${key}:integerRange`); // config-exempt: native signed32 timer limit, counts must be whole
   }
+  if (typeof settings.hideFlagged !== 'boolean') throw Error('config:leaderboard.historyRange');
   return settings;
 }
 export function validateRankQuery(q: RankQuery, config: Config) {
@@ -36,16 +44,7 @@ export function rankPage(snapshot: RankSnapshot, query: RankQuery, owner: { play
   const ownPeriod = own?.periods.find(p => p.kind === query.kind && p.endsAt > now);
   const period = ownPeriod ?? seasonWindow(now, snapshot.config, query.kind);
   const tier = query.tier ?? ownPeriod?.tierId ?? snapshot.config.values.league.tiers[0].id;
-  const candidates = snapshot.sources.flatMap(source => {
-    const score = source.periods.find(p => p.id === period.id && p.endsAt > now);
-    return score?.eligible ? [{ source, score }] : [];
-  }).sort((a, b) => b.score.earned - a.score.earned || (a.score.firstReachedAt ?? Infinity) - (b.score.firstReachedAt ?? Infinity) ||
-    (a.source.playerId < b.source.playerId ? -1 : a.source.playerId > b.source.playerId ? 1 : 0));
-  const ranks = new Map<string, number>();
-  const ranked = candidates.map(({ source, score }) => {
-    const rank = (ranks.get(score.tierId) ?? 0) + 1; ranks.set(score.tierId, rank);
-    return { id: publicRankId(source.playerId), rank, tierId: score.tierId, earned: score.earned, reputation: source.reputation, lifePath: source.lifePath };
-  });
+  const ranked = rankRows(snapshot.sources, period.id);
   const rows = ranked.filter(r => r.tierId === tier), me = own ? ranked.find(r => r.id === publicRankId(own.playerId)) ?? null : null;
   const { topN, neighborsWindow, refreshMs } = snapshot.config.values.leaderboard, offset = query.page * topN;
   if (!Number.isSafeInteger(offset) || query.page > 0 && offset >= rows.length) throw Error('leaderboard:invalidPage');
@@ -56,3 +55,19 @@ export function rankPage(snapshot: RankSnapshot, query: RankQuery, owner: { play
     neighbors: me ? ranked.filter(r => r.tierId === me.tierId && r.id !== me.id && Math.abs(r.rank - me.rank) <= neighborsWindow) : [],
     eligibility: { reason: owner?.provider !== 'google' ? 'googleRequired' : ownPeriod?.reason ?? (me ? null : 'insufficientShifts'), review: own?.review ?? null } };
 }
+
+/** Shared stable ordering for live pages and immutable season capture. */
+export function rankRows(sources: RankSource[], periodId: string) {
+  const candidates = sources.flatMap(source => {
+    const score = source.periods.find(p => p.id === periodId);
+    return score?.eligible ? [{ source, score }] : [];
+  }).sort((a, b) => b.score.earned - a.score.earned || (a.score.firstReachedAt ?? Infinity) - (b.score.firstReachedAt ?? Infinity) ||
+    (a.source.playerId < b.source.playerId ? -1 : a.source.playerId > b.source.playerId ? 1 : 0));
+  const ranks = new Map<string, number>();
+  return candidates.map(({ source, score }) => {
+    const rank = (ranks.get(score.tierId) ?? 0) + 1; ranks.set(score.tierId, rank);
+    return { id: publicRankId(source.playerId), rank, tierId: score.tierId, earned: score.earned, reputation: source.reputation, lifePath: source.lifePath };
+  });
+}
+
+export type SeasonSnapshot = { period: { id: string; kind: SeasonKind; startsAt: number; endsAt: number }; capturedAt: number; configVersion: string; tiers: string[]; shrineTop: number; wallSize: number; rows: (ReturnType<typeof rankRows>[number] & { name: { key: 'rank.alias'; id: string } })[] };

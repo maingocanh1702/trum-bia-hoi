@@ -670,5 +670,12 @@
   "upgrade.hint.cooler": "Served {n} guests with stale beer. A cooler keeps beer fresh longer; serving sooner also helps keep tips.",
   "upgrade.hint.tables": "{n} guests could not join because the tables and queue were full. Consider another table or more seats.",
   "upgrade.hintOpen.cooler": "View cooler upgrade",
-  "upgrade.hintOpen.tables": "View tables & seats"
+  "upgrade.hintOpen.tables": "View tables & seats",
+  "shrine.title": "Season hall of fame",
+  "shrine.frozen": "Rankings and names are preserved when the season ends.",
+  "shrine.empty": "No seasons have been captured yet.",
+  "shrine.season": "Completed season",
+  "shrine.captured": "Captured on {date}",
+  "shrine.podium": "Podium",
+  "shrine.wall": "Wall of fame"
 }

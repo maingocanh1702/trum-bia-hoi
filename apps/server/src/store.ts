@@ -4,8 +4,9 @@ import { isDeepStrictEqual } from 'node:util';
 import { validGoogleSubject, type GoogleIdentity } from './google';
 import { LOCAL_ARCHIVE_BYTES, validateLocalArchive } from './local-archive';
 import { AdminAuth, initializeAdmin } from './admin-auth';
+import { captureSeasonBackup } from './season-snapshot';
 import { Competition, type ImportReview } from './competition';
-import { rankSnapshot, rankPage, validateRankQuery, type RankSnapshot, type RankQuery, type RankSource } from './leaderboard';
+import { rankSnapshot, rankPage, rankRows, rankSettings, archiveSettings, type SeasonSnapshot, validateRankQuery, type RankSnapshot, type RankQuery, type RankSource } from './leaderboard';
 import { importBaseline, competitivePeriods, type ImportBaseline } from './competitive-score';
 import { ConfigRegistry, initializeRegistry, initializeScopes, heartbeatTiming } from './registry';
 import { Game, config as seedConfig, configContent, decodeSave, loadConfig, validEnvelope, type Config, type Command, type DomainEvent, type EngineCheckpoint, type LoggedCommand, type World } from '@tbh/engine';
@@ -45,6 +46,8 @@ export class GameStore {
   readonly competition: Competition;
   private rankCache?: RankSnapshot;
   private rankRefresh?: Promise<void>;
+  private seasonSweep?: Promise<void>;
+  private readonly seasonAbort = new AbortController();
   private readonly cache = new Map<string, LiveGame & { revision: number }>();
   constructor(readonly path: string, config: Config = seedConfig, private readonly clock = Date.now) {
     const candidate = loadConfig(config.raw);
@@ -133,7 +136,7 @@ export class GameStore {
       this.db.close(); throw error;
     }
   }
-  close() { this.cache.clear(); this.rankCache = undefined; if (this.db.isOpen) this.db.close(); }
+  close() { this.seasonAbort.abort(); this.cache.clear(); this.rankCache = undefined; if (this.db.isOpen) this.db.close(); }
   private now() {
     const now = this.clock();
     if (!Number.isSafeInteger(now) || now < 0) throw Error('store:invalidClock');
@@ -396,6 +399,87 @@ export class GameStore {
     const cache = this.rankCache!, at = this.now();
     if (at < cache.at || at >= cache.until || cache.signature !== this.rankSignature().signature) throw Error('leaderboard:stalePage');
     return { ...rankPage(cache, query, current, at), viewer: current ? { playerId: current.playerId, provider: current.provider } : null };
+  }
+  /** Single-flight per process; the write transaction also serializes separate local stores. */
+  sweepSeasons(): Promise<void> {
+    return this.seasonSweep ??= this.captureSeasons().finally(() => { this.seasonSweep = undefined; });
+  }
+  private pendingSeasons() {
+    const now = this.now();
+    const googleRows = () => this.db.prepare('SELECT p.* FROM players p JOIN google_accounts g ON g.player_id=p.id ORDER BY p.id').all() as PlayerRow[];
+    const periods = (row: PlayerRow) => {
+      const w = JSON.parse(row.projection) as World;
+      return w.seasons ? [...w.seasons.results, w.seasons.ranking, w.seasons.contest].filter(p => p.endsAt <= now) : [];
+    };
+    const captured = () => new Set(this.db.prepare("SELECT json_extract(payload,'$.period.id') id FROM registry_audit WHERE type='SeasonSnapshot'").all().map(r => String(r.id)));
+    const known = captured(), due = new Map(googleRows().flatMap(row => periods(row).map(p => [p.id, p] as const)).filter(([id]) => !known.has(id)));
+    return due;
+  }
+  private async captureSeasons() {
+    if (!this.pendingSeasons().size) return;
+    const snapshots = await captureSeasonBackup(this.db, this.now(), this.seasonAbort.signal);
+    if (this.seasonAbort.signal.aborted) throw Error('leaderboard:captureCancelled');
+    this.db.exec('BEGIN IMMEDIATE');
+    try {
+      // Inputs before each cutoff are immutable; later commands, membership and moderation cannot backdate them.
+      for (const snapshot of snapshots) {
+        if (snapshot.period.endsAt > this.now()) throw Error('leaderboard:captureClock');
+        if (!this.db.prepare("SELECT 1 FROM registry_audit WHERE type='SeasonSnapshot' AND json_extract(payload,'$.period.id')=?").get(snapshot.period.id))
+          this.db.prepare('INSERT INTO registry_audit VALUES (NULL,?,?)').run('SeasonSnapshot', JSON.stringify(snapshot));
+      }
+      this.db.exec('COMMIT');
+    } catch(error) { if(this.db.isTransaction)this.db.exec('ROLLBACK'); throw error; }
+  }
+  /** Internal worker entry: only called against a private SQLite backup, never the live request store. */
+  async snapshotSeasonsInBackup(): Promise<SeasonSnapshot[]> {
+    const now = this.now(), due = this.pendingSeasons();
+    if (!due.size) return [];
+    const googleRows = () => this.db.prepare('SELECT p.* FROM players p JOIN google_accounts g ON g.player_id=p.id ORDER BY p.id').all() as PlayerRow[];
+    // Resolve normal presence/calendar catch-up through the existing writer, never simulate a different offline policy.
+    for (const row of googleRows()) {
+      if (row.now < now) this.read(row.id);
+      await this.ensureImportBaseline(row.id);
+    }
+    this.db.exec('BEGIN IMMEDIATE');
+    try {
+      const rows = googleRows(), snapshots: SeasonSnapshot[] = [];
+      for (const [id, p] of this.pendingSeasons()) due.set(id, p);
+      const configFor = (version: string) => this.registry.config(version);
+      for (const period of [...due.values()].sort((a,b) => a.endsAt - b.endsAt || a.id.localeCompare(b.id))) {
+        const cutoff = period.endsAt - 1, sources: RankSource[] = [];
+        // ponytail: replay each season in this worker; add boundary checkpoints if measured worker time exceeds its bound.
+        for (const row of rows) {
+          if (row.created_at > cutoff) continue;
+          const state = this.competition.state(row.id, cutoff);
+          const origin = this.db.prepare('SELECT imported_at FROM local_imports WHERE player_id=?').get(row.id);
+          if (state.provider !== 'google' || origin && Number(origin.imported_at) > cutoff) continue;
+          const { game: trusted } = this.hydrate(row), game = new Game(trusted.initialConfig, trusted.seed, trusted.createdAt, trusted.playerId);
+          for (const entry of trusted.log) {
+            if (entry.at > cutoff) break;
+            if (!isDeepStrictEqual(game.replay(entry, configFor(entry.configVersion)), entry.result)) throw Error('leaderboard:replayMismatch');
+          }
+          game.advance(cutoff);
+          sources.push({ playerId: row.id, reputation: game.world.reputation, lifePath: game.world.lifePath, review: state.localImport?.review.value ?? null,
+            periods: competitivePeriods(game.world, configFor, state, this.importedBaseline(row.id)) });
+        }
+        // Frozen archive fields follow the retained season pin, including pre-registry imports.
+        const c = configFor(period.configVersion), settings = archiveSettings(c);
+        const ranked = rankRows(sources, period.id);
+        const payload: SeasonSnapshot = { period: { id: period.id, kind: period.kind, startsAt: period.startsAt, endsAt: period.endsAt },
+          capturedAt: now, configVersion: c.version, tiers: [...new Set([...c.values.league.tiers.map(t => t.id), ...ranked.map(r => r.tierId)])],
+          shrineTop: settings.shrineTop, wallSize: settings.wallSize,
+          rows: ranked.filter(r => r.rank <= settings.wallSize).map(r => ({ ...r, name: { key: 'rank.alias', id: r.id.slice(0, 8).toUpperCase() } })) };
+        this.db.prepare('INSERT INTO registry_audit VALUES (NULL,?,?)').run('SeasonSnapshot', JSON.stringify(payload));
+        snapshots.push(payload);
+      }
+      this.db.exec('COMMIT'); return snapshots;
+    } catch(error) { if(this.db.isTransaction)this.db.exec('ROLLBACK'); throw error; }
+  }
+  async seasonHistory() {
+    await this.sweepSeasons();
+    const { historySeasonsKept } = archiveSettings(this.registry.active());
+    return this.db.prepare("SELECT payload FROM registry_audit WHERE type='SeasonSnapshot' ORDER BY json_extract(payload,'$.period.endsAt') DESC, json_extract(payload,'$.period.id') LIMIT ?")
+      .all(historySeasonsKept).map(row => JSON.parse(String(row.payload)) as SeasonSnapshot);
   }
   configSnapshot(version: string): string {
     const row = this.db.prepare('SELECT snapshot FROM configs WHERE version=?').get(version);

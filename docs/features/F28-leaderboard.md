@@ -102,3 +102,10 @@ history may count once; pending history cannot count. No compensation credit is 
 | Date | Change |
 |---|---|
 | 2026-09-11 | Steer18 M5-F28-RANK acceptance refreshed:4 real-server browsers and409unit/server PASS. Existing paginated live-board/tie/flag/unflag/server-threshold code needs no change; immutable end snapshot/name-at-capture/history is next, not claimed complete. |
+
+
+| Date | Change |
+|---|---|
+| 2026-09-11 Steer18 | Local immutable season archive implemented: startup/timer capture, cutoff membership/review/flags, server tie ordering, captured public aliases, configured podium/wall and VI/EN history. Replay runs on a private SQLite backup and only the final append-only snapshot enters the live database. F12-CLAIM/reward grants/mailbox remain PENDING by owner 2026-09-11; no reward configuration changes. Verification receipt will be recorded in the milestone closure report. |
+
+| 2026-09-11 acceptance | Snapshot local slice PASS:418unit/server,6browser,6axe scans, full verify and independent correction review CLEAN. Evidence: milestone-closure-m0-m5.md, M5-F12/F28-SNAPSHOT. |

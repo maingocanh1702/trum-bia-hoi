@@ -207,6 +207,7 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
         throw new HttpError(404, 'notFound');
       }
       const token = credential(req);
+      if (req.method === 'GET' && path === '/seasons/history') { reply(200, await store.seasonHistory()); return; }
       if (req.method === 'GET' && path === '/leaderboard') {
         const q = route.searchParams, page = q.get('page') ?? '0';
         if (q.size !== new Set(q.keys()).size || [...q.keys()].some(k => !['kind', 'tier', 'page', 'revision'].includes(k)) || !q.has('kind') || !/^(0|[1-9]\d*)$/.test(page)) throw new HttpError(400, 'invalidQuery');
@@ -328,13 +329,20 @@ export function createGameServer(store: GameStore, options: ServerOptions, googl
     }
   });
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const stop = () => { if (timer) clearTimeout(timer); timer = undefined; };
-  const arm = () => { stop(); if (server.listening) { timer = setTimeout(() => { sweep(); arm(); }, store.heartbeatIntervalMs); timer.unref(); } };
+  let seasonTimer: ReturnType<typeof setTimeout> | undefined;
+  const stopPresence = () => { if (timer) clearTimeout(timer); timer = undefined; };
+  const stop = () => { stopPresence(); if (seasonTimer) clearTimeout(seasonTimer); seasonTimer = undefined; };
+  const arm = () => { stopPresence(); if (server.listening) { timer = setTimeout(() => { sweep(); arm(); }, store.heartbeatIntervalMs); timer.unref(); } };
   const sweep = () => {
     try { for (const failure of store.sweepPresence()) console.error('presence sweep failed', failure); }
     catch (error) { console.error('presence sweep failed', error instanceof Error ? error.message : 'unknown'); }
   };
-  server.on('listening', () => { sweep(); arm(); });
+  const seasons = () => {
+    void store.sweepSeasons().catch(error => { if (server.listening) console.error('season capture failed', error instanceof Error ? error.message : 'unknown'); }).finally(() => {
+      if (server.listening) { seasonTimer = setTimeout(seasons, store.heartbeatIntervalMs); seasonTimer.unref(); }
+    });
+  };
+  server.on('listening', () => { sweep(); arm(); seasons(); });
   server.on('close', stop); server.on('error', stop);
   return server;
 }

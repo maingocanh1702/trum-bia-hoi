@@ -331,7 +331,7 @@ test('an already-published threshold-deletion scope still opens shifts and can b
 
 for (const scoped of [false, true]) test(`leaderboard display tuning refuses zero, fractional and overflowing timers or page counts in ${scoped ? 'scoped' : 'default'} admin drafts`, t => {
   const f = fixture(t), who = f.actor('super'); f.store.createPlayer('rank-tuning-player', 42);
-  const invalid = [{ topN: 0 }, { topN: 0.5 }, { topN: Number.MAX_SAFE_INTEGER + 1 }, { refreshMs: 0 }, { refreshMs: 1.5 }, { refreshMs: 2147483648 }, { neighborsWindow: 0.5 }];
+  const invalid = [{ topN: 0 }, { topN: 0.5 }, { topN: Number.MAX_SAFE_INTEGER + 1 }, { refreshMs: 0 }, { refreshMs: 1.5 }, { refreshMs: 2147483648 }, { neighborsWindow: 0.5 }, { minShiftsToRank: 0.5 }, { shrineTop: 0 }, { shrineTop: 11, wallSize: 10 }, { wallSize: 1.5 }, { historySeasonsKept: 0 }, { historySeasonsKept: 1.5 }, { hideFlagged: 'true' }];
   for (const [i, patch] of invalid.entries()) {
     const raw = structuredClone(config.raw); Object.assign(raw.leaderboard, patch);
     assert.throws(() => f.registry.propose(who, { key: 'bad-rank-' + i, baseVersion: config.version, snapshot: raw, reason: 'Leaderboard display tuning',
@@ -464,4 +464,17 @@ test('superseded schedules require explicit normal republication; rollback also 
   const old=r.draftSource(f.actor('super'),config.version),rollback=r.propose(f.actor('super'),{key:'rollback',...old,scope:undefined,reason:'Restore original values'});
   r.approve(f.actor('super','reviewer'),rollback.version);const rolled=r.publish(f.actor('super'),rollback.version);f.now=rolled.effective_at;
   const {_meta:actualMeta,...actual}=r.active().raw,{_meta:seedMeta,...expected}=config.raw;assert.deepEqual(actual,expected);assert.equal(r.details(f.actor('viewer'),scheduled.version).supersededBy,d.version);
+});
+
+test('archive and eligibility tuning waits for the common season boundary while topN and refresh stay next-day', t => {
+  const f = fixture(t);
+  for (const key of ['neighborsWindow', 'minShiftsToRank', 'shrineTop', 'wallSize', 'historySeasonsKept', 'hideFlagged'])
+    assert.equal(registryPolicy(['leaderboard.' + key], config).effective, 'next_season');
+  for (const key of ['topN', 'refreshMs']) assert.equal(registryPolicy(['leaderboard.' + key], config).effective, 'next_day');
+  const before = f.registry.active(), pub = f.publish(raw => { raw.leaderboard.wallSize++; raw.leaderboard.historySeasonsKept++; });
+  assert.equal(pub.effective_at, seasonWindow(f.now, config, 'contest').endsAt);
+  f.now = pub.effective_at - 1;
+  assert.equal(f.registry.active().version, before.version);
+  assert.equal(f.registry.active().values.leaderboard.historySeasonsKept, config.values.leaderboard.historySeasonsKept);
+  f.now++; assert.equal(f.registry.active().version, pub.version);
 });

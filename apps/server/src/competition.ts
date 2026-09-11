@@ -14,19 +14,19 @@ const HISTORY_PAGE = 50; // config-exempt: bounded admin evidence page, not game
 export class Competition {
   constructor(private readonly db: DatabaseSync, private readonly clock: () => number) {}
   private receipt(row: Record<string, unknown>): Receipt { return { ...JSON.parse(String(row.payload)), seq: Number(row.seq) }; }
-  private latest(type: CompetitionRequest['type'], playerId: string): Receipt | undefined {
+  private latest(type: CompetitionRequest['type'], playerId: string, at: number): Receipt | undefined {
     // ponytail: scan immutable admin audit; add expression indexes if measured moderation volume requires them.
-    const row = this.db.prepare("SELECT seq,payload FROM registry_audit WHERE type=? AND json_extract(payload,'$.request.playerId')=? ORDER BY seq DESC LIMIT 1").get(TYPES[type], playerId);
+    const row = this.db.prepare("SELECT seq,payload FROM registry_audit WHERE type=? AND json_extract(payload,'$.request.playerId')=? AND json_extract(payload,'$.at')<=? ORDER BY seq DESC LIMIT 1").get(TYPES[type], playerId, at);
     return row ? this.receipt(row) : undefined;
   }
-  /** Current authoritative moderation only; season scores remain a separate projection. */
-  state(playerId: string) {
+  /** Authoritative moderation as of a server cutoff; default is current state. */
+  state(playerId: string, at = this.clock()) {
     if (!validId(playerId)) throw Error('competition:invalidInput');
     if (!this.db.prepare('SELECT 1 FROM players WHERE id=?').get(playerId)) throw Error('competition:missingPlayer');
-    const google = this.db.prepare('SELECT subject FROM google_accounts WHERE player_id=?').get(playerId);
-    const imported = this.db.prepare('SELECT player_id,subject,digest,imported_at,source_now,command_seq,event_seq FROM local_imports WHERE player_id=?').get(playerId);
+    const google = this.db.prepare('SELECT subject FROM google_accounts WHERE player_id=? AND created_at<=?').get(playerId, at);
+    const imported = this.db.prepare('SELECT player_id,subject,digest,imported_at,source_now,command_seq,event_seq FROM local_imports WHERE player_id=? AND imported_at<=?').get(playerId, at);
     if (imported && imported.subject !== google?.subject) throw Error('competition:importOwnerChanged');
-    const flag = this.latest('flag', playerId), decision = imported ? this.latest('import-review', playerId) : undefined;
+    const flag = this.latest('flag', playerId, at), decision = imported ? this.latest('import-review', playerId, at) : undefined;
     if (flag && (flag.request.type !== 'flag' || typeof flag.request.value !== 'boolean') || decision &&
       (decision.request.type !== 'import-review' || decision.request.digest !== imported!.digest || !['approved', 'rejected'].includes(decision.request.value))) throw Error('competition:invalidHistory');
     return { playerId, provider: google ? 'google' as const : 'guest' as const,

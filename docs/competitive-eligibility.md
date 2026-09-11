@@ -294,3 +294,38 @@ emergency admin configuration and remaining account/operational acceptance; publ
 archive upload and history-volume tuning stay M9 by owner decision.
 
 | 2026-09-10 E25 | Public leaderboard628eb72 verified; P1 display bounds corrected, final independent review CLEAN; M4 rises15/18. |
+
+
+## Local season archive — Steer18 (2026-09-11)
+
+`GET /seasons/history` is a public, read-only archive. The existing server startup/
+heartbeat sweep captures ended ranking/contest periods without requiring a player
+visit. The existing native SQLite backup/worker pattern performs catch-up and
+deterministic replay on a private copy; live player projections are never rewritten
+by capture. A short transaction inserts one `SeasonSnapshot` per exact period ID
+in the existing append-only registry audit. Concurrent capture and retries reuse it.
+
+Eligibility is evaluated immediately before the season boundary: Google membership,
+import approval, flag state and imported-score baseline. Later approval/unflag or
+new membership cannot add old earnings. Existing canonical competitive totals and
+rank sorting are reused. Per-tier wall size bounds stored public rows; the current
+configured history limit bounds the archive response. Frozen display settings always use the retained season config, including seasons
+that predate registry creation. Archive/eligibility changes activate at the next
+common season boundary; only topN/refreshMs retain next-day display activation. Invalid wall/podium/history/qualification values
+are rejected by the existing registry admission path.
+
+Names are frozen public aliases (`rank.alias` plus the public hash suffix), matching
+the existing no-profile-editor contract. Their literal alias IDs and scores survive
+later source identity changes/deletion. This does not implement editable names,
+profile filtering, account deletion UI, medals, rewards or mailbox. F12-CLAIM is
+PENDING by owner decision 2026-09-11; no prize IDs or quantities are invented.
+
+The private worker has the same explicit 120-second/1-GiB local workload bound as
+the forecast pattern. Failures preserve the original database and remain retryable;
+large-population production capacity is not certified by this local build.
+
+| Date | Change |
+|---|---|
+| 2026-09-11 Steer18 | Added immutable season archive contract, cutoff eligibility, captured alias, bounded wall/history and isolated replay; rewards remain owner-deferred. |
+
+Archive capture validates its own retained archive fields; obsolete live-only topN/refresh settings cannot block a valid old season. Future registry admission still validates every leaderboard display field.

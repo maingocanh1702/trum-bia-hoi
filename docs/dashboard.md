@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-11 13:47 · **Branch hiện tại:** `codex/game-build-isolated`
+> **Cập nhật:** 2026-09-11 15:32 · **Branch hiện tại:** `codex/game-build-isolated`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -236,7 +236,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S 🔒B
 - **Phase:** Phase 3
-- **Notes:** Rules23: hai mùa theo lịch, thu nhập sau daily cap, peak thật, lịch sử cá nhân và panel VI/EN. Đã verify/review tại faece69: 248 engine/server, 79 browser + 6 kiểm tra lại, config/build/k nền/rush qua. E25 public live ranking628eb72 verified/review CLEAN; snapshots và mailbox chưa xong.
+- **Notes:** Rules23: hai mùa theo lịch, thu nhập sau daily cap, peak thật, lịch sử cá nhân và panel VI/EN. Đã verify/review tại faece69: 248 engine/server, 79 browser + 6 kiểm tra lại, config/build/k nền/rush qua. E25 public live ranking628eb72 verified/review CLEAN. Steer18: immutable end-season snapshots/name-at-capture/history implemented,418unit/server +6browser +6axe scans PASS; independent correction review CLEAN. F12-CLAIM/mailbox PENDING by owner2026-09-11, OUT of v0.3.
 
 ### F13 — Đường Lên Trùm — LP0–LP7, gate tính năng & mặt bằng
 
@@ -263,7 +263,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S 🔒B
 - **Phase:** Phase 3
-- **Notes:** Spec `docs/features/F28-leaderboard.md`; config `leaderboard` tier A. M4 prerequisite + M5. E23: caller-only score/baseline7e7f337 verified;376unit/server,19admin,32focused,config/build/review PASS. E24 admin history/review controls85fbdfb verified;378unit/server +24admin browser, final5 affected browser/config/build/review PASS. E25 public live query/VI–EN UI628eb72 verified:386unit/server,52focused,11affected remote/24admin browser,config/build and final CLEAN review. P1 display bounds fixed; M4=15/18. Immutable snapshots and profile names remain. Owner10/09: giữ tiến độ local, chỉ cộng lịch sử vào BXH sau khi duyệt, không cộng trùng.
+- **Notes:** Spec `docs/features/F28-leaderboard.md`; config `leaderboard` tier A. M4 prerequisite + M5. E23: caller-only score/baseline7e7f337 verified;376unit/server,19admin,32focused,config/build/review PASS. E24 admin history/review controls85fbdfb verified;378unit/server +24admin browser, final5 affected browser/config/build/review PASS. E25 public live query/VI–EN UI628eb72 verified:386unit/server,52focused,11affected remote/24admin browser,config/build and final CLEAN review. P1 display bounds fixed; M4=15/18. Steer18: immutable snapshot/public captured aliases/VI–EN history implemented,418unit/server +6browser PASS; independent correction review CLEAN. Editable profile names/medals remain outside local v0.3. Owner10/09: giữ tiến độ local, chỉ cộng lịch sử vào BXH sau khi duyệt, không cộng trùng.
 
 ## Up next
 
