@@ -54,5 +54,5 @@ test('max-level kitchen shows all three configured burners', async ({ page }) =>
 test('an unowned kitchen is purchasable mid-shift without showing a fake owned yard appliance', async ({ page }) => {
   const f = fixture('locked'); await page.clock.pauseAt(new Date(f.now)); await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), f.save);
   await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click(); await expect(page.getByRole('button', { name: 'Bếp', exact: true })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click(); await page.locator('.kitchen-entry').click(); await expect(page.locator('.kitchen-panel')).toContainText('Mua bếp để mở'); await expect(page.locator('.equipment-detail .upgrade-card button')).toBeEnabled();
+  await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click(); await page.locator('.kitchen-entry').click(); await expect(page.locator('.kitchen-panel')).toContainText('Mua bếp để mở'); await expect(page.locator('.kitchen-panel header')).toHaveCount(0); await expect(page.locator('.equipment-detail .upgrade-card button')).toBeEnabled();
 });

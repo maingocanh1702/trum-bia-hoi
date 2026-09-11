@@ -469,3 +469,12 @@ Only JSON metadata and `upgrades.keg.kegStorage` changed; kegBatch2/3/5/8/14, re
 Receipts: `.qa/buffer-5-verify.txt` (rejected primary), `.qa/buffer-4-final-verify.txt`, `.qa/buffer-cohorts.json`, `.qa/buffer-4-career-result.json`, `.qa/buffer-4-web-final.txt`, `.qa/review-buffer-final-verdict.txt`. The standard simulator does not print Lv1 served-per-shift, so no such delta is inferred from its1000-serve cohorts. Re-evaluate after Alpha playtest with real player data; the7-day faucet/sink report remains the endgame-inflation lens.
 
 Local5174/5175 are verified at the pinned `playable-v0` checkout, config2.0.2, with existing database/backup and explicit dev identity; real runtime midshift sign-in smoke PASS. Config2.0.3 is the new source seed, not a silent publication into that existing registry or a rewrite of open-shift pins. M6/M7/M8 remain deferred; no monetization.
+
+
+## Steer15 (1a–d) — upgrade and ingredient labels, 2026-09-11
+
+Kitchen cards now display config-derived new hot dishes, parallel pans, portions and prep-time improvement, plus the raw-stock/cook-to-order explanation. Level0 hides the live0/0 row. Phone explains shipper takeaway orders and retains the configured LP gate; QR lists phone ownership first and retains the configured tip multiplier. Stock rows/HUD use ingredient names, hot ingredients show the finished-dish hint only when unlocked, and restock controls retain compact amounts with ingredient accessible descriptions. Beer keeps Buy keg/Mua bom; emergency crate contents use ingredient labels behind the existing hidden-risk flag. VI/EN match. No engine or config values changed.
+
+Label/browser checks:18 passes in the focused kitchen/economy2/production/pause run; the only failure was the old beer-button label in pause.spec.ts, updated and passed with both business-card regressions (3/3). Full verification receipt: `.qa/steer15-copy-verify.txt`. Assets and preview publication are the next two owner-authorized steps.
+
+Steer15 (1) final verification: full verify PASS406/406, standard10cohorts k2.5644–2.9168,15rush cases, career42/99 k3.46546/3.39320. Final VI/EN label2/2 and guest flow4/4 PASS; final build refreshed after matching the finished dish name Tóp mỡ Triều Khúc to its config label. Engine/config diff is empty.

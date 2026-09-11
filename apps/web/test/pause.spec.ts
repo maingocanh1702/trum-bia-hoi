@@ -19,7 +19,7 @@ test('stock purchases keep the menu open and the whole game paused until closing
   expect([waiting.remaining, waiting.prepRemaining, waiting.shiftRemaining, waiting.stamina]).toEqual([before.remaining, before.prepRemaining, before.shiftRemaining, before.stamina]);
   expect(waiting.coins).toBe(before.coins); expect(waiting.expired).toBe(0);
   const beer = panel.locator('.stock-row').filter({ has: page.getByText('Bia hơi', { exact: true }) });
-  await beer.getByRole('button', { name: /^\+1 ·/ }).click(); await beer.getByRole('button', { name: /^\+1 ·/ }).click();
+  await beer.getByRole('button', { name: /^Mua bom \+1 ·/ }).click(); await beer.getByRole('button', { name: /^Mua bom \+1 ·/ }).click();
   await page.clock.runFor(1000); const stocked = await snapshot();
   expect(stocked.inventory.bia).toBe(before.inventory.bia + 2); expect(stocked.coins).toBe(before.coins - 2 * f.unitCost);
   expect(stocked.paused).toBe(true); expect(stocked.remaining).toBe(before.remaining); await expect(panel).toBeVisible();

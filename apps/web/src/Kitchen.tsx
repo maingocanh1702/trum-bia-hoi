@@ -3,7 +3,7 @@ import { menuAsset, Sprite } from './assets';
 
 export function Kitchen({ status, onTable, onStock, t }: { status: ReturnType<typeof kitchenStatus>; onTable: (tableId: string) => void; onStock: () => void; t: (key: string, params?: Record<string, string | number>) => string }) {
   return <section className="kitchen-panel" aria-label={t('kitchen.live')}>
-    <header><h3>{t('kitchen.live')}</h3><b>{t('kitchen.slots', { busy: status.busy, total: status.slots })}</b></header>
+    {status.level > 0 && <header><h3>{t('kitchen.live')}</h3><b>{t('kitchen.slots', { busy: status.busy, total: status.slots })}</b></header>}
     {status.level > 0 && <p>{t('production.portions', { n: status.portionsPerPan })}</p>}
     <div className="kitchen-slots" aria-hidden="true">{Array.from({ length: status.slots }, (_, i) => <span key={i} className={i < status.busy ? 'is-cooking' : ''}>{i + 1}</span>)}</div>
     {!status.level ? <p>{t('kitchen.locked')}</p> : !status.jobs.length ? <p>{t('kitchen.idle')}</p> : <>

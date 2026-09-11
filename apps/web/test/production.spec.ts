@@ -51,7 +51,7 @@ for (const width of [360, 390]) test(`stocked beer capacity and upgrade comparis
   await page.getByRole('button', { name: 'Beer taps', exact: true }).click();
   await expect(page.getByRole('dialog').getByText(/^Poured \d+\/5 · \+5 every 2.7s$/)).toBeVisible();
   await page.keyboard.press('Escape'); await page.getByRole('button', { name: 'Restock', exact: true }).click();
-  await expect(page.locator('.stock-row').first().getByText('Buy keg', { exact: true })).toBeVisible();
+  await expect(page.locator('.stock-row').first().getByRole('button', { name: /^Buy keg/ }).first()).toBeVisible();
 
 });
 

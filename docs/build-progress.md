@@ -2691,3 +2691,8 @@ Only JSON metadata and `upgrades.keg.kegStorage` changed; kegBatch2/3/5/8/14, re
 Receipts: `.qa/buffer-5-verify.txt` (rejected primary), `.qa/buffer-4-final-verify.txt`, `.qa/buffer-cohorts.json`, `.qa/buffer-4-career-result.json`, `.qa/buffer-4-web-final.txt`, `.qa/review-buffer-final-verdict.txt`. The standard simulator does not print Lv1 served-per-shift, so no such delta is inferred from its1000-serve cohorts. Re-evaluate after Alpha playtest with real player data; the7-day faucet/sink report remains the endgame-inflation lens.
 
 Local5174/5175 are verified at the pinned `playable-v0` checkout, config2.0.2, with existing database/backup and explicit dev identity; real runtime midshift sign-in smoke PASS. Config2.0.3 is the new source seed, not a silent publication into that existing registry or a rewrite of open-shift pins. M6/M7/M8 remain deferred; no monetization.
+
+
+### Steer15 (1a–d) — UI copy, 2026-09-11
+
+Kitchen upgrade value and raw ingredient labels are implemented in VI/EN. Slots, portions, unlocks, speed, phone gate and QR multiplier derive from existing config. No engine/config changes. Focused label/browser results and full verify receipt are recorded in implementation-tracker; remaining scope is13 equipment sprites then normal config2.0.3 publication to the pinned preview.
