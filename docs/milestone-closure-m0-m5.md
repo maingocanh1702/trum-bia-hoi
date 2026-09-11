@@ -1,6 +1,6 @@
 # Milestone closure report — M0–M5
 
-> Current owner target (Steer18 +14:50 addendum, 2026-09-11): **local release playable-v0.3**. F14 summary → live ranks → immutable season snapshots/history → local onboarding → read-only M1/M3 reconciliation. F12-CLAIM/rewards/mailbox, production/Google/CAPTCHA/social stay PENDING; M6/M7/M8 deferred; WAIVED rows stay waived. v0.2 remains the running preview until v0.3 passes release gates and the SQLite-preserving cutover.
+> Current owner target (Steer18 +14:50 addendum, 2026-09-11): **local release playable-v0.3**. F14 summary → live ranks → immutable season snapshots/history → local onboarding → read-only M1/M3 reconciliation. F12-CLAIM/rewards/mailbox, production/Google/CAPTCHA/social stay PENDING; M6/M7/M8 deferred; WAIVED rows stay waived. v0.3 is now the running preview at261f233 after all local gates and SQLite-preserving cutover PASS; master verification is recorded separately below.
 
 2026-09-10 · implementation `628eb72` · config2.0.2/rules24/schema10.
 Authority: [ROADMAP §mốc M0–M9](../06-ROADMAP-trum-bia-hoi.md), including the
@@ -166,8 +166,8 @@ No new gameplay test or80MB run was added solely to make this report green.
 | M1 | COMPLETE (11/12 PASS;1 WAIVED) | COMPLETE | All code/automated criteria pass; human first30seconds remains WAIVED by owner2026-09-10, post-release. Local v0.2 packaging still has its own fresh verify/smoke gates. |
 | M2 | OPEN (7/9 PASS;1 WAIVED;1 FAIL) | LOCAL ONBOARDING PASS | Paired on/off k, existing admin thresholds/step publication, retained-guide correction PASS. Real Google minute5/consent stays PENDING outside local v0.3; human test WAIVED. |
 | M3 | OPEN (6/12 PASS;5 WAIVED;1 FAIL) | LOCAL RECONCILIATION COMPLETE | Human feel/badge tests remain WAIVED. The sole FAIL is incomplete art-batch work tracked for M9, outside local v0.3 by owner14:50. |
-| M4 | FAIL (15/18 PASS) | OPEN — next implementation priority | E7 remote authority/reconnect, E8 registry and E9/E10 admin browser workflow verified. E11/E12 scoped core/editor/factual impact verified; E14 forecast, E15 locale and E18 current-visit Google attachment/restore verified; E25 public rank eligibility verified; observed VND/emergency, live consent and deferred public import remain; E19 reauthentication and E21 invitations/validation verified. |
-| M5 | OPEN (18/25 PASS;1 PENDING;6 FAIL) | LOCAL SCOPE IMPLEMENTED; review/release pending | F14 summary, live rank and immutable snapshot/history pass. F12-CLAIM owner-deferred; remaining donation/referral/gift integration belongs to deferred work. |
+| M4 | FAIL (15/18 PASS) | OPEN — outside current local scope | E7 remote authority/reconnect, E8 registry and E9/E10 admin browser workflow verified. E11/E12 scoped core/editor/factual impact verified; E14 forecast, E15 locale and E18 current-visit Google attachment/restore verified; E25 public rank eligibility verified; observed VND/emergency, live consent and deferred public import remain; E19 reauthentication and E21 invitations/validation verified. |
+| M5 | OPEN (18/25 PASS;1 PENDING;6 FAIL) | LOCAL v0.3 ACCEPTED | F14 summary, live rank and immutable snapshot/history pass. F12-CLAIM owner-deferred; remaining donation/referral/gift integration belongs to deferred work. |
 
 ## E20 — guest device persistence, owner Steer #5 (2026-09-10 15:30)
 
@@ -795,3 +795,16 @@ Owner14:50 scope confirmed against the criterion tables: M1=11PASS/1WAIVED; M3=6
 ### Local v0.3 acceptance — 2026-09-11
 
 Source `b67470fe01730f5197c2d808faf3458d92b1e13d`:418tests/full verify,20paired k,15rush/2career,assets and three full-shift viewport smokes PASS. Independent review CLEAN. [Local release notes](playable-v0.md) contain measurements, run instructions and explicit deferrals. Tag/cutover/master verification are the next separately recorded operations.
+
+
+### Local v0.3 runtime cutover — PASS, 2026-09-11
+
+Tag `playable-v0.3` is `261f23316e025ea56e88f372c884c5c50ab4cdbd`. Both launchd jobs now use `/Users/maingocanh/.codex/worktrees/trum-bia-hoi-playable-v0.3`;5174 serves the byte-identical built index (SHA256 `d656c0fc52e2c54be66f574c7a44c1c36ba6aa087483487708e707692b25eb4b`),5175 runs the matching API. SQLite/cookies stay unchanged; backup is pinned `.qa/playable-runtime/game-api-before-playable-v0.3.sqlite`.
+
+Preservation PASS:7prior players,7155commands,4959events,37client receipts,4config snapshots,8audit records and2publications retained byte-for-byte;6same-shift pins match,0shifts advanced during cutover. Normal config publication is unnecessary because no config values changed. Runtime smoke confirms4/4ready buffer,6stock rows, hidden risk controls and mid-shift localhost dev identity retaining player/shift/coins with0console errors.
+
+All37main-checkout WIP hashes and its `codex/build-game` branch are unchanged. Evidence: `.qa/playable-v03-{cutover.txt,preservation-receipt.json,runtime-binding.json,runtime-smoke.json}`, pinned runtime receipt/control helper. No production operation or push.
+
+### Local v0.3 master landing / verification record
+
+Next authorized operation: fast-forward `master` from `7d1c25595af86067a63d5a43a48c47bf80c09814` to this writing branch through the clean temporary worktree `trum-bia-hoi-master-v03-verify`, then full `npm run verify` in that worktree. The main checkout is never switched or stashed. Exact ff commit is recorded in `.qa/playable-v03-master-ff.json`; success-only `.qa/playable-v03-master-verified.json` records the final master hash,418test result and log SHA256 after completion. Retain `.qa/playable-v03-master-verify.txt`, then remove the temporary worktree only after PASS. These receipt files distinguish a completed check from this planned record. The preview stays on its immutable v0.3 tag independently of later documentation commits.

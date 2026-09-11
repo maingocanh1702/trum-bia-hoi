@@ -1,6 +1,6 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **Local v0.2 DELIVERED — 2026-09-11:** M0/M1 COMPLETE; final local gates PASS. Preview now serves v0.2 at ad94161. See [closure report](milestone-closure-m0-m5.md) and [local release notes](playable-v0.md).
+> **Local v0.3 DELIVERED — 2026-09-11:** M0/M1 COMPLETE; final local gates PASS. Preview now serves v0.3 at261f233;418tests, paired on/off k,3full-shift viewports and preserved SQLite PASS. See [closure report](milestone-closure-m0-m5.md) and [local release notes](playable-v0.md).
 
 > **Version:** v0.64.0
 > **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-11 (Steer17 local v0.2; M1 complete)
@@ -588,3 +588,5 @@ Dedicated check: `npm run verify` in that temporary master worktree, with output
 | 2026-09-11 owner14:50 | M1/M3 local reconciliation complete:11PASS/1WAIVED and6PASS/5WAIVED/1assetFAIL respectively. Asset row stays M9; no new work under item d. Production/Google/CAPTCHA/PWA/social remain outside v0.3. |
 
 | 2026-09-11 | Local v0.3 acceptance PASS:418tests,20paired k,15rush/2career,assets,3full-shift viewports; independent review CLEAN. Release tag and local SQLite-preserving cutover follow. |
+
+| 2026-09-11 | Local v0.3 tag261f233 is serving5174/5175;7prior players and all source rows/pins preserved, runtime dev-account smoke0errors. Master ff/full verify proceeds separately; no push. |

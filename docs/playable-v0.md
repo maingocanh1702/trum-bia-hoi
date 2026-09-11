@@ -204,3 +204,16 @@ The login-session launchd jobs remain `local.tbh.playable-web` / `local.tbh.play
 **F12-CLAIM PENDING (owner2026-09-11), OUT of v0.3:** no season prize quantities, grant/claim or mailbox is invented. M6/M7/M8 remain deferred/hidden; no monetization, inspection or lottery. Production hosting/HTTPS/domain, real Google OAuth/consent, CAPTCHA, PWA/physical-device acceptance and social/referral remain PENDING. Local dev identity is explicitly enabled only on localhost/non-production. Owner preview admin remains disabled without a private allowlist/TOTP. M1/M3 reconciliation adds no assets or new gameplay: the sole M3 art-batch FAIL stays tracked for M9; human rows remain WAIVED.
 
 Receipts in the writing checkout `.qa/`: `v03-onboarding-verify.txt`, `playable-v03-{assets,smoke}.txt`, `playable-v03-{390,360,1280}.json`, `v03-snapshot-receipt.json`, `v03-onboarding-receipt.json`, `v03-release-review.txt`, and `playable-v03-control-tests.txt`. Cutover backup/preservation and exact master verification are separate success-only receipts. No push or production operation.
+
+
+### Local v0.3 runtime cutover — PASS, 2026-09-11
+
+Tag `playable-v0.3` is `261f23316e025ea56e88f372c884c5c50ab4cdbd`. Both launchd jobs now use `/Users/maingocanh/.codex/worktrees/trum-bia-hoi-playable-v0.3`;5174 serves the byte-identical built index (SHA256 `d656c0fc52e2c54be66f574c7a44c1c36ba6aa087483487708e707692b25eb4b`),5175 runs the matching API. SQLite/cookies stay unchanged; backup is pinned `.qa/playable-runtime/game-api-before-playable-v0.3.sqlite`.
+
+Preservation PASS:7prior players,7155commands,4959events,37client receipts,4config snapshots,8audit records and2publications retained byte-for-byte;6same-shift pins match,0shifts advanced during cutover. Normal config publication is unnecessary because no config values changed. Runtime smoke confirms4/4ready buffer,6stock rows, hidden risk controls and mid-shift localhost dev identity retaining player/shift/coins with0console errors.
+
+All37main-checkout WIP hashes and its `codex/build-game` branch are unchanged. Evidence: `.qa/playable-v03-{cutover.txt,preservation-receipt.json,runtime-binding.json,runtime-smoke.json}`, pinned runtime receipt/control helper. No production operation or push.
+
+### Local v0.3 master landing / verification record
+
+Next authorized operation: fast-forward `master` from `7d1c25595af86067a63d5a43a48c47bf80c09814` to this writing branch through the clean temporary worktree `trum-bia-hoi-master-v03-verify`, then full `npm run verify` in that worktree. The main checkout is never switched or stashed. Exact ff commit is recorded in `.qa/playable-v03-master-ff.json`; success-only `.qa/playable-v03-master-verified.json` records the final master hash,418test result and log SHA256 after completion. Retain `.qa/playable-v03-master-verify.txt`, then remove the temporary worktree only after PASS. These receipt files distinguish a completed check from this planned record. The preview stays on its immutable v0.3 tag independently of later documentation commits.
