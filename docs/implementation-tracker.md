@@ -1,11 +1,11 @@
 # Implementation Tracker — Trùm Bia Hơi
 
-> **playable-v0 DELIVERED** (`a602af3`): three full-shift viewports and dev identity PASS; local5174/5175 pinned to that tag. Post-tag Steer14 source config2.0.3 uses the verified fallback4/7/12/20/40. Full milestone closure remains separate; M6/M7/M8 deferred.
+> **Local v0.2 preparation — 2026-09-11:** M0/M1 COMPLETE; final local gates running. Preview stays on v0.1 until cutover. See [closure report](milestone-closure-m0-m5.md) and [local release notes](playable-v0.md).
 
-> **Version:** v0.63.0
-> **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-11 (playable-v0 delivered; Steer14 config2.0.3 fallback verified)
-> **Trạng thái:** Active — **M0 COMPLETE theo exit criteria; xem báo cáo closure M0–M5. M1–M3 tiếp tục triển khai; M4 web server/outbox đã qua review và101browser checks; đạt15/18 tiêu chí; chọn ngôn ngữ trước game5871453 đã verify/review; registry c1e953c, admin API6f42575 và editor56a0a44 đã verify/review; scoped core d91b92a đã verify/review; scope editor/impact a84f41f và dự báo xu7ngày a99a567 đã verify/review; Google guest-link transport3c369aa đã verify/review; guest giữ tiến độ trên thiết bị theo Steer #5 lúc15:30; diễn giải theo phiên8c9dc64 đã bị thay thế; đăng nhập lại ddc77a9 đã verify/review; guest trên thiết bịe34fd56 đã verify/review; lời mời/cooldown và validation config03dae56 đã verify/review; core/API duyệt lịch sử local và flag521e901 đã verify/review; baseline và caller-only score7e7f337 đã verify/review; controls85fbdfb đã verify/review:378unit/server +24admin browser, final5ca liên quan/config/build qua; public rank628eb72 đã verify/review:386unit/server,11affected remote/24admin browser,config/build; review cuối CLEAN sau sửa P1 display bounds; asset/release chưa hoàn tất.** `prototype/` đã lưu trữ (kết quả cũ ghi ở ghi chú Phase 0, không tính tiến độ). Đồng bộ `06-ROADMAP` **v3.3** (1 phase, mốc M0–M9).
-> **Release scope:** M6/M7/M8 DEFERRED by owner 2026-09-11 — post-release. M4 → automated gameplay M1/M2/M3/M5 → assets → gameplay-facing M9 release candidate. Free, no monetization in this build.
+> **Version:** v0.64.0
+> **Ngày tạo:** 2026-06-09 · **Cập nhật:** 2026-09-11 (Steer17 local v0.2; M1 complete)
+> **Trạng thái:** M0/M1 COMPLETE (M1: 11 PASS, 1 owner-WAIVED). M2–M5 retain open criteria outside the local release scope. Per-criterion evidence and historical commits are retained below; `prototype/` remains archived.
+> **Release scope:** Steer17 local-only gameplay/UI → verify/smoke → tag/serve v0.2 → fast-forward master, no push. F14 summary PENDING post-v0.2; M6/M7/M8 deferred; production deployment PENDING. Free, no monetization.
 > **Owner:** Team
 > **Mục đích:** Master status board cho mọi feature F01–F28. Nhãn `Phase N` chỉ là **khoá parser** của dashboard-engine; mốc thật: P0 → M0 (nền) · P1 → M1–M2 · P2 → M3 · P3 → M4–M6 · P4 → M7–M8 · QA/release → M9. Là **input cho dashboard-engine** (`tools/dashboard-engine/build_dashboard.py`). Nguồn quyết định/scope = `02-GDD-trum-bia-hoi.md` + `06-ROADMAP-trum-bia-hoi.md`; tracker chỉ theo dõi **trạng thái build**.
 > **Cập nhật:** đổi status mỗi khi 1 feature chuyển trạng thái (bắt đầu code / review / merge).
@@ -528,3 +528,8 @@ Measured current-shift stale/overflow customer counts now drive one contextual r
 ### M1-I18N / M1-AXE — PASS; M1 COMPLETE, 2026-09-11
 
 12player/native-form files,804VI/EN key pairs audited; `check:i18n` joins verify.6axe browser tests cover17screens in both locales on3viewports (102scans),0WCAG violations/console errors/external requests. Shared contrast fixed;3quest visibility regressions retain unavailable-gift copy and no guest referral/send action. M1 now11PASS/1owner-WAIVED. No engine/config change; fresh full verify and three real12-minute shifts are running before v0.2 release. M6/M7/M8 remain deferred; F14 summary PENDING post-v0.2.
+
+
+### M1-AXE / M1-UPGRADE — keyboard follow-up, 2026-09-11
+
+Independent v0.2 diff review found one focus defect in the measured Tables suggestion. Both navigation paths now focus the Tables heading; Tab reaches the next enabled table action. Red regression reproduced in VI/EN, then9/9 focused tests PASS (`.qa/playable-v02-focus-{red,green}.txt`). Production change is limited to the existing App navigation; no engine/config changes. Final current-code verify PASS: 406/406, all standard/rush/career gates; assets PASS. Three full-shift viewports PASS (first playable 659–1154 ms, 60.22–60.25 fps, zero console/errors or missing assets); axe 6/6 and independent follow-up CLEAN. Receipts: `.qa/playable-v02-final-{verify,assets,smoke,axe}.txt`.

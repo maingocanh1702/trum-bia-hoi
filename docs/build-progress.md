@@ -1,15 +1,15 @@
 # Build progress — Trùm Bia Hơi
 
-> **playable-v0 DELIVERED** (`a602af3`): three full-shift viewports and dev identity PASS; local5174/5175 pinned to that tag. Post-tag Steer14 source config2.0.3 uses the verified fallback4/7/12/20/40. Full milestone closure remains separate; M6/M7/M8 deferred.
+> **Local v0.2 preparation — 2026-09-11:** M0 and M1 COMPLETE (M1: 11 PASS, 1 owner-WAIVED). Trimmed gameplay/UI batch is implemented; final verify/smoke is running. Live preview remains `playable-v0.1` until cutover. M6/M7/M8 and production deployment remain pending/deferred.
 
 Started 2026-09-08 from `30c0285`. Active worktree: `/Users/maingocanh/.codex/worktrees/trum-bia-hoi-game`, branch `codex/game-build-isolated` based on `bc79af5`. A concurrent Claude docs commit captured the first engine files in the original checkout; original files were preserved, and further work was isolated. Authority: current `00-HANDOFF-trum-bia-hoi.md` and [owner update adoption](latest-handoff-adoption.md),
 PROMPT PACK part B, GDD decisions, 03-SPEC table rules, JSON numbers. This is the
-complete-game goal; milestones below are implementation order, not scope cuts.
+historical complete-game baseline; the current owner target is the trimmed local v0.2 release, not full milestone closure.
 
 | Milestone | Status | Evidence / remaining |
 |---|---|---|
 | M0 — config, pure engine, deterministic replay, k sim, workspaces | COMPLETE — exit criteria PASS | All3exit criteria PASS: current config/build/321tests,5seeds×2profiles k2.4186–2.8738; reviewed foundation/checkpoint/web. |
-| M1 — serve loop, glasses, stock, upgrades, local save, spatial UI, core audio | In progress | Playable loop, local save/replay, stock/equipment/table UI, core SFX wired; final sprites and listening QA pending |
+| M1 — serve loop, glasses, stock, upgrades, local save, spatial UI, core audio | COMPLETE — 11 PASS, 1 owner-WAIVED | Shift/screens, timeout, measured upgrade hints, VI/EN and axe verified; see current closure evidence. Human-only acceptance stays waived. |
 | M2 — guest, vi/en, onboarding | In progress | Device-persistent guest, vi/en, guide and Google attach/restore verified; dev identity acceptance remains; live consent/five-person study waived by owner10/09 |
 | M3 — full menu, customer mix, weather, rush, business unlocks | In progress — 6/12 PASS | Standard k and advanced career≤3.5 pass under owner10/09 rule; 5human-only criteria WAIVED by owner10/09; equipment/customer art remains tracked. |
 | M4 — server authority, accounts, reconnect, config registry/admin | In progress | 15/18 exit criteria PASS; E25 live public ranking628eb72 verified with386unit/server,11affected remote/24admin browser, config/build and CLEAN review. Emergency/admin remainder, owner-deferred archive transport and dev-stub account/donation acceptance remain; see criterion report. |
@@ -19,12 +19,11 @@ complete-game goal; milestones below are implementation order, not scope cuts.
 | M8 — football events, season shop, legal-gated lottery | M6/M7/M8 DEFERRED by owner 2026-09-11 — post-release | Retain spec/config/manifest; features OFF/hidden. No implementation for this release. |
 | M9 — complete art/audio, accessibility, replay/security/performance QA, release | Pending | |
 
-Current milestone closure (2026-09-10): **M0 COMPLETE; M1–M5 OPEN**. Every ROADMAP
+Current milestone closure (2026-09-11): **M0/M1 COMPLETE; M2–M5 retain scoped open criteria**. Every ROADMAP
 exit criterion is evaluated in [M0–M5 closure report](milestone-closure-m0-m5.md).
 Verified engine sub-rules, missing implementation and missing human/UI evidence are
 separate. Feature rows span milestones; their count is not milestone completion.
-Owner queue (Steer9): M4 emergency → dev identity → M4 closure → remaining automated gameplay M1/M2/M3/M5 → assets → gameplay-facing M9 release candidate.
-No additional M5 breadth or history-volume tuning before those dependencies.
+Current owner queue (Steer17 and 11:40 addendum): final local verification → tag/serve v0.2 → master fast-forward and full verification, no push. F14 summary is PENDING post-v0.2; production and other deferred criteria are not part of this batch.
 
 ## Public leaderboard closure — E25, 2026-09-10
 
@@ -2746,3 +2745,8 @@ Measured current-shift stale/overflow customer counts now drive one contextual r
 ### M1-I18N / M1-AXE — PASS; M1 COMPLETE, 2026-09-11
 
 12player/native-form files,804VI/EN key pairs audited; `check:i18n` joins verify.6axe browser tests cover17screens in both locales on3viewports (102scans),0WCAG violations/console errors/external requests. Shared contrast fixed;3quest visibility regressions retain unavailable-gift copy and no guest referral/send action. M1 now11PASS/1owner-WAIVED. No engine/config change; fresh full verify and three real12-minute shifts are running before v0.2 release. M6/M7/M8 remain deferred; F14 summary PENDING post-v0.2.
+
+
+### M1-AXE / M1-UPGRADE — keyboard follow-up, 2026-09-11
+
+Independent v0.2 diff review found one focus defect in the measured Tables suggestion. Both navigation paths now focus the Tables heading; Tab reaches the next enabled table action. Red regression reproduced in VI/EN, then9/9 focused tests PASS (`.qa/playable-v02-focus-{red,green}.txt`). Production change is limited to the existing App navigation; no engine/config changes. Final current-code verify PASS: 406/406, all standard/rush/career gates; assets PASS. Three full-shift viewports PASS (first playable 659–1154 ms, 60.22–60.25 fps, zero console/errors or missing assets); axe 6/6 and independent follow-up CLEAN. Receipts: `.qa/playable-v02-final-{verify,assets,smoke,axe}.txt`.
