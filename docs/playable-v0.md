@@ -1,5 +1,7 @@
 # playable-v0
 
+Latest client acceptance: [playable-v0.1](#playable-v01--steer15-2026-09-11). Historical v0 evidence is retained below.
+
 Status: **PASS — playable-v0 acceptance**. Code commit: **d048a9c296815f2b0813da9bb21207906cc73899**. The tag `playable-v0` adds this release note; resolve its exact snapshot SHA with `git rev-parse playable-v0`.
 Owner scope: Steer12/13. Config remains **2.0.2**, rules24; the Steer14 buffer change runs only after this tag.
 
@@ -63,3 +65,24 @@ Receipts in the writing checkout `.qa/`: `playable-final-verify.txt`, `playable-
 Checkout: `/Users/maingocanh/.codex/worktrees/trum-bia-hoi-playable-v0` at `playable-v0`. Local launch jobs: `local.tbh.playable-web` / `local.tbh.playable-api`; logs, pre-switch SQLite backup and actual runtime receipt live under that checkout's `.qa/playable-runtime/`. Web serves the built client with Vite preview on5174; API uses tsx on5175 with explicit `TBH_AUTH_DEV=1`, `NODE_ENV=development`. The existing database remains `/Users/maingocanh/.codex/worktrees/trum-bia-hoi-game/.qa/game-api.sqlite`; no browser cookie/save is reset. Jobs persist for the current login session.
 
 For a manual restart, stop those two jobs before running the commands above, so there is only one API writer. Real admin access still requires a private allowlist and TOTP; no default admin identity is added. The subsequent Steer14 balance commit does not silently change this pinned snapshot or an existing registry/shift pin.
+
+
+## playable-v0.1 — Steer15, 2026-09-11
+
+**PASS — all three playable viewports.** Code/art commit: **7dc5998d18ed8d752a4888dcee385d1b3e17f900**; UI/ingredient copy: **af9d287**. Tag `playable-v0.1` adds this release note; resolve the exact tag SHA with `git rev-parse playable-v0.1`.
+
+VI/EN kitchen cards explain unlocks, pans, portions and prep speed; phone explains shipper orders; QR lists phone ownership first. Stock/restock/HUD use ingredient names and cook-to-order hints, while orders/kitchen/shift ledger retain finished-dish names.13 distinct draft sprites replace washer2–5, cooler2–5 and stall1–5 placeholders. No engine/config values changed by Steer15. Manifest:132entries,121drafts,3placeholders outside this batch (chair-plastic-red, stall-owner-normal, customer-football-fan); all files resolve. M6/M7/M8 stay deferred/hidden; no monetization.
+
+| Viewport | First playable | RAF fps | Served | Full shift / upgrade / next day / reload / new tab | Console / failed requests |
+|---|---:|---:|---:|---|---|
+|390×844|561ms|60.25|68|PASS|0 / 0|
+|360×740|751ms|60.44|75|PASS|0 / 0|
+|1280×720|1040ms|60.27|83|PASS|0 / 0|
+
+Full `npm run verify` PASS:406/406unit/server tests,10standard cohorts k2.5644–2.9168,15rush cases, career seeds42/99 k3.465460767842698 /3.393196640939153≤3.5. `check:assets` PASS; per-level upgrade-art browser regression PASS; independent source/art review CLEAN. Timing/FPS are desktop Chromium at the named viewports, not a physical-phone benchmark. The390px retry corrects test receipt/popup synchronization; no gameplay timing was changed.
+
+Receipts: `.qa/steer15-final-verify.txt`, `.qa/steer15-final-assets.txt`, `.qa/steer15-art-web.txt`, `.qa/steer15-playable-smoke-final.txt` (360/1280PASS), `.qa/steer15-playable-390-retry.txt` (390PASS), `.qa/playable-{390,360,1280}.json`, `.qa/steer15-review-verdict.txt`, `.qa/steer15-operation-review-followup-verdict.txt`.
+
+Prepared pinned checkout: `/Users/maingocanh/.codex/worktrees/trum-bia-hoi-playable-v0.1`. Build succeeds and its index/manifest/config hashes match the tested code. Keep the same `local.tbh.playable-web` / `local.tbh.playable-api` jobs,5174/5175, and existing `.qa/game-api.sqlite`; cutover requires the pre-switch SQLite backup. Run commands above remain valid.
+
+**Registry clarification:** the prior tag carried seed2.0.2, but direct SQLite inspection found the existing preview registry still active at2.0.1. Seed2.0.3 (`7418c7b`) differs from that live snapshot only in `upgrades.keg.kegStorage`4/7/12/20/40 and the already-built `onboarding.loginPrompt.leaveProgress` threshold group. Publish both through the normal proposal/approval `next_shift` path; the registry assigns its own immutable version ID. Existing shifts retain their pins. Runtime cutover/publication receipts will be appended after the operation; this tag alone does not publish config.

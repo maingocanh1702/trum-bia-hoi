@@ -2701,3 +2701,8 @@ Kitchen upgrade value and raw ingredient labels are implemented in VI/EN. Slots,
 ## Steer15 (2) — equipment drafts, 2026-09-11
 
 All13 requested per-level sprites generated via built-in imagegen and exported through the existing keyed-alpha/native-crop/token-palette pipeline: washer2–5, cooler2–5, stall1–5. Manifest paths resolve with source, draft status and SHA-256; no fallback needed for this batch.132entries/121drafts/3remaining placeholders; check:assets PASS. Prompt/export provenance and128/64/32px contact sheet are in the asset checklist. Full verify PASS406/406, standard10cohorts k2.5644–2.9168,15rush cases, career42/99 k3.46546/3.39320. Per-level upgrade-image browser regression PASS; independent source/art review CLEAN. The playable smoke passed360×740 and1280×720;390×844 is retrying after a test-only popup/receipt synchronization correction. Tag and preview cutover remain gated on that result. No engine/config or kitchen art changes.
+
+
+### Steer15 playable-v0.1 acceptance — 2026-09-11
+
+All three real12-minute viewport paths PASS:390×844561ms/60.25fps/68served;360×740751ms/60.44fps/75served;1280×7201040ms/60.27fps/83served. Every path includes earned-coin upgrade, restock, washing, summary, next day, reload/new-tab persistence,0console/failed requests. The390 retry fixed only test popup/receipt synchronization. Full verify406/406 +10standard/15rush/2career gates and check:assets green; source/art and local-operation reviews CLEAN. Code/art7dc5998, copyaf9d287. Tag/run instructions: docs/playable-v0.md. Remaining owner step: backed-up preview cutover then normal next_shift publication of source2.0.3 to the existing registry, preserving historical pins and receipts.
