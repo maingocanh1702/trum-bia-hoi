@@ -2721,3 +2721,8 @@ Escaped the HTML Unicode-v literal hyphen in the shared dev-account form. Native
 ### M1-EQUIPMENT-UI — PASS, owner addendum 2026-09-11
 
 Kitchen Lv0 has an explicit empty slot and locked copy; an unavailable level never borrows another level's art in upgrade comparisons. Four retained imagegen kitchen originals have compact v2 exports (7,289,987→59,845 bytes total), true alpha, native sizes and manifest checksums. Cooler cards explain configured baseline freshness, stale tip/reputation outcome and hot/humid multipliers; HUD uses the actual weather-adjusted duration with a seconds unit. VI/EN label8/8, kitchen7/7, production5/5 PASS; typecheck/build/config and406unit/server tests PASS. Two old production assertions were updated for baseline card values and spaced seconds. Engine/config untouched; standard/rush/career gates reuse the full green M4-DEV-PATTERN source result, with an additional full verify still running in `.qa/steer16-equipment-verify-final.txt`. Preview remains v0.1 until batch release.
+
+
+### M1-SHIFT — PASS, 2026-09-11
+
+Reconciled the stale closure row using the accepted v0.1 three real12-minute viewport receipts, reopened and hashed (E28). Serving/restock/earned upgrade/washing, summary, next day, reload/new tab all pass;0console/missing assets. Docs-only change; no redundant gameplay implementation. New v0.2 smoke remains a release gate.

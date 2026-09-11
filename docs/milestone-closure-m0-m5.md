@@ -163,7 +163,7 @@ No new gameplay test or80MB run was added solely to make this report green.
 | Milestone | Exit verdict | Closure | Remaining acceptance |
 |---|---|---|---|
 | M0 | PASS (3/3) | COMPLETE | All three explicit exit criteria met; E10 config/build/tests and unchanged E8 sim pass. Foundation/checkpoint reviews also passed. |
-| M1 | FAIL (6/12 PASS) | OPEN | Full12min proof at all3viewports, complete7-screen coverage, measured upgrade recommendation, axe and new-player feel evidence. |
+| M1 | OPEN (7/12 PASS;1 WAIVED) | OPEN | Seven-screen coverage, measured upgrade recommendation, i18n inventory and axe. Human first30seconds criterion remains WAIVED. |
 | M2 | FAIL (4/9 PASS) | OPEN | Five-person test, real mid-shift Google browser flow and admin-editable onboarding; login-prompt gaps below. |
 | M3 | FAIL (6/12 PASS) | OPEN | Advanced k criterion PASS under owner soft cap3.5; feel,32px badge acceptance and remaining equipment/football placeholders still pending. |
 | M4 | FAIL (15/18 PASS) | OPEN — next implementation priority | E7 remote authority/reconnect, E8 registry and E9/E10 admin browser workflow verified. E11/E12 scoped core/editor/factual impact verified; E14 forecast, E15 locale and E18 current-visit Google attachment/restore verified; E25 public rank eligibility verified; observed VND/emergency, live consent and deferred public import remain; E19 reauthentication and E21 invitations/validation verified. |
@@ -223,7 +223,7 @@ now PASS. M4 is **14/18 OPEN**; public archive transport remains deferred to M9.
 
 | Criterion (ROADMAP and09§11 P1) | Verdict | Evidence or exact gap |
 |---|---|---|
-| Complete12-minute shift on390×844,360×740,1280×720 | FAIL | Web `game.spec.ts` “guest serves, reloads…” covers all3; “a neglected first shift closes…” runs full duration at390 only. No complete-duration proof for other2. |
+| Complete12-minute shift on390×844,360×740,1280×720 (M1-SHIFT) | PASS | E28: production-config/HTTP/store `playable-test/shift.spec.ts`, three real12-minute shifts; earned upgrade/restock/washing, summary, next-day, reload and new-tab persistence. |
 | Seven screens §3–§4.5 on all3viewports | FAIL | E2 covers yard/stock/settings/close/book and several equipment flows, but no complete7×3 acceptance matrix. |
 | Whole-table contextual service per03§9.5 | PASS | Web “tapped order stays live, returns keyboard focus, and closes on customer expiry”; one Phục vụ cả mâm action in “guest serves…”. |
 | Four visually distinct serve outcomes | PASS | Web “multi-dish service shows the actual early/late/grace/stale reward and guest reaction”; separate emoji, actual amounts, reduced-motion and reload checks. |
@@ -656,3 +656,16 @@ Supersedes the unstarted portions of the Steer16 queue above. Ordered ids: M1-EQ
 ### M1-EQUIPMENT-UI — PASS, owner addendum 2026-09-11
 
 Kitchen Lv0 has an explicit empty slot and locked copy; an unavailable level never borrows another level's art in upgrade comparisons. Four retained imagegen kitchen originals have compact v2 exports (7,289,987→59,845 bytes total), true alpha, native sizes and manifest checksums. Cooler cards explain configured baseline freshness, stale tip/reputation outcome and hot/humid multipliers; HUD uses the actual weather-adjusted duration with a seconds unit. VI/EN label8/8, kitchen7/7, production5/5 PASS; typecheck/build/config and406unit/server tests PASS. Two old production assertions were updated for baseline card values and spaced seconds. Engine/config untouched; standard/rush/career gates reuse the full green M4-DEV-PATTERN source result, with an additional full verify still running in `.qa/steer16-equipment-verify-final.txt`. Preview remains v0.1 until batch release.
+
+
+## E28 — M1-SHIFT closure, 2026-09-11
+
+Reconciled the stale full-shift FAIL row against the accepted playable-v0.1 evidence. Source:7dc5998, tagb3cfb34; no gameplay implementation is needed for this criterion. `playable-test/shift.spec.ts` explicitly asserts actual elapsed active shift≥configured12minutes (only overnight rest accelerates), earned upgrade/restock, washing, summary, next-day, reload and new-tab persistence.
+
+| Viewport | First playable | FPS | Served | Console / missing | Receipt SHA-256 |
+|---|---:|---:|---:|---|---|
+|390×844|561ms|60.25|68|0 /0|160218826d0d0ee45e1007464a34790517f70df739f7fe5b2926e11f9fecbe21|
+|360×740|751ms|60.44|75|0 /0|0b339a435825caaec0c1600921d6eb3380283d9398b67489b6a12f8c0b8d9d13|
+|1280×720|1040ms|60.27|83|0 /0|87efb80561e3534c92be176909d592cf80356a4d9056eb14fd4ca502d570cc63|
+
+Receipts: `.qa/playable-{390,360,1280}.json`, `.qa/steer15-playable-smoke-final.txt` plus `.qa/steer15-playable-390-retry.txt`. Each receipt was reopened and checked on disk; hashes above preserve this evidence when v0.2 replaces the local QA outputs. The final v0.2 smoke remains required after the batch.
