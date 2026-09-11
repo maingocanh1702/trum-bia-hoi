@@ -165,7 +165,7 @@ No new gameplay test or80MB run was added solely to make this report green.
 | M0 | PASS (3/3) | COMPLETE | All three explicit exit criteria met; E10 config/build/tests and unchanged E8 sim pass. Foundation/checkpoint reviews also passed. |
 | M1 | COMPLETE (11/12 PASS;1 WAIVED) | COMPLETE | All code/automated criteria pass; human first30seconds remains WAIVED by owner2026-09-10, post-release. Local v0.2 packaging still has its own fresh verify/smoke gates. |
 | M2 | OPEN (7/9 PASS;1 WAIVED;1 FAIL) | LOCAL ONBOARDING PASS | Paired on/off k, existing admin thresholds/step publication, retained-guide correction PASS. Real Google minute5/consent stays PENDING outside local v0.3; human test WAIVED. |
-| M3 | FAIL (6/12 PASS) | OPEN | Advanced k criterion PASS under owner soft cap3.5; feel,32px badge acceptance and remaining equipment/football placeholders still pending. |
+| M3 | OPEN (6/12 PASS;5 WAIVED;1 FAIL) | LOCAL RECONCILIATION COMPLETE | Human feel/badge tests remain WAIVED. The sole FAIL is incomplete art-batch work tracked for M9, outside local v0.3 by owner14:50. |
 | M4 | FAIL (15/18 PASS) | OPEN — next implementation priority | E7 remote authority/reconnect, E8 registry and E9/E10 admin browser workflow verified. E11/E12 scoped core/editor/factual impact verified; E14 forecast, E15 locale and E18 current-visit Google attachment/restore verified; E25 public rank eligibility verified; observed VND/emergency, live consent and deferred public import remain; E19 reauthentication and E21 invitations/validation verified. |
 | M5 | OPEN (18/25 PASS;1 PENDING;6 FAIL) | LOCAL SCOPE IMPLEMENTED; review/release pending | F14 summary, live rank and immutable snapshot/history pass. F12-CLAIM owner-deferred; remaining donation/referral/gift integration belongs to deferred work. |
 
@@ -263,7 +263,7 @@ now PASS. M4 is **14/18 OPEN**; public archive transport remains deferred to M9.
 | Rush-type telegraph | PASS | E2 “rush warning pauses in sheets, resumes on closing, active timer wins…” at3viewports; engine rush-clock/schedule tests. |
 | Quest panel | PASS | E2 `quests.spec.ts` and `attendance.spec.ts`: real progress/claim/rollover and pause. Full social quest branches remain M5. |
 | Signboard sheet | PASS | E2 “business sign installation, ownership, reputation gate and live yard…” at mobile widths. |
-| Equipment/customer/menu asset batch replaces placeholders | FAIL | Current manifest has16placeholders and108drafts (including4archived Blender studies)/8approved after keg Lv2–5 exports. Owner allows listed placeholders where generation fails; remaining family production work is tracked for M9, not represented as finished art. |
+| Equipment/customer/menu asset batch replaces placeholders | FAIL | Current check:assets:132entries,121drafts,3placeholders. Owner14:50 decision: this incomplete art-batch row stays tracked for M9; no asset generation or new M3 work belongs to local v0.3. Draft/placeholder release acceptance does not mean the full art batch is complete. |
 
 ## M4 — server/accounts/admin
 
@@ -785,3 +785,8 @@ Retained guide rendering now observes onboarding.enabled; one shared UI guard fi
 Full verify418/418 PASS; paired standard cohorts on=[2.5644, 2.9168], off=[2.4866, 2.959] (5seeds × cold/full × both modes),15rush and career42/99≤3.5 PASS. Only the measurement harness gains paired mode; no engine rule, economy value, config version or live publication changes. Existing fixed catalog identities/shape remain governed by registry admission.
 
 Receipts: `.qa/v03-onboarding-{red2,green,verify}.txt`, `.qa/v03-onboarding-receipt.json`, four `.qa/v03-onboarding-*.png`. Real Google/consent and human tests remain PENDING/WAIVED; no new work under those rows.
+
+
+## Steer18 item d — read-only M1/M3 reconciliation, 2026-09-11
+
+Owner14:50 scope confirmed against the criterion tables: M1=11PASS/1WAIVED; M3=6PASS/5WAIVED/1FAIL. The only M3 FAIL is the asset-production batch, retained for M9. No open in-scope local M1/M3 criterion remains, no WAIVED row is reopened, and no assets or gameplay changes were made. `check:assets` remains green (132entries,121drafts,3placeholders). Next is the local v0.3 verify/assets/three-viewport release gate, preserving SQLite and the main checkout.

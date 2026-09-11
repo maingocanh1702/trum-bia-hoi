@@ -2829,3 +2829,8 @@ Retained guide rendering now observes onboarding.enabled; one shared UI guard fi
 Full verify418/418 PASS; paired standard cohorts on=[2.5644, 2.9168], off=[2.4866, 2.959] (5seeds × cold/full × both modes),15rush and career42/99≤3.5 PASS. Only the measurement harness gains paired mode; no engine rule, economy value, config version or live publication changes. Existing fixed catalog identities/shape remain governed by registry admission.
 
 Receipts: `.qa/v03-onboarding-{red2,green,verify}.txt`, `.qa/v03-onboarding-receipt.json`, four `.qa/v03-onboarding-*.png`. Real Google/consent and human tests remain PENDING/WAIVED; no new work under those rows.
+
+
+## Steer18 item d — read-only M1/M3 reconciliation, 2026-09-11
+
+Owner14:50 scope confirmed against the criterion tables: M1=11PASS/1WAIVED; M3=6PASS/5WAIVED/1FAIL. The only M3 FAIL is the asset-production batch, retained for M9. No open in-scope local M1/M3 criterion remains, no WAIVED row is reopened, and no assets or gameplay changes were made. `check:assets` remains green (132entries,121drafts,3placeholders). Next is the local v0.3 verify/assets/three-viewport release gate, preserving SQLite and the main checkout.

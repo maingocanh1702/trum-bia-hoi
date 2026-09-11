@@ -584,3 +584,5 @@ Dedicated check: `npm run verify` in that temporary master worktree, with output
 | 2026-09-11 | M5-F12/F28-SNAPSHOT PASS: final418tests/43focused,6browser/6axe scans, standard/rush/career gates green; independent corrections reviewed CLEAN. F12-CLAIM stays PENDING; onboarding is the next separate slice. |
 
 | 2026-09-11 | M2-ONBOARDING local PASS: one UI guard, existing editor publication test,20 on/off sim cohorts;418tests + full verify green. No engine/economy/config changes. |
+
+| 2026-09-11 owner14:50 | M1/M3 local reconciliation complete:11PASS/1WAIVED and6PASS/5WAIVED/1assetFAIL respectively. Asset row stays M9; no new work under item d. Production/Google/CAPTCHA/PWA/social remain outside v0.3. |
