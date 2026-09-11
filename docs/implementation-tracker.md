@@ -508,3 +508,8 @@ Kitchen Lv0 has an explicit empty slot and locked copy; an unavailable level nev
 ### M1-SHIFT — PASS, 2026-09-11
 
 Reconciled the stale closure row using the accepted v0.1 three real12-minute viewport receipts, reopened and hashed (E28). Serving/restock/earned upgrade/washing, summary, next day, reload/new tab all pass;0console/missing assets. Docs-only change; no redundant gameplay implementation. New v0.2 smoke remains a release gate.
+
+
+### M1-SCREENS — PASS, 2026-09-11
+
+Seven core screens ×3viewports verified through real server transport:3/3 browser tests,21screenshots,0console/page errors, no missing images or viewport overflow; typecheck PASS. Source/engine/config unchanged. M1 now8PASS/1WAIVED/3open criteria; see closure for exact evidence.

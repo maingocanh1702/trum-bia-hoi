@@ -257,3 +257,42 @@ for (const damage of ['missing chunk', 'invalid revision']) test(`normal startup
   await expect(page.locator('.game-shell')).toBeVisible();
   expect(JSON.parse(await readSave(page)).seed).toBe(99);
 });
+
+for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1280, height: 720 }]) {
+  test(`M1-SCREENS seven core screens through the server at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+    page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+    const capture = async (screen: string) => {
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await expect.poll(() => page.locator('img').evaluateAll(images => images.every(image => (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0))).toBe(true);
+      const panel = page.locator('dialog[open], .order-panel');
+      if (await panel.count()) {
+        const box = (await panel.boundingBox())!;
+        expect(box.x).toBeGreaterThanOrEqual(0); expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+        expect(box.y).toBeGreaterThanOrEqual(0); expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+      }
+      await page.screenshot({ path: `.qa/m1-screens-${viewport.width}-${screen}.png` });
+    };
+    await enter(page); await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
+    await expect.poll(async () => (await snapshot(page)).world.phase).toBe('open'); await capture('yard');
+    await expect(page.locator('.table-order-hint').first()).toBeVisible({ timeout: 20000 });
+    await page.locator('.table-order-hint').first().click();
+    await expect(page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true })).toBeEnabled(); await capture('order');
+    await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
+    await expect.poll(async () => (await snapshot(page)).world.shift.stats.served).toBeGreaterThan(0); await page.keyboard.press('Escape');
+    for (const [name, screen] of [['Nhập hàng', 'stock'], ['Nâng cấp', 'upgrades']]) {
+      await page.getByRole('button', { name, exact: true }).click(); await expect(page.getByRole('dialog', { name, exact: true })).toBeVisible();
+      await expect.poll(async () => (await snapshot(page)).world.paused).toBe(true); await capture(screen); await page.keyboard.press('Escape');
+    }
+    await page.getByRole('button', { name: 'Sổ ca', exact: true }).first().click();
+    await expect(page.getByRole('heading', { name: 'Sổ ca hôm nay', exact: true })).toBeVisible(); await capture('book');
+    await page.getByRole('button', { name: /^Mời tất cả về/ }).click();
+    await expect(page.getByRole('dialog', { name: 'Mời khách về để đóng ca?', exact: true })).toBeVisible(); await capture('close');
+    await page.getByRole('button', { name: /^Trả .* xu và đóng ca$/ }).click();
+    await expect.poll(async () => (await snapshot(page)).world.phase).toBe('resting');
+    await expect(page.getByRole('heading', { name: 'Sổ ca hôm nay', exact: true })).toBeVisible(); await page.keyboard.press('Escape');
+    await expect(page.locator('.rest-summary')).toBeVisible(); await capture('rest');
+    expect((await snapshot(page)).world.completedShifts).toBe(1); expect(errors).toEqual([]);
+  });
+}

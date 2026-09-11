@@ -163,7 +163,7 @@ No new gameplay test or80MB run was added solely to make this report green.
 | Milestone | Exit verdict | Closure | Remaining acceptance |
 |---|---|---|---|
 | M0 | PASS (3/3) | COMPLETE | All three explicit exit criteria met; E10 config/build/tests and unchanged E8 sim pass. Foundation/checkpoint reviews also passed. |
-| M1 | OPEN (7/12 PASS;1 WAIVED) | OPEN | Seven-screen coverage, measured upgrade recommendation, i18n inventory and axe. Human first30seconds criterion remains WAIVED. |
+| M1 | OPEN (8/12 PASS;1 WAIVED) | OPEN | Measured upgrade recommendation, i18n inventory and axe. Human first30seconds criterion remains WAIVED. |
 | M2 | FAIL (4/9 PASS) | OPEN | Five-person test, real mid-shift Google browser flow and admin-editable onboarding; login-prompt gaps below. |
 | M3 | FAIL (6/12 PASS) | OPEN | Advanced k criterion PASS under owner soft cap3.5; feel,32px badge acceptance and remaining equipment/football placeholders still pending. |
 | M4 | FAIL (15/18 PASS) | OPEN — next implementation priority | E7 remote authority/reconnect, E8 registry and E9/E10 admin browser workflow verified. E11/E12 scoped core/editor/factual impact verified; E14 forecast, E15 locale and E18 current-visit Google attachment/restore verified; E25 public rank eligibility verified; observed VND/emergency, live consent and deferred public import remain; E19 reauthentication and E21 invitations/validation verified. |
@@ -224,7 +224,7 @@ now PASS. M4 is **14/18 OPEN**; public archive transport remains deferred to M9.
 | Criterion (ROADMAP and09§11 P1) | Verdict | Evidence or exact gap |
 |---|---|---|
 | Complete12-minute shift on390×844,360×740,1280×720 (M1-SHIFT) | PASS | E28: production-config/HTTP/store `playable-test/shift.spec.ts`, three real12-minute shifts; earned upgrade/restock/washing, summary, next-day, reload and new-tab persistence. |
-| Seven screens §3–§4.5 on all3viewports | FAIL | E2 covers yard/stock/settings/close/book and several equipment flows, but no complete7×3 acceptance matrix. |
+| Seven screens §3–§4.5 on all3viewports (M1-SCREENS) | PASS | `remote.spec.ts` M1-SCREENS: yard, live order, stock, upgrades, shift book, close confirmation, rest;3/3 tests and21screenshots,0console/page errors, all images loaded and panels within viewport. |
 | Whole-table contextual service per03§9.5 | PASS | Web “tapped order stays live, returns keyboard focus, and closes on customer expiry”; one Phục vụ cả mâm action in “guest serves…”. |
 | Four visually distinct serve outcomes | PASS | Web “multi-dish service shows the actual early/late/grace/stale reward and guest reaction”; separate emoji, actual amounts, reduced-motion and reload checks. |
 | Management sheets pause (owner override) | PASS | Web `pause.spec.ts` all3tests; stock purchase retains sheet/pause, visibility cannot resume it, equipment switch/reload preserve wait. |
@@ -669,3 +669,8 @@ Reconciled the stale full-shift FAIL row against the accepted playable-v0.1 evid
 |1280×720|1040ms|60.27|83|0 /0|87efb80561e3534c92be176909d592cf80356a4d9056eb14fd4ca502d570cc63|
 
 Receipts: `.qa/playable-{390,360,1280}.json`, `.qa/steer15-playable-smoke-final.txt` plus `.qa/steer15-playable-390-retry.txt`. Each receipt was reopened and checked on disk; hashes above preserve this evidence when v0.2 replaces the local QA outputs. The final v0.2 smoke remains required after the batch.
+
+
+### M1-SCREENS — PASS, 2026-09-11
+
+`npx playwright test --config playwright.remote.config.ts apps/web/remote-test/remote.spec.ts -g M1-SCREENS` passes3/3 (47.2s). Each viewport390×844,360×740,1280×720 opens all seven core surfaces against real HTTP/store, serves a customer, observes paused management sheets, confirms early close and reaches rest with exactly one completed shift. Every screen checks image completion, horizontal overflow and contextual-panel bounds;0console/page errors.21screenshots `.qa/m1-screens-{width}-{yard,order,stock,upgrades,book,close,rest}.png`; receipt `.qa/steer17-screens.txt`; typecheck PASS. No production source, engine or config changed. Human first-use criterion remains WAIVED.
