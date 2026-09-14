@@ -138,10 +138,12 @@ all still open:
 - **Keg-empty UI state** — **confirmed uncovered in remote/playable tiers** (all `keg` hits there are
   about upgrades, never empty state). Already covered in local mode (`game.spec.ts`'s "beer is out"
   test, via `fixtures/mixed-grace.ts` zeroing starting stock).
-- **Lease early-exit UI** — **ambiguous, two referents in this codebase, don't conflate them.**
-  (a) Location-rental lease (`Locations.tsx`, `leaveLocation` command) — already covered, local mode
-  only (`apps/web/test/locations.spec.ts`). (b) Server presence/session lease (connection ownership,
-  `presence.test.ts`) — confirmed uncovered at UI/browser tier, covered only at server-store tier.
+- **Lease early-exit UI** — means the location-rental lease (`Locations.tsx`, the `leaveLocation`
+  command → `leaveLease()` → `lease_left` event, `engine.ts:338-343`), not the unrelated server
+  presence/session lease in `presence.test.ts`. **Already covered, not a gap** — local mode only,
+  `apps/web/test/locations.spec.ts`'s `` `rental quote, early move, pause and reload at ${width}px in
+  ${locale}` `` (its `vi@360px` iteration clicks the early-leave button; `en@390px` lets the lease
+  expire naturally instead). No remote-mode equivalent exists.
 - **Season rollover in the browser** — **already covered, not a gap.** `seasons.spec.ts` (above)
   does exactly this, including reload. Local mode only.
 - **Admin rollback UI** — **already covered**, just not under the literal English word: `apps/web/

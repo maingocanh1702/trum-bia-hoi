@@ -1,4 +1,4 @@
-# Economy k-ledger (08-SPEC-economy-constants.md; `docs/config/economy.tbh.json` `k`/`ledgers` blocks)
+# Economy k-ledger (08-SPEC-economy-constants.md §22 "Config Registry"; 04-SPEC-prototype-phase0.md §5 "Cách đo k_value" — the k-measurement invariant; `docs/config/economy.tbh.json` `k`/`ledgers` blocks)
 
 ## Observable contract
 

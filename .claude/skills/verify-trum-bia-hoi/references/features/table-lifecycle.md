@@ -6,7 +6,7 @@ the spec's blocks:
 
 | Spec sketch (§1) | Actual code (`types.ts`) |
 |---|---|
-| `Table.state: 'EMPTY'\|'SEATING'\|'ORDERING'\|'AWAITING_SERVE'\|'CONSUMING'\|'PAYING'\|'CLEANING'` | `'empty'\|'seating'\|'waiting'\|'consuming'\|'occupied'\|'cleaning'\|'broken'` (`:16`, lowercase) — `ORDERING`+`AWAITING_SERVE` collapse into one `'waiting'` state; `PAYING` doesn't exist as a stored state (see Gotchas); `'occupied'` and `'broken'` were added, the first matches spec intent (§8's Chí Phèo case), the second matches nothing in any doc (see Uncovered paths). |
+| `Table.state: 'EMPTY'\|'SEATING'\|'ORDERING'\|'AWAITING_SERVE'\|'CONSUMING'\|'PAYING'\|'CLEANING'` | `'empty'\|'seating'\|'waiting'\|'consuming'\|'occupied'\|'cleaning'\|'broken'` (`:16`, lowercase) — `ORDERING`+`AWAITING_SERVE` collapse into one `'waiting'` state; `PAYING` doesn't exist as a stored state (see Gotchas); `'occupied'` and `'broken'` were added — the first matches spec intent (§8's Chí Phèo case), the second is reserved for a *different, later* doc than 03-SPEC (see Uncovered paths). |
 | `Table{seats, orders: Order[], variant, groupTimer?}` | `Table{group: Group\|null, order: Order\|null (singular), until, roundsServed}` (`:14-18`) — no `variant` field anywhere. |
 | `Order.state: 'pending'\|'preparing'\|'grace_leaving'\|'served'\|'expired'` | `'pending'\|'grace'\|'served'\|'expired'\|'cancelled'` (`:10`) — no `'preparing'` on Order (tracked per-`Item` instead), `grace_leaving`→`'grace'`, added `'cancelled'` (kickAll only). |
 | `Customer{state: CustomerState, tableId, seatIndex, ...}` | `Customer{id, type, patienceMs, enjoyMs}` (`:3`) — **no state field at all**; §3's `ARRIVING→SEATED→…→LEFT` machine has no code counterpart, "state" is entirely implicit in which array (`table.group`, `world.queue`) holds the customer. |
@@ -154,10 +154,21 @@ sequencing/idempotency/session wrapping.
 
 ## Uncovered paths
 
-- **`Table.state==='broken'` is dead in production code.** Exactly 3 hits repo-wide: the type union
-  and two defensive allow-lists (`engine.ts:425`, `rules.ts:86`) — no code path ever assigns it. The
-  only assignment anywhere is `game.test.ts:238`, a test-isolation trick to force a table non-seatable,
-  not a real feature. No design doc references a "broken table" mechanic.
+- **`Table.state==='broken'` is unassigned by any current code path, but it is not dead/removable —
+  it's reserved for an owner-deferred mechanic, not an orphan.** Exactly 3 hits repo-wide: the type
+  union and two defensive allow-lists (`engine.ts:425`, `rules.ts:86`); the only assignment anywhere
+  is `game.test.ts:238`, a test-isolation trick to force a table non-seatable. The real mechanic lives
+  in `docs/features/F15-risk-events.md` (Phase 3 risk layer, depends on F18 dog/guard + F23 server —
+  not 03-SPEC, which is why the discrepancy table above doesn't find it there): §6 "Drunk fight" —
+  "Ignore -> reputation loss and possible table dirty/broken" — and §3 "Gangster" — a lost fight "can
+  break tables/chairs". `docs/playable-v0.md` confirms the whole risk layer is owner-deferred and
+  hidden from the shipped UI ("M6/M7/M8 DEFERRED by owner 2026-09-11 — post-release... Risk controls
+  are hidden in the shipped UI; legacy risk UI is available only in an explicit development test
+  preview, `VITE_TBH_RISK_PREVIEW=1`"). Today's only trace of that flag is a UI-only stub,
+  `apps/web/src/App.tsx:21` (`showDeferredRisk = import.meta.env.DEV &&
+  import.meta.env.VITE_TBH_RISK_PREVIEW === '1'`) — it doesn't touch `Table.state`, confirming F15's
+  engine side (including the table-break consequence) isn't built yet. Don't flag `'broken'` as a
+  removal candidate; treat it as reserved for F15.
 - **`Result.outcome:'expired'`** (the already-expired-order re-tap guard, `engine.ts:860`) is never
   asserted by any test.
 - **`reason:'orderNotReady'`/`'orderExpired'` are never asserted by exact string.**
