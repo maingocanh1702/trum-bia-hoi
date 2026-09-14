@@ -54,13 +54,21 @@
   not a simulation. **Confirmed by direct experiment:** a candidate that keeps `k.value: 2.5` (inside
   `band: [2,3]`) while changing an unrelated pricing anchor produced a *measured* k of 209.765 across
   1,000 simulated serves — admission accepted it anyway, because it never runs the candidate config
-  through gameplay. **No existing tool can simulate an admin candidate before publish either** —
-  `packages/engine/sim/career.ts:18`'s `simulateCareer()` always plays `config`, the module-level
-  singleton `loadConfig()` builds from a static import of `docs/config/economy.tbh.json`
-  (`config.ts:1,367`); its CLI (`:110-113`) accepts only `--days`/`--seed`/`--out`/`--check-advanced`,
-  no candidate-config input. This admission check only blocks an obviously-wrong self-reported
-  number; proving the resulting economy is safe for a proposal that changes price/cost/anchor/payout
-  math has no automated path today — see Uncovered paths. League tier ids, location ids and
+  through gameplay. **`/admin/forecast` (`AdminForecast.tsx`) DOES run a real candidate-vs-baseline
+  simulation** — `reportFromBackup()` (`forecast.ts:19`) forks each existing player's actual save
+  (`store.fork(player.id)`) and calls `compareEconomy(game, player.before, player.after)`, replaying
+  real players under both the current and proposed config — but its `Totals` shape
+  (`faucet`/`sink`/`penalties`/`depositRefunds`/`openingCoins`/`closingCoins`) has no `k` field at
+  all (`grep -n "\.k\b|kValue|k\.band|k\.value" packages/engine/sim/forecast.ts apps/server/src/forecast.ts`
+  → zero hits) — it reports coin economics, never the k-invariant. **`sim:career:gate`
+  (`packages/engine/sim/career.ts:18`) is the opposite gap**: it does check k-band, but
+  `simulateCareer()` always plays the module-level `config` singleton (`loadConfig()`'s static import
+  of `docs/config/economy.tbh.json`, `config.ts:1,367`) — its CLI (`:110-113`) accepts only
+  `--days`/`--seed`/`--out`/`--check-advanced`, no candidate-config input. So today: real
+  candidate-vs-baseline simulation exists but doesn't check k; k-band checking exists but can't run
+  against a candidate. Neither combination — and admission's `k.value` check is not one either — is
+  proof that a price/cost/anchor/payout proposal's resulting k stays in band; see Uncovered paths.
+  League tier ids, location ids and
   the location fallback are treated as persisted-identity sets that cannot be renamed or removed
   ("These identifiers are persisted in careers. Tuning numbers cannot migrate their meaning.",
   `registry.ts:160`); `_meta` other than `version`/`date` is immutable (`registry:metadataImmutable`).
@@ -229,24 +237,31 @@ logout; damaged recovery is downloadable'`.
 - `npm run verify` is the whole-repo gate for any change here; it does not run the admin Playwright
   config (that's a separate, non-default config the way remote/accessibility are).
 - **Admission's `k.value` band check is not economy-safety proof for a price/cost/anchor/payout
-  change** (see the k-invariant Gotcha above), and there is currently no automated way to run
-  `sim:career:gate` (or any sim) against a candidate config instead of the pinned seed — see
-  Uncovered paths. Until that tooling exists, treat such a proposal's real-economy impact as
-  unverified by any command in this file.
+  change** (see the k-invariant Gotcha above). Run `/admin/forecast` for a real candidate-vs-baseline
+  coin-economics comparison against actual existing players — but it does not compute or check `k`;
+  no tool combines a real candidate simulation with a k-band check (`sim:career:gate` checks k-band
+  but only ever plays the pinned seed config) — see Uncovered paths. Treat a k-band regression in
+  such a proposal as unverified by any command in this file.
 
 ## Uncovered paths
 
-- **No tool can simulate an admin candidate config's real economy before publish.**
-  `packages/engine/sim/career.ts:18`'s `simulateCareer()` always plays the module-level `config`
-  singleton, built once from a static import of `docs/config/economy.tbh.json`
-  (`packages/engine/src/config.ts:1,367` — `loadConfig()`'s default `input = seed`); the CLI
-  (`career.ts:110-113`) takes only `--days`/`--seed`/`--out`/`--check-advanced`, nothing that loads a
-  different config. The same applies to `sim:onboarding`/`sim:rush`. A registry proposal that changes
-  price/cost/anchor/payout math therefore has no automated way to confirm the *resulting* economy
-  stays sane — only `registry.ts:157`'s cheap `k.value`-vs-`k.band` check runs, and it can pass while
-  the real economy is badly broken (see the k-invariant Gotcha). The closest manual workaround —
-  temporarily overwriting `economy.tbh.json` with the candidate, running `npm run sim:career:gate`,
-  then reverting — is unautomated and risks leaving the wrong file committed if a step is skipped.
+- **No tool combines real candidate simulation with a k-band check.** `/admin/forecast`
+  (`forecast.ts:19`'s `reportFromBackup()`/`compareEconomy()`) *does* simulate a candidate config
+  against real existing players' saves, but its `Totals` shape has no `k` field — it reports coin
+  economics only (`grep -n "\.k\b|kValue|k\.band|k\.value" packages/engine/sim/forecast.ts
+  apps/server/src/forecast.ts` → zero hits), covered by `apps/server/test/forecast.test.ts:37` `'real
+  worker forecasts all existing saves, preserves source rows and keeps the request event loop
+  responsive'`. `sim:career:gate` (`packages/engine/sim/career.ts:18`) checks k-band but
+  `simulateCareer()` always plays the module-level `config` singleton, built once from a static
+  import of `docs/config/economy.tbh.json` (`packages/engine/src/config.ts:1,367` — `loadConfig()`'s
+  default `input = seed`); its CLI (`career.ts:110-113`) takes only
+  `--days`/`--seed`/`--out`/`--check-advanced`, nothing that loads a different config. Same for
+  `sim:onboarding`/`sim:rush`. A registry proposal that changes price/cost/anchor/payout math
+  therefore has no automated way to confirm the *resulting* k stays in band — only `registry.ts:157`'s
+  cheap `k.value`-vs-`k.band` check runs, and it can pass while the real economy is badly broken (see
+  the k-invariant Gotcha). The closest manual workaround for a k-specific check — temporarily
+  overwriting `economy.tbh.json` with the candidate, running `npm run sim:career:gate`, then
+  reverting — is unautomated and risks leaving the wrong file committed if a step is skipped.
 - Route **paths** are now confirmed against `http.ts` directly (see "How to reach it"), but this pass
   did not read every route handler's full body — request/response field shapes beyond what's cited
   above (e.g. `/admin/players`' pagination shape, `/admin/config`'s exact response envelope) are not

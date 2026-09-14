@@ -105,6 +105,17 @@
   gap an earlier pass claimed. **Still genuinely untested in its own right:** focus-return-on-close,
   and whether `Escape` behaves the same across all 15 `Sheet` variants or only the two these specs
   happen to open.
+- `apps/web/remote-test/locale.spec.ts` is the dedicated locale/bootstrap lifecycle suite for the
+  `App()`/`language-entry` gate documented above — an earlier pass here cited no test for it.
+  `` `language entry precedes server creation and preserves the live shift at
+  ${viewport.width}x${viewport.height}` `` (`:3`, 3-viewport parametrized) asserts the entry form
+  blocks any `/api/` request or IndexedDB/journal creation until a locale is submitted, 44px hit
+  targets on the radio labels, and that `Escape`/reload cannot skip it. `'preference storage refusal
+  keeps the entry retryable and never creates a remote player'` (`:23`) is real (non-axe) proof of the
+  `entry.storageError` path the Uncovered-paths axe gap references. `'invalid stored locale cannot
+  skip the language choice through a stale accepted flag'` (`:34`) and `'a failed game module offers
+  retry before language selection or any player mutation'` (`:38`) cover legacy-preference/migration
+  and module-load-failure cases respectively.
 
 ## Verification procedure
 
@@ -122,6 +133,9 @@
 - For the 3-viewport layout matrix specifically (not a11y), `npx playwright test --config
   playwright.playable.config.ts` (`apps/web/playable-test/shift.spec.ts`) is the closest existing
   proof, though it doesn't run axe.
+- `npx playwright test --config playwright.remote.config.ts apps/web/remote-test/locale.spec.ts` —
+  run for any change to the `language-entry` gate, locale persistence, or pre-server-creation
+  bootstrap order (see Existing proof).
 
 ## Uncovered paths
 
