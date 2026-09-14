@@ -75,9 +75,21 @@ report's own contract).
   table/queue/delivery being clear (`processDue()`, `engine.ts:425`).
 - UI: `'Vào quán'`/`'Mở ca'` → `startShift`; `'Sổ ca'` sheet → `endShift`/`kickAll` (exact button
   chain documented in table-lifecycle.md). Hidden/offline: `document.visibilitychange` →
-  `{type:'activity', active:false}` on hide, `active:true` on show — identical in both runtime modes.
-- Remote mode: same command shapes over `POST /player/command`; the server holds no separate
-  shift-phase logic — `http.ts` calls straight into `@tbh/engine`.
+  `syncActivity()` (`App.tsx:177-181`).
+- **Corrected claim**: hidden/offline is **not** identical in both runtime modes, and `activity` does
+  **not** go over `POST /player/command` in remote mode like `startShift`/`endShift`/`kickAll` do.
+  Local mode calls `run({type:'activity', active, paused: active && paused})` — the normal command
+  path. Remote mode calls `remote.setPresence(active, paused)` instead (`remote.ts:228-230`), a pure
+  client-side state update — `RemoteGame.command()` itself explicitly refuses `activity`
+  (`remote.ts:256`: `if (command.type === 'activity' || ...) return {ok:false, reason: this.state}`),
+  and if one somehow reached the server, `store.ts:631` rejects it with `error:'presenceManaged'`. The
+  server instead learns `active`/`paused` from the **heartbeat** payload (`POST /player/heartbeat`,
+  `remote.ts:275`), not from a command result — see
+  [restock-inventory-menu](restock-inventory-menu.md) for the same correction and
+  `apps/server/test/presence.test.ts` for the actual remote mechanism's own tests. Every *other*
+  command in this file genuinely is identical over `POST /player/command` in both modes; only
+  `activity` diverges, and the server holds no separate shift-phase logic for those —
+  `http.ts` calls straight into `@tbh/engine`.
 
 ## Existing proof
 

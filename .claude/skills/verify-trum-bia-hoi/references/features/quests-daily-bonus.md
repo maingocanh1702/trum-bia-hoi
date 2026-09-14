@@ -38,8 +38,11 @@ are `shift_3` and `gift_3` (below), and life-path progress is its own unrelated 
   `quests.ts:44`) — claiming it never touches `w.coins`/`dayEarned`/`seasonEarned` at all, a narrower
   invariant than but consistent with [economy-k-ledger](economy-k-ledger.md)'s single-mutator rule.
 - Events: `quest_generated` (`engine.ts:307`, once per row, on daily reseed — `{questId, kind, target,
-  day, tier, seed}`), `quest_progressed` (`engine.ts:104`, fired on *every* domain event while
-  `rulesVersion >= QUEST_RULES(12)` and `world.daily` is set — also `engine.ts:316` for the
+  day, tier, seed}`), `quest_progressed` (`engine.ts:104`, **corrected claim**: `applyQuestEvent()` is
+  *checked* on every domain event while `rulesVersion >= QUEST_RULES(12)` and `world.daily` is set,
+  but `quest_progressed` only *emits* once per row `applyQuestEvent()` actually returns — i.e. once
+  per quest row whose progress changed as a result of that event, not once per event unconditionally;
+  an event that advances no row's progress emits nothing — also `engine.ts:316` for the
   passive `zero_loss_window` tick), `quest_claimed` / `daily_bonus_claimed` (`engine.ts:959`, one or
   the other depending on whether `q.row` is set — i.e. a per-row claim vs the five-of-five bonus
   claim — `{day, questId, coin, reputation, flyers, badgeShards}`).

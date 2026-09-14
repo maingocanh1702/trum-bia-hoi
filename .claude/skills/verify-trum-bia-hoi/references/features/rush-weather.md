@@ -138,10 +138,14 @@ Two spec-vs-code naming drifts worth knowing before grepping for either mechanic
   `rush.<kind>.floorMs` (config-verified against `docs/config/economy.tbh.json`) — the forced `0.01`
   weather mult crushes the raw `baseMs × weather.mult × rush.mult` product far below any real floor,
   so `Math.max(interval, rush.floorMs)` (`config.ts:21`) always returns the floor verbatim. This
-  proves the **hard floor** holds under extreme weather, not that a *moderate* weather mult and a
-  *moderate* rush mult visibly combine in the unclamped middle of the formula. No test asserts a case
-  where the multiplicative product of both mults lands *above* the floor, so both factors are
-  simultaneously visible in the result rather than one swallowing the other.
+  proves the **hard floor** holds under extreme weather. **Second correction**: the *moderate*-stacking
+  case IS covered elsewhere in the same file — `arrival-interval.test.ts:34`'s sibling test
+  (`'ordinary baseline floor and multiplier remain configurable without weakening active-rush
+  floors'`) asserts `arrivalIntervalMs(c.values, 'hot', 'heavy') === 950`, and `950 = 5000 ×
+  weather.hot.spawnIntervalMult(0.95) × rush.heavy.spawnIntervalMult(0.2)` genuinely exceeds
+  `rush.heavy.floorMs` (`700`, config-verified) — the floor does *not* bind here, so both mults are
+  simultaneously visible in the unclamped result. There is no remaining gap for this specific
+  interaction.
 
 ## Variants
 
