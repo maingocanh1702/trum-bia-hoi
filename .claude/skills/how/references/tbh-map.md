@@ -155,12 +155,21 @@ same way this file itself was built.
   `claimLocal` (store.ts:289) admits it — the server never trusts an uploaded `checkpoint`/`world`
   field, only what full replay reproduces.
 - **Source-of-truth boundary — this is a local-vs-remote (runtime mode) split, not a
-  guest-vs-authenticated (identity) split; don't conflate the two.** Only **web-local mode**
-  (`VITE_TBH_LOCAL=1`) has zero `/api` traffic — there, and only there, the browser IndexedDB tier
-  is the sole source of truth. In **web-remote mode (the default)**, even a brand-new guest talks
-  to the server immediately: `RemoteGame.open()` calls `/auth/session` then `/player/connect`
-  (remote.ts:102-106) before any gameplay, and the server SQLite tier is authoritative from the
-  first shift — there is no "pre-auth local phase" inside remote mode.
+  guest-vs-authenticated (identity) split; don't conflate the two.** In **web-local mode**
+  (`VITE_TBH_LOCAL=1`), the browser IndexedDB tier is the sole source of truth **for that player's
+  own gameplay/save** — no command, world-state, or save traffic hits `/api`. In **web-remote mode
+  (the default)**, even a brand-new guest talks to the server immediately for their own play:
+  `RemoteGame.open()` calls `/auth/session` then `/player/connect` (remote.ts:102-106) before any
+  gameplay, and the server SQLite tier is authoritative from the first shift — there is no
+  "pre-auth local phase" inside remote mode.
+  - **This is not "local mode has zero `/api` traffic" — that's too strong.** `App.tsx:452` mounts
+    `<Leaderboard>`/`<SeasonHistory>` inside the `seasons` sheet **unconditionally, in both modes**
+    (not gated by `remote`), and they `fetch('/api/leaderboard...')` (`Leaderboard.tsx:35`) /
+    `fetch('/api/seasons/history')` (`SeasonHistory.tsx:11`) as **public, unauthenticated,
+    cross-player reads** (`credentials: viewer ? 'same-origin' : 'omit'` — a local-mode player has
+    no `viewer`, so goes through anonymously) even from a local-mode session. The boundary is:
+    local mode never sends *this player's own gameplay* through `/api`; it can still make
+    read-only public requests for cross-player views that don't belong to any single save.
   - **Google sign-in within remote mode** is a separate mechanism from local-save import — don't
     conflate the two: `POST /auth/google` (http.ts:251) → `store.signInGoogle()` (store.ts:243)
     links/authenticates the *already-server-authoritative* remote session to a Google identity; no
