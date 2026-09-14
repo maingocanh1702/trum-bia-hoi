@@ -36,6 +36,11 @@ export interface Snapshot {
   dog: number;
 }
 
+/** Drop own properties whose value is `undefined` so JSON round-trips lose no keys. */
+function omitUndefined<T extends Record<string, unknown>>(obj: T): T {
+  return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined)) as T;
+}
+
 export function snapshot(game: Game): Snapshot {
   const w = game.world;
   const glasses: Record<Glass['state'], number> = { clean: 0, in_use: 0, dirty: 0, washing: 0 };
@@ -50,7 +55,7 @@ export function snapshot(game: Game): Snapshot {
     shift: w.shift === null ? null : {
       elapsed: Math.min(w.shift.closedAt ?? w.now, w.shift.endsAt) - w.shift.startedAt - w.shift.pausedMs,
       duration: w.shift.endsAt - w.shift.startedAt - w.shift.pausedMs,
-      weather: w.shift.weather, rush: w.shift.rush, stats: { ...w.shift.stats },
+      weather: w.shift.weather, rush: w.shift.rush, stats: omitUndefined({ ...w.shift.stats }),
     },
     tables: w.tables.map(t => ({
       id: t.id, state: t.state, level: t.level, capacity: t.capacity,
@@ -65,7 +70,7 @@ export function snapshot(game: Game): Snapshot {
     equipment: { ...w.equipment },
     economy: { coins: w.coins, reputation: w.reputation, seasonEarned: w.seasonEarned, lifetimeEarned: w.lifetimeEarned, serves: w.serves.length },
     location: w.location,
-    lease: w.lease ? { ...w.lease } : null,
+    lease: w.lease ? omitUndefined({ ...w.lease }) : null,
     staminaMs: w.staminaMs,
     completedShifts: w.completedShifts,
     quests: w.daily ? { claimed: w.daily.rows.filter(r => r.claimed).length, total: w.daily.rows.length, bonusClaimed: w.daily.bonusClaimed } : null,

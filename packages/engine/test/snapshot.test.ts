@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Game, config, loadConfig, snapshot, type Command, type Economy, type DailyQuests, type Attendance } from '../src';
+import { Game, config, loadConfig, snapshot, type Command, type Economy, type DailyQuests, type Attendance, type Glass } from '../src';
 
 function setup(patch = (_: Economy) => {}) {
   const raw = structuredClone(config.raw);
@@ -77,8 +77,10 @@ test('snapshot() returns a schema:1, JSON-safe projection of every documented fi
 
   assert.deepEqual(s.queue, g.world.queue.map(q => ({ id: q.id, size: q.customers.length, rounds: q.rounds, arrivedAt: q.arrivedAt })));
   assert.ok(s.queue.length > 0);
-  assert.deepEqual(Object.keys(s.glasses).sort(), ['clean', 'dirty', 'in_use', 'washing']);
-  assert.equal(Object.values(s.glasses).reduce((a, b) => a + b, 0), g.world.glasses.length);
+  const expectedGlasses: Record<Glass['state'], number> = { clean: 0, in_use: 0, dirty: 0, washing: 0 };
+  for (const glass of g.world.glasses) expectedGlasses[glass.state]++;
+  assert.deepEqual(s.glasses, expectedGlasses);
+  assert.ok(Object.values(s.glasses).some(n => n > 0));
 
   if (g.world.beer) assert.deepEqual(s.keg, { ready: g.world.beer.ready, batch: g.world.beer.batch ? { ...g.world.beer.batch } : null });
   else assert.equal(s.keg, null);
