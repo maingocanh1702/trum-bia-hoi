@@ -1,6 +1,6 @@
 # 🚀 PROMPT — Claude builds Trùm Bia Hơi, Codex reviews (v1.0)
 
-> **Cách dùng (chủ dự án):** mở Claude Code tại gốc repo (`master` đã có đủ docs 08/09), dán nguyên **Phần 1**. Claude tự quyết quy trình build; sau mỗi slice Claude tự gọi **Codex review** bằng `codex exec review` với instruction ở **Phần 2** (file `docs/prompts/codex-review.md`, pipe qua stdin). Không có Level 3, không scope gate, không worktree bắt buộc — chỉ có **ràng buộc kết quả** + **review độc lập**.
+> **Cách dùng (chủ dự án):** mở Claude Code tại gốc repo (`main` đã có đủ docs 08/09), dán nguyên **Phần 1**. Claude tự quyết quy trình build; sau mỗi slice Claude tự gọi **Codex review** bằng `codex exec review` với instruction ở **Phần 2** (file `docs/prompts/codex-review.md`, pipe qua stdin). Không có Level 3, không scope gate, không worktree bắt buộc — chỉ có **ràng buộc kết quả** + **review độc lập**.
 > Ngày: 2026-09-08. Nguồn ràng buộc: `00-HANDOFF` v1.14 §4/§6, `11-PROMPT-PACK` v1.14 Phần B. Prompt viết tiếng Anh để dán thẳng.
 
 ---
@@ -63,7 +63,7 @@ BINDING (outcomes — everything not listed here is your call)
     enabled=false`), content bank in docs/content/ (schema only). Lottery stays off
     (`lottery.legalGate`). Defaults for open decisions are in 00-HANDOFF §4.5 — use them, don't wait.
 12. Code lives here as npm workspaces: packages/engine (pure), apps/web, apps/server (from M4).
-    Never under prototype/. Keep master buildable.
+    Never under prototype/. Keep main buildable.
 
 YOU DECIDE, FREELY
 Architecture inside those workspaces, libraries (Pixi.js + React is a suggestion), rendering,
@@ -77,7 +77,7 @@ For every slice you consider done:
      in 2.0–3.0 whenever economy/sim code changed · smoke on 390×844 and 1280×720 · no console
      errors, no missing assets (placeholders count).
   b. Codex review (independent, adversarial):
-       git add -A && codex exec review --base master - < docs/prompts/codex-review.md
+       git add -A && codex exec review --base main - < docs/prompts/codex-review.md
      (use --uncommitted instead of --base when reviewing before the first commit of a slice;
      use --commit <sha> to re-review a fix). The reviewer sees the diff plus the binding list
      above. Its verdict is CLEAN or a findings list with BLOCKER / MAJOR / MINOR.
@@ -167,7 +167,7 @@ SUMMARY: <one line: what this slice does and the biggest risk left>
 
 ## Ghi chú vận hành (VN)
 
-- Claude Code chạy ở gốc repo, nhánh `master` (đã ff-merge docs pack). Codex CLI ≥ 0.152 có `codex exec review`; nếu muốn model khác: `codex exec review -m <model> --base master - < docs/prompts/codex-review.md`.
+- Claude Code chạy ở gốc repo, nhánh `main` (đã ff-merge docs pack). Codex CLI ≥ 0.152 có `codex exec review`; nếu muốn model khác: `codex exec review -m <model> --base main - < docs/prompts/codex-review.md`.
 - Review là **ràng buộc kết quả** (phải CLEAN hoặc xử lý hết BLOCKER/MAJOR), không phải quy trình cầm tay — Claude tự quyết khi nào một "slice" kết thúc.
 - Designer chạy song song với Phần A của `11-PROMPT-PACK`; asset vào qua `assets/manifest.json`, Claude thay placeholder dần.
 - Muốn dừng/đổi hướng: sửa docs (GDD/JSON/HANDOFF) rồi bảo Claude "re-read docs, continue" — không sửa prompt này giữa chừng.
