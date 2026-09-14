@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Game, config, loadConfig, snapshot, type Command, type Economy } from '../src';
+import { Game, config, loadConfig, snapshot, type Command, type Economy, type DailyQuests, type Attendance } from '../src';
 
 function setup(patch = (_: Economy) => {}) {
   const raw = structuredClone(config.raw);
@@ -21,8 +21,29 @@ test('snapshot() returns a schema:1, JSON-safe projection of every documented fi
   const g = setup();
   const table = withReadyOrder(g);
   const order = table.order!;
+  const group = table.group!;
   const result = send(g, { type: 'serve', tableId: table.id, orderId: order.id });
   assert.ok(result.ok);
+
+  // Populate the field groups a fresh/default world leaves empty, so their projections are
+  // checked against real, non-trivial values instead of only against their absent/zero case.
+  g.world.queue.push({ id: 'queue-test-group', customers: [{ id: 'queue-cust-1', type: 'thuong', patienceMs: 30000, enjoyMs: 20000 }], rounds: 2, arrivedAt: g.world.now });
+  g.world.lease = { id: 'lease-test', locationId: g.world.location, fallback: 'via_he', startedAt: g.world.now, expiresAt: g.world.now + 100000, rent: 500, deposit: 1000, forfeitOnEarlyLeave: true };
+  g.world.signStyle = 'neon';
+  g.world.flyers = 3;
+  g.world.dogLevel = 2;
+  const dailyRows = [
+    { id: 'quest-1', kind: 'test_kind_a', bucket: 'b0', target: 5, progress: 5, coin: 10, reputation: 2, claimed: true },
+    { id: 'quest-2', kind: 'test_kind_b', bucket: 'b0', target: 3, progress: 1, coin: 5, reputation: 1, claimed: false },
+  ];
+  const daily: DailyQuests = {
+    day: 'test-day', tier: 1, seed: 'test-seed', expiresAt: g.world.now + 86400000, rows: dailyRows,
+    bonusClaimed: true, recipients: [], lossFreeSince: null, lossFreeServed: false,
+    vipShift: null, vipServed: false, vipLost: false, rushSlot: null, rushShift: null, rushServed: false,
+  };
+  g.world.daily = daily;
+  const attendance: Attendance = { cycleDay: 3, lastActiveDateKey: 'test-day', lastClaimDateKey: 'test-prev-day', expiresAt: g.world.now + 86400000, claimedDays: [1, 2] };
+  g.world.attendance = attendance;
 
   const s = snapshot(g);
   assert.equal(s.schema, 1);
@@ -46,9 +67,16 @@ test('snapshot() returns a schema:1, JSON-safe projection of every documented fi
   assert.equal(servedRow.state, table.state);
   assert.equal(servedRow.level, table.level);
   assert.equal(servedRow.capacity, table.capacity);
-  assert.ok(typeof servedRow.itemsReady === 'number' && typeof servedRow.itemsTotal === 'number');
+  assert.equal(servedRow.groupId, group.id);
+  assert.equal(servedRow.orderId, order.id);
+  assert.equal(servedRow.orderState, 'served');
+  assert.equal(servedRow.itemsReady, order.items.filter(i => i.state === 'ready').length);
+  assert.equal(servedRow.itemsTotal, order.items.length);
+  assert.equal(servedRow.itemsReady, 0);
+  assert.ok(servedRow.itemsTotal > 0);
 
-  assert.equal(s.queue.length, g.world.queue.length);
+  assert.deepEqual(s.queue, g.world.queue.map(q => ({ id: q.id, size: q.customers.length, rounds: q.rounds, arrivedAt: q.arrivedAt })));
+  assert.ok(s.queue.length > 0);
   assert.deepEqual(Object.keys(s.glasses).sort(), ['clean', 'dirty', 'in_use', 'washing']);
   assert.equal(Object.values(s.glasses).reduce((a, b) => a + b, 0), g.world.glasses.length);
 
@@ -62,12 +90,38 @@ test('snapshot() returns a schema:1, JSON-safe projection of every documented fi
     lifetimeEarned: g.world.lifetimeEarned, serves: g.world.serves.length,
   });
   assert.equal(s.location, g.world.location);
-  assert.equal(s.lease, g.world.lease ? s.lease : null);
+  assert.deepEqual(s.lease, { ...g.world.lease });
   assert.equal(s.staminaMs, g.world.staminaMs);
   assert.equal(s.completedShifts, g.world.completedShifts);
-  assert.equal(s.signboard, g.world.signStyle ?? null);
-  assert.equal(s.flyer, g.world.flyers ?? 0);
-  assert.equal(s.dog, g.world.dogLevel);
+  assert.equal(s.signboard, 'neon');
+  assert.equal(s.flyer, 3);
+  assert.equal(s.dog, 2);
+  assert.deepEqual(s.quests, { claimed: 1, total: 2, bonusClaimed: true });
+  assert.deepEqual(s.attendance, { cycleDay: 3, claimedDays: 2 });
+});
+
+test('snapshot(game) shift timing excludes paused/hidden wall time and freezes once the shift closes', () => {
+  const g = setup();
+  assert.ok(send(g, { type: 'startShift' }).ok);
+  g.advance(g.world.now + 1000);
+  assert.ok(send(g, { type: 'activity', active: false }).ok);
+  g.advance(g.world.now + 60000);
+  assert.ok(send(g, { type: 'activity', active: true }).ok);
+
+  assert.equal(g.world.shift!.pausedMs, 60000);
+  let s = snapshot(g);
+  assert.equal(s.shift!.elapsed, 1000);
+  assert.equal(s.shift!.duration, g.config.values.shift.durationMs);
+
+  assert.ok(send(g, { type: 'endShift' }).ok);
+  while (g.world.phase !== 'resting') g.advance(g.world.now + 1000);
+  const closedElapsed = snapshot(g).shift!.elapsed;
+  assert.ok(g.world.shift!.closedAt !== null);
+  g.advance(g.world.now + 5000);
+
+  s = snapshot(g);
+  assert.equal(s.shift!.elapsed, closedElapsed);
+  assert.equal(s.shift!.duration, g.config.values.shift.durationMs);
 });
 
 test('snapshot(game) is pure JSON and does not mutate game.world', () => {

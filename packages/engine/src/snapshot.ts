@@ -48,7 +48,8 @@ export function snapshot(game: Game): Snapshot {
     seed: game.seed,
     logLength: game.log.length,
     shift: w.shift === null ? null : {
-      elapsed: w.now - w.shift.startedAt, duration: w.shift.endsAt - w.shift.startedAt,
+      elapsed: Math.min(w.shift.closedAt ?? w.now, w.shift.endsAt) - w.shift.startedAt - w.shift.pausedMs,
+      duration: w.shift.endsAt - w.shift.startedAt - w.shift.pausedMs,
       weather: w.shift.weather, rush: w.shift.rush, stats: { ...w.shift.stats },
     },
     tables: w.tables.map(t => ({
