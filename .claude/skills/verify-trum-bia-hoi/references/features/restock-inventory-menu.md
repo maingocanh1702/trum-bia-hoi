@@ -39,6 +39,8 @@ word.
 - DOM/aria: button `'Nhập hàng'` opens the restock/management sheet (`pause.spec.ts`); stock rows
   `.stock-row`, buy button pattern `` /^Mua bom \+1 ·/ ``; the sheet shows `.sheet-pause` containing
   `'Tạm dừng'` (paused indicator) whenever `world.paused` is true.
+- `emergencyPack` → `emergency_pack_claimed` — F15-deferred, dev-preview only
+  (`VITE_TBH_RISK_PREVIEW=1`); no verification procedure until F15 is un-deferred.
 
 ## How to reach it
 
@@ -170,8 +172,11 @@ word.
   counters and `serveValueStats([])`'s `mean:null`/`avgTicket:null`/`kValue:null` (already proved by
   [economy-k-ledger](economy-k-ledger.md); `menu.spec.ts`'s "empty current... reports" test is the UI
   side).
-- **persistence** — `menu.test.ts`'s legacy-replay test (rules13 histories); every restock/pause
-  command round-trips through `decodeSave(encodeSave(g))` in the cited engine tests.
+- **persistence** — `menu.test.ts`'s legacy-replay test (rules13 histories). **Corrected claim**: all
+  6 named `menu.test.ts` citations and all 3 `menu-pause.test.ts` citations round-trip
+  `decodeSave(encodeSave(g))`, but `game.test.ts:141` (the malformed-`restock`-rejection test) does
+  not — it's a rejected-command/no-mutation check, not a successful restock/pause round-trip, so
+  "every cited test" was too strong as written.
 - **capacity** — `stockCap` per-dish ceiling proved for `'bia'` only (see Uncovered for the gap on the
   other five dishes).
 - **duplicate/idempotent** — `menu-pause.test.ts`'s repeated-pause test (`'repeated pause leaves the

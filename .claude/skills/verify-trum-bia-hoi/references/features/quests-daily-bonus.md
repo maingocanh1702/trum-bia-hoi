@@ -115,6 +115,14 @@ are `shift_3` and `gift_3` (below), and life-path progress is its own unrelated 
   locale switch), `'open daily sheet expires an unclaimed reward at VN midnight'`, and a ×2-threshold
   loop: `` `onboarding reveals both quest entries only after ${threshold} finalized shifts` `` (the
   quest sheet is gated behind an onboarding shift-count threshold, not shown from game start).
+- `packages/engine/test/game.test.ts:278` — `'hidden time freezes pending orders and freshness while
+  preserving real calendar time and replay'` — not primarily a quest test, but directly asserts
+  `quest_generated`'s count on a real calendar-day reseed (`calendarEvents.length ===
+  quests.daily.count`), the file's only event-name-level proof of generation.
+- `packages/engine/test/disconnection.test.ts:190` — `'returning after a thousand absent days skips
+  missed quest sets and opens only the current day'` — the absent-day suppression-then-regenerate
+  proof: zero `quest_generated` growth during a 1000-day offline gap, exactly one batch's worth
+  (`quests.daily.count`) on return.
 
 ## Verification procedure
 
@@ -126,17 +134,26 @@ are `shift_3` and `gift_3` (below), and life-path progress is its own unrelated 
 
 ## Uncovered paths
 
-- **`quest_generated` and `quest_progressed` are never asserted by event name anywhere** (grep-
-  confirmed zero hits in both `quests.test.ts` and `quests.spec.ts`). All progress/generation proof is
-  inferred from `DailyQuest.progress`/`.rows.length` field reads, never from the event stream itself.
+- **Corrected claim**: `quest_generated` IS asserted by event name — just not inside this file's own
+  `quests.test.ts`/`quests.spec.ts` citations, which is why the earlier grep (scoped to those two
+  files only) came back empty. `packages/engine/test/game.test.ts:278` (inside `'hidden time freezes
+  pending orders and freshness while preserving real calendar time and replay'`) filters
+  `world.events` for `quest_generated` and asserts the count equals `quests.daily.count` (the
+  reseed-count proof). `packages/engine/test/disconnection.test.ts:190` (`'returning after a thousand
+  absent days skips missed quest sets and opens only the current day'`) asserts zero `quest_generated`
+  growth during a 1000-day offline gap (`w.events.length` unchanged) and exactly one batch's worth
+  (`quests.daily.count`) on return — the absent-day suppression-then-regenerate proof. `quest_progressed`
+  remains genuinely unasserted by event name anywhere (grep-confirmed across the same broader set).
 - **`gift_3`'s only real trigger is a hand-built `'gift_sent'` event in the test file itself** — no
   command, UI action, or other engine code path currently produces this event in real play (see How
   to reach it). This isn't a bug, it's an intentionally deferred producer (per the source comment),
   but it means the whole gift-quest *arrival* path is unverifiable until that producer exists —
   today's coverage starts from a synthetic event, not a real trusted-transfer flow.
-- **No test asserts `quest_generated`'s per-row payload on a fresh reseed** (kind/target/day/tier
-  correctness at generation time) — `'daily rows use independent date/tier seeds...'` asserts the
-  *shape* of `planDailyQuests`'s pure return value directly, not the emitted event.
+- **Narrowed**: `quest_generated`'s *count* is now proven (see above), but no test asserts its
+  per-row *payload* on a fresh reseed (`kind`/`target`/`day`/`tier` correctness read from the emitted
+  event itself) — `'daily rows use independent date/tier seeds...'` asserts the *shape* of
+  `planDailyQuests`'s pure return value directly, and `game.test.ts:278` only checks `data.day` plus
+  the count, not `kind`/`target`/`tier` per event.
 - **The five-of-five bonus's own UI is not exercised by `quests.spec.ts`** — the spec's `.quest-bonus
   button` is asserted only as `toBeDisabled()` after a single claim (4 of 5 rows still needed); no web
   spec drives a full 5-row completion and clicks the bonus button.

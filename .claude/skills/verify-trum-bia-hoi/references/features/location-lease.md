@@ -126,6 +126,11 @@ revert to) has no spec counterpart at all. `'broken'` never existed in code.
 - **`Locations.tsx`'s DOM/aria selectors are not documented here** — the web spec's exact button
   names/aria labels were not enumerated in this pass; open `apps/web/src/Locations.tsx` before
   relying on a specific selector.
+- **Two of the 12 cited tests never call the file's `replay()` helper**: the deferred-refund test
+  (`'an overflowing refund remains owed after expiry...'`, `locations.test.ts:98`) and `'malformed
+  identities, unsafe lease arithmetic and unknown command authorities cannot create contracts'` — the
+  former directly mutates and inspects `g.world.coins` in-memory, the latter only asserts rejections.
+  Lease persistence for the deferred-refund-then-settle sequence specifically is unverified by replay.
 
 ## Variants
 
@@ -137,13 +142,15 @@ revert to) has no spec counterpart at all. `'broken'` never existed in code.
 - **empty** — `leaveLocationQuote` on no active lease returns `{leaseId:null, refund:0, reason:
   'leaseChanged'}` — the same reason code as a stale-leaseId mismatch (an overload worth knowing
   when debugging a report of this reason).
-- **persistence** — **corrected claim**: only 3 of the 12 cited `locations.test.ts` tests explicitly
-  call `decodeSave(encodeSave(g))` — `'calendar expiry is identical under fine/coarse ticks...'`,
-  `'unpaused expiry during service uses the same calendar deadline...'`, and `'the captured actual
-  rules21 save replays unchanged...'` (the dedicated legacy-replay proof). The other 9, including the
-  deferred-refund test (`locations.test.ts:98`, which directly mutates `g.world.coins` and checks
-  values in-memory, never replaying), do not round-trip — treat lease persistence beyond those three
-  named tests as unverified by this pass, not implicitly covered by "every cited test."
+- **persistence** — **re-corrected claim** (counted by the file's own `replay()` helper —
+  `locations.test.ts:21`, `const replay = (g: Game) => assert.deepEqual(decodeSave(encodeSave(g))
+  .world, g.world)` — not by a literal grep for `decodeSave`/`encodeSave` text, which misses calls to
+  the wrapper): **10 of the 12** cited tests call `replay(...)`, including `'the captured actual
+  rules21 save replays unchanged...'` (the dedicated legacy-replay proof). Only 2 do not: the
+  deferred-refund test (`locations.test.ts:98`, `'an overflowing refund remains owed after
+  expiry...'`, which directly mutates `g.world.coins` and checks values in-memory) and `'malformed
+  identities, unsafe lease arithmetic and unknown command authorities cannot create contracts'` (a
+  pure rejection/validation test) — see Uncovered paths for those two.
 - **capacity** — not applicable (leases aren't stackable; renting replaces, it doesn't add).
 - **duplicate/idempotent** — the stale-`leaseId`/stale-`maxCost` guard on `rentLocation` is the
   idempotency-adjacent protection here (a second identical command with an outdated quote fails

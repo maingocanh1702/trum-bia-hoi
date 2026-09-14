@@ -184,11 +184,21 @@ same `quests.ts` file — cross-link, not restated here.
   asserted).
 - **empty** — a fresh `World` has `attendance: undefined` until first observed; `lifePathStatus` on a
   brand-new game returns `level: 0` with every row `reached:false`.
-- **persistence** — **corrected claim**: round-trip coverage varies sharply by file, not "every cited
-  test" — `well-rested.test.ts` 8/11, `attendance.test.ts` 6/8, but `progression.test.ts` only 2/7 (most
-  of its cases are pure config-validation/quote checks with no state to persist). The real v5/v12/v13/v2
-  legacy-save tests specifically pin cross-version stamina/attendance/life-path field survival; don't
-  assume every other cited test — especially in `progression.test.ts` — also round-trips.
+- **persistence** — **re-corrected claim**: counted by actual `decodeSave(` calls, not by grepping
+  `decodeSave|encodeSave` together — a bare `encodeSave()` used alone (no decode) is a byte-string
+  equality check for "nothing mutated," not replay/round-trip proof, and inflated the earlier count.
+  `well-rested.test.ts` is **6/11**, not 8/11: `'each customer receives the rounded combined-service
+  bonus...'`, `'partial and exhausted daily caps clamp...'`, `'the first grant stays on its opening
+  day...'`, `'same-day repeat rests do not grant twice...'`, `'hidden time preserves the remaining
+  bonus through replay...'` (the one test that actually keeps playing on the decoded object
+  afterward, not just an equality check), and `'the real pre-bonus v2 save preserves amounts...'`
+  (loads a real legacy fixture). The two excluded (`'rest must be strictly longer than six
+  hours...'`, `'modern config rejects overflowing service bonuses...'`) only call bare `encodeSave()`
+  for a before/after string-equality check, never `decodeSave`. `attendance.test.ts` (6/8) and
+  `progression.test.ts` (2/7) were re-verified under the same stricter rule and are unchanged — most
+  of `progression.test.ts`'s cases are pure config-validation/quote checks with no state to persist.
+  The real v5/v12/v13/v2 legacy-save tests specifically pin cross-version stamina/attendance/life-path
+  field survival; don't assume every other cited test also round-trips.
 - **capacity** — `loginTrackRepBase.length` bounds the attendance cycle (wraps at 7); `lifePath[]`
   array length bounds claimable levels.
 - **duplicate/idempotent** — `attendance.test.ts`'s claimed-state check (`'Đã nhận hôm nay'` disabled);

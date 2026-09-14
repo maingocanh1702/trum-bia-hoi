@@ -150,11 +150,14 @@ each test below is cited for its *refill/capacity* claim, not restated for its f
   stock is genuinely **stock-limited** (`2 < 5`), not a capacity-vs-stock coincidence. Don't reuse this
   file's current-config `kegBatch`/`kegStorage`/`refillMs` arrays (Observable contract above) to reason
   about `production.test.ts`'s own fixture numbers — they're two different config generations.
-- **persistence** — **corrected claim**: 6 of the 8 cited engine tests round-trip
-  `decodeSave(encodeSave(g))` (all 4 `production.test.ts` citations, `live-upgrades.test.ts`,
-  `config-pinning.test.ts` — the latter's save/reopen case is the direct cross-config persistence
-  proof for batch timing); `game.test.ts`'s `restock` full-mode test and `economy2.test.ts`'s
-  new-shift-fill test do not round-trip — treat batch/restock persistence beyond the 6 named tests as
+- **persistence** — **re-corrected claim**: `economy2.test.ts` wraps `decodeSave(encodeSave(g))` in a
+  file-level `replay()` helper (`economy2.test.ts:12`) — a literal grep for `decodeSave`/`encodeSave`
+  text misses calls to it, which is why the earlier pass wrongly excluded it. 7 of the 8 cited engine
+  tests round-trip: all 4 `production.test.ts` citations, `live-upgrades.test.ts`,
+  `config-pinning.test.ts` (the direct cross-config persistence proof for batch timing), and
+  `economy2.test.ts`'s new-shift-fill test (`'a new shift fills real reserve...'` calls `replay(g)`).
+  Only `game.test.ts`'s `restock` full-mode test does not round-trip (`game.test.ts` defines no such
+  helper, so a direct grep is reliable there) — treat restock-command persistence specifically as
   unverified by this pass.
 - **capacity** — the `kegStorage`/`kegBatch` per-level arrays; the multi-batch assembly test's running
   conservation invariant; the forty-serving max-level test.
