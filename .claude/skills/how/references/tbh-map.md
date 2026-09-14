@@ -129,16 +129,31 @@ same way this file itself was built.
   exactly once, only during migration/corruption-recovery — it is not rolling autosave history.
 - `apps/server/src/store.ts` — `class GameStore` (store.ts:42), SQLite (`node:sqlite`), append-only
   `commands`/`events` tables enforced by `RAISE(ABORT,'store:appendOnly')` triggers. `hydrate()`
-  (store.ts:501) prefers a hash-chained, digest-checked `engine_checkpoints` row (restored via
-  `Game.restoreTrusted`, **no replay** — spied on directly in `apps/server/test/checkpoint.test.ts`)
-  and only falls back to full `decodeSave` replay when no valid checkpoint exists.
+  (store.ts:500-528) branches on whether an `engine_checkpoints` row **exists at all**, not on
+  whether it's valid:
+  - **Row exists** (store.ts:517) — must be hash/digest/metadata-consistent with the live
+    `commands`/`events` tables (store.ts:518-521) or it **throws `store:checkpointMismatch`**
+    (store.ts:519, 521, 523) — a corrupt/tampered checkpoint fails closed, it does **not** fall
+    back to replay. Restored via `Game.restoreTrusted`, **no replay** — spied on directly in
+    `apps/server/test/checkpoint.test.ts:18` ("cold server reads and retries restore verified
+    checkpoints without replay...") and the mismatch path is pinned by
+    `checkpoint.test.ts:37` ("checkpoint metadata, projection, origin, raw history and registry
+    order must all match before trusted restore").
+  - **Row absent** (store.ts:529 onward) — only then does `hydrate()` fall back to full
+    `decodeSave` replay.
   `apps/server/src/local-archive.ts` reuses the same `decodeSave` core in a worker thread
   (`replayLocalArchive`/`validateLocalArchive`) to revalidate an uploaded local save before
   `claimLocal` (store.ts:289) admits it — the server never trusts an uploaded `checkpoint`/`world`
   field, only what full replay reproduces.
-- **Source-of-truth boundary**: guest/pre-auth play — the browser IndexedDB tier is the sole source
-  of truth, nothing hits `/api/*`. After a player signs in and `claimLocal` succeeds, the server
-  SQLite tier becomes authoritative for that `playerId`.
+- **Source-of-truth boundary — this is a local-vs-remote (runtime mode) split, not a
+  guest-vs-authenticated (identity) split; don't conflate the two.** Only **web-local mode**
+  (`VITE_TBH_LOCAL=1`) has zero `/api` traffic — there, and only there, the browser IndexedDB tier
+  is the sole source of truth. In **web-remote mode (the default)**, even a brand-new guest talks
+  to the server immediately: `RemoteGame.open()` calls `/auth/session` then `/player/connect`
+  (remote.ts:102-106) before any gameplay, and the server SQLite tier is authoritative from the
+  first shift — there is no "pre-auth local phase" inside remote mode. Signing in with Google later
+  (`claimLocal`, store.ts:289) only matters for a player who *started* in local mode and is
+  importing that local-only history into the server for the first time.
 - Proof: `packages/engine/test/checkpoint.test.ts` (engine-level checkpoint/restoreTrusted, no I/O)
   · `apps/server/test/checkpoint.test.ts` (SQLite `engine_checkpoints` caching/fault-injection —
   **a different layer than the engine-level file of the same name**) · `apps/server/test/
