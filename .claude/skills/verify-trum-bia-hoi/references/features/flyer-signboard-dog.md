@@ -179,8 +179,10 @@ scaffolding, not a bug or an oversight to "finish" incidentally while touching p
 - **empty** — `flyerQuote`'s `'flyerEmpty'` (stock `=== 0` while trying to activate) is
   engine-tested; a `dogLevel === 0` "no dog" starting state is the default and is asserted by the
   pre-dog-save replay test.
-- **persistence** — every cited engine test round-trips `decodeSave(encodeSave(g))`; the pre-dog and
-  rules10-replay tests are dedicated legacy-save proofs for this feature area specifically.
+- **persistence** — **corrected claim**: round-trip coverage is roughly half, not "every cited test" —
+  `flyer.test.ts` 4/8, `signboard.test.ts` 4/10, `dog-purchase.test.ts` 3/5. The pre-dog and
+  rules10-replay tests are the dedicated legacy-save proofs for this feature area; the other passing
+  tests mostly assert command results/event data in-memory without a save round-trip.
 - **capacity** — `unlocks.flyer.stockCap` (`5`) and `perShift` (`1`) are both engine-tested via the
   intake-rejection and stock-full paths.
 - **duplicate/idempotent** — `dog-purchase.test.ts`'s "no level can be skipped or bought twice" test;

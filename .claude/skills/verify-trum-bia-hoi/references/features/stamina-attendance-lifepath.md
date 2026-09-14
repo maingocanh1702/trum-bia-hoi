@@ -184,8 +184,11 @@ same `quests.ts` file — cross-link, not restated here.
   asserted).
 - **empty** — a fresh `World` has `attendance: undefined` until first observed; `lifePathStatus` on a
   brand-new game returns `level: 0` with every row `reached:false`.
-- **persistence** — every cited engine test round-trips `decodeSave(encodeSave(g))`; the real v5/v12/
-  v13/v2 legacy-save tests specifically pin cross-version stamina/attendance/life-path field survival.
+- **persistence** — **corrected claim**: round-trip coverage varies sharply by file, not "every cited
+  test" — `well-rested.test.ts` 8/11, `attendance.test.ts` 6/8, but `progression.test.ts` only 2/7 (most
+  of its cases are pure config-validation/quote checks with no state to persist). The real v5/v12/v13/v2
+  legacy-save tests specifically pin cross-version stamina/attendance/life-path field survival; don't
+  assume every other cited test — especially in `progression.test.ts` — also round-trips.
 - **capacity** — `loginTrackRepBase.length` bounds the attendance cycle (wraps at 7); `lifePath[]`
   array length bounds claimable levels.
 - **duplicate/idempotent** — `attendance.test.ts`'s claimed-state check (`'Đã nhận hôm nay'` disabled);

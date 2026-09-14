@@ -112,11 +112,14 @@ each test below is cited for its *refill/capacity* claim, not restated for its f
 - **`restock(dish:'bia')` failing on insufficient coins is never asserted** — `restockQuote`'s
   `w.coins >= cost` branch (`rules.ts:39`) has no dedicated test; only the missing-quantity-exceeded
   refusal is proven (`game.test.ts:112`, a same-file follow-up call, not a coins-short case).
-- **No engine test drives a full batch cycle at an intermediate keg level (2, 3 or 4).** The direct
-  batch-cycle tests use level 1 (`production.test.ts`'s first three cases, all on a fresh `game()`)
-  or level 5 (`live-upgrades.test.ts`, `production.test.ts`'s forty-serving test); only
-  `config-pinning.test.ts`'s timing assertion reads `equipment.keg - 1` generically without pinning
-  which level the fixture save is actually at.
+- **Corrected claim**: level 2 IS exercised — `production.test.ts`'s partial-raw-stock test
+  (`:49-64`) upgrades keg to level 2 mid-shift, then resumes a paused batch and drives it to
+  completion, directly asserting `refillMs[1]`-timed completion and the resulting `beer.ready`
+  count. **No engine test drives a full batch cycle at level 3 or 4 specifically** — the other direct
+  batch-cycle tests use level 1 (`production.test.ts`'s first three cases, fresh `game()`) or level 5
+  (`live-upgrades.test.ts`, `production.test.ts`'s forty-serving test); `config-pinning.test.ts`'s
+  timing assertion reads `equipment.keg - 1` generically without pinning which level the fixture save
+  is actually at.
 - **Every batch-cycle proof above runs under the modern/batch economy only** — no test in this file's
   citation set exercises `refillEnabled:false` (legacy direct-pour) through an actual restock/upgrade
   cycle; the mode split itself is documented (not tested) in glass-beer-flat.md's Gotchas.
@@ -147,9 +150,12 @@ each test below is cited for its *refill/capacity* claim, not restated for its f
   stock is genuinely **stock-limited** (`2 < 5`), not a capacity-vs-stock coincidence. Don't reuse this
   file's current-config `kegBatch`/`kegStorage`/`refillMs` arrays (Observable contract above) to reason
   about `production.test.ts`'s own fixture numbers — they're two different config generations.
-- **persistence** — every cited engine test round-trips `decodeSave(encodeSave(g))`;
-  `config-pinning.test.ts`'s save/reopen case is the direct cross-config persistence proof for batch
-  timing.
+- **persistence** — **corrected claim**: 6 of the 8 cited engine tests round-trip
+  `decodeSave(encodeSave(g))` (all 4 `production.test.ts` citations, `live-upgrades.test.ts`,
+  `config-pinning.test.ts` — the latter's save/reopen case is the direct cross-config persistence
+  proof for batch timing); `game.test.ts`'s `restock` full-mode test and `economy2.test.ts`'s
+  new-shift-fill test do not round-trip — treat batch/restock persistence beyond the 6 named tests as
+  unverified by this pass.
 - **capacity** — the `kegStorage`/`kegBatch` per-level arrays; the multi-batch assembly test's running
   conservation invariant; the forty-serving max-level test.
 - **duplicate/idempotent** — not exercised specifically for `restock`/`upgrade(kind:'keg')` in this

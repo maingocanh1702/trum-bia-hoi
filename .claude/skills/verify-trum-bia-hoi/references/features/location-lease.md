@@ -137,8 +137,13 @@ revert to) has no spec counterpart at all. `'broken'` never existed in code.
 - **empty** — `leaveLocationQuote` on no active lease returns `{leaseId:null, refund:0, reason:
   'leaseChanged'}` — the same reason code as a stale-leaseId mismatch (an overload worth knowing
   when debugging a report of this reason).
-- **persistence** — `'the captured actual rules21 save replays unchanged...'`; every cited test
-  round-trips `decodeSave(encodeSave(g))` including `world.lease`/`world.location`.
+- **persistence** — **corrected claim**: only 3 of the 12 cited `locations.test.ts` tests explicitly
+  call `decodeSave(encodeSave(g))` — `'calendar expiry is identical under fine/coarse ticks...'`,
+  `'unpaused expiry during service uses the same calendar deadline...'`, and `'the captured actual
+  rules21 save replays unchanged...'` (the dedicated legacy-replay proof). The other 9, including the
+  deferred-refund test (`locations.test.ts:98`, which directly mutates `g.world.coins` and checks
+  values in-memory, never replaying), do not round-trip — treat lease persistence beyond those three
+  named tests as unverified by this pass, not implicitly covered by "every cited test."
 - **capacity** — not applicable (leases aren't stackable; renting replaces, it doesn't add).
 - **duplicate/idempotent** — the stale-`leaseId`/stale-`maxCost` guard on `rentLocation` is the
   idempotency-adjacent protection here (a second identical command with an outdated quote fails

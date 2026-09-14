@@ -179,7 +179,14 @@ independent shipper lane — because they share the same autonomous tick machine
   `'deliveryGone'` (see Uncovered paths).
 - **empty** — the default `delivery:null, nextDeliveryAt:null` state until `'phone'` is owned
   (`shipper.test.ts`'s v6 legacy-fixture test is the direct proof of staying inert).
-- **persistence** — `decodeSave(encodeSave(g))` round-trips are asserted in every cited engine test.
+- **persistence** — **corrected claim**: only 7 of the 15 cited engine tests explicitly round-trip
+  `decodeSave(encodeSave(g))` — both legacy-fixture-replay tests (`'genuine v9 hot and humid
+  histories...'`, `'actual v6 phone-owned history...'`) and 5 of `shipper.test.ts`'s later tests
+  (`'hidden delivery time...'`, `'table and delivery handoffs share...'`, `'stamina exhaustion stops
+  arrivals...'`, `'delivery uses the actual day cap...'`, plus the v6 one already listed). The
+  remaining tests (including `'delivery handoff requires every ingredient...'` and `'pending delivery
+  blocks paid kick-all...'`) assert command results and event data directly without a save round-trip
+  — don't assume persistence coverage from a test's mere presence in this list.
 - **capacity** — not directly applicable here: arrival-side capacity is
   [table-lifecycle](table-lifecycle.md)'s `queueSlots`; the delivery lane has an implicit
   capacity-of-one (`!w.delivery && ...` guards a second delivery from ever arriving while one is

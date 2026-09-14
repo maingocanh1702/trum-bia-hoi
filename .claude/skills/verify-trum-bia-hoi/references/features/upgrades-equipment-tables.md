@@ -82,8 +82,13 @@ finding — cross-linked, not restated), cooler's freshness formula is
   `empty.level` incremented), `{type:'buyTable'}` (`:25`, asserts `w.tables.length` incremented), and
   a **second** `upgradeTable` against a non-empty table (`:26`, asserts `reason === 'tableBusy'`) — all
   without ever closing the shift. `'live upgrade refusals describe real funds or maximum level and
-  cannot debit a customer shift'` (`:38+`) — drives every kind to `'maxLevel'`, and separately asserts
-  an unaffordable upgrade is refused (`'notEnoughCoins'`) with no coin debit.
+  cannot debit a customer shift'` (`:38+`) — **corrected claim**: this test drives only `'keg'` to
+  `'maxLevel'` (a `while` loop upgrading keg until `upgradeQuote(...).cost === null`), not every kind;
+  the `'notEnoughCoins'` refusal is checked only for `'kitchen'`. Washer/cooler/stall's own max-level
+  and insufficient-funds refusals are not separately asserted by this test (they share the exact same
+  `upgradeQuote`/`case 'upgrade':` code path per the "one command, five kinds" Gotcha above, so the
+  risk is structural, not per-kind, but no test names washer/cooler/stall specifically for either
+  refusal).
 - `apps/web/test/live-upgrades.spec.ts` — 1 templated test, 2 runtime executions: `` `kitchen can be
   bought in the current shift while its menu stays paused, sufficient funds=${!poor}` `` — the
   **kitchen** card's own UI purchase proof (menu stays paused across the purchase either way; the

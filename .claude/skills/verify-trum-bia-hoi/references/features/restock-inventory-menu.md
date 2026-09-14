@@ -63,8 +63,19 @@ word.
   title ref, is the exact source of this behaviour: patience/queue, prep/wash, glass freshness, shift,
   Giờ Vàng (rush) and delivery timers all freeze together; deliberate in-menu actions and
   attendance/VN-midnight keep using real calendar time).
-- Remote mode: identical `restock`/`activity` commands over `POST /player/command` — no shape
-  difference (same pattern as every other command in this repo).
+- Remote mode: `restock` is identical over `POST /player/command`, but **`activity` is NOT** — this is
+  a genuinely different mechanism per mode, not the usual "same pattern as every other command"
+  cross-link this file makes elsewhere. `App.tsx`'s generic `run(cmd)` dispatcher (`:165-166`) is never
+  used for `activity`; a separate `syncActivity()` (`:177-181`) calls `remote.setPresence(active,
+  paused)` in remote mode — a pure client-side state update, `remote.ts:228-230` — instead of sending
+  a command. `RemoteGame.command()` itself explicitly refuses `activity` outright
+  (`remote.ts:256`: `if (command.type === 'activity' || ...) return {ok:false, reason: this.state}`),
+  and if one somehow reached the server anyway, `store.ts:631` rejects it with `error:
+  'presenceManaged'`. The server instead learns `active`/`paused` from the **heartbeat** payload
+  (`POST /player/heartbeat`, `remote.ts:275`: `{clientId, beatSeq, active: this.active, paused:
+  this.paused}`), not from a command result. Driving this file's `activity.paused` recipe against a
+  remote-mode instance will not work — see [multi-system-journeys](multi-system-journeys.md)/
+  `apps/server/test/presence.test.ts` for the actual remote presence mechanism and its own tests.
 
 ## Existing proof
 

@@ -146,8 +146,9 @@ no separate "me" endpoint. "Shrine" (Bàn Thờ) data rides inside `GET /seasons
   bare `tsx` is not guaranteed on `PATH` outside an npm script).
 - `node --import tsx --test apps/server/test/leaderboard.test.ts apps/server/test/competition.test.ts`
   (or `npm test`).
-- `npx playwright test apps/web/test/seasons.spec.ts` (or `npm run test:e2e`) for the local-mode own-
-  season view.
+- `npx playwright test apps/web/test/seasons.spec.ts` (or `npm run test:e2e`) for the local-mode
+  guest-gating/rollover coverage (public board + hidden personal panels — see the correction in
+  Existing proof; this is not own-season `<Seasons>` coverage).
 - `npx playwright test --config playwright.remote.config.ts apps/web/remote-test/leaderboard.spec.ts`
   — **`testDir` for this config is `apps/web/remote-test`**, a different directory from the default
   config; passing this path against `playwright.config.ts` instead matches zero tests.

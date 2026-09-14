@@ -150,9 +150,11 @@ Two spec-vs-code naming drifts worth knowing before grepping for either mechanic
 - **empty** — `perShift:0` disables all rush events for the shift (`rush-schedule.test.ts`'s second
   test); `rush.none`'s zero-duration/no-op shape is the same "no active rush" baseline `rushStatus()`
   returns between scheduled slots.
-- **persistence** — every cited engine test round-trips `decodeSave(encodeSave(g))`; the v7→v8
-  legacy-replay test is the dedicated persistence/migration proof (no retroactive `rush_scheduled`
-  fabricated for pre-v8 saves).
+- **persistence** — **corrected claim**: 7 of the 8 cited `rush-schedule.test.ts` tests round-trip
+  `decodeSave(encodeSave(g))`; the exception is `'an impossible or unbounded schedule refuses opening
+  before any state or RNG mutation'` (a pre-mutation fail-closed check with no state to persist). The
+  v7→v8 legacy-replay test is the dedicated persistence/migration proof (no retroactive
+  `rush_scheduled` fabricated for pre-v8 saves).
 - **capacity** — `perShift` bounded at `10000` (`rush.ts:10`, a config-exempt allocation guard, not
   gameplay tuning); the minimum-fit check (`rush.ts:14-15`) is itself a capacity boundary against
   `shift.durationMs`.
