@@ -113,7 +113,7 @@ implemented**: `freshness.kegFreshnessEnabled`/`kegFreshnessMs`/`warnMs`/`staleC
 
 ## Verification procedure
 
-- `tsx --test packages/engine/test/production.test.ts packages/engine/test/game.test.ts
+- `node --import tsx --test packages/engine/test/production.test.ts packages/engine/test/game.test.ts
   packages/engine/test/economy2.test.ts packages/engine/test/kitchen.test.ts
   packages/engine/test/quests.test.ts` (or `npm test`).
 - `npx playwright test apps/web/test/production.spec.ts apps/web/test/game.spec.ts` (or `npm run

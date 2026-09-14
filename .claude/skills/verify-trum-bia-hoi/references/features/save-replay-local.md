@@ -110,9 +110,10 @@
 ## Verification procedure
 
 - `npm test` (= `tsx --test packages/engine/test/*.test.ts apps/server/test/*.test.ts`) runs both
-  `checkpoint.test.ts` files and `local-import.test.ts`. Targeted:
-  `tsx --test packages/engine/test/checkpoint.test.ts` /
-  `tsx --test apps/server/test/checkpoint.test.ts apps/server/test/local-import.test.ts`.
+  `checkpoint.test.ts` files and `local-import.test.ts`. Targeted (bare `tsx` is not guaranteed on
+  `PATH` outside an npm script — use `node --import tsx --test`):
+  `node --import tsx --test packages/engine/test/checkpoint.test.ts` /
+  `node --import tsx --test apps/server/test/checkpoint.test.ts apps/server/test/local-import.test.ts`.
 - `npm run test:e2e` (`playwright.config.ts`, `testDir: apps/web/test`) runs `browser-save.spec.ts`,
   `account-local.spec.ts`, `config-pinning.spec.ts`.
 - `npx playwright test --config playwright.remote.config.ts` / `--config playwright.admin.config.ts`

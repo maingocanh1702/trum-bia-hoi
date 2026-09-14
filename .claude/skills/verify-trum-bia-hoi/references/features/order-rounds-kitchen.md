@@ -104,14 +104,21 @@ station is defined by a batch duration + a batch size; the engine reads
   rush pricing, and only a remaining Chi Pheo occupies a finished mixed table'` (the second test
   hand-sets `table.state = 'occupied'` rather than driving the real chipheo-lingering branch — see
   Uncovered paths).
+- `packages/engine/test/menu.test.ts` — `'mâm average stays separate from per-customer k across
+  repeated rounds, with no cap or bonus credit in either value'` — drives real service via the
+  `playMenu()` helper (`packages/engine/test/fixtures/menu.ts`, repeated `advance()`+`serve()`) until
+  the *same customer* appears in two distinct `Order`s, i.e. the table actually cycled back through
+  `order()` a second time (`engine.ts:396`) — **this is the round-repeat mechanism exercised
+  end-to-end**, correcting the Uncovered-paths claim below.
 - `apps/web/test/kitchen.spec.ts`: `` `live kitchen shows real timers and routes to the whole table at ${viewport.width}×${viewport.height}` `` (×3 viewports), `'kitchen warning disappears after real expiry and never leaves a stale dish link'`, `'out-of-stock recipe opens the existing restock sheet'`, `'max-level kitchen shows all three configured burners'`, `'an unowned kitchen is purchasable mid-shift without showing a fake owned yard appliance'`.
 - `apps/web/test/production.spec.ts`: `` `stocked beer capacity and upgrade comparison update live, with frozen batch progress in menus at ${width}px` `` (×2 widths), `'legacy washing shows an indeterminate bar in the yard and paused equipment panel'`, `'reload immediately after a completed beer batch warns while its save is pending and preserves the batch'`, `'washer, cooler and counter upgrade cards show their own per-level draft sprites'`.
 
 ## Verification procedure
 
-- Engine: `tsx --test packages/engine/test/kitchen.test.ts packages/engine/test/production.test.ts
-  packages/engine/test/economy2.test.ts packages/engine/test/game.test.ts
-  packages/engine/test/manual-close.test.ts`.
+- Engine: `node --import tsx --test packages/engine/test/kitchen.test.ts
+  packages/engine/test/production.test.ts packages/engine/test/economy2.test.ts
+  packages/engine/test/game.test.ts packages/engine/test/manual-close.test.ts
+  packages/engine/test/menu.test.ts`.
 - UI: `npx playwright test apps/web/test/kitchen.spec.ts apps/web/test/production.spec.ts`.
 - `npm run sim:onboarding` / `sim:rush` / `sim:career:gate` exercise many repeat-order cycles
   incidentally (long randomized runs) but assert nothing about `roundsServed` or kitchen state
@@ -138,10 +145,11 @@ station is defined by a batch duration + a batch size; the engine reads
 - **`Result.reason === 'orderNotReady'`** (`engine.ts:862`) is never asserted by string anywhere
   (only the source line and the i18n key `error.orderNotReady` reference it). `kitchen.test.ts`'s
   partial-hot-food test triggers this path but only checks `result.ok === false`.
-- **No test drives a table through more than one full round via real gameplay** (spawn → order →
-  prepare → serve → consuming → reorder → order → prepare → serve again) and asserts on the second
-  round specifically. Multi-tick loops that do exist (e.g. `production.test.ts`'s 150-iteration loop)
-  cover beer-batch/tank conservation across time, not the round-count mechanic.
+- **The round-repeat mechanism itself IS exercised end-to-end** (`menu.test.ts`, above) — but
+  **`Table.roundsServed` and `Table.state` are never directly asserted** by that test or any other;
+  proof is inferred from the same customer appearing under two distinct `orderId`s in `world.serves`,
+  not from reading the field/state values themselves. A test asserting `table.roundsServed` and the
+  `waiting→consuming→waiting` state sequence directly is still missing.
 - The `'locked'` kitchen job state (`kitchen.ts:13`, fires when `!dishUnlocked`) appears structurally
   unreachable in normal play — `order()` only ever assigns already-unlocked dishes and kitchen-level
   unlocks are monotonic. No test exercises this branch; not exhaustively confirmed unreachable via
@@ -197,5 +205,10 @@ station is defined by a batch duration + a batch size; the engine reads
 the `consuming→waiting` reorder transition), [serve-outcomes](serve-outcomes.md) (`serve` is the sole
 consumer of "is the tray ready"), [glass-beer-flat](glass-beer-flat.md) (`beerStatus`, glass state
 machine, and `prepare()`'s `needsGlass` branch are the beer half of this same pipeline),
-[economy-k-ledger](economy-k-ledger.md) (every round is a fresh `Order`, so round count directly
-multiplies the ticket denominator feeding `kValue`).
+[economy-k-ledger](economy-k-ledger.md) — **not** "round count multiplies the ticket denominator
+feeding `kValue`": `serveValueStats` (`menu.ts:5-12`) computes `kValue` from `mean = total /
+served` where `served = serves.length` is the **per-customer** `ServeRecord` count, one row per
+customer per round; `avgTicket` is the separate figure computed from `orders = new
+Set(serves.map(s=>s.orderId)).size` (the unique-order/round count). More rounds add more
+independent per-customer samples to `served` — that doesn't systematically move `kValue`, only
+`avgTicket` (order-sized ticket) is order-count-sensitive.

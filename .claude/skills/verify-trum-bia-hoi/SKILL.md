@@ -53,12 +53,19 @@ gameplay, save, or UI:
    hand: confirm `npm run build` succeeded after your last source edit (stale-build check), and that
    the dev/preview server or Playwright webServer you're testing against was started/restarted after
    that edit, on the port you think it's on (see Stale-Build Rule below).
-4. **Engine/server tier** — run the exact tests each affected feature file cites:
-   `tsx --test packages/engine/test/<file>.test.ts apps/server/test/<file>.test.ts` (or the
-   combined `npm test` when several engine/server files are affected).
-5. **UI tier** — run the exact specs each affected feature file cites:
-   `npx playwright test apps/web/test/<file>.spec.ts`, adding `--config playwright.remote.config.ts`
-   (or whichever config the feature file names) when remote mode is touched.
+4. **Engine/server tier** — run the exact tests each affected feature file cites. Bare `tsx` is not
+   guaranteed on `PATH` outside an npm script (verified: it exits 127 run standalone) — use
+   `node --import tsx --test packages/engine/test/<file>.test.ts apps/server/test/<file>.test.ts`
+   (or the combined `npm test` when several engine/server files are affected).
+5. **UI tier** — run the exact specs each affected feature file cites, matching the config to the
+   spec's real directory — `playwright.config.ts`'s `testDir` is `apps/web/test`, but
+   `playwright.remote.config.ts`'s `testDir` is `apps/web/remote-test`, a different directory (not a
+   flag on the same one): local/legacy specs → `npx playwright test apps/web/test/<file>.spec.ts`;
+   remote specs → `npx playwright test --config playwright.remote.config.ts
+   apps/web/remote-test/<file>.spec.ts` (or whichever config the feature file names — admin/playable
+   specs live under their own `apps/web/admin-test/`/`apps/web/playable-test/` directories the same
+   way). Passing an `apps/web/test/...` path together with `--config playwright.remote.config.ts`
+   matches zero tests.
 6. **New behaviour without a citation** → write the test in the tier the feature file names, and
    update that feature file's "Existing proof" in the same commit. A change isn't done until its
    proof exists *and* is cited — an uncited passing test doesn't count for the next agent who reads

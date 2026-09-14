@@ -145,8 +145,9 @@ sequencing/idempotency/session wrapping.
 
 ## Verification procedure
 
-- `tsx --test packages/engine/test/game.test.ts packages/engine/test/kitchen.test.ts
-  packages/engine/test/manual-close.test.ts` (or `npm test` for the full suite).
+- `node --import tsx --test packages/engine/test/game.test.ts packages/engine/test/kitchen.test.ts
+  packages/engine/test/manual-close.test.ts` (or `npm test` for the full suite — bare `tsx` is not
+  guaranteed on `PATH` outside an npm script).
 - `npx playwright test apps/web/test/game.spec.ts` (or `npm run test:e2e`).
 - Config sanity for table timers: `economy.tbh.json` `tableSeatingMs:800`, `tableCleaningMs:1000`,
   `graceMs:2500`.
@@ -164,10 +165,15 @@ sequencing/idempotency/session wrapping.
   `'orderGone'` (server-side, once) and `serveDelivery`'s `'serveCooldown'` are asserted by string.
 - **`queue_overflow` is never triggered/asserted in any test** — it appears only in two unrelated
   defensive filter lists, neither test drives the queue full enough to hit `engine.ts:566-567`.
-- **The multi-round "lai rai" loop is not exercised end-to-end.** `roundsServed` has zero test-file
-  references; the two "round ranges"/"round precedence" tests only assert how many rounds a group is
-  **assigned** (`group.rounds` sampling), never that a table actually cycles
-  `waiting→consuming→waiting` a second time via `advance()`.
+- **The multi-round "lai rai" loop IS exercised end-to-end, but not by name.**
+  `packages/engine/test/menu.test.ts`'s `'mâm average stays separate from per-customer k across
+  repeated rounds, with no cap or bonus credit in either value'` drives real `advance()`+`serve()`
+  service (via the `playMenu()` helper) until the same customer appears under two distinct
+  `orderId`s — i.e. the table really did cycle back through `order()` a second time. What's still
+  missing: no test directly asserts `table.roundsServed` or the `waiting→consuming→waiting` state
+  sequence itself — the two "round ranges"/"round precedence" tests only assert how many rounds a
+  group is **assigned** (`group.rounds` sampling), and the repeated-rounds proof above only checks
+  the resulting serve records, not the table/state fields.
 - **The organic Chí Phèo `'occupied'` transition has no direct engine-layer unit test** — only the
   manual-field-assignment version (`manual-close.test.ts:43`) plus one layer removed via the web
   fixture (`manual-close.ts` `occupied` mode) consumed by `game.spec.ts`'s Chí Phèo UI test.

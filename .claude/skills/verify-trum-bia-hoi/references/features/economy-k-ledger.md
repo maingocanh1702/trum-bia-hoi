@@ -83,7 +83,7 @@ Engine (all in `packages/engine/src/engine.ts`, verified by grep of every call s
 
 ## Verification procedure
 
-- Engine/server: `tsx --test packages/engine/test/economy2.test.ts
+- Engine/server: `node --import tsx --test packages/engine/test/economy2.test.ts
   packages/engine/test/config-pinning.test.ts packages/engine/test/seasons.test.ts` (or `npm test`
   for the full suite).
 - UI: `npx playwright test apps/web/test/config-pinning.spec.ts` — **not** part of `npm run verify`'s
