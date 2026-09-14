@@ -93,9 +93,10 @@
   /auth/logout` (`:232`), `POST /auth/guest/restart` (`:240`), `POST /auth/google/challenge` (`:246`,
   503 `googleUnavailable` when no Client ID is configured — matches F25's "Owner has no Client ID"),
   `POST /auth/google` (`:251`), `POST /player/connect` (`:262`), `POST /player/heartbeat` (`:267`,
-  also calls `arm()` at `:271` which (re)schedules the server's own presence-sweep timer at
-  `store.heartbeatIntervalMs` — the sweep is armed *by* client heartbeats, not a free-running
-  interval), `GET /player/config?version=` (`:276`, 404 `configMissing` on an unknown pinned
+  also calls `arm()` at `:271`, which restarts the server's presence-sweep timer's countdown early —
+  the timer itself starts independently at server listen (`:345`) and self-reschedules every
+  `store.heartbeatIntervalMs` regardless of traffic; see Gotchas), `GET /player/config?version=`
+  (`:276`, 404 `configMissing` on an unknown pinned
   version — the same cache `RemoteGame.apply()` keys by version at `remote.ts:123-128`), `GET
   /player/state` (`:283`), `GET /player/events?after=` (`:284`, cursor pagination, events passed
   through `publicEvent()` before leaving the server), `POST /player/command` (`:290`, validates
@@ -165,10 +166,14 @@
 - `node --import tsx --test apps/server/test/http.test.ts` (targeted; bare `tsx` is not guaranteed on
   `PATH` outside an npm script). `npm test` runs it alongside every other engine/server file.
 - `npx playwright test --config playwright.remote.config.ts apps/web/remote-test/remote.spec.ts
-  apps/web/remote-test/dev-identity.spec.ts apps/web/remote-test/google-link.spec.ts` — `testDir` for
-  this config is `apps/web/remote-test`, a different directory than the legacy
-  `playwright.config.ts` (`apps/web/test`); passing a bare `apps/web/test/...` path with this config
-  matches zero tests.
+  apps/web/remote-test/google-link.spec.ts` — `testDir` for this config is `apps/web/remote-test`, a
+  different directory than the legacy `playwright.config.ts` (`apps/web/test`); passing a bare
+  `apps/web/test/...` path with this config matches zero tests. **This config's own `testIgnore:
+  ['dev-identity.spec.ts', 'accessibility.spec.ts']` (`playwright.remote.config.ts:4`) drops
+  `dev-identity.spec.ts` even if it's named explicitly on the command line** — it never runs here.
+- `npx playwright test --config playwright.dev-identity.config.ts
+  apps/web/remote-test/dev-identity.spec.ts` — the dev-identity flow's actual command; this config's
+  `testMatch: 'dev-identity.spec.ts'` (`playwright.dev-identity.config.ts:3`) is the one that runs it.
 - `npm run verify` is the whole-repo gate for any change here (it already runs `test` and the sims);
   no dedicated `sim:*` covers this module.
 
@@ -186,10 +191,16 @@
   `http.test.ts` or `remote.spec.ts` — a client-visible reproduction of one of these codes is
   unverified.
 - **`store:importBusy`(429)/`store:importInterrupted`(503) are wired in `http.ts`'s error table
-  (`:322`) with no route that can currently throw them** — the single-flight local-archive-import
-  lock they describe (`apps/server/src/local-archive.ts`) has no HTTP entry point (previous bullet),
-  so this mapping is dead code today, not a bug — evidence the transport layer was pre-wired ahead of
-  the deferred upload route, per the "owner-deferred" framing.
+  (`:322`) and are reachable — this is not dead code.** `GET /player/competition` (`:236-238`) calls
+  `store.competitiveStatus()` (`store.ts:353`), which calls `ensureImportBaseline()` (`:355`) whenever
+  the caller's competition state carries a pending `localImport`, which calls `validateLocalArchive()`
+  (`:342`) — the same single-flight lock/worker-timeout that throws these two codes
+  (`local-archive.ts:46,54,56-57`). `competitiveStatus()` throwing `importBusy` is directly tested:
+  `apps/server/test/competition.test.ts:247` `'legacy baseline inflation runs only in the admitted
+  worker while concurrent recovery is refused'` (assertion at `:254`). What's still unverified: no test
+  drives the 429/503 HTTP status code through an actual `/player/competition` request —
+  `http.test.ts`'s own `/player/competition` cases cover 401/400/404/200 only — so the HTTP-layer
+  surfacing of these two codes remains unproven even though the underlying throw is real and reachable.
 - `apps/web/remote-test/account-ui.spec.ts` (456 lines) and `login-invitation.spec.ts` (107 lines)
   exercise the Account settings panel and the login-invitation prompt UI that *calls into* this
   module's `linkGoogle`/`googleChallenge` — they were read for cross-reference but are not cited as
@@ -232,9 +243,13 @@
 - `store:invalidClient` is the one `input`-bucket code that maps to **403**, not 400
   (`http.ts:326`) — every sibling code in that same list (`invalidCursor/invalidCommand/
   invalidHeartbeat`) is 400.
-- The server's presence-sweep timer is armed *by* `/player/heartbeat` calls (`http.ts:271`'s `arm()`),
-  not a free-running interval independent of traffic — a player who never heartbeats after connecting
-  never gets swept until another heartbeat arrives to arm it.
+- The presence-sweep timer is a **free-running interval, armed once at server startup**
+  (`server.on('listening', ...)` → `sweep(); arm(); seasons();`, `http.ts:345`) and self-rescheduling
+  every `store.heartbeatIntervalMs` from inside its own `setTimeout` callback (`arm()`, `:335`) — it
+  does not depend on client traffic to start or keep running. `/player/heartbeat`'s own call to
+  `arm()` (`:271`) just restarts that countdown early (a debounce, not an ignition switch): an active
+  heartbeat postpones the next sweep, but a player who never heartbeats after connecting is still
+  caught by the next regularly scheduled sweep, not left unswept forever.
 - Reconnect backoff is not exponential: cadence is whatever the last heartbeat's
   `heartbeatIntervalMs` was, with an early wake for the closest order-patience deadline
   (`remote.ts:316-320`). A config change to `network.reconnectingUiDelayMs` changes only the

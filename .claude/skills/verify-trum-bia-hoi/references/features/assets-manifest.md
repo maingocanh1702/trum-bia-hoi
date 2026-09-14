@@ -67,11 +67,18 @@
 - `python3 scripts/check_assets.py --release` (real run on this commit): exit 1 —
   `unresolved asset: chair-plastic-red (placeholder)`, `unresolved asset: stall-owner-normal
   (placeholder)`, `unresolved asset: customer-football-fan (placeholder)`. See Uncovered paths.
-- No engine/server unit test or Playwright spec exercises this feature:
-  `grep -rl "manifest.json\|hasSpriteArt\|createSound\|check_assets" apps/web/test apps/server/test
-  apps/web/*-test` returns zero files. The only real proof today is the static schema/file-existence
-  script above; `<Sprite>`'s fallback branches and `audio.ts`'s negotiation/dedupe/group-mute logic
-  have no runtime assertion anywhere in the suite.
+- `apps/web/test/production.spec.ts:106` `'washer, cooler and counter upgrade cards show their own
+  per-level draft sprites'` **is** runtime proof of manifest-backed `<Sprite>` resolution: it asserts
+  each upgrade card's `img[src]` matches the manifest-driven `${id}-lv2-imagegen-v1`/
+  `${id}-lv3-imagegen-v1` filename pattern before/after an upgrade, and that every rendered `img`
+  actually finished loading (`img.complete && img.naturalWidth > 0`, `:116`). Run via `npx playwright
+  test apps/web/test/production.spec.ts` (default `playwright.config.ts`). This is the normal
+  (non-fallback) resolution path only — a grep for the literal identifiers `manifest.json`/
+  `hasSpriteArt`/`createSound`/`check_assets` still returns zero hits in `apps/web/test`/
+  `apps/server/test`/`apps/web/*-test`, which is why an earlier pass here missed this test; grepping
+  for identifiers misses behavior that exercises the manifest indirectly through `<Sprite>`.
+  `<Sprite>`'s two fallback branches and `audio.ts`'s negotiation/dedupe/group-mute logic remain
+  unexercised by any test — see Uncovered paths.
 
 ## Verification procedure
 
@@ -82,9 +89,11 @@
 - `python3 scripts/check_assets.py --release` — not wired into any npm script or CI: the repo has no
   `.github/` directory at all, and `package.json` only invokes the script without `--release`. This
   mode is manual/on-demand only, never enforced automatically today.
-- A change to `<Sprite>`/`createSound` behavior itself (not just manifest content) has no existing
-  tier to target — write a new test in whichever tier owns the change and cite it here in the same
-  commit, per SKILL.md's "New behaviour without a citation" rule.
+- `<Sprite>`'s normal resolution path has a tier: `apps/web/test/production.spec.ts` (see Existing
+  proof) — extend it for a change there. `<Sprite>`'s two fallback branches and `createSound`/
+  `audio.ts`'s behavior still have no existing tier to target — write a new test in whichever tier
+  owns the change and cite it here in the same commit, per SKILL.md's "New behaviour without a
+  citation" rule.
 
 ## Uncovered paths
 

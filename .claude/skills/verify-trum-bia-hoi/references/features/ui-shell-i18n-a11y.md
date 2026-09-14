@@ -95,20 +95,30 @@
   `.qa/axe-<locale>-<viewport>.json`.
 - `npm run check:i18n` is a static, always-run proof for every player-facing `.tsx` file (see How to
   reach it) — part of `npm run verify`'s chain per `SKILL.md`.
-- No dedicated test exercises the shared `SheetDialog`/toast/bottom-nav shell mechanics directly
-  (focus-return-on-close, `Escape`-to-close, the `role="status"` pause line) in their own right — they
-  are only incidentally exercised by whichever feature spec happens to open a sheet. Treat that as
-  Uncovered, not proof.
+- `apps/web/test/pause.spec.ts:13` `'stock purchases keep the menu open and the whole game paused
+  until closing, then the same table can be served'` directly asserts the shared `role="status"` pause
+  line's text (`.sheet-pause` contains `'Tạm dừng'`) inside an open sheet, and that sprite animation
+  play-state pauses (`animationPlayState === 'paused'`, `:27`). `pause.spec.ts:37` `'visibility changes
+  cannot resume an open settings menu; Escape resumes the original remaining wait and expiry happens
+  once'` asserts pressing `Escape` on an open sheet resumes the frozen shift countdown. Real, if
+  incidental, proof of the pause line and `Escape`-to-close's effect — not the "no dedicated test"
+  gap an earlier pass claimed. **Still genuinely untested in its own right:** focus-return-on-close,
+  and whether `Escape` behaves the same across all 15 `Sheet` variants or only the two these specs
+  happen to open.
 
 ## Verification procedure
 
 - `npm run check:i18n` (part of `npm run verify`) — run after touching any player-facing `.tsx` file,
   `i18n/vi.json`, or `i18n/en.json`.
 - `npx playwright test --config playwright.accessibility.config.ts` — real dev-identity server
-  (`TBH_AUTH_DEV=1`, ports 4179/4180), full guest a11y sweep; run when changing shell layout, ARIA,
-  copy, or CSS motion/focus rules. **Not** part of `npm run verify`'s default chain (`SKILL.md` lists
-  `check:config → check:i18n → build → test → sim:onboarding → sim:rush → sim:career:gate` — no axe
-  step) — run it explicitly.
+  (`TBH_AUTH_DEV=1`, ports 4179/4180), full guest a11y sweep; run when changing shell layout, ARIA, or
+  copy. **Not** part of `npm run verify`'s default chain (`SKILL.md` lists `check:config → check:i18n
+  → build → test → sim:onboarding → sim:rush → sim:career:gate` — no axe step) — run it explicitly.
+- **Axe alone does not cover motion or the shared sheet/pause mechanics** — axe asserts static WCAG
+  rules, not `prefers-reduced-motion` behavior or `SheetDialog`'s pause/`Escape` contract. When
+  changing CSS motion or sheet/dialog behavior, also run `npx playwright test
+  apps/web/test/game.spec.ts apps/web/test/pause.spec.ts` (default `playwright.config.ts`) — see
+  Existing proof.
 - For the 3-viewport layout matrix specifically (not a11y), `npx playwright test --config
   playwright.playable.config.ts` (`apps/web/playable-test/shift.spec.ts`) is the closest existing
   proof, though it doesn't run axe.
@@ -122,11 +132,19 @@
   locales — a key missing from just one locale can't happen past `check:i18n`'s static parity check,
   so this DEV-only path only ever fires for a key missing from the dictionaries entirely (e.g. a
   runtime-constructed key, or a regression `check:i18n` would already have caught pre-commit).
-- `SheetDialog` focus-return, `Escape` handling, and the shared pause line have no dedicated
-  shell-level test (see Existing proof).
-- No test asserts the two reduced-motion mechanisms (global kill-switch vs. scoped `no-preference`
-  gating) actually behave correctly together — axe checks static WCAG rules, not
-  `prefers-reduced-motion` compliance, and no spec calls `page.emulateMedia({ reducedMotion })`.
+- **`check_web_copy.mjs:7`'s `Admin*.tsx` exclusion is a checking gap, not a localization exemption**
+  (see Gotchas) — the four excluded files (`Admin.tsx`, `AdminCompetition.tsx`, `AdminForecast.tsx`,
+  `AdminScope.tsx`) get no automated hardcoded-string/missing-key scan at all; a violation of the
+  owner's 100%-i18n-key rule inside any of them is only ever caught by manual review.
+- `SheetDialog` focus-return-on-close has no dedicated shell-level test; the shared pause line and
+  `Escape`-to-close are incidentally exercised by `pause.spec.ts:13,37` (see Existing proof) but not
+  isolated at the `SheetDialog` component level across all 15 sheet variants.
+- The two reduced-motion CSS mechanisms are only half-tested: `game.spec.ts:483,571` cover the
+  "default-on, turned-off-under-reduce" sprites (dog, delivery phone) via
+  `page.emulateMedia({ reducedMotion: 'reduce' })`; no spec exercises the "default-off,
+  turned-on-only-under-no-preference" half (`.sign-object:active`,
+  `.equipment-object.kitchen.is-cooking .sprite`), and no test isolates the global `style.css:204`
+  kill-switch from the per-selector rules `game.spec.ts` actually asserts against.
 - `accessibility.spec.ts` only ever drives the **guest** path (`account.playGuest`) — no axe pass
   exists for a signed-in Google session, the Admin screens, or the pre-locale-acceptance error path
   (`entry.storageError`).
@@ -137,7 +155,9 @@
   `check_web_copy.mjs`.
 - **viewport** — 390×844 / 360×740 / 1280×720, looped in-test by `accessibility.spec.ts`, looped via
   Playwright `projects` by `playwright.playable.config.ts` (two different mechanisms, see Gotchas).
-- **reduced-motion** — CSS-only guarantee today; not exercised by any Playwright spec.
+- **reduced-motion** — `game.spec.ts:483,571` exercise the "default-on, turned-off" half via
+  `page.emulateMedia({ reducedMotion: 'reduce' })`; the "default-off, turned-on-only-under-
+  no-preference" half is still untested (see Uncovered paths).
 - **missing-copy** — key missing from both dictionaries → DEV console warning only (see Uncovered
   paths); key missing from exactly one dictionary → statically impossible past `check:i18n`.
 - **empty/error** — `entry.storageError` (locale-write failure, `App.tsx:57,65`) and the
@@ -146,16 +166,21 @@
 
 ## Gotchas
 
-- **The `Admin*.tsx` i18n exemption is real, not theoretical** — `check_web_copy.mjs:7` explicitly
-  filters `!file.startsWith('Admin')` while still including `admin-api.ts`. See
-  [admin-registry](admin-registry.md) for the admin-side consequence (hardcoded English is expected
-  there, not a bug).
-- **`style.css` and `admin.css` are separate bundle entries, not layers of one stylesheet** —
-  `main.tsx:3` imports `style.css` (the player shell); `Admin.tsx:7` imports `admin.css` on its own.
-  That's *why* `admin.css:19` needs its own `@media (prefers-reduced-motion:reduce) { .admin-page
-  button { transition:none; } .admin-page button:active { transform:none; } }` — the shared shell's
-  global kill switch (`style.css:204`) never loads on the admin bundle, so admin has to repeat the
-  pattern locally rather than being redundant with it.
+- **The `Admin*.tsx` exclusion from `check_web_copy.mjs` is a checking gap, not a localization
+  exemption.** `check_web_copy.mjs:7` filters `!file.startsWith('Admin')` out of its
+  hardcoded-string/missing-key scan (while still including `admin-api.ts`) — that only means no
+  automated check catches a hardcoded-English string inside `Admin*.tsx`; it does **not** relax the
+  owner's binding 100%-i18n-key requirement for that file. A hardcoded string in `Admin*.tsx` is a
+  real violation a human reviewer must still catch, exactly like one anywhere else — see
+  [admin-registry](admin-registry.md) for the file list this gap covers, and Uncovered paths.
+- **`main.tsx:3-4` loads `style.css`/`reference-layout.css` unconditionally, before either screen is
+  chosen** — both the player shell and `Admin.tsx` get the same global stylesheets, including
+  `style.css:204`'s `prefers-reduced-motion` kill switch; `Admin.tsx:7` then layers its own
+  `admin.css` on top, it does not replace the shared one. `admin.css:19`'s own `@media
+  (prefers-reduced-motion:reduce) { .admin-page button { transition:none; } .admin-page
+  button:active { transform:none; } }` is therefore **reinforcing** the already-active global kill
+  switch for admin's own button transitions, not filling a gap where the global rule "never loads" on
+  the admin bundle.
 - **`playwright.accessibility.config.ts` has no `projects` array of its own** — its "3 viewports" come
   entirely from the spec file calling `page.setViewportSize()` per test iteration, not from
   Playwright's project-matrix feature the way `playwright.playable.config.ts` uses it. A change to one

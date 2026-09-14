@@ -17,10 +17,12 @@
   admin's own `admin_sessions` SQLite table (`admin-auth.ts:48-50`) with phase
   `google→mfa→authenticated`, an 8-hour TTL (`ADMIN_SESSION_MS=28800000`, `registry.ts:23`, "BRD9.2
   eight-hour admin authentication limit") versus the fixture server's player `sessionTtlMs:86400000`
-  (24h, `apps/web/admin-test/server.ts:20`); the session token is rotated on every phase transition
-  (`admin-auth.ts:112-119` `finish()`); the client never sees the raw token as an opaque id — `context`
-  IS `token_hash` itself (`admin-auth.ts:83`), round-tripped via the `X-TBH-Admin-Context` header
-  (`admin-api.ts:21`).
+  (24h, `apps/web/admin-test/server.ts:20`); **the session token rotates only once, at the transition
+  into `authenticated`** (`finish()`, `admin-auth.ts:112-118`) — reached directly from `google()` for a
+  non-MFA account, or from `factor()` after a correct OTP — while the `google→mfa` transition itself
+  keeps the same token/row and only flips `phase` to `'mfa'` (`admin-auth.ts:129-131`); the client
+  never sees the raw token as an opaque id — `context` IS `token_hash` itself (`admin-auth.ts:83`),
+  round-tripped via the `X-TBH-Admin-Context` header (`admin-api.ts:21`).
 - **Real RFC 6238 TOTP**, not a stub: SHA1-HMAC, hand-rolled Base32 decode, RFC4226 dynamic truncation
   (`admin-auth.ts:14-19`). Verification allows **one time-step of clock skew**
   (`[current, current-1, current+1]`, `admin-auth.ts:147`), constant-time compare

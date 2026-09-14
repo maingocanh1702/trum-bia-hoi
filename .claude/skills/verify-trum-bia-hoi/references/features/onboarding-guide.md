@@ -91,9 +91,42 @@
 - `packages/engine/test/game.test.ts`, inside `'startup rejects configurations that create fractional
   stock, unusable equipment or silent audio crashes'` (a table-driven `assert.throws` test): the
   `'first customer can never fit'` case sets `c.onboarding.firstShift.firstGroupSize = 99` and asserts
-  `loadConfig` throws — this is the **only** direct proof of the capacity invariant, and it proves the
-  config.ts:262 load-time throw, not engine.ts:782's runtime `configOnboardingTables` fail (see
-  Variants).
+  `loadConfig` throws — this proves the config.ts:262 load-time throw specifically; the sibling
+  runtime check has its own direct test too (see Variants).
+- `packages/engine/test/config-pinning.test.ts:144` `'a candidate designed for larger initial tables
+  cannot strand the first group at a preserved small stall'` is direct proof of engine.ts:782's
+  runtime `configOnboardingTables` fail: it pins a candidate config with `firstGroupSize = 4` onto a
+  game with only smaller tables while `completedShifts === 0`, and asserts
+  `g.command(open(g), candidate)` returns exactly `{ok: false, reason: 'configOnboardingTables'}`. Run
+  via `npm test` or targeted: `node --import tsx --test packages/engine/test/config-pinning.test.ts`.
+- `packages/engine/test/presentation.test.ts` **is** the step-guide state machine's dedicated proof —
+  contrary to an earlier pass's "zero hits" claim here: `'the event-driven guide resets after serving
+  and obeys the daily repeat cap'` (`:16`) drives `advanceGuide` through a `customer_served` reset,
+  then a 3-in-a-row `customer_left` streak, and asserts `guideIndex` jumps to the
+  `waitFor: 'order_ready'` step with `guideRuns` incrementing (`:23-24`), then loops 20 more losses and
+  asserts `guideRuns` caps at `config.values.onboarding.stepGuide.maxAutoRepeatsPerDay` (`:26`) — direct
+  proof of both the lost-streak auto-trigger and the daily-repeat cap. `'a three-customer queue loss
+  triggers the three-customer guide immediately'` (`:30`) asserts a single `customer_left` event
+  carrying `data.count: 3` triggers the same jump in one call, proving `lostStreak += event.count` (not
+  a flat `+= 1`). Run via `npm test` or targeted: `node --import tsx --test
+  packages/engine/test/presentation.test.ts`.
+- `apps/web/admin-test/admin.spec.ts:259` `'M2-ONBOARDING local editor publishes thresholds and guide
+  steps; disabled mode hides a retained guide in VI/EN'` is direct proof that an admin-published
+  `onboarding.stepGuide.steps`/`lostStreakToGuide`/`firstShift.guaranteedFirstGroupWithinMs` change
+  reaches a real runtime player session: it publishes a changed `stepGuide.steps[0].copyKey`, opens a
+  fresh guest session pinned to that version, and asserts the fetched config matches (`:306`), the
+  guide banner renders the new copy, and the forced first-shift spawn timing
+  (`nextSpawnAt - startedAt`) equals the *published* `guaranteedFirstGroupWithinMs`, with the
+  disabled-mode counterpart falling back to normal spawn math. Run via `npx playwright test --config
+  playwright.admin.config.ts apps/web/admin-test/admin.spec.ts` (see
+  [admin-registry](admin-registry.md)). It does not exercise the lost-streak trigger or repeat cap —
+  see `presentation.test.ts` above for that.
+- `apps/web/test/game.spec.ts:242` `'muting, guide skipping and reduced-motion preference survive
+  normal play'` clicks the guide's skip button (`'Bỏ qua'`), reloads, and asserts `tbh.settings.v1`
+  matches `{guideDone: true, ...}` with the guide banner (`.guide`) at zero count — direct proof that
+  the skip button's `{guideDone: true, guideIndex: null}` write (`App.tsx:387`) persists across reload
+  and actually suppresses the banner, not just an in-memory UI toggle. Run via `npx playwright test
+  apps/web/test/game.spec.ts` (default `playwright.config.ts`).
 - `npm run sim:onboarding` (ran via its documented invocation, not re-executed this pass): runs
   `Game` with `onboarding.enabled` both `true`/`false`, crossed with 2 kitchen-level profiles × 5 fixed
   seeds (`headless.ts:11-18`), requires ≥1000 real serves per row (`MIN_SERVED`), then asserts **every**
@@ -127,12 +160,13 @@
 
 ## Uncovered paths
 
-- **No test exercises the step-guide state machine itself.** Across every engine and web test/spec
-  file, zero hits for `stepGuide`, `advanceGuide`, or `lostStreakToGuide` outside the config default
-  definition and the one config-validation case above. The lost-streak auto-trigger
-  (3-in-a-row → jump to the `order_ready` step), the `maxAutoRepeatsPerDay` cap, the VN-day-rollover
-  reset of `guideRuns`, and skip/persistence of `guideDone`/`guideIndex` across reload are all
-  unverified by any automated test today.
+- **The VN-day-rollover reset of `guideRuns` is the one step-guide mechanic with no test.**
+  `presentation.test.ts`, `admin.spec.ts:259` and `game.spec.ts:242` (see Existing proof) between them
+  cover the lost-streak auto-trigger, the `maxAutoRepeatsPerDay` cap, published-config propagation, and
+  skip/persistence of `guideDone`/`guideIndex` across reload — an earlier pass here called all of this
+  untested; it wasn't. `settings.guideDay !== day` resetting `guideRuns` to `0` on a new VN calendar day
+  (`local.ts:70`) is the one piece with zero hits for `guideDay` outside fixture initialization
+  (grep-confirmed across `apps/web/test`, `apps/web/*-test`, `packages/engine/test`).
 - **`firstShift`'s forced mechanics are never asserted as onboarding correctness in their own right** —
   every real hit found (listed under "corroborating but not dedicated" above) uses `firstGroupSize`/
   `firstGroupType`/`firstOrder`/`guaranteedFirstGroupWithinMs`/`riskEventsDisabled`/`rushDisabled` only
@@ -152,15 +186,18 @@
   accept-the-invitation test.
 - **cancel/reason** — `login-invitation.spec.ts`'s "disabled invitation flags suppress..." and
   "leaving ... never warns of data loss..." tests; the UI's own skip button (`App.tsx:387`) bypasses
-  `advanceGuide` entirely (untested).
+  `advanceGuide` entirely — exercised end-to-end by `game.spec.ts:242` (skip persists across reload,
+  guide banner stays hidden).
 - **empty** — not evidenced (no test drives a `stepGuide.steps` traversal to `guideIndex === null`
   other than via skip).
 - **persistence** — `readSettings()`'s `guideIndex` sanitization (`local.ts:17`, non-negative-integer-
-  or-null guard); `login-invitation.spec.ts`'s "...cooldown survives a new tab".
-- **capacity** — **two separate gates for the same invariant, only one tested**: `config.ts:262` throws
-  at config-load time (tested via game.test.ts's `'first customer can never fit'`); `engine.ts:782`'s
-  `configOnboardingTables` runtime fail at shift-open is a second, later check with no direct test
-  found.
+  or-null guard); `login-invitation.spec.ts`'s "...cooldown survives a new tab"; `game.spec.ts:242`
+  (skip's `guideDone`/`guideIndex` write survives reload).
+- **capacity** — **two separate gates for the same invariant, both tested**: `config.ts:262` throws at
+  config-load time (`game.test.ts`'s `'first customer can never fit'`); `engine.ts:782`'s
+  `configOnboardingTables` runtime fail — reached via a config-pin at shift-open when
+  `w.completedShifts === 0` — is directly asserted by `config-pinning.test.ts:144`'s `'...cannot strand
+  the first group...'` (`{ok: false, reason: 'configOnboardingTables'}`).
 - **duplicate/idempotent** — not evidenced.
 - **stale** — not evidenced.
 - **time-jump** — sim:onboarding's `game.advance(w.now + STEP_MS)` loop across up to `MAX_STEPS =
@@ -181,13 +218,18 @@
   not by reading `World.lostStreak`. They track the same real-world phenomenon through two unrelated
   code paths — a change to one does not touch the other.
 - The load-time (`config.ts:262`) and runtime (`engine.ts:782`) `firstGroupSize`-vs-capacity checks
-  guard the same invariant twice; only the load-time one currently has a test.
+  guard the same invariant twice, at two different moments (config load vs. a config-pin at
+  shift-open); both are directly tested (`game.test.ts`'s `'first customer can never fit'`,
+  `config-pinning.test.ts:144`'s `'...cannot strand the first group...'`).
 - `k.band` (`[2.0, 3.0]`, `economy.tbh.json:132-134`) is read from config by `sim:onboarding`'s final
   assertion (`headless.ts:71`), not hardcoded in the sim script itself.
 - `stepGuide.steps[2]`'s `waitFor: 'order_served'` and step 4's `waitFor: 'coin_gain'` both fire on the
-  same real player action (serving a customer emits both events); the guide only advances one step per
-  matching event per `advanceGuide` call, so a single serve advances the guide at most one step even
-  though two of its steps could plausibly match the same moment.
+  same real player action (serving a customer emits both events). `advanceGuide` advances `guideIndex`
+  **once per matching event, inside its per-event loop** (`local.ts:68-87`) — not once per call — so
+  when both events land in the same `events` array (one serve), the guide advances twice in a single
+  `advanceGuide` invocation (confirmed by reading the loop body directly; no committed test exercises
+  this exact `order_served`→`coin_gain` sequence today — `presentation.test.ts`'s dedicated step-guide
+  tests use `shift_opened`/`customer_served`/`customer_left` fixtures only, not this pair).
 
 ## Related
 
