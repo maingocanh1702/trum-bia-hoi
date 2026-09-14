@@ -235,6 +235,10 @@ logout; damaged recovery is downloadable'`.
   cited by exact string only, not by body.
 - The `admin.*` i18n namespace (214 keys, confirmed vi/en-paired by direct count) has no static guard
   against a `t('admin.typo')` call inside `Admin*.tsx` referencing a nonexistent key — see Gotchas.
+- **`Admin.tsx:99`'s hardcoded `TRÙM BIA HƠI`/`Tiếng Việt`/`English` is a live, uncaught i18n-key
+  violation** — the `brand`/`language.vi`/`language.en` keys it should use already exist (see
+  Gotchas) — fixing it is a one-line change to that JSX, not documented here further since this file
+  tracks verification, not a fix backlog.
 
 ## Variants
 
@@ -273,11 +277,14 @@ logout; damaged recovery is downloadable'`.
   raw key string at runtime (`i18n.ts`'s fallback behavior) and **no static check would ever catch
   it** — the same typo inside a scanned file (e.g. `App.tsx`) would fail `npm run check:i18n`
   immediately. See [ui-shell-i18n-a11y](ui-shell-i18n-a11y.md) for the check's full mechanics.
-- **The admin panel's own brand/language-picker text is genuinely hardcoded, by design, not by
-  omission**: `Admin.tsx:99` renders `TRÙM BIA HƠI` as literal JSX text (a proper noun) and the locale
-  `<select>`'s two `<option>` labels are the hardcoded endonyms `Tiếng Việt`/`English` (each language
-  names itself, not translated per the *current* locale) — this is the same pattern any language
-  picker uses, not a localization bug.
+- **The admin panel's brand/language-picker text is a real i18n-key violation, not a design
+  exemption.** `Admin.tsx:99` renders `TRÙM BIA HƠI`, `Tiếng Việt`, and `English` as literal JSX text
+  — but `brand`, `language.vi`, and `language.en` **already exist** as keys in both `vi.json`/`en.json`
+  with these exact values (`i18n/vi.json:2,539-540`, `i18n/en.json:2,539-540`); the player shell's own
+  nav already calls `t('brand')` (see [ui-shell-i18n-a11y](ui-shell-i18n-a11y.md)). `Admin*.tsx`'s
+  exclusion from `check_web_copy.mjs` (see the i18n-checking-gap gotcha above) means no automated check
+  catches this, but it's a real, fixable violation of the owner's 100%-i18n-key rule — not "the same
+  pattern any language picker uses."
 - **Two unrelated rate limits (publish-per-day, OTP lockout) surface through the identical UI message**
   (`t('error.limit')`, `Admin.tsx:26`) — an admin seeing "limit" has no way to tell from the UI alone
   which one tripped; only the audit log (`AdminFactorRejected` vs. the publish path's silent 429)

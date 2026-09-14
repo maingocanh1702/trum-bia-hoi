@@ -216,8 +216,12 @@
 
 - **success** — `remote.spec.ts:22` (lost-ack resync), `google-link.spec.ts:33` (normal link).
 - **cancel** — `google-link.spec.ts:141` (closing mid-verification settles the promise, no request).
-- **reason** — every `store:*`/`auth:*` code in the Observable-contract mapping is asserted somewhere
-  in `http.test.ts`; client-side `RemoteError` codes (`otherTab`, `bufferFull`, `accountBusy`,
+- **reason** — most `store:*` codes in the Observable-contract mapping are asserted in `http.test.ts`;
+  **`auth:googleVerificationFailed` is asserted in `apps/server/test/google.test.ts`, not
+  `http.test.ts`** (grep-confirmed: 2 hits in `google.test.ts`, 0 in `http.test.ts`) — a separate file
+  this doc hadn't previously named for this code. `store:importBusy`/`store:importInterrupted` are
+  **not** asserted through any HTTP request today (see Uncovered paths) — don't read the "every code"
+  claim as covering them. Client-side `RemoteError` codes (`otherTab`, `bufferFull`, `accountBusy`,
   `conflict`) are asserted in `remote.spec.ts`/`google-link.spec.ts`.
 - **empty** — a fresh guest with no prior journal: `remote.spec.ts:202`.
 - **persistence** — `remote.spec.ts:22` (reload retains queue), `dev-identity.spec.ts:18` (fresh
@@ -252,8 +256,19 @@
   caught by the next regularly scheduled sweep, not left unswept forever.
 - Reconnect backoff is not exponential: cadence is whatever the last heartbeat's
   `heartbeatIntervalMs` was, with an early wake for the closest order-patience deadline
-  (`remote.ts:316-320`). A config change to `network.reconnectingUiDelayMs` changes only the
-  UI-visible "reconnecting" threshold (`watchLiveness`'s timeout), not the retry cadence itself.
+  (`remote.ts:316-320`). **A config change to `network.reconnectingUiDelayMs` changes more than the
+  UI-visible "reconnecting" threshold** — `heartbeatTiming()` (`registry.ts:32-35`) derives BOTH
+  `heartbeatTimeoutMs` (= `reconnectingUiDelayMs` directly, what `watchLiveness()` uses) AND
+  `heartbeatIntervalMs` (= `Math.floor(timeoutMs / 2)`) from this one value; the server returns
+  `heartbeatIntervalMs` on every `/player/heartbeat` reply and `remote.ts:282` adopts it as
+  `this.interval`, which is exactly what drives the client's actual heartbeat cadence and the
+  reconnect/retry scheduling in `cycle()`'s `finally` block (`:312-321`). The same
+  `heartbeatTiming().heartbeatIntervalMs` is also `store.heartbeatIntervalMs` (`store.ts:692`), the
+  interval the server's presence-sweep timer self-reschedules on (see the presence-sweep Gotcha
+  above). So tuning this one config value moves the UI threshold, the real heartbeat/retry traffic
+  cadence, and the server's presence-sweep cadence together — confirmed end to end by
+  `apps/server/test/presence.test.ts:164` (`reconnectingUiDelayMs: 40`) asserting
+  `beat.heartbeatIntervalMs === 20` and `beat.heartbeatTimeoutMs === 40`.
 
 ## Related
 
