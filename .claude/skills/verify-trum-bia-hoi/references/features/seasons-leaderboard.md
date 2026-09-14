@@ -125,7 +125,13 @@ no separate "me" endpoint. "Shrine" (Bàn Thờ) data rides inside `GET /seasons
 - `apps/web/test/seasons.spec.ts` — 1 test (×2 locale/width): `` `offline guest board preserves
   customer pause and calendar rollover without exposing account history at ${width}px in ${locale}` ``
   — already cited by [multi-system-journeys](multi-system-journeys.md) for the reload+rollover
-  crossing; this is local mode's own-season view (`Seasons` component), not the public leaderboard.
+  crossing. **Corrected claim**: this is NOT the own-season `Seasons` component — `App.tsx:452` only
+  mounts `<Seasons>` when `remote?.identity.provider === 'google'`, which a local-mode guest never has
+  (`remote` is `null` in local mode). The test explicitly asserts `.seasons-panel` and `.rank-personal`
+  stay **hidden** (`seasons.spec.ts:23`, `.not.toBeVisible()`) — it proves the public
+  `Leaderboard`/`SeasonHistory` render for a guest while personal/own-season panels correctly stay
+  gated behind Google identity, not that it verifies the `Seasons` component's own content. Authenticated
+  coverage of `<Seasons>` itself is not established by this pass — see Uncovered paths.
 - `apps/web/remote-test/leaderboard.spec.ts` — 4 top-level tests (6 runtime executions with locale
   loops): `` `real ranked careers show pages, own tier neighbors and paused menus in ${locale}` `` (×2
   locale), `'moderation invalidates an open page and a guest can view the public board without
@@ -158,12 +164,18 @@ no separate "me" endpoint. "Shrine" (Bàn Thờ) data rides inside `GET /seasons
   participated one** (`seasons.ts:29-31`) — i.e. a player who has earned in `ranking` but not
   `contest` (or vice versa) getting the correct single finite deadline, not the min of two real
   values. Grep-confirmed no test name references "nextSeasonEnd" or a mixed-participation scenario.
-- **`compatibleSeasonTiers()`'s `configSeasonTiers` refusal** (`engine.ts:772`) has no test found
-  under `seasons.test.ts`'s 13 names that names tier identity/order changes specifically at
-  *shift-open* time (as opposed to the season-rollover-time tier-identity tests, which do exist,
-  e.g. "changes to permanent tier identities fail closed"); the shift-open gate and the
-  rollover-time gate are two different call sites guarding the same invariant — only one is clearly
-  named in the proof list above.
+- **Removed false claim**: `compatibleSeasonTiers()` has exactly **one** call site
+  (`engine.ts:772`, inside `case 'startShift':` — grep-confirmed, not two), and it's covered by name
+  by two already-cited tests: `'invalid calendar definitions and changes to permanent tier identities
+  fail closed'` and `'first rules23 opening rejects renamed permanent tiers for new games and
+  historical saves'`, both of which send a renamed-tier config through `startShift` and assert
+  `reason === 'configSeasonTiers'`. There is no separate rollover-time tier-identity gate to leave
+  uncovered.
+- **The authenticated `<Seasons>` component itself (`App.tsx:452`, gated on
+  `remote?.identity.provider === 'google'`) has no dedicated UI test in this pass's citation set** —
+  `seasons.spec.ts` is local-mode/guest and explicitly can't reach it (see the correction above);
+  no `remote-test`/`admin-test` spec was found asserting its own content (own-tier, own-rank display)
+  for a signed-in Google player.
 - **The `seasons()` HTTP timer's own re-arm/failure path** (`http.ts:340-345`, `console.error` on a
   rejected `sweepSeasons()`, then still re-arms) has no direct test asserting the server keeps
   scheduling captures after one throws — `leaderboard.test.ts`'s "staggered HTTP heartbeats cannot

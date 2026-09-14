@@ -130,12 +130,18 @@ Two spec-vs-code naming drifts worth knowing before grepping for either mechanic
   isolate arrival-cadence math from the roll's randomness — the opposite of testing the roll itself.
   Grep confirms no engine test file exercises `weighted()` (`rng.ts:12`) for a distribution-fairness
   property on the weather table.
-- **No test combines an active rush with non-sunny weather simultaneously stacking their
-  `spawnIntervalMult`s** — `rush-pressure.ts` isolates rush pressure under sunny-only weather by
-  design (see Existing proof); `arrival-interval.test.ts` isolates a single forced weather with rush
-  scheduling suppressed (`perShift:0` in its own setup, not shown above but consistent with its
-  narrow-cadence-math focus). The multiplicative stack (`rush.spawnIntervalMult × weather
-  .spawnIntervalMult`, per F08 §5's formula) is asserted in isolation on each axis, never jointly.
+- **Corrected claim**: `arrival-interval.test.ts:39`'s `'fast-weather rush groups retain hard floors
+  and round once after the per-customer size factor'` DOES combine hot weather
+  (`weather.hot.spawnIntervalMult = 0.01`) with an active rush (hand-sets `world.shift.rushes` for
+  every non-`'none'` kind) — "no test combines them" was wrong. What's still genuinely uncovered:
+  that test's `expected` table (`light:1000`, `heavy:700`, …) is exactly each kind's raw
+  `rush.<kind>.floorMs` (config-verified against `docs/config/economy.tbh.json`) — the forced `0.01`
+  weather mult crushes the raw `baseMs × weather.mult × rush.mult` product far below any real floor,
+  so `Math.max(interval, rush.floorMs)` (`config.ts:21`) always returns the floor verbatim. This
+  proves the **hard floor** holds under extreme weather, not that a *moderate* weather mult and a
+  *moderate* rush mult visibly combine in the unclamped middle of the formula. No test asserts a case
+  where the multiplicative product of both mults lands *above* the floor, so both factors are
+  simultaneously visible in the result rather than one swallowing the other.
 
 ## Variants
 

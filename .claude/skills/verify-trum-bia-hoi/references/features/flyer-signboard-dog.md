@@ -73,11 +73,16 @@ scaffolding, not a bug or an oversight to "finish" incidentally while touching p
   change/purchase is `setSignboard` (owned styles re-equip for `0` cost, unowned styles pay
   `styles[style].priceBase` plus any `repBase` gate). Both commands share one handler but are
   materially different economic events — don't treat `setSignboard` as always-free.
-- UI: dog — `dog.open` nav → dog sheet → `dog.buy`/`dog.upgrade` button → `upgradeDog`. Signboard —
+- UI: dog — **both** the yard's `dog.open` button (`App.tsx:375`) and the upgrades-sheet entry
+  (`App.tsx:454`) are wrapped in `showDeferredRisk` (`App.tsx:21`: `import.meta.env.DEV &&
+  import.meta.env.VITE_TBH_RISK_PREVIEW === '1'`) **and** `w.dogLevel > 0` for the yard button —
+  production hides dog navigation entirely; it's reachable only in a dev build with that env flag
+  set. When visible: nav → dog sheet → `dog.buy`/`dog.upgrade` button → `upgradeDog`. Signboard —
   `sign.open` nav → sign sheet → `sign.install` (first) or a style card's `sign.buy`/`sign.equip` →
-  `installSignboard`/`setSignboard`. Flyer — `flyer.open` nav → flyer sheet → `flyer.buy` →
-  `buyFlyer`; `flyer.use` → `activateFlyer`. Both local and remote mode route through the same
-  `run(cmd)` dispatcher (`App.tsx:165-174`) — no divergent logic for this feature area.
+  `installSignboard`/`setSignboard` (no preview gate — shipped normally). Flyer — `flyer.open` nav →
+  flyer sheet → `flyer.buy` → `buyFlyer`; `flyer.use` → `activateFlyer` (also shipped normally). Both
+  local and remote mode route through the same `run(cmd)` dispatcher (`App.tsx:165-174`) — no
+  divergent logic for this feature area.
 
 ## Existing proof
 

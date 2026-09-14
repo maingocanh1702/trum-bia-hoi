@@ -79,8 +79,11 @@ are `shift_3` and `gift_3` (below), and life-path progress is its own unrelated 
   `claimAttendance` is validated on the adjacent line but is a **different** command entirely, owned
   by [stamina-attendance-lifepath](stamina-attendance-lifepath.md).
 - UI: nav → `'Nhiệm vụ ngày'` sheet → per-row `'Nhận thưởng'` once `progress >= target`, or
-  `.quest-bonus button` once all 5 rows are claimed. Both modes dispatch through the same
-  `run(cmd)` fork as every other command (`App.tsx:166`) — no local/remote divergence in this feature.
+  `.quest-bonus button` once all 5 rows are **completed** (`quests.ts:75`'s eligibility check is
+  `daily.rows.some(r => r.progress < r.target)`, i.e. progress vs. target — not `row.claimed`; the
+  bonus is claimable even if individual rows haven't been claimed yet, as long as every row's progress
+  has reached its target). Both modes dispatch through the same `run(cmd)` fork as every other command
+  (`App.tsx:166`) — no local/remote divergence in this feature.
 
 ## Existing proof
 
@@ -186,5 +189,10 @@ source file but is a fully separate mechanic and command), [economy-k-ledger](ec
 (`credit(w, c, q.coin, 'quest')` is how a per-row coin reward reaches the ledger — the five-of-five
 bonus itself never calls `credit` since it has no coin reward), [glass-beer-flat](glass-beer-flat.md)
 (staleness gates `perfect_tip`/`no_stale_beer` progress), [seasons-leaderboard](seasons-leaderboard.md)
-(quest coin rewards still count toward `seasonEarned` like any other `credit()` call, but the bonus's
-flyer/badge-shard reward does not touch the season ledger at all).
+(quest coin rewards go through `credit(w, c, q.coin, 'quest')`, adding to `w.coins`, but `'quest'` is
+in `ledgers.excluded` — **corrected claim**: quest credit does *not* count toward
+`seasonEarned`/`lifetimeEarned`/`dayEarned`, confirmed both by config
+(`ledgers.excluded: ["quest",...]`) and directly by `quests.test.ts`'s own first test above, which
+asserts `g.world.seasonEarned`/`lifetimeEarned`/`dayEarned` stay byte-unchanged after a real quest
+claim credits coins; the bonus's flyer/badge-shard reward never calls `credit` at all, so it's excluded
+by construction rather than by source-list).

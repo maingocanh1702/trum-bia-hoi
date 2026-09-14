@@ -123,6 +123,10 @@ each test below is cited for its *refill/capacity* claim, not restated for its f
 - **No test restocks `'bia'` while a batch is already mid-flight and *not* paused** — the only
   restock-during-batch case (`production.test.ts`'s partial-stock test) pauses activity first
   (`{active:true, paused:true}`); an un-paused concurrent restock+batch interleaving is untested.
+- **No test pairs fine vs. coarse time-stepping of a single running (unpaused) keg batch** — grep-
+  confirmed the two candidate tests (the 150-tick loop, the paused-batch jump) use different scenarios,
+  not a fine/coarse comparison of the same one (see Variants' time-jump entry for the correction).
+  `kitchen.test.ts` has this exact comparison for kitchen jobs; no equivalent exists here.
 
 ## Variants
 
@@ -132,8 +136,13 @@ each test below is cited for its *refill/capacity* claim, not restated for its f
   (`.ok===false`, `game.test.ts:112`) carries **no** `reason` string at all — `restockQuote` returns
   only `{quantity, cost, ok}`, never a `reason` field, unlike most other quote helpers.
 - **empty** — starting stock below one full batch (`production.test.ts`'s partial-stock test: 2 units
-  vs. `kegBatch[0]=2`, so the first batch is capacity-limited, not stock-limited, by coincidence at
-  that level — re-check the arithmetic before reusing this fixture at a different level).
+  vs. its own fixture's level-1 `kegBatch`). **Corrected claim**: `production.test.ts`'s `game()`
+  helper builds from `docs/config/legacy/economy-1.7.3.json` (`import legacy from
+  '../../../docs/config/legacy/economy-1.7.3.json'`, `game.ts:7-11`), whose `kegBatch[0]` is `5`, not
+  the current config's `2` (grep-verified against the raw legacy JSON) — the test's 2-unit starting
+  stock is genuinely **stock-limited** (`2 < 5`), not a capacity-vs-stock coincidence. Don't reuse this
+  file's current-config `kegBatch`/`kegStorage`/`refillMs` arrays (Observable contract above) to reason
+  about `production.test.ts`'s own fixture numbers — they're two different config generations.
 - **persistence** — every cited engine test round-trips `decodeSave(encodeSave(g))`;
   `config-pinning.test.ts`'s save/reopen case is the direct cross-config persistence proof for batch
   timing.
@@ -143,8 +152,15 @@ each test below is cited for its *refill/capacity* claim, not restated for its f
   file's citation set; `'level one fills...'`'s repeated-`serve`-idempotency-key check is incidental,
   not a keg-command idempotency proof.
 - **stale** — not this file's concern; see [glass-beer-flat](glass-beer-flat.md).
-- **time-jump** — `production.test.ts`'s 150-tick loop vs. the paused-batch test's single
-  `g.advance(w.now + 40000)` jump land on equivalent state (fine vs. coarse stepping).
+- **time-jump** — **corrected claim**: these two tests are not a fine-vs-coarse pair of the *same*
+  scenario — they use different initial config, commands and durations, so they can't be read as
+  proving stepping-granularity equivalence. Cite each for its own actual property instead:
+  `production.test.ts`'s 150-tick loop (fine, 1000ms steps) holds the
+  `inventory+ready+batch+onTray+served+waste` conservation invariant across every step of a real
+  multi-batch assembly; the paused-batch test's single coarse `g.advance(w.now + 40000)` jump proves a
+  *paused* batch's `remainingMs`/`progress` stay frozen across a large jump. No test in this file's
+  citation set directly pairs fine-vs-coarse stepping of an *unpaused*, running keg batch the way
+  `kitchen.test.ts`'s deadline test does for kitchen jobs (see Uncovered paths).
 - **offline/reconnect** — the paused-batch test's `{active:true, paused:true}` → resume cycle is the
   closest analog here (menu-pause, not true offline/disconnect) — see `restock-inventory-menu` for
   the pause mechanic itself.

@@ -151,8 +151,12 @@ finding — cross-linked, not restated), cooler's freshness formula is
   round-trips via the shared `send()`/`decodeSave` harness convention used throughout this suite.
 - **capacity** — `maxTables:6` (untested refusal, see Uncovered paths would need a 7th `buyTable`);
   table capacity per level (`2/4/6/8` seats, implicitly proven by the level-up assertion).
-- **duplicate/idempotent** — not exercised specifically for `upgrade`/`upgradeTable`/`buyTable` in
-  this file's citation set.
+- **duplicate/idempotent** — **corrected claim**: `live-upgrades.test.ts:18` (inside the
+  all-five-kinds loop) resends the identical `envelope` (same `idempotencyKey`) for `upgrade`
+  immediately after the first successful send, and asserts both the result stays `ok:true` and the
+  whole world (`deepEqual(w, after)`) is byte-unchanged by the retry — a direct idempotent-retry
+  proof, missed in an earlier pass. Not separately exercised for `upgradeTable`/`buyTable` in this
+  file's citation set.
 - **stale** — not applicable to this feature.
 - **time-jump** — not applicable; upgrades are instantaneous commands, not clocked processes (contrast
   [keg-refill](keg-refill.md), where the upgraded kind's *effect* is clocked).
