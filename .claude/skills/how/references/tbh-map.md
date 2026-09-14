@@ -42,9 +42,19 @@ same way this file itself was built.
   - `freeze(value)` (config.ts:362); `loadConfig(input = seed)` (config.ts:367) — the exported
     loader: `shape` → `structuredClone` → `validate` → `scale` → `freeze` → `{version, raw, values, get}`.
   - `configContent(c)` (config.ts:386) — canonical `JSON.stringify` for content-equality.
-- `packages/engine/src/rules.ts` — 23 pure functions, every one `(w, c: Config, ...)`, reading
-  numbers exclusively via `c.values.*` (e.g. `wellRestedBonus` rules.ts:23, `customerValue`
-  rules.ts:69, `credit` rules.ts:111 — "the only faucet entry point").
+- `packages/engine/src/rules.ts` — 23 exported functions, all reading numbers exclusively via
+  `c.values.*` (no hardcoded economy numbers) — **but not all are pure; don't assume the whole
+  file is read-only.** 20 are read-only quote/status helpers taking `WorldView` and never
+  mutating (`wellRestedBonus` rules.ts:23, `customerValue` rules.ts:69, `restockQuote` rules.ts:33,
+  `upgradeQuote` rules.ts:41, `creditQuote` rules.ts:103, `deliveryQuote` rules.ts:141,
+  `stockGiftQuote` rules.ts:155, …). Two take `World` (mutable) and actually mutate it:
+  **`credit`** (rules.ts:111, doc comment "The only faucet entry point" — mutates `w.coins`,
+  `w.dayEarned`, `w.seasonEarned`, `w.lifetimeEarned` and calls `creditSeasons()`, which mutates
+  `w.seasons`) and **`addStock`** (rules.ts:167, mutates `w.inventory` then calls `credit()`).
+  A third, **`creditBatchSafe`** (rules.ts:124), also types its param as `World` but does **not**
+  mutate the caller's real world — it runs `credit()` against a disposable `trial` clone
+  (rules.ts:126-127, `const trial: World = {...w, ...}`) to check a batch of credits stays
+  ledger-safe before the real commit.
 - **`configVersion` pin/replay does NOT live in config.ts** (zero grep hits there) — it's owned by
   `engine.ts`: `Game.replay()` throws `replay:configVersion` on a mismatch (engine.ts:697),
   `Game.applyCommand()` rejects `configVersionConflict` on same-version-different-content
