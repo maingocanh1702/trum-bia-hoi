@@ -54,10 +54,13 @@
   not a simulation. **Confirmed by direct experiment:** a candidate that keeps `k.value: 2.5` (inside
   `band: [2,3]`) while changing an unrelated pricing anchor produced a *measured* k of 209.765 across
   1,000 simulated serves — admission accepted it anyway, because it never runs the candidate config
-  through gameplay. Any change that can move the real economy (price, cost, anchor, payout formulas)
-  still needs `npm run sim:career:gate` (or an equivalent sim) against the actual candidate config;
-  this admission check only blocks an obviously-wrong self-reported number, it is not proof the
-  resulting economy is safe. League tier ids, location ids and
+  through gameplay. **No existing tool can simulate an admin candidate before publish either** —
+  `packages/engine/sim/career.ts:18`'s `simulateCareer()` always plays `config`, the module-level
+  singleton `loadConfig()` builds from a static import of `docs/config/economy.tbh.json`
+  (`config.ts:1,367`); its CLI (`:110-113`) accepts only `--days`/`--seed`/`--out`/`--check-advanced`,
+  no candidate-config input. This admission check only blocks an obviously-wrong self-reported
+  number; proving the resulting economy is safe for a proposal that changes price/cost/anchor/payout
+  math has no automated path today — see Uncovered paths. League tier ids, location ids and
   the location fallback are treated as persisted-identity sets that cannot be renamed or removed
   ("These identifiers are persisted in careers. Tuning numbers cannot migrate their meaning.",
   `registry.ts:160`); `_meta` other than `version`/`date` is immutable (`registry:metadataImmutable`).
@@ -111,8 +114,12 @@
   helper's default `navigate=true` (`page.goto('/admin')`, `admin.spec.ts:22`).
 - **UI**: `Admin.tsx` (registry editor: draft/diff/compare/proposals/approve/publish/emergency/support/
   audit), `AdminScope.tsx` (segment/campaign/player scope editor + impact viewer), `AdminForecast.tsx`
-  (7-day economic forecast, VND-denominated, 660s client timeout against a ~10-minute server worker —
-  `config-exempt` comment at `AdminForecast.tsx:11`), `AdminCompetition.tsx` (moderation). All real copy
+  (7-day economic forecast, **denominated in in-game coins, not VND** — `forecast.ts:90` marks
+  `vndRevenue.status: 'unavailable'` unconditionally, "No observed donation data; free gameplay sales
+  are not a revenue model."; the UI states this explicitly too, `admin.forecast.vnd`: "VND revenue
+  unavailable: no observed donation data. In-game coins are not real-money revenue." — 660s client
+  timeout against a ~10-minute server worker — `config-exempt` comment at `AdminForecast.tsx:11`),
+  `AdminCompetition.tsx` (moderation). All real copy
   routes through `translate(locale, 'admin.'+key)` (`Admin.tsx:12`) — **except** the dev-Google-sign-in
   stub in `admin-api.ts`'s `googleScript(dev=true)` branch, which calls `translate()` directly with the
   **player**-side keys `account.devName`/`account.devSignIn`/`account.devOnly`
@@ -221,12 +228,25 @@ logout; damaged recovery is downloadable'`.
   `Admin*.tsx` itself — see Gotchas and [ui-shell-i18n-a11y](ui-shell-i18n-a11y.md).
 - `npm run verify` is the whole-repo gate for any change here; it does not run the admin Playwright
   config (that's a separate, non-default config the way remote/accessibility are).
-- **Any proposal touching price/cost/anchor/payout math needs `npm run sim:career:gate` against the
-  actual candidate config, not just admission's `k.value` band check** — see the k-invariant Gotcha
-  above; admission alone cannot catch an economy that's broken while `k.value` still reads in-band.
+- **Admission's `k.value` band check is not economy-safety proof for a price/cost/anchor/payout
+  change** (see the k-invariant Gotcha above), and there is currently no automated way to run
+  `sim:career:gate` (or any sim) against a candidate config instead of the pinned seed — see
+  Uncovered paths. Until that tooling exists, treat such a proposal's real-economy impact as
+  unverified by any command in this file.
 
 ## Uncovered paths
 
+- **No tool can simulate an admin candidate config's real economy before publish.**
+  `packages/engine/sim/career.ts:18`'s `simulateCareer()` always plays the module-level `config`
+  singleton, built once from a static import of `docs/config/economy.tbh.json`
+  (`packages/engine/src/config.ts:1,367` — `loadConfig()`'s default `input = seed`); the CLI
+  (`career.ts:110-113`) takes only `--days`/`--seed`/`--out`/`--check-advanced`, nothing that loads a
+  different config. The same applies to `sim:onboarding`/`sim:rush`. A registry proposal that changes
+  price/cost/anchor/payout math therefore has no automated way to confirm the *resulting* economy
+  stays sane — only `registry.ts:157`'s cheap `k.value`-vs-`k.band` check runs, and it can pass while
+  the real economy is badly broken (see the k-invariant Gotcha). The closest manual workaround —
+  temporarily overwriting `economy.tbh.json` with the candidate, running `npm run sim:career:gate`,
+  then reverting — is unautomated and risks leaving the wrong file committed if a step is skipped.
 - Route **paths** are now confirmed against `http.ts` directly (see "How to reach it"), but this pass
   did not read every route handler's full body — request/response field shapes beyond what's cited
   above (e.g. `/admin/players`' pagination shape, `/admin/config`'s exact response envelope) are not

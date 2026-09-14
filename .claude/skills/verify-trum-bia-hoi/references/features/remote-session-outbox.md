@@ -30,7 +30,12 @@
 - Heartbeat (`beat()`, `:271-284`): increments and **persists `heartbeatSeq` before sending**
   (`:273-274` comment: "a lost acknowledgement is followed by a NEW beat"), posts `{clientId,
   beatSeq, active, paused}` to `/player/heartbeat`. A `heartbeatStale` server reply reconciles the
-  local counter forward (`:278`) instead of failing. `watchLiveness()` (`:232-237`) is a plain
+  local counter forward **and then still throws** (`:278-279`: `j.heartbeatSeq =
+  Math.max(j.heartbeatSeq, reply.heartbeatSeq); ...; throw new RemoteError(reply.error)`) — this beat
+  attempt fails (state moves to `'reconnecting'`, per the `fail()` mapping above, since
+  `heartbeatStale` isn't one of the `'conflict'`-mapped codes), but the reconciled counter makes the
+  *next* retried beat succeed. Not a silent instead-of-failing recovery — a visible reconnect blip
+  followed by a self-correcting retry. `watchLiveness()` (`:232-237`) is a plain
   `setTimeout` for `config.values.network.reconnectingUiDelayMs` (assigned at `:129` from the pinned
   config) — if no successful `apply()` lands before it fires while state is `online`/`connecting`,
   state flips to `'reconnecting'` even though the underlying `fetch` may still be hanging (README's
