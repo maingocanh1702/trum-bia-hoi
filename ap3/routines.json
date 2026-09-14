@@ -7,12 +7,18 @@
       "risk": "P2",
       "description": "Read-only verification tooling for agents: engine snapshot, window bridge, doctor, port resolver, Playwright fixture, coverage script. No gameplay, economy, engine/server API or UI copy changes.",
       "allowed_scope": [
-        "packages/engine/src/snapshot.ts", "packages/engine/src/index.ts",
+        "packages/engine/src/snapshot.ts",
+        "packages/engine/src/index.ts",
         "packages/engine/test/snapshot.test.ts",
-        "apps/web/src/verify/**", "apps/web/src/main.tsx", "apps/web/vite.config.ts",
-        "apps/web/test/tbh-fixture.ts", "apps/web/test/bridge.spec.ts",
-        "scripts/verify/**", "playwright*.config.ts", "package.json", ".gitignore",
-        ".claude/skills/verify-trum-bia-hoi/references/features/**"
+        "apps/web/src/verify/**",
+        "apps/web/src/main.tsx",
+        "apps/web/vite.config.ts",
+        "apps/web/test/tbh-fixture.ts",
+        "apps/web/test/bridge.spec.ts",
+        "scripts/verify/**",
+        "playwright*.config.ts",
+        "package.json",
+        ".gitignore"
       ],
       "budget_usd_max": 16,
       "max_runs_per_day": 2,
