@@ -35,6 +35,17 @@
   config) — if no successful `apply()` lands before it fires while state is `online`/`connecting`,
   state flips to `'reconnecting'` even though the underlying `fetch` may still be hanging (README's
   "heartbeat deadline changes the edge status... even if fetch hangs").
+- **`connection_lost`/`connection_expired` are the engine-side counterpart of this module's
+  presence-sweep mechanism**, not client-dispatched events. `store.ts`'s `syncPresence()` (`:647-654`)
+  calls `game.disconnect(at, shiftId, lossId)` (`engine.ts:679-682`, wraps the trusted
+  `connectionLost` system command) once a player's live `client_presence` rows all expire — this
+  emits `connection_lost` (`engine.ts:745` for `shiftId: null`/resting, `:753` for an open shift) and,
+  for an open shift, arms `w.disconnection.expiresAt = now + network.reconnectGraceMs`.
+  `game.reconnect()` (`:684-687`, wraps `connectionRestored`) clears it on return. If no reconnect
+  lands before the deadline, `advance()`/`catchUp()` (`engine.ts:184`) — reached again via
+  `syncPresence()`'s own `game.catchUp(at)` call — fires `connection_expired` and force-closes a
+  still-`'open'` shift (`shift_closing` reason `'disconnected'`). Neither event is reachable through a
+  public HTTP route directly; both are internal, driven by presence expiry, not a client command.
 - Reconnect cadence is **server-driven, not exponential backoff**: `cycle()`'s `finally` block
   (`:312-321`) reschedules via `setTimeout(() => this.wake(), this.again ? 0 : Math.min(this.interval,
   ...deadlines))`, where `interval` is the last heartbeat's `heartbeatIntervalMs` (`:282`) and
@@ -108,6 +119,15 @@
 
 ## Existing proof
 
+- `packages/engine/test/disconnection.test.ts:17` `'a lost connection freezes grace, closes an
+  unserved table at the deadline and never grants absent attendance or resting stamina'` is direct
+  proof of both engine events: it calls the `disconnect()` test helper, reads `w.disconnection!.expiresAt`
+  (= `lostAt + network.reconnectGraceMs`), advances to one tick before the deadline (shift stays
+  `'open'`, nothing else changes), then advances to the deadline and asserts
+  `count(g, 'connection_expired') === 1` and `count(g, 'shift_closing') === 1`. Run via `npm test` or
+  targeted: `node --import tsx --test packages/engine/test/disconnection.test.ts`. The end-to-end web
+  counterpart is `remote.spec.ts:111` (already cited below) — it drives the same grace-then-close
+  behavior through the real HTTP fixture, not just the engine.
 - `apps/server/test/http.test.ts` (server tier, 12 tests total in file), the ones pinning this
   surface: `'HTTP requires owned stream sequencing, returns recoverable gap/conflict
   acknowledgements and resumes the exact cursor after restart'` (`:251`), `'real HTTP guests own

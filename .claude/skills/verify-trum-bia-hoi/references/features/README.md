@@ -6,11 +6,11 @@ regression checklist. Adapted from
 [poteto/verification-skill-example](https://github.com/poteto/verification-skill-example)'s feature
 map to this repo's engine/server/web-local/web-remote shape.
 
-**Coverage today: 12 of 23 files.** Wave V1 (`trum-bia-hoi-agent-understanding-verification-implementation-plan.md`
-§5) is split into 3–4 PRs by area; this PR is the gameplay-core slice (table → kitchen → serve →
-glass → economy → save → cross-system). The remaining 11 are listed below with a one-line scope and
-no link — do not assume they exist; `ls references/features/*.md` is the ground truth, this prose
-summary is not.
+**Coverage today: 23 of 23 files.** Wave V1 (`trum-bia-hoi-agent-understanding-verification-implementation-plan.md`
+§5) shipped in three PRs by area: gameplay-core (table → kitchen → serve → glass → economy → save →
+cross-system), the engine/server remainder (shift/spawn/economy/progression pieces), and web-remote/
+admin (session, admin registry, shell, assets). Every file below now exists and is linked;
+`ls references/features/*.md` remains the ground truth if this prose ever drifts.
 
 ## Baseline preconditions
 
@@ -53,22 +53,22 @@ Sequence for the full procedure. Summary:
 
 Walk this map top to bottom for a broad regression; finish with `multi-system-journeys.md`. This is
 the wave-V1 target order (`trum-bia-hoi-agent-understanding-verification-implementation-plan.md`
-§5.2) — the ✅ files exist today, the rest are named for when a later slice adds them.
+§5.2) — every file below exists today.
 
 ```text
-shift-lifecycle → spawn-queue-seating → table-lifecycle ✅ → order-rounds-kitchen ✅ → serve-outcomes ✅
-→ glass-beer-flat ✅ → keg-refill → restock-inventory-menu → economy-k-ledger ✅ → rush-weather
-→ stamina-attendance-lifepath → quests-daily-bonus → upgrades-equipment-tables → location-lease
-→ flyer-signboard-dog → seasons-leaderboard → onboarding-guide ✅ → save-replay-local ✅
+shift-lifecycle ✅ → spawn-queue-seating ✅ → table-lifecycle ✅ → order-rounds-kitchen ✅ → serve-outcomes ✅
+→ glass-beer-flat ✅ → keg-refill ✅ → restock-inventory-menu ✅ → economy-k-ledger ✅ → rush-weather ✅
+→ stamina-attendance-lifepath ✅ → quests-daily-bonus ✅ → upgrades-equipment-tables ✅ → location-lease ✅
+→ flyer-signboard-dog ✅ → seasons-leaderboard ✅ → onboarding-guide ✅ → save-replay-local ✅
 → remote-session-outbox ✅ → admin-registry ✅ → ui-shell-i18n-a11y ✅ → assets-manifest ✅ → multi-system-journeys ✅
 ```
 
 ## Shift & flow
 
-- `shift-lifecycle` *(not yet written)*: the shift clock (prepare/wash/rush/close), `manual-close`,
+- [shift-lifecycle](shift-lifecycle.md): the shift clock (prepare/wash/rush/close), `manual-close`,
   well-rested carry-over, `rush-clock`.
-- `spawn-queue-seating` *(not yet written)*: customer arrival interval, queue formation and overflow,
-  the separate shipper delivery-order lane.
+- [spawn-queue-seating](spawn-queue-seating.md): customer arrival interval, queue formation and
+  overflow, the separate shipper delivery-order lane.
 
 ## Table & service
 
@@ -81,24 +81,26 @@ shift-lifecycle → spawn-queue-seating → table-lifecycle ✅ → order-rounds
   expired, plus the code-level `stale` case) and the two-clock (patience + freshness) combine rule.
 - [glass-beer-flat](glass-beer-flat.md): per-glass freshness/flat lifecycle, cooler-upgrade effect,
   the keg status it depends on.
-- `keg-refill` *(not yet written)*: dedicated keg-level/refill-purchase feature file (glass-beer-flat
+- [keg-refill](keg-refill.md): dedicated keg-level/refill-purchase feature file (glass-beer-flat
   covers keg *status* only as far as the freshness contract needs it).
-- `restock-inventory-menu` *(not yet written)*: ingredient stock, menu pause, restock commands.
+- [restock-inventory-menu](restock-inventory-menu.md): ingredient stock, menu pause, restock
+  commands.
 
 ## Economy & progression
 
 - [economy-k-ledger](economy-k-ledger.md): the single mutating ledger helper (`credit()`), k
   (value-per-served-order) measurement via sims.
-- `rush-weather` *(not yet written)*: rush schedule + weather multiplier pressure.
-- `stamina-attendance-lifepath` *(not yet written)*: stamina/well-rested, attendance streak,
-  life-path unlock gating.
-- `quests-daily-bonus` *(not yet written)*: daily quest planning + claim, attendance rewards.
-- `upgrades-equipment-tables` *(not yet written)*: equipment upgrade purchase/quote (cooler, etc.),
-  live-upgrade application mid-shift.
-- `location-lease` *(not yet written)*: lease quote, rent/leave location.
-- `flyer-signboard-dog` *(not yet written)*: flyer campaigns, signboard style, dog level purchase.
-- `seasons-leaderboard` *(not yet written)*: season rollover/sync, server leaderboard + competition
-  snapshot.
+- [rush-weather](rush-weather.md): rush schedule + weather multiplier pressure.
+- [stamina-attendance-lifepath](stamina-attendance-lifepath.md): stamina/well-rested, attendance
+  streak, life-path unlock gating.
+- [quests-daily-bonus](quests-daily-bonus.md): daily quest planning + claim, attendance rewards.
+- [upgrades-equipment-tables](upgrades-equipment-tables.md): equipment upgrade purchase/quote
+  (cooler, etc.), live-upgrade application mid-shift.
+- [location-lease](location-lease.md): lease quote, rent/leave location.
+- [flyer-signboard-dog](flyer-signboard-dog.md): flyer campaigns, signboard style, dog level
+  purchase.
+- [seasons-leaderboard](seasons-leaderboard.md): season rollover/sync, server leaderboard +
+  competition snapshot.
 
 ## Onboarding & persistence
 
