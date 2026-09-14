@@ -6,9 +6,9 @@ regression checklist. Adapted from
 [poteto/verification-skill-example](https://github.com/poteto/verification-skill-example)'s feature
 map to this repo's engine/server/web-local/web-remote shape.
 
-**Coverage today: 7 of 23 files.** Wave V1 (`trum-bia-hoi-agent-understanding-verification-implementation-plan.md`
+**Coverage today: 12 of 23 files.** Wave V1 (`trum-bia-hoi-agent-understanding-verification-implementation-plan.md`
 §5) is split into 3–4 PRs by area; this PR is the gameplay-core slice (table → kitchen → serve →
-glass → economy → save → cross-system). The remaining 16 are listed below with a one-line scope and
+glass → economy → save → cross-system). The remaining 11 are listed below with a one-line scope and
 no link — do not assume they exist; `ls references/features/*.md` is the ground truth, this prose
 summary is not.
 
@@ -59,8 +59,8 @@ the wave-V1 target order (`trum-bia-hoi-agent-understanding-verification-impleme
 shift-lifecycle → spawn-queue-seating → table-lifecycle ✅ → order-rounds-kitchen ✅ → serve-outcomes ✅
 → glass-beer-flat ✅ → keg-refill → restock-inventory-menu → economy-k-ledger ✅ → rush-weather
 → stamina-attendance-lifepath → quests-daily-bonus → upgrades-equipment-tables → location-lease
-→ flyer-signboard-dog → seasons-leaderboard → onboarding-guide → save-replay-local ✅
-→ remote-session-outbox → admin-registry → ui-shell-i18n-a11y → assets-manifest → multi-system-journeys ✅
+→ flyer-signboard-dog → seasons-leaderboard → onboarding-guide ✅ → save-replay-local ✅
+→ remote-session-outbox ✅ → admin-registry ✅ → ui-shell-i18n-a11y ✅ → assets-manifest ✅ → multi-system-journeys ✅
 ```
 
 ## Shift & flow
@@ -102,19 +102,21 @@ shift-lifecycle → spawn-queue-seating → table-lifecycle ✅ → order-rounds
 
 ## Onboarding & persistence
 
-- `onboarding-guide` *(not yet written)*: F27 guided-onboarding steps.
+- [onboarding-guide](onboarding-guide.md): F27 guided-onboarding steps, engine `firstShift`/
+  `lostStreak` forcing, `sim:onboarding`'s k-band assertion.
 - [save-replay-local](save-replay-local.md): `encodeSave`/`decodeSave` replay, checkpoint fast path,
   IndexedDB local career storage, the documented `claimLocal` boundary.
-- `remote-session-outbox` *(not yet written)*: `remote.ts` journal, one-writer lock, heartbeat,
-  reconnect.
+- [remote-session-outbox](remote-session-outbox.md): `remote.ts` journal, one-writer lock, heartbeat,
+  reconnect, Google account link/switch.
 
 ## Admin & shell
 
-- `admin-registry` *(not yet written)*: `Admin*` screens, server registry publish/rollback,
-  admin-auth.
-- `ui-shell-i18n-a11y` *(not yet written)*: `App.tsx` shell, i18n fallback, 44px hit targets,
+- [admin-registry](admin-registry.md): `Admin*` screens, server registry publish/rollback,
+  admin-auth (5 roles, TOTP MFA), local-history moderation.
+- [ui-shell-i18n-a11y](ui-shell-i18n-a11y.md): `App.tsx` shell, i18n fallback, 44px hit targets,
   reduced-motion, viewport matrix.
-- `assets-manifest` *(not yet written)*: manifest entries, `check:assets`.
+- [assets-manifest](assets-manifest.md): manifest entries, `check:assets`, `Sprite`/`audio.ts`
+  consumers.
 
 ## Multi-system
 
