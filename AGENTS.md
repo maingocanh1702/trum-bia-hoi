@@ -43,6 +43,13 @@ This project is indexed by GitNexus as **trum-bia-hoi** (2190 symbols, 3232 rela
 
 <!-- gitnexus:end -->
 
+## How — codebase-understanding skill (Claude Code)
+
+Before editing anything non-trivial, read `.claude/skills/how/SKILL.md` (or run `/how <question>`
+in Claude Code). It explores in parallel (explain mode) or explores + spawns independent critics
+(critique mode), and requires every non-trivial answer to cite file:line and the exact tests that
+already pin the behaviour — see `.claude/skills/how/references/tbh-map.md` for the entry-point map.
+
 <!-- autopilot:start -->
 # Build workflow — the building agent decides (owner decision 2026-09-08)
 
