@@ -1,0 +1,197 @@
+# Restock, inventory & menu report (03-SPEC-he-ban.md "Owner update — management pause", 2026-09-09; `docs/config/economy.tbh.json` `menu`/`inventory` blocks)
+
+## "Menu pause" is not in `menu.ts`
+
+Despite the name, the "menu pause" mechanic (opening Nhập hàng/management menus auto-freezes
+gameplay) is **not implemented in `packages/engine/src/menu.ts`** — grep-confirmed zero
+`paused`/`activity` references in that file. It's a generic `World.paused` boolean set by the
+`activity` command and checked at four call sites in `engine.ts` (`validateAdvance():161`,
+`gameplayPaused():187`, `updateRush():268`, `tickQuests():311` — exact line numbers as of this
+commit, re-grep `w.paused` before citing elsewhere since these shift easily) plus the private
+`gameplayPaused()` helper (`engine.ts:186-189`) that is the actual freeze gate consumed throughout
+`advanceTime()`. `menu.ts` itself owns only `serveValueStats()`/`menuReport()` — pure reporting, no
+pause logic at all. Treat "menu.ts" and "menu pause" as two unrelated things that happen to share a
+word.
+
+## Observable contract
+
+- `Dish` (`packages/engine/src/config.ts:6`): `keyof Economy['menu']`. `DISHES` (`config.ts:12`):
+  `Object.keys(seed.menu)` → `['bia', 'lac', 'nem', 'dau', 'topmo', 'long']` (grep-verified against
+  `docs/config/economy.tbh.json`'s `menu` block, not hardcoded here from memory).
+  [keg-refill](keg-refill.md) owns `'bia'`; this file owns the other five.
+- `World.inventory: Record<Dish, number>`; `World.paused: boolean` (only meaningful alongside
+  `World.active`, see Gotchas); `World.shift.menu: {eventStart, serveStart, complete}` (the report's
+  observation cursors).
+- `menuReport(w, c)` (`packages/engine/src/menu.ts:15-30`) → `{shiftId, complete, rows: [{dish,
+  ordered, sold, wasted}], ...serveValueStats(...)}` — walks `w.events` from `shift.menu.eventStart`
+  counting `dish_ordered`/`dish_wasted` per dish, and `w.serves` from `shift.menu.serveStart` counting
+  sold dishes. `serveValueStats()` (`menu.ts:5-12`) is the money/`k` half — already owned by
+  [economy-k-ledger](economy-k-ledger.md), cross-link rather than re-deriving the formula here.
+- Events: `restocked` (`engine.ts:912`, `{dish, quantity, cost}`), `dish_ordered` (`:605`, gated
+  `MENU_RULES`), `dish_wasted` (`:520`), `menu_tracking_started` (`:527`, private `startMenu()`,
+  fires once per shift — explicit `{complete:true}` at shift-open `:810`, or lazily on the first tick
+  after if not already set `:716` — sets `shift.menu = {eventStart, serveStart, complete}`, the
+  cursor pair `menuReport` reads from), `menu_mix_summary` (`:441`, emitted once at shift-close,
+  flattens each report row into `ordered_<dish>`/`sold_<dish>`/`wasted_<dish>` keys alongside the
+  `serveValueStats` fields).
+- `Result` reasons for `restock`: `'stockOrCoins'` (not enough stock headroom or coins),
+  `'dishLocked'` (kitchen level below `menu[dish].unlock.kitchenLevel`) — `engine.ts:910`.
+- DOM/aria: button `'Nhập hàng'` opens the restock/management sheet (`pause.spec.ts`); stock rows
+  `.stock-row`, buy button pattern `` /^Mua bom \+1 ·/ ``; the sheet shows `.sheet-pause` containing
+  `'Tạm dừng'` (paused indicator) whenever `world.paused` is true.
+
+## How to reach it
+
+- `{type:'restock', dish, mode:'bulk'|'full'|'one'}` (`types.ts:103`) — `case 'restock':`
+  (`engine.ts:908-913`): `restockQuote()` (`rules.ts:33-40`, cost = bulk-batch price +
+  per-unit remainder, `ok` requires `dishUnlocked(w,c,dish)` (`rules.ts:32`:
+  `equipment.kitchen >= menu[dish].unlock.kitchenLevel`) **and** `quantity <= stockCap(w,c) -
+  inventory[dish]` (`stockCap`, `rules.ts:28`, driven by `equipment.stall`) **and** enough coins.
+  Success: `spend(cost)`, `inventory[dish] += quantity`, emits `restocked`. The command's own shape
+  gate (`engine.ts:1091`) is a **closed allowlist**: `DISHES.includes(cmd.dish) &&
+  ['bulk','full','one'].includes(cmd.mode)` — a `dish` outside the six real keys (e.g. an injected
+  `'__proto__'`) is rejected before `restockQuote` ever runs, not just quietly priced at zero.
+- `{type:'activity', active, paused?}` (`types.ts:120`) — `case 'activity':` (`engine.ts:761-764`):
+  sets `w.paused = true` only when `cmd.paused` is truthy **and** the replaying/live rules version is
+  `>= MENU_PAUSE_RULES` (`16`, `engine.ts:27`). The command-shape validator
+  (`engine.ts:1083`) enforces `!c.paused || c.active` — you cannot request "paused" without also being
+  "active"; paused is a refinement of active, not an independent flag. [shift-lifecycle](shift-lifecycle.md)
+  owns the `active:false` (hidden/offline) case; this file owns `paused:true`.
+- UI: any of "Nhập hàng" (restock), the equipment detail/upgrade sheets, or the management menu opens
+  auto-sends `{type:'activity', active:true, paused:true}`; closing via `×`, `Escape`, or clicking
+  outside resumes (`03-SPEC-he-ban.md`'s "Owner update — management pause" section, quoted in the
+  title ref, is the exact source of this behaviour: patience/queue, prep/wash, glass freshness, shift,
+  Giờ Vàng (rush) and delivery timers all freeze together; deliberate in-menu actions and
+  attendance/VN-midnight keep using real calendar time).
+- Remote mode: identical `restock`/`activity` commands over `POST /player/command` — no shape
+  difference (same pattern as every other command in this repo).
+
+## Existing proof
+
+- `packages/engine/test/menu.test.ts` (10 tests, all grep-confirmed): `'six actual menu dishes keep
+  per-item ordered provenance and per-customer sales without mutating the report source'` (the core
+  `menuReport` dish-tracking proof), `'a newly opened shift resets report coverage without rewriting
+  the previous summary or selling old dishes twice'` (the `eventStart`/`serveStart` cursor-reset
+  proof — i.e. the direct proof of `menu_tracking_started`/`startMenu()` above), `'expired food is
+  wasted once with a reason, while never-stocked hot orders count as ordered
+  but not wasted'` (the `dish_ordered` vs `dish_wasted` counting distinction — [serve-outcomes](serve-outcomes.md)
+  already cites this same test for the waste-mechanism angle; here it's cited for the report-counting
+  angle instead), `'confirmed dismissal discards pending-order preparation but never reclassifies a
+  served mâm; retry and refusal add no waste'`, `'menu events and report are frame-independent, and a
+  hidden midnight does not manufacture sales or waste'`, `'genuine rules13 queued, expired and served
+  histories remain exact; only the observed current portion is reportable'` (legacy-replay proof).
+  `'mâm average stays separate from per-customer k across repeated rounds...'` is already cited by
+  [order-rounds-kitchen](order-rounds-kitchen.md) for the round-repeat angle and by
+  [economy-k-ledger](economy-k-ledger.md) for the `serveValueStats` formula — cross-link, not
+  re-derived here.
+- `packages/engine/test/game.test.ts:141` — `'invalid commands cannot write arbitrary inventory
+  fields or regress the clock'` — sends `{type:'restock', dish:'__proto__', mode:'full'}` and asserts
+  `ok:false`: the direct proof of the `DISHES.includes(cmd.dish)` allowlist gate, distinct from
+  [keg-refill](keg-refill.md)'s bulk/full/one-mode proof (`game.test.ts:106`, `dish:'bia'` only).
+- `packages/engine/test/menu-pause.test.ts` (all 3): `'a present player can restock, claim the real
+  calendar day and activate a flyer while gameplay remains frozen'` (restock **and**
+  [flyer-signboard-dog](flyer-signboard-dog.md)'s `activateFlyer` both proved safe mid-pause — cite
+  from both files, don't duplicate), `'menu pause rejects malformed or pre-protocol commands and
+  repeated pause leaves the original clock intact'` (idempotent re-pause, and the `MENU_PAUSE_RULES`
+  replay guard at `engine.ts:696`), `'a menu held across midnight replays the same calendar events
+  whether the clock advances once or in small ticks'` (VN-midnight/attendance keep real time while
+  gameplay clocks freeze — direct proof of the "management pause" spec quote above).
+- `apps/web/test/menu.spec.ts` (2): `` `Sổ ca shows actual dish counts, pauses while open and updates
+  after closing and survives reload at ${viewport.width}×${viewport.height}` `` (the UI's own
+  "Sổ ca"/shift-book rendering of `menuReport`, plus a same-test pause+reload crossing),
+  `'empty current and partial or closed legacy shifts do not present an invented average'` (no
+  fabricated `kValue`/`avgTicket` on an empty or legacy report).
+- `apps/web/test/pause.spec.ts` (3, confirmed by reading — this is genuinely the `world.paused`
+  mechanic, not [shift-lifecycle](shift-lifecycle.md)'s hidden/offline case): `'stock purchases keep
+  the menu open and the whole game paused until closing, then the same table can be served'`
+  (asserts `snapshot().paused === true` directly, buys stock twice mid-pause, confirms every timer
+  field is bit-identical before/after a long `page.clock.runFor`), `'visibility changes cannot resume
+  an open settings menu; Escape resumes the original remaining wait and expiry happens once'`,
+  `'switching from upgrades to equipment stays paused and reloading preserves the frozen wait before
+  resuming the yard'`.
+
+## Verification procedure
+
+- `node --import tsx --test packages/engine/test/menu.test.ts packages/engine/test/menu-pause.test.ts
+  packages/engine/test/game.test.ts` (or `npm test` for the full suite — bare `tsx` is not guaranteed
+  on `PATH` outside an npm script).
+- `npx playwright test apps/web/test/menu.spec.ts apps/web/test/pause.spec.ts` (or `npm run
+  test:e2e`).
+- `npm run check:config` before touching any `menu.*`/`inventory.*`/`upgrades.stall.stockCap` value in
+  `docs/config/economy.tbh.json`.
+
+## Uncovered paths
+
+- **No test drives a non-`'bia'` dish to its `stockCap` boundary.** `restockQuote`'s `quantity <=
+  missing` clamp (`rules.ts:34,39`) is exercised for `'bia'` only (via
+  [keg-refill](keg-refill.md)'s `game.test.ts:112`); grep of `menu.test.ts`/`economy2.test.ts` finds
+  no assertion of `reason`/`ok:false` from a full non-beer dish.
+- **`reason:'dishLocked'` is never asserted by exact string for `restock`.** The kitchen-level gate
+  (`dishUnlocked`, `rules.ts:32`) is exercised for *ordering* a locked dish (via `kitchenStatus`'s
+  `'locked'` job state, already noted as structurally-unreachable-in-normal-play by
+  [order-rounds-kitchen](order-rounds-kitchen.md)'s Uncovered paths) but not for *restocking* one —
+  no test sets `equipment.kitchen` below a dish's unlock level and asserts the restock command itself
+  returns `reason:'dishLocked'`.
+- **The flattened per-dish `menu_mix_summary` keys (`ordered_<dish>`/`sold_<dish>`/`wasted_<dish>`)
+  are never asserted by name.** Every cited test reads the structured `menuReport()` return value or
+  aggregate `serveValueStats` fields; none inspects the event's own flattened key set directly (grep
+  `ordered_lac`/`sold_dau`-style literals in the test files → zero hits).
+- **No test restocks all six dishes to a mixed-capacity state and asserts `menuReport`'s per-dish
+  `rows` array reflects each independently** — coverage today is per-dish in isolation (the `DISHES`
+  loops in `menu.test.ts` restock every dish identically as setup, not as a mixed-state assertion
+  target).
+
+## Variants
+
+- **success** — `restocked` event + `inventory[dish] += quantity` (all `menu.test.ts` setup calls);
+  `menuReport` dish-provenance test above.
+- **cancel** — not applicable to `restock` (no cancel semantics); menu-pause's Escape/×/outside-click
+  close is the closest analog, proved by `pause.spec.ts`.
+- **reason** — `'stockOrCoins'` (not test-asserted by exact string, see Uncovered), `'dishLocked'`
+  (not asserted, see Uncovered); the allowlist rejection (`game.test.ts:141`) returns bare `ok:false`
+  with no `reason` field at all (it fails the command-shape validator, never reaches `restockQuote`).
+- **empty** — `menuReport` on a shift with zero orders/sales/waste returns `rows` with all-zero
+  counters and `serveValueStats([])`'s `mean:null`/`avgTicket:null`/`kValue:null` (already proved by
+  [economy-k-ledger](economy-k-ledger.md); `menu.spec.ts`'s "empty current... reports" test is the UI
+  side).
+- **persistence** — `menu.test.ts`'s legacy-replay test (rules13 histories); every restock/pause
+  command round-trips through `decodeSave(encodeSave(g))` in the cited engine tests.
+- **capacity** — `stockCap` per-dish ceiling proved for `'bia'` only (see Uncovered for the gap on the
+  other five dishes).
+- **duplicate/idempotent** — `menu-pause.test.ts`'s repeated-pause test (`'repeated pause leaves the
+  original clock intact'`).
+- **stale** — not directly applicable; menu-pause interacts with staleness only insofar as it freezes
+  the same clocks [glass-beer-flat](glass-beer-flat.md) reads for freshness — no dedicated test
+  combines the two.
+- **time-jump / offline-reconnect** — `menu-pause.test.ts`'s hidden-midnight test (fine vs coarse
+  ticks produce identical calendar events while gameplay stays frozen); `pause.spec.ts`'s reload test
+  (frozen wait survives a browser reload).
+
+## Gotchas
+
+- `menu.ts` does not implement menu pause — see the callout above. Don't grep `menu.ts` looking for
+  the pause mechanic.
+- `World.paused` can only be `true` while `World.active` is also `true` (`engine.ts:1083`) — it is a
+  refinement, not an independent axis. The actual per-tick freeze gate is the private
+  `gameplayPaused()` (`engine.ts:186-189`), which ORs `!active` (shift-lifecycle's hidden/offline
+  case) with `!!paused` (this file's case) — a change to the freeze condition touches both features at
+  once; re-verify both files' Existing proof if you touch `gameplayPaused()`.
+- Old persisted logs recorded before `MENU_PAUSE_RULES` (`16`) never carry a `paused` field; replaying
+  one that somehow does throws `replay:rulesVersion` (`engine.ts:696`) rather than silently accepting
+  it — a version-gated replay guard, not a soft default.
+- `restock`'s dish allowlist (`engine.ts:1091`) is a genuine security-relevant gate, not incidental
+  validation — it's what stands between a crafted `dish:'__proto__'` command and `w.inventory` being
+  indexed by an attacker-chosen string. Don't weaken it to "any string, cost 0" when adding a new dish.
+- `DISHES` order is whatever `Object.keys(seed.menu)` yields — don't assume alphabetical or
+  station-grouped order when iterating for UI or reports.
+
+## Related
+
+[keg-refill](keg-refill.md) (`restock(dish:'bia')` and the keg's own capacity/batch mechanic — the
+sixth dish, split out because its production path is entirely different from the other five),
+[shift-lifecycle](shift-lifecycle.md) (`activity.active` hidden/offline pause, the sibling half of
+`gameplayPaused()`), [order-rounds-kitchen](order-rounds-kitchen.md) (`dish_ordered`/`dish_wasted`
+emit sites and kitchen-level unlock gating this file only reports on, doesn't own),
+[economy-k-ledger](economy-k-ledger.md) (`serveValueStats`'s money/`k` formula, consumed but not
+redefined here), [flyer-signboard-dog](flyer-signboard-dog.md) (`activateFlyer` proved safe mid-pause
+by the same `menu-pause.test.ts` test this file cites).
