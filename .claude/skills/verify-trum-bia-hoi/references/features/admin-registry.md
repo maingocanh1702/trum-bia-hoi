@@ -47,9 +47,17 @@
   publisher **or** the original proposer (`registry:distinctApprover`, `registry.ts:323`); emergency
   publication requires `role==='super' && actor.mfa===true` and explicitly forbids touching any tier-C
   key (`registry:emergencyTier`, `registry.ts:301-304`).
-- **The k-invariant is enforced structurally at admission**, not only by sim: every proposal's
-  `k.value` must stay inside the *seed* config's `k.band` (`registry.ts:157`) — this runs on every
-  `propose()`/`publish()`, independent of `npm run sim:career:gate`. League tier ids, location ids and
+- **Admission only guards the DECLARED `k.value` scalar — it does not measure the economy.**
+  `validate()` (`registry.ts:157`) throws `registry:bindingRange` if a proposal's *self-reported*
+  `k.value` field falls outside the *seed* config's `k.band` — this runs on every `propose()`/
+  `publish()`, independent of `npm run sim:career:gate`, but it's a range check on one config field,
+  not a simulation. **Confirmed by direct experiment:** a candidate that keeps `k.value: 2.5` (inside
+  `band: [2,3]`) while changing an unrelated pricing anchor produced a *measured* k of 209.765 across
+  1,000 simulated serves — admission accepted it anyway, because it never runs the candidate config
+  through gameplay. Any change that can move the real economy (price, cost, anchor, payout formulas)
+  still needs `npm run sim:career:gate` (or an equivalent sim) against the actual candidate config;
+  this admission check only blocks an obviously-wrong self-reported number, it is not proof the
+  resulting economy is safe. League tier ids, location ids and
   the location fallback are treated as persisted-identity sets that cannot be renamed or removed
   ("These identifiers are persisted in careers. Tuning numbers cannot migrate their meaning.",
   `registry.ts:160`); `_meta` other than `version`/`date` is immutable (`registry:metadataImmutable`).
@@ -213,6 +221,9 @@ logout; damaged recovery is downloadable'`.
   `Admin*.tsx` itself — see Gotchas and [ui-shell-i18n-a11y](ui-shell-i18n-a11y.md).
 - `npm run verify` is the whole-repo gate for any change here; it does not run the admin Playwright
   config (that's a separate, non-default config the way remote/accessibility are).
+- **Any proposal touching price/cost/anchor/payout math needs `npm run sim:career:gate` against the
+  actual candidate config, not just admission's `k.value` band check** — see the k-invariant Gotcha
+  above; admission alone cannot catch an economy that's broken while `k.value` still reads in-band.
 
 ## Uncovered paths
 
@@ -247,9 +258,15 @@ logout; damaged recovery is downloadable'`.
 - **cancel/reason** — extensive: `AdminError` codes are asserted throughout `admin-auth.test.ts`/
   `registry.test.ts`/`registry-scopes.test.ts`; every reject path in `AdminCompetition.tsx` requires a
   non-empty `reason` before enabling its action buttons.
-- **empty** — `'a newly published shorter heartbeat re-arms the real HTTP scheduler without repricing
-  existing players'`-style zero-diff proposals; `registry.ts:77` refuses a proposal with no changed
-  rows and no scope predecessor.
+- **empty** — `registry-scopes.test.ts:222` `'removing old scoped Tier A keys retains Super approval
+  and the day floor, including an empty replacement'` proves an empty-keys proposal is **accepted**
+  when it clears a non-empty scope predecessor (`d.keys` is `[]`, then approved/published normally).
+  The actual rejection path — `registry.ts:203`'s `if (!governed.length) throw
+  Error('registry:invalidKeys')`, which fires only when current **and** any prior/displaced scope
+  keys are all empty — has no test asserting the throw itself (`grep -rn "invalidKeys"
+  apps/server/test/` → zero hits); that refusal path is untested. (An earlier pass cited
+  `registry.ts:77` for this, which is wrong — that line is schema `CREATE TABLE` setup, unrelated to
+  empty-proposal handling.)
 - **persistence** — draft/intent `sessionStorage` recovery across reload in both `Admin.tsx` and
   `AdminCompetition.tsx`; append-only ledger tables survive restart (`registry.test.ts`'s "preserves
   ... after restart" tests).
