@@ -11,8 +11,10 @@ same way this file itself was built.
   (grep-confirmed zero hits for `Math.random`/`Date.now` anywhere in `packages/engine/src`,
   including inside `rng.ts` itself). `Game.command()`/`Game.advance()` in `engine.ts` *is* the
   production path.
-- **Server tier** — `apps/server/*`. Calls the engine per request; SQLite-backed, authoritative
-  once a player claims an account.
+- **Server tier** — `apps/server/*`. Calls the engine per request; SQLite-backed. Authoritative
+  for any connected remote-mode player from their first `/player/connect` (guest or Google-linked
+  alike) — **not** conditioned on a later "claim" step; see §3 for the local-save-import boundary,
+  which is a distinct mechanism from Google sign-in.
 - **Web-local** — `apps/web/src/local.ts`. The browser constructs a `Game` itself and calls
   `dispatch()` → `game.command()` directly, in-tab.
 - **Web-remote** (default) — `apps/web/src/remote.ts`. The browser never constructs or advances a
@@ -116,8 +118,15 @@ same way this file itself was built.
     `Game` from only `config/seed/createdAt/playerId` (save.ts:28), replays every log entry through
     `game.replay(entry, c)` (save.ts:44), requires the result to match the recorded one
     byte-for-byte or throws `save:replay-mismatch` (save.ts:45), then `game.advance(save.now)`
-    (save.ts:48) and requires recomputed `world.events` to match `save.events` or throws
-    `save:event-mismatch` (save.ts:49). Other checked invariants: `save:unsupported` (save.ts:26),
+    (save.ts:48). **The event-match check (save.ts:49) is version-conditional, not uniform**:
+    v1 saves skip it entirely (the whole check is gated by `save.version >= 2`); v2 requires only
+    that every recorded field in `save.events` is still present and matching in the replayed
+    `world.events` (`recordedFieldsMatch(save.events, world.events)` — one direction, so the
+    replayed side may have *additional* fields — additive enrichment, per the doc comment at
+    save.ts:17); v3 (`CATALOG_SAVE_VERSION`) additionally checks the reverse direction
+    (`recordedFieldsMatch(world.events, save.events)`), so **only v3 saves require exact
+    equivalence in both directions**. Any mismatch throws `save:event-mismatch`. Other checked
+    invariants: `save:unsupported` (save.ts:26),
     `save:configCatalog` (save.ts:31/35), `save:invalid-log` (save.ts:41/47), `save:invalid-version`
     (save.ts:43). Distinct from `Game.checkpoint()`/`restoreTrusted()` — a direct trusted-snapshot
     restore with **no** replay, used by the server's checkpoint fast path.
@@ -151,9 +160,21 @@ same way this file itself was built.
   is the sole source of truth. In **web-remote mode (the default)**, even a brand-new guest talks
   to the server immediately: `RemoteGame.open()` calls `/auth/session` then `/player/connect`
   (remote.ts:102-106) before any gameplay, and the server SQLite tier is authoritative from the
-  first shift — there is no "pre-auth local phase" inside remote mode. Signing in with Google later
-  (`claimLocal`, store.ts:289) only matters for a player who *started* in local mode and is
-  importing that local-only history into the server for the first time.
+  first shift — there is no "pre-auth local phase" inside remote mode.
+  - **Google sign-in within remote mode** is a separate mechanism from local-save import — don't
+    conflate the two: `POST /auth/google` (http.ts:251) → `store.signInGoogle()` (store.ts:243)
+    links/authenticates the *already-server-authoritative* remote session to a Google identity; no
+    local save is involved.
+  - **`claimLocal`** (store.ts:289) is the *different* mechanism: importing a **web-local-mode**
+    save's full history into the server as a new server-tracked account, for a player who started
+    in local mode and wants to move to remote/server play. **Grep-confirmed it has no route in the
+    real `apps/server/src/http.ts`** (checked every route; `/auth/session` itself requires an empty
+    body, http.ts:216-217) — every call site is either a test
+    (`apps/server/test/{local-import,competition,leaderboard,http,admin-auth}.test.ts`, calling
+    `store.claimLocal()` directly) or one of the two isolated test-fixture servers
+    (`apps/web/remote-test/server.ts`, `apps/web/admin-test/server.ts`). **How, or whether, a real
+    production player currently reaches this path is not resolved by this map** — verify before
+    relying on it for account-recovery work.
 - Proof: `packages/engine/test/checkpoint.test.ts` (engine-level checkpoint/restoreTrusted, no I/O)
   · `apps/server/test/checkpoint.test.ts` (SQLite `engine_checkpoints` caching/fault-injection —
   **a different layer than the engine-level file of the same name**) · `apps/server/test/
