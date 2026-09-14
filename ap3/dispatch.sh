@@ -706,9 +706,24 @@ reconcile_running() {
   fi
   # require an EXPLICIT is_error:false (a missing field must not be read as success)
   if [ "$(jget "$result" is_error MISSING)" != false ]; then
-    if [ "$(jget "$result" subtype "")" = error_max_budget_usd ]; then halt "$slug" BUDGET "hit --max-budget-usd"
-    else halt "$slug" WRITER_ERROR "writer result.json is_error or missing is_error:false"; fi
-    return
+    # W5.2.2 (K22): the writer's own --max-budget-usd is a soft ceiling enforced by claude itself
+    # (RESULTS.md: a $0.30 cap once reported $0.735 AFTER the work finished) -- it can trip
+    # (is_error:true, subtype:error_max_budget_usd) AFTER the writer already committed real work
+    # and wrote READY-FOR-REVIEW + verify=pass. retry.sh --extend-budget re-enters this SAME
+    # result.json (it never relaunches a writer), so unconditionally halting here on that stale
+    # flag re-halted every owner-extended resume no matter how far the ceiling was raised, even
+    # once the cumulative spend<=budget_usd check above already passed. Let it fall through
+    # (never halt) only when the writer had genuinely already delivered a complete, reviewable
+    # result -- the READY-FOR-REVIEW/verify gates directly below re-check exactly that. Any other
+    # is_error, or this same subtype without a completed READY signal, still halts as before.
+    if [ "$(jget "$result" subtype "")" = error_max_budget_usd ] && [ -f "$run/READY-FOR-REVIEW" ] \
+      && [ "$(head -1 "$run/verify" 2>/dev/null || true)" = pass ]; then
+      log "$slug: writer hit its own --max-budget-usd cap after delivering READY-FOR-REVIEW; cumulative spend \$$sp within budget \$$bt, proceeding to review"
+    elif [ "$(jget "$result" subtype "")" = error_max_budget_usd ]; then
+      halt "$slug" BUDGET "hit --max-budget-usd"; return
+    else
+      halt "$slug" WRITER_ERROR "writer result.json is_error or missing is_error:false"; return
+    fi
   fi
   if [ ! -f "$run/READY-FOR-REVIEW" ]; then
     halt "$slug" NO_SIGNAL "writer stopped without READY-FOR-REVIEW or HALT.md"; return
