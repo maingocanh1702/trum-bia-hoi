@@ -6,8 +6,8 @@ scope:
   - scripts/verify/port.ts
   - scripts/verify/port.test.ts
   - package.json
-verify: npx tsx --test scripts/verify/port.test.ts
-budget_usd: 6
+verify: node --import tsx --test scripts/verify/port.test.ts
+budget_usd: 10
 max_review_rounds: 3
 model: claude-sonnet-5
 feature: agent-verification

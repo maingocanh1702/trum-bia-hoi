@@ -14,7 +14,7 @@
         "scripts/verify/**", "playwright*.config.ts", "package.json", ".gitignore",
         ".claude/skills/verify-trum-bia-hoi/references/features/**"
       ],
-      "budget_usd_max": 10,
+      "budget_usd_max": 16,
       "max_runs_per_day": 2,
       "review": "codex",
       "security_review": "auto"

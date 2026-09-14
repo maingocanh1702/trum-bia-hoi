@@ -6,7 +6,7 @@ scope:
   - apps/web/test/tbh-fixture.ts
   - apps/web/test/bridge.spec.ts
 verify: npx playwright test apps/web/test/bridge.spec.ts --config playwright.config.ts
-budget_usd: 8
+budget_usd: 12
 max_review_rounds: 3
 model: claude-sonnet-5
 feature: agent-verification

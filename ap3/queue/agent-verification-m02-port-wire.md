@@ -9,8 +9,8 @@ scope:
   - playwright.playable.config.ts
   - playwright.remote.config.ts
   - scripts/verify/port-wire.test.ts
-verify: npx tsx --test scripts/verify/port-wire.test.ts
-budget_usd: 8
+verify: node --import tsx --test scripts/verify/port-wire.test.ts
+budget_usd: 12
 max_review_rounds: 3
 model: claude-sonnet-5
 feature: agent-verification

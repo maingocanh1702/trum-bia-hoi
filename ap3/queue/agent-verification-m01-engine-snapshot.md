@@ -6,8 +6,8 @@ scope:
   - packages/engine/src/snapshot.ts
   - packages/engine/src/index.ts
   - packages/engine/test/snapshot.test.ts
-verify: npx tsx --test packages/engine/test/snapshot.test.ts
-budget_usd: 8
+verify: node --import tsx --test packages/engine/test/snapshot.test.ts
+budget_usd: 12
 max_review_rounds: 3
 model: claude-sonnet-5
 feature: agent-verification

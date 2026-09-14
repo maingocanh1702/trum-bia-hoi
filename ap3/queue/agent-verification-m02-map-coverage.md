@@ -6,8 +6,8 @@ scope:
   - scripts/verify/map-coverage.ts
   - scripts/verify/map-coverage.test.ts
   - package.json
-verify: npx tsx --test scripts/verify/map-coverage.test.ts
-budget_usd: 6
+verify: node --import tsx --test scripts/verify/map-coverage.test.ts
+budget_usd: 10
 max_review_rounds: 3
 model: claude-sonnet-5
 feature: agent-verification

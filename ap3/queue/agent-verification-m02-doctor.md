@@ -7,8 +7,8 @@ scope:
   - scripts/verify/doctor.test.ts
   - package.json
   - .gitignore
-verify: npx tsx --test scripts/verify/doctor.test.ts
-budget_usd: 10
+verify: node --import tsx --test scripts/verify/doctor.test.ts
+budget_usd: 16
 max_review_rounds: 3
 model: claude-sonnet-5
 feature: agent-verification

@@ -7,8 +7,8 @@ scope:
   - apps/web/src/verify/bridge.test.ts
   - apps/web/src/main.tsx
   - apps/web/vite.config.ts
-verify: npx tsx --test apps/web/src/verify/bridge.test.ts
-budget_usd: 10
+verify: node --import tsx --test apps/web/src/verify/bridge.test.ts
+budget_usd: 16
 max_review_rounds: 3
 model: claude-sonnet-5
 feature: agent-verification
