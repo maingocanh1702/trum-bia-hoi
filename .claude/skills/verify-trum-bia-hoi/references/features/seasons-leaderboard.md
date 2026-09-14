@@ -180,10 +180,16 @@ no separate "me" endpoint. "Shrine" (Bàn Thờ) data rides inside `GET /seasons
   rejected `sweepSeasons()`, then still re-arms) has no direct test asserting the server keeps
   scheduling captures after one throws — `leaderboard.test.ts`'s "staggered HTTP heartbeats cannot
   postpone automatic season capture" tests timing interference, not capture-failure resilience.
-- **`Leaderboard.tsx`'s `tbh.leaderboard.v1` cache read/write round-trip** has no dedicated assertion
-  found in `remote-test/leaderboard.spec.ts`'s 4 test names beyond the general "shows pages" proof —
-  the cache-corruption/schema-mismatch path (`readCache()`'s validation, `Leaderboard.tsx`) is not
-  named as its own scenario.
+- **Corrected claim**: `remote-test/leaderboard.spec.ts`'s `'offline reopening shows only a dated
+  public preview, recovers online and ignores a late response after closing'` DOES exercise the
+  cache round-trip and one corruption path — going offline reads the previously-cached board back
+  (`.rank-asof` "Bản xem đã lưu" proves a prior write, read back while offline), and its final lines
+  inject syntactically-broken JSON (`localStorage.setItem('tbh.leaderboard.v1', '{broken')`) and
+  confirm the board still recovers — the `JSON.parse` catch path (`readCache()`, `Leaderboard.tsx`).
+  What's still genuinely untested: `readCache()`'s **separate** structural-shape validation (the
+  `if (!b || !/^[a-f0-9]{64}$/.test(b.revision) || ...)` chain that runs *after* a successful parse) —
+  no test caches syntactically-valid JSON with a wrong shape (e.g. a missing field or bad regex match)
+  to confirm that path also falls back to `null` rather than rendering malformed data.
 
 ## Variants
 

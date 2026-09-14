@@ -151,8 +151,14 @@ are `shift_3` and `gift_3` (below), and life-path progress is its own unrelated 
 - **empty** — a bucket kind that never progresses simply stays `progress:0`, blocking both its own
   claim and the five-of-five bonus (`'questIncomplete'`); not a distinct code path.
 - **persistence** — `quests.spec.ts`'s reload after claiming asserts the claimed state and coin/
-  reputation delta survive; `decodeSave(encodeSave(g))` round-trips `world.daily` in every engine test
-  via the shared harness (implicit, not separately named).
+  reputation delta survive. **Corrected claim**: the shared `send()` helper only calls `g.command(...)`
+  (`quests.test.ts:6`) — it does not force a round-trip check itself. Of the 10 cited engine tests,
+  5 explicitly call `decodeSave(encodeSave(g))`: `'all service and quality variants...'`, `'zero-loss
+  time excludes hidden play...'`, `'VIP protection requires a full shift...'`, `'VN midnight expires
+  claims exactly...'`, `'genuine rules11 campaign snapshots...'`. The five-of-five bonus test
+  (`'four local quests cannot claim the five-of-five bonus...'`) does **not** — its own persistence
+  claim (byte-unchanged `coins`/`reputation`/`seasonEarned`) is a same-session in-memory assertion, not
+  a save/replay round-trip; treat five-of-five bonus persistence as unverified by replay.
 - **capacity** — `flyerStockFull` on the bonus claim; `Number.isSafeInteger` overflow guards on coins/
   reputation/badgeShards.
 - **duplicate/idempotent** — the five-of-five test's `g.command(e)` sent twice with the same

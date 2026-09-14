@@ -132,9 +132,13 @@ each test below is cited for its *refill/capacity* claim, not restated for its f
 
 - **success** — every batch start/complete in `production.test.ts` above; `game.test.ts:106`'s
   `restock` full-mode fill.
-- **reason** — `'maxLevel'` (`live-upgrades.test.ts`); the missing-exceeded restock refusal
-  (`.ok===false`, `game.test.ts:112`) carries **no** `reason` string at all — `restockQuote` returns
-  only `{quantity, cost, ok}`, never a `reason` field, unlike most other quote helpers.
+- **reason** — `'maxLevel'` (`live-upgrades.test.ts`). **Corrected claim**: `restockQuote()` itself
+  (the pure quote helper, `rules.ts`) returns only `{quantity, cost, ok}`, never a `reason` field,
+  unlike most other quote helpers — but the `restock` **command result** does carry one: `case
+  'restock':` (`engine.ts:910`) derives `fail(dishUnlocked(...) ? 'stockOrCoins' : 'dishLocked')` when
+  `!q.ok`. `game.test.ts:112`'s missing-exceeded refusal only asserts `.ok === false`, not `.reason` —
+  the test not checking it is not the same as the result not having one; don't conflate the quote
+  helper's return shape with the command's actual result shape.
 - **empty** — starting stock below one full batch (`production.test.ts`'s partial-stock test: 2 units
   vs. its own fixture's level-1 `kegBatch`). **Corrected claim**: `production.test.ts`'s `game()`
   helper builds from `docs/config/legacy/economy-1.7.3.json` (`import legacy from

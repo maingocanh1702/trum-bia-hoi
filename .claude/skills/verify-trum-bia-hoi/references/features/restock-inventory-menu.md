@@ -132,10 +132,12 @@ word.
   [order-rounds-kitchen](order-rounds-kitchen.md)'s Uncovered paths) but not for *restocking* one —
   no test sets `equipment.kitchen` below a dish's unlock level and asserts the restock command itself
   returns `reason:'dishLocked'`.
-- **The flattened per-dish `menu_mix_summary` keys (`ordered_<dish>`/`sold_<dish>`/`wasted_<dish>`)
-  are never asserted by name.** Every cited test reads the structured `menuReport()` return value or
-  aggregate `serveValueStats` fields; none inspects the event's own flattened key set directly (grep
-  `ordered_lac`/`sold_dau`-style literals in the test files → zero hits).
+- **Corrected claim**: `menu.test.ts:63` (the kitchen-waste test) DOES assert the flattened
+  `wasted_<dish>` key directly — `for (const row of report.rows) assert.equal(end[0].data[
+  \`wasted_${row.dish}\`], row.wasted)` — a literal grep for `wasted_lac`-style strings missed this
+  because the key is computed (template literal), not a string constant. `ordered_<dish>`/`sold_<dish>`
+  remain genuinely unasserted (grep-confirmed: no test file contains `` ordered_${ `` or `` sold_${ ``
+  at all, not just no literal hits) — narrow this gap to those two key families only.
 - **No test restocks all six dishes to a mixed-capacity state and asserts `menuReport`'s per-dish
   `rows` array reflects each independently** — coverage today is per-dish in isolation (the `DISHES`
   loops in `menu.test.ts` restock every dish identically as setup, not as a mixed-state assertion
@@ -148,8 +150,11 @@ word.
 - **cancel** — not applicable to `restock` (no cancel semantics); menu-pause's Escape/×/outside-click
   close is the closest analog, proved by `pause.spec.ts`.
 - **reason** — `'stockOrCoins'` (not test-asserted by exact string, see Uncovered), `'dishLocked'`
-  (not asserted, see Uncovered); the allowlist rejection (`game.test.ts:141`) returns bare `ok:false`
-  with no `reason` field at all (it fails the command-shape validator, never reaches `restockQuote`).
+  (not asserted, see Uncovered). **Corrected claim**: the allowlist rejection (`game.test.ts:141`)
+  does carry a `reason` — `'invalidCommand'` (`engine.ts:675`, `!validEnvelope(envelope)`), the shape
+  validator's own fixed reason for any structurally-invalid command; the test only asserts
+  `.ok === false` and doesn't check `.reason`, which is a gap in the test, not evidence the field is
+  absent.
 - **empty** — `menuReport` on a shift with zero orders/sales/waste returns `rows` with all-zero
   counters and `serveValueStats([])`'s `mean:null`/`avgTicket:null`/`kValue:null` (already proved by
   [economy-k-ledger](economy-k-ledger.md); `menu.spec.ts`'s "empty current... reports" test is the UI

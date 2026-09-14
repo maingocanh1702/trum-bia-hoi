@@ -158,10 +158,10 @@ scaffolding, not a bug or an oversight to "finish" incidentally while touching p
 - **No test asserts `flyerQuote`'s `buyReason`/`useReason` by exact string for every value** — `'flyerClock'`
   (the `Number.isSafeInteger(w.now + campaignMs)` overflow guard, `flyer.ts:13`) has no dedicated
   test; the intake-rejection test covers unsafe *config* values, not an unsafe *runtime clock* value.
-- **`signboardQuote`'s `'signboardGate'` reason (stall level below `signboard.gate.stallLevel`) is
-  exercised only via the config-rejection test's boundary framing** — no test drives an actual
-  under-leveled stall attempting `installSignboard` and asserts `reason === 'signboardGate'` by
-  string.
+- **Removed false claim**: `'signboardGate'` IS asserted by exact string, twice —
+  `signboard.test.ts:16` (fresh setup, no stall upgrade yet) and `:137` (explicit
+  `stall.signboardGateLevel = signboard.gate.stallLevel = 4` under-level setup), both send
+  `installSignboard` and assert `.reason === 'signboardGate'`. There is no remaining gap here.
 - **The three viewport-matrix `game.spec.ts` tests are each single-scenario** (one golden path per
   feature) — none exercises a buy-refusal (insufficient coins/reputation/materials) through the UI;
   refusal proof exists only at the engine-test level.
@@ -173,8 +173,9 @@ scaffolding, not a bug or an oversight to "finish" incidentally while touching p
   path.
 - **cancel** — not applicable: no explicit cancel command for any of the three; a flyer campaign only
   ends via `flyer_ended` (natural expiry or shift close), never a player-initiated stop.
-- **reason** — extensive, see Observable contract's `Result.reason` list; `'flyerClock'` and
-  `'signboardGate'` are defined but not string-asserted (Uncovered paths).
+- **reason** — extensive, see Observable contract's `Result.reason` list; `'signboardGate'` IS
+  string-asserted (`signboard.test.ts:16,137`); `'flyerClock'` is still defined but not
+  string-asserted (see Uncovered paths).
 - **empty** — `flyerQuote`'s `'flyerEmpty'` (stock `=== 0` while trying to activate) is
   engine-tested; a `dogLevel === 0` "no dog" starting state is the default and is asserted by the
   pre-dog-save replay test.

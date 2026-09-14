@@ -168,9 +168,12 @@ same `quests.ts` file — cross-link, not restated here.
   `well-rested` in the same run** — the three mechanics in this file are each unit-proven in
   isolation; no integration test combines a claimed attendance reward, an active well-rested bonus,
   and a life-path unlock purchase in one shift.
-- **`c.values.quests.loginMissResets === false`'s "advances one observed slot" behavior** is proven
-  once (`attendance.test.ts`'s third test) but never combined with a multi-week gap — only a
-  single-miss case is exercised.
+- **Corrected claim**: `attendance.test.ts`'s third test (`'disabling missed-day reset advances one
+  observed slot, not the number of offline days'`) DOES combine `loginMissResets:false` with a
+  30-day (`DAY * 30`) gap and asserts `cycleDay` still advances by exactly one slot — a genuine
+  multi-week case, not just a single-miss one. What's still untested: a gap that crosses a *second*
+  VN-midnight boundary while active/online (as opposed to one offline jump), and whether repeated
+  offline gaps in sequence (not just one) still advance by exactly one slot each time.
 
 ## Variants
 
