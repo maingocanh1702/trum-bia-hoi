@@ -46,3 +46,7 @@ playwright-report/
 
 # Thùng rác tạm (Claude không có quyền xoá file) — xoá cả thư mục này
 _to_delete/
+ap3/env
+ap3/state/
+ap3/PAUSED
+.ap3-run/

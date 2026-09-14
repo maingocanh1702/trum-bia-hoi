@@ -73,3 +73,15 @@ merge, tooling. `.autopilot/` and `docs/autopilot-*.md` are archived kit materia
 | `SESSION-TRACK-LOG.md` | Project snapshot + next step; read before planning. |
 | `docs/autopilot-*.md`, `.autopilot/` | Archived Level 3 kit — optional reference, not a process requirement. |
 <!-- autopilot:end -->
+
+<!-- ap3-workflow:start -->
+# ap3 runs (headless writer) — what applies here
+- You may only edit files inside the task's `scope`; the class ceiling is ap3/routines.json.
+- Static gate before READY: `npm run verify` must stay green (check:config · check:i18n · build ·
+  test · sim:onboarding · sim:rush · sim:career:gate). Run the task's own `verify` for RED→GREEN.
+- Never change docs/config/economy.tbh.json, packages/engine rules, apps/server routes, or any
+  i18n string in an ap3 run — those are supervised slices.
+- Verification tooling is READ-ONLY: nothing under apps/web/src/verify or scripts/verify may call
+  Game.command/advance, persist, replaceSave, or write localStorage/IndexedDB.
+- Report per 11-PROMPT-PACK §0.3 in .ap3-run/READY-FOR-REVIEW.
+<!-- ap3-workflow:end -->
