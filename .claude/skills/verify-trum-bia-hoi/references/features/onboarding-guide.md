@@ -116,7 +116,8 @@
   reaches a real runtime player session: it publishes a changed `stepGuide.steps[0].copyKey`, opens a
   fresh guest session pinned to that version, and asserts the fetched config matches (`:306`), the
   guide banner renders the new copy, and the forced first-shift spawn timing
-  (`nextSpawnAt - startedAt`) equals the *published* `guaranteedFirstGroupWithinMs`, with the
+  (`nextSpawnAt - startedAt`) equals the *published* `guaranteedFirstGroupWithinMs` minus
+  `config.runtime.tableSeatingMs` (`:312`, matching engine.ts:806's own formula), with the
   disabled-mode counterpart falling back to normal spawn math. Run via `npx playwright test --config
   playwright.admin.config.ts apps/web/admin-test/admin.spec.ts` (see
   [admin-registry](admin-registry.md)). It does not exercise the lost-streak trigger or repeat cap —

@@ -97,6 +97,10 @@
 
 ## How to reach it
 
+- **Mount point**: a plain path check, not a separate build entry — `apps/web/src/main.tsx:9-10`:
+  `location.pathname.replace(/\/$/, '') === '/admin' ? import('./Admin').then(m => m.default) :
+  import('./App').then(m => m.App)`. Exercised by every `admin.spec.ts` test through its `login()`
+  helper's default `navigate=true` (`page.goto('/admin')`, `admin.spec.ts:22`).
 - **UI**: `Admin.tsx` (registry editor: draft/diff/compare/proposals/approve/publish/emergency/support/
   audit), `AdminScope.tsx` (segment/campaign/player scope editor + impact viewer), `AdminForecast.tsx`
   (7-day economic forecast, VND-denominated, 660s client timeout against a ~10-minute server worker —
@@ -229,9 +233,6 @@ logout; damaged recovery is downloadable'`.
   in full during authoring (`propose`/`approve`/`publish`/scope-conflict/emergency paths in
   `registry.ts`, the Google/TOTP flow in `admin-auth.ts`); the remaining ~50 harvested test names are
   cited by exact string only, not by body.
-- No test was found that drives `Admin.tsx`'s mount point/route itself — this pass did not locate
-  where `Admin.tsx` is attached to a router or served (a separate build entry, most likely, given
-  `apps/web/admin-test/server.ts` serves it standalone on its own ports) — say so rather than guess.
 - The `admin.*` i18n namespace (214 keys, confirmed vi/en-paired by direct count) has no static guard
   against a `t('admin.typo')` call inside `Admin*.tsx` referencing a nonexistent key — see Gotchas.
 

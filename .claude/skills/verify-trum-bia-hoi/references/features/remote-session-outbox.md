@@ -156,7 +156,11 @@
   resume so the old credential cannot arrive late'` (`:223`), `'explicit Google choice drains the
   source outbox then uses an audited fresh target stream'` (`:242`, the `keepAccount`/`accountSwitch`
   path), `'a corrupted switch intent with pending old commands fails before any server request'`
-  (`:323`) — remaining 8 tests (`:154,185,201,266,277,291,305,314`) cover unavailable-Google,
+  (`:323` — the direct hand-corrupted-journal proof of the `accountSwitch` empty-pending invariant,
+  `readJournal()`/`remote.ts:26`: it writes `localStorage['tbh.remote.v1']` with `accountSwitch: true`
+  **and** a non-empty `pending` array, then asserts `RemoteGame.open()` rejects with `'storage'`
+  before any network request) — remaining 8 tests (`:154,185,201,266,277,291,305,314`) cover
+  unavailable-Google,
   lost-canonical-read retry, paused-during-verification, and every lost-response/reload/unrelated-
   cookie permutation of the switch flow; open the file directly for those exact names before citing
   one in a report.
@@ -207,10 +211,6 @@
   primary proof here; they belong to the account-panel/onboarding UI surface, not the
   journal/transport contract this file owns. If a future change touches `Account.tsx` directly, open
   those specs rather than assuming this file's citations cover them.
-- No test drives the `accountSwitch` journal flag directly at the `readJournal()` validation layer
-  (empty-pending invariant, `remote.ts:26`) with a hand-corrupted journal — `google-link.spec.ts`
-  exercises the flag only through the real UI flow, never a malformed-storage fixture for this
-  specific field.
 
 ## Variants
 
