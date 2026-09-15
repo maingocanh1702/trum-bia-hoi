@@ -15,6 +15,7 @@
         "apps/web/src/main.tsx",
         "apps/web/vite.config.ts",
         "apps/web/test/tbh-fixture.ts",
+        "apps/web/test/tbh-fixture.test.ts",
         "apps/web/test/bridge.spec.ts",
         "scripts/verify/**",
         "playwright*.config.ts",
