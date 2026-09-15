@@ -42,6 +42,19 @@ const ROLE_OFFSETS: Record<PortRole, number> = {
 const DEFAULT_BASE = 4178;
 const WORKTREE_BASE_FLOOR = 5200;
 const WORKTREE_BASE_SPAN = 300;
+const MAX_ROLE_OFFSET = Math.max(...Object.values(ROLE_OFFSETS));
+const PORT_BASE_MIN = 1;
+const PORT_BASE_MAX = 65535 - MAX_ROLE_OFFSET;
+
+function parsePortBaseOverride(raw: string): number {
+  const base = Number(raw);
+  if (!Number.isInteger(base) || base < PORT_BASE_MIN || base > PORT_BASE_MAX) {
+    throw new Error(
+      `Invalid TBH_PORT_BASE "${raw}": must be an integer in [${PORT_BASE_MIN}, ${PORT_BASE_MAX}]`,
+    );
+  }
+  return base;
+}
 
 function isWorktreeCwd(cwd: string): boolean {
   const gitPath = resolve(cwd, '.git');
@@ -61,7 +74,7 @@ export function resolveBasePort(opts: ResolveOptions = {}): number {
   const cwd = opts.cwd ?? process.cwd();
   const env = opts.env ?? process.env;
   if (env.TBH_PORT_BASE !== undefined && env.TBH_PORT_BASE !== '') {
-    return Number(env.TBH_PORT_BASE);
+    return parsePortBaseOverride(env.TBH_PORT_BASE);
   }
   if (isWorktreeCwd(cwd)) {
     return WORKTREE_BASE_FLOOR + hashToRange(getWorktreeIdentifier(cwd), WORKTREE_BASE_SPAN);

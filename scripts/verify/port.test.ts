@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { resolveAllPorts } from './port';
 
 const LITERAL_PORTS = {
@@ -58,6 +59,31 @@ test('resolves a hashed base plus fixed collision-free per-role offsets in a wor
   assert.equal(distinct.size, Object.keys(ports).length, 'resolved ports must be collision-free');
 });
 
+test('worktree base matches the sha256-hash formula for independently computed identifiers', (t) => {
+  const gitdirContents = [
+    'gitdir: /fake/main/.git/worktrees/fake-branch\n',
+    'gitdir: /fake/main/.git/worktrees/other-branch\n',
+  ];
+  for (const content of gitdirContents) {
+    const cwd = worktreeDir(t, content);
+    const ports = resolveAllPorts({ cwd, env: {} });
+    const digest = createHash('sha256').update(content.trim()).digest();
+    const expectedBase = 5200 + (digest.readUInt32BE(0) % 300);
+    assert.equal(ports['e2e'], expectedBase, `base mismatch for identifier "${content.trim()}"`);
+  }
+});
+
+test('rejects invalid TBH_PORT_BASE overrides instead of producing unusable ports', (t) => {
+  const cwd = mainWorkspaceDir(t);
+  for (const invalid of ['nope', ' ', '0', '12.5', '-1', '65500']) {
+    assert.throws(
+      () => resolveAllPorts({ cwd, env: { TBH_PORT_BASE: invalid } }),
+      /Invalid TBH_PORT_BASE/,
+      `expected rejection for TBH_PORT_BASE="${invalid}"`,
+    );
+  }
+});
+
 test('honours TBH_PORT_BASE override with the same offsets in both the main workspace and a worktree', (t) => {
   const mainCwd = mainWorkspaceDir(t);
   const worktreeCwd = worktreeDir(t, 'gitdir: /fake/main/.git/worktrees/other-branch\n');
@@ -93,4 +119,19 @@ test('package.json exposes a verify:port script that runs the resolver directly'
   const pkg = JSON.parse(readFileSync(resolve('package.json'), 'utf8'));
   assert.equal(typeof pkg.scripts['verify:port'], 'string');
   assert.match(pkg.scripts['verify:port'], /scripts\/verify\/port\.ts/);
+});
+
+test('npm run verify:port executes the resolver and prints the resolved ports', () => {
+  const override = '6100';
+  const output = execFileSync('npm', ['run', 'verify:port'], {
+    env: { ...process.env, TBH_PORT_BASE: override },
+    encoding: 'utf8',
+  });
+  const fromNpmScript: Record<string, number> = {};
+  for (const line of output.split('\n')) {
+    const match = /^([\w-]+)\t(\d+)$/.exec(line.trim());
+    if (match) fromNpmScript[match[1]] = Number(match[2]);
+  }
+  const expected = resolveAllPorts({ env: { TBH_PORT_BASE: override } });
+  assert.deepEqual(fromNpmScript, expected);
 });

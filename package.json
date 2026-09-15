@@ -27,7 +27,7 @@
     "sim:career": "tsx packages/engine/sim/career.ts",
     "sim:career:gate": "tsx packages/engine/sim/career.ts --check-advanced",
     "test:one": "node --import tsx --test",
-    "verify:port": "tsx scripts/verify/port.ts"
+    "verify:port": "node --import tsx scripts/verify/port.ts"
   },
   "type": "module",
   "engines": {
