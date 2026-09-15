@@ -107,13 +107,32 @@ interface Tok {
   kind: number;
   value: string;
   start: number;
+  // Set only on a CloseParenToken that closes a control-keyword `(` (`if`/`while`/`for`/
+  // `switch`/`catch`/`with`) -- see `tokenize()`'s `parenStack`. Such a paren closes a
+  // CONDITION, not a value expression, so a `/` right after it starts a regex, not a division.
+  controlParenClose?: boolean;
 }
+
+// The `(` of `if (...)`, `while (...)`, `for (...)`, `switch (...)`, `catch (...)` and `with (...)`
+// wraps a condition, not a value -- its matching `)` must NOT be treated as "followed by a value"
+// for the purposes of `followsValue`, even though a `)` normally is (a call result, a grouped
+// expression). Without this, `if (ok) /window/.test(v)` mis-tokenizes the `/` as division.
+const CONTROL_KEYWORDS = new Set([
+  SyntaxKind.IfKeyword,
+  SyntaxKind.WhileKeyword,
+  SyntaxKind.ForKeyword,
+  SyntaxKind.SwitchKeyword,
+  SyntaxKind.CatchKeyword,
+  SyntaxKind.WithKeyword,
+]);
 
 // A previous token that already denotes a complete VALUE means the next `/` is division, not the
 // start of a regex literal -- the same ambiguity a real parser resolves with expression-context
-// tracking; this is the standard "does a value precede?" heuristic for it.
-function followsValue(kind: number): boolean {
-  switch (kind) {
+// tracking; this is the standard "does a value precede?" heuristic for it. A control-keyword's
+// closing paren is the one exception: it closes a condition, not a value (see `CONTROL_KEYWORDS`).
+function followsValue(tok: Tok): boolean {
+  if (tok.kind === SyntaxKind.CloseParenToken && tok.controlParenClose) return false;
+  switch (tok.kind) {
     case SyntaxKind.Identifier:
     case SyntaxKind.NumericLiteral:
     case SyntaxKind.BigIntLiteral:
@@ -150,8 +169,12 @@ function tokenize(src: string): Tok[] {
   const toks: Tok[] = [];
   let depth = 0;
   const templateDepths: number[] = [];
+  // Tracks, for each currently-open `(`, whether it was opened right after a control keyword --
+  // so its matching `)` can be marked `controlParenClose` (see `followsValue`).
+  const parenStack: boolean[] = [];
   let kind = scanner.scan();
   while (kind !== SyntaxKind.EndOfFile) {
+    let controlParenClose = false;
     if (kind === SyntaxKind.TemplateHead) {
       templateDepths.push(depth);
     } else if (kind === SyntaxKind.OpenBraceToken) {
@@ -163,15 +186,20 @@ function tokenize(src: string): Tok[] {
       } else {
         depth--;
       }
+    } else if (kind === SyntaxKind.OpenParenToken) {
+      const prev = toks[toks.length - 1];
+      parenStack.push(!!prev && CONTROL_KEYWORDS.has(prev.kind));
+    } else if (kind === SyntaxKind.CloseParenToken) {
+      controlParenClose = parenStack.pop() ?? false;
     } else if (kind === SyntaxKind.SlashToken || kind === SyntaxKind.SlashEqualsToken) {
       const prev = toks[toks.length - 1];
-      if (!prev || !followsValue(prev.kind)) kind = scanner.reScanSlashToken();
+      if (!prev || !followsValue(prev)) kind = scanner.reScanSlashToken();
     }
     const value =
       kind === SyntaxKind.Identifier || kind === SyntaxKind.StringLiteral || kind === SyntaxKind.NoSubstitutionTemplateLiteral
         ? scanner.getTokenValue()
         : '';
-    toks.push({ kind, value, start: scanner.getTokenStart() });
+    toks.push({ kind, value, start: scanner.getTokenStart(), controlParenClose });
     kind = scanner.scan();
   }
   return toks;
@@ -247,7 +275,7 @@ function scanFilePurity(relPath: string, src: string): string[] {
 export function scanEnginePurity(dir: string, fs: Pick<FsRunner, 'listEngineFiles' | 'readFile'>): string[] {
   const violations: string[] = [];
   for (const file of fs.listEngineFiles(dir)) {
-    if (!file.endsWith('.ts')) continue;
+    if (!file.endsWith('.ts') && !file.endsWith('.tsx')) continue;
     const relPath = relative(dir, file);
     violations.push(...scanFilePurity(relPath, fs.readFile(file)));
   }
@@ -269,7 +297,10 @@ function formatReport(lines: DoctorLine[]): string {
   for (const line of lines) {
     const marker = line.ok ? '✓' : '✗';
     const prefix = line.group === lastGroup ? ' '.repeat(9) : line.group.padEnd(9);
-    out.push(`${prefix} ${marker} ${line.label}`);
+    // Sanitize centrally, on every label, regardless of whether the call site already did --
+    // this is what closes the engine-purity-filename gap (repo-controlled content that never
+    // passed through the call-site sanitization above) without hunting down every call site.
+    out.push(`${prefix} ${marker} ${sanitizeForReport(line.label)}`);
     lastGroup = line.group;
   }
   return `${out.join('\n')}\n`;

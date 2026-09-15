@@ -601,6 +601,79 @@ test('control characters in injected bridge/console text are escaped so they can
   assert.ok(!physicalLines.some((l) => /^✓ forged bridge line$/.test(l)));
 });
 
+test('a .tsx file containing window is scanned too, not only .ts', (t) => {
+  const root = tempDir(t, 'purity-tsx-window');
+  const engineSrcDir = resolve(root, 'packages/engine/src');
+  mkdirSync(engineSrcDir, { recursive: true });
+  writeFileSync(resolve(engineSrcDir, 'widget.tsx'), 'export const Widget = () => window.location.href;\n');
+  const runners = happyRunners(root);
+  const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
+  const bindingLines = result.lines.filter((l) => l.group === 'binding');
+  assert.ok(bindingLines.some((l) => !l.ok && /widget\.tsx.*window global/.test(l.label)));
+  assert.equal(result.ok, false);
+});
+
+test('a regex literal after an `if` condition is not mistaken for division -- if (ok) /window/.test(v) passes', (t) => {
+  const root = tempDir(t, 'purity-if-regex');
+  const engineSrcDir = resolve(root, 'packages/engine/src');
+  mkdirSync(engineSrcDir, { recursive: true });
+  writeFileSync(
+    resolve(engineSrcDir, 'if-regex.ts'),
+    ['export function check(ok: boolean, v: string) {', '  if (ok) /window/.test(v);', '  return true;', '}', ''].join('\n'),
+  );
+  const runners = happyRunners(root);
+  const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
+  const bindingLines = result.lines.filter((l) => l.group === 'binding');
+  assert.ok(bindingLines.every((l) => l.ok));
+  assert.equal(result.ok, true);
+});
+
+test('a regex literal after a `while` condition is not mistaken for division -- while (n) /Date/.test(s) passes', (t) => {
+  const root = tempDir(t, 'purity-while-regex');
+  const engineSrcDir = resolve(root, 'packages/engine/src');
+  mkdirSync(engineSrcDir, { recursive: true });
+  writeFileSync(
+    resolve(engineSrcDir, 'while-regex.ts'),
+    ['export function check(n: number, s: string) {', '  while (n) /Date/.test(s);', '  return true;', '}', ''].join('\n'),
+  );
+  const runners = happyRunners(root);
+  const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
+  const bindingLines = result.lines.filter((l) => l.group === 'binding');
+  assert.ok(bindingLines.every((l) => l.ok));
+  assert.equal(result.ok, true);
+});
+
+test('a genuine division after a function call is still division, not a regex literal -- the fix does not over-correct', (t) => {
+  const root = tempDir(t, 'purity-division-after-call');
+  const engineSrcDir = resolve(root, 'packages/engine/src');
+  mkdirSync(engineSrcDir, { recursive: true });
+  writeFileSync(
+    resolve(engineSrcDir, 'division.ts'),
+    ['export function ratio(f: (n: number) => number, a: number) {', '  return f(a) / window;', '}', ''].join('\n'),
+  );
+  const runners = happyRunners(root);
+  const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
+  const bindingLines = result.lines.filter((l) => l.group === 'binding');
+  // If the fix over-corrected (treating this ordinary call's `)` as a control-paren-close too),
+  // `/ window` would be mis-scanned as the start of a regex literal, swallowing the `window`
+  // identifier and hiding the violation below.
+  assert.ok(bindingLines.some((l) => !l.ok && /division\.ts.*window global/.test(l.label)));
+  assert.equal(result.ok, false);
+});
+
+test('an engine filename containing a newline produces exactly one report line per logical check', (t) => {
+  const root = tempDir(t, 'purity-filename-newline');
+  const engineSrcDir = resolve(root, 'packages/engine/src');
+  const forgedPath = resolve(engineSrcDir, 'evil.ts\n✓ forged.ts');
+  const runners = happyRunners(root, {
+    fs: { ...defaultRunners().fs, pathExists: () => true, listEngineFiles: () => [forgedPath], readFile: () => 'export const x = window;\n' },
+  });
+  const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
+  const physicalLines = result.text.split('\n').filter((l) => l.length > 0);
+  assert.equal(physicalLines.length, result.lines.length);
+  assert.ok(!physicalLines.some((l) => /^✓ forged\.ts$/.test(l)));
+});
+
 test('package.json exposes a verify:doctor script that runs doctor.ts', () => {
   const pkg = JSON.parse(readFileSync(resolve('package.json'), 'utf8'));
   assert.equal(typeof pkg.scripts['verify:doctor'], 'string');
