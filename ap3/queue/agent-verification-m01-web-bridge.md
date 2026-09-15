@@ -5,9 +5,11 @@ risk: P2
 scope:
   - apps/web/src/verify/bridge.ts
   - apps/web/src/verify/bridge.test.ts
-  - apps/web/src/main.tsx
+  - apps/web/src/verify/install.ts
+  - apps/web/src/verify/install.test.ts
+  - apps/web/src/start.ts
   - apps/web/vite.config.ts
-verify: npm run test:one -- apps/web/src/verify/bridge.test.ts
+verify: npm run test:one -- apps/web/src/verify/bridge.test.ts apps/web/src/verify/install.test.ts
 budget_usd: 16
 max_review_rounds: 3
 model: claude-sonnet-5
@@ -17,21 +19,85 @@ milestone: true
 milestone_id: M1
 ---
 ## Problem
-No read-only runtime bridge exists for either app mode -- apps/web/src/verify/ does not exist. A browser-driving test/agent has no way to read WorldView/events/connection state except scraping the DOM. Build `window.__TBH_VERIFY__` per the plan's shape: `version(), snapshot(), events(since?), connection(), journal(), settings()`.
 
-`RemoteGame.journal` (apps/web/src/remote.ts) is a PRIVATE field with only a `pending`-count getter exposed publicly -- read it from bridge.ts via a narrow local type-cast (e.g. cast the session's `remote` to a minimal `{journal: {nextSeq:number; pending: unknown[]; cursor:number} | null}` shape); do not modify remote.ts to add a public accessor, it is out of this slice's scope.
+A browser-driving test or agent has no way to read game state except scraping the DOM. Local mode
+holds a `Game`; remote mode (`RemoteGame`) holds only server snapshots and never constructs a
+`Game`. There is no `window.__TBH_VERIFY__` today (`grep -rn "__TBH_VERIFY__" apps packages` finds
+nothing outside this task). Plan v3 §6 specifies a read-only bridge exposing version / snapshot /
+events / connection / journal / settings for both modes.
 
-Note: this task's model was downgraded from an originally-requested claude-opus-5 to claude-sonnet-5 to stay within ap3/routines.json's agent-tooling class, which declares no writer_models_allowed override (see PLAN.md).
+A previous attempt at this slice (tag `salvage/m01-web-bridge`, commit 4e1f4b1) delivered a working
+`bridge.ts` + `bridge.test.ts` (9/9 green, RED confirmed) and the `vite.config.ts` define block, then
+correctly HALTed SCOPE_DRIFT because the task told it to install from `main.tsx`, which has no access
+to the live `Session`. Read that commit (`git show salvage/m01-web-bridge`) and reuse whatever you
+verify yourself to be correct — you own the result either way. The install point is now fixed (below).
+
 ## Acceptance
-apps/web/src/verify/bridge.test.ts (new; node:test with fake window/session objects, no real browser needed) fails today (module missing) and then proves:
-- exported `buildBridge(session)` returns an object with exactly the keys `version, snapshot, events, connection, journal, settings` -- no more, no fewer.
-- for a fake session shaped like local mode's `BootSession` (`{game, storage, original, error}`, apps/web/src/local.ts), `bridge.snapshot()` equals the engine's own `snapshot(session.game)` (the function built by the prerequisite slice agent-verification-m01-engine-snapshot, imported from the engine package's barrel export -- this slice's `after:` chain runs behind it).
-- for a fake session shaped like remote mode's `RemoteSession`/`RemoteGame` (apps/web/src/start.ts defines `RemoteSession`; apps/web/src/remote.ts defines `RemoteGame`), `bridge.snapshot()` derives from `session.remote.world` (the last applied WorldView) -- it must NOT call the engine's `snapshot()` function, since remote mode has no local `Game`.
-- `bridge.connection()` returns the literal `'local'` for a local session, and `session.remote.state` (the `Connection` union exported by remote.ts) for a remote one.
-- `bridge.journal()` returns `null` for a local session, and `{nextSeq, pending, cursor}` read off the remote session's private `journal` field via the type-cast described in Problem, for a remote one.
-- `Object.isFrozen(bridge)` is true.
-- none of the six bridge methods ever calls `command`, `advance`, `persist`, or `replaceSave` -- spy on the fake session's `game.command`/`game.advance`/`storage.save`/`remote.command` and assert zero calls after exercising every bridge method.
-- apps/web/src/main.tsx installs `window.__TBH_VERIFY__ = buildBridge(session)` only when `import.meta.env.DEV || import.meta.env.VITE_TBH_VERIFY === '1'`. Both `playwright.config.ts` and `playwright.remote.config.ts` already run their web server via `npm run dev` (Vite's dev server, where `import.meta.env.DEV` is always true) -- neither needs an env-var change for this to work; no Playwright config is in this slice's scope, and none needs to be.
-- apps/web/vite.config.ts gains a `define` block providing `__TBH_COMMIT__` (from `git rev-parse HEAD`, resolved once at config-load time) and `__TBH_WORKTREE__` (the config's own cwd) for `version()` to read.
+
+`npm run test:one -- apps/web/src/verify/bridge.test.ts apps/web/src/verify/install.test.ts` fails
+today (both modules missing) and passes after. Both test files run under `node --import tsx --test`
+with hand-made fake session objects — no browser, no real `Game` boot required for install.test.ts.
+
+bridge.test.ts (`buildBridge(session)` in apps/web/src/verify/bridge.ts):
+- returns an object whose own keys are exactly version, snapshot, events, connection, journal,
+  settings — nothing else; `Object.isFrozen(bridge)` is true.
+- local session (a `BootSession`): `snapshot()` deep-equals the engine's `snapshot(session.game)`
+  from the `packages/engine/src` barrel; `connection()` returns `'local'`; `journal()` returns null.
+- remote session (a `RemoteSession`): `snapshot()` derives from the remote's own last world view and
+  never calls the engine's `snapshot()`; `connection()` returns the remote's connection state;
+  `journal()` returns `{nextSeq, pending, cursor}` read from the remote journal.
+- `version()` returns `{schema: 1, commit: __TBH_COMMIT__, worktree: __TBH_WORKTREE__, mode, startedAt,
+  configVersion}`.
+- read-only proof: spy on the session and assert that calling every one of the six methods never
+  invokes `game.command`, `game.advance`, `storage.save`, `remote.command`, or any localStorage /
+  IndexedDB write.
+
+install.test.ts (`installVerifyBridge(state)` in apps/web/src/verify/install.ts):
+- with the env guard off, it writes nothing to the fake window.
+- with the guard on and a `StartState` that has a session, it sets `window.__TBH_VERIFY__` to
+  `buildBridge(state.session)`.
+- with the guard on and a session-less `StartState` (`{local,legacy}` / `{error}` / `{reauth}`), it
+  writes nothing.
+- calling it twice with two different sessions leaves the SECOND session's bridge installed (the app
+  calls `start()` again on account switch / reauthenticate — the bridge must follow the live session).
+
+vite.config.ts: a `define` block supplying `__TBH_COMMIT__` (`git rev-parse HEAD`, must not throw
+outside a git checkout — fall back to `'unknown'`) and `__TBH_WORKTREE__` (the config's own cwd).
+
 ## Context
-apps/web/src/local.ts exports `BootSession` (`{game: Game, storage, original, error}`) and `boot()`. apps/web/src/remote.ts exports `class RemoteGame` (public `world`, `config`, `state: Connection`, `command()`; private `journal`) and `type Connection`. apps/web/src/start.ts exports `Session = BootSession | RemoteSession` and defines `RemoteSession`. Read all three; do not modify them -- they are not in this slice's scope. apps/web/src/main.tsx is the entry point that needs the install call added. apps/web/vite.config.ts already has `server`/`preview`/`build` blocks to extend with a `define` block.
+
+**Install point — this is the whole reason the previous attempt halted; do not deviate.**
+`apps/web/src/start.ts` is the single funnel that creates a session: `App.tsx` calls `start()` in
+exactly two places (the mount effect at App.tsx:73 and `choose()` at App.tsx:74) and nothing else
+constructs a `Session`. So wrap it in start.ts itself, leaving App.tsx untouched and out of scope:
+
+    export async function start(mode?): Promise<StartState> {
+      const state = await <the current body, extracted as a local async function>;
+      installVerifyBridge(state);   // no-op unless guarded env + a session is present
+      return state;
+    }
+
+`install.ts` must `import type { StartState } from '../start'` (type-only, so there is no runtime
+import cycle) and `import { buildBridge } from './bridge'`. Guard is
+`import.meta.env.DEV || import.meta.env.VITE_TBH_VERIFY === '1'`.
+
+NEVER call `start()`, `boot()`, or `RemoteGame.open()` a second time to obtain a session. The
+previous attempt proved this regresses the real app under `import.meta.env.DEV` (true for every
+Playwright config's `npm run dev` webServer): local mode hits `BrowserSave.commit()`'s
+optimistic-concurrency check (browser-save.ts:85-109) → `storage:conflict` → the recovery screen;
+remote mode loses `navigator.locks.request(JOURNAL_KEY, {ifAvailable:true})` (remote.ts:78-86) →
+`RemoteError('otherTab')`. If the wrap above turns out to be impossible, HALT MISSING_CONTEXT — do
+not invent a second boot path or scrape the DOM.
+
+The bridge is READ-ONLY (see the ap3-workflow block in CLAUDE.md): nothing under
+`apps/web/src/verify/` may call `Game.command`, `Game.advance`, `persist`, `replaceSave`, or write
+localStorage / IndexedDB. Deterministic setup for later slices stays "fixture save", not a mutator.
+
+Read before writing: `apps/web/src/start.ts` (25 lines, 5 return points), `local.ts` (`BootSession`),
+`remote.ts` (`RemoteGame`, `Connection`, the journal fields), `packages/engine/src/snapshot.ts`
+(merged in PR #4 — reuse it, do not re-implement), `apps/web/src/main.tsx` (Admin vs App split; Admin
+has no session, so the bridge simply never installs there — note that in your report, do not "fix" it).
+
+`npm run verify` must stay green; run it before you write READY-FOR-REVIEW.
+
+Commit message: `feat(web): read-only __TBH_VERIFY__ bridge installed from start.ts`

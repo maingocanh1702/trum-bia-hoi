@@ -11,6 +11,7 @@
         "packages/engine/src/index.ts",
         "packages/engine/test/snapshot.test.ts",
         "apps/web/src/verify/**",
+        "apps/web/src/start.ts",
         "apps/web/src/main.tsx",
         "apps/web/vite.config.ts",
         "apps/web/test/tbh-fixture.ts",
