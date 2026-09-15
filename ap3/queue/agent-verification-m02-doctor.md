@@ -7,7 +7,7 @@ scope:
   - scripts/verify/doctor.test.ts
   - package.json
   - .gitignore
-verify: node --import tsx --test scripts/verify/doctor.test.ts
+verify: npm run test:one -- scripts/verify/doctor.test.ts
 budget_usd: 16
 max_review_rounds: 3
 model: claude-sonnet-5

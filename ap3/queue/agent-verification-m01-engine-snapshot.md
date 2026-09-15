@@ -6,7 +6,7 @@ scope:
   - packages/engine/src/snapshot.ts
   - packages/engine/src/index.ts
   - packages/engine/test/snapshot.test.ts
-verify: node --import tsx --test packages/engine/test/snapshot.test.ts
+verify: npm run test:one -- packages/engine/test/snapshot.test.ts
 budget_usd: 12
 max_review_rounds: 3
 model: claude-sonnet-5

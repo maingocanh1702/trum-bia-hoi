@@ -5,7 +5,7 @@
     "packages/*",
     "apps/*"
   ],
-  "description": "Root: gate check:config (JSON \u2194 registry) + npm workspaces cho game m\u1edbi (packages/engine, apps/web, apps/server). prototype/ l\u00e0 l\u01b0u tr\u1eef, kh\u00f4ng thu\u1ed9c workspace.",
+  "description": "Root: gate check:config (JSON ↔ registry) + npm workspaces cho game mới (packages/engine, apps/web, apps/server). prototype/ là lưu trữ, không thuộc workspace.",
   "scripts": {
     "check:economy": "python3 scripts/check_economy_config.py",
     "check:config-coverage": "python3 scripts/check_config_coverage.py",
@@ -25,7 +25,8 @@
     "sim:rush": "tsx packages/engine/sim/rush-pressure.ts",
     "dev:server": "tsx apps/server/src/main.ts",
     "sim:career": "tsx packages/engine/sim/career.ts",
-    "sim:career:gate": "tsx packages/engine/sim/career.ts --check-advanced"
+    "sim:career:gate": "tsx packages/engine/sim/career.ts --check-advanced",
+    "test:one": "node --import tsx --test"
   },
   "type": "module",
   "engines": {

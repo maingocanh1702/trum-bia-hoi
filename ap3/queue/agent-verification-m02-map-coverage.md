@@ -6,7 +6,7 @@ scope:
   - scripts/verify/map-coverage.ts
   - scripts/verify/map-coverage.test.ts
   - package.json
-verify: node --import tsx --test scripts/verify/map-coverage.test.ts
+verify: npm run test:one -- scripts/verify/map-coverage.test.ts
 budget_usd: 10
 max_review_rounds: 3
 model: claude-sonnet-5

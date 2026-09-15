@@ -6,7 +6,7 @@ scope:
   - scripts/verify/port.ts
   - scripts/verify/port.test.ts
   - package.json
-verify: node --import tsx --test scripts/verify/port.test.ts
+verify: npm run test:one -- scripts/verify/port.test.ts
 budget_usd: 10
 max_review_rounds: 3
 model: claude-sonnet-5

@@ -7,7 +7,7 @@ scope:
   - apps/web/src/verify/bridge.test.ts
   - apps/web/src/main.tsx
   - apps/web/vite.config.ts
-verify: node --import tsx --test apps/web/src/verify/bridge.test.ts
+verify: npm run test:one -- apps/web/src/verify/bridge.test.ts
 budget_usd: 16
 max_review_rounds: 3
 model: claude-sonnet-5

@@ -9,7 +9,7 @@ scope:
   - playwright.playable.config.ts
   - playwright.remote.config.ts
   - scripts/verify/port-wire.test.ts
-verify: node --import tsx --test scripts/verify/port-wire.test.ts
+verify: npm run test:one -- scripts/verify/port-wire.test.ts
 budget_usd: 12
 max_review_rounds: 3
 model: claude-sonnet-5
