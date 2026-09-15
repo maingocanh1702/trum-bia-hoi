@@ -1,7 +1,8 @@
 import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { basename, dirname, relative, resolve } from 'node:path';
+import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync, spawnSync } from 'node:child_process';
+import { createScanner, LanguageVariant, SyntaxKind, computeLineStarts } from 'typescript/unstable/ast';
 
 export type DoctorGroup = 'repo' | 'deps' | 'binding' | 'map' | 'server' | 'bridge' | 'console';
 
@@ -47,6 +48,7 @@ export interface FetchRunner {
 export interface FsRunner {
   listEngineFiles(dir: string): string[];
   readFile(path: string): string;
+  pathExists(path: string): boolean;
   writeReport(path: string, content: string): void;
 }
 
@@ -69,143 +71,216 @@ function checkNodeVersion(version: string): boolean {
   return major > 22 || (major === 22 && minor >= 12);
 }
 
-const REACT_IMPORT =
-  /(?:\bimport\s*\(\s*['"]react(?:-dom)?['"]|\bimport\s+['"]react(?:-dom)?['"]|\bfrom\s*['"]react(?:-dom)?['"]|\brequire\(\s*['"]react(?:-dom)?['"]\s*\))/;
-// Tolerate stray whitespace around the dot/parens -- `Date . now ( )` is valid JS and must not
-// slip past a scanner that only recognises the no-space spelling.
-const DATE_NOW = /\bDate\s*\.\s*now\s*\(\s*\)/;
-const MATH_RANDOM = /\bMath\s*\.\s*random\s*\(\s*\)/;
-const DOM_GLOBALS: Array<{ name: string; pattern: RegExp }> = [
-  { name: 'document', pattern: /\bdocument\b/ },
-  { name: 'localStorage', pattern: /\blocalStorage\b/ },
-  { name: 'sessionStorage', pattern: /\bsessionStorage\b/ },
-  { name: 'indexedDB', pattern: /\bindexedDB\b/ },
-];
+const DOM_GLOBAL_NAMES = new Set(['window', 'document', 'localStorage', 'sessionStorage', 'indexedDB']);
+const DATE_MATH_PROPS: Record<string, string> = { Date: 'now', Math: 'random' };
 
-// One left-to-right scan tracking comment/string state, instead of a `//`-anywhere regex --
-// a `//` inside a string (e.g. a URL literal) must not swallow the rest of the line as a
-// "comment" and hide a real violation that follows it on the same line. Produces two views:
-// `forImport` (comments blanked, string/template bodies left intact -- the import-specifier
-// check needs to read inside the quotes) and `forGlobals` (comments AND string/template bodies
-// blanked -- so a harmless string literal like `"window"` can never trip the DOM-global scan).
-// Newlines always pass through unmodified in both views so reported line numbers stay accurate.
-function tokenizeSource(src: string): { forImport: string; forGlobals: string } {
-  let forImport = '';
-  let forGlobals = '';
-  type State = 'code' | 'line-comment' | 'block-comment' | 'single' | 'double' | 'template';
-  let state: State = 'code';
-  for (let i = 0; i < src.length; i++) {
-    const ch = src[i];
-    const next = src[i + 1];
-    if (ch === '\n') {
-      forImport += '\n';
-      forGlobals += '\n';
-      if (state === 'line-comment') state = 'code';
-      continue;
-    }
-    if (state === 'code') {
-      if (ch === '/' && next === '/') {
-        state = 'line-comment';
-        forImport += ' ';
-        forGlobals += ' ';
-        continue;
-      }
-      if (ch === '/' && next === '*') {
-        state = 'block-comment';
-        forImport += ' ';
-        forGlobals += ' ';
-        continue;
-      }
-      if (ch === "'" || ch === '"' || ch === '`') {
-        state = ch === "'" ? 'single' : ch === '"' ? 'double' : 'template';
-        forImport += ch;
-        forGlobals += ' ';
-        continue;
-      }
-      forImport += ch;
-      forGlobals += ch;
-      continue;
-    }
-    if (state === 'line-comment') {
-      forImport += ' ';
-      forGlobals += ' ';
-      continue;
-    }
-    if (state === 'block-comment') {
-      if (ch === '*' && next === '/') {
-        state = 'code';
-        forImport += ' ';
-        forGlobals += ' ';
-        i++;
-      } else {
-        forImport += ' ';
-        forGlobals += ' ';
-      }
-      continue;
-    }
-    // Inside a single/double/template string body.
-    const closer = state === 'single' ? "'" : state === 'double' ? '"' : '`';
-    if (ch === '\\' && next !== undefined && next !== '\n') {
-      forImport += ch + next;
-      forGlobals += '  ';
-      i++;
-      continue;
-    }
-    if (ch === closer) {
-      state = 'code';
-      forImport += ch;
-      forGlobals += ' ';
-      continue;
-    }
-    forImport += ch;
-    forGlobals += ' ';
-  }
-  return { forImport, forGlobals };
+function isReactModuleSpecifier(text: string): boolean {
+  return text === 'react' || text.startsWith('react/') || text === 'react-dom' || text.startsWith('react-dom/');
 }
 
-// `window` used as a bare identifier is the DOM global UNLESS the enclosing block declares its
-// own local `window` binding (e.g. packages/engine/src/seasons.ts's `const window =
-// seasonWindow(...)`). Tracked with a brace-depth stack (not a per-line scan) so a shadow that
-// opens and closes on the very same physical line still gets popped -- a line-granular scan
-// misses that case and leaves every later top-level `window` read in the file wrongly exempted.
-const WINDOW_TOKEN = /\{|\}|\b(?:const|let|var)\s+window\b|\bwindow\b/g;
+function lineOf(lineStarts: number[], pos: number): number {
+  let lo = 0;
+  let hi = lineStarts.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (lineStarts[mid] <= pos) lo = mid;
+    else hi = mid - 1;
+  }
+  return lo + 1;
+}
 
-function scanWindowUsage(relPath: string, maskedCode: string): string[] {
-  const hits: string[] = [];
+interface Tok {
+  kind: number;
+  value: string;
+  start: number;
+}
+
+// A previous token that already denotes a complete VALUE means the next `/` is division, not the
+// start of a regex literal -- the same ambiguity a real parser resolves with expression-context
+// tracking; this is the standard "does a value precede?" heuristic for it.
+function followsValue(kind: number): boolean {
+  switch (kind) {
+    case SyntaxKind.Identifier:
+    case SyntaxKind.NumericLiteral:
+    case SyntaxKind.BigIntLiteral:
+    case SyntaxKind.StringLiteral:
+    case SyntaxKind.NoSubstitutionTemplateLiteral:
+    case SyntaxKind.TemplateTail:
+    case SyntaxKind.RegularExpressionLiteral:
+    case SyntaxKind.CloseParenToken:
+    case SyntaxKind.CloseBracketToken:
+    case SyntaxKind.CloseBraceToken:
+    case SyntaxKind.PlusPlusToken:
+    case SyntaxKind.MinusMinusToken:
+    case SyntaxKind.ThisKeyword:
+    case SyntaxKind.SuperKeyword:
+    case SyntaxKind.TrueKeyword:
+    case SyntaxKind.FalseKeyword:
+    case SyntaxKind.NullKeyword:
+      return true;
+    default:
+      return false;
+  }
+}
+
+// The installed `typescript@7` preview no longer ships the classic `ts.createSourceFile` parser
+// as a public API -- its package "exports" map only reaches `dist/ast/*`'s node/token primitives
+// (`typescript/unstable/ast`), which is a tokenizer (`createScanner`), not a full parser. This
+// tokenizes the whole file up front, resolving the two ambiguities a raw token stream can't: is a
+// `/` a regex literal or division (`followsValue`), and does a `}` close a template interpolation
+// or a real block/object (tracked via `templateDepths`, using `reScanTemplateToken`). The result
+// is a real, single-token-per-comment/string/regex/template-body stream -- those can never be
+// mistaken for code, so they can never trip a false violation or hide a real one.
+function tokenize(src: string): Tok[] {
+  const scanner = createScanner(true, LanguageVariant.Standard, src);
+  const toks: Tok[] = [];
   let depth = 0;
-  const shadowStack: number[] = [];
-  let line = 1;
-  let scanPos = 0;
-  WINDOW_TOKEN.lastIndex = 0;
-  let match: RegExpExecArray | null;
-  while ((match = WINDOW_TOKEN.exec(maskedCode))) {
-    for (let i = scanPos; i < match.index; i++) if (maskedCode[i] === '\n') line++;
-    scanPos = match.index;
-    const token = match[0];
-    if (token === '{') {
+  const templateDepths: number[] = [];
+  let kind = scanner.scan();
+  while (kind !== SyntaxKind.EndOfFile) {
+    if (kind === SyntaxKind.TemplateHead) {
+      templateDepths.push(depth);
+    } else if (kind === SyntaxKind.OpenBraceToken) {
       depth++;
-    } else if (token === '}') {
-      depth--;
-      while (shadowStack.length > 0 && depth < shadowStack[shadowStack.length - 1]) shadowStack.pop();
-    } else if (token !== 'window') {
-      shadowStack.push(depth);
-    } else if (shadowStack.length === 0) {
-      hits.push(`${relPath}:${line}: window global`);
+    } else if (kind === SyntaxKind.CloseBraceToken) {
+      if (templateDepths.length > 0 && depth === templateDepths[templateDepths.length - 1]) {
+        kind = scanner.reScanTemplateToken(false);
+        if (kind === SyntaxKind.TemplateTail) templateDepths.pop();
+      } else {
+        depth--;
+      }
+    } else if (kind === SyntaxKind.SlashToken || kind === SyntaxKind.SlashEqualsToken) {
+      const prev = toks[toks.length - 1];
+      if (!prev || !followsValue(prev.kind)) kind = scanner.reScanSlashToken();
     }
+    const value = kind === SyntaxKind.Identifier || kind === SyntaxKind.StringLiteral ? scanner.getTokenValue() : '';
+    toks.push({ kind, value, start: scanner.getTokenStart() });
+    kind = scanner.scan();
   }
-  return hits;
+  return toks;
 }
 
+// Walks the resolved token stream (see `tokenize`) to flag react imports, `Date.now()` /
+// `Math.random()` calls (including optional chaining and computed member access) and bare
+// references to a DOM global. A brace-depth shadow stack tracks local `const/let/var` bindings
+// and `function` parameters that shadow a DOM-global name (e.g. packages/engine/src/seasons.ts's
+// local `const window = ...`), matching real JS block scoping closely enough for this narrow
+// purity check; property names (`foo.window`), object-literal keys (`{ window: 1 }`) and
+// declaration sites are recognised from local token context and never treated as a reference.
 function scanFilePurity(relPath: string, src: string): string[] {
-  const { forImport, forGlobals } = tokenizeSource(src);
   const hits: string[] = [];
-  if (REACT_IMPORT.test(forImport)) hits.push(`${relPath}: react import`);
-  hits.push(...scanWindowUsage(relPath, forGlobals));
-  for (const { name, pattern } of DOM_GLOBALS) {
-    if (pattern.test(forGlobals)) hits.push(`${relPath}: ${name} global`);
+  const lineStarts = computeLineStarts(src);
+  const toks = tokenize(src);
+
+  const hit = (pos: number, label: string) => hits.push(`${relPath}:${lineOf(lineStarts, pos)}: ${label}`);
+  const hitPlain = (label: string) => hits.push(`${relPath}: ${label}`);
+
+  let depth = 0;
+  let parenDepth = 0;
+  let awaitingParamOpen = false;
+  let paramParenDepth = -1;
+  let pendingParamShadows: string[] | null = null;
+  let awaitingFunctionBody: string[] | null = null;
+  const shadowStack: Array<{ depth: number; name: string }> = [];
+  const isShadowed = (name: string) => shadowStack.some((s) => s.name === name);
+
+  for (let i = 0; i < toks.length; i++) {
+    const t = toks[i];
+    const prev = toks[i - 1];
+    const next = toks[i + 1];
+
+    if (t.kind === SyntaxKind.FunctionKeyword) {
+      awaitingParamOpen = true;
+    } else if (t.kind === SyntaxKind.OpenParenToken) {
+      parenDepth++;
+      if (awaitingParamOpen) {
+        awaitingParamOpen = false;
+        pendingParamShadows = [];
+        paramParenDepth = parenDepth;
+      }
+      const p1 = prev;
+      const p2 = toks[i - 2];
+      const p3 = toks[i - 3];
+      const p4 = toks[i - 4];
+      if (
+        p1 && p2 && p3 &&
+        p1.kind === SyntaxKind.Identifier &&
+        (p2.kind === SyntaxKind.DotToken || p2.kind === SyntaxKind.QuestionDotToken) &&
+        p3.kind === SyntaxKind.Identifier &&
+        DATE_MATH_PROPS[p3.value] === p1.value
+      ) {
+        hitPlain(`${p3.value}.${p1.value}()`);
+      } else if (
+        p1 && p2 && p3 && p4 &&
+        p1.kind === SyntaxKind.CloseBracketToken &&
+        p2.kind === SyntaxKind.StringLiteral &&
+        p3.kind === SyntaxKind.OpenBracketToken &&
+        p4.kind === SyntaxKind.Identifier &&
+        DATE_MATH_PROPS[p4.value] === p2.value
+      ) {
+        hitPlain(`${p4.value}.${p2.value}()`);
+      }
+    } else if (t.kind === SyntaxKind.CloseParenToken) {
+      if (pendingParamShadows !== null && parenDepth === paramParenDepth) {
+        awaitingFunctionBody = pendingParamShadows;
+        pendingParamShadows = null;
+        paramParenDepth = -1;
+      }
+      parenDepth--;
+    } else if (t.kind === SyntaxKind.OpenBraceToken) {
+      depth++;
+      if (awaitingFunctionBody) {
+        for (const name of awaitingFunctionBody) shadowStack.push({ depth, name });
+        awaitingFunctionBody = null;
+      }
+    } else if (t.kind === SyntaxKind.CloseBraceToken) {
+      depth--;
+      while (shadowStack.length > 0 && shadowStack[shadowStack.length - 1].depth > depth) shadowStack.pop();
+    } else if (t.kind === SyntaxKind.SemicolonToken) {
+      awaitingFunctionBody = null; // an overload signature ending in `;` never gets a body to shadow
+    } else if (t.kind === SyntaxKind.StringLiteral && isReactModuleSpecifier(t.value)) {
+      const p1 = prev;
+      const p2 = toks[i - 2];
+      const isFrom = !!p1 && p1.kind === SyntaxKind.FromKeyword;
+      const isBareImport = !!p1 && p1.kind === SyntaxKind.ImportKeyword;
+      const isDynamicImport = !!p1 && p1.kind === SyntaxKind.OpenParenToken && !!p2 && p2.kind === SyntaxKind.ImportKeyword;
+      const isRequire = !!p1 && p1.kind === SyntaxKind.OpenParenToken && !!p2 && p2.kind === SyntaxKind.Identifier && p2.value === 'require';
+      if (isFrom || isBareImport || isDynamicImport || isRequire) hitPlain('react import');
+    } else if (t.kind === SyntaxKind.Identifier) {
+      if (
+        prev &&
+        (prev.kind === SyntaxKind.ConstKeyword || prev.kind === SyntaxKind.LetKeyword || prev.kind === SyntaxKind.VarKeyword) &&
+        DOM_GLOBAL_NAMES.has(t.value)
+      ) {
+        shadowStack.push({ depth, name: t.value });
+        continue;
+      }
+      if (
+        pendingParamShadows !== null &&
+        parenDepth === paramParenDepth &&
+        DOM_GLOBAL_NAMES.has(t.value) &&
+        prev && (prev.kind === SyntaxKind.OpenParenToken || prev.kind === SyntaxKind.CommaToken) &&
+        next &&
+        (next.kind === SyntaxKind.ColonToken ||
+          next.kind === SyntaxKind.CommaToken ||
+          next.kind === SyntaxKind.CloseParenToken ||
+          next.kind === SyntaxKind.EqualsToken)
+      ) {
+        pendingParamShadows.push(t.value);
+        continue;
+      }
+      if (prev && (prev.kind === SyntaxKind.DotToken || prev.kind === SyntaxKind.QuestionDotToken)) continue; // e.g. `foo.window`
+      if (
+        prev &&
+        (prev.kind === SyntaxKind.OpenBraceToken || prev.kind === SyntaxKind.CommaToken) &&
+        next &&
+        next.kind === SyntaxKind.ColonToken
+      )
+        continue; // object-literal key, e.g. `{ window: 1 }`
+      if (DOM_GLOBAL_NAMES.has(t.value) && !isShadowed(t.value)) hit(t.start, `${t.value} global`);
+    }
   }
-  if (DATE_NOW.test(forGlobals)) hits.push(`${relPath}: Date.now()`);
-  if (MATH_RANDOM.test(forGlobals)) hits.push(`${relPath}: Math.random()`);
+
   return hits;
 }
 
@@ -213,8 +288,9 @@ export function scanEnginePurity(dir: string, fs: Pick<FsRunner, 'listEngineFile
   const violations: string[] = [];
   for (const file of fs.listEngineFiles(dir)) {
     if (!file.endsWith('.ts')) continue;
-    if (basename(file) === 'rng.ts') continue; // exact-name exemption, matches scripts/check_config_coverage.py's SKIP_FILES
-    violations.push(...scanFilePurity(relative(dir, file), fs.readFile(file)));
+    const relPath = relative(dir, file);
+    if (relPath === 'rng.ts') continue; // exact relative-path exemption at the engine-src root only
+    violations.push(...scanFilePurity(relPath, fs.readFile(file)));
   }
   return violations;
 }
@@ -240,19 +316,46 @@ function formatReport(lines: DoctorLine[]): string {
   return `${out.join('\n')}\n`;
 }
 
+const HEAD_SHA_PATTERN = /^[0-9a-f]{40}$/;
+
 export function runDoctor(opts: DoctorOptions): DoctorReport {
   const cwd = opts.cwd ?? process.cwd();
   const { runners } = opts;
   const lines: DoctorLine[] = [];
 
   const branch = sanitizeForReport(runners.git.branch(cwd));
-  const headSha = sanitizeForReport(runners.git.headSha(cwd));
-  const worktreePath = sanitizeForReport(runners.git.worktreePath(cwd));
+  const rawHeadSha = runners.git.headSha(cwd);
+  const headSha = sanitizeForReport(rawHeadSha);
+  const rawWorktreePath = runners.git.worktreePath(cwd);
+  const worktreePath = sanitizeForReport(rawWorktreePath);
 
-  lines.push({ group: 'repo', ok: true, label: `branch=${branch} head=${headSha} worktree=${worktreePath}` });
+  const headShaValid = HEAD_SHA_PATTERN.test(rawHeadSha);
+  lines.push({
+    group: 'repo',
+    ok: headShaValid,
+    label: headShaValid ? `branch=${branch} head=${headSha}` : `INVALID SHA: head=${headSha} is not a 40-hex commit sha`,
+  });
+
+  const resolvedCwd = resolve(cwd);
+  const worktreeIsCwdRoot = rawWorktreePath === resolvedCwd;
+  lines.push({
+    group: 'repo',
+    ok: worktreeIsCwdRoot,
+    label: worktreeIsCwdRoot
+      ? `worktree=${worktreePath}`
+      : `WRONG ROOT: worktree=${worktreePath} != resolved cwd ${sanitizeForReport(resolvedCwd)}`,
+  });
 
   const nodeOk = checkNodeVersion(process.version);
   lines.push({ group: 'deps', ok: nodeOk, label: `node ${process.version} (>=22.12 required)` });
+
+  const nodeModulesPath = resolve(cwd, 'node_modules');
+  const nodeModulesOk = runners.fs.pathExists(nodeModulesPath);
+  lines.push({
+    group: 'deps',
+    ok: nodeModulesOk,
+    label: nodeModulesOk ? 'node_modules present' : `MISSING node_modules at ${sanitizeForReport(nodeModulesPath)}`,
+  });
 
   const configResult = runners.exec.checkConfig(cwd);
   lines.push({ group: 'binding', ok: configResult.code === 0, label: 'check:config' });
@@ -280,13 +383,13 @@ export function runDoctor(opts: DoctorOptions): DoctorReport {
     } else {
       const commit = sanitizeForReport(version.commit);
       const worktree = sanitizeForReport(version.worktree);
-      const commitOk = version.commit === headSha;
+      const commitOk = version.commit === rawHeadSha;
       lines.push({
         group: 'bridge',
         ok: commitOk,
         label: commitOk ? 'version().commit == HEAD' : `STALE BUILD: commit ${commit} != HEAD ${headSha}`,
       });
-      const worktreeOk = version.worktree === worktreePath;
+      const worktreeOk = version.worktree === rawWorktreePath;
       lines.push({
         group: 'bridge',
         ok: worktreeOk,
@@ -353,8 +456,9 @@ export function defaultRunners(): DoctorRunners {
       // real page, which only a browser-driving harness (apps/web/test/tbh-fixture.ts, a future
       // slice) can supply. Rather than fabricate a clean result for a check this runner never
       // performed, every default here fails closed -- an honest "unknown/unreachable", never a
-      // false PASS. --engine-only exists precisely to skip this group for engine/server-only work;
-      // full mode is meant to run with real runners injected by that future browser harness.
+      // false PASS. The shipped CLI defaults to engine-only precisely because these fail closed;
+      // full mode (`--full`) is meant to run with real runners injected by that future browser
+      // harness.
       bridgeVersion: () => null,
       serverHealth: () => false,
       consoleErrors: () => ['console errors not checked: no driven browser session available to this CLI'],
@@ -362,6 +466,7 @@ export function defaultRunners(): DoctorRunners {
     fs: {
       listEngineFiles: (dir) => listFilesRecursive(dir),
       readFile: (path) => readFileSync(path, 'utf8'),
+      pathExists: (path) => existsSync(path),
       writeReport: (path, content) => {
         mkdirSync(dirname(path), { recursive: true });
         writeFileSync(path, content);
@@ -374,8 +479,16 @@ function isMainModule(): boolean {
   return process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 }
 
+// The shipped `verify:doctor` script must be a command that can genuinely pass with no browser
+// or dev server available -- so engine-only is the default, and reaching the server/bridge/
+// console groups (which need real runners from a browser-driving harness) requires the caller to
+// opt in explicitly with `--full`. `--engine-only` is accepted too, but is already the default.
+export function resolveEngineOnly(argv: string[]): boolean {
+  return !argv.includes('--full');
+}
+
 if (isMainModule()) {
-  const engineOnly = process.argv.includes('--engine-only');
+  const engineOnly = resolveEngineOnly(process.argv.slice(2));
   const report = runDoctor({ engineOnly, runners: defaultRunners() });
   console.log(report.text);
   process.exit(exitCodeFor(report));
