@@ -659,6 +659,22 @@ launch_writer() { # <slug> — start (or restart) the sandboxed coding session, 
 reconcile_running() {
   local slug="$1" rec="$RUNS/$1/record.json" wt="$WT/$1"
   local result="$RUNS/$slug/result.json" run="$wt/.ap3-run"
+  # W5.2.3 (K23): retry.sh --answer sets this after the owner has written the answer to a
+  # MISSING_CONTEXT question into the run's task.md. Handled FIRST, before anything below reads
+  # pid/result.json: the halted attempt's result.json is the writer's "I stopped to ask", already
+  # metered, and every branch below would misread it (a stale result plus a dead pid reaches the
+  # HALT.md / NO_SIGNAL paths and re-halts). The answer needs a new WRITER session -- not the
+  # review step --review-only resumes -- so drop the previous attempt's signal files and
+  # re-dispatch exactly the way a findings round does.
+  if [ "$(jget "$rec" answer_pending false)" = true ]; then
+    jsetj "$rec" answer_pending false
+    rm -f "$result" "$run/READY-FOR-REVIEW" "$run/HALT.md"
+    if launch_writer "$slug"; then          # a refused writer already HALTed + logged inside launch_writer
+      log "RECONCILED $slug — owner answered MISSING_CONTEXT, re-dispatched writer"
+      DID_RECONCILE=1
+    fi
+    return
+  fi
   local pid; pid="$(jget "$rec" pid 0)"
   local alive=0; { [ "$pid" != 0 ] && kill -0 "$pid" 2>/dev/null; } && alive=1
   # a non-empty result.json that is not yet valid JSON means the writer is mid-write -> if its

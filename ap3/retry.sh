@@ -30,19 +30,29 @@ REPO="$(cd "$DIR/.." && pwd)"; cd "$REPO"
 now() { date -u +%Y-%m-%dT%H:%M:%SZ; }
 
 REVIEW_ONLY=0
+ANSWER=0
 EXTEND_ROUNDS=""
 EXTEND_BUDGET=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --review-only) REVIEW_ONLY=1; shift ;;
+    --answer) ANSWER=1; shift ;;
     --extend-rounds) EXTEND_ROUNDS="${2:?--extend-rounds requires an integer}"; shift 2 ;;
     --extend-budget) EXTEND_BUDGET="${2:?--extend-budget requires a USD amount}"; shift 2 ;;
     *) break ;;
   esac
 done
-SLUG="${1:?usage: retry.sh [--review-only] [--extend-rounds N] [--extend-budget USD] <slug>}"
+SLUG="${1:?usage: retry.sh [--review-only] [--answer] [--extend-rounds N] [--extend-budget USD] <slug>}"
 if [ "$REVIEW_ONLY" = 1 ] && { [ -n "$EXTEND_ROUNDS" ] || [ -n "$EXTEND_BUDGET" ]; }; then
   echo "retry: refusing $SLUG -- --review-only cannot be combined with --extend-rounds/--extend-budget (different recovery modes)" >&2
+  exit 1
+fi
+# W5.2.3 (K23): --answer is its own recovery mode -- it re-dispatches the WRITER, where the other
+# three deliberately never do. Combining it with a mode that resumes review (or raises a ceiling
+# for a review that is not about to run) can only express owner confusion, so refuse rather than
+# silently letting one win.
+if [ "$ANSWER" = 1 ] && { [ "$REVIEW_ONLY" = 1 ] || [ -n "$EXTEND_ROUNDS" ] || [ -n "$EXTEND_BUDGET" ]; }; then
+  echo "retry: refusing $SLUG -- --answer cannot be combined with --review-only/--extend-rounds/--extend-budget (different recovery modes)" >&2
   exit 1
 fi
 # the same slug shape enforced everywhere else (aplib.py, dispatch.sh) -- reject BEFORE any
@@ -93,6 +103,65 @@ recreate_pinned_db() { # <label for error text, e.g. "--review-only"> -> exits 1
     exit 1
   fi
 }
+
+if [ "$ANSWER" = 1 ]; then
+  # W5.2.3 (K23): MISSING_CONTEXT is the one terminal that means the writer STOPPED ON PURPOSE to
+  # ask an owner-level question -- the skill's own contradiction-handling rule tells it to halt
+  # rather than guess, and every other recovery mode is wrong for it. --review-only refuses it
+  # (not an outage) and would resume review over a diff the writer never finished; --extend-*
+  # refuses it (no ceiling was hit) and likewise never relaunches a writer. That left only a full
+  # `retry.sh <slug>`, which WIPES the worktree and branch -- so a writer that asked a GOOD
+  # question cost the owner every dollar of committed work on the run, and the incentive it
+  # created (guess rather than ask) is the exact failure the halt exists to prevent. This mode
+  # keeps the run intact and re-dispatches the writer, which reads the owner's answer from the
+  # pinned ap3/state/runs/<slug>/task.md the owner edits before calling this.
+  terminal="$(python3 "$DIR/rec.py" get "$REC" terminal unknown)"
+  if [ "$terminal" != MISSING_CONTEXT ]; then
+    echo "retry: refusing --answer $SLUG -- terminal '$terminal' is not MISSING_CONTEXT (only a writer's own question is answerable; use a full 'retry.sh $SLUG' instead)" >&2
+    exit 1
+  fi
+  [ -d "$WT" ] || { echo "retry: refusing --answer $SLUG -- no worktree at $WT (use a full 'retry.sh $SLUG' instead)" >&2; exit 1; }
+  # the question itself. Its absence means this record's MISSING_CONTEXT did not come from a
+  # writer that actually asked one -- fail closed rather than relaunch a writer into an unknown
+  # state (and never silently answer a question nobody can read).
+  [ -f "$WT/.ap3-run/HALT.md" ] \
+    || { echo "retry: refusing --answer $SLUG -- $WT/.ap3-run/HALT.md is missing (nothing to answer)" >&2; exit 1; }
+  # same guard the full-rewrite path uses below: a pushed branch means a PR exists, and what
+  # happens to a PR is a human decision, never this script's.
+  remote_out="$(git ls-remote --heads origin "ap3/$SLUG" 2>&1)" || {
+    echo "retry: refusing --answer $SLUG -- could not query origin for branch ap3/$SLUG ($remote_out)" >&2
+    exit 1
+  }
+  if [ -n "$remote_out" ]; then
+    echo "retry: refusing --answer $SLUG -- origin already has branch ap3/$SLUG (a pushed branch means a PR exists -- human decision)" >&2
+    exit 1
+  fi
+  recreate_pinned_db --answer
+  # Removed BEFORE the record is published: reconcile_running halts on HALT.md's mere presence, so
+  # leaving it would re-halt this run on the very next tick no matter what the owner wrote.
+  rm -f "$WT/.ap3-run/HALT.md"
+  # NOT resume_review: there is nothing new to review -- the writer never finished this attempt.
+  # dispatch.sh's reconcile_running consumes answer_pending by re-dispatching the WRITER instead.
+  # The asking attempt's telemetry was already accumulated (reconcile_running sums it strictly
+  # before it reads HALT.md), and the relaunched writer produces a NEW result.json, so there is no
+  # double-count to suppress here the way --review-only has to.
+  python3 "$DIR/rec.py" setjson "$REC" terminal null
+  python3 "$DIR/rec.py" setjson "$REC" halt_cause null
+  python3 "$DIR/rec.py" setjson "$REC" terminal_kind null
+  python3 "$DIR/rec.py" setjson "$REC" pid 0
+  python3 "$DIR/rec.py" setjson "$REC" answer_pending true
+  # Read by reconcile_ready: a run that only got unstuck because a human answered its question is
+  # a human-ASSISTED outcome, not evidence of hands-off reliability -- an unchanged merge must not
+  # bump the class's clean_runs. Same flag (and same reason) as the --extend-* modes.
+  python3 "$DIR/rec.py" setjson "$REC" owner_extended true
+  python3 "$DIR/rec.py" set "$REC" owner_extended_at "$(now)"
+  python3 "$DIR/rec.py" set "$REC" owner_extended_flags answer
+  # published LAST, for the same reason spelled out on the --review-only path below
+  python3 "$DIR/rec.py" set "$REC" status running
+  echo "retry: $SLUG resumed after an owner answer (was HALT MISSING_CONTEXT) -- next dispatcher tick re-dispatches the writer, which reads your answer from ap3/state/runs/$SLUG/task.md"
+  echo "retry: the class is still paused -- run 'ap3/unpause.sh <class>' yourself when ready (not chained here)"
+  exit 0
+fi
 
 if [ "$REVIEW_ONLY" = 1 ]; then
   # kept in sync BY HAND with dispatch.sh's OUTAGE_TERMINALS -- this script never sources
