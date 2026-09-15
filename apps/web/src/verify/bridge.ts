@@ -47,13 +47,13 @@ export function buildBridge(session: Session): Readonly<VerifyBridge> {
       startedAt,
       configVersion: remote ? session.remote.config.version : session.game.config.version,
     }),
-    snapshot: () => (remote ? session.remote.world : engineSnapshot(session.game)),
-    events: (since = 0) => session.game.world.events.slice(since),
+    snapshot: () => (remote ? structuredClone(session.remote.world) : engineSnapshot(session.game)),
+    events: (since = 0) => structuredClone(session.game.world.events.slice(since)),
     connection: () => (remote ? session.remote.state : 'local'),
     journal: () => {
       if (!remote) return null;
       const journal = (session.remote as unknown as RemoteJournalHolder).journal;
-      return journal ? { nextSeq: journal.nextSeq, pending: journal.pending, cursor: journal.cursor } : null;
+      return journal ? structuredClone({ nextSeq: journal.nextSeq, pending: journal.pending, cursor: journal.cursor }) : null;
     },
     settings: () => readSettings(),
   };

@@ -133,16 +133,46 @@ test('none of the six bridge methods ever calls command/advance/persist/replaceS
   assert.strictEqual(remote.calls.command, 0);
 });
 
-test('none of the six bridge methods ever writes localStorage (bridge.ts never imports IndexedDB storage)', () => {
-  let writes = 0;
+test('none of the six bridge methods ever writes localStorage or opens IndexedDB, for local or remote', () => {
+  let localWrites = 0, indexedDbOpens = 0;
   const originalSetItem = localStorageStub.setItem;
-  localStorageStub.setItem = (...args: Parameters<Storage['setItem']>) => { writes++; return originalSetItem(...args); };
+  localStorageStub.setItem = (...args: Parameters<Storage['setItem']>) => { localWrites++; return originalSetItem(...args); };
+  (globalThis as unknown as { indexedDB: { open: (...args: unknown[]) => never } }).indexedDB = {
+    open: (): never => { indexedDbOpens++; throw new Error('the read-only bridge must never open IndexedDB'); },
+  };
   try {
-    const { session } = fakeLocalSession();
-    const bridge = buildBridge(session);
-    bridge.version(); bridge.snapshot(); bridge.events(); bridge.connection(); bridge.journal(); bridge.settings();
-    assert.strictEqual(writes, 0);
+    const local = fakeLocalSession();
+    const localBridge = buildBridge(local.session);
+    localBridge.version(); localBridge.snapshot(); localBridge.events(); localBridge.events(1);
+    localBridge.connection(); localBridge.journal(); localBridge.settings();
+
+    const remote = fakeRemoteSession();
+    const remoteBridge = buildBridge(remote.session);
+    remoteBridge.version(); remoteBridge.snapshot(); remoteBridge.events(); remoteBridge.events(1);
+    remoteBridge.connection(); remoteBridge.journal(); remoteBridge.settings();
+
+    assert.strictEqual(localWrites, 0);
+    assert.strictEqual(indexedDbOpens, 0);
   } finally {
     localStorageStub.setItem = originalSetItem;
+    delete (globalThis as unknown as { indexedDB?: unknown }).indexedDB;
   }
+});
+
+test('remote: snapshot()/events()/journal() are detached from the live session — mutating a result never taints it', () => {
+  const { session, remote } = fakeRemoteSession();
+  const bridge = buildBridge(session);
+
+  const snap = bridge.snapshot() as WorldView & { events: DomainEvent[] };
+  (snap as { coins: number }).coins = 999999;
+  assert.strictEqual(remote.world.coins, 0);
+  assert.deepStrictEqual(bridge.snapshot(), remote.world);
+
+  const events = bridge.events();
+  events[0].type = 'tampered';
+  assert.strictEqual(remote.world.events[0].type, 'shift_opened');
+
+  const journal = bridge.journal()!;
+  journal.pending.push({ tampered: true });
+  assert.strictEqual(remote.journal.pending.length, 1);
 });
