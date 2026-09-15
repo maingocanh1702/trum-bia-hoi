@@ -21,7 +21,7 @@
         ".gitignore"
       ],
       "budget_usd_max": 16,
-      "max_runs_per_day": 2,
+      "max_runs_per_day": 6,
       "review": "codex",
       "security_review": "auto"
     }
