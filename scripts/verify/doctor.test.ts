@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { runDoctor, defaultRunners, scanEnginePurity, type DoctorRunners } from './doctor';
+import { runDoctor, defaultRunners, exitCodeFor, scanEnginePurity, type DoctorRunners } from './doctor';
 
 function tempDir(t: { after(fn: () => unknown): void }, kind: string): string {
   mkdirSync('.qa', { recursive: true });
@@ -23,6 +23,7 @@ function happyRunners(overrides: Partial<DoctorRunners> = {}): DoctorRunners {
     },
     exec: overrides.exec ?? {
       checkConfig: () => ({ code: 0 }),
+      checkI18n: () => ({ code: 0 }),
       mapCoverage: () => ({ code: 0 }),
     },
     fetch: overrides.fetch ?? {
@@ -66,10 +67,23 @@ test('WRONG INSTANCE: bridge version().worktree != injected current worktree pat
 
 test('a red check:config (injected non-zero exit) fails the binding line and the overall result', (t) => {
   const root = tempDir(t, 'check-config-red');
-  const runners = happyRunners({ exec: { checkConfig: () => ({ code: 1 }), mapCoverage: () => ({ code: 0 }) } });
+  const runners = happyRunners({
+    exec: { checkConfig: () => ({ code: 1 }), checkI18n: () => ({ code: 0 }), mapCoverage: () => ({ code: 0 }) },
+  });
   const result = runDoctor({ cwd: root, engineSrcDir: resolve(root, 'packages/engine/src'), engineOnly: true, runners });
   const bindingLines = result.lines.filter((l) => l.group === 'binding');
   assert.ok(bindingLines.some((l) => !l.ok && /check:config/.test(l.label)));
+  assert.equal(result.ok, false);
+});
+
+test('a red check:i18n (injected non-zero exit) fails the binding line and the overall result', (t) => {
+  const root = tempDir(t, 'check-i18n-red');
+  const runners = happyRunners({
+    exec: { checkConfig: () => ({ code: 0 }), checkI18n: () => ({ code: 1 }), mapCoverage: () => ({ code: 0 }) },
+  });
+  const result = runDoctor({ cwd: root, engineSrcDir: resolve(root, 'packages/engine/src'), engineOnly: true, runners });
+  const bindingLines = result.lines.filter((l) => l.group === 'binding');
+  assert.ok(bindingLines.some((l) => !l.ok && /check:i18n/.test(l.label)));
   assert.equal(result.ok, false);
 });
 
@@ -100,9 +114,79 @@ test('a file named rng.ts is exempt from the engine-purity scan, matching the re
   assert.equal(result.ok, true);
 });
 
+test('the rng.ts exemption is an exact filename match, not a suffix match -- custom-rng.ts still fails', (t) => {
+  const root = tempDir(t, 'purity-rng-suffix-not-exempt');
+  const engineSrcDir = resolve(root, 'packages/engine/src');
+  mkdirSync(engineSrcDir, { recursive: true });
+  writeFileSync(resolve(engineSrcDir, 'custom-rng.ts'), 'export const x = Math.random();\n');
+  const runners = happyRunners();
+  const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
+  const bindingLines = result.lines.filter((l) => l.group === 'binding');
+  assert.ok(bindingLines.some((l) => !l.ok && /custom-rng\.ts/.test(l.label)));
+  assert.equal(result.ok, false);
+});
+
+test('engine-purity scan flags document/localStorage/sessionStorage/indexedDB, not only window', (t) => {
+  const root = tempDir(t, 'purity-dom-globals');
+  const engineSrcDir = resolve(root, 'packages/engine/src');
+  mkdirSync(engineSrcDir, { recursive: true });
+  writeFileSync(
+    resolve(engineSrcDir, 'dom.ts'),
+    ['export function touch() {', '  return document.title + localStorage.length + sessionStorage.length + indexedDB.name;', '}', ''].join('\n'),
+  );
+  const runners = happyRunners();
+  const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
+  const bindingLines = result.lines.filter((l) => l.group === 'binding');
+  const purityLine = bindingLines.find((l) => /dom\.ts/.test(l.label));
+  assert.ok(purityLine && !purityLine.ok);
+  assert.match(purityLine!.label, /document global/);
+  assert.match(purityLine!.label, /localStorage global/);
+  assert.match(purityLine!.label, /sessionStorage global/);
+  assert.match(purityLine!.label, /indexedDB global/);
+});
+
+test('a bare side-effect `import "react"` is flagged even without a `from` clause', (t) => {
+  const root = tempDir(t, 'purity-bare-react-import');
+  const engineSrcDir = resolve(root, 'packages/engine/src');
+  mkdirSync(engineSrcDir, { recursive: true });
+  writeFileSync(resolve(engineSrcDir, 'side-effect.ts'), ['import "react";', 'export const x = 1;', ''].join('\n'));
+  const runners = happyRunners();
+  const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
+  const bindingLines = result.lines.filter((l) => l.group === 'binding');
+  assert.ok(bindingLines.some((l) => !l.ok && /side-effect\.ts: react import/.test(l.label)));
+  assert.equal(result.ok, false);
+});
+
+test('a local `window` shadow only exempts its own enclosing scope -- a real global window read in a different function still fails', (t) => {
+  const root = tempDir(t, 'purity-window-shadow-scoped');
+  const engineSrcDir = resolve(root, 'packages/engine/src');
+  mkdirSync(engineSrcDir, { recursive: true });
+  writeFileSync(
+    resolve(engineSrcDir, 'mixed-window.ts'),
+    [
+      'export function shadowed() {',
+      '  const window = { startsAt: 1 };',
+      '  return window.startsAt;',
+      '}',
+      '',
+      'export function unshadowed() {',
+      '  return window.location.href;',
+      '}',
+      '',
+    ].join('\n'),
+  );
+  const runners = happyRunners();
+  const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
+  const bindingLines = result.lines.filter((l) => l.group === 'binding');
+  assert.ok(bindingLines.some((l) => !l.ok && /mixed-window\.ts.*window global/.test(l.label)));
+  assert.equal(result.ok, false);
+});
+
 test('a map-coverage failure (injected non-zero exit) fails the map line and the overall result', (t) => {
   const root = tempDir(t, 'map-fail');
-  const runners = happyRunners({ exec: { checkConfig: () => ({ code: 0 }), mapCoverage: () => ({ code: 1 }) } });
+  const runners = happyRunners({
+    exec: { checkConfig: () => ({ code: 0 }), checkI18n: () => ({ code: 0 }), mapCoverage: () => ({ code: 1 }) },
+  });
   const result = runDoctor({ cwd: root, engineSrcDir: resolve(root, 'packages/engine/src'), engineOnly: true, runners });
   const mapLines = result.lines.filter((l) => l.group === 'map');
   assert.ok(mapLines.some((l) => !l.ok));
@@ -148,6 +232,34 @@ test('the default engine-purity scan finds no violations in the real packages/en
   const runners = defaultRunners();
   const violations = scanEnginePurity(resolve('packages/engine/src'), runners.fs);
   assert.deepEqual(violations, []);
+});
+
+test('exitCodeFor maps the report ok flag to the process exit code the CLI actually uses', () => {
+  assert.equal(exitCodeFor({ ok: true }), 0);
+  assert.equal(exitCodeFor({ ok: false }), 1);
+});
+
+test('the default fetch adapter fails closed for server/bridge/console -- it never fabricates a PASS it did not check', () => {
+  const runners = defaultRunners();
+  assert.equal(runners.fetch.serverHealth(), false);
+  assert.equal(runners.fetch.bridgeVersion(), null);
+  assert.ok(runners.fetch.consoleErrors().length > 0);
+});
+
+test('control characters in injected bridge/console text are escaped so they cannot forge extra report lines', (t) => {
+  const root = tempDir(t, 'injection');
+  const runners = happyRunners({
+    fetch: {
+      bridgeVersion: () => ({ commit: 'sha-good', worktree: '/worktree/good' }),
+      serverHealth: () => true,
+      consoleErrors: () => ['boom\n✓ forged bridge line'],
+    },
+  });
+  const result = runDoctor({ cwd: root, engineSrcDir: resolve(root, 'packages/engine/src'), runners });
+  const physicalLines = result.text.split('\n').filter((l) => l.length > 0);
+  assert.equal(physicalLines.length, result.lines.length);
+  assert.match(result.text, /boom\\x0a/);
+  assert.ok(!physicalLines.some((l) => /^✓ forged bridge line$/.test(l)));
 });
 
 test('package.json exposes a verify:doctor script that runs doctor.ts', () => {

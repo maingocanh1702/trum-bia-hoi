@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
-import { dirname, relative, resolve } from 'node:path';
+import { basename, dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync, spawnSync } from 'node:child_process';
 
@@ -34,6 +34,7 @@ export interface GitRunner {
 
 export interface ExecRunner {
   checkConfig(cwd: string): ExecResult;
+  checkI18n(cwd: string): ExecResult;
   mapCoverage(cwd: string): ExecResult;
 }
 
@@ -68,21 +69,62 @@ function checkNodeVersion(version: string): boolean {
   return major > 22 || (major === 22 && minor >= 12);
 }
 
-const REACT_IMPORT = /(?:from\s*['"]react(?:-dom)?['"]|require\(\s*['"]react(?:-dom)?['"]\s*\))/;
+const REACT_IMPORT =
+  /(?:\bimport\s+['"]react(?:-dom)?['"]|\bfrom\s*['"]react(?:-dom)?['"]|\brequire\(\s*['"]react(?:-dom)?['"]\s*\))/;
 // `window` used as a bare identifier is the DOM global UNLESS this file declares its own
 // local `window` binding (e.g. packages/engine/src/seasons.ts's `const window = seasonWindow(...)`)
-// -- that shadowing means every `window` in the file refers to the local value, not the DOM.
+// -- that shadowing means `window` inside the declaration's enclosing block refers to the local
+// value, not the DOM. Scoped by brace depth (see scanWindowUsage) rather than blanket-exempting
+// the whole file, so a real global `window` read elsewhere in the same file still gets flagged.
 const LOCAL_WINDOW_DECL = /\b(?:const|let|var)\s+window\b/;
 const BARE_WINDOW = /\bwindow\b/;
 const DATE_NOW = /\bDate\.now\(\)/;
 const MATH_RANDOM = /\bMath\.random\(\)/;
+const DOM_GLOBALS: Array<{ name: string; pattern: RegExp }> = [
+  { name: 'document', pattern: /\bdocument\b/ },
+  { name: 'localStorage', pattern: /\blocalStorage\b/ },
+  { name: 'sessionStorage', pattern: /\bsessionStorage\b/ },
+  { name: 'indexedDB', pattern: /\bindexedDB\b/ },
+];
+
+// Comments are prose, not code -- a doc comment mentioning "window" in English must not trip the
+// DOM-global scan. Blanked out (not removed) so line numbers reported by scanWindowUsage stay accurate.
+function stripComments(src: string): string {
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+    .replace(/\/\/[^\n]*/g, (m) => ' '.repeat(m.length));
+}
+
+function scanWindowUsage(relPath: string, src: string): string[] {
+  const hits: string[] = [];
+  const lines = src.split('\n');
+  let shadowDepth = -1; // brace depth at which a local `window` binding is in scope; -1 = none
+  let depth = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const declaresLocal = LOCAL_WINDOW_DECL.test(line);
+    if (BARE_WINDOW.test(line) && !declaresLocal && shadowDepth === -1) {
+      hits.push(`${relPath}:${i + 1}: window global`);
+    }
+    if (declaresLocal && shadowDepth === -1) shadowDepth = depth;
+    const opens = (line.match(/{/g) ?? []).length;
+    const closes = (line.match(/}/g) ?? []).length;
+    depth += opens - closes;
+    if (shadowDepth !== -1 && depth < shadowDepth) shadowDepth = -1; // exited the shadowing block
+  }
+  return hits;
+}
 
 function scanFilePurity(relPath: string, src: string): string[] {
+  const code = stripComments(src);
   const hits: string[] = [];
-  if (REACT_IMPORT.test(src)) hits.push(`${relPath}: react import`);
-  if (!LOCAL_WINDOW_DECL.test(src) && BARE_WINDOW.test(src)) hits.push(`${relPath}: window global`);
-  if (DATE_NOW.test(src)) hits.push(`${relPath}: Date.now()`);
-  if (MATH_RANDOM.test(src)) hits.push(`${relPath}: Math.random()`);
+  if (REACT_IMPORT.test(code)) hits.push(`${relPath}: react import`);
+  hits.push(...scanWindowUsage(relPath, code));
+  for (const { name, pattern } of DOM_GLOBALS) {
+    if (pattern.test(code)) hits.push(`${relPath}: ${name} global`);
+  }
+  if (DATE_NOW.test(code)) hits.push(`${relPath}: Date.now()`);
+  if (MATH_RANDOM.test(code)) hits.push(`${relPath}: Math.random()`);
   return hits;
 }
 
@@ -90,10 +132,19 @@ export function scanEnginePurity(dir: string, fs: Pick<FsRunner, 'listEngineFile
   const violations: string[] = [];
   for (const file of fs.listEngineFiles(dir)) {
     if (!file.endsWith('.ts')) continue;
-    if (file.endsWith('rng.ts')) continue; // documented exemption, matches scripts/check_config_coverage.py's SKIP_FILES
+    if (basename(file) === 'rng.ts') continue; // exact-name exemption, matches scripts/check_config_coverage.py's SKIP_FILES
     violations.push(...scanFilePurity(relative(dir, file), fs.readFile(file)));
   }
   return violations;
+}
+
+// Text sourced from injected git/bridge/console runners is external input to this CLI; escape
+// control characters so an injected newline can't forge an extra, convincing report line.
+const CONTROL_CHAR_RANGE = String.fromCharCode(0) + '-' + String.fromCharCode(31) + String.fromCharCode(127);
+const CONTROL_CHAR = new RegExp('[' + CONTROL_CHAR_RANGE + ']', 'g');
+
+function sanitizeForReport(value: string): string {
+  return value.replace(CONTROL_CHAR, (ch) => `\\x${ch.codePointAt(0)!.toString(16).padStart(2, '0')}`);
 }
 
 function formatReport(lines: DoctorLine[]): string {
@@ -113,9 +164,9 @@ export function runDoctor(opts: DoctorOptions): DoctorReport {
   const { runners } = opts;
   const lines: DoctorLine[] = [];
 
-  const branch = runners.git.branch(cwd);
-  const headSha = runners.git.headSha(cwd);
-  const worktreePath = runners.git.worktreePath(cwd);
+  const branch = sanitizeForReport(runners.git.branch(cwd));
+  const headSha = sanitizeForReport(runners.git.headSha(cwd));
+  const worktreePath = sanitizeForReport(runners.git.worktreePath(cwd));
 
   lines.push({ group: 'repo', ok: true, label: `branch=${branch} head=${headSha} worktree=${worktreePath}` });
 
@@ -124,6 +175,9 @@ export function runDoctor(opts: DoctorOptions): DoctorReport {
 
   const configResult = runners.exec.checkConfig(cwd);
   lines.push({ group: 'binding', ok: configResult.code === 0, label: 'check:config' });
+
+  const i18nResult = runners.exec.checkI18n(cwd);
+  lines.push({ group: 'binding', ok: i18nResult.code === 0, label: 'check:i18n' });
 
   const engineSrcDir = opts.engineSrcDir ?? resolve(cwd, 'packages/engine/src');
   const violations = scanEnginePurity(engineSrcDir, runners.fs);
@@ -143,21 +197,23 @@ export function runDoctor(opts: DoctorOptions): DoctorReport {
     if (version === null) {
       lines.push({ group: 'bridge', ok: false, label: 'bridge unreachable' });
     } else {
+      const commit = sanitizeForReport(version.commit);
+      const worktree = sanitizeForReport(version.worktree);
       const commitOk = version.commit === headSha;
       lines.push({
         group: 'bridge',
         ok: commitOk,
-        label: commitOk ? 'version().commit == HEAD' : `STALE BUILD: commit ${version.commit} != HEAD ${headSha}`,
+        label: commitOk ? 'version().commit == HEAD' : `STALE BUILD: commit ${commit} != HEAD ${headSha}`,
       });
       const worktreeOk = version.worktree === worktreePath;
       lines.push({
         group: 'bridge',
         ok: worktreeOk,
-        label: worktreeOk ? 'worktree matches' : `WRONG INSTANCE: worktree ${version.worktree} != ${worktreePath}`,
+        label: worktreeOk ? 'worktree matches' : `WRONG INSTANCE: worktree ${worktree} != ${worktreePath}`,
       });
     }
 
-    const errors = runners.fetch.consoleErrors();
+    const errors = runners.fetch.consoleErrors().map(sanitizeForReport);
     lines.push({
       group: 'console',
       ok: errors.length === 0,
@@ -172,6 +228,10 @@ export function runDoctor(opts: DoctorOptions): DoctorReport {
   runners.fs.writeReport(reportPath, text);
 
   return { lines, ok, text };
+}
+
+export function exitCodeFor(report: Pick<DoctorReport, 'ok'>): number {
+  return report.ok ? 0 : 1;
 }
 
 function listFilesRecursive(dir: string): string[] {
@@ -199,15 +259,20 @@ export function defaultRunners(): DoctorRunners {
     },
     exec: {
       checkConfig: (cwd) => runNpmScript(cwd, 'check:config'),
+      checkI18n: (cwd) => runNpmScript(cwd, 'check:i18n'),
       mapCoverage: (cwd) => runNpmScript(cwd, 'verify:map'),
     },
     fetch: {
-      // No headless browser/dev server is available to this CLI outside a driven e2e run;
-      // --engine-only exists precisely for that case. A real server/bridge integration is
-      // future work (apps/web/test/tbh-fixture.ts), not this slice.
+      // No headless browser/dev server is available to this plain-Node CLI outside a driven e2e
+      // run -- `bridgeVersion()`/`consoleErrors()` need `window.__TBH_VERIFY__` evaluated inside a
+      // real page, which only a browser-driving harness (apps/web/test/tbh-fixture.ts, a future
+      // slice) can supply. Rather than fabricate a clean result for a check this runner never
+      // performed, every default here fails closed -- an honest "unknown/unreachable", never a
+      // false PASS. --engine-only exists precisely to skip this group for engine/server-only work;
+      // full mode is meant to run with real runners injected by that future browser harness.
       bridgeVersion: () => null,
       serverHealth: () => false,
-      consoleErrors: () => [],
+      consoleErrors: () => ['console errors not checked: no driven browser session available to this CLI'],
     },
     fs: {
       listEngineFiles: (dir) => listFilesRecursive(dir),
@@ -228,5 +293,5 @@ if (isMainModule()) {
   const engineOnly = process.argv.includes('--engine-only');
   const report = runDoctor({ engineOnly, runners: defaultRunners() });
   console.log(report.text);
-  process.exit(report.ok ? 0 : 1);
+  process.exit(exitCodeFor(report));
 }
