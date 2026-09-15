@@ -75,7 +75,7 @@ test('worktree base matches the sha256-hash formula for independently computed i
 
 test('rejects invalid TBH_PORT_BASE overrides instead of producing unusable ports', (t) => {
   const cwd = mainWorkspaceDir(t);
-  for (const invalid of ['nope', ' ', '0', '12.5', '-1', '65500']) {
+  for (const invalid of ['', 'nope', ' ', '0', '12.5', '-1', '65500']) {
     assert.throws(
       () => resolveAllPorts({ cwd, env: { TBH_PORT_BASE: invalid } }),
       /Invalid TBH_PORT_BASE/,

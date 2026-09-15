@@ -73,7 +73,7 @@ function hashToRange(id: string, span: number): number {
 export function resolveBasePort(opts: ResolveOptions = {}): number {
   const cwd = opts.cwd ?? process.cwd();
   const env = opts.env ?? process.env;
-  if (env.TBH_PORT_BASE !== undefined && env.TBH_PORT_BASE !== '') {
+  if (env.TBH_PORT_BASE !== undefined) {
     return parsePortBaseOverride(env.TBH_PORT_BASE);
   }
   if (isWorktreeCwd(cwd)) {
