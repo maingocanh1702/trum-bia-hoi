@@ -126,6 +126,11 @@ if [ "$ANSWER" = 1 ]; then
   # state (and never silently answer a question nobody can read).
   [ -f "$WT/.ap3-run/HALT.md" ] \
     || { echo "retry: refusing --answer $SLUG -- $WT/.ap3-run/HALT.md is missing (nothing to answer)" >&2; exit 1; }
+  REC_TASK="ap3/state/runs/$SLUG/task.md"
+  [ -f "$REC_TASK" ] \
+    || { echo "retry: refusing --answer $SLUG -- no pinned task at $REC_TASK to carry your answer" >&2; exit 1; }
+  [ -d "$WT/.ap3-run" ] \
+    || { echo "retry: refusing --answer $SLUG -- no $WT/.ap3-run to place the answered task in" >&2; exit 1; }
   # same guard the full-rewrite path uses below: a pushed branch means a PR exists, and what
   # happens to a PR is a human decision, never this script's.
   remote_out="$(git ls-remote --heads origin "ap3/$SLUG" 2>&1)" || {
@@ -136,7 +141,24 @@ if [ "$ANSWER" = 1 ]; then
     echo "retry: refusing --answer $SLUG -- origin already has branch ap3/$SLUG (a pushed branch means a PR exists -- human decision)" >&2
     exit 1
   fi
-  recreate_pinned_db --answer
+  # K23 follow-up: the two task copies are NOT the same file, and only one of them reaches the
+  # writer. launch_writer passes AP3_TASK="<worktree>/ap3/queue/<slug>.md" (the copy committed on
+  # the run's branch); run_review and scope-check pass the PINNED ap3/state/runs/<slug>/task.md.
+  # An owner who writes the answer into the pinned copy -- the natural place, and what this
+  # script's own success message points at -- reaches the REVIEWER but never the WRITER, so the
+  # reviewer starts enforcing instructions the writer was never given. Measured on a real run:
+  # three owner amendments landed in the pinned copy, the writer saw none of them, and the loop
+  # only broke because the reviewer happened to quote one back through REVIEW-FINDINGS.md.
+  # Place the pinned copy where launch_writer will prefer it, so both sides read the same task.
+  # NOT over the worktree's ap3/queue/<slug>.md: that file is TRACKED on the run's branch, so
+  # overwriting it makes the worktree dirty, the writer commits it with `git add -A`, and the run
+  # halts SCOPE_DRIFT on a file no task ever declared (measured -- this is why .ap3-run/ is the
+  # destination). .ap3-run/ is gitignored, survives fix rounds, and is already the writer's own
+  # signal directory, so the answered task governs every later round too.
+  if ! cp "$REC_TASK" "$WT/.ap3-run/TASK.md"; then
+    echo "retry: refusing --answer $SLUG -- could not place $REC_TASK at $WT/.ap3-run/TASK.md (the writer would not see your answer)" >&2
+    exit 1
+  fi
   # Removed BEFORE the record is published: reconcile_running halts on HALT.md's mere presence, so
   # leaving it would re-halt this run on the very next tick no matter what the owner wrote.
   rm -f "$WT/.ap3-run/HALT.md"

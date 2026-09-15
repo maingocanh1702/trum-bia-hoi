@@ -643,10 +643,19 @@ launch_writer() { # <slug> — start (or restart) the sandboxed coding session, 
   # `--setting-sources ''` loads NONE of those scopes, so the contract stands alone (proved by
   # probe-settings-flag.sh: a hostile project `deny: Bash(git *)` is ignored with it, applied without).
   # ap3/env is sourced INSIDE this subshell only, so secrets never reach the dispatcher/reviewer.
+  # K23 follow-up: normally the writer's task is the copy committed on its own branch. After
+  # `retry.sh --answer`, the owner's answer lives in the PINNED ap3/state/runs/<slug>/task.md --
+  # the copy run_review and scope-check already read -- and --answer drops it here, inside the
+  # gitignored .ap3-run/, so the writer and the reviewer judge the run against the SAME text from
+  # that point on. Without this the answer reached only the reviewer, which then enforced
+  # instructions the writer had never been given. Preferred whenever present, for every later fix
+  # round too, since an answered question stays answered.
+  local wtask="$wt/ap3/queue/$slug.md"
+  [ -f "$wt/.ap3-run/TASK.md" ] && wtask="$wt/.ap3-run/TASK.md"
   ( cd "$wt"
     if [ -f "$REPO/ap3/env" ]; then set -a; . "$REPO/ap3/env"; set +a; fi
     if [ -n "$db_url_override" ]; then export DATABASE_URL_TEST="$db_url_override"; fi
-    nohup env AP3_SLUG="$slug" AP3_TASK="$wt/ap3/queue/$slug.md" AP3_BASE_SHA="$base" \
+    nohup env AP3_SLUG="$slug" AP3_TASK="$wtask" AP3_BASE_SHA="$base" \
       AP3_STATE="$RUNS/$slug" \
       "$cbin" -p "$prompt" \
         --settings "$settings" --setting-sources '' \
