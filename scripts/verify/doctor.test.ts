@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync, existsSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync, existsSync, symlinkSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { runDoctor, defaultRunners, exitCodeFor, scanEnginePurity, type DoctorRunners } from './doctor';
 
@@ -180,6 +180,81 @@ test('a local `window` shadow only exempts its own enclosing scope -- a real glo
   const bindingLines = result.lines.filter((l) => l.group === 'binding');
   assert.ok(bindingLines.some((l) => !l.ok && /mixed-window\.ts.*window global/.test(l.label)));
   assert.equal(result.ok, false);
+});
+
+test('a `//` inside a string literal (e.g. a URL) is not mistaken for a comment start -- a real Date.now() later on the same line still fails', (t) => {
+  const root = tempDir(t, 'purity-url-string-comment');
+  const engineSrcDir = resolve(root, 'packages/engine/src');
+  mkdirSync(engineSrcDir, { recursive: true });
+  writeFileSync(
+    resolve(engineSrcDir, 'url.ts'),
+    ['export function stamp() {', '  const u = "http://example"; return Date.now();', '}', ''].join('\n'),
+  );
+  const runners = happyRunners();
+  const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
+  const bindingLines = result.lines.filter((l) => l.group === 'binding');
+  assert.ok(bindingLines.some((l) => !l.ok && /url\.ts: Date\.now\(\)/.test(l.label)));
+  assert.equal(result.ok, false);
+});
+
+test('a harmless string literal containing the word "window" is not flagged -- only a bare identifier use is', (t) => {
+  const root = tempDir(t, 'purity-window-string-literal');
+  const engineSrcDir = resolve(root, 'packages/engine/src');
+  mkdirSync(engineSrcDir, { recursive: true });
+  writeFileSync(resolve(engineSrcDir, 'label.ts'), 'export const label = "window";\n');
+  const runners = happyRunners();
+  const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
+  const bindingLines = result.lines.filter((l) => l.group === 'binding');
+  assert.ok(bindingLines.every((l) => l.ok));
+  assert.equal(result.ok, true);
+});
+
+test('a `window` shadow whose block opens and closes on the same line still exits its scope -- a later top-level `window` read still fails', (t) => {
+  const root = tempDir(t, 'purity-window-shadow-one-line');
+  const engineSrcDir = resolve(root, 'packages/engine/src');
+  mkdirSync(engineSrcDir, { recursive: true });
+  writeFileSync(
+    resolve(engineSrcDir, 'one-line-shadow.ts'),
+    [
+      'if (true) { const window = { x: 1 }; void window.x; }',
+      'export function real() {',
+      '  return window.location.href;',
+      '}',
+      '',
+    ].join('\n'),
+  );
+  const runners = happyRunners();
+  const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
+  const bindingLines = result.lines.filter((l) => l.group === 'binding');
+  assert.ok(bindingLines.some((l) => !l.ok && /one-line-shadow\.ts.*window global/.test(l.label)));
+  assert.equal(result.ok, false);
+});
+
+test('a dynamic `import("react")` is flagged, not only static import/from/require forms', (t) => {
+  const root = tempDir(t, 'purity-dynamic-react-import');
+  const engineSrcDir = resolve(root, 'packages/engine/src');
+  mkdirSync(engineSrcDir, { recursive: true });
+  writeFileSync(resolve(engineSrcDir, 'dynamic.ts'), ['export async function load() {', "  return import('react');", '}', ''].join('\n'));
+  const runners = happyRunners();
+  const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
+  const bindingLines = result.lines.filter((l) => l.group === 'binding');
+  assert.ok(bindingLines.some((l) => !l.ok && /dynamic\.ts: react import/.test(l.label)));
+  assert.equal(result.ok, false);
+});
+
+test('the purity scan does not follow a symlink under packages/engine/src out of the tree', (t) => {
+  const root = tempDir(t, 'purity-symlink');
+  const engineSrcDir = resolve(root, 'packages/engine/src');
+  mkdirSync(engineSrcDir, { recursive: true });
+  const outsideDir = resolve(root, 'outside');
+  mkdirSync(outsideDir, { recursive: true });
+  writeFileSync(resolve(outsideDir, 'escaped.ts'), 'export const x = window;\n');
+  symlinkSync(outsideDir, resolve(engineSrcDir, 'linked'));
+  const runners = happyRunners();
+  const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
+  const bindingLines = result.lines.filter((l) => l.group === 'binding');
+  assert.ok(bindingLines.every((l) => l.ok));
+  assert.equal(result.ok, true);
 });
 
 test('a map-coverage failure (injected non-zero exit) fails the map line and the overall result', (t) => {

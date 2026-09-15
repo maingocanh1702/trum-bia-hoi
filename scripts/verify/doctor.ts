@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { basename, dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -70,16 +70,11 @@ function checkNodeVersion(version: string): boolean {
 }
 
 const REACT_IMPORT =
-  /(?:\bimport\s+['"]react(?:-dom)?['"]|\bfrom\s*['"]react(?:-dom)?['"]|\brequire\(\s*['"]react(?:-dom)?['"]\s*\))/;
-// `window` used as a bare identifier is the DOM global UNLESS this file declares its own
-// local `window` binding (e.g. packages/engine/src/seasons.ts's `const window = seasonWindow(...)`)
-// -- that shadowing means `window` inside the declaration's enclosing block refers to the local
-// value, not the DOM. Scoped by brace depth (see scanWindowUsage) rather than blanket-exempting
-// the whole file, so a real global `window` read elsewhere in the same file still gets flagged.
-const LOCAL_WINDOW_DECL = /\b(?:const|let|var)\s+window\b/;
-const BARE_WINDOW = /\bwindow\b/;
-const DATE_NOW = /\bDate\.now\(\)/;
-const MATH_RANDOM = /\bMath\.random\(\)/;
+  /(?:\bimport\s*\(\s*['"]react(?:-dom)?['"]|\bimport\s+['"]react(?:-dom)?['"]|\bfrom\s*['"]react(?:-dom)?['"]|\brequire\(\s*['"]react(?:-dom)?['"]\s*\))/;
+// Tolerate stray whitespace around the dot/parens -- `Date . now ( )` is valid JS and must not
+// slip past a scanner that only recognises the no-space spelling.
+const DATE_NOW = /\bDate\s*\.\s*now\s*\(\s*\)/;
+const MATH_RANDOM = /\bMath\s*\.\s*random\s*\(\s*\)/;
 const DOM_GLOBALS: Array<{ name: string; pattern: RegExp }> = [
   { name: 'document', pattern: /\bdocument\b/ },
   { name: 'localStorage', pattern: /\blocalStorage\b/ },
@@ -87,44 +82,130 @@ const DOM_GLOBALS: Array<{ name: string; pattern: RegExp }> = [
   { name: 'indexedDB', pattern: /\bindexedDB\b/ },
 ];
 
-// Comments are prose, not code -- a doc comment mentioning "window" in English must not trip the
-// DOM-global scan. Blanked out (not removed) so line numbers reported by scanWindowUsage stay accurate.
-function stripComments(src: string): string {
-  return src
-    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
-    .replace(/\/\/[^\n]*/g, (m) => ' '.repeat(m.length));
+// One left-to-right scan tracking comment/string state, instead of a `//`-anywhere regex --
+// a `//` inside a string (e.g. a URL literal) must not swallow the rest of the line as a
+// "comment" and hide a real violation that follows it on the same line. Produces two views:
+// `forImport` (comments blanked, string/template bodies left intact -- the import-specifier
+// check needs to read inside the quotes) and `forGlobals` (comments AND string/template bodies
+// blanked -- so a harmless string literal like `"window"` can never trip the DOM-global scan).
+// Newlines always pass through unmodified in both views so reported line numbers stay accurate.
+function tokenizeSource(src: string): { forImport: string; forGlobals: string } {
+  let forImport = '';
+  let forGlobals = '';
+  type State = 'code' | 'line-comment' | 'block-comment' | 'single' | 'double' | 'template';
+  let state: State = 'code';
+  for (let i = 0; i < src.length; i++) {
+    const ch = src[i];
+    const next = src[i + 1];
+    if (ch === '\n') {
+      forImport += '\n';
+      forGlobals += '\n';
+      if (state === 'line-comment') state = 'code';
+      continue;
+    }
+    if (state === 'code') {
+      if (ch === '/' && next === '/') {
+        state = 'line-comment';
+        forImport += ' ';
+        forGlobals += ' ';
+        continue;
+      }
+      if (ch === '/' && next === '*') {
+        state = 'block-comment';
+        forImport += ' ';
+        forGlobals += ' ';
+        continue;
+      }
+      if (ch === "'" || ch === '"' || ch === '`') {
+        state = ch === "'" ? 'single' : ch === '"' ? 'double' : 'template';
+        forImport += ch;
+        forGlobals += ' ';
+        continue;
+      }
+      forImport += ch;
+      forGlobals += ch;
+      continue;
+    }
+    if (state === 'line-comment') {
+      forImport += ' ';
+      forGlobals += ' ';
+      continue;
+    }
+    if (state === 'block-comment') {
+      if (ch === '*' && next === '/') {
+        state = 'code';
+        forImport += ' ';
+        forGlobals += ' ';
+        i++;
+      } else {
+        forImport += ' ';
+        forGlobals += ' ';
+      }
+      continue;
+    }
+    // Inside a single/double/template string body.
+    const closer = state === 'single' ? "'" : state === 'double' ? '"' : '`';
+    if (ch === '\\' && next !== undefined && next !== '\n') {
+      forImport += ch + next;
+      forGlobals += '  ';
+      i++;
+      continue;
+    }
+    if (ch === closer) {
+      state = 'code';
+      forImport += ch;
+      forGlobals += ' ';
+      continue;
+    }
+    forImport += ch;
+    forGlobals += ' ';
+  }
+  return { forImport, forGlobals };
 }
 
-function scanWindowUsage(relPath: string, src: string): string[] {
+// `window` used as a bare identifier is the DOM global UNLESS the enclosing block declares its
+// own local `window` binding (e.g. packages/engine/src/seasons.ts's `const window =
+// seasonWindow(...)`). Tracked with a brace-depth stack (not a per-line scan) so a shadow that
+// opens and closes on the very same physical line still gets popped -- a line-granular scan
+// misses that case and leaves every later top-level `window` read in the file wrongly exempted.
+const WINDOW_TOKEN = /\{|\}|\b(?:const|let|var)\s+window\b|\bwindow\b/g;
+
+function scanWindowUsage(relPath: string, maskedCode: string): string[] {
   const hits: string[] = [];
-  const lines = src.split('\n');
-  let shadowDepth = -1; // brace depth at which a local `window` binding is in scope; -1 = none
   let depth = 0;
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const declaresLocal = LOCAL_WINDOW_DECL.test(line);
-    if (BARE_WINDOW.test(line) && !declaresLocal && shadowDepth === -1) {
-      hits.push(`${relPath}:${i + 1}: window global`);
+  const shadowStack: number[] = [];
+  let line = 1;
+  let scanPos = 0;
+  WINDOW_TOKEN.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = WINDOW_TOKEN.exec(maskedCode))) {
+    for (let i = scanPos; i < match.index; i++) if (maskedCode[i] === '\n') line++;
+    scanPos = match.index;
+    const token = match[0];
+    if (token === '{') {
+      depth++;
+    } else if (token === '}') {
+      depth--;
+      while (shadowStack.length > 0 && depth < shadowStack[shadowStack.length - 1]) shadowStack.pop();
+    } else if (token !== 'window') {
+      shadowStack.push(depth);
+    } else if (shadowStack.length === 0) {
+      hits.push(`${relPath}:${line}: window global`);
     }
-    if (declaresLocal && shadowDepth === -1) shadowDepth = depth;
-    const opens = (line.match(/{/g) ?? []).length;
-    const closes = (line.match(/}/g) ?? []).length;
-    depth += opens - closes;
-    if (shadowDepth !== -1 && depth < shadowDepth) shadowDepth = -1; // exited the shadowing block
   }
   return hits;
 }
 
 function scanFilePurity(relPath: string, src: string): string[] {
-  const code = stripComments(src);
+  const { forImport, forGlobals } = tokenizeSource(src);
   const hits: string[] = [];
-  if (REACT_IMPORT.test(code)) hits.push(`${relPath}: react import`);
-  hits.push(...scanWindowUsage(relPath, code));
+  if (REACT_IMPORT.test(forImport)) hits.push(`${relPath}: react import`);
+  hits.push(...scanWindowUsage(relPath, forGlobals));
   for (const { name, pattern } of DOM_GLOBALS) {
-    if (pattern.test(code)) hits.push(`${relPath}: ${name} global`);
+    if (pattern.test(forGlobals)) hits.push(`${relPath}: ${name} global`);
   }
-  if (DATE_NOW.test(code)) hits.push(`${relPath}: Date.now()`);
-  if (MATH_RANDOM.test(code)) hits.push(`${relPath}: Math.random()`);
+  if (DATE_NOW.test(forGlobals)) hits.push(`${relPath}: Date.now()`);
+  if (MATH_RANDOM.test(forGlobals)) hits.push(`${relPath}: Math.random()`);
   return hits;
 }
 
@@ -239,7 +320,11 @@ function listFilesRecursive(dir: string): string[] {
   const out: string[] = [];
   for (const entry of readdirSync(dir)) {
     const full = resolve(dir, entry);
-    if (statSync(full).isDirectory()) out.push(...listFilesRecursive(full));
+    // lstat, never stat: a repo-controlled symlink under packages/engine/src must not let the
+    // scanner follow it out of the tree, recurse into unrelated files, or spin on a link cycle.
+    const stat = lstatSync(full);
+    if (stat.isSymbolicLink()) continue;
+    if (stat.isDirectory()) out.push(...listFilesRecursive(full));
     else out.push(full);
   }
   return out;
