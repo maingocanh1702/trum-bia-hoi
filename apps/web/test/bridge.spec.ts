@@ -17,6 +17,10 @@ test('serving a whole table increases economy.coins by exactly that serve\'s coi
 
   const before = (await tbh.snapshot()) as Snapshot;
 
+  // Strictly advance the paused clock so the served event's `at` is > before.now,
+  // matching waitForEvent's strict-since boundary (tbh-fixture.ts:22).
+  await page.clock.runFor(1);
+
   await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
   await expect(page.locator('.toast-gain')).toHaveAccessibleName(/có boa/);
 

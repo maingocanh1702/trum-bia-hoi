@@ -8,14 +8,17 @@ import type { VerifySnapshot } from '../src/verify/bridge';
 
 const ARTIFACTS_ROOT = 'artifacts/verification';
 
-/** Collapses a branch name into one filesystem-safe path segment -- a branch like
- * "ap3/agent-verification-m02-tbh-fixture" must not turn into a nested directory. */
-function sanitizeBranchSegment(branch: string): string {
-  return branch.replace(/[\\/]+/g, '-').replace(/[^a-zA-Z0-9._-]/g, '_');
+/** Collapses a branch or shot name into one filesystem-safe path segment -- a branch like
+ * "ap3/agent-verification-m02-tbh-fixture" must not turn into a nested directory, and a shot
+ * name like "../../../package.json" must not escape the evidence directory. */
+function sanitizePathSegment(value: string): string {
+  const collapsed = value.replace(/[\\/]+/g, '-').replace(/[^a-zA-Z0-9._-]/g, '_');
+  // A segment of only dots (".", "..") is still a directory-traversal token to path.join.
+  return /^\.+$/.test(collapsed) ? '_'.repeat(collapsed.length) : collapsed;
 }
 
 export function evidencePath(branch: string, name: string): string {
-  return join(ARTIFACTS_ROOT, sanitizeBranchSegment(branch), name);
+  return join(ARTIFACTS_ROOT, sanitizePathSegment(branch), sanitizePathSegment(name));
 }
 
 export function matchEvent(events: readonly DomainEvent[], type: string, since: number): DomainEvent | undefined {

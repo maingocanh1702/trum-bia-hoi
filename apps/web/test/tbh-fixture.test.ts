@@ -32,6 +32,15 @@ test('evidencePath sanitises a branch containing "/" into a single safe path seg
   assert.ok(!branchSegment.includes('/'));
 });
 
+test('evidencePath sanitises a traversal-shaped shot name into a single safe segment', () => {
+  const path = evidencePath('main', '../../../package.json');
+  assert.notStrictEqual(path, 'package.json');
+  assert.strictEqual(path, 'artifacts/verification/main/..-..-..-package.json');
+  // Still confined to exactly one segment under the branch directory.
+  const withoutRoot = path.slice('artifacts/verification/main/'.length);
+  assert.ok(!withoutRoot.includes('/'));
+});
+
 test('matchEvent selects the first event of the given type strictly after `since`', () => {
   const events = [
     fakeEvent({ id: 'e1', type: 'coin_gain', at: 10 }),
