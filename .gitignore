@@ -43,6 +43,7 @@ venv/
 .qa/
 test-results/
 playwright-report/
+artifacts/verification/
 
 # Thùng rác tạm (Claude không có quyền xoá file) — xoá cả thư mục này
 _to_delete/
