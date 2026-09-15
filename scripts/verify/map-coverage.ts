@@ -48,22 +48,70 @@ export function collectCommandTypes(cwd: string): string[] {
   return [...match[1].matchAll(/type:\s*'(\w+)'/g)].map((m) => m[1]);
 }
 
+// Extracts the raw text of each `this.emit(`'s first argument by scanning the whole
+// file (not line-by-line), so a call whose args span multiple lines is still found.
+// Tracks quote/paren/bracket/brace depth so a comma or `)` inside a nested literal or
+// object doesn't end the argument early.
+function extractEmitFirstArgs(src: string): string[] {
+  const marker = 'this.emit(';
+  const args: string[] = [];
+  let searchFrom = 0;
+  let idx = src.indexOf(marker, searchFrom);
+  while (idx !== -1) {
+    let i = idx + marker.length;
+    let depth = 0;
+    let quote: string | null = null;
+    let arg = '';
+    for (; i < src.length; i++) {
+      const ch = src[i];
+      if (quote) {
+        arg += ch;
+        if (ch === '\\') {
+          i++;
+          arg += src[i] ?? '';
+        } else if (ch === quote) {
+          quote = null;
+        }
+        continue;
+      }
+      if (ch === "'" || ch === '"' || ch === '`') {
+        quote = ch;
+        arg += ch;
+        continue;
+      }
+      if (ch === '(' || ch === '[' || ch === '{') {
+        depth++;
+        arg += ch;
+        continue;
+      }
+      if (ch === ')' || ch === ']' || ch === '}') {
+        if (depth === 0) break;
+        depth--;
+        arg += ch;
+        continue;
+      }
+      if (ch === ',' && depth === 0) break;
+      arg += ch;
+    }
+    args.push(arg);
+    searchFrom = i;
+    idx = src.indexOf(marker, searchFrom);
+  }
+  return args;
+}
+
 export function collectEmittedEvents(cwd: string): string[] {
   const dir = resolve(cwd, 'packages/engine/src');
   const events = new Set<string>();
   for (const file of listFilesRecursive(dir)) {
     if (!file.endsWith('.ts')) continue;
     const src = readFileSync(file, 'utf8');
-    for (const line of src.split('\n')) {
-      const callSites = line.matchAll(/this\.emit\(([^,)]*)/g);
-      for (const call of callSites) {
-        const firstArg = call[1];
-        // A ternary first-arg (`cond ? 'a' : 'b'`) may have quoted strings in `cond` too
-        // (e.g. `item.dish === 'bia' ? 'beer_poured' : 'dish_ready'`); only the text after
-        // the `?` holds the actual candidate event names.
-        const tail = firstArg.includes('?') ? firstArg.slice(firstArg.indexOf('?') + 1) : firstArg;
-        for (const literal of tail.matchAll(/'([A-Za-z_]\w*)'/g)) events.add(literal[1]);
-      }
+    for (const firstArg of extractEmitFirstArgs(src)) {
+      // A ternary first-arg (`cond ? 'a' : 'b'`) may have quoted strings in `cond` too
+      // (e.g. `item.dish === 'bia' ? 'beer_poured' : 'dish_ready'`); only the text after
+      // the `?` holds the actual candidate event names.
+      const tail = firstArg.includes('?') ? firstArg.slice(firstArg.indexOf('?') + 1) : firstArg;
+      for (const literal of tail.matchAll(/'([A-Za-z_]\w*)'/g)) events.add(literal[1]);
     }
   }
   return [...events];
@@ -87,6 +135,16 @@ function collectFeatureMapText(featureMapDir: string): string {
     .join('\n');
 }
 
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Word-boundary match so a citation of `serveDelivery` or `upgradeTable` does not
+// falsely count as a citation of the shorter command/event names `serve`/`upgrade`.
+function isCited(text: string, name: string): boolean {
+  return new RegExp(`\\b${escapeRegExp(name)}\\b`).test(text);
+}
+
 export function computeCoverage(opts: CoverageOptions = {}): CoverageReport {
   const cwd = opts.cwd ?? process.cwd();
   const featureMapDir = resolve(cwd, opts.featureMapDir ?? DEFAULT_FEATURE_MAP_DIR);
@@ -98,7 +156,7 @@ export function computeCoverage(opts: CoverageOptions = {}): CoverageReport {
     ...collectTestFiles(cwd).map((name): CoverageItem => ({ kind: 'test', name })),
   ];
 
-  return { uncited: items.filter((item) => !text.includes(item.name)), total: items.length };
+  return { uncited: items.filter((item) => !isCited(text, item.name)), total: items.length };
 }
 
 function isMainModule(): boolean {
