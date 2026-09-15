@@ -63,6 +63,7 @@ export interface DoctorOptions {
   cwd?: string;
   engineOnly?: boolean;
   engineSrcDir?: string;
+  nodeVersion?: string;
   runners: DoctorRunners;
 }
 
@@ -71,11 +72,24 @@ function checkNodeVersion(version: string): boolean {
   return major > 22 || (major === 22 && minor >= 12);
 }
 
-const DOM_GLOBAL_NAMES = new Set(['window', 'document', 'localStorage', 'sessionStorage', 'indexedDB']);
+// Class A: bare identifiers with no legitimate use in a pure engine -- a violation the moment the
+// token appears anywhere in the resolved token stream (see `scanFilePurity`), no scope analysis.
+const CLASS_A_IDENTIFIERS = new Set(['window', 'document', 'navigator', 'localStorage', 'sessionStorage', 'globalThis', 'process', 'fetch']);
+// Class B: `Date` and `Math` are legitimate identifiers on their own -- only the member access
+// named here (`Date.now`, `Math.random`) is banned, matched as a token SEQUENCE, not a call.
 const DATE_MATH_PROPS: Record<string, string> = { Date: 'now', Math: 'random' };
 
+// Exactly one entry: packages/engine/src/seasons.ts:14 `const window = seasonWindow(...)` is the
+// only local shadow of a Class A name anywhere in the engine. Growing this list is a visible,
+// deliberate choice -- see the "purity allowlist has exactly one entry" test.
+export const PURITY_ALLOWLIST: ReadonlyArray<{ path: string; identifier: string }> = [{ path: 'seasons.ts', identifier: 'window' }];
+
+function isAllowlisted(relPath: string, identifier: string): boolean {
+  return PURITY_ALLOWLIST.some((entry) => entry.path === relPath && entry.identifier === identifier);
+}
+
 function isReactModuleSpecifier(text: string): boolean {
-  return text === 'react' || text.startsWith('react/') || text === 'react-dom' || text.startsWith('react-dom/');
+  return text === 'react' || text.startsWith('react/');
 }
 
 function lineOf(lineStarts: number[], pos: number): number {
@@ -153,20 +167,48 @@ function tokenize(src: string): Tok[] {
       const prev = toks[toks.length - 1];
       if (!prev || !followsValue(prev.kind)) kind = scanner.reScanSlashToken();
     }
-    const value = kind === SyntaxKind.Identifier || kind === SyntaxKind.StringLiteral ? scanner.getTokenValue() : '';
+    const value =
+      kind === SyntaxKind.Identifier || kind === SyntaxKind.StringLiteral || kind === SyntaxKind.NoSubstitutionTemplateLiteral
+        ? scanner.getTokenValue()
+        : '';
     toks.push({ kind, value, start: scanner.getTokenStart() });
     kind = scanner.scan();
   }
   return toks;
 }
 
-// Walks the resolved token stream (see `tokenize`) to flag react imports, `Date.now()` /
-// `Math.random()` calls (including optional chaining and computed member access) and bare
-// references to a DOM global. A brace-depth shadow stack tracks local `const/let/var` bindings
-// and `function` parameters that shadow a DOM-global name (e.g. packages/engine/src/seasons.ts's
-// local `const window = ...`), matching real JS block scoping closely enough for this narrow
-// purity check; property names (`foo.window`), object-literal keys (`{ window: 1 }`) and
-// declaration sites are recognised from local token context and never treated as a reference.
+// `Date`/`Math` member-access matcher for Class B (see `scanFilePurity`): matches the token
+// SEQUENCE identifier -> member, across every access shape `tokenize()` can produce --
+// `X.m`, `X?.m`, `X["m"]`, `X?.["m"]` -- regardless of surrounding parens (`(Math.random)`) and
+// regardless of whether it is ever called (`const f = Date.now` is still a violation).
+function matchesBannedMember(toks: Tok[], i: number, member: string): boolean {
+  const n1 = toks[i + 1];
+  const n2 = toks[i + 2];
+  const n3 = toks[i + 3];
+  if (n1 && (n1.kind === SyntaxKind.DotToken || n1.kind === SyntaxKind.QuestionDotToken) && n2 && n2.kind === SyntaxKind.Identifier && n2.value === member) {
+    return true;
+  }
+  if (n1 && n1.kind === SyntaxKind.OpenBracketToken && n2 && n2.kind === SyntaxKind.StringLiteral && n2.value === member && n3 && n3.kind === SyntaxKind.CloseBracketToken) {
+    return true;
+  }
+  if (
+    n1 && n1.kind === SyntaxKind.QuestionDotToken &&
+    n2 && n2.kind === SyntaxKind.OpenBracketToken &&
+    n3 && n3.kind === SyntaxKind.StringLiteral && n3.value === member &&
+    toks[i + 4] && toks[i + 4].kind === SyntaxKind.CloseBracketToken
+  ) {
+    return true;
+  }
+  return false;
+}
+
+// Walks the resolved token stream (see `tokenize`) with a deliberately conservative, scope-free
+// rule: a Class A identifier (`window`, `document`, ...) or a Class B `Date`/`Math` member access
+// is a violation wherever it appears -- no scope analysis, no shadow tracking, no member/key/param
+// exemptions. Because comments, strings, regex literals and template TEXT are single tokens from
+// `tokenize()`, they can never match; interpolation EXPRESSIONS (`${Date.now()}`) are real tokens
+// and still do. The one false positive this produces (packages/engine/src/seasons.ts's local
+// `const window = ...`) is carved out by `PURITY_ALLOWLIST`, not by scanner logic.
 function scanFilePurity(relPath: string, src: string): string[] {
   const hits: string[] = [];
   const lineStarts = computeLineStarts(src);
@@ -175,109 +217,27 @@ function scanFilePurity(relPath: string, src: string): string[] {
   const hit = (pos: number, label: string) => hits.push(`${relPath}:${lineOf(lineStarts, pos)}: ${label}`);
   const hitPlain = (label: string) => hits.push(`${relPath}: ${label}`);
 
-  let depth = 0;
-  let parenDepth = 0;
-  let awaitingParamOpen = false;
-  let paramParenDepth = -1;
-  let pendingParamShadows: string[] | null = null;
-  let awaitingFunctionBody: string[] | null = null;
-  const shadowStack: Array<{ depth: number; name: string }> = [];
-  const isShadowed = (name: string) => shadowStack.some((s) => s.name === name);
-
   for (let i = 0; i < toks.length; i++) {
     const t = toks[i];
     const prev = toks[i - 1];
-    const next = toks[i + 1];
 
-    if (t.kind === SyntaxKind.FunctionKeyword) {
-      awaitingParamOpen = true;
-    } else if (t.kind === SyntaxKind.OpenParenToken) {
-      parenDepth++;
-      if (awaitingParamOpen) {
-        awaitingParamOpen = false;
-        pendingParamShadows = [];
-        paramParenDepth = parenDepth;
+    if (t.kind === SyntaxKind.Identifier) {
+      if (CLASS_A_IDENTIFIERS.has(t.value) && !isAllowlisted(relPath, t.value)) {
+        hit(t.start, `${t.value} global`);
+        continue;
       }
-      const p1 = prev;
+      const member = DATE_MATH_PROPS[t.value];
+      if (member && matchesBannedMember(toks, i, member)) hitPlain(`${t.value}.${member}()`);
+      continue;
+    }
+
+    if ((t.kind === SyntaxKind.StringLiteral || t.kind === SyntaxKind.NoSubstitutionTemplateLiteral) && isReactModuleSpecifier(t.value)) {
       const p2 = toks[i - 2];
-      const p3 = toks[i - 3];
-      const p4 = toks[i - 4];
-      if (
-        p1 && p2 && p3 &&
-        p1.kind === SyntaxKind.Identifier &&
-        (p2.kind === SyntaxKind.DotToken || p2.kind === SyntaxKind.QuestionDotToken) &&
-        p3.kind === SyntaxKind.Identifier &&
-        DATE_MATH_PROPS[p3.value] === p1.value
-      ) {
-        hitPlain(`${p3.value}.${p1.value}()`);
-      } else if (
-        p1 && p2 && p3 && p4 &&
-        p1.kind === SyntaxKind.CloseBracketToken &&
-        p2.kind === SyntaxKind.StringLiteral &&
-        p3.kind === SyntaxKind.OpenBracketToken &&
-        p4.kind === SyntaxKind.Identifier &&
-        DATE_MATH_PROPS[p4.value] === p2.value
-      ) {
-        hitPlain(`${p4.value}.${p2.value}()`);
-      }
-    } else if (t.kind === SyntaxKind.CloseParenToken) {
-      if (pendingParamShadows !== null && parenDepth === paramParenDepth) {
-        awaitingFunctionBody = pendingParamShadows;
-        pendingParamShadows = null;
-        paramParenDepth = -1;
-      }
-      parenDepth--;
-    } else if (t.kind === SyntaxKind.OpenBraceToken) {
-      depth++;
-      if (awaitingFunctionBody) {
-        for (const name of awaitingFunctionBody) shadowStack.push({ depth, name });
-        awaitingFunctionBody = null;
-      }
-    } else if (t.kind === SyntaxKind.CloseBraceToken) {
-      depth--;
-      while (shadowStack.length > 0 && shadowStack[shadowStack.length - 1].depth > depth) shadowStack.pop();
-    } else if (t.kind === SyntaxKind.SemicolonToken) {
-      awaitingFunctionBody = null; // an overload signature ending in `;` never gets a body to shadow
-    } else if (t.kind === SyntaxKind.StringLiteral && isReactModuleSpecifier(t.value)) {
-      const p1 = prev;
-      const p2 = toks[i - 2];
-      const isFrom = !!p1 && p1.kind === SyntaxKind.FromKeyword;
-      const isBareImport = !!p1 && p1.kind === SyntaxKind.ImportKeyword;
-      const isDynamicImport = !!p1 && p1.kind === SyntaxKind.OpenParenToken && !!p2 && p2.kind === SyntaxKind.ImportKeyword;
-      const isRequire = !!p1 && p1.kind === SyntaxKind.OpenParenToken && !!p2 && p2.kind === SyntaxKind.Identifier && p2.value === 'require';
+      const isFrom = !!prev && prev.kind === SyntaxKind.FromKeyword;
+      const isBareImport = !!prev && prev.kind === SyntaxKind.ImportKeyword;
+      const isDynamicImport = !!prev && prev.kind === SyntaxKind.OpenParenToken && !!p2 && p2.kind === SyntaxKind.ImportKeyword;
+      const isRequire = !!prev && prev.kind === SyntaxKind.OpenParenToken && !!p2 && p2.kind === SyntaxKind.Identifier && p2.value === 'require';
       if (isFrom || isBareImport || isDynamicImport || isRequire) hitPlain('react import');
-    } else if (t.kind === SyntaxKind.Identifier) {
-      if (
-        prev &&
-        (prev.kind === SyntaxKind.ConstKeyword || prev.kind === SyntaxKind.LetKeyword || prev.kind === SyntaxKind.VarKeyword) &&
-        DOM_GLOBAL_NAMES.has(t.value)
-      ) {
-        shadowStack.push({ depth, name: t.value });
-        continue;
-      }
-      if (
-        pendingParamShadows !== null &&
-        parenDepth === paramParenDepth &&
-        DOM_GLOBAL_NAMES.has(t.value) &&
-        prev && (prev.kind === SyntaxKind.OpenParenToken || prev.kind === SyntaxKind.CommaToken) &&
-        next &&
-        (next.kind === SyntaxKind.ColonToken ||
-          next.kind === SyntaxKind.CommaToken ||
-          next.kind === SyntaxKind.CloseParenToken ||
-          next.kind === SyntaxKind.EqualsToken)
-      ) {
-        pendingParamShadows.push(t.value);
-        continue;
-      }
-      if (prev && (prev.kind === SyntaxKind.DotToken || prev.kind === SyntaxKind.QuestionDotToken)) continue; // e.g. `foo.window`
-      if (
-        prev &&
-        (prev.kind === SyntaxKind.OpenBraceToken || prev.kind === SyntaxKind.CommaToken) &&
-        next &&
-        next.kind === SyntaxKind.ColonToken
-      )
-        continue; // object-literal key, e.g. `{ window: 1 }`
-      if (DOM_GLOBAL_NAMES.has(t.value) && !isShadowed(t.value)) hit(t.start, `${t.value} global`);
     }
   }
 
@@ -289,7 +249,6 @@ export function scanEnginePurity(dir: string, fs: Pick<FsRunner, 'listEngineFile
   for (const file of fs.listEngineFiles(dir)) {
     if (!file.endsWith('.ts')) continue;
     const relPath = relative(dir, file);
-    if (relPath === 'rng.ts') continue; // exact relative-path exemption at the engine-src root only
     violations.push(...scanFilePurity(relPath, fs.readFile(file)));
   }
   return violations;
@@ -346,8 +305,9 @@ export function runDoctor(opts: DoctorOptions): DoctorReport {
       : `WRONG ROOT: worktree=${worktreePath} != resolved cwd ${sanitizeForReport(resolvedCwd)}`,
   });
 
-  const nodeOk = checkNodeVersion(process.version);
-  lines.push({ group: 'deps', ok: nodeOk, label: `node ${process.version} (>=22.12 required)` });
+  const nodeVersion = opts.nodeVersion ?? process.version;
+  const nodeOk = checkNodeVersion(nodeVersion);
+  lines.push({ group: 'deps', ok: nodeOk, label: `node ${nodeVersion} (>=22.12 required)` });
 
   const nodeModulesPath = resolve(cwd, 'node_modules');
   const nodeModulesOk = runners.fs.pathExists(nodeModulesPath);
@@ -374,7 +334,10 @@ export function runDoctor(opts: DoctorOptions): DoctorReport {
   const mapResult = runners.exec.mapCoverage(cwd);
   lines.push({ group: 'map', ok: mapResult.code === 0, label: 'feature-map coverage' });
 
-  if (!opts.engineOnly) {
+  // The programmatic API defaults to engine-only too -- an omitted `engineOnly` must never fall
+  // through to full mode, which needs real server/bridge/console runners this CLI cannot fabricate.
+  const engineOnly = opts.engineOnly ?? true;
+  if (!engineOnly) {
     lines.push({ group: 'server', ok: runners.fetch.serverHealth(), label: 'web reachable' });
 
     const version = runners.fetch.bridgeVersion();

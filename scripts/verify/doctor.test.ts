@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync, existsSync, symlinkSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { runDoctor, defaultRunners, exitCodeFor, scanEnginePurity, resolveEngineOnly, type DoctorRunners } from './doctor';
+import { runDoctor, defaultRunners, exitCodeFor, scanEnginePurity, resolveEngineOnly, PURITY_ALLOWLIST, type DoctorRunners } from './doctor';
 
 function tempDir(t: { after(fn: () => unknown): void }, kind: string): string {
   mkdirSync('.qa', { recursive: true });
@@ -48,7 +48,7 @@ test('STALE BUILD: bridge version().commit != injected HEAD sha fails the bridge
       consoleErrors: () => [],
     },
   });
-  const result = runDoctor({ cwd: root, engineSrcDir: resolve(root, 'packages/engine/src'), runners });
+  const result = runDoctor({ cwd: root, engineSrcDir: resolve(root, 'packages/engine/src'), engineOnly: false, runners });
   const bridgeLines = result.lines.filter((l) => l.group === 'bridge');
   assert.ok(bridgeLines.some((l) => !l.ok && /STALE BUILD/.test(l.label)));
   assert.equal(result.ok, false);
@@ -63,7 +63,7 @@ test('WRONG INSTANCE: bridge version().worktree != injected current worktree pat
       consoleErrors: () => [],
     },
   });
-  const result = runDoctor({ cwd: root, engineSrcDir: resolve(root, 'packages/engine/src'), runners });
+  const result = runDoctor({ cwd: root, engineSrcDir: resolve(root, 'packages/engine/src'), engineOnly: false, runners });
   const bridgeLines = result.lines.filter((l) => l.group === 'bridge');
   assert.ok(bridgeLines.some((l) => !l.ok && /WRONG INSTANCE/.test(l.label)));
   assert.equal(result.ok, false);
@@ -97,6 +97,15 @@ test('deps: a missing node_modules (injected filesystem check) fails the deps li
   const result = runDoctor({ cwd: root, engineSrcDir: resolve(root, 'packages/engine/src'), engineOnly: true, runners });
   const depsLines = result.lines.filter((l) => l.group === 'deps');
   assert.ok(depsLines.some((l) => !l.ok && /MISSING node_modules/.test(l.label)));
+  assert.equal(result.ok, false);
+});
+
+test('deps: an injected Node version below 22.12 fails the deps line and the overall result', (t) => {
+  const root = tempDir(t, 'deps-old-node');
+  const runners = happyRunners(root);
+  const result = runDoctor({ cwd: root, engineSrcDir: resolve(root, 'packages/engine/src'), engineOnly: true, nodeVersion: 'v22.11.0', runners });
+  const depsLines = result.lines.filter((l) => l.group === 'deps');
+  assert.ok(depsLines.some((l) => !l.ok && /node v22\.11\.0/.test(l.label)));
   assert.equal(result.ok, false);
 });
 
@@ -137,31 +146,19 @@ test('an engine-purity breach in a FAKE packages/engine/src fixture fails the bi
   assert.equal(result.ok, false);
 });
 
-test('a file named rng.ts is exempt from the engine-purity scan, matching the real rng.ts exemption', (t) => {
-  const root = tempDir(t, 'purity-rng-exempt');
+test('rng.ts is no longer exempt from the engine-purity scan -- the plan exception is superseded by the Class B Math.random() rule', (t) => {
+  const root = tempDir(t, 'purity-rng-not-exempt');
   const engineSrcDir = resolve(root, 'packages/engine/src');
   mkdirSync(engineSrcDir, { recursive: true });
   writeFileSync(resolve(engineSrcDir, 'rng.ts'), 'export const x = Math.random();\n');
   const runners = happyRunners(root);
   const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
   const bindingLines = result.lines.filter((l) => l.group === 'binding');
-  assert.ok(bindingLines.every((l) => l.ok));
-  assert.equal(result.ok, true);
-});
-
-test('the rng.ts exemption is an exact filename match, not a suffix match -- custom-rng.ts still fails', (t) => {
-  const root = tempDir(t, 'purity-rng-suffix-not-exempt');
-  const engineSrcDir = resolve(root, 'packages/engine/src');
-  mkdirSync(engineSrcDir, { recursive: true });
-  writeFileSync(resolve(engineSrcDir, 'custom-rng.ts'), 'export const x = Math.random();\n');
-  const runners = happyRunners(root);
-  const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
-  const bindingLines = result.lines.filter((l) => l.group === 'binding');
-  assert.ok(bindingLines.some((l) => !l.ok && /custom-rng\.ts/.test(l.label)));
+  assert.ok(bindingLines.some((l) => !l.ok && /rng\.ts: Math\.random\(\)/.test(l.label)));
   assert.equal(result.ok, false);
 });
 
-test('the rng.ts exemption only applies at the engine-src root -- a nested packages/engine/src/**/rng.ts still fails', (t) => {
+test('a nested packages/engine/src/**/rng.ts also fails -- there is no exemption anywhere for rng.ts', (t) => {
   const root = tempDir(t, 'purity-nested-rng-not-exempt');
   const engineSrcDir = resolve(root, 'packages/engine/src');
   const nestedDir = resolve(engineSrcDir, 'sub');
@@ -174,13 +171,22 @@ test('the rng.ts exemption only applies at the engine-src root -- a nested packa
   assert.equal(result.ok, false);
 });
 
-test('engine-purity scan flags document/localStorage/sessionStorage/indexedDB, not only window', (t) => {
-  const root = tempDir(t, 'purity-dom-globals');
+test('the purity allowlist has exactly one entry -- seasons.ts window -- so growing it is a visible choice', () => {
+  assert.deepEqual(PURITY_ALLOWLIST, [{ path: 'seasons.ts', identifier: 'window' }]);
+});
+
+test('engine-purity scan flags document/navigator/localStorage/sessionStorage/globalThis/process/fetch, not only window', (t) => {
+  const root = tempDir(t, 'purity-class-a-globals');
   const engineSrcDir = resolve(root, 'packages/engine/src');
   mkdirSync(engineSrcDir, { recursive: true });
   writeFileSync(
     resolve(engineSrcDir, 'dom.ts'),
-    ['export function touch() {', '  return document.title + localStorage.length + sessionStorage.length + indexedDB.name;', '}', ''].join('\n'),
+    [
+      'export function touch() {',
+      '  return document.title + navigator.userAgent + localStorage.length + sessionStorage.length + globalThis.x + process.env.X + fetch("/x");',
+      '}',
+      '',
+    ].join('\n'),
   );
   const runners = happyRunners(root);
   const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
@@ -188,9 +194,12 @@ test('engine-purity scan flags document/localStorage/sessionStorage/indexedDB, n
   const purityLine = bindingLines.find((l) => /dom\.ts/.test(l.label));
   assert.ok(purityLine && !purityLine.ok);
   assert.match(purityLine!.label, /document global/);
+  assert.match(purityLine!.label, /navigator global/);
   assert.match(purityLine!.label, /localStorage global/);
   assert.match(purityLine!.label, /sessionStorage global/);
-  assert.match(purityLine!.label, /indexedDB global/);
+  assert.match(purityLine!.label, /globalThis global/);
+  assert.match(purityLine!.label, /process global/);
+  assert.match(purityLine!.label, /fetch global/);
 });
 
 test('a bare side-effect `import "react"` is flagged even without a `from` clause', (t) => {
@@ -241,7 +250,7 @@ test('a regex literal containing the word "window" is not flagged -- only a bare
   assert.equal(result.ok, true);
 });
 
-test('an object literal key named window passes -- it is a property label, not a global reference', (t) => {
+test('an object literal key named window now fails too -- the scope-free design has no key exemption', (t) => {
   const root = tempDir(t, 'purity-object-key-window');
   const engineSrcDir = resolve(root, 'packages/engine/src');
   mkdirSync(engineSrcDir, { recursive: true });
@@ -249,11 +258,11 @@ test('an object literal key named window passes -- it is a property label, not a
   const runners = happyRunners(root);
   const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
   const bindingLines = result.lines.filter((l) => l.group === 'binding');
-  assert.ok(bindingLines.every((l) => l.ok));
-  assert.equal(result.ok, true);
+  assert.ok(bindingLines.some((l) => !l.ok && /obj-key\.ts.*window global/.test(l.label)));
+  assert.equal(result.ok, false);
 });
 
-test('a parameter named window passes as a declaration and shadows the global for its own function body', (t) => {
+test('a parameter named window now fails too -- the scope-free design has no param exemption', (t) => {
   const root = tempDir(t, 'purity-parameter-window');
   const engineSrcDir = resolve(root, 'packages/engine/src');
   mkdirSync(engineSrcDir, { recursive: true });
@@ -261,8 +270,8 @@ test('a parameter named window passes as a declaration and shadows the global fo
   const runners = happyRunners(root);
   const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
   const bindingLines = result.lines.filter((l) => l.group === 'binding');
-  assert.ok(bindingLines.every((l) => l.ok));
-  assert.equal(result.ok, true);
+  assert.ok(bindingLines.some((l) => !l.ok && /param\.ts.*window global/.test(l.label)));
+  assert.equal(result.ok, false);
 });
 
 test('template interpolation keeps expressions live -- `${Date.now()}` and `${window.x}` both fail even wrapped in a template string', (t) => {
@@ -302,7 +311,43 @@ test('Math["random"]() with computed member access still fails', (t) => {
   assert.equal(result.ok, false);
 });
 
-test('a local `window` shadow only exempts its own enclosing scope -- a real global window read in a different function still fails', (t) => {
+test('Date?.["now"]() -- optional chaining combined with computed member access -- still fails', (t) => {
+  const root = tempDir(t, 'purity-optional-computed-date-now');
+  const engineSrcDir = resolve(root, 'packages/engine/src');
+  mkdirSync(engineSrcDir, { recursive: true });
+  writeFileSync(resolve(engineSrcDir, 'opt-computed.ts'), ['export function stamp() {', '  return Date?.["now"]();', '}', ''].join('\n'));
+  const runners = happyRunners(root);
+  const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
+  const bindingLines = result.lines.filter((l) => l.group === 'binding');
+  assert.ok(bindingLines.some((l) => !l.ok && /opt-computed\.ts: Date\.now\(\)/.test(l.label)));
+  assert.equal(result.ok, false);
+});
+
+test('(Math.random)() -- parenthesized member access -- still fails', (t) => {
+  const root = tempDir(t, 'purity-parenthesized-math-random');
+  const engineSrcDir = resolve(root, 'packages/engine/src');
+  mkdirSync(engineSrcDir, { recursive: true });
+  writeFileSync(resolve(engineSrcDir, 'paren.ts'), ['export function roll() {', '  return (Math.random)();', '}', ''].join('\n'));
+  const runners = happyRunners(root);
+  const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
+  const bindingLines = result.lines.filter((l) => l.group === 'binding');
+  assert.ok(bindingLines.some((l) => !l.ok && /paren\.ts: Math\.random\(\)/.test(l.label)));
+  assert.equal(result.ok, false);
+});
+
+test('Date.now?.() -- optional call on a plain member access -- still fails', (t) => {
+  const root = tempDir(t, 'purity-optional-call-date-now');
+  const engineSrcDir = resolve(root, 'packages/engine/src');
+  mkdirSync(engineSrcDir, { recursive: true });
+  writeFileSync(resolve(engineSrcDir, 'opt-call.ts'), ['export function stamp() {', '  return Date.now?.();', '}', ''].join('\n'));
+  const runners = happyRunners(root);
+  const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
+  const bindingLines = result.lines.filter((l) => l.group === 'binding');
+  assert.ok(bindingLines.some((l) => !l.ok && /opt-call\.ts: Date\.now\(\)/.test(l.label)));
+  assert.equal(result.ok, false);
+});
+
+test('a local `const window = ...` declaration now fails too -- there is no shadow tracking; only the exact seasons.ts allowlist entry is exempt', (t) => {
   const root = tempDir(t, 'purity-window-shadow-scoped');
   const engineSrcDir = resolve(root, 'packages/engine/src');
   mkdirSync(engineSrcDir, { recursive: true });
@@ -324,6 +369,18 @@ test('a local `window` shadow only exempts its own enclosing scope -- a real glo
   const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
   const bindingLines = result.lines.filter((l) => l.group === 'binding');
   assert.ok(bindingLines.some((l) => !l.ok && /mixed-window\.ts.*window global/.test(l.label)));
+  assert.equal(result.ok, false);
+});
+
+test('the real packages/engine/src local `const window = ...` in seasons.ts is the only allowlisted case -- an identical pattern elsewhere still fails', (t) => {
+  const root = tempDir(t, 'purity-window-not-seasons');
+  const engineSrcDir = resolve(root, 'packages/engine/src');
+  mkdirSync(engineSrcDir, { recursive: true });
+  writeFileSync(resolve(engineSrcDir, 'not-seasons.ts'), 'const window = { startsAt: 1 };\nexport const x = window.startsAt;\n');
+  const runners = happyRunners(root);
+  const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
+  const bindingLines = result.lines.filter((l) => l.group === 'binding');
+  assert.ok(bindingLines.some((l) => !l.ok && /not-seasons\.ts.*window global/.test(l.label)));
   assert.equal(result.ok, false);
 });
 
@@ -354,12 +411,12 @@ test('a harmless string literal containing the word "window" is not flagged -- o
   assert.equal(result.ok, true);
 });
 
-test('a `window` shadow whose block opens and closes on the same line still exits its scope -- a later top-level `window` read still fails', (t) => {
-  const root = tempDir(t, 'purity-window-shadow-one-line');
+test('every occurrence of window fails, including one inside an unrelated local block -- there is no per-occurrence scope carve-out', (t) => {
+  const root = tempDir(t, 'purity-window-multiple-occurrences');
   const engineSrcDir = resolve(root, 'packages/engine/src');
   mkdirSync(engineSrcDir, { recursive: true });
   writeFileSync(
-    resolve(engineSrcDir, 'one-line-shadow.ts'),
+    resolve(engineSrcDir, 'multi-window.ts'),
     [
       'if (true) { const window = { x: 1 }; void window.x; }',
       'export function real() {',
@@ -371,8 +428,20 @@ test('a `window` shadow whose block opens and closes on the same line still exit
   const runners = happyRunners(root);
   const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
   const bindingLines = result.lines.filter((l) => l.group === 'binding');
-  assert.ok(bindingLines.some((l) => !l.ok && /one-line-shadow\.ts.*window global/.test(l.label)));
+  assert.ok(bindingLines.some((l) => !l.ok && /multi-window\.ts.*window global/.test(l.label)));
   assert.equal(result.ok, false);
+});
+
+test('a comment mentioning "window" is not flagged -- comments are single tokens from tokenize()', (t) => {
+  const root = tempDir(t, 'purity-comment');
+  const engineSrcDir = resolve(root, 'packages/engine/src');
+  mkdirSync(engineSrcDir, { recursive: true });
+  writeFileSync(resolve(engineSrcDir, 'comment.ts'), '// window\nexport const x = 1;\n');
+  const runners = happyRunners(root);
+  const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
+  const bindingLines = result.lines.filter((l) => l.group === 'binding');
+  assert.ok(bindingLines.every((l) => l.ok));
+  assert.equal(result.ok, true);
 });
 
 test('a dynamic `import("react")` is flagged, not only static import/from/require forms', (t) => {
@@ -384,6 +453,18 @@ test('a dynamic `import("react")` is flagged, not only static import/from/requir
   const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
   const bindingLines = result.lines.filter((l) => l.group === 'binding');
   assert.ok(bindingLines.some((l) => !l.ok && /dynamic\.ts: react import/.test(l.label)));
+  assert.equal(result.ok, false);
+});
+
+test('a dynamic import with a template-literal specifier -- import(`react`) -- is flagged too, not only string literals', (t) => {
+  const root = tempDir(t, 'purity-dynamic-react-import-template');
+  const engineSrcDir = resolve(root, 'packages/engine/src');
+  mkdirSync(engineSrcDir, { recursive: true });
+  writeFileSync(resolve(engineSrcDir, 'dynamic-tmpl.ts'), ['export async function load() {', '  return import(`react`);', '}', ''].join('\n'));
+  const runners = happyRunners(root);
+  const result = runDoctor({ cwd: root, engineSrcDir, engineOnly: true, runners });
+  const bindingLines = result.lines.filter((l) => l.group === 'binding');
+  assert.ok(bindingLines.some((l) => !l.ok && /dynamic-tmpl\.ts: react import/.test(l.label)));
   assert.equal(result.ok, false);
 });
 
@@ -432,6 +513,22 @@ test('--engine-only skips the server/bridge/console groups entirely, running onl
     },
   });
   const result = runDoctor({ cwd: root, engineSrcDir: resolve(root, 'packages/engine/src'), engineOnly: true, runners });
+  const skippedGroups = result.lines.filter((l) => l.group === 'server' || l.group === 'bridge' || l.group === 'console');
+  assert.deepEqual(skippedGroups, []);
+  assert.equal(result.ok, true);
+});
+
+test('runDoctor defaults to engine-only when engineOnly is omitted -- the programmatic API never silently falls through to full mode', (t) => {
+  const root = tempDir(t, 'programmatic-default-engine-only');
+  // Deliberately broken fetch runner -- if server/bridge/console ran, this would fail the result.
+  const runners = happyRunners(root, {
+    fetch: {
+      bridgeVersion: () => ({ commit: 'sha-stale', worktree: '/worktree/bad' }),
+      serverHealth: () => false,
+      consoleErrors: () => ['boom'],
+    },
+  });
+  const result = runDoctor({ cwd: root, engineSrcDir: resolve(root, 'packages/engine/src'), runners });
   const skippedGroups = result.lines.filter((l) => l.group === 'server' || l.group === 'bridge' || l.group === 'console');
   assert.deepEqual(skippedGroups, []);
   assert.equal(result.ok, true);
@@ -497,7 +594,7 @@ test('control characters in injected bridge/console text are escaped so they can
       consoleErrors: () => ['boom\n✓ forged bridge line'],
     },
   });
-  const result = runDoctor({ cwd: root, engineSrcDir: resolve(root, 'packages/engine/src'), runners });
+  const result = runDoctor({ cwd: root, engineSrcDir: resolve(root, 'packages/engine/src'), engineOnly: false, runners });
   const physicalLines = result.text.split('\n').filter((l) => l.length > 0);
   assert.equal(physicalLines.length, result.lines.length);
   assert.match(result.text, /boom\\x0a/);
