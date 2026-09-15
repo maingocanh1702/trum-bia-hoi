@@ -26,6 +26,9 @@ async function startSession(mode?: 'local' | 'remote' | 'reauthenticate'): Promi
 }
 export async function start(mode?: 'local' | 'remote' | 'reauthenticate'): Promise<StartState> {
   const state = await startSession(mode);
-  installVerifyBridge(state);
+  // Written as a direct import.meta.env.<KEY> chain (not a destructured/aliased lookup) so Vite's
+  // build-time literal replacement can constant-fold this to `false` in production, letting Rollup
+  // tree-shake the call and the whole verify/bridge module graph out of the production bundle.
+  if (import.meta.env.DEV || import.meta.env.VITE_TBH_VERIFY === '1') installVerifyBridge(state, true);
   return state;
 }

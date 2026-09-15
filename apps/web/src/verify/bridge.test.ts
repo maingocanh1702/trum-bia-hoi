@@ -92,6 +92,22 @@ test('local: version() reports mode local and the game\'s own config version', (
   assert.strictEqual(typeof version.startedAt, 'number');
 });
 
+test('version() returns the exact compile-time __TBH_COMMIT__/__TBH_WORKTREE__ constants, not a hard-coded fallback', () => {
+  const globals = globalThis as unknown as { __TBH_COMMIT__?: string; __TBH_WORKTREE__?: string };
+  const previousCommit = globals.__TBH_COMMIT__, previousWorktree = globals.__TBH_WORKTREE__;
+  globals.__TBH_COMMIT__ = 'deadbeefcafe';
+  globals.__TBH_WORKTREE__ = '/fake/seeded/worktree';
+  try {
+    const { session } = fakeLocalSession();
+    const version = buildBridge(session).version();
+    assert.strictEqual(version.commit, 'deadbeefcafe');
+    assert.strictEqual(version.worktree, '/fake/seeded/worktree');
+  } finally {
+    globals.__TBH_COMMIT__ = previousCommit;
+    globals.__TBH_WORKTREE__ = previousWorktree;
+  }
+});
+
 test('remote: snapshot() derives from session.remote.world, not the engine snapshot()', () => {
   const { session, remote } = fakeRemoteSession();
   const bridge = buildBridge(session);
@@ -135,8 +151,10 @@ test('none of the six bridge methods ever calls command/advance/persist/replaceS
 
 test('none of the six bridge methods ever writes localStorage or opens IndexedDB, for local or remote', () => {
   let localWrites = 0, indexedDbOpens = 0;
-  const originalSetItem = localStorageStub.setItem;
+  const originalSetItem = localStorageStub.setItem, originalRemoveItem = localStorageStub.removeItem, originalClear = localStorageStub.clear;
   localStorageStub.setItem = (...args: Parameters<Storage['setItem']>) => { localWrites++; return originalSetItem(...args); };
+  localStorageStub.removeItem = (...args: Parameters<Storage['removeItem']>) => { localWrites++; return originalRemoveItem(...args); };
+  localStorageStub.clear = (...args: Parameters<Storage['clear']>) => { localWrites++; return originalClear(...args); };
   (globalThis as unknown as { indexedDB: { open: (...args: unknown[]) => never } }).indexedDB = {
     open: (): never => { indexedDbOpens++; throw new Error('the read-only bridge must never open IndexedDB'); },
   };
@@ -155,6 +173,8 @@ test('none of the six bridge methods ever writes localStorage or opens IndexedDB
     assert.strictEqual(indexedDbOpens, 0);
   } finally {
     localStorageStub.setItem = originalSetItem;
+    localStorageStub.removeItem = originalRemoveItem;
+    localStorageStub.clear = originalClear;
     delete (globalThis as unknown as { indexedDB?: unknown }).indexedDB;
   }
 });
