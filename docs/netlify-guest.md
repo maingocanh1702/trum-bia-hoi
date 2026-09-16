@@ -45,3 +45,14 @@ Rollback deploy: `6a9fa78f9bec4e0d3bfa19b7`; restoring it only switches hosted f
 Owner requested publishing the latest A/B update. Gameplay source is `5e9fe2d`; this candidate reuses the prior `c772425` guest-only wrapper on that source. The startup conflict preserves the newer verification-bridge wrapper and selects local storage inside `startSession`. No engine/config/assets changes in this deployment slice; config 2.0.4 and rules 27 are inherited from A/B.
 
 Verify the complete guest journey in `playwright.guest.config.ts` on three viewports before publishing, including the Settings source SHA and all six closed-shift KPIs matching the downloaded backup. Upload only the accepted static directory, retain the previous deployment for rollback, promote the verified draft, and run the same smoke against the public URL. The deployed receipt is recorded in `docs/deploy-log.md` after the operation succeeds. Existing site-origin saves and local 5174/5175 services remain untouched.
+
+
+## Wave A/B published — 2026-09-17
+
+Live guest update: **https://trumbiahoi.netlify.app/**. Runtime source `36c8db43e61b7dec4e424f7da123e71b3818ffc5`, gameplay base `5e9fe2d`, immutable deploy `6aaacf25a465a8fb1d8e9267`. Settings shows `36c8db43e61b`. The reviewed static draft was promoted directly; the three-viewport public guest smoke passed, including saved progress, next day and six shift KPIs. Anonymous HTTPS serves the exact recorded index. Browser-origin storage and the local services are preserved; online accounts/admin/ranking remain unavailable in this edition. A2 balance acceptance remains OPEN.
+
+Full receipt, test retries, hashes and rollback deploy `6aa3df1ade7c9b5eeba5662b`: [deployment log](deploy-log.md#wave-ab-published--2026-09-17-asiaho_chi_minh). Re-run against this immutable source with `TBH_GUEST_URL=https://trumbiahoi.netlify.app TBH_GUEST_COMMIT=36c8db43e61b7dec4e424f7da123e71b3818ffc5 npx playwright test --config playwright.guest.config.ts --workers=1`.
+
+| Date | Change |
+|---|---|
+| 2026-09-17 | Publish Wave A/B guest update; existing public access, browser persistence and local preview remain unchanged. |

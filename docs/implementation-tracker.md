@@ -660,3 +660,12 @@ Sổ ca → Chi tiết → Số đo ca displays six canonical values: served cus
 ### Netlify Wave A/B guest publication — 2026-09-16
 
 Owner requested deploying the reviewed A/B update. The release branch reuses the existing guest-only wrapper (explicit build flag, local IndexedDB saves, no online ranking/admin/API) on `5e9fe2d`, preserving the newer startup verification wrapper. The production guest smoke covers a full shift/next day, reload/new tab, build SHA and exact six-KPI backup on three viewports. Deployment receipt and final verification live in `docs/deploy-log.md`; existing local services/player progress are outside the upload. A2 balance and human playtest acceptance remain OPEN.
+
+
+### Netlify Wave A/B guest publication — completed 2026-09-17
+
+Runtime `36c8db4` (gameplay `5e9fe2d`) is published at https://trumbiahoi.netlify.app/ as immutable deploy `6aaacf25a465a8fb1d8e9267`. Full verification passed 548 tests; assets, source-bound independent review and public three-viewport guest smoke passed. Direct restock, clearer order feedback, exact shift KPIs and build identification are now available in the browser-only guest edition. No backend, main-checkout, SQLite or local-service mutation; existing-origin saves retained. See `docs/deploy-log.md` for exact hashes, retries and rollback. This closes publication only: A2 balance and human acceptance remain OPEN.
+
+| Date | Change |
+|---|---|
+| 2026-09-17 | Record verified public Wave A/B deployment and preserve outstanding acceptance boundaries. |
