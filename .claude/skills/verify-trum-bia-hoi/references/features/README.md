@@ -29,8 +29,10 @@ admin (session, admin registry, shell, assets). Every file below now exists and 
   `playwright.accessibility.config.ts` spreads dev-identity's already-resolved config instead of
   reading the resolver directly; admin `playwright.admin.config.ts` baseURL `4181` / API `4182`;
   playable `playwright.playable.config.ts`, 3 viewport projects, baseURL `4209/4211/4213`, auth+API
-  `4210/4212/4214`. Two worktrees' `dev`/`dev:server` still collide (see `SKILL.md` Stale-Build
-  Rule) — the six Playwright configs themselves do not.
+  `4210/4212/4214`. `dev`/`dev:server` always collide across worktrees (not wired to the resolver
+  at all); the other five configs' hash-derived bases only reduce collision odds, they don't
+  eliminate them — see `SKILL.md` Stale-Build Rule for the exact math and how to check before a
+  parallel run.
 - This repo has 9 worktrees active in parallel at times (`git worktree list`); confirm you're testing
   the instance you think you are before trusting a result.
 

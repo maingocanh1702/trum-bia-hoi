@@ -113,9 +113,16 @@ paths**, or you write the test now and cite it.
 ## Stale-Build Rule
 
 This repo runs many worktrees in parallel (`git worktree list` — nine at last count).
-`scripts/verify/port.ts` (`verify:port`, wave V3, landed) gives five of the six Playwright configs
-per-worktree ports, so those no longer collide across worktrees — but `dev`/`dev:server` are NOT
-wired to it and still share fixed ports (`5173`/`5175`) regardless of worktree. `npm run
+`scripts/verify/port.ts` (`verify:port`, wave V3, landed) derives five of the six Playwright
+configs' ports from `sha256(worktree-id) mod 300` — this reduces collisions, it does **not**
+eliminate them: a fixed 300-slot hash space collides by the birthday paradox as worktree count
+grows, and the resolver has no cross-worktree registry to detect or refuse a collision. Verified
+2026-09-16 against this repo's own 9 live worktrees (`resolveBasePort()` on each `git worktree
+list` entry): all 9 resolved to distinct bases that day — but that is a measurement of that moment,
+not a guarantee. Run `npm run verify:port` (or compare `resolveBasePort()` output) across your
+active worktrees before trusting parallel UI-tier runs; a collision looks like one worktree's
+Playwright server silently answering another worktree's requests. `dev`/`dev:server` are NOT wired
+to the resolver at all and still share fixed ports (`5173`/`5175`) regardless of worktree. `npm run
 verify:doctor` exists (wave V3, landed) and refuses PASS on a red repo/deps/binding/map check — but
 `--full`'s server/bridge/console checks are not functional from a plain CLI call today (see step 3
 above), so a green UI-tier result against a stale bundle or the wrong worktree's server is still a
