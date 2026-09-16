@@ -289,10 +289,29 @@ Budget 14, max_review_rounds 3, milestone false.
 Plan §7 leftover. scripts/verify/port.ts resolves a worktree-safe port and all six
 playwright*.config.ts use it (PR #9), but `npm run dev`, `npm run dev:server` and
 apps/web/vite.config.ts still hardcode their ports, so two worktrees' dev servers still collide.
-Wire them to TBH_PORT_BASE via the same resolver. Acceptance: a unit test proves the vite config
-and the dev scripts derive their ports from the resolver with the documented offsets; verify:
-`npm run test:one -- <test>`. Scope: apps/web/vite.config.ts, package.json,
-scripts/verify/port-wire.test.ts (extend, do not duplicate). Budget 8, rounds 3.
+Wire them to TBH_PORT_BASE via the same resolver.
+
+The resolver itself has a measured gap the V4 review (round 6) could only fix the WORDING of:
+`scripts/verify/port.ts:69` maps a worktree to `5200 + sha256(id) % 300` with no collision
+detection. Ten live worktrees in 300 slots is roughly a 14% chance two share a slot, and two bases
+closer than MAX_ROLE_OFFSET collide on their role ports even when the slots differ. Fix the
+mechanism in this slice: enumerate the other live worktrees (`git worktree list --porcelain`),
+detect a base within MAX_ROLE_OFFSET of another worktree's, and probe deterministically to the next
+free slot. Acceptance: a unit test proves the vite config and the dev scripts derive their ports
+from the resolver with the documented offsets; a second test proves two fake worktree ids that hash
+to the same slot receive different bases and that the probe order is stable across runs; the real
+guarantee replaces the probabilistic wording in port.ts and in the ap3-workflow block.
+verify: `npm run test:one -- <tests>`. Scope: scripts/verify/port.ts, apps/web/vite.config.ts,
+package.json, scripts/verify/port-wire.test.ts (extend, do not duplicate), CLAUDE.md, AGENTS.md
+(ap3-workflow block only). Budget 10, rounds 3.
+
+## Rule for EVERY slice emitted here: wire new tests into the aggregate
+
+The V4 review found 115 tests from M1/M2 that `npm run verify` never ran: each slice's `verify:`
+pointed at its own file and nobody added the file to the aggregate. Every task you emit that adds
+a test file must ALSO, in the same PR, add it to whatever `npm run verify` executes (or prove the
+aggregate already globs it), and its acceptance must say so in one line. A slice whose new tests
+are green in isolation but absent from `npm run verify` is not done.
 
 ## 4. Slice `v5-uncovered-serve-toast-remote` (class agent-tooling, risk P2)
 
