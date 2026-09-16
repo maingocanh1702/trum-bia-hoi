@@ -67,59 +67,91 @@ whatever measurement technique is chosen must be built from `@tbh/engine`'s EXIS
 (`Game`, `loadConfig`, `serveValueStats`, ...) plus new code under `packages/engine/sim/**` (allowed)
 or directly in `apps/server/src/registry.ts`; it must not require editing engine source.
 ## Acceptance
-- A new case in `apps/server/test/registry.test.ts` proposes a candidate that leaves `k.value`/
-  `k.band` at the seed's own values (inside band) while multiplying a real pricing field (e.g.
-  `raw.menu.bia.price`, the same field `registry.test.ts`'s existing cases already edit) by enough to
-  move the MEASURED k outside `[2.0,3.0]` -- confirm the resulting k yourself first (a quick
-  `serveValueStats` check against a small sample, or a `packages/engine/test/menu.test.ts` case) before
-  wiring the server test, do not guess the multiplier -- then asserts `registry.propose(...)`/
-  `f.draft(...)` throws `/registry:bindingRange/`. This case fails on `main` today (admission accepts
-  it, matching admin-registry.md's confirmed experiment).
-- A second case proves a candidate with a representative price/anchor change whose measured k STAYS
-  inside band is still ACCEPTED -- no false-positive regression.
-- The measured-k check is added inside `validate()` (registry.ts:153) or a private method it calls,
-  reached from BOTH `validateAdmission()` (propose's path) and `compose()`'s direct `validate()` call
-  (registry.ts:264) -- grep the diff for the new check's call site to confirm it isn't only reachable
-  from `forecastPlan`/`previewImpact`/the async `forecastEconomy()` worker.
-- The added latency is actually measured (e.g. `console.time`/`process.hrtime` around the new code
-  path in a throwaway local run, reported in the slice report, then removed) for BOTH reach paths
-  above. Target: under ~2s added latency per call -- a real player's `startShift` (path 2) and an
-  admin's `propose()` (path 1, inside a `BEGIN IMMEDIATE` transaction) both need to stay interactive.
-  If a full bot-driven simulation measures over that, redesign before shipping: a smaller deterministic
-  sample, or an analytic estimate built from `@tbh/engine`'s existing pure pricing functions (e.g.
-  `customerValue`) instead of a stateful bot loop. Memoizing the verdict by the resolved config's own
-  version/hash (`compose()` already computes `raw._meta.version = resolved-${sha256(...)}` at
-  registry.ts:263; `propose()`/`validateAdmission()` see the proposal's own `version`) so a given
-  resolved config is measured once, not once per request, is one concrete way to hit this budget --
-  not the only one; state which approach was taken and why in the slice report.
-- The refusal keeps throwing the existing `registry:bindingRange` string (registry.ts:157) so
-  `apps/server/src/http.ts:315`'s existing 400-mapping keeps working unchanged -- no second error
-  string for the same failure class.
-- `apps/server/test/forecast.test.ts` and `packages/engine/test/forecast.test.ts` stay green,
-  unmodified in behavior (`admin-registry.md`'s own citation: 5 existing forecast cases, none assert
-  k) -- this slice adds a gate to `validate()`, it does not change `projectEconomy`/`compareEconomy`'s
-  return shape.
-- The new test file(s) live under `apps/server/test/*.test.ts` / `packages/engine/test/*.test.ts` --
-  both already globbed by package.json's `"test"` script -- so `npm test`/`npm run verify` runs them
-  with no separate aggregate edit; state this one-line confirmation in the slice report. If a new
-  helper file is added under `packages/engine/sim/**`, its own unit-level proof goes in a NEW
-  `packages/engine/test/<name>.test.ts` (matching how `packages/engine/test/forecast.test.ts` already
-  pairs with `packages/engine/sim/forecast.ts`), not a same-directory `packages/engine/sim/*.test.ts`
-  file -- that directory is NOT in the `"test"` script's glob and would silently never run.
-- This same change appends one bullet to `.claude/skills/verify-trum-bia-hoi/references/features/
-  admin-registry.md`'s `## Existing proof` section citing the new `registry.test.ts` case name(s), so
-  the file's own "Admission only guards the DECLARED k.value scalar" claim and its Uncovered-paths
-  entry ("No tool combines real candidate simulation with a k-band check") are corrected in the same
-  change that closes the gap. This path is NOT listed in this task's `scope:` and cannot be (`.claude/`
-  is unconditionally forbidden to every ap3 task, `ap3/aplib.py`'s `FORBIDDEN_PREFIXES`) -- whoever
-  implements this (supervised, by hand -- see Context) makes that doc edit as a companion change in
-  the same PR/commit, outside the ap3 scope-guard.
+Corrected design (the benchmark above invalidates a check inside `validate()` itself -- k moves off
+every synchronous request path entirely, not just under a latency budget):
+- Measure k ONCE per version, asynchronously, at publish time -- reuse the EXISTING forecast Worker
+  (`apps/server/src/forecast.ts`'s `forecastEconomy`, `packages/engine/sim/forecast.ts`'s
+  `compareEconomy`/`projectEconomy`), do not write a second simulation path.
+- `compareEconomy()` (`packages/engine/sim/forecast.ts:94-98`) stops discarding the `game` each
+  `projectEconomy()` call returns; it (or a thin wrapper `apps/server/src/forecast.ts` adds) exposes
+  `serveValueStats(game.world.serves, c)` for the candidate run, so a real per-serve-measured `kValue`
+  becomes available wherever `compareEconomy`'s result is consumed.
+- `registry_publications` gains two nullable columns, `measured_k REAL` and `measured_at INTEGER`, via
+  a migration to the `CREATE TABLE registry_publications (...)` DDL in `initializeRegistry()`
+  (registry.ts:78-86). MEASURED BLOCKER, resolve explicitly: that same function installs an append-only
+  trigger on this exact table (registry.ts:87-90, `BEFORE UPDATE ... RAISE(ABORT,'registry:appendOnly')`)
+  that forbids ANY update after insert -- including filling these two columns in once the async
+  measurement completes. Either (a) narrow the trigger to permit exactly one legal transition per row
+  (`measured_k`/`measured_at` NULL -> non-NULL, every other column unchanged, checked in the trigger's
+  own `WHEN` clause), or (b) leave `registry_publications` fully append-only as today and store
+  `measured_k`/`measured_at` in a new, freely-updatable companion table keyed by `version`, with
+  `active()`/`latest()` (registry.ts:147-152) joining against it. State which was chosen and why in the
+  slice report -- weakening a named append-only audit property is itself security-relevant (this
+  class's `security_review` is already `always`).
+- `validate()` (registry.ts:153) reads the STORED measurement for the `version` it's validating (the
+  proposal's own version via `validateAdmission()`, or `compose()`'s deterministic
+  `resolved-${sha256(...)}` version, registry.ts:263) and NEVER spawns a Worker or runs a sim itself:
+  absent -> throws `registry:kUnmeasured`; present and outside `seed.values.k.band` -> throws
+  `registry:bindingRange measured=<k> band=[lo,hi]` (both numbers interpolated into the message, match
+  `career.ts`'s existing `k.toFixed(4)` precision convention); present and in-band -> passes. NOTE:
+  today's bare `Error('registry:bindingRange')` (registry.ts:157) is matched by EXACT string in
+  `apps/server/src/http.ts:315`'s `[...].includes(error.message)` 400-mapping -- appending
+  `measured=...band=...` breaks that exact match and would silently 500 instead of 400. `http.ts` (not
+  currently in this task's scope list -- add it) needs the same `startsWith(...)` treatment that line
+  already gives `'config:'`: check `error.message.startsWith('registry:bindingRange')` alongside the
+  existing exact-match array, not just membership in it. Note this scope addition in the slice report.
+- The async measurement is kicked off (fire-and-forget) at the two points a version can first need one:
+  `publish()` (registry.ts:543, a top-level proposal becoming a publication) and `compose()`'s
+  first-occurrence branch (registry.ts:269-273, `if (sources.length > 1 && !exists)`, a scoped-merge
+  version nobody has resolved before) -- both already have a natural "this version is new" signal to
+  hook. A version's measurement is cached once computed (keyed by `version`, per the migration above)
+  -- never recomputed on a later request for the same version.
+- A published-but-unmeasured version is not yet live: `active()`/`latest()` (registry.ts:147-152)
+  exclude any row whose stored measurement is absent or out-of-band, so nothing is ever served to a
+  player before it is measured and in-band. A real player's `startShift` hitting a not-yet-measured
+  scoped-merge version (the rare first-occurrence case) gets `registry:kUnmeasured` per the bullet
+  above -- fail-closed, matching how every other admission check in this file already behaves. State
+  this explicitly in the slice report as the accepted trade-off (a self-healing, retriable edge case),
+  not a silently-chosen different fallback.
+- Drop the prior draft's "~2s added latency" acceptance line entirely -- with measurement off every
+  synchronous request path there is nothing left to bound. The benchmark numbers stay in Context above
+  as the reason this redesign exists, not something to re-derive or re-target.
+- Tests, all in `apps/server/test/registry.test.ts` unless noted:
+  - **A -- refuse-on-measured-out-of-band** (fails on `main` today): the same self-report-inside-band,
+    measured-outside-band candidate as the prior draft's first case (leave `k.value`/`k.band` at seed
+    values, multiply a real pricing field like `raw.menu.bia.price` enough to move MEASURED k outside
+    `[2.0,3.0]` -- confirm the resulting k yourself first, e.g. via a `packages/engine/test/menu.test.ts`
+    case calling `serveValueStats` directly, do not guess the multiplier). Once measured, assert the
+    OBSERVABLE end state -- it never reaches `active()`/`latest()` (or `validate()` throws
+    `bindingRange` reading the stored value, whichever your design surfaces first) -- not just that some
+    function once threw.
+  - **B -- accept-in-band**: a representative price/anchor change whose measured k stays inside band is
+    measured, stored, and DOES become active/latest -- no false-positive regression.
+  - **C -- unmeasured-throws**: whichever function actually gates (`validate()`, or `active()`/
+    `latest()`) called against a version with no stored measurement throws `registry:kUnmeasured`,
+    distinctly from `bindingRange`.
+  - **D -- validate()-with-injected-throwing-Worker-factory-still-returns**: inject a Worker-factory (or
+    whatever seam kicks off the async measurement) that immediately throws/rejects into `publish()`
+    and/or `compose()`'s first-occurrence path; assert the SYNCHRONOUS caller still returns/completes
+    normally -- the measurement subsystem's own failure is isolated (logged, `measured_k` left NULL for
+    a retry), never an uncaught exception on the request path. This is the test that actually proves
+    `validate()` is decoupled from the Worker, not just that reading the diff shows it isn't called.
+- `apps/server/test/forecast.test.ts` and `packages/engine/test/forecast.test.ts` stay green; if
+  `compareEconomy`'s return shape changes (stops discarding `game`, gains a `kValue`), update their
+  assertions to match the WIDENED shape -- don't narrow or delete an existing assertion to force a pass.
+- The new/changed test files stay inside `npm test`'s already-globbed `apps/server/test/*.test.ts` /
+  `packages/engine/test/*.test.ts` patterns -- state this one-line confirmation in the slice report.
+- This same change still appends one bullet to `.claude/skills/verify-trum-bia-hoi/references/features/
+  admin-registry.md`'s `## Existing proof` section citing the new case name(s), correcting its
+  "Admission only guards the DECLARED k.value scalar" claim and the matching Uncovered-paths entry --
+  a companion by-hand edit outside ap3 scope (`.claude/` is unconditionally forbidden to every ap3
+  task, `ap3/aplib.py`'s `FORBIDDEN_PREFIXES`), unchanged from the prior draft.
 ## Context
 This is a P1 task file. `ap3/aplib.py`'s `lint()` unconditionally rejects any `risk` other than `P2`
 ("only P2 tasks are auto-dispatchable (P1 stays supervised, P3 is read-only)") -- there is no
 P1-dispatchable path in this kit today (confirmed: no P1/supervised handling exists anywhere in
 `ap3/dispatch.sh`/`ap3/retry.sh`, and `ap3/queue/` has no subdirectory for supervised work). This file
-therefore CANNOT pass `bash ap3/lint-task.sh ap3/queue/v5-admin-k-admission.md` and will never be
+therefore CANNOT pass `bash ap3/lint-task.sh ap3/supervised/v5-admin-k-admission.md` and will never be
 picked up by the dispatcher -- that is by design for `server-guard`'s declared risk, not a defect in
 this file. It exists as a complete, precise spec for a human or a supervised Level-3 session to
 implement by hand, per the user's global Level-3 supervised-autonomy workflow contract (a private,
