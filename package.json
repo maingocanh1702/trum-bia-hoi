@@ -29,7 +29,8 @@
     "test:one": "node --import tsx --test",
     "verify:port": "node --import tsx scripts/verify/port.ts",
     "verify:map": "node --import tsx scripts/verify/map-coverage.ts",
-    "verify:doctor": "node --import tsx scripts/verify/doctor.ts"
+    "verify:doctor": "node --import tsx scripts/verify/doctor.ts",
+    "verify:all": "npm run verify && npm run verify:doctor"
   },
   "type": "module",
   "engines": {
