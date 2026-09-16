@@ -204,3 +204,7 @@ well-rested bonus formula and stamina thresholds this file only gates/stamps),
 [keg-refill](keg-refill.md) (`beer_initial_fill` at shift-open),
 [multi-system-journeys](multi-system-journeys.md) (the shared `shiftPauseTimers` freeze across every
 subsystem's deadlines).
+
+
+### Wave B — 2026-09-16 proof
+- `packages/engine/test/menu.test.ts` — 'five production seeds export exact six shift KPIs matching service records and deterministic replay' verifies one final metrics snapshot per completed shift and immutable prior close events after next opening; 'genuine rules26 close events remain byte-equivalent before adding rules27 metrics on a new shift' pins historical compatibility.

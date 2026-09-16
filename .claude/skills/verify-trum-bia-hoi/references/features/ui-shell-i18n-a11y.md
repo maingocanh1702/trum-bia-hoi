@@ -238,3 +238,7 @@ the manifest — don't confuse a missing icon with a missing sprite.
 | 2026-09-16 A6 | Cite the Settings build-SHA label in both locales/three viewports; historical deployment receipt is in docs/deploy-log.md. |
 
 | 2026-09-16 A2 | Cite direct HUD full-beer purchase in local and real-server UI; raw empty is distinct from ready/batch reserve. Balance targets remain OPEN in docs/improve-a2-stock.md. |
+
+
+### Wave B — 2026-09-16 proof
+- `apps/web/test/menu.spec.ts` — three Sổ ca scenarios include keyboard-native Details, VI/EN six metrics, exact backup export and whole-page axe with the panel expanded (six scans); empty/partial legacy case prevents fabricated ratios. Run `npx playwright test apps/web/test/menu.spec.ts`.

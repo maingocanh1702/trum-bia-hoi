@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-16 19:02 · **Branch hiện tại:** `codex/improve-order-feedback`
+> **Cập nhật:** 2026-09-16 20:35 · **Branch hiện tại:** `codex/improve-wave-ab`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 

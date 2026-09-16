@@ -29,7 +29,8 @@ const MENU_PAUSE_RULES: RulesVersion = 16; // config-exempt: fixed replay protoc
 const LIVE_UPGRADE_RULES: RulesVersion = 17; // config-exempt: fixed replay protocol revision for owner live-upgrade policy
 const BATCH_RULES: RulesVersion = 18; // config-exempt: fixed replay protocol revision for stocked beer and wash batches
 const DISCONNECT_RULES: RulesVersion = 19; // config-exempt: replay protocol for trusted disconnection deadlines
-export const CURRENT_RULES: RulesVersion = 26; // config-exempt: additive loss-at-deadline evidence; historical events remain exact
+export const CURRENT_RULES: RulesVersion = 27; // config-exempt: shift KPI snapshots; historical events remain exact
+const METRICS_RULES: RulesVersion = 27; // config-exempt: fixed replay protocol revision
 const FEEDBACK_RULES: RulesVersion = 26; // config-exempt: fixed replay protocol revision
 const OPENING_PROGRESS_RULES: RulesVersion = 25; // config-exempt: fixed replay protocol revision
 const CONNECTION_RULES: RulesVersion = 24; // config-exempt: replay protocol for hidden recovery and resting connection loss
@@ -441,13 +442,13 @@ export class Game {
       if (this.rulesVersion >= RUSH_CLOCK_RULES) this.updateRush();
       delete w.disconnection;
       this.endFlyer('shiftClosed');
-      this.emit('shift_closed', { shiftId: s?.id ?? '', credited: s?.stats.credited ?? 0 });
-      if (this.rulesVersion >= MENU_RULES) {
-        const report = menuReport(w, this.config);
-        if (report) {
-          const { rows, losses: _, ...values } = report; // Keep every historical menu summary's payload unchanged.
-          this.emit('menu_mix_summary', { ...values, ...Object.fromEntries(rows.flatMap(row => (['ordered', 'sold', 'wasted'] as const).map(key => [`${key}_${row.dish}`, row[key]]))) });
-        }
+      const report = this.rulesVersion >= MENU_RULES ? menuReport(w, this.config) : null;
+      this.emit('shift_closed', { shiftId: s?.id ?? '', credited: s?.stats.credited ?? 0,
+        ...(this.rulesVersion >= METRICS_RULES ? { metricsComplete: !!report?.metrics,
+          ...(report?.metrics ?? { served: null, mean: null, kValue: null, moiRate: null, staleRate: null, lost: null }) } : {}) });
+      if (report) {
+        const { rows, losses: _, metrics: __, ...values } = report; // Keep every historical menu summary's payload unchanged.
+        this.emit('menu_mix_summary', { ...values, ...Object.fromEntries(rows.flatMap(row => (['ordered', 'sold', 'wasted'] as const).map(key => [`${key}_${row.dish}`, row[key]]))) });
       }
     }
   }

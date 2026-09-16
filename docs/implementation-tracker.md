@@ -651,3 +651,8 @@ Shared pure order preparation feedback now distinguishes empty stock, reserved r
 | Date | Change |
 |---|---|
 | 2026-09-16 / A4 | Accurate pending-order/guide copy and rules26 loss provenance implemented with replay, command-path and localized browser regressions. |
+
+
+### PLAN-improve-2026-09-16 B — exact shift KPIs, 2026-09-16
+
+Sổ ca → Chi tiết → Số đo ca displays six canonical values: served customer rounds, mean payments+tips, measured k, snack-round ratio, flat-served-beer ratio, and customers lost. Numerators/arrival counts accompany the ratios. Rules27 writes exact values to shift_closed; historical events remain unchanged and partial legacy shifts show unavailable whole-shift metrics. Native details retains the existing paused sheet, with VI/EN copy; the closed-playtest form is prospective and does not fabricate human evidence. Integrated verification PASS on codex/improve-wave-ab: 548 tests, 20 paired k samples, rush/VIP/career gates, assets; 88 mapped local + 18 remote + 4 menu/export browser cases and six menu axe scans. Independent Wave B review: no actionable defects; final production guest migration 1/1 PASS. See docs/improve-wave-ab.md for exact receipts and OPEN A2/human acceptance boundaries; public deployment unchanged.

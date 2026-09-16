@@ -218,3 +218,7 @@ their own feature files (see the README index).
 | Date | Change |
 |---|---|
 | 2026-09-16 | Add current order feedback and rules26 loss evidence regression citations; historical replay remains unchanged. |
+
+
+### Wave B — 2026-09-16 proof
+- Wave B: `packages/engine/test/menu.test.ts` proves five seeded full shifts → exact close-event metrics → encode/decode replay → next-shift preservation. `apps/web/test/menu.spec.ts` verifies actual DOM backup export/reload and empty/partial coverage. `apps/web/remote-test/remote.spec.ts` exercises authoritative report over real API and lost-ack recovery; UI never computes game KPIs.

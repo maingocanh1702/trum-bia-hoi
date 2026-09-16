@@ -31,3 +31,7 @@ Settings displays the first 12 characters of the build's existing `__TBH_COMMIT_
 | Date | Change |
 |---|---|
 | 2026-09-16 | A6: reconstruct the September 11 Netlify receipt and explain the Settings build label; no new deployment or current-site claim. |
+
+## Read-only public index check — 2026-09-16
+
+Anonymous HTTPS returned200 and index SHA-256 `2a9a80fdac977a60f0fefecb4b1f23c5d408eda3392dbe13e0e96bbdf7e0b45e`, exactly matching the September11 receipt above (source `c7724254b2e3dca28800dec5261d975478c1562c`). This check identifies the served entrypoint; it is not a new deployment or a fresh gameplay acceptance. Evidence: `artifacts/verification/improve-wave-ab/public-index-receipt.json`. Wave A/B has not been published; the Settings SHA is available only in a rebuilt A6-or-later client.

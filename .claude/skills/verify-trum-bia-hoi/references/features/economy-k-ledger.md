@@ -162,3 +162,7 @@ save/replay persistence tests for this same ledger — heavy overlap, not a sepa
 | Date | Change |
 |---|---|
 | 2026-09-16 | Add current order feedback and rules26 loss evidence regression citations; historical replay remains unchanged. |
+
+
+### Wave B — 2026-09-16 proof
+- `packages/engine/test/menu.test.ts` — 'five production seeds export exact six shift KPIs matching service records and deterministic replay'; 'flat beer and snack numerators use served rounds, while empty and partial shifts never invent ratios'. Same canonical serveValueStats basis, no credit/throughput term.

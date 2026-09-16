@@ -33,5 +33,16 @@ export function menuReport(w: World, c: Config) {
   const attributed = Object.values(losses).reduce((sum, count) => sum + count, 0);
   if (!Number.isSafeInteger(attributed) || attributed < 0 || attributed > shift.stats.lost) throw Error('report:lossProvenance');
   losses.unknown += shift.stats.lost - attributed;
-  return { shiftId: shift.id, complete: shift.menu.complete, rows, losses, ...serveValueStats(serves, c) };
+  const values = serveValueStats(serves, c);
+  const withMoi = serves.filter(serve => serve.hadMoi).length;
+  const beerServes = serves.filter(serve => serve.dishes.includes('bia'));
+  const beerServed = beerServes.length, staleBeer = beerServes.filter(serve => serve.stale).length;
+  // Whole-shift KPIs need complete provenance; observed legacy fragments keep only the existing dish report.
+  const metrics = shift.menu.complete ? {
+    served: values.served, mean: values.mean, kValue: values.kValue,
+    moiRate: values.served ? withMoi / values.served : null,
+    staleRate: beerServed ? staleBeer / beerServed : null, lost: shift.stats.lost,
+    withMoi, beerServed, staleBeer, arrived: shift.stats.arrived, rejected: shift.stats.rejected,
+  } : null;
+  return { shiftId: shift.id, complete: shift.menu.complete, rows, losses, metrics, ...values };
 }

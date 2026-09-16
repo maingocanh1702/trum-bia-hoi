@@ -220,3 +220,7 @@ independent per-customer samples to `served` — that doesn't systematically mov
 | Date | Change |
 |---|---|
 | 2026-09-16 | Add current order feedback and rules26 loss evidence regression citations; historical replay remains unchanged. |
+
+
+### Wave B — 2026-09-16 proof
+- `packages/engine/test/menu.test.ts` covers six KPI numerators and round denominators; `apps/web/test/menu.spec.ts` checks VI/EN metric labels, current/closed/partial/empty states, pause, export and reload on360×740/390×844/1280×720. Whole-shift metrics are absent for partial legacy provenance.

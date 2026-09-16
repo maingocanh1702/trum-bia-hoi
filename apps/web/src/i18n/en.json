@@ -713,5 +713,16 @@
   "upgrade.hintOpen.stock": "Restock",
   "upgrade.hintOpen.keg": "View Beer tap",
   "upgrade.hintOpen.washer": "View Glass washer",
-  "upgrade.hintOpen.kitchen": "View Kitchen"
+  "upgrade.hintOpen.kitchen": "View Kitchen",
+  "metrics.details": "Details",
+  "metrics.title": "Shift metrics",
+  "metrics.served": "Customer rounds served",
+  "metrics.mean": "Value per round (coins)",
+  "metrics.kValue": "Measured k",
+  "metrics.moiRate": "Rounds with snacks",
+  "metrics.staleRate": "Served beer gone flat",
+  "metrics.lost": "Customers lost",
+  "metrics.unavailable": "This legacy shift lacks enough data for whole-shift metrics.",
+  "metrics.basis": "With snacks {moi}/{served} rounds · Flat {stale}/{beer} beers served · Arrivals {arrived} · Queue full {rejected}.",
+  "metrics.note": "Value per round includes dish payments and tips, excluding bonuses and deliveries. k measures value, not serving speed. Rates without a sample show —; displayed values are rounded and backups retain exact values."
 }

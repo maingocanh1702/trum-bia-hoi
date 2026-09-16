@@ -345,3 +345,9 @@
 .beer-stock-warning p { flex: 1 1 110px; margin: 0; }
 .beer-stock-warning button { flex: 1 1 144px; min-height: 44px; padding: 6px 8px; background: var(--panelRaised); color: var(--cream); font-size: 11px; }
 .beer-stock-warning small { flex-basis: 100%; }
+
+.shift-metrics summary { cursor: pointer; min-height: 44px; padding: 12px 0; font-weight: 800; }
+.shift-metrics summary:focus-visible { outline: 2px solid var(--coinGold); outline-offset: 3px; }
+.shift-metrics h4 { margin: 12px 0; }
+.menu-report .shift-metrics dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.shift-metrics dd { overflow-wrap: anywhere; }

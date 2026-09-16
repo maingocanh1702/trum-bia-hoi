@@ -130,3 +130,68 @@ test('genuine rules13 queued, expired and served histories remain exact; only th
     assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
   }
 });
+
+test('five production seeds export exact six shift KPIs matching service records and deterministic replay', () => {
+  for (const seed of [20260611, 42, 20260908, 7, 99]) {
+    const g = new Game(config, seed, 0), w = g.world;
+    sendKitchen(g, { type: 'startShift' });
+    playMenu(g, () => w.phase === 'resting', config.values.shift.durationMs * 3);
+    const records = w.serves, beer = records.filter(s => s.dishes.includes('bia'));
+    const report = menuReport(w, g.config)!, metrics = report.metrics!;
+    const mean = records.reduce((total, s) => total + s.payment + s.tip, 0) / records.length;
+    assert.ok(records.length > 0);
+    assert.deepEqual(metrics, { served: records.length, mean, kValue: mean / config.values.k.anchorValuePerServe,
+      moiRate: records.filter(s => s.hadMoi).length / records.length,
+      staleRate: beer.filter(s => s.stale).length / beer.length, lost: w.shift!.stats.lost,
+      withMoi: records.filter(s => s.hadMoi).length, beerServed: beer.length, staleBeer: beer.filter(s => s.stale).length,
+      arrived: w.shift!.stats.arrived, rejected: w.shift!.stats.rejected });
+    const closed = w.events.filter(e => e.type === 'shift_closed'); assert.equal(closed.length, 1);
+    for (const [key, value] of Object.entries(metrics)) assert.equal(closed[0].data[key], value, `seed ${seed}: ${key}`);
+    assert.equal(closed[0].data.metricsComplete, true);
+    const restored = decodeSave(encodeSave(g)); assert.deepEqual(restored.world, w);
+    assert.deepEqual(menuReport(restored.world, restored.config)!.metrics, metrics);
+    const old = structuredClone(closed[0]); g.advance(w.now + 86400000); sendKitchen(g, { type: 'startShift' });
+    assert.deepEqual(w.events.find(e => e.id === old.id), old);
+    assert.equal(menuReport(w, g.config)!.metrics!.served, 0);
+  }
+});
+
+test('flat beer and snack numerators use served rounds, while empty and partial shifts never invent ratios', () => {
+  const g = kitchenGame(2), w = g.world;
+  const empty = menuReport(w, g.config)!.metrics!;
+  assert.equal(empty.served, 0); assert.equal(empty.mean, null); assert.equal(empty.kValue, null);
+  assert.equal(empty.moiRate, null); assert.equal(empty.staleRate, null);
+  untilKitchen(g, () => w.tables.some(t => t.order?.items.every(i => i.state === 'ready')));
+  const table = w.tables.find(t => t.order?.items.every(i => i.state === 'ready'))!;
+  g.advance(w.now + g.config.values.upgrades.cooler.freshnessMs[0]! + 1);
+  sendKitchen(g, { type: 'serve', tableId: table.id, orderId: table.order!.id });
+  assert.ok(w.serves.some(s => s.stale));
+  const metrics = menuReport(w, g.config)!.metrics!;
+  assert.equal(metrics.staleBeer, w.serves.filter(s => s.stale && s.dishes.includes('bia')).length);
+  assert.equal(metrics.withMoi, w.serves.filter(s => s.hadMoi).length);
+  assert.equal(metrics.staleRate, metrics.staleBeer / metrics.beerServed);
+  const old = decodeSave(readFileSync(new URL('./fixtures/legacy-kitchen-queued-v13.json', import.meta.url), 'utf8'));
+  sendKitchen(old, { type: 'activity', active: true });
+  assert.equal(menuReport(old.world, old.config)!.complete, false);
+  assert.equal(menuReport(old.world, old.config)!.metrics, null);
+  sendKitchen(old, { type: 'endShift' }); old.advance(old.world.now + 300000);
+  const event = old.world.events.find(e => e.type === 'shift_closed')!;
+  assert.equal(event.data.metricsComplete, false);
+  for (const key of ['served', 'mean', 'kValue', 'moiRate', 'staleRate', 'lost']) assert.equal(event.data[key], null);
+});
+
+test('genuine rules26 close events remain byte-equivalent before adding rules27 metrics on a new shift', async () => {
+  const { createHash } = await import('node:crypto');
+  const fixture = JSON.parse(readFileSync(new URL('./fixtures/legacy-metrics-v26.json', import.meta.url), 'utf8'));
+  assert.equal(fixture.source, '8b6dff3');
+  const g = decodeSave(fixture.save);
+  assert.equal(createHash('sha256').update(JSON.stringify(g.world)).digest('hex'), fixture.worldHash);
+  const oldEvents = structuredClone(g.world.events);
+  assert.equal(oldEvents.find(e => e.type === 'shift_closed')!.data.metricsComplete, undefined);
+  g.advance(g.world.now + 86400000); sendKitchen(g, { type: 'startShift' });
+  playMenu(g, () => menuReport(g.world, g.config)!.served > 2);
+  sendKitchen(g, { type: 'endShift' }); g.advance(g.world.now + 300000);
+  assert.deepEqual(g.world.events.slice(0, oldEvents.length), oldEvents);
+  assert.equal(g.world.events.filter(e => e.type === 'shift_closed').at(-1)!.data.metricsComplete, true);
+  assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
+});

@@ -219,3 +219,7 @@ session resumes through.
 | Date | Change |
 |---|---|
 | 2026-09-16 | Add current order feedback and rules26 loss evidence regression citations; historical replay remains unchanged. |
+
+
+### Wave B — 2026-09-16 proof
+- `packages/engine/test/menu.test.ts` — 'genuine rules26 close events remain byte-equivalent before adding rules27 metrics on a new shift'. `apps/web/test/menu.spec.ts` — 'Sổ ca shows actual dish counts, pauses while open and updates after closing and survives reload at …' now checks actual backup-button downloads contain every exact KPI. Rules27 adds close-event fields; rules≤26 payloads remain exact.

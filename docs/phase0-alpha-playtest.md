@@ -1,9 +1,9 @@
 # Closed playtest — phiếu thu bằng chứng C/E
 
 > **CHƯA THU BẰNG CHỨNG NGƯỜI CHƠI.** Phiếu chuẩn bị theo `PLAN-improve-2026-09-16.md`
-> đợt B/C/E. Wave B dự kiến thêm **Sổ ca → Chi tiết → Số đo ca**; chỉ dùng quy trình này sau khi
-> phần đó được tích hợp, kiểm chứng và triển khai trong đúng bản thử. Tại lúc lập phiếu, bản
-> public cũ **chưa có đầy đủ A/B**; URL mở được không chứng minh bản mới đã triển khai.
+> đợt B/C/E. **Sổ ca → Chi tiết → Số đo ca** đã được triển khai và kiểm thử trên nhánh A/B;
+> chỉ thu số sau khi đối chiếu đúng bản thử. Bản public cũ **chưa có đầy đủ A/B**; URL mở được
+> không chứng minh bản mới đã triển khai. Xem [receipt A/B](improve-wave-ab.md).
 
 Nguồn: [04-SPEC §5](../04-SPEC-prototype-phase0.md#5-cách-đo-k_value--bất-biến-phương-pháp)
 (cách đo k), [ROADMAP — Playtest & Validation Plan](../06-ROADMAP-trum-bia-hoi.md#-playtest--validation-plan)
@@ -232,3 +232,5 @@ Final decision is `PASS` only when every row above has human evidence and no rep
 | Ngày | Thay đổi |
 |---|---|
 | 2026-09-16 | Chuẩn bị phiếu closed playtest C/E 10–15 người ×3 ca, sáu KPI/mẫu số, partial/mixed-config, SHA/build và survey. Số đo ca chờ tích hợp; giữ nguyên phiếu prototype trong phần lưu trữ và waiver, không ghi kết quả người chơi hay triển khai chưa xảy ra. |
+
+| 2026-09-16 / Wave B | Số đo ca đã qua kiểm thử UI, server và export trên nhánh A/B; cập nhật trạng thái hướng dẫn, giữ trống toàn bộ kết quả người chơi và không tuyên bố đã deploy. |
