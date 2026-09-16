@@ -59,6 +59,8 @@
 
 ## Existing proof
 
+- `packages/engine/test/feedback.test.ts` — `genuine rules25 losses and summaries replay unchanged, then mixed old and new evidence remains explicitly unknown`. Fixture `legacy-feedback-v25.json` was generated from07430a95ec6f8f2799650344511dbda2f8a19f12; SHA256 pins the entire original world, including closed summary, before current-rule adoption. `A4 ${locale} ${mode} advice uses observed losses and survives reload` in `apps/web/test/feedback.spec.ts` covers local migration/reload.
+
 - `packages/engine/test/checkpoint.test.ts` (ENGINE tier, pure in-memory, no I/O), 5 tests: `'every
   archived replay state restores its actual bookkeeping and continues with identical events,
   currency and retry results'`, `'rules1 through24 preserve an active rush through closing and
@@ -212,3 +214,8 @@ session resumes through.
 - `apps/web/test/local-config.test.ts`: newer bundled config adoption only at next successful opening; running/historical pins, custom/newer versions and replay retained.
 - `packages/engine/test/progression.test.ts`: LP1 scaled threshold/four seats without dog; old pinned dog requirement still enforced.
 - `apps/web/test/improve-lp1.spec.ts`: production browser guest with real previously earned income migrates LP1, opens next shift, reloads unchanged with no visible dog. Run `npx playwright test --config playwright.improve.config.ts improve-lp1.spec.ts`.
+
+## Changelog — A4
+| Date | Change |
+|---|---|
+| 2026-09-16 | Add current order feedback and rules26 loss evidence regression citations; historical replay remains unchanged. |

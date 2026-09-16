@@ -73,6 +73,8 @@ finding — cross-linked, not restated), cooler's freshness formula is
 
 ## Existing proof
 
+- `apps/web/test/feedback.spec.ts` — `A4 ${locale} ${mode} advice uses observed losses and survives reload` (loss/loss-vs-stale/legacy/legacy-tie/legacy-known/queue/maxed/ready in VI/EN): stock losses route to restock; queue evidence routes to tables; unknown history suppresses a specific equipment diagnosis only when largest or tied for largest. Run `npx playwright test apps/web/test/feedback.spec.ts`.
+
 - `apps/web/test/ui-clarity.spec.ts` — `A5 legacy pinned save shows direct pour without a refill or reserve in ${locale}` (VI/EN) loads the historical v12 archive and pins the direct-pour/no-reserve copy.
 
 - `apps/web/test/ui-clarity.spec.ts` — `A5 zero configured recovery rate shows paused recovery without an invalid ETA` pins the config-allowed zero-rate display without changing engine rules.
@@ -225,3 +227,8 @@ freshness-formula effect), [table-lifecycle](table-lifecycle.md) (the table stat
 | Date | Change |
 |---|---|
 | 2026-09-16 A5 | Cite UI clarity, first-open asset preload and active-rest ETA regression; no engine/config rule changes. |
+
+## Changelog — A4
+| Date | Change |
+|---|---|
+| 2026-09-16 | Add current order feedback and rules26 loss evidence regression citations; historical replay remains unchanged. |

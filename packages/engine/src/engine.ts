@@ -11,6 +11,7 @@ import { flyerQuote } from './flyer';
 import { planRushes, summarizeRush } from './rush';
 import { menuReport } from './menu';
 import { beerStatus } from './production';
+import { orderPreparation, type PreparationCause } from './preparation';
 import type { Command, Customer, Envelope, Group, Item, LoggedCommand, Order, Result, RulesVersion, Stats, SystemCommand, Table, World } from './types';
 
 const RUSH_CLOCK_RULES: RulesVersion = 5; // config-exempt: fixed replay protocol revision
@@ -28,7 +29,8 @@ const MENU_PAUSE_RULES: RulesVersion = 16; // config-exempt: fixed replay protoc
 const LIVE_UPGRADE_RULES: RulesVersion = 17; // config-exempt: fixed replay protocol revision for owner live-upgrade policy
 const BATCH_RULES: RulesVersion = 18; // config-exempt: fixed replay protocol revision for stocked beer and wash batches
 const DISCONNECT_RULES: RulesVersion = 19; // config-exempt: replay protocol for trusted disconnection deadlines
-export const CURRENT_RULES: RulesVersion = 25; // config-exempt: opening progression uses the incoming config; historical rush schedules remain exact
+export const CURRENT_RULES: RulesVersion = 26; // config-exempt: additive loss-at-deadline evidence; historical events remain exact
+const FEEDBACK_RULES: RulesVersion = 26; // config-exempt: fixed replay protocol revision
 const OPENING_PROGRESS_RULES: RulesVersion = 25; // config-exempt: fixed replay protocol revision
 const CONNECTION_RULES: RulesVersion = 24; // config-exempt: replay protocol for hidden recovery and resting connection loss
 const SEASON_RULES: RulesVersion = 23; // config-exempt: replay protocol for real seasonal earnings
@@ -386,11 +388,15 @@ export class Game {
         }
       }
     }
+    // Observe every due table before any expiry/cleanup can release a shared burner or glass.
+    const lossCauses = this.rulesVersion >= FEEDBACK_RULES ? new Map(w.tables
+      .filter(t => t.order && ['pending', 'grace'].includes(t.order.state) && w.now >= t.order.placedAt + t.order.patienceMs + c.patience.graceMs)
+      .map(t => [t.id, orderPreparation(w, this.config, t.order)])) : null;
     for (const t of w.tables) {
       if (t.order?.state === 'pending' && w.now >= t.order.placedAt + t.order.patienceMs) {
         t.order.state = 'grace'; this.emit('order_grace', { tableId: t.id, orderId: t.order.id });
       }
-      if (t.order?.state === 'grace' && w.now >= t.order.placedAt + t.order.patienceMs + c.patience.graceMs) this.lose(t);
+      if (t.order?.state === 'grace' && w.now >= t.order.placedAt + t.order.patienceMs + c.patience.graceMs) this.lose(t, lossCauses?.get(t.id));
       if (t.until !== null && w.now >= t.until) {
         if (t.state === 'seating') this.order(t);
         else if (t.state === 'consuming') {
@@ -415,7 +421,7 @@ export class Game {
         if (s) s.stats.lost += group.customers.length;
         const loss = this.penalize(0, group.customers.length);
         w.lostStreak += 1;
-        this.emit('customer_left', { groupId: group.id, reason: 'queue', count: group.customers.length, penalty: loss.coins, reputation: loss.reputation, ...(this.rulesVersion >= QUEST_RULES ? { vipCount: group.customers.filter(c => c.type === 'vip').length } : {}) });
+        this.emit('customer_left', { groupId: group.id, reason: 'queue', count: group.customers.length, penalty: loss.coins, reputation: loss.reputation, ...(this.rulesVersion >= QUEST_RULES ? { vipCount: group.customers.filter(c => c.type === 'vip').length } : {}), ...(this.rulesVersion >= FEEDBACK_RULES ? { shiftId: s!.id } : {}) });
       }
     }
     this.seatQueue();
@@ -439,7 +445,7 @@ export class Game {
       if (this.rulesVersion >= MENU_RULES) {
         const report = menuReport(w, this.config);
         if (report) {
-          const { rows, ...values } = report;
+          const { rows, losses: _, ...values } = report; // Keep every historical menu summary's payload unchanged.
           this.emit('menu_mix_summary', { ...values, ...Object.fromEntries(rows.flatMap(row => (['ordered', 'sold', 'wasted'] as const).map(key => [`${key}_${row.dish}`, row[key]]))) });
         }
       }
@@ -497,7 +503,7 @@ export class Game {
     t.state = 'cleaning'; t.until = this.world.now + this.config.values.runtime.tableCleaningMs;
     this.emit('table_cleaning', { tableId: t.id });
   }
-  private lose(t: Table): void {
+  private lose(t: Table, cause?: PreparationCause): void {
     if (!t.order || !t.group || !this.world.shift) return;
     const w = this.world, s = w.shift!, order = t.order;
     let penalty = 0;
@@ -511,7 +517,7 @@ export class Game {
     order.state = 'expired';
     this.waste(t, 'expired');
     w.lostStreak++;
-    this.emit('order_expired', { tableId: t.id, orderId: order.id, penalty: charged, reputation: loss.reputation, count: t.group.customers.length });
+    this.emit('order_expired', { tableId: t.id, orderId: order.id, penalty: charged, reputation: loss.reputation, count: t.group.customers.length, ...(this.rulesVersion >= FEEDBACK_RULES ? { shiftId: s.id, cause: cause ?? 'unknown' } : {}) });
     this.clean(t);
   }
   private waste(table: Table, reason: 'expired' | 'cancelled') {
