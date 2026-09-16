@@ -242,3 +242,7 @@ the manifest — don't confuse a missing icon with a missing sprite.
 
 ### Wave B — 2026-09-16 proof
 - `apps/web/test/menu.spec.ts` — three Sổ ca scenarios include keyboard-native Details, VI/EN six metrics, exact backup export and whole-page axe with the panel expanded (six scans); empty/partial legacy case prevents fabricated ratios. Run `npx playwright test apps/web/test/menu.spec.ts`.
+
+## Netlify guest build — 2026-09-16
+
+`apps/web/guest-test/guest.spec.ts` → `static guest serves, restocks, upgrades, closes shift and persists across reload/new tab without API`: production guest build on 360×740, 390×844, 1280×720; full service/restock/pause/upgrade/next-day journey, Settings SHA, six close KPIs equal backup, reload/new-tab preservation, admin/online-ranking hidden and zero API/Google requests. Run `npm run build:guest`, copy `apps/web/dist` to `.qa/guest-dist`, then `npx playwright test --config playwright.guest.config.ts`; `TBH_GUEST_URL` targets the verified draft or live URL without a local server. Normal remote/account mechanics are unchanged.

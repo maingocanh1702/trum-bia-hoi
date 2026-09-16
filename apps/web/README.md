@@ -54,3 +54,8 @@ flow; replacement preserves the exact damaged rows in a backup. Google Client ID
 | 2026-09-10 | First web server cutover/outbox and explicit local preservation boundary. Verification and independent review in progress; M4 registry/admin and full account/import integration remain open. |
 
 | 2026-09-10 verified |936e9d5: config/build,298engine/server +91legacy/10remote browser and k/rush PASS. Full review local-recovery regression fixed; correction review CLEAN. M4 registry/admin/account acceptance remain open. |
+
+
+### Netlify guest hosting — owner decision 2026-09-11
+
+The owner requests a separate browser-only guest edition on their existing `trumbiahoi.netlify.app` site. See [Netlify guest deployment](../../docs/netlify-guest.md) for its explicit build mode, device-save limits and verification. This supersedes the local-only hosting restriction for this static edition; the accepted localhost v0.3 runtime and SQLite are unchanged. Oracle/API and real Google remain separate future work.

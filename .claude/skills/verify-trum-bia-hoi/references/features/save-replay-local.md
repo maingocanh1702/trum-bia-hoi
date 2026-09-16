@@ -223,3 +223,7 @@ session resumes through.
 
 ### Wave B — 2026-09-16 proof
 - `packages/engine/test/menu.test.ts` — 'genuine rules26 close events remain byte-equivalent before adding rules27 metrics on a new shift'. `apps/web/test/menu.spec.ts` — 'Sổ ca shows actual dish counts, pauses while open and updates after closing and survives reload at …' now checks actual backup-button downloads contain every exact KPI. Rules27 adds close-event fields; rules≤26 payloads remain exact.
+
+## Netlify guest build — 2026-09-16
+
+`apps/web/guest-test/guest.spec.ts` → `static guest serves, restocks, upgrades, closes shift and persists across reload/new tab without API`: production guest build on 360×740, 390×844, 1280×720; full service/restock/pause/upgrade/next-day journey, Settings SHA, six close KPIs equal backup, reload/new-tab preservation, admin/online-ranking hidden and zero API/Google requests. Run `npm run build:guest`, copy `apps/web/dist` to `.qa/guest-dist`, then `npx playwright test --config playwright.guest.config.ts`; `TBH_GUEST_URL` targets the verified draft or live URL without a local server. Normal remote/account mechanics are unchanged.

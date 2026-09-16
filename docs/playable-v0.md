@@ -237,3 +237,8 @@ SQLite remains `/Users/maingocanh/.codex/worktrees/trum-bia-hoi-game/.qa/game-ap
 Verification: full `npm run verify` on merged master `4b7cbeb653958692c13bcda5f7292092f92cd129` PASS (418/418 tests, 20 paired standard cohorts, 15 rush cases, career seeds 42/99 within the gate). Receipt `.qa/playable-v03-master-verified.json` confirms success and temporary-worktree removal. Assets and all three full-shift viewport smokes already PASS as recorded above. This final two-file docs commit is fast-forwarded separately; the runtime stays pinned. The main `codex/build-game` checkout and owner WIP are untouched. No push; the owner pushes.
 
 **PENDING / outside this final local release:** F12-CLAIM rewards/claim/mailbox; real Google OAuth; production hosting/HTTPS, TOTP, backup/monitoring; CAPTCHA; PWA/device QA; F16/F17 social/referral; three placeholder assets plus one background (M9); human playtest (acceptance waived for this build); account deletion/privacy; M6/M7/M8. These remain tracked, not release blockers. Work stops after this closure pending owner feedback.
+
+
+### Netlify guest hosting — owner decision 2026-09-11
+
+The owner requests a separate browser-only guest edition on their existing `trumbiahoi.netlify.app` site. See [Netlify guest deployment](netlify-guest.md) for its explicit build mode, device-save limits and verification. This supersedes the local-only hosting restriction for this static edition; the accepted localhost v0.3 runtime and SQLite are unchanged. Oracle/API and real Google remain separate future work.

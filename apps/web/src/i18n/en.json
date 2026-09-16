@@ -550,6 +550,7 @@
   "account.benefit.save": "Save to your account",
   "account.benefit.achievements": "Achievements",
   "account.benefit.leaderboard": "Compete on the leaderboard",
+  "guest.browserOnly": "Browser edition: progress is saved only here. Clearing site data or changing browsers will not carry this save over. Export a backup in Settings. Sign-in, sync and online rankings are not available yet.",
   "account.localCopy": "This progress is saved on your device. Linking this save is not available yet; you can still export a backup in Settings.",
   "account.success": "Signed in. Continue with your account progress.",
   "account.loading": "Preparing sign-in…",

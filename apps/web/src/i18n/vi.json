@@ -550,6 +550,7 @@
   "account.benefit.save": "Lưu vào tài khoản",
   "account.benefit.achievements": "Thành tích",
   "account.benefit.leaderboard": "Đua top",
+  "guest.browserOnly": "Bản chơi trên trình duyệt: tiến độ chỉ lưu tại đây. Xóa dữ liệu trang hoặc đổi trình duyệt sẽ không có bản lưu này. Có thể xuất bản sao trong Cài đặt. Đăng nhập, đồng bộ và bảng xếp hạng online chưa mở.",
   "account.localCopy": "Tiến độ này đang lưu trên thiết bị. Liên kết tài khoản cho bản lưu này chưa sẵn sàng; bạn vẫn có thể xuất bản sao trong Cài đặt.",
   "account.success": "Đã đăng nhập. Bạn có thể tiếp tục tiến độ của tài khoản.",
   "account.loading": "Đang chuẩn bị đăng nhập…",

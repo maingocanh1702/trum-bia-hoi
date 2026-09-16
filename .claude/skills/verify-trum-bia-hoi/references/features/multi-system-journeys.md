@@ -222,3 +222,7 @@ their own feature files (see the README index).
 
 ### Wave B — 2026-09-16 proof
 - Wave B: `packages/engine/test/menu.test.ts` proves five seeded full shifts → exact close-event metrics → encode/decode replay → next-shift preservation. `apps/web/test/menu.spec.ts` verifies actual DOM backup export/reload and empty/partial coverage. `apps/web/remote-test/remote.spec.ts` exercises authoritative report over real API and lost-ack recovery; UI never computes game KPIs.
+
+## Netlify guest build — 2026-09-16
+
+`apps/web/guest-test/guest.spec.ts` → `static guest serves, restocks, upgrades, closes shift and persists across reload/new tab without API`: production guest build on 360×740, 390×844, 1280×720; full service/restock/pause/upgrade/next-day journey, Settings SHA, six close KPIs equal backup, reload/new-tab preservation, admin/online-ranking hidden and zero API/Google requests. Run `npm run build:guest`, copy `apps/web/dist` to `.qa/guest-dist`, then `npx playwright test --config playwright.guest.config.ts`; `TBH_GUEST_URL` targets the verified draft or live URL without a local server. Normal remote/account mechanics are unchanged.

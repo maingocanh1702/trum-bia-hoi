@@ -61,8 +61,8 @@ export function Account({ remote, locale, t, close }: { remote: RemoteGame | nul
   return <div className="account-panel">
     <div className="account-profile"><Sprite id="owner-idle" /><div><h3>{t(remote?.reauthenticating ? 'account.reauthenticate' : `account.${provider}`)}</h3><p>{t(remote?.reauthenticating ? 'account.recoveryCopy' : provider === 'google' ? 'account.linked' : 'account.free')}</p></div></div>
     {provider === 'guest' && !remote?.reauthenticating && <p>{t('account.guestCopy')}</p>}
-    {(provider !== 'google' || remote?.reauthenticating) && <AccountBenefits t={t} />}
-    {provider === 'local' ? <p>{t('account.localCopy')}</p> : provider === 'google' && !remote?.reauthenticating ? <p className="account-confirmed" role="status"><span aria-hidden="true">✓ </span>{t('account.success')}</p> : <>
+    {provider !== 'local' && (provider !== 'google' || remote?.reauthenticating) && <AccountBenefits t={t} />}
+    {provider === 'local' ? <p>{t(import.meta.env.VITE_TBH_GUEST_ONLY === '1' ? 'guest.browserOnly' : 'account.localCopy')}</p> : provider === 'google' && !remote?.reauthenticating ? <p className="account-confirmed" role="status"><span aria-hidden="true">✓ </span>{t('account.success')}</p> : <>
       {(busy || phase === 'loading') && <p role="status">{t(busy ? 'account.confirming' : 'account.loading')}</p>}
       {!busy && error && <p role="alert">{t(problem)}</p>}
       <div className="account-google" ref={button} inert={busy || remote?.state !== 'online'} />

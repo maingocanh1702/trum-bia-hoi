@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 
 export type PortRole =
   | 'e2e'
+  | 'guest-web'
   | 'dev-identity-web'
   | 'dev-identity-api'
   | 'admin-web'
@@ -27,6 +28,7 @@ export interface ResolveOptions {
 // playwright.playable.config.ts=4209/4210/4211/4212/4213/4214).
 const ROLE_OFFSETS: Record<PortRole, number> = {
   'e2e': 0,
+  'guest-web': 5,
   'dev-identity-web': 1,
   'dev-identity-api': 2,
   'admin-web': 3,
