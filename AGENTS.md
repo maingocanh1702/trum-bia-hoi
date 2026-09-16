@@ -83,9 +83,12 @@ merge, tooling. `.autopilot/` and `docs/autopilot-*.md` are archived kit materia
 <!-- ap3-workflow:start -->
 # ap3 runs (headless writer) — what applies here
 - You may only edit files inside the task's `scope`; the class ceiling is ap3/routines.json.
-- Static gate before READY: `npm run verify` must stay green (check:config · check:i18n · build ·
-  test · sim:onboarding · sim:rush · sim:career:gate); `npm run verify:all` runs that plus
-  `verify:doctor` in one command — the single gate to reach for before calling a slice done.
+- Static/engine gate before READY: `npm run verify` must stay green (check:config · check:i18n ·
+  build · test · sim:onboarding · sim:rush · sim:career:gate); `npm run verify:all` runs that plus
+  `verify:doctor` in one command. Bare `verify:doctor` defaults to engine-only
+  (repo/deps/binding/map) — it does NOT check server/bridge/console, which need `--full` inside a
+  driven-browser session. `verify:all` is the floor for every slice, not a substitute for the UI
+  tier below on a change that touches gameplay, save, or UI.
 - Never change docs/config/economy.tbh.json, packages/engine rules, apps/server routes, or any
   i18n string in an ap3 run — those are supervised slices.
 - Verification tooling is READ-ONLY: nothing under apps/web/src/verify or scripts/verify may call

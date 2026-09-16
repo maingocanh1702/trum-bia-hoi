@@ -64,7 +64,7 @@ unrelated one:
   `JSON.parse(JSON.stringify(s))`), and the resting/no-shift null-field shape.
 - `apps/web/test/tbh-fixture.ts` (the shared Playwright fixture wrapping the bridge — `tbh.snapshot()`,
   `tbh.waitForEvent()`, `tbh.shot()`, `tbh.consoleErrors()`, `tbh.evidence()`) — proven by
-  `apps/web/test/tbh-fixture.test.ts` (12 cases): evidence-path construction and sanitisation
+  `apps/web/test/tbh-fixture.test.ts` (13 cases): evidence-path construction and sanitisation
   (a branch containing `/`, and a traversal-shaped shot name, both collapse to one safe path segment
   under `artifacts/verification/<branch>/`), `matchEvent`'s strict-since event matching,
   `waitForEvent`'s polling/timeout behaviour, console-error collection, and the exported fixture's

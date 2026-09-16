@@ -77,10 +77,11 @@ gameplay, save, or UI:
 8. **`multi-system-journeys.md`** — read and drive its journeys whenever the change crosses
    engine↔web, local↔remote, or touches shift/save/season together. Skip this step for a change
    scoped to a single tier.
-9. **Report.** `11-PROMPT-PACK-designer-blender-dev.md` §0.3 report, `QA:` line carrying what you
-   ran and its result (a machine-checked `VERIFICATION:` block is wave V4 — until it lands, PASS /
-   FAIL / PARTIAL plus any `SKIPPED:` blocks go in `QA:`/`DEVIATIONS:`), then independent review per
-   `docs/prompts/codex-review.md`.
+9. **Report.** `11-PROMPT-PACK-designer-blender-dev.md` §0.3 report (`TASK`/`STATUS`/
+   `CREATED/CHANGED`/`QA`/`DEVIATIONS`/`HANDOFF` — the template itself is unchanged), with a
+   `VERIFICATION:` block appended after it (wave V4, landed — `RESULT: PASS|FAIL|PARTIAL`,
+   `EVIDENCE:` paths, any `SKIPPED:` blocks). Then independent review per
+   `docs/prompts/codex-review.md`, which checks for this block and refuses PASS on a failed doctor.
 
 ## Proof Standard
 
