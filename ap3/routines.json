@@ -26,6 +26,23 @@
       "max_runs_per_day": 6,
       "review": "codex",
       "security_review": "auto"
+    },
+    "server-guard": {
+      "status": "enabled",
+      "risk": "P1",
+      "writer_model": "claude-sonnet-5",
+      "description": "Server-side admission and forecast guards. Changes what the server REFUSES, never what the game pays. No economy JSON, no engine command/event, no UI.",
+      "allowed_scope": [
+        "apps/server/src/registry.ts",
+        "apps/server/src/forecast.ts",
+        "apps/server/test/**",
+        "packages/engine/sim/**",
+        "packages/engine/test/**"
+      ],
+      "budget_usd_max": 16,
+      "max_runs_per_day": 3,
+      "review": "codex",
+      "security_review": "always"
     }
   }
 }
