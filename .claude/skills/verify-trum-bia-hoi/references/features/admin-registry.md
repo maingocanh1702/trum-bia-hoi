@@ -196,19 +196,29 @@
 `'authenticated emergency transport requires Super MFA and fresh confirmation, preserves retries and records independent post-review'` ·
 `'dev identities still require a private admin allowlist and server-verified TOTP before registry access'`.
 
-`apps/server/test/registry.test.ts` (28 tests, selected -- 4 added by v5-admin-k-admission, 2026-09-17):
-`'a real pricing blowup that self-reports an in-band k is refused once actually measured (fails on
-main today)'` · `'a modest pricing change with a genuinely in-band measured k is admitted'` ·
-`'a pending async measurement never becomes active until it settles, and re-checking it throws
-kUnmeasured'` · `'resolve()/compose() never invoke the measurer on the real-player hot path -- only
-publish() does'` (proves no Worker/sim ever runs on `compose()`'s real-player path, only inside
-`publish()`, and only outside its own DB transaction). Also updated: the schema7/8/9 migration tests
-in this file and in `admin-auth.test.ts`/`registry-scopes.test.ts`/`local-import.test.ts`/
-`client-sequence.test.ts`/`http.test.ts`/`checkpoint.test.ts`/`presence.test.ts`/`accounts.test.ts`
-now additionally drop `registry_measurements` before simulating an old schema, and assert
-`user_version=11`; `SCHEMA_VERSION` moved 10→11 for this migration.
+`apps/server/test/registry.test.ts` (33 tests, selected -- 9 added by v5-admin-k-admission,
+2026-09-17, across its full supervised review loop): `'a real pricing blowup that self-reports an
+in-band k is refused once actually measured (fails on main today)'` · `'a modest pricing change with
+a genuinely in-band measured k is admitted'` · `'a pending async measurement never becomes active
+until it settles, and re-checking it throws kUnmeasured'` · `'resolve()/compose() never invoke the
+measurer on the real-player hot path -- only publish() does'` (proves no Worker/sim ever runs on
+`compose()`'s real-player path, only inside `publish()`, and only outside its own DB transaction) ·
+`'the real forecast worker measures a genuine price blowup and refuses it, not just the
+self-reported k.value'` and `'a scoped candidate refused by the real worker never composes into that
+player's resolve()'` (exercise `measureKViaForecast`/`forecastEconomy`/`forecast-worker.mjs` end to
+end, not an injected stub) · `'a scoped campaign that expires within the forecast horizon is
+measured on its own serves, not the reverted baseline'` · `'a scoped proposal against a still-pending
+sibling for the same scope is rejected as stale, not silently accepted'` ·
+`'scopeSource() never pairs a stale admitted snapshot with a newer pending sibling'`.
+`packages/engine/test/forecast.test.ts` gained one case: `'a candidate whose after-timeline never
+introduces a version outside the before-timeline measures as baseline, not unmeasurable'`. Also
+updated: the schema7/8/9 migration tests in `registry.test.ts` and in
+`admin-auth.test.ts`/`registry-scopes.test.ts`/`local-import.test.ts`/`client-sequence.test.ts`/
+`http.test.ts`/`checkpoint.test.ts`/`presence.test.ts`/`accounts.test.ts` now additionally drop
+`registry_measurements` before simulating an old schema, and assert `user_version=11`;
+`SCHEMA_VERSION` moved 10→11 for this migration.
 
-`apps/server/test/registry.test.ts` (28 tests total, selected pre-existing): `'published default config is used by real
+`apps/server/test/registry.test.ts` (33 tests total, selected pre-existing/24 of them): `'published default config is used by real
 openings, never rewrites a live shift, and replays exactly after restart'` · `'Tier A requires a
 distinct Super approval and becomes active exactly at VN midnight across connections'` · `'tier
 classifier covers every section, flags beat broad balance groups, and mixed changes require all
@@ -288,24 +298,31 @@ through `publish()`'s admission gate rather than through `compareEconomy()` in i
 ## Uncovered paths
 
 - **Corrected (v5-admin-k-admission, 2026-09-17) — was "no tool combines real candidate simulation
-  with a k-band check."** `compareEconomy()` (`packages/engine/sim/forecast.ts`) now returns a real
-  `k: {baseline, candidate}` from `serveValueStats()`; `reportFromBackup()` pools it into one
-  `measuredK`; `publish()` gates admission on it via `registry_measurements` (see the Observable
-  contract correction above). `measureKViaForecast()` (`apps/server/src/forecast.ts`) is the
-  production `measureK`, reusing `forecastEconomy()` unchanged -- still the same real worker proven
-  off the event loop by `apps/server/test/forecast.test.ts:37` `'real worker forecasts all existing
-  saves, preserves source rows and keeps the request event loop responsive'`. What remains genuinely
-  uncovered: (1) `sim:career:gate` still only ever
-  plays the static `docs/config/economy.tbh.json` singleton, no candidate-config input — it is not the
-  mechanism that closed this gap, `publish()`'s own injected `measureK` is; (2) the *production*
-  `measureKViaForecast()` falls back to the candidate's own self-reported `k.value` when there are
-  zero real players to measure against (a brand-new/low-population deployment) — that fallback path is
-  not exercised by any automated test, only reasoned about; (3) a scoped (segment/campaign/player)
-  publication's own measurement uses the exact same `publish()` gate as a default one, but no test
-  here exercises a *scoped* candidate being refused for a bad measured k, only a default/unscoped one
-  (`apps/server/test/registry.test.ts`'s new cases, see Existing proof) — scope-conflict interaction
-  with a *pending* (not yet refused/admitted) scoped candidate is exercised only incidentally by
-  `publish()`'s own pre-insert `validatePublications()` self-check, not by a dedicated case.
+  with a k-band check."** `compareEconomy()` (`packages/engine/sim/forecast.ts`) attributes serves to
+  "the candidate" by set difference (versions in the after-timeline but not the before-timeline, so a
+  scoped campaign that expires within the 7-day horizon is still measured on its own serves, not the
+  reverted baseline); `reportFromBackup()` (`apps/server/src/forecast.ts`) pools it into one
+  `measuredK`, requiring >=500 served (08-SPEC-economy-constants.md §1's own floor) before it's
+  non-null; `publish()` gates admission on it via `registry_measurements`. `measureKViaForecast()`
+  is the production `measureK`, reusing `forecastEconomy()`'s existing worker (still proven off the
+  event loop by `apps/server/test/forecast.test.ts:37`). It does **not** fall back to the candidate's
+  self-reported `k.value` on zero real data (that gap was closed and is now itself covered by tests,
+  see below) -- it throws `registry:forecastEmpty` and the row stays pending, fail-closed. A scoped
+  candidate refused by the real worker, and one whose scope expires mid-horizon, are both directly
+  exercised end to end (`apps/server/test/registry.test.ts`'s new cases, see Existing proof) --
+  including proving the refusal never composes into the affected player's `resolve()`. Genuinely
+  remaining: (1) `sim:career:gate` still only ever plays the static `docs/config/economy.tbh.json`
+  singleton, no candidate-config input -- it is not the mechanism that closed this gap, `publish()`'s
+  own injected `measureK` is; (2) `emergencyScopeReplacements()` (registry.ts, feeding the emergency
+  publish's own supersession audit trail) still reads the admitted-only `scopedPublications()`, not
+  the pending-aware `scopedAttempts()` introduced for `predecessor()`/`currentBase()`'s scope check --
+  an emergency publish racing a pending sibling for the same scope may not mark it superseded in the
+  audit trail, though `active()`/`compose()` still resolve correctly regardless (most-recent-admitted
+  always wins by `seq`); this is an audit-completeness gap, not a runtime economics one, deliberately
+  left for a narrower follow-up rather than widening this slice further; (3) `index()`'s admin-listing
+  `latest` field and `previewImpact()`'s boundary-time collection also stay admitted-only by choice
+  (display-only and preview-thoroughness-only respectively, not gates) -- untested by design, since
+  there is no admission-safety behavior to assert there.
 - Route **paths** are now confirmed against `http.ts` directly (see "How to reach it"), but this pass
   did not read every route handler's full body — request/response field shapes beyond what's cited
   above (e.g. `/admin/players`' pagination shape, `/admin/config`'s exact response envelope) are not
