@@ -616,3 +616,14 @@ Focused clarity 10/10 (VI/EN ×360/390/1280, recovery/reload, zero-rate, and his
 | Date | Change |
 |---|---|
 | 2026-09-16 | A5 UI clarity implemented and focused checks pass; full simulation/review receipt follows separately. |
+
+
+### PLAN-improve-2026-09-16 A6 — build identity and deploy history, 2026-09-16
+
+Settings now shows the existing compile-time source SHA (12 visible characters, full SHA in the title) in VI/EN. `docs/deploy-log.md` reconstructs the September 11 Netlify release from committed receipt `223ec608874e7258a6ab278dcbca9cd8af5e8f7a`, including source `c7724254b2e3dca28800dec5261d975478c1562c`, immutable deployment and build digests. No new deployment or current-site verification is claimed.
+
+Build-label and sheet-pause browser checks pass 9/9 across both locales and 360/390/1280px. The A5 predecessor has a CLEAN independent follow-up after direct-pour legacy copy and English grammar corrections; A5 production/clarity follow-up passes 26/26 and axe 6/6. The aggregate checks and A6 review are recorded in `artifacts/verification/codex-improve-ui-clarity/a6-report.md` and `report.md`; implementation does not authorize a runtime cutover.
+
+| Date | Change |
+|---|---|
+| 2026-09-16 | A6 Settings build label and historical Netlify deployment receipt implemented; A5 independent review fixes closed. |

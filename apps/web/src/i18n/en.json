@@ -680,5 +680,6 @@
   "shrine.wall": "Wall of fame",
   "production.refill": "Refill reserve from keg · glasses/batch: {n} · {seconds}s",
   "rest.regenPaused": "Resting at the stall · Stamina recovery is paused.",
-  "production.directPour": "Direct pour · taps: {n} · {seconds}s/glass"
+  "production.directPour": "Direct pour · taps: {n} · {seconds}s/glass",
+  "settings.build": "Build"
 }

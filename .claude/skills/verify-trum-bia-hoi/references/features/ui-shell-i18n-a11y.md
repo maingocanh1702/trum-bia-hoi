@@ -80,6 +80,8 @@
 
 ## Existing proof
 
+- `apps/web/test/build-info.spec.ts` — `A6 settings shows the build commit in ${locale} at ${viewport.width}px` (VI/EN ×360/390/1280) opens Settings through the DOM, checks the short SHA/full title against the checkout used by Vite, and verifies no overflow or console errors. Run with the default `playwright.config.ts`; screenshot receipts use `a6-build-<locale>-<width>.png`.
+
 - `apps/web/test/ui-clarity.spec.ts` — `A5 legacy pinned save shows direct pour without a refill or reserve in ${locale}` (VI/EN) loads the historical v12 archive and pins the direct-pour/no-reserve copy.
 
 - `apps/web/test/ui-clarity.spec.ts` — `A5 zero configured recovery rate shows paused recovery without an invalid ETA` pins the config-allowed zero-rate display without changing engine rules.
@@ -228,3 +230,5 @@ the manifest — don't confuse a missing icon with a missing sprite.
 | Date | Change |
 |---|---|
 | 2026-09-16 A5 | Cite UI clarity, first-open asset preload and active-rest ETA regression; no engine/config rule changes. |
+
+| 2026-09-16 A6 | Cite the Settings build-SHA label in both locales/three viewports; historical deployment receipt is in docs/deploy-log.md. |
