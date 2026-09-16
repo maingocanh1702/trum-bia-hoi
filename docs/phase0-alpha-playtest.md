@@ -85,7 +85,7 @@ chơi và gắn ảnh; không tự đặt engine ID.
   chưa đủ 5 mẫu thì ghi thiếu mẫu, không quy đổi tỷ lệ để đủ gate.
 - **Hai đợt Giờ Vàng:** ca 2/3 ghi số đợt, loại rush, có thấy cảnh báo, xử lý và phục hồi được
   không. Chỉ thấy 0/1 đợt thì ghi đúng; lưu mốc/ảnh và lời người chơi về điều gây rối.
-- **Sau 3 ca:** hỏi “Mức độ vui từ 1 đến 10?”, “Bạn có muốn chơi thêm một ca ngay không? Có/Không”,
+- **Sau 3 ca:** hỏi “Mức độ vui từ 1 đến 10?”, “Bạn có muốn chơi tiếp không? Có/Không”,
   “Khó hoặc khó hiểu nhất ở đâu?”. Ghi câu trả lời tự do, không gợi ý đáp án.
 
 | Tester | Người mới / nhóm 5? | Giây phục vụ đầu / chưa phục vụ | Ca 2: số/loại rush · xử lý được? | Ca 3: số/loại rush · xử lý được? | Fun 1–10 | Muốn chơi tiếp Có/Không | Khó ở đâu · cốc/rửa rõ? · quan sát/ảnh |
