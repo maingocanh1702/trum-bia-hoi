@@ -53,6 +53,10 @@ each test below is cited for its *refill/capacity* claim, not restated for its f
 
 ## Existing proof
 
+- `apps/web/test/quick-beer-stock.spec.ts` — `A2 HUD full beer refill keeps live time and survives reload in ${locale} at ${viewport.width}px` (VI/EN × 360/390/1280px) uses a real DOM purchase and replay inspection to assert full-quote quantity/cost, stock including in-flight batches, one restock event, unpaused timer/reload, 44px and warning-specific axe. Boundaries: `A2 empty raw beer stock remains a refill warning while a batch is still preparing`, `A2 low beer stock keeps the exact unaffordable quote disabled in ${locale}`, and `A2 full beer stock has no low-stock warning or zero-quantity quick purchase`. `A2 stock at the configured batch boundary has no warning despite a nonzero refill quote` pins `stock === batchSize < cap` separately from the full-stock boundary.
+- `apps/web/remote-test/quick-beer-stock.spec.ts` — `A2 quick beer refill uses the real server while the shift remains live and reloads once` consumes stock through DOM serving against the isolated API, purchases through the HUD, and checks the authoritative charge/stock, no pause and reload. Run `TBH_PORT_BASE=4178 npx playwright test --config playwright.remote.config.ts apps/web/remote-test/quick-beer-stock.spec.ts`; 4179/4180 must be free because this fixture binds those test ports. Local proof uses `npx playwright test apps/web/test/quick-beer-stock.spec.ts`.
+
+
 - `packages/engine/test/production.test.ts`: `'level one fills five servings before any customer and
   refills the vacancy as a glass leaves for service'` (shift-open batch fills to `kegStorage[0]=5`,
   a full batch completes mid-shift, pouring a glass immediately arms the next 1-unit batch),
@@ -109,9 +113,10 @@ each test below is cited for its *refill/capacity* claim, not restated for its f
 
 ## Uncovered paths
 
-- **`restock(dish:'bia')` failing on insufficient coins is never asserted** — `restockQuote`'s
-  `w.coins >= cost` branch (`rules.ts:39`) has no dedicated test; only the missing-quantity-exceeded
-  refusal is proven (`game.test.ts:112`, a same-file follow-up call, not a coins-short case).
+- **The insufficient-coins command-result reason is not directly asserted.** A2's
+  `A2 low beer stock keeps the exact unaffordable quote disabled in ${locale}` now proves
+  `restockQuote.ok === false`, the exact price and disabled UI without a mutation. It does not
+  send the forbidden command or assert `reason:'stockOrCoins'`.
 - **Corrected claim**: level 2 IS exercised — `production.test.ts`'s partial-raw-stock test
   (`:49-64`) upgrades keg to level 2 mid-shift, then resumes a paused batch and drives it to
   completion, directly asserting `refillMs[1]`-timed completion and the resulting `beer.ready`
@@ -123,9 +128,9 @@ each test below is cited for its *refill/capacity* claim, not restated for its f
 - **Every batch-cycle proof above runs under the modern/batch economy only** — no test in this file's
   citation set exercises `refillEnabled:false` (legacy direct-pour) through an actual restock/upgrade
   cycle; the mode split itself is documented (not tested) in glass-beer-flat.md's Gotchas.
-- **No test restocks `'bia'` while a batch is already mid-flight and *not* paused** — the only
-  restock-during-batch case (`production.test.ts`'s partial-stock test) pauses activity first
-  (`{active:true, paused:true}`); an un-paused concurrent restock+batch interleaving is untested.
+- **Covered by A2:** `A2 empty raw beer stock remains a refill warning while a batch is still
+  preparing` buys through the DOM while unpaused and checks raw stock, the preserved active batch,
+  exact charge and pause state. `production.test.ts` also covers paused restock during a batch.
 - **No test pairs fine vs. coarse time-stepping of a single running (unpaused) keg batch** — grep-
   confirmed the two candidate tests (the 150-tick loop, the paused-batch jump) use different scenarios,
   not a fine/coarse comparison of the same one (see Variants' time-jump entry for the correction).
@@ -156,9 +161,10 @@ each test below is cited for its *refill/capacity* claim, not restated for its f
   tests round-trip: all 4 `production.test.ts` citations, `live-upgrades.test.ts`,
   `config-pinning.test.ts` (the direct cross-config persistence proof for batch timing), and
   `economy2.test.ts`'s new-shift-fill test (`'a new shift fills real reserve...'` calls `replay(g)`).
-  Only `game.test.ts`'s `restock` full-mode test does not round-trip (`game.test.ts` defines no such
-  helper, so a direct grep is reliable there) — treat restock-command persistence specifically as
-  unverified by this pass.
+  `game.test.ts`'s full-mode test itself does not round-trip. A2's
+  `A2 HUD full beer refill keeps live time and survives reload in ${locale} at ${viewport.width}px`
+  now checks restock-command/event persistence through decoded saves and a browser reload;
+  the real-server A2 scenario also checks the authoritative charge after reload.
 - **capacity** — the `kegStorage`/`kegBatch` per-level arrays; the multi-batch assembly test's running
   conservation invariant; the forty-serving max-level test.
 - **duplicate/idempotent** — not exercised specifically for `restock`/`upgrade(kind:'keg')` in this
@@ -205,3 +211,12 @@ independent-implementation risk is the same shape of finding as this file's upgr
 timing), [economy-k-ledger](economy-k-ledger.md) (`restock`/`upgrade` spending is debited via
 `spend()`, outside `credit()`'s faucet scope), `restock-inventory-menu` (owns non-`'bia'` restock and
 the `activity`/`paused` menu-pause mechanic exercised by this file's paused-batch test).
+
+
+## Changelog
+
+| Date | Change |
+|---|---|
+
+| 2026-09-16 A2 | Cite direct HUD full-beer purchase in local and real-server UI; raw empty is distinct from ready/batch reserve. Balance targets remain OPEN in docs/improve-a2-stock.md. |
+| 2026-09-16 A2 review | Add partial-stock batch-boundary regression and reconcile covered quote, unpaused batch-restock and persistence paths; command-result reason remains unverified. |

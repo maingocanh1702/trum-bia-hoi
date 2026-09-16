@@ -627,3 +627,16 @@ Build-label and sheet-pause browser checks pass 9/9 across both locales and 360/
 | Date | Change |
 |---|---|
 | 2026-09-16 | A6 Settings build label and historical Netlify deployment receipt implemented; A5 independent review fixes closed. |
+
+### PLAN-improve-2026-09-16 A2 — direct beer-stock action, 2026-09-16
+
+The HUD warns when raw beer is empty or below the configured refill batch, shows the existing full-stock quote and buys directly through the existing command path. It stays live; the management sheet retains its pause behaviour. VI/EN copy distinguishes empty raw stock from poured or preparing beer. Unaffordable purchases are disabled and full stock has no quick-purchase action. No engine/config, capacity ladder or emergency changes.
+
+Local mapped browser checks pass 57/57, including ten new stock cases; warning-specific axe passes at 360/390/1280px in both languages. Focused restock/menu engine checks pass 37/37; config, i18n (822 paired keys), build and doctor pass. The real-server path, full accessibility sweep and exact-source independent review are recorded in `artifacts/verification/codex-improve-ui-clarity/a2-report.md`. A5's full `verify:all` receipt completed (537 tests, onboarding/rush/career and doctor PASS) and A5/A6 pinned reviews are CLEAN; the parent owns the final integrated aggregate gate.
+
+**A2 balance acceptance remains OPEN.** The verified diagnostic measured 221/1020 lost at cap 15 (21.6667%, 211 queue + 10 seated), versus 198/1022 at hypothetical cap 45 (19.3738%, 181 queue + 17 seated). Neither meets the plan targets. See `docs/improve-a2-stock.md` for source hashes, protocol and limitations. UI-friction completion is not balance acceptance or deployment readiness.
+
+| Date | Change |
+|---|---|
+| 2026-09-16 | A2 option 2 implemented with existing quote/command; preserve OPEN balance target and record final A5/A6 evidence. |
+| 2026-09-16 A2 review | Add the partial-stock configured-batch boundary: focused stock UI now 11/11; reconcile keg coverage inventory. Full axe 6/6 (102 scans), production UI 5/5, real-server scenario 2/2 and additional keg engine 31/31 pass. Production implementation is unchanged. |

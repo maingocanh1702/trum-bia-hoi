@@ -271,6 +271,8 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   const rushReports = sheet === 'book' ? w.events.filter(e => e.type === 'rush_ended' && e.data.shiftId === shift?.id) : [];
   const kitchen = kitchenStatus(w, game.config);
   const beer = beerStatus(w, game.config), washer = washerStatus(w, game.config);
+  const beerRestock = restockQuote(w, game.config, 'bia', 'full');
+  const lowBeerStock = beerRestock.quantity > 0 && w.inventory.bia < beer.batchSize;
   const beerInventory = t('beer.inventory', { n: w.inventory.bia, cap: stockCap(w, game.config) });
   const pouredBeer = t('beer.poured', { ready: beer.stored, max: beer.capacity, batch: beer.batchSize, s: beer.durationMs / 1000 });
   const flyers = flyerQuote(w, game.config);
@@ -376,7 +378,12 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
         <div className="business-props">{BUSINESS_UNLOCKS.filter(item => w.unlocks.includes(item)).map(item => <button key={item} className={item === 'phone' && delivery ? `has-delivery ${deliveryUrgent ? 'is-urgent' : ''}` : ''} onClick={() => open(item === 'phone' ? 'delivery' : 'upgrades')} aria-label={t(item === 'phone' ? 'delivery.open' : `business.${item}`)} aria-describedby={item === 'phone' && delivery ? 'delivery-clock' : undefined}><Sprite id={item === 'qr' ? 'qr-payment' : item === 'phone' && delivery ? 'customer-shipper' : 'phone'} />{item === 'phone' && delivery && <span id="delivery-clock" className="delivery-clock"><span className="sr-only">{t(deliveryUrgent ? 'delivery.urgent' : 'delivery.deadline')}</span>{deliveryUrgent && <b aria-hidden="true">! </b>}{time(Math.ceil(delivery.remainingMs / 1000) * 1000)}</span>}</button>)}</div>
         {showDeferredRisk && w.dogLevel > 0 && <button className="dog-object" aria-label={t('dog.open', { n: w.dogLevel })} aria-haspopup="dialog" onClick={() => open('dog')}><Sprite id={`dog-idle-lv${w.dogLevel}`} /><span>{t('level', { n: w.dogLevel })}</span></button>}
       </section>
-      <p className="beer-pipeline">{t('beer.pipeline', { ready: beer.stored, n: w.inventory.bia, cap: stockCap(w, game.config), clean: cleanGlasses, total: w.glasses.length })}</p>
+      <p id="beer-supply-status" className="beer-pipeline">{t('beer.pipeline', { ready: beer.stored, n: w.inventory.bia, cap: stockCap(w, game.config), clean: cleanGlasses, total: w.glasses.length })}</p>
+      {lowBeerStock && <section className="beer-stock-warning" aria-label={t('stock.quickBeerTitle')}>
+        <p role="status">{t(w.inventory.bia === 0 ? 'stock.beerEmpty' : 'stock.beerLow')}</p>
+        <button aria-describedby="beer-supply-status" disabled={!beerRestock.ok} onClick={() => run({ type: 'restock', dish: 'bia', mode: 'full' })}>{t('stock.quickBeer', { n: num(beerRestock.quantity), cost: num(beerRestock.cost) })}</button>
+        {w.coins < beerRestock.cost && <small>{t('error.notEnoughCoins')}</small>}
+      </section>}
       {remote && <div className={`network-status is-${remote.state}`} role="status" aria-live="polite"><span>{t(remote.accountBusy ? 'account.confirming' : `network.${remote.state}`)}</span>{remote.state === 'invalidSession' && <button onClick={onReauthenticate}>{t('account.reauthenticate')}</button>}{remote.pending > 0 && <strong>{t('network.pending', { n: remote.pending })}</strong>}</div>}
       <section className="yard" aria-label={t(`location.${w.location}`)}>
         {w.tables.map(renderTable)}

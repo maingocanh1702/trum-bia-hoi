@@ -681,5 +681,9 @@
   "production.refill": "Nạp từ bom vào dự trữ: {n} cốc/mẻ · {seconds} s",
   "rest.regenPaused": "Đang nghỉ tại quán · Chưa hồi thể lực.",
   "production.directPour": "Rót trực tiếp: {n} vòi · {seconds} s/cốc",
-  "settings.build": "Bản dựng"
+  "settings.build": "Bản dựng",
+  "stock.quickBeerTitle": "Nhập bia nhanh",
+  "stock.beerEmpty": "Kho bia đã hết. Nhập thêm để nạp tiếp.",
+  "stock.beerLow": "Kho bia còn ít. Nhập thêm để nạp tiếp.",
+  "stock.quickBeer": "Nhập đầy kho bia +{n} · {cost} xu"
 }

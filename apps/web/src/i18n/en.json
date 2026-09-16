@@ -681,5 +681,9 @@
   "production.refill": "Refill reserve from keg · glasses/batch: {n} · {seconds}s",
   "rest.regenPaused": "Resting at the stall · Stamina recovery is paused.",
   "production.directPour": "Direct pour · taps: {n} · {seconds}s/glass",
-  "settings.build": "Build"
+  "settings.build": "Build",
+  "stock.quickBeerTitle": "Quick beer refill",
+  "stock.beerEmpty": "Beer stock empty. Refill to keep replenishing.",
+  "stock.beerLow": "Beer stock low. Refill to keep replenishing.",
+  "stock.quickBeer": "Fill beer stock +{n} · {cost} coins"
 }
