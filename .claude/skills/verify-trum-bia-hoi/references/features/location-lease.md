@@ -107,8 +107,8 @@ revert to) has no spec counterpart at all. `'broken'` never existed in code.
 
 ## Verification procedure
 
-- `node --import tsx --test packages/engine/test/locations.test.ts` (or `npm test` for the full
-  suite — bare `tsx` is not guaranteed on `PATH` outside an npm script).
+- `node --import tsx --test packages/engine/test/locations.test.ts apps/server/test/shift-location.test.ts`
+  (or `npm test` for the full suite — bare `tsx` is not guaranteed on `PATH` outside an npm script).
 - `npx playwright test apps/web/test/locations.spec.ts` (or `npm run test:e2e`).
 - `npm run check:config` before touching `locations.leaseDays`/`depositRate`/
   `earlyLeaveLosesDeposit`/`fallback`/`list[].rentPerDayBase`/`gateLifePath` in

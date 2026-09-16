@@ -145,7 +145,7 @@ dismissal, not a tap-serve outcome).
 
 - `node --import tsx --test packages/engine/test/game.test.ts` (or `npm test` for the full suite —
   bare `tsx` is not guaranteed on `PATH` outside an npm script).
-- `npx playwright test apps/web/test/game.spec.ts` (or `npm run test:e2e`).
+- `npx playwright test apps/web/test/game.spec.ts apps/web/test/bridge.spec.ts` (or `npm run test:e2e`).
 - `npm run check:config` before touching any of `patienceThreshold`, `graceForcedPatienceRatio`,
   `staleGlass`, `customerTypes.vip.tipMult`/`leavePenaltyMult` in `docs/config/economy.tbh.json`.
 - Manual fixture reproduction: `node --import tsx apps/web/test/fixtures/service-states.ts

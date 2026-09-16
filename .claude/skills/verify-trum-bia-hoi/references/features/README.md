@@ -69,9 +69,18 @@ unrelated one:
   under `artifacts/verification/<branch>/`), `matchEvent`'s strict-since event matching,
   `waitForEvent`'s polling/timeout behaviour, console-error collection, and the exported fixture's
   exact five-method surface.
+- `apps/web/src/verify/bridge.ts` (`buildBridge()`) and `apps/web/src/verify/install.ts`
+  (`installVerifyBridge()`, the `DEV`/`VITE_TBH_VERIFY` install guard) — proven by
+  `apps/web/src/verify/bridge.test.ts` and `apps/web/src/verify/install.test.ts` against fake
+  `window`/`localStorage` stand-ins (no real browser needed).
 - The bridge driven end to end through a real page, not just unit-tested:
   `apps/web/test/bridge.spec.ts` — cited under [serve-outcomes](serve-outcomes.md), since that test's
   actual subject is a serve outcome, not the bridge's own mechanics.
+
+All four tooling test files above run automatically as part of `npm test`/`npm run verify`
+(`apps/web/src/verify/*.test.ts apps/web/test/*.test.ts` in the root `test` script) — targeted:
+`node --import tsx --test packages/engine/test/snapshot.test.ts apps/web/src/verify/bridge.test.ts
+apps/web/src/verify/install.test.ts apps/web/test/tbh-fixture.test.ts`.
 
 ## Full sweep
 

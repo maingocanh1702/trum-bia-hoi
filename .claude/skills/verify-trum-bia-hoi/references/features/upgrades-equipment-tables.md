@@ -131,7 +131,7 @@ finding — cross-linked, not restated), cooler's freshness formula is
 - `node --import tsx --test packages/engine/test/live-upgrades.test.ts` (or `npm test` for the full
   suite — bare `tsx` is not guaranteed on `PATH` outside an npm script).
 - `npx playwright test apps/web/test/live-upgrades.spec.ts apps/web/test/production.spec.ts
-  apps/web/test/upgrade-hint.spec.ts` (or `npm run test:e2e`).
+  apps/web/test/upgrade-hint.spec.ts apps/web/test/economy2.spec.ts` (or `npm run test:e2e`).
 - `npm run check:config` before touching any `upgrades.<kind>.priceBase`/`upgrades.lifePathGate`/
   `upgrades.table.levels`/`extraSeatPriceBase` array — all must stay level/seat-index-aligned or
   `config.ts`'s `validate()` fails closed (same warning [keg-refill](keg-refill.md) makes for its own

@@ -239,8 +239,8 @@ by direct reading, not just by grep.
 
 ## Verification procedure
 
-- `node --import tsx --test apps/server/test/admin-auth.test.ts apps/server/test/registry.test.ts apps/server/test/registry-scopes.test.ts`
-  for the server tier (or the combined `npm test`).
+- `node --import tsx --test apps/server/test/admin-auth.test.ts apps/server/test/registry.test.ts apps/server/test/registry-scopes.test.ts packages/engine/test/forecast.test.ts`
+  for the server + engine-sim tier (or the combined `npm test`).
 - `npx playwright test --config playwright.admin.config.ts apps/web/admin-test/admin.spec.ts apps/web/admin-test/moderation.spec.ts`
   for the UI tier (baseURL `4181`, API `4182`, per `references/features/README.md`'s baseline
   preconditions; the fixture's cert server binds `4183`).

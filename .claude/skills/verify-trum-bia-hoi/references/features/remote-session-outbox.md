@@ -212,8 +212,9 @@
 
 ## Verification procedure
 
-- `node --import tsx --test apps/server/test/http.test.ts` (targeted; bare `tsx` is not guaranteed on
-  `PATH` outside an npm script). `npm test` runs it alongside every other engine/server file.
+- `node --import tsx --test apps/server/test/http.test.ts apps/server/test/accounts.test.ts apps/server/test/store.test.ts`
+  (targeted; bare `tsx` is not guaranteed on `PATH` outside an npm script). `npm test` runs these
+  alongside every other engine/server file.
 - `npx playwright test --config playwright.remote.config.ts apps/web/remote-test/remote.spec.ts
   apps/web/remote-test/google-link.spec.ts` — `testDir` for this config is `apps/web/remote-test`, a
   different directory than the legacy `playwright.config.ts` (`apps/web/test`); passing a bare

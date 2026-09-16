@@ -229,9 +229,12 @@ in at all for a given build, not just whether it installs at runtime — don't r
 ## 7. Wave V3 — doctor, ports, evidence helpers
 
 - `scripts/verify/port.ts`: main workspace keeps today's ports; a worktree (`.git` is a file) gets
-  `base = 5200 + hash(worktree) % 300` and derives dev/e2e/api/playable ports from it. All five
-  Playwright configs and `dev`/`dev:server` read `TBH_PORT_BASE` when set (default = today's values,
-  so nothing changes for the main workspace).
+  `base = 5200 + hash(worktree) % 300` and derives e2e/dev-identity/admin/playable ports from it.
+  **As shipped (v3.1 correction):** five of the six `playwright*.config.ts` read `TBH_PORT_BASE`
+  directly (`.accessibility` spreads `.dev-identity`'s already-resolved config instead); `dev`
+  (`vite.config.ts`, hardcoded `5173`) and `dev:server` (`apps/server/src/main.ts`, reads `TBH_PORT`,
+  not `TBH_PORT_BASE`, default `5175`) were never wired to the resolver — two worktrees' dev servers
+  still collide (tracked as a V5 follow-up, not closed by this wave).
 - `scripts/verify/doctor.ts`:
   ```text
   repo      ✓ trum-bia-hoi root · branch/worktree/HEAD · origin fetched
