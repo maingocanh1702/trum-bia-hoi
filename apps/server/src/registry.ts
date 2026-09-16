@@ -172,6 +172,14 @@ export class ConfigRegistry {
   // so the previous admitted version keeps serving; there is no window where an unmeasured/bad config is live.
   private readonly ADMITTED = "version IN (SELECT version FROM registry_measurements WHERE state='admitted')";
   latest() { return this.db.prepare(`SELECT * FROM registry_publications WHERE version NOT IN (SELECT version FROM registry_scopes) AND ${this.ADMITTED} ORDER BY seq DESC LIMIT 1`).get() as Publication; }
+  // A pending sibling already claims this base slot for staleness purposes, even though it isn't admitted
+  // yet: without this, two default publications built against the same base can both pass currentBase(),
+  // and whichever settles second silently reverts the first's change (codex round 2 finding). Only a
+  // REFUSED attempt is truly as if it never happened -- everything else counts as "the latest attempt".
+  private readonly NOT_REFUSED = "version NOT IN (SELECT version FROM registry_measurements WHERE state='refused')";
+  private latestAttempt() {
+    return this.db.prepare(`SELECT * FROM registry_publications WHERE version NOT IN (SELECT version FROM registry_scopes) AND ${this.NOT_REFUSED} ORDER BY seq DESC LIMIT 1`).get() as Publication | undefined;
+  }
   active(now = this.now()) {
     const row = this.db.prepare(`SELECT version FROM registry_publications WHERE effective_at<=? AND version NOT IN (SELECT version FROM registry_scopes) AND ${this.ADMITTED} ORDER BY seq DESC LIMIT 1`).get(now);
     if (!row) throw Error('registry:missingActive');
@@ -233,7 +241,8 @@ export class ConfigRegistry {
     return registryPolicy(governed, base, scope?.kind);
   }
   private currentBase(draft: { base_version: string }, scope?: ConfigScope, emergency = false, now = this.now()) {
-    if ((emergency ? this.active(now).version : this.latest().version) !== draft.base_version || scope && (this.predecessor(scope)?.version ?? null) !== scope.previousVersion) throw Error('registry:staleBase');
+    const reference = emergency ? this.active(now).version : this.latestAttempt()?.version;
+    if (reference !== draft.base_version || scope && (this.predecessor(scope)?.version ?? null) !== scope.previousVersion) throw Error('registry:staleBase');
   }
   private supportAvailable(scope: ConfigScope) {
     const ticket = this.db.prepare('SELECT player_id FROM registry_support WHERE id=?').get(scope.ticketId!);
@@ -586,13 +595,6 @@ export class ConfigRegistry {
     return row ? { state: String(row.state) as 'pending' | 'admitted' | 'refused',
       measured_k: row.measured_k === null ? null : Number(row.measured_k), measured_at: row.measured_at === null ? null : Number(row.measured_at) } : undefined;
   }
-  /** Absent/pending -> not ready; refused carries both numbers as Error properties (never in .message, so the
-   * existing bare 'registry:bindingRange' HTTP 400 mapping keeps matching exactly, no second error string). */
-  private assertMeasured(version: string) {
-    const row = this.measurementRow(version);
-    if (!row || row.state === 'pending') throw Error('registry:kUnmeasured');
-    if (row.state === 'refused') throw Object.assign(new Error('registry:bindingRange'), { measured: row.measured_k, band: this.seedBand() });
-  }
   /** Pure DB write, never throws -- callers decide what a refusal means for their own control flow. */
   private finishMeasurement(version: string, measured: number): boolean {
     const band = this.seedBand(), admitted = measured >= band[0] && measured <= band[1];
@@ -626,11 +628,18 @@ export class ConfigRegistry {
    * GameStore from a BACKUP COPY of the same database to run the very measurement this method would resume;
    * auto-calling this from the constructor would race that measurement using this default self-report
    * measurer and settle the row before the real one runs (codex round 2 finding, caught before it shipped). */
-  resumePendingMeasurements() {
+  async resumePendingMeasurements() {
     const system: AdminActor = { subject: 'system:measurement-resume', role: 'super', mfa: true, issuedAt: this.now(), expiresAt: this.now() + 3600000 };
     for (const row of this.db.prepare("SELECT version FROM registry_measurements WHERE state='pending'").all()) {
       const version = String(row.version);
-      try { this.settleMeasurement(version, this.config(version), system); }
+      try {
+        // Never duplicate a measurement a concurrent publish() retry (or an earlier resume pass) already kicked.
+        if (!this.settling.has(version)) this.settleMeasurement(version, this.config(version), system);
+        // Serialized on purpose: forecastEconomy()'s single-flight `running` mutex admits only one
+        // measurement at a time, so firing every pending row concurrently just lets the first grab the
+        // lock and forces the rest to fail with forecastBusy and stay pending forever (codex round 2).
+        await (this.settling.get(version) ?? Promise.resolve());
+      }
       catch (error) { console.error('registry:measurementResumeFailed', version, error instanceof Error ? error.message : error); }
     }
   }
@@ -643,7 +652,15 @@ export class ConfigRegistry {
       const emergency = emergencyDraft(draft); if (emergency) this.emergencyPermit(actor, policy);
       if (!emergency && !approval) throw Error('registry:approvalRequired');
       const existing = this.db.prepare('SELECT * FROM registry_publications WHERE version=?').get(version) as Publication | undefined;
-      if (existing) { this.assertMeasured(version); return { publication: existing, config: null as Config | null }; }
+      if (existing) {
+        const row = this.measurementRow(version);
+        if (row?.state === 'refused') throw Object.assign(new Error('registry:bindingRange'), { measured: row.measured_k, band: this.seedBand() });
+        if (row?.state === 'admitted') return { publication: existing, config: null as Config | null, retry: false };
+        // Still pending: a re-publish call on a stuck version retries the measurement instead of just
+        // re-throwing kUnmeasured forever -- recovers from a transient forecastBusy/timeout without
+        // needing a full server restart (codex round 2 finding).
+        return { publication: existing, config: this.config(version), retry: true };
+      }
       if (emergency) this.emergencyPermit(actor, this.policy(JSON.parse(draft.keys), base, scope, now));
       if ((emergency || scope && expectedImpact !== undefined) && (!expectedImpact || this.previewImpact(version, now).token !== expectedImpact)) throw Error('registry:staleImpact');
       const at = this.publicationAt(draft, now);
@@ -667,9 +684,16 @@ export class ConfigRegistry {
       this.audit('ConfigPublished', { version, emergency, scope: scope ?? null, keys: JSON.parse(draft.keys), effectiveAt: draft.effective, activatesAt: at,
         changedBy: draft.changed_by, publishedBy: actor.subject, approvedBy, reason: draft.reason,
         rollbackVersion: this.rollbackSource(loadConfig(JSON.parse(JSON.parse(draft.fingerprint).config)), draft.base_version), at: now });
-      return { publication: this.db.prepare('SELECT * FROM registry_publications WHERE version=?').get(version) as Publication, config: this.config(version) };
+      return { publication: this.db.prepare('SELECT * FROM registry_publications WHERE version=?').get(version) as Publication, config: this.config(version), retry: false };
     });
-    if (prepared.config) this.settleMeasurement(version, prepared.config, actor);
+    if (prepared.config) {
+      // Never duplicate an already in-flight settlement (a resume, or another concurrent retry).
+      if (!this.settling.has(version)) this.settleMeasurement(version, prepared.config, actor);
+      // A fresh publish (retry=false) always returns -- the caller sees a pending Publication and awaits
+      // settleMeasurements()/polls details(), matching the documented "admin response says pending" contract.
+      // A retry (existing, still-pending version) reports whether the nudge actually resolved it yet.
+      if (prepared.retry && this.measurementRow(version)?.state !== 'admitted') throw Error('registry:kUnmeasured');
+    }
     return prepared.publication;
   }
 }

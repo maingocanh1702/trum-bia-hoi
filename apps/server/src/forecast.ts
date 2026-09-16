@@ -8,6 +8,9 @@ import type { AdminActor } from './registry';
 
 // config-exempt: report worker resource/deployment limits, not economy tuning.
 const TIMEOUT_MS=600000, HEAP_MB=1024;
+// config-exempt: 08-SPEC-economy-constants.md §1 measurement methodology floor ("k = mean(payment+tip)/82.5
+// on >=500 served"), not gameplay tuning -- matches packages/engine/sim/career.ts's own >=500 assertion.
+const MIN_SERVED_FOR_MEASUREMENT=500;
 let running=false;
 type Totals=ReturnType<typeof projectEconomy>['report']['totals'];
 const checked=(n:number)=>{if(!Number.isSafeInteger(n))throw Error('registry:forecastAmount');return n;};
@@ -50,7 +53,9 @@ export function reportFromBackup(store:GameStore,actor:AdminActor,version:string
   // Pooled across every real player actually simulated under the candidate -- mean of means would misweight
   // a low-volume player the same as a high-volume one, so this sums totalValue/served first, then divides once.
   const anchor=store.registry.config(version).values.k.anchorValuePerServe;
-  const measuredK=candidateSafe&&candidateServed>0?candidateTotalValue/candidateServed/anchor:null;
+  // Below the spec's own representativeness floor, a measured k is noise, not a verdict either way --
+  // stays unmeasured rather than certifying (or refusing) admission on too small a sample (codex round 2).
+  const measuredK=candidateSafe&&candidateServed>=MIN_SERVED_FOR_MEASUREMENT?candidateTotalValue/candidateServed/anchor:null;
   return {version,computedAt:plan.computedAt,through:plan.through,activatesAt:plan.activatesAt,registryRevision:plan.registryRevision,policy:FORECAST_POLICY,
     status:members.length?'complete' as const:'empty' as const,audiencePlayers:members.length,changedPlayers:plan.players.filter(p=>p.keys.length).length,
     keys:[...keys].map(([path,players])=>({path,players})),members,measuredK,
