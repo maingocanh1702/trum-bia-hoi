@@ -3,7 +3,6 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { compareEconomy, projectEconomy, FORECAST_DAYS, DAY_MS, FORECAST_POLICY, type ForecastDay } from '../../../packages/engine/sim/forecast';
-import { serveValueStats } from '@tbh/engine';
 import type { GameStore } from './store';
 import type { AdminActor } from './registry';
 
@@ -28,17 +27,24 @@ export function reportFromBackup(store:GameStore,actor:AdminActor,version:string
   let candidateTotalValue=0,candidateServed=0,candidateSafe=true;
   for(const player of plan.players) {
     const snapshot=store.read(player.id),game=store.fork(player.id);
-    const result=player.keys.length?compareEconomy(game,player.before,player.after):(()=>{
-      const startServes=game.world.serves.length,run=projectEconomy(game,player.before);
-      const stats=serveValueStats(run.game.world.serves.slice(startServes),player.before.at(-1)!.config);
-      return {baseline:run.report,candidate:run.report,k:{baseline:stats,candidate:stats}};
-    })();
+    let result:{baseline:ReturnType<typeof projectEconomy>['report'];candidate:ReturnType<typeof projectEconomy>['report']};
+    if(player.keys.length) {
+      const compared=compareEconomy(game,player.before,player.after);
+      result=compared;
+      // Only a player who actually diverges under the candidate tells us anything about ITS real economics --
+      // one whose resolved config never changes within this horizon (masked by a more specific scope, or the
+      // change activates beyond the forecast window) must not smuggle baseline-labeled-candidate data into the
+      // pool (codex round 1 finding: a price hike scheduled past the horizon measured in-band on zero real data).
+      if(compared.k.candidate.totalValue===null)candidateSafe=false;
+      else {candidateTotalValue=checked(candidateTotalValue+compared.k.candidate.totalValue);candidateServed=checked(candidateServed+compared.k.candidate.served);}
+    } else {
+      const report=projectEconomy(game,player.before).report;
+      result={baseline:report,candidate:report};
+    }
     sum(baseline,result.baseline.totals);sum(candidate,result.candidate.totals);
     aggregate(result.baseline.rows,'baseline');aggregate(result.candidate.rows,'candidate');
     members.push({id:player.id,revision:player.revision,snapshotRevision:snapshot.revision,inputConfigVersion:game.config.version,commandHash:result.baseline.commandHash,candidateHash:result.candidate.commandHash});
     for(const key of player.keys)keys.set(key,(keys.get(key)??0)+1);
-    if(result.k.candidate.totalValue===null)candidateSafe=false;
-    else {candidateTotalValue=checked(candidateTotalValue+result.k.candidate.totalValue);candidateServed=checked(candidateServed+result.k.candidate.served);}
   }
   for(const totals of [baseline,candidate])if(totals.closingCoins!==totals.openingCoins+totals.faucet+totals.depositRefunds-totals.sink-totals.penalties)throw Error('registry:forecastConservation');
   // Pooled across every real player actually simulated under the candidate -- mean of means would misweight
@@ -54,11 +60,13 @@ export function reportFromBackup(store:GameStore,actor:AdminActor,version:string
 }
 export type EconomicForecast=ReturnType<typeof reportFromBackup>;
 /** The production MeasureK: reuses the existing forecast Worker (async, off the event loop) rather than a
- * second mechanism. Falls back to the candidate's own declared k.value only when there is no real player
- * yet to measure against -- it cannot refuse what there is no data to measure. */
+ * second mechanism. Throws when there is no real measured data (no players, or none actually experience the
+ * candidate within the horizon) -- the row stays 'pending' rather than silently certifying the self-reported
+ * k.value, which is exactly the gap this feature closes (codex round 1 finding: fail closed, not open). */
 export async function measureKViaForecast(store:GameStore,actor:AdminActor,version:string):Promise<number> {
   const report=await forecastEconomy(store,actor,version,new AbortController().signal);
-  return report.measuredK??store.registry.config(version).values.k.value;
+  if(report.measuredK===null)throw Error('registry:forecastEmpty');
+  return report.measuredK;
 }
 
 /** Copy + simulate off the HTTP event loop; a failed/cancelled report never returns partial totals. */

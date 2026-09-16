@@ -201,7 +201,9 @@ export class ConfigRegistry {
   }
   private scopedPublications() {
     // ponytail: scan admin publication history; index scope/effective boundaries if this catalog becomes large.
-    return this.db.prepare(`SELECT p.*,s.scope FROM registry_publications p JOIN registry_scopes s USING(version) ORDER BY seq`).all()
+    // Same admitted-only gate as active()/latest(): a pending/refused scoped override must never compose
+    // into a real player's resolved config (codex round 1 finding -- this was the actual bypass).
+    return this.db.prepare(`SELECT p.*,s.scope FROM registry_publications p JOIN registry_scopes s USING(version) WHERE ${this.ADMITTED} ORDER BY seq`).all()
       .map(r => ({ ...r, scope: JSON.parse(String(r.scope)) as ConfigScope })) as (Publication & { scope: ConfigScope })[];
   }
   private predecessor(scope: ConfigScope) {
@@ -517,8 +519,16 @@ export class ConfigRegistry {
     return this.transaction(now => { this.actor(actor, now); return this.previewImpact(version, now); });
   }
   private previewPublication(version: string, now: number): PreviewPublication {
+      const existing = this.db.prepare('SELECT * FROM registry_publications WHERE version=?').get(version) as Publication | undefined;
+      if (existing) {
+        // A still-pending measurement means publish() already committed and validated this row once;
+        // return the REAL committed shape (no re-schedule, no re-validate) so forecastPlan()/reportFromBackup()
+        // can measure it (codex round 1 finding -- this guard made production measurement unreachable).
+        // A settled (admitted/refused) version keeps the original terminal guard unchanged.
+        if (this.measurementRow(version)?.state !== 'pending') throw Error('registry:alreadyPublished');
+        return { ...existing, scope: this.scope(version) };
+      }
       const draft = this.proposal(version), scope = this.scope(version), at = this.publicationAt(draft, now);
-      if (this.db.prepare('SELECT 1 FROM registry_publications WHERE version=?').get(version)) throw Error('registry:alreadyPublished');
       const candidate: PreviewPublication = { seq: Number(this.db.prepare('SELECT MAX(seq) AS n FROM registry_publications').get()!.n) + 1,
         version, scope, effective_at: at, published_at: now, changed_by: draft.changed_by, approved_by: 'preview' };
       this.validatePublications(now, candidate);
@@ -607,6 +617,23 @@ export class ConfigRegistry {
   }
   /** Test-only determinism seam: await every in-flight async measurement instead of racing timers. */
   async settleMeasurements() { await Promise.all([...this.settling.values()]); }
+  /** Recovery for a restart mid-measurement, or after a worker failure that left a row pending forever
+   * (codex round 1 finding). The original publishing admin's session is long gone by restart time, so this
+   * uses a synthetic system actor -- same pattern as 'system:seed' in initializeRegistry(). A resumed
+   * version that turns out refused must not throw out of here.
+   * Called explicitly by the production entrypoint (apps/server/src/main.ts) after constructing its store --
+   * NOT wired into the GameStore constructor itself. forecastEconomy()'s worker also constructs a throwaway
+   * GameStore from a BACKUP COPY of the same database to run the very measurement this method would resume;
+   * auto-calling this from the constructor would race that measurement using this default self-report
+   * measurer and settle the row before the real one runs (codex round 2 finding, caught before it shipped). */
+  resumePendingMeasurements() {
+    const system: AdminActor = { subject: 'system:measurement-resume', role: 'super', mfa: true, issuedAt: this.now(), expiresAt: this.now() + 3600000 };
+    for (const row of this.db.prepare("SELECT version FROM registry_measurements WHERE state='pending'").all()) {
+      const version = String(row.version);
+      try { this.settleMeasurement(version, this.config(version), system); }
+      catch (error) { console.error('registry:measurementResumeFailed', version, error instanceof Error ? error.message : error); }
+    }
+  }
   publish(actor: AdminActor, version: string, expectedImpact?: string | null): Publication {
     const prepared = this.transaction(now => {
       this.actor(actor, now);

@@ -9,6 +9,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { config, configContent, Game, loadConfig, seasonWindow, serveValueStats, type Config } from '@tbh/engine';
 import { GameStore } from '../src/store';
 import { createGameServer } from '../src/http';
+import { measureKViaForecast } from '../src/forecast';
 import { ConfigRegistry, registryPolicy, type AdminActor, type ConfigScope, type MeasureK } from '../src/registry';
 const NOW = Date.parse('2026-09-10T10:00:00Z');
 // Default measurer trusts the candidate's own declared k.value -- identical to the pre-existing self-report
@@ -550,4 +551,49 @@ test('resolve()/compose() never invoke the measurer on the real-player hot path 
   assert.doesNotThrow(() => restarted.registry.active());
   const opened = restarted.command('alice', { idempotencyKey: 'open-hotpath', command: { type: 'startShift' } });
   assert.ok(opened.result.ok);
+});
+
+// The four cases above all inject a synthetic measurer -- none of them prove the REAL production wiring
+// (measureKViaForecast -> forecastEconomy -> forecast-worker.mjs) actually measures and gates correctly
+// (codex round 1 finding). These two use the real worker, matching apps/server/src/main.ts's own wiring.
+function realWorkerFixture(t: { after(fn: () => unknown): void }) {
+  const dir = mkdtempSync(join(tmpdir(), 'tbh-registry-realworker-')), file = join(dir, 'game.db');
+  let now = NOW;
+  const store: GameStore = new GameStore(file, config, () => now, (_c, version, actor) => measureKViaForecast(store, actor, version));
+  const db = new DatabaseSync(file);
+  t.after(() => { store.close(); db.close(); rmSync(dir, { recursive: true, force: true }); });
+  const actor = (role: AdminActor['role'] = 'economy', subject: string = role): AdminActor => ({ subject, role, mfa: true, issuedAt: now, expiresAt: now + 3600000 });
+  return { store, db, registry: store.registry, actor, get now() { return now; }, set now(v) { now = v; } };
+}
+
+test('the real forecast worker measures a genuine price blowup and refuses it, not just the self-reported k.value', { timeout: 120000 }, async t => {
+  const f = realWorkerFixture(t);
+  f.store.createPlayer('real-worker-player', 42);
+  f.store.command('real-worker-player', { idempotencyKey: 'open', command: { type: 'startShift' } });
+  const base = f.registry.config(f.registry.latest().version), snapshot = structuredClone(base.raw);
+  snapshot.menu.bia.price *= 50; // k.value/k.band left at the seed's own values -- only a real sim catches this
+  const draft = f.registry.propose(f.actor(), { key: 'real-worker-blowup', baseVersion: base.version, snapshot, reason: 'Real worker measurement probe' });
+  f.registry.approve(f.actor('super', 'reviewer'), draft.version);
+  f.registry.publish(f.actor(), draft.version);
+  await f.registry.settleMeasurements();
+  const row = f.db.prepare('SELECT state, measured_k FROM registry_measurements WHERE version=?').get(draft.version)!;
+  assert.equal(row.state, 'refused'); assert.ok(Number(row.measured_k) > config.values.k.band[1]);
+  assert.equal(f.registry.latest().version, base.version);
+});
+
+test('a scoped candidate refused by the real worker never composes into that player\'s resolve()', { timeout: 120000 }, async t => {
+  const f = realWorkerFixture(t);
+  f.store.createPlayer('scoped-real-player', 42);
+  f.store.command('scoped-real-player', { idempotencyKey: 'open', command: { type: 'startShift' } });
+  const scope: ConfigScope = { kind: 'segment', id: 'real-worker-group', playerIds: ['scoped-real-player'], priority: 0, expiresAt: null, previousVersion: null, ticketId: null };
+  const base = f.registry.config(f.registry.latest().version), snapshot = structuredClone(base.raw); snapshot.menu.bia.price *= 50;
+  const draft = f.registry.propose(f.actor(), { key: 'scoped-real-worker-blowup', baseVersion: base.version, snapshot, reason: 'Scoped real-worker probe', scope });
+  f.registry.approve(f.actor('super', 'reviewer'), draft.version);
+  f.registry.publish(f.actor(), draft.version);
+  // Still pending (worker running) -- must not already be composed into the real player's resolve.
+  assert.equal(f.registry.resolve('scoped-real-player').raw.menu.bia.price, base.raw.menu.bia.price);
+  await f.registry.settleMeasurements();
+  assert.equal(f.db.prepare('SELECT state FROM registry_measurements WHERE version=?').get(draft.version)!.state, 'refused');
+  // Refused, not just pending -- resolve() still excludes it, permanently.
+  assert.equal(f.registry.resolve('scoped-real-player').raw.menu.bia.price, base.raw.menu.bia.price);
 });
