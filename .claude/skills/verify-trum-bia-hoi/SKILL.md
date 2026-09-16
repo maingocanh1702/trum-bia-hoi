@@ -19,8 +19,9 @@ actually work" — read `tbh-map.md` for the former, `references/features/*.md` 
   (default, browser never builds a `Game` — talks to the server over `/api` via `RemoteGame`).
 - Read `.claude/skills/how/references/tbh-map.md` first for entry points; it is more accurate than
   any prose summary here where they disagree.
-- GitNexus (`gitnexus://repo/trum-bia-hoi/context`) covers `prototype/` only — stale for anything
-  under `packages/` or `apps/`. Use Glob/Grep/Read, not graph results, for those paths.
+- GitNexus (`gitnexus://repo/trum-bia-hoi/context`) is re-indexed and covers `packages/` and
+  `apps/` too — check `gitnexus://repo/trum-bia-hoi/context` for staleness before trusting it, the
+  same as any index.
 
 ## Philosophy
 
@@ -30,14 +31,15 @@ actually work" — read `tbh-map.md` for the former, `references/features/*.md` 
    production path (local mode calls it through `dispatch()`; the server calls it per request). UI
    tier: through the DOM only. Remote-mode UI proof additionally needs the isolated API config
    (`playwright.remote.config.ts`) — never a mocked `/api`.
-3. **Read-only observation, never mutation.** A future wave (V2) adds a `window.__TBH_VERIFY__`
-   read-only bridge for both runtime modes. Until it lands, observe through the DOM and through
-   fixture saves — don't hand-edit `localStorage`/IndexedDB to "check" state.
+3. **Read-only observation, never mutation.** `window.__TBH_VERIFY__` is a read-only bridge for
+   both runtime modes (wave V2, landed). Observe through it, the DOM, and fixture saves — don't
+   hand-edit `localStorage`/IndexedDB to "check" state, and no bridge key may call `command`,
+   `advance`, `persist`, `replaceSave`, or write storage.
 4. **Behaviour map, not source map.** Feature files in `references/features/` name what the
    player/sim *observes* and cite the tests that already pin it. They never restate `engine.ts`.
 5. **Binding checks are verification.** `npm run verify` and `npm run check:assets` are the static
-   tier and always run. A future wave (V3) adds `verify:doctor`, which will refuse PASS when they're
-   red; until it exists, treat a red `npm run verify` the same way yourself.
+   tier and always run. `npm run verify:doctor` (wave V3, landed) refuses PASS when they're red;
+   `npm run verify:all` runs both in one command.
 
 ## Required Sequence
 
@@ -49,10 +51,15 @@ gameplay, save, or UI:
 2. **`npm run verify`** — static tier, always. `verify` already runs `check:config` → `check:i18n` →
    `build` → `test` (engine + server) → `sim:onboarding` → `sim:rush` → `sim:career:gate`. Add
    `npm run check:assets` when the diff touches `assets/manifest.json` or asset files.
-3. **`npm run verify:doctor`** — *not built yet, added by wave V3.* Until it exists, do its job by
-   hand: confirm `npm run build` succeeded after your last source edit (stale-build check), and that
-   the dev/preview server or Playwright webServer you're testing against was started/restarted after
-   that edit, on the port you think it's on (see Stale-Build Rule below).
+3. **`npm run verify:doctor`** — checks repo/deps/binding/map; refuses PASS when any is red. Bare
+   `verify:doctor` defaults to engine-only. Passing `--full` from the plain CLI does **not** give
+   real server/bridge/console checks today — `defaultRunners()` (`scripts/verify/doctor.ts`)
+   always uses hard-coded fail-closed stubs there (`serverHealth: () => false`, `bridgeVersion: ()
+   => null`, `consoleErrors` reports "not checked") because no browser exists to query from a plain
+   Node process; `--full` only becomes real once a caller injects working runners programmatically
+   from inside an actual Playwright session, and nothing in this repo does that yet. Until it does,
+   verify stale-build/wrong-instance/bridge/console by hand — see the Stale-Build Rule below — or
+   through a real Playwright spec (`apps/web/test/bridge.spec.ts` reaches the bridge for real).
 4. **Engine/server tier** — run the exact tests each affected feature file cites. Bare `tsx` is not
    guaranteed on `PATH` outside an npm script (verified: it exits 127 run standalone) — use
    `node --import tsx --test packages/engine/test/<file>.test.ts apps/server/test/<file>.test.ts`
@@ -70,17 +77,18 @@ gameplay, save, or UI:
    update that feature file's "Existing proof" in the same commit. A change isn't done until its
    proof exists *and* is cited — an uncited passing test doesn't count for the next agent who reads
    the map instead of the diff.
-7. **Evidence.** *A fixed evidence directory (`artifacts/verification/<branch>/`) is added by wave
-   V3* — it isn't gitignored or created yet (today's `.gitignore` only covers `.qa/`,
-   `test-results/`, `playwright-report/`). Until V3 lands, put the exact command you ran and its
-   result directly in the §0.3 report's `QA:` line — don't invent a path that doesn't exist.
+7. **Evidence.** `artifacts/verification/<branch>/` (gitignored, wave V3, landed) — `doctor.txt`,
+   `console.txt`, `snapshots/*.json`, `*.png`, `report.md`. The shared `apps/web/test/tbh-fixture.ts`
+   fixture writes shots/snapshots here via `tbh.shot()`/`tbh.evidence()`; `verify:doctor` writes its
+   own output to `doctor.txt`. Cite the exact paths in the report's `VERIFICATION:` block (step 9).
 8. **`multi-system-journeys.md`** — read and drive its journeys whenever the change crosses
    engine↔web, local↔remote, or touches shift/save/season together. Skip this step for a change
    scoped to a single tier.
-9. **Report.** `11-PROMPT-PACK-designer-blender-dev.md` §0.3 report, `QA:` line carrying what you
-   ran and its result (a machine-checked `VERIFICATION:` block is wave V4 — until it lands, PASS /
-   FAIL / PARTIAL plus any `SKIPPED:` blocks go in `QA:`/`DEVIATIONS:`), then independent review per
-   `docs/prompts/codex-review.md`.
+9. **Report.** `11-PROMPT-PACK-designer-blender-dev.md` §0.3 report (`TASK`/`STATUS`/
+   `CREATED/CHANGED`/`QA`/`DEVIATIONS`/`HANDOFF` — the template itself is unchanged), with a
+   `VERIFICATION:` block appended after it (wave V4, landed — `RESULT: PASS|FAIL|PARTIAL`,
+   `EVIDENCE:` paths, any `SKIPPED:` blocks). Then independent review per
+   `docs/prompts/codex-review.md`, which checks for this block and refuses PASS on a failed doctor.
 
 ## Proof Standard
 
@@ -104,13 +112,24 @@ paths**, or you write the test now and cite it.
 
 ## Stale-Build Rule
 
-This repo runs many worktrees in parallel (`git worktree list` — nine at last count) that today
-share fixed dev/e2e/API ports (per-worktree ports are wave V3's `verify:port`). A green UI-tier
-result against a stale bundle or the wrong worktree's server is a false pass, and nothing catches it
-automatically yet. Before trusting a UI-tier result: confirm the server you hit was (re)started after
-your last source edit, and confirm which worktree/branch is actually listening on the port you used.
-Once wave V3 ships, `npm run verify:doctor` automates both checks and PASS is refused on a red
-doctor — this rule doesn't change then, it just stops being manual.
+This repo runs many worktrees in parallel (`git worktree list` — nine at last count).
+`scripts/verify/port.ts` (`verify:port`, wave V3, landed) derives five of the six Playwright
+configs' ports from `sha256(worktree-id) mod 300` — this reduces collisions, it does **not**
+eliminate them: a fixed 300-slot hash space collides by the birthday paradox as worktree count
+grows, and the resolver has no cross-worktree registry to detect or refuse a collision. Verified
+2026-09-16 against this repo's own 9 live worktrees (`resolveBasePort()` on each `git worktree
+list` entry): all 9 resolved to distinct bases that day — but that is a measurement of that moment,
+not a guarantee. Run `npm run verify:port` (or compare `resolveBasePort()` output) across your
+active worktrees before trusting parallel UI-tier runs; a collision looks like one worktree's
+Playwright server silently answering another worktree's requests. `dev`/`dev:server` are NOT wired
+to the resolver at all and still share fixed ports (`5173`/`5175`) regardless of worktree. `npm run
+verify:doctor` exists (wave V3, landed) and refuses PASS on a red repo/deps/binding/map check — but
+`--full`'s server/bridge/console checks are not functional from a plain CLI call today (see step 3
+above), so a green UI-tier result against a stale bundle or the wrong worktree's server is still a
+possible false pass on that front, and nothing catches it automatically yet. Before trusting a
+UI-tier result: confirm the server you hit was (re)started after your last source edit, and confirm
+which worktree/branch is actually listening on the port you used — this stays manual until a real
+browser-driving harness wires `--full`'s runners for real.
 
 ## Skip Format
 

@@ -225,10 +225,22 @@ inspection, while storage failure prevents any write and confirmed ACK clears be
 operator pending intent'` · `'a delayed history response cannot restore protected contents after
 logout; damaged recovery is downloadable'`.
 
+`packages/engine/test/forecast.test.ts` (5 cases) — direct engine-tier proof of `projectEconomy`/
+`compareEconomy` (`packages/engine/sim/forecast.ts`), the sim `reportFromBackup()` above wraps for
+`/admin/forecast`: `'seven-day projection conserves the wallet, preserves a real paused input and
+deterministically replays every modeled command'`, `'scheduled and expired prices switch only at real
+openings while the existing shift retains its immutable pin'`, `'a daily cap exhausted before a midday
+activation is retried at that activation instead of skipped until tomorrow'`, `'forecast rejects
+unsupported horizons and ambiguous timelines before projecting'`, `'an existing signed lease separates
+returned principal and renews by location identity after multiplier tuning'` (the deepest case: renews
+a lease across a projected multiplier retune, checking deposit-refund/penalty math and per-location
+renewal identity). None of these five asserts a `k` value — confirms the Uncovered-paths claim below
+by direct reading, not just by grep.
+
 ## Verification procedure
 
-- `node --import tsx --test apps/server/test/admin-auth.test.ts apps/server/test/registry.test.ts apps/server/test/registry-scopes.test.ts`
-  for the server tier (or the combined `npm test`).
+- `node --import tsx --test apps/server/test/admin-auth.test.ts apps/server/test/registry.test.ts apps/server/test/registry-scopes.test.ts packages/engine/test/forecast.test.ts`
+  for the server + engine-sim tier (or the combined `npm test`).
 - `npx playwright test --config playwright.admin.config.ts apps/web/admin-test/admin.spec.ts apps/web/admin-test/moderation.spec.ts`
   for the UI tier (baseURL `4181`, API `4182`, per `references/features/README.md`'s baseline
   preconditions; the fixture's cert server binds `4183`).

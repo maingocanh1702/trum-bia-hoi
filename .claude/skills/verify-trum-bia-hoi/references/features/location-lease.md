@@ -94,11 +94,21 @@ revert to) has no spec counterpart at all. `'broken'` never existed in code.
   historical after moving and reloading in ${locale} at ${width}px` `` (`vi@360px`/`en@390px`/
   `vi@1280px` — a past, closed shift keeps recording the location it was actually played at even
   after the player later moves elsewhere).
+- `apps/server/test/shift-location.test.ts` (3 cases) — proof of `shiftLocationReport()`
+  (`apps/shared/shift-location.ts`), the shared helper behind the historical-location display above:
+  `'shift book retains the paid location after moving at rest, expiry and replay without changing
+  state'` (a new lease/move never relabels an already-closed shift's location row), `'lease expiry in
+  a paused shift shows both actual multipliers, using its pinned config'` (asserts the report is
+  computed from the shift's own pinned `configVersion`, and refuses — returns `null` — when asked
+  against a different config), `'missing shift provenance does not substitute the current location'`
+  (no synthesized fallback when `world.events` carries no shift-open evidence). This is the shared
+  (`apps/shared`) counterpart consumed by both server and web; `locations.spec.ts` above is the
+  UI-tier proof of the same historical-location contract.
 
 ## Verification procedure
 
-- `node --import tsx --test packages/engine/test/locations.test.ts` (or `npm test` for the full
-  suite — bare `tsx` is not guaranteed on `PATH` outside an npm script).
+- `node --import tsx --test packages/engine/test/locations.test.ts apps/server/test/shift-location.test.ts`
+  (or `npm test` for the full suite — bare `tsx` is not guaranteed on `PATH` outside an npm script).
 - `npx playwright test apps/web/test/locations.spec.ts` (or `npm run test:e2e`).
 - `npm run check:config` before touching `locations.leaseDays`/`depositRate`/
   `earlyLeaveLosesDeposit`/`fallback`/`list[].rentPerDayBase`/`gateLifePath` in

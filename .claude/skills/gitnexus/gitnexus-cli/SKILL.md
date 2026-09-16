@@ -5,9 +5,16 @@ description: "Use when the user needs to run GitNexus CLI commands like analyze/
 
 # GitNexus CLI Commands
 
-Commands below use `node .gitnexus/run.cjs <command>` — the project-local runner `gitnexus analyze` drops next to the index. It auto-selects an available runner at call time (global `gitnexus`, else `pnpm dlx`, else `npx`), so no package-manager assumption and no global install is required.
+Commands below use `node .gitnexus/run.cjs <command>` — the project-local runner that drops next to
+the index. It auto-selects an available runner at call time (global `gitnexus`, else `pnpm dlx`,
+else `npx`), so no package-manager assumption and no global install is required.
 
-> **Not analyzed yet, or `node .gitnexus/run.cjs` reports `Cannot find module`** (the gitignored runner is absent — e.g. a fresh clone or `git clean`)? (Re)generate it with `npx gitnexus analyze` from the project root. On **npm 11.x**, if `npx` crashes during install (`node.target is null`), install once with `npm i -g gitnexus` (then `gitnexus analyze`) or use `pnpm --allow-build=@ladybugdb/core --allow-build=gitnexus --allow-build=tree-sitter dlx gitnexus@latest analyze`. See [#1939](https://github.com/abhigyanpatwari/GitNexus/issues/1939).
+> **Not analyzed yet, or `node .gitnexus/run.cjs` reports `Cannot find module`** (the gitignored
+> runner is absent — e.g. a fresh clone or `git clean`)? (Re)generate it with `npx gitnexus analyze`
+> from the project root. On **npm 11.x**, if `npx` crashes during install (`node.target is null`),
+> install once with `npm i -g gitnexus` (then `gitnexus analyze`) or use `pnpm
+> --allow-build=@ladybugdb/core --allow-build=gitnexus --allow-build=tree-sitter dlx gitnexus@latest
+> analyze`. See [#1939](https://github.com/abhigyanpatwari/GitNexus/issues/1939).
 
 ## Commands
 
@@ -25,7 +32,7 @@ Run from the project root. This parses all source files, builds the knowledge gr
 | `--embeddings` | Enable embedding generation for semantic search (off by default) |
 | `--drop-embeddings` | Drop existing embeddings on rebuild. By default, an `analyze` without `--embeddings` preserves them. |
 
-**When to run:** First time in a project, after major code changes, or when `gitnexus://repo/{name}/context` reports the index is stale. In Claude Code, a PostToolUse hook detects staleness after `git commit` and `git merge` and notifies the agent to run `analyze` — the hook does not run analyze itself, to avoid blocking the agent for up to 120s and risking KuzuDB corruption on timeout.
+**When to run:** First time in a project, after major code changes, or when `gitnexus://repo/{name}/context` reports the index is stale. In Claude Code, a PostToolUse hook (`~/.claude/hooks/gitnexus/gitnexus-hook.cjs`, when configured) detects staleness after `git commit` and `git merge` and notifies the agent to run `analyze` — the hook does not run `analyze` itself, to avoid blocking the agent for up to 120s and risking KuzuDB corruption on timeout.
 
 ### status — Check index freshness
 

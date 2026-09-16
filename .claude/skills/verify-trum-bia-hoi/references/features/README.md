@@ -20,15 +20,19 @@ admin (session, admin registry, shell, assets). Every file below now exists and 
   own webServer — you don't need to export it by hand to run `npm run test:e2e`).
 - Remote-mode UI tests need the isolated API fixture, never a mocked `/api` — each remote-tier config
   spins up its own `server.ts` fixture.
-- Ports are fixed today, not per-worktree (`verify:port` is wave V3): dev `5173` / API `5175`
-  (`npm run dev`, `npm run dev:server`); e2e legacy `playwright.config.ts` baseURL `4178`; remote
-  `playwright.remote.config.ts` baseURL `4179` / auth `4180`; dev-identity
-  `playwright.dev-identity.config.ts` same `4179`/`4180` (near-duplicate of remote, different
-  `testMatch`/`testIgnore`); accessibility `playwright.accessibility.config.ts` spreads dev-identity;
-  admin `playwright.admin.config.ts` baseURL `4181` / API `4182`; playable
-  `playwright.playable.config.ts`, 3 viewport projects, baseURL `4209/4211/4213`, auth+API
-  `4210/4212/4214`. Two worktrees running the UI tier at once on the main ports will collide — this
-  is a known gap, not yet fixed (see `SKILL.md` Stale-Build Rule).
+- Ports are resolved per-worktree by `scripts/verify/port.ts` (`verify:port`, wave V3, landed) for
+  five of the six Playwright configs — main workspace: dev `5173` / API `5175` (`npm run dev`,
+  `npm run dev:server` — these two are **not** wired to the resolver, still fixed regardless of
+  worktree); e2e legacy `playwright.config.ts` baseURL `4178`; remote `playwright.remote.config.ts`
+  baseURL `4179` / auth `4180`; dev-identity `playwright.dev-identity.config.ts` same `4179`/`4180`
+  (near-duplicate of remote, different `testMatch`/`testIgnore`); accessibility
+  `playwright.accessibility.config.ts` spreads dev-identity's already-resolved config instead of
+  reading the resolver directly; admin `playwright.admin.config.ts` baseURL `4181` / API `4182`;
+  playable `playwright.playable.config.ts`, 3 viewport projects, baseURL `4209/4211/4213`, auth+API
+  `4210/4212/4214`. `dev`/`dev:server` always collide across worktrees (not wired to the resolver
+  at all); the other five configs' hash-derived bases only reduce collision odds, they don't
+  eliminate them — see `SKILL.md` Stale-Build Rule for the exact math and how to check before a
+  parallel run.
 - This repo has 9 worktrees active in parallel at times (`git worktree list`); confirm you're testing
   the instance you think you are before trusting a result.
 
@@ -48,6 +52,39 @@ Sequence for the full procedure. Summary:
   (`execFileSync`/`game.command`), they are not hand-written JSON.
 - When a path is genuinely unreachable or skipped, name it with the `SKIPPED:` block from `SKILL.md`
   — reason, closest verified path, risk. Don't silently omit it.
+
+## Verification tooling itself
+
+The bridge/fixture machinery this map's UI-tier procedures depend on (`window.__TBH_VERIFY__`,
+`apps/web/test/tbh-fixture.ts`) is infrastructure, not a gameplay feature — it has no honest home in
+the 23 feature files below, so its own correctness is proven here instead of stretched into an
+unrelated one:
+
+- `packages/engine/src/snapshot.ts` (the pure `World → VerificationSnapshot` the bridge exposes) —
+  proven by `packages/engine/test/snapshot.test.ts` (4 cases): the full documented field-group
+  contract populated with non-trivial values (queue/lease/signboard/flyer/dog/daily/attendance, not
+  just the empty/default case), shift-timing that excludes paused/hidden wall time and freezes once a
+  shift closes, purity (`game.world` untouched, output is real JSON via
+  `JSON.parse(JSON.stringify(s))`), and the resting/no-shift null-field shape.
+- `apps/web/test/tbh-fixture.ts` (the shared Playwright fixture wrapping the bridge — `tbh.snapshot()`,
+  `tbh.waitForEvent()`, `tbh.shot()`, `tbh.consoleErrors()`, `tbh.evidence()`) — proven by
+  `apps/web/test/tbh-fixture.test.ts` (13 cases): evidence-path construction and sanitisation
+  (a branch containing `/`, and a traversal-shaped shot name, both collapse to one safe path segment
+  under `artifacts/verification/<branch>/`), `matchEvent`'s strict-since event matching,
+  `waitForEvent`'s polling/timeout behaviour, console-error collection, and the exported fixture's
+  exact five-method surface.
+- `apps/web/src/verify/bridge.ts` (`buildBridge()`) and `apps/web/src/verify/install.ts`
+  (`installVerifyBridge()`, the `DEV`/`VITE_TBH_VERIFY` install guard) — proven by
+  `apps/web/src/verify/bridge.test.ts` and `apps/web/src/verify/install.test.ts` against fake
+  `window`/`localStorage` stand-ins (no real browser needed).
+- The bridge driven end to end through a real page, not just unit-tested:
+  `apps/web/test/bridge.spec.ts` — cited under [serve-outcomes](serve-outcomes.md), since that test's
+  actual subject is a serve outcome, not the bridge's own mechanics.
+
+All four tooling test files above run automatically as part of `npm test`/`npm run verify`
+(`apps/web/src/verify/*.test.ts apps/web/test/*.test.ts` in the root `test` script) — targeted:
+`node --import tsx --test packages/engine/test/snapshot.test.ts apps/web/src/verify/bridge.test.ts
+apps/web/src/verify/install.test.ts apps/web/test/tbh-fixture.test.ts`.
 
 ## Full sweep
 
@@ -139,3 +176,28 @@ Every feature file uses the same structure (plan §5.3):
 ## Variants                      success · cancel · reason · empty · persistence · capacity · duplicate/idempotent · stale · time-jump · offline/reconnect
 ## Gotchas · Related
 ```
+
+## Conventions for authors
+
+Each rule below exists because it was learned the hard way, in this repo, once — the one-line
+incident is the receipt, not decoration:
+
+- **Existing-proof and Uncovered claims come from reading test bodies and following helpers, never
+  from test names.** (S1–S4: `replay()` in `locations.test.ts:21` was missed; `encodeSave()`
+  equality was mistaken for replay proof.)
+- **A queue task that cites a library API must verify the API exists in the installed version
+  first** (`node -p "typeof require('x').y"`). (m02-doctor: `ts.createSourceFile` does not exist in
+  `typescript@7.0.2`; cost two review rounds.)
+- **"Matching the plan's X/Y/Z groups" is not an acceptance criterion.** Each group gets its own
+  falsifiable pass/fail line, or is named as out of scope. (m02-doctor: the reviewer measured against
+  the plan document and the slice ballooned.)
+- **An owner amendment that adds a hard rule is checked against the real tree before it is
+  written.** (m02-doctor: "ban bare Date/Math" contradicted 94 legitimate uses; the writer had to
+  HALT to expose it.)
+
+**Review-round ceiling:** `max_review_rounds` (task frontmatter, default 3) is a hard stop for a
+headless ap3 writer — verified in `ap3/dispatch.sh`/`ap3/retry.sh`: there is no automatic reset.
+An owner raises it explicitly with `ap3/retry.sh --extend-rounds N <slug>` (or `--extend-budget
+USD <slug>`), which pins `max_review_rounds_override` and resumes the same in-flight lifecycle —
+never a silent or scope-change-triggered reset. A terminal `MAX_ROUNDS`/`VERIFY_HOST_FAIL` halt
+refuses to resume any other way (`retry.sh` line ~323/337).

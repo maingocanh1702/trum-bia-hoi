@@ -7,6 +7,28 @@
 
 ---
 
+## Agent-verification M1/M2 hoàn tất — 2026-09-16
+
+12 PR merge (`#1`→`#12`, `docs/how-skill` → `agent-verification-m02-tbh-fixture`): skill `/how`
+(V0), skill `verify-trum-bia-hoi` + 23 feature file (V1), `snapshot.ts` + bridge
+`window.__TBH_VERIFY__` cho cả local/remote (V2), `scripts/verify/{port,doctor}.ts` +
+`map-coverage.ts` + fixture Playwright dùng chung `apps/web/test/tbh-fixture.ts` +
+`apps/web/test/bridge.spec.ts` (V3). Lệnh mới: `npm run verify:port` (11 port theo
+`TBH_PORT_BASE`, per-worktree), `npm run verify:map` (coverage: mọi command/event/test file dưới
+`packages/engine/test`, `apps/server/test`, `apps/web/{test,admin-test,remote-test,playable-test}`
+phải được feature map cite — `scripts/verify/*.test.ts` (82 test riêng của chính công cụ verify)
+không nằm trong phạm vi quét này, chạy qua `npm test` chứ không qua map coverage), `npm run
+verify:doctor` (repo/deps/binding/map luôn chạy; `--full` hiện CHƯA hoạt động thật từ CLI trần —
+luôn trả kết quả fail-closed cứng vì không có trình duyệt để hỏi, cần Playwright thật hoặc kiểm
+tay). PR #12 là lần đầu tiên
+`verify_host` (dispatcher-side, unsandboxed) chạy Playwright thật (`bridge.spec.ts` qua
+`playwright.config.ts`) thay vì chỉ unit test browser-free.
+
+Dispatcher `ap3` tạm dừng (`ap3/PAUSED`) sau khi archive 7 task M1/M2 vào
+`ap3/queue/done/agent-verification-m1-m2/`; V4 (contract block + đóng nốt các test uncited mà V3
+tự sinh thêm) chạy supervised, không qua dispatcher. Chi tiết:
+`trum-bia-hoi-agent-understanding-verification-implementation-plan.md` §8, Changelog v3.1.
+
 ## Steer14 complete — 2026-09-11
 
 playable-v0 tag a602af3 is live on5174/5175 with preserved SQLite and explicit dev identity; runtime midshift sign-in PASS. After tag, primary5/8/12/20/40 failed standard k; config2.0.3 fallback4/7/12/20/40 passed full verify406tests/10standard/15rush/2careers (42:3.465461,99:3.393197),3capacity UI cases and final review CLEAN. JSON changes only metadata/storage; specs/tests reconciled. Source config2.0.3 is not published into the pinned preview registry. Owner-defined playable target is delivered; M6/M7/M8 remain deferred.
