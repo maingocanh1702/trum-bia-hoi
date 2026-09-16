@@ -4,7 +4,14 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'nod
 import { resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { resolveAllPorts } from './port';
+import { resolveAllPorts, resolveBasePort } from './port';
+
+// WORKTREE_BASE_FLOOR/WORKTREE_BASE_SPAN/MAX_ROLE_OFFSET below duplicate port.ts's private
+// constants (5200/300/39) the same way this file already duplicates the hash formula in
+// "matches the sha256-hash formula" -- port.ts intentionally keeps them unexported.
+const WORKTREE_BASE_FLOOR = 5200;
+const WORKTREE_BASE_SPAN = 300;
+const MAX_ROLE_OFFSET = 39; // max(ROLE_OFFSETS) after adding dev-web=37, dev-api=38, dev-preview=39
 
 const LITERAL_PORTS = {
   'e2e': 4178,
@@ -18,7 +25,14 @@ const LITERAL_PORTS = {
   'playable-api-1': 4212,
   'playable-web-2': 4213,
   'playable-api-2': 4214,
+  'dev-web': 4215,
+  'dev-api': 4216,
+  'dev-preview': 4217,
 } as const;
+
+function slotFor(id: string): number {
+  return createHash('sha256').update(id.trim()).digest().readUInt32BE(0) % WORKTREE_BASE_SPAN;
+}
 
 function fixtureDir(t: { after(fn: () => unknown): void }, kind: string): string {
   mkdirSync('.qa', { recursive: true });
@@ -134,4 +148,117 @@ test('npm run verify:port executes the resolver and prints the resolved ports', 
   }
   const expected = resolveAllPorts({ env: { TBH_PORT_BASE: override } });
   assert.deepEqual(fromNpmScript, expected);
+});
+
+test('CLI --role=<role> prints only that role\'s resolved port, for capturing into TBH_PORT (dev:server wiring)', () => {
+  const scriptPath = resolve('scripts/verify/port.ts');
+  const output = execFileSync(process.execPath, ['--import', 'tsx', scriptPath, '--role=dev-api'], {
+    env: { ...process.env, TBH_PORT_BASE: '6200' }, encoding: 'utf8',
+  });
+  const expected = resolveAllPorts({ env: { TBH_PORT_BASE: '6200' } })['dev-api'];
+  assert.equal(output.trim(), String(expected));
+});
+
+test('collision probe separates two live worktrees whose bases hash to the exact same slot', (t) => {
+  const bySlot = new Map<number, string>();
+  let contentA: string | undefined;
+  let contentB: string | undefined;
+  for (let i = 0; i < 5000 && !contentB; i++) {
+    const content = `gitdir: /fake/main/.git/worktrees/collision-${i}\n`;
+    const slot = slotFor(content);
+    const existing = bySlot.get(slot);
+    if (existing !== undefined) {
+      contentA = existing;
+      contentB = content;
+      break;
+    }
+    bySlot.set(slot, content);
+  }
+  assert.ok(contentA && contentB, 'expected two candidates hashing to the same slot within 5000 tries');
+
+  const cwdA = worktreeDir(t, contentA!);
+  const cwdB = worktreeDir(t, contentB!);
+  const baseA = resolveBasePort({ cwd: cwdA, env: {}, listOtherWorktreeIds: () => [contentB!.trim()] });
+  const baseB = resolveBasePort({ cwd: cwdB, env: {}, listOtherWorktreeIds: () => [contentA!.trim()] });
+  assert.notEqual(baseA, baseB, 'worktrees hashing to the same slot must resolve to different final bases');
+  assert.equal(baseA, WORKTREE_BASE_FLOOR + slotFor(contentA!), 'each side computes the same deterministic winner');
+});
+
+test('collision probe also separates two worktrees whose bases hash to DIFFERENT slots but land within MAX_ROLE_OFFSET of each other', (t) => {
+  const bySlot = new Map<number, string>();
+  let contentA: string | undefined;
+  let contentB: string | undefined;
+  outer:
+  for (let i = 0; i < 5000; i++) {
+    const content = `gitdir: /fake/main/.git/worktrees/near-${i}\n`;
+    const slot = slotFor(content);
+    for (const [existingSlot, existingContent] of bySlot) {
+      const diff = Math.abs(existingSlot - slot);
+      if (diff > 0 && diff <= MAX_ROLE_OFFSET) {
+        contentA = existingContent;
+        contentB = content;
+        break outer;
+      }
+    }
+    if (!bySlot.has(slot)) bySlot.set(slot, content);
+  }
+  assert.ok(contentA && contentB, 'expected two candidates with near-colliding (but distinct) slots within 5000 tries');
+
+  const cwdA = worktreeDir(t, contentA!);
+  const cwdB = worktreeDir(t, contentB!);
+  const baseA = resolveBasePort({ cwd: cwdA, env: {}, listOtherWorktreeIds: () => [contentB!.trim()] });
+  const baseB = resolveBasePort({ cwd: cwdB, env: {}, listOtherWorktreeIds: () => [contentA!.trim()] });
+  assert.ok(
+    Math.abs(baseA - baseB) > MAX_ROLE_OFFSET,
+    `bases ${baseA} and ${baseB} must end up more than MAX_ROLE_OFFSET (${MAX_ROLE_OFFSET}) apart after the probe`,
+  );
+});
+
+test('collision probe result does not depend on the enumerated worktree list\'s iteration order', (t) => {
+  const selfContent = 'gitdir: /fake/main/.git/worktrees/order-self\n';
+  const otherContents = [
+    'gitdir: /fake/main/.git/worktrees/order-b\n',
+    'gitdir: /fake/main/.git/worktrees/order-c\n',
+    'gitdir: /fake/main/.git/worktrees/order-d\n',
+  ].map((s) => s.trim());
+  const cwd = worktreeDir(t, selfContent);
+
+  const forward = resolveBasePort({ cwd, env: {}, listOtherWorktreeIds: () => [...otherContents] });
+  const reversed = resolveBasePort({ cwd, env: {}, listOtherWorktreeIds: () => [...otherContents].reverse() });
+  const shuffled = resolveBasePort({
+    cwd, env: {}, listOtherWorktreeIds: () => [otherContents[2], otherContents[0], otherContents[1]],
+  });
+  assert.equal(forward, reversed, 'reversing the enumerated list must not change the resolved base');
+  assert.equal(forward, shuffled, 'shuffling the enumerated list must not change the resolved base');
+
+  // Repeated in-process calls for the same live set must also agree with each other.
+  const again = resolveBasePort({ cwd, env: {}, listOtherWorktreeIds: () => [...otherContents] });
+  assert.equal(forward, again, 'repeated calls for the same live set must resolve to the same base');
+});
+
+// `git init`/`git worktree add` are unavailable in this test's sandbox (permission-denied when
+// git tries to copy its hook templates), so this exercises the DEFAULT (non-injected)
+// `listOtherWorktreeIds` against the REAL worktree this repo checkout already lives in --
+// `git worktree list --porcelain` is a read-only query, so it needs no repo of its own. This is
+// the same "spawn a real separate process" technique the pre-existing "is deterministic ... across
+// ... separate process runs" test above uses, now exercised with real sibling worktrees present
+// (this repo has several live worktrees today), proving the new probe is stable end-to-end against
+// genuine `git worktree list --porcelain` output, not just the injected-fake-id path above.
+test('collision probe is stable for the real live worktree across repeated calls and a separate process invocation', () => {
+  const cwd = resolve('.');
+  const first = resolveAllPorts({ cwd, env: {} });
+  const second = resolveAllPorts({ cwd, env: {} });
+  assert.deepEqual(first, second, 'repeated in-process calls against the real live worktree list must agree');
+
+  const { TBH_PORT_BASE, ...envWithoutOverride } = process.env;
+  const scriptPath = resolve('scripts/verify/port.ts');
+  const output = execFileSync(process.execPath, ['--import', 'tsx', scriptPath], {
+    cwd, env: envWithoutOverride, encoding: 'utf8',
+  });
+  const fromSeparateProcess: Record<string, number> = {};
+  for (const line of output.trim().split('\n').filter(Boolean)) {
+    const [role, port] = line.split('\t');
+    fromSeparateProcess[role] = Number(port);
+  }
+  assert.deepEqual(fromSeparateProcess, first, 'a separate process invocation against the real live worktree list must agree');
 });

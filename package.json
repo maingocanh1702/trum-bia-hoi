@@ -23,7 +23,7 @@
     "check:i18n": "node scripts/check_web_copy.mjs",
     "check:assets": "python3 scripts/check_assets.py",
     "sim:rush": "tsx packages/engine/sim/rush-pressure.ts",
-    "dev:server": "tsx apps/server/src/main.ts",
+    "dev:server": "TBH_PORT=$(node --import tsx scripts/verify/port.ts --role=dev-api) tsx apps/server/src/main.ts",
     "sim:career": "tsx packages/engine/sim/career.ts",
     "sim:career:gate": "tsx packages/engine/sim/career.ts --check-advanced",
     "test:one": "node --import tsx --test",
