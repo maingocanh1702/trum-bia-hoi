@@ -1,25 +1,24 @@
 <!-- gitnexus:start -->
-# GitNexus — Code Intelligence (recommended tooling, not a gate — index currently covers `prototype/` only)
+# GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **trum-bia-hoi** (2190 symbols, 3232 relationships, 102 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **trum-bia-hoi** (8897 symbols, 14707 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
-> Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
+> If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
 ## Always Do
 
-- **Recommended: run impact analysis before editing an indexed symbol.** Before modifying a function, class, or method, run `impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
-- **Recommended: run `detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows. For regression review, compare against the default branch: `detect_changes({scope: "compare", base_ref: "main"})`.
-- **Warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
-- When exploring unfamiliar code, use `query({search_query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
-- When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `context({name: "symbolName"})`.
-- For security review, `explain({target: "fileOrSymbol"})` lists taint findings (source→sink flows; needs `analyze --pdg`).
+- **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `gitnexus_impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
+- **MUST run `gitnexus_detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows.
+- **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
+- When exploring unfamiliar code, use `gitnexus_query({query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
+- When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `gitnexus_context({name: "symbolName"})`.
 
 ## Never Do
 
-- Prefer running `impact` before editing an indexed function, class, or method.
-- Do not ignore HIGH or CRITICAL risk warnings from impact analysis.
-- Prefer `rename` (call-graph aware) over find-and-replace for indexed symbols.
-- Prefer running `detect_changes()` before committing. New code under `packages/`/`apps/` is not indexed until `node .gitnexus/run.cjs analyze` is re-run — the tool is optional there.
+- NEVER edit a function, class, or method without first running `gitnexus_impact` on it.
+- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis.
+- NEVER rename symbols with find-and-replace — use `gitnexus_rename` which understands the call graph.
+- NEVER commit changes without running `gitnexus_detect_changes()` to check affected scope.
 
 ## Resources
 
@@ -78,10 +77,28 @@ merge, tooling. `.autopilot/` and `docs/autopilot-*.md` are archived kit materia
 # ap3 runs (headless writer) — what applies here
 - You may only edit files inside the task's `scope`; the class ceiling is ap3/routines.json.
 - Static gate before READY: `npm run verify` must stay green (check:config · check:i18n · build ·
-  test · sim:onboarding · sim:rush · sim:career:gate). Run the task's own `verify` for RED→GREEN.
+  test · sim:onboarding · sim:rush · sim:career:gate); `npm run verify:all` runs that plus
+  `verify:doctor` in one command — the single gate to reach for before calling a slice done.
 - Never change docs/config/economy.tbh.json, packages/engine rules, apps/server routes, or any
   i18n string in an ap3 run — those are supervised slices.
 - Verification tooling is READ-ONLY: nothing under apps/web/src/verify or scripts/verify may call
-  Game.command/advance, persist, replaceSave, or write localStorage/IndexedDB.
+  Game.command/advance, persist, replaceSave, or write localStorage/IndexedDB — observe through the
+  bridge, never mutate through it.
+- Any change touching gameplay, save, or UI follows `.claude/skills/verify-trum-bia-hoi/SKILL.md`'s
+  9-step Required Sequence: (1) map the diff to feature files in that skill's
+  `references/features/`; (2) `npm run verify`; (3) `npm run verify:doctor` (`--engine-only` for
+  engine/server-only slices); (4) engine/server tier — run the exact tests the affected feature
+  file(s) cite; (5) UI tier — run the exact specs they cite, matching the config to the spec's real
+  `testDir`; (6) new behaviour without a citation → write the test in the tier the feature file
+  names and cite it back in the same commit; (7) evidence under `artifacts/verification/<branch>/`;
+  (8) `multi-system-journeys.md` when the change crosses engine↔web, local↔remote, or touches
+  shift/save/season; (9) `§0.3` report with a `VERIFICATION:` block → codex review.
+- Two-tier rule: engine tier — `game.command()`/`advance()` *is* the production path (local mode
+  calls it through `dispatch()`; the server calls it per request). UI tier — through the DOM only;
+  remote-mode UI proof additionally needs the isolated API (`playwright.remote.config.ts`), never a
+  mocked `/api`.
+- PASS rule: PASS only when every tier the affected feature file(s) name ran green and any new
+  behaviour has a map citation; PARTIAL needs a legitimate `SKIPPED:` block per skip; anything cited
+  that came back red, or skipped without a `SKIPPED:` block, is FAIL — never round up to PASS.
 - Report per 11-PROMPT-PACK §0.3 in .ap3-run/READY-FOR-REVIEW.
 <!-- ap3-workflow:end -->

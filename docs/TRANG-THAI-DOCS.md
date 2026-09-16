@@ -68,6 +68,12 @@ Ba mục item-list (hành phi, đá lạnh, giá cosmetic) đã **chốt theo đ
 - **Đã vào `master`:** 4 commit `b4c39eb` → `8bca922` (docs pack 08/09, quyết định, tracker/dashboard, `package.json` gốc, bỏ Level 3) — fast-forward từ nhánh `docs/2026-09-08-docs-pack` (nhánh giữ lại, xoá được). **Lưu ý:** checkout sang nhánh cũ/`origin/master` sẽ làm các file docs biến mất khỏi thư mục (chúng chỉ tồn tại từ `b4c39eb`) — không phải mất dữ liệu, `git checkout master` là quay lại. Chưa push origin. Git chạy trực tiếp trên máy (qua mount không xoá được `index.lock`).
 - `PHASE_DATES` trong `tools/dashboard-engine/build_dashboard.py` để trống có chủ đích (ROADMAP v3.1 chưa gán ngày) — dashboard ghi "Chưa gán ngày"; điền lại khi team chốt ước lượng.
 - Script vá một lần `scripts/apply_pending_0809.py` đã xoá. Backup `$HOME/*.bak` trên máy có thể xoá.
+- **(16/09/2026)** Nhánh công cụ xác minh agent (`agent-verification`, tách biệt với bộ docs build
+  game ở trên) đã xong M1/M2: 12 PR (`#1`-`#12`) — skill `/how`, skill `verify-trum-bia-hoi` (23
+  feature file), bridge `window.__TBH_VERIFY__` (snapshot + cả 2 mode local/remote),
+  `scripts/verify/{port,doctor}.ts`, `map-coverage.ts`, fixture `tbh-fixture.ts` +
+  `bridge.spec.ts` (PR #12 là lần đầu `verify_host` chạy Playwright thật, không chỉ unit test
+  browser-free). Chi tiết: `trum-bia-hoi-agent-understanding-verification-implementation-plan.md`.
 
 ## 6. Bản đồ nhanh — đọc gì trước
 

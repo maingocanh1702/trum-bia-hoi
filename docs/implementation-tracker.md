@@ -52,6 +52,19 @@ Full criterion list and named checks: [M0–M5 closure](milestone-closure-m0-m5.
 Feature rows below span milestones, so M0 completion does not close all Phase0 feature
 rows. Follow owner queue M4→M6→M7→M8→M9; defer extra M5 breadth/performance tuning.
 
+## Agent-verification tooling — M1/M2, 2026-09-14 → 2026-09-16
+
+Infrastructure wave, not a gameplay feature row (F01–F28 unaffected): 12 PRs (#1–#12) shipped the
+`/how` codebase-understanding skill, the `verify-trum-bia-hoi` skill with 23 feature-map files,
+`packages/engine/src/snapshot.ts` + the `window.__TBH_VERIFY__` read-only bridge (local and remote
+mode), and `scripts/verify/{port,doctor,map-coverage}.ts` plus the shared
+`apps/web/test/tbh-fixture.ts` Playwright fixture with `apps/web/test/bridge.spec.ts`. New gate
+commands: `npm run verify:port`, `npm run verify:map`, `npm run verify:doctor`, `npm run
+verify:all`. PR #12 was the first time `verify_host` (the dispatcher's unsandboxed real-browser
+run) drove an actual Playwright session against the bridge, not just a browser-free unit test.
+Full detail: `trum-bia-hoi-agent-understanding-verification-implementation-plan.md` §8, Changelog
+v3.1.
+
 ## 0. How to use this tracker
 
 **Status legend:**

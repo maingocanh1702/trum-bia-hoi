@@ -49,6 +49,30 @@ Sequence for the full procedure. Summary:
 - When a path is genuinely unreachable or skipped, name it with the `SKIPPED:` block from `SKILL.md`
   — reason, closest verified path, risk. Don't silently omit it.
 
+## Verification tooling itself
+
+The bridge/fixture machinery this map's UI-tier procedures depend on (`window.__TBH_VERIFY__`,
+`apps/web/test/tbh-fixture.ts`) is infrastructure, not a gameplay feature — it has no honest home in
+the 23 feature files below, so its own correctness is proven here instead of stretched into an
+unrelated one:
+
+- `packages/engine/src/snapshot.ts` (the pure `World → VerificationSnapshot` the bridge exposes) —
+  proven by `packages/engine/test/snapshot.test.ts` (4 cases): the full documented field-group
+  contract populated with non-trivial values (queue/lease/signboard/flyer/dog/daily/attendance, not
+  just the empty/default case), shift-timing that excludes paused/hidden wall time and freezes once a
+  shift closes, purity (`game.world` untouched, output is real JSON via
+  `JSON.parse(JSON.stringify(s))`), and the resting/no-shift null-field shape.
+- `apps/web/test/tbh-fixture.ts` (the shared Playwright fixture wrapping the bridge — `tbh.snapshot()`,
+  `tbh.waitForEvent()`, `tbh.shot()`, `tbh.consoleErrors()`, `tbh.evidence()`) — proven by
+  `apps/web/test/tbh-fixture.test.ts` (12 cases): evidence-path construction and sanitisation
+  (a branch containing `/`, and a traversal-shaped shot name, both collapse to one safe path segment
+  under `artifacts/verification/<branch>/`), `matchEvent`'s strict-since event matching,
+  `waitForEvent`'s polling/timeout behaviour, console-error collection, and the exported fixture's
+  exact five-method surface.
+- The bridge driven end to end through a real page, not just unit-tested:
+  `apps/web/test/bridge.spec.ts` — cited under [serve-outcomes](serve-outcomes.md), since that test's
+  actual subject is a serve outcome, not the bridge's own mechanics.
+
 ## Full sweep
 
 Walk this map top to bottom for a broad regression; finish with `multi-system-journeys.md`. This is
@@ -139,3 +163,24 @@ Every feature file uses the same structure (plan §5.3):
 ## Variants                      success · cancel · reason · empty · persistence · capacity · duplicate/idempotent · stale · time-jump · offline/reconnect
 ## Gotchas · Related
 ```
+
+## Conventions for authors
+
+Each rule below exists because it was learned the hard way, in this repo, once — the one-line
+incident is the receipt, not decoration:
+
+- **Existing-proof and Uncovered claims come from reading test bodies and following helpers, never
+  from test names.** (S1–S4: `replay()` in `locations.test.ts:21` was missed; `encodeSave()`
+  equality was mistaken for replay proof.)
+- **A queue task that cites a library API must verify the API exists in the installed version
+  first** (`node -p "typeof require('x').y"`). (m02-doctor: `ts.createSourceFile` does not exist in
+  `typescript@7.0.2`; cost two review rounds.)
+- **"Matching the plan's X/Y/Z groups" is not an acceptance criterion.** Each group gets its own
+  falsifiable pass/fail line, or is named as out of scope. (m02-doctor: the reviewer measured against
+  the plan document and the slice ballooned.)
+- **An owner amendment that adds a hard rule is checked against the real tree before it is
+  written.** (m02-doctor: "ban bare Date/Math" contradicted 94 legitimate uses; the writer had to
+  HALT to expose it.)
+
+**Review-cap rule:** the 4-round review cap resets once after an owner-directed scope change; a
+second reset requires a new slice.

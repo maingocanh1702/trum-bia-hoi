@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-11 16:04 · **Branch hiện tại:** `codex/game-build-isolated`
+> **Cập nhật:** 2026-09-16 12:17 · **Branch hiện tại:** `main`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -87,7 +87,7 @@
 
 ### F04 — Vòng Đời Cốc — bottleneck cốc clean→in_use→dirty→washing→clean
 
-- **Status:** 🟡 In progress · 🌿 đang trên branch này
+- **Status:** 🟡 In progress
 - **Branch:** `codex/game-build-isolated`
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
@@ -96,7 +96,7 @@
 
 ### F01 — Vòng Lặp Mở Ca — ca 12 phút, thể lực, trần ngày 500k
 
-- **Status:** 🟡 In progress · 🌿 đang trên branch này
+- **Status:** 🟡 In progress
 - **Branch:** `codex/game-build-isolated`
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
@@ -105,7 +105,7 @@
 
 ### F02 — Menu & Kinh Tế Quán — 3 món P0 (bia+2 mồi), đo k
 
-- **Status:** 🟡 In progress · 🌿 đang trên branch này
+- **Status:** 🟡 In progress
 - **Branch:** `codex/game-build-isolated`
 - **Wave:** ⚖️ Economy
 - **Gates:** 🔒S 🔒B
@@ -114,7 +114,7 @@
 
 ### F03 — Hệ Bàn — 3 bàn, serve theo Order
 
-- **Status:** 🟡 In progress · 🌿 đang trên branch này
+- **Status:** 🟡 In progress
 - **Branch:** `codex/game-build-isolated`
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
@@ -123,7 +123,7 @@
 
 ### F05 — Độ Hơi Bia — mất hơi 12s, cờ vàng, MVP mềm
 
-- **Status:** 🟡 In progress · 🌿 đang trên branch này
+- **Status:** 🟡 In progress
 - **Branch:** `codex/game-build-isolated`
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S 🔒P
@@ -132,7 +132,7 @@
 
 ### F06 — Tip / Uy tín / Phạt — VIP ×10, grace window
 
-- **Status:** 🟡 In progress · 🌿 đang trên branch này
+- **Status:** 🟡 In progress
 - **Branch:** `codex/game-build-isolated`
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
@@ -141,7 +141,7 @@
 
 ### F08 — Giờ Vàng — 2 mức (nhẹ 90s/nặng 150s), spawn floor
 
-- **Status:** 🟡 In progress · 🌿 đang trên branch này
+- **Status:** 🟡 In progress
 - **Branch:** `codex/game-build-isolated`
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S 🔒P
@@ -150,7 +150,7 @@
 
 ### F24 — Thiết Kế UI/UX Quán Bia — tokens, wireframe, sprite, animation
 
-- **Status:** 🟡 In progress · 🌿 đang trên branch này
+- **Status:** 🟡 In progress
 - **Branch:** `codex/game-build-isolated`
 - **Wave:** 🎨 Design
 - **Gates:** 🔒S
@@ -159,7 +159,7 @@
 
 ### F07 — Các Kiểu Khách — 3 loại P1 (thường/vội/VIP)
 
-- **Status:** 🟡 In progress · 🌿 đang trên branch này
+- **Status:** 🟡 In progress
 - **Branch:** `codex/game-build-isolated`
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S 🔒B
@@ -168,7 +168,7 @@
 
 ### F09 — Thời Tiết Quán — tối giản (hệ số độ hơi/tip/spawn)
 
-- **Status:** 🟡 In progress · 🌿 đang trên branch này
+- **Status:** 🟡 In progress
 - **Branch:** `codex/game-build-isolated`
 - **Wave:** ⚖️ Economy
 - **Gates:** 🔒S
@@ -177,7 +177,7 @@
 
 ### F10 — Nâng Cấp Quán — bom/rửa/hầm/bàn cơ bản (×k)
 
-- **Status:** 🟡 In progress · 🌿 đang trên branch này
+- **Status:** 🟡 In progress
 - **Branch:** `codex/game-build-isolated`
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S 🔒B
@@ -186,7 +186,7 @@
 
 ### F25 — Ngôn Ngữ / Tài Khoản — chọn vi/en, guest play, Google login (kể cả giữa ca)
 
-- **Status:** 🟡 In progress · 🌿 đang trên branch này
+- **Status:** 🟡 In progress
 - **Branch:** `codex/game-build-isolated`
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
@@ -195,7 +195,7 @@
 
 ### F27 — Onboarding — ca 1 = 1 khách 1 bia, thông báo mất khách, step guide (lần đầu + sau 3 lần mất khách)
 
-- **Status:** 🟡 In progress · 🌿 đang trên branch này
+- **Status:** 🟡 In progress
 - **Branch:** `codex/game-build-isolated`
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
@@ -204,7 +204,7 @@
 
 ### F11 — Bếp & Mồi Nóng — bếp 4 cấp, 3 mồi nóng
 
-- **Status:** 🟡 In progress · 🌿 đang trên branch này
+- **Status:** 🟡 In progress
 - **Branch:** `codex/game-build-isolated`
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S 🔒B
@@ -213,7 +213,7 @@
 
 ### F17 — Nhiệm Vụ Quán Nhậu — 7 nhánh (ngày/ca/gift/điểm danh/referral/ĐLT)
 
-- **Status:** 🟡 In progress · 🌿 đang trên branch này
+- **Status:** 🟡 In progress
 - **Branch:** `codex/game-build-isolated`
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
@@ -222,7 +222,7 @@
 
 ### F23 — Kiến Trúc Server Quán — server-auth, websocket, CAPTCHA
 
-- **Status:** 🟡 In progress · 🌿 đang trên branch này
+- **Status:** 🟡 In progress
 - **Branch:** `codex/game-build-isolated`
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
@@ -240,7 +240,7 @@
 
 ### F13 — Đường Lên Trùm — LP0–LP7, gate tính năng & mặt bằng
 
-- **Status:** 🟡 In progress · 🌿 đang trên branch này
+- **Status:** 🟡 In progress
 - **Branch:** `codex/game-build-isolated`
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
@@ -249,7 +249,7 @@
 
 ### F14 — Mặt Bằng Quán — 9 mặt bằng, rent/cọc 7 ngày
 
-- **Status:** 🟡 In progress · 🌿 đang trên branch này
+- **Status:** 🟡 In progress
 - **Branch:** `codex/game-build-isolated`
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S

@@ -23,6 +23,7 @@ CHECK, IN THIS ORDER
    serve/grace, migration of versioned local saves, idempotency on retries.
 3. Tests and verification: are the claims in the slice report backed by tests or the sim? Missing
    or tautological tests for changed rules = MAJOR. Sim not run when economy code changed = MAJOR.
+   Verification block present, evidence paths exist, skips legitimate, no PASS on a failed doctor.
 4. Security / robustness (server slices): input validation, auth on mutating endpoints, no
    trusting client totals, rate limits on donate/serve, secrets not committed.
 5. UI invariants when UI changed: 44 px hit targets, no hover-only, colour-only signals, i18n keys
@@ -49,3 +50,4 @@ SUMMARY: <one line: what this slice does and the biggest risk left>
 | Date | Change |
 |---|---|
 | 2026-09-09 | Owner supersedes the prior no-pause sheet rule: management/equipment dialogs pause; purchases retain the open stock menu; closing resumes. Calendar attendance and menu actions remain available. |
+| 2026-09-16 | Wave V4 (agent-verification plan §8): item 3 gains a check for the `VERIFICATION:` block (`11-PROMPT-PACK` §0.3) — block present, evidence paths exist, `SKIPPED:` blocks legitimate, no `RESULT: PASS` reported alongside a failed `npm run verify:doctor`. |
