@@ -52,10 +52,14 @@ gameplay, save, or UI:
    `build` → `test` (engine + server) → `sim:onboarding` → `sim:rush` → `sim:career:gate`. Add
    `npm run check:assets` when the diff touches `assets/manifest.json` or asset files.
 3. **`npm run verify:doctor`** — checks repo/deps/binding/map; refuses PASS when any is red. Bare
-   `verify:doctor` defaults to engine-only (no headless browser/dev server available outside a
-   driven e2e run); reaching the server/bridge/console groups (stale-build check, wrong-instance
-   check, `__TBH_VERIFY__` reachability) needs `--full` from inside a driven-browser session — see
-   the Stale-Build Rule below for what to confirm by hand until that session exists.
+   `verify:doctor` defaults to engine-only. Passing `--full` from the plain CLI does **not** give
+   real server/bridge/console checks today — `defaultRunners()` (`scripts/verify/doctor.ts`)
+   always uses hard-coded fail-closed stubs there (`serverHealth: () => false`, `bridgeVersion: ()
+   => null`, `consoleErrors` reports "not checked") because no browser exists to query from a plain
+   Node process; `--full` only becomes real once a caller injects working runners programmatically
+   from inside an actual Playwright session, and nothing in this repo does that yet. Until it does,
+   verify stale-build/wrong-instance/bridge/console by hand — see the Stale-Build Rule below — or
+   through a real Playwright spec (`apps/web/test/bridge.spec.ts` reaches the bridge for real).
 4. **Engine/server tier** — run the exact tests each affected feature file cites. Bare `tsx` is not
    guaranteed on `PATH` outside an npm script (verified: it exits 127 run standalone) — use
    `node --import tsx --test packages/engine/test/<file>.test.ts apps/server/test/<file>.test.ts`

@@ -16,10 +16,10 @@ description: "Use when the user is debugging a bug, tracing an error, or asking 
 ## Workflow
 
 ```
-1. gitnexus_query({query: "<error or symptom>"})            → Find related execution flows
+1. gitnexus_query({search_query: "<error or symptom>"})            → Find related execution flows
 2. gitnexus_context({name: "<suspect>"})                    → See callers/callees/processes
 3. READ gitnexus://repo/{name}/process/{name}                → Trace execution flow
-4. gitnexus_cypher({query: "MATCH path..."})                 → Custom traces if needed
+4. gitnexus_cypher({statement: "MATCH path..."})                 → Custom traces if needed
 ```
 
 > If "Index is stale" → run `npx gitnexus analyze` in terminal.
@@ -51,7 +51,7 @@ description: "Use when the user is debugging a bug, tracing an error, or asking 
 **gitnexus_query** — find code related to error:
 
 ```
-gitnexus_query({query: "payment validation error"})
+gitnexus_query({search_query: "payment validation error"})
 → Processes: CheckoutFlow, ErrorHandling
 → Symbols: validatePayment, handlePaymentError, PaymentException
 ```
@@ -75,7 +75,7 @@ RETURN [n IN nodes(path) | n.name] AS chain
 ## Example: "Payment endpoint returns 500 intermittently"
 
 ```
-1. gitnexus_query({query: "payment error handling"})
+1. gitnexus_query({search_query: "payment error handling"})
    → Processes: CheckoutFlow, ErrorHandling
    → Symbols: validatePayment, handlePaymentError
 

@@ -79,9 +79,11 @@ merge, tooling. `.autopilot/` and `docs/autopilot-*.md` are archived kit materia
 - Static/engine gate before READY: `npm run verify` must stay green (check:config · check:i18n ·
   build · test · sim:onboarding · sim:rush · sim:career:gate); `npm run verify:all` runs that plus
   `verify:doctor` in one command. Bare `verify:doctor` defaults to engine-only
-  (repo/deps/binding/map) — it does NOT check server/bridge/console, which need `--full` inside a
-  driven-browser session. `verify:all` is the floor for every slice, not a substitute for the UI
-  tier below on a change that touches gameplay, save, or UI.
+  (repo/deps/binding/map) — it does NOT check server/bridge/console. `--full` exists but is not
+  functional from a plain CLI call today (no browser to query; it always reports the stub
+  fail-closed result) — verify those by hand (Stale-Build Rule) or through a real Playwright spec
+  until a session injects working runners. `verify:all` is the floor for every slice, not a
+  substitute for the UI tier below on a change that touches gameplay, save, or UI.
 - Never change docs/config/economy.tbh.json, packages/engine rules, apps/server routes, or any
   i18n string in an ap3 run — those are supervised slices.
 - Verification tooling is READ-ONLY: nothing under apps/web/src/verify or scripts/verify may call
