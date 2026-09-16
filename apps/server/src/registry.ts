@@ -214,8 +214,18 @@ export class ConfigRegistry {
     return this.db.prepare(`SELECT p.*,s.scope FROM registry_publications p JOIN registry_scopes s USING(version) WHERE ${this.ADMITTED} ORDER BY seq`).all()
       .map(r => ({ ...r, scope: JSON.parse(String(r.scope)) as ConfigScope })) as (Publication & { scope: ConfigScope })[];
   }
+  // predecessor() is a staleness/draftSource helper, never on the player-facing compose() path (that's
+  // scopedPublications() above, which must stay admitted-only). It needs the scoped analog of
+  // latestAttempt(): a pending sibling for the SAME scope already claims that slot, so without this a
+  // second scoped proposal against the same predecessor can pass currentBase() while the first is still
+  // mid-measurement, and whichever settles second silently reverts the other (codex round 3 finding --
+  // the scoped shape of the round-2 default-base race).
+  private scopedAttempts() {
+    return this.db.prepare(`SELECT p.*,s.scope FROM registry_publications p JOIN registry_scopes s USING(version) WHERE ${this.NOT_REFUSED} ORDER BY seq`).all()
+      .map(r => ({ ...r, scope: JSON.parse(String(r.scope)) as ConfigScope })) as (Publication & { scope: ConfigScope })[];
+  }
   private predecessor(scope: ConfigScope) {
-    return this.scopedPublications().filter(p => p.scope.kind === scope.kind && p.scope.id === scope.id).at(-1);
+    return this.scopedAttempts().filter(p => p.scope.kind === scope.kind && p.scope.id === scope.id).at(-1);
   }
   private normalizeScope(scope: ConfigScope | undefined): ConfigScope | undefined {
     if (scope === undefined) return undefined;
@@ -413,7 +423,14 @@ export class ConfigRegistry {
         reviewTicket: this.auditRecord<EmergencyTicket>('ConfigEmergencyReviewOpened', version), review: this.auditRecord<EmergencyReview>('ConfigEmergencyReviewed', version), snapshot: config.raw, scope: scope ?? null, previous, draft: draft ?? null,
         permissions: { propose: !['support', 'viewer'].includes(actor.role),
           approve: !emergency && !publication && !approval && permitted(true) && (policy?.tier !== 'A' || draft?.changed_by !== actor.subject),
-          publish: !publication && (emergency || !!approval) && permitted(false) },
+          publish: !publication && (emergency || !!approval) && permitted(false),
+          // A stuck-pending publication (e.g. a worker failure the restart-recovery sweep hasn't reached
+          // yet) is otherwise invisible to an admin -- publish=false already, and phase reads 'archived'
+          // once its effective_at passes, indistinguishable from a version that really was superseded.
+          // Calling POST /admin/publish again on this exact version retries the measurement (codex round 2);
+          // this flag is what makes that discoverable without a UI change (out of scope for this server
+          // slice -- see measurement.state above for the same information) (codex round 3 finding).
+          retryMeasurement: !!publication && this.measurementRow(version)?.state === 'pending' && permitted(false) },
         base: draft ? this.config(String(draft.base_version)).raw : null,
         policy, approval, publication, measurement: publication ? this.measurementRow(version) ?? null : null };
     }, true);

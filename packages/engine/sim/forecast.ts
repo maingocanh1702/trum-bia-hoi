@@ -91,30 +91,36 @@ export function projectEconomy(source:Game,timeline:readonly ConfigPeriod[],days
   return {game,report};
 }
 
-/** Only a customer_served event actually stamped with this exact version reflects that config's real
+/** Only a customer_served event actually stamped with a version in this set reflects that side's real
  * economics -- serveValueStats()/ServeRecord carries no configVersion, so a blind slice-from-start would
  * blend in pre-activation baseline serves, a pinned shift's retained old config, or serves generated after
  * a scoped override's expiry (codex round 2 finding). Mirrors serveValueStats()'s own safe-mean/anchor
  * formula; duplicated rather than reusing it because that function's input type has no version to filter on. */
-function versionServeStats(events:readonly DomainEvent[],c:Config) {
-  const matching=events.filter(e=>e.type==='customer_served'&&e.configVersion===c.version);
+function versionServeStats(events:readonly DomainEvent[],versions:ReadonlySet<string>,anchor:number) {
+  const matching=events.filter(e=>e.type==='customer_served'&&versions.has(e.configVersion));
   const served=matching.length;
   const safe=matching.every(e=>Number.isSafeInteger(Number(e.data.payment))&&Number(e.data.payment)>=0&&Number.isSafeInteger(Number(e.data.tip))&&Number(e.data.tip)>=0);
   const totalValue=safe?matching.reduce((sum,e)=>sum+Number(e.data.payment)+Number(e.data.tip),0):null;
   const mean=safe&&served?totalValue!/served:null;
-  const k=mean===null?NaN:mean/c.values.k.anchorValuePerServe;
+  const k=mean===null?NaN:mean/anchor;
   return {served,totalValue,mean,kValue:Number.isFinite(k)?k:null};
 }
+const NO_CANDIDATE_PERIOD:ReturnType<typeof versionServeStats>={served:0,totalValue:null,mean:null,kValue:null};
 
 export function compareEconomy(source:Game,before:readonly ConfigPeriod[],after:readonly ConfigPeriod[],days=FORECAST_DAYS) {
   const startEvents=source.world.events.length;
   const baselineRun=projectEconomy(source,before,days),candidateRun=projectEconomy(source,after,days);
   const baseline=baselineRun.report,candidate=candidateRun.report;
   const delta=Object.fromEntries((['faucet','sink','penalties','depositRefunds','closingCoins'] as const).map(key=>[key,candidate.totals[key]-baseline.totals[key]]));
-  // The real per-serve k for each side, from ONLY the serves actually generated under that side's own
-  // final config version during this projection -- the only place a candidate's TRUE economics get
-  // measured, not just its self-reported k.value.
-  const k={baseline:versionServeStats(baselineRun.game.world.events.slice(startEvents),before.at(-1)!.config),
-    candidate:versionServeStats(candidateRun.game.world.events.slice(startEvents),after.at(-1)!.config)};
+  // Attribute serves to "the candidate" by which config versions appear in the after-timeline but NOT the
+  // before-timeline -- the ONLY versions whose presence is caused by the candidate itself. The timeline's
+  // LAST period is not a reliable proxy for "the candidate": it reverts to baseline the moment a temporary
+  // scoped campaign expires within the horizon, silently measuring baseline serves as the candidate's own
+  // (codex round 3 finding). Baseline has no such ambiguity -- every before-period IS baseline, full stop.
+  const beforeVersions=new Set(before.map(p=>p.config.version));
+  const candidateVersions=new Set(after.map(p=>p.config.version).filter(v=>!beforeVersions.has(v)));
+  const candidatePeriod=after.find(p=>candidateVersions.has(p.config.version));
+  const k={baseline:versionServeStats(baselineRun.game.world.events.slice(startEvents),beforeVersions,before.at(-1)!.config.values.k.anchorValuePerServe),
+    candidate:candidatePeriod?versionServeStats(candidateRun.game.world.events.slice(startEvents),candidateVersions,candidatePeriod.config.values.k.anchorValuePerServe):NO_CANDIDATE_PERIOD};
   return {baseline,candidate,delta,k};
 }

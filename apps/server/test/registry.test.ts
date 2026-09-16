@@ -597,3 +597,39 @@ test('a scoped candidate refused by the real worker never composes into that pla
   // Refused, not just pending -- resolve() still excludes it, permanently.
   assert.equal(f.registry.resolve('scoped-real-player').raw.menu.bia.price, base.raw.menu.bia.price);
 });
+
+test('a scoped campaign that expires within the forecast horizon is measured on its own serves, not the reverted baseline', { timeout: 120000 }, async t => {
+  const f = realWorkerFixture(t);
+  f.store.createPlayer('expiring-campaign-player', 42);
+  f.store.command('expiring-campaign-player', { idempotencyKey: 'open', command: { type: 'startShift' } });
+  // Expires partway through the 7-day forecast horizon -- the timeline's LAST period reverts to baseline.
+  // Using at(-1) to pick "the candidate's" config would measure baseline serves instead (codex round 3).
+  const scope: ConfigScope = { kind: 'campaign', id: 'expiring-real-worker', playerIds: ['expiring-campaign-player'], priority: 0, expiresAt: f.now + 3 * 86400000, previousVersion: null, ticketId: null };
+  const base = f.registry.config(f.registry.latest().version), snapshot = structuredClone(base.raw); snapshot.menu.bia.price *= 50;
+  const draft = f.registry.propose(f.actor(), { key: 'expiring-blowup', baseVersion: base.version, snapshot, reason: 'Expiring campaign probe', scope });
+  f.registry.approve(f.actor('super', 'reviewer'), draft.version);
+  f.registry.publish(f.actor(), draft.version);
+  await f.registry.settleMeasurements();
+  const row = f.db.prepare('SELECT state, measured_k FROM registry_measurements WHERE version=?').get(draft.version)!;
+  assert.equal(row.state, 'refused'); assert.ok(Number(row.measured_k) > config.values.k.band[1]);
+});
+
+test('a scoped proposal against a still-pending sibling for the same scope is rejected as stale, not silently accepted', t => {
+  let resolveA!: (k: number) => void;
+  const pendingA = new Promise<number>(resolve => { resolveA = resolve; });
+  let calls = 0;
+  // First measurement call (draft A's) hangs; every later call resolves in-band immediately.
+  const f = fixture(t, config, candidate => { calls++; return calls === 1 ? pendingA : candidate.values.k.value; });
+  f.store.createPlayer('race-player', 42);
+  const scope: ConfigScope = { kind: 'segment', id: 'race-group', playerIds: ['race-player'], priority: 0, expiresAt: null, previousVersion: null, ticketId: null };
+  const base = f.registry.config(f.registry.latest().version);
+  const snapshotA = structuredClone(base.raw); snapshotA.menu.bia.price++;
+  const draftA = f.registry.propose(f.actor(), { key: 'race-a', baseVersion: base.version, snapshot: snapshotA, reason: 'A', scope });
+  f.registry.approve(f.actor('super', 'reviewer'), draftA.version);
+  f.registry.publish(f.actor(), draftA.version); // stays pending -- measurement A is still hanging
+  // B targets the same scope with the same (as far as its own author can see) previousVersion=null --
+  // codex round 3 found this used to slip through and, once both settled, silently revert A's price change.
+  const snapshotB = structuredClone(base.raw); snapshotB.menu.lac.price++;
+  assert.throws(() => f.registry.propose(f.actor(), { key: 'race-b', baseVersion: base.version, snapshot: snapshotB, reason: 'B', scope }), /registry:staleBase/);
+  resolveA(2.6);
+});
