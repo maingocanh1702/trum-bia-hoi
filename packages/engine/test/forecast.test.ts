@@ -36,14 +36,22 @@ test('a daily cap exhausted before a midday activation is retried at that activa
  assert.notEqual(report.delta.faucet,0);assert.equal(source.world.completedShifts,0);
 });
 
-test('a candidate whose after-timeline never introduces a version outside the before-timeline measures as baseline, not unmeasurable',()=>{
- // Identical before/after timelines are the simplest case of "the candidate never becomes reachable" --
- // e.g. removing a player from a scope collapses their after-timeline onto a version already in their
- // before-timeline. There is nothing new to measure, so nothing new can be exploited either: k.candidate
- // must equal k.baseline (already trusted/admitted), not silently stay unmeasurable forever (codex round 4).
+test('a candidate whose after-timeline versions are a subset of the before-timeline measures the CANDIDATE run, not baseline\'s',()=>{
+ // Baseline plays config-pricing for the first 3 days then campaign-pricing for the rest; candidate plays
+ // campaign-pricing the WHOLE time. candidateVersions (after minus before) is empty -- {campaign.version}
+ // is already inside beforeVersions {config.version, campaign.version} -- the simplest real case of "the
+ // candidate never introduces a version outside baseline's own set" (e.g. removing a player from a scope
+ // collapses their after-timeline onto a version already in their before-timeline). But an identical
+ // version SET does not mean an identical serve DISTRIBUTION: these are two independent simulations from
+ // the same source, and one of them experiences campaign pricing for 4 more days than the other. A first
+ // attempt at this fix measured baselineRun's own events for the fallback instead of candidateRun's,
+ // silently reporting the wrong run's economics whenever a case like this arose (codex round 5 finding,
+ // caught before it shipped) -- k.candidate must reflect what the CANDIDATE simulation actually did.
  const source=new Game(config,42,START);source.command({command:{type:'startShift'},at:START,idempotencyKey:'open'});
- const report=compareEconomy(source,[{from:0,config}],[{from:0,config}],1);
- assert.notEqual(report.k.candidate.served,0);assert.deepEqual(report.k.candidate,report.k.baseline);
+ const activation=START+3*DAY_MS,campaign=changed('forecast-subset-campaign',raw=>{raw.menu.bia.price+=10;});
+ const report=compareEconomy(source,[{from:0,config},{from:activation,config:campaign}],[{from:0,config:campaign}],7);
+ assert.notEqual(report.k.candidate.served,0);
+ assert.notEqual(report.k.candidate.mean,report.k.baseline.mean);
 });
 
 test('forecast rejects unsupported horizons and ambiguous timelines before projecting',()=>{

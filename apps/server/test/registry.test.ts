@@ -656,3 +656,25 @@ test('scopeSource() never pairs a stale admitted snapshot with a newer pending s
   assert.equal(source.snapshot.menu.bia.price, 57);
   resolveSecond(2.6);
 });
+
+test('overlapping equal-priority scoped proposals conflict at publish time even while both are still pending', t => {
+  // Every measurement hangs forever -- fine, this test only needs the SYNCHRONOUS pre-insert
+  // validatePublications() self-check inside publish(), which runs before measureK is ever invoked.
+  const f = fixture(t, config, () => new Promise<number>(() => {}));
+  f.store.createPlayer('conflict-player', 42);
+  const base = f.registry.config(f.registry.latest().version);
+  const scopeA: ConfigScope = { kind: 'segment', id: 'conflict-a', playerIds: ['conflict-player'], priority: 0, expiresAt: null, previousVersion: null, ticketId: null };
+  const scopeB: ConfigScope = { kind: 'segment', id: 'conflict-b', playerIds: ['conflict-player'], priority: 0, expiresAt: null, previousVersion: null, ticketId: null };
+  const snapshotA = structuredClone(base.raw); snapshotA.menu.bia.price = 60;
+  const draftA = f.registry.propose(f.actor(), { key: 'conflict-a', baseVersion: base.version, snapshot: snapshotA, reason: 'A', scope: scopeA });
+  f.registry.approve(f.actor('super', 'reviewer'), draftA.version);
+  f.registry.publish(f.actor(), draftA.version); // stays pending -- same kind+priority, touches the same key
+  // B touches the SAME field with a DIFFERENT value: non-commutative with A, so real conflict. Before codex
+  // round 5's fix, A being merely pending (not yet admitted) made it invisible to B's own pre-insert
+  // self-check, so this slipped through -- and once both eventually admitted, a real player's resolve()
+  // would throw scopeConflict at runtime instead of B's own publish() catching it here.
+  const snapshotB = structuredClone(base.raw); snapshotB.menu.bia.price = 70;
+  const draftB = f.registry.propose(f.actor(), { key: 'conflict-b', baseVersion: base.version, snapshot: snapshotB, reason: 'B', scope: scopeB });
+  f.registry.approve(f.actor('super', 'reviewer'), draftB.version);
+  assert.throws(() => f.registry.publish(f.actor(), draftB.version), /registry:scopeConflict/);
+});

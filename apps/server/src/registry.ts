@@ -271,17 +271,28 @@ export class ConfigRegistry {
       this.audit('SupportRequested', { ticketId: id, ...input, requestedBy: actor.subject, at: now }); return id;
     });
   }
-  private currentScopes(now: number, candidate?: PreviewPublication) {
+  // includePending: for validatePublications()'s own conflict-detection sweep ONLY (see below) -- two
+  // overlapping equal-priority scoped proposals could otherwise each pass their own pre-insert self-check
+  // (neither sees the other while both are still pending measurement), and the conflict would only surface
+  // once both settle admitted, as a REAL player's resolve() throwing scopeConflict at runtime instead of
+  // being caught at publish time (codex round 5 finding). The real player-facing default (false, via
+  // scopedPublications()) is unchanged and must stay admitted-only (codex round 1).
+  private currentScopes(now: number, candidate?: PreviewPublication, includePending = false) {
     const latest = new Map<string, ReturnType<ConfigRegistry['scopedPublications']>[number]>();
-    const entries = this.scopedPublications();
+    const entries = includePending ? this.scopedAttempts() : this.scopedPublications();
     if (candidate?.scope) entries.push({ ...candidate, scope: candidate.scope });
     for (const entry of entries) if (entry.effective_at <= now) latest.set(JSON.stringify([entry.scope.kind, entry.scope.id]), entry);
     return [...latest.values()].filter(p => p.scope.expiresAt === null || p.scope.expiresAt > now);
   }
+  // Feeds real governance decisions (policy()'s displaced-keys and affectedPlayers()'s audience below), not
+  // just the audit trail -- reading the admitted-only scopedPublications() here let a pending Tier C scope
+  // followed by a pending A/B successor omit the earlier audience and bypass emergencyTier entirely
+  // (codex round 5 finding; an earlier pass here wrongly assumed this was audit-only and left it unfixed).
+  // "What's actually active NOW" (`active`, via currentScopes()) correctly stays admitted-only.
   private emergencyScopeReplacements(scope: ConfigScope, now: number) {
     const matches = (p: { scope: ConfigScope }) => p.scope.kind === scope.kind && p.scope.id === scope.id;
     const active = this.currentScopes(now).find(matches)?.version;
-    return this.scopedPublications().filter(matches).filter(p => p.version === active || p.effective_at > now && !this.supersededBy(p.version));
+    return this.scopedAttempts().filter(matches).filter(p => p.version === active || p.effective_at > now && !this.supersededBy(p.version));
   }
   private affectedPlayers(version: string, now: number) {
     const scope = this.scope(version);
@@ -290,10 +301,10 @@ export class ConfigRegistry {
     const displaced = emergencyDraft(this.proposal(version)) ? this.emergencyScopeReplacements(scope, now).flatMap(p => p.scope.playerIds) : [];
     return [...new Set([...scope.playerIds, ...previous, ...displaced])].sort();
   }
-  private compose(playerId: string, now: number, candidate?: PreviewPublication): { config: Config; sources: string[] } {
+  private compose(playerId: string, now: number, candidate?: PreviewPublication, includePending = false): { config: Config; sources: string[] } {
     const base = candidate && !candidate.scope && candidate.effective_at <= now ? this.config(candidate.version) : this.active(now);
     const rank = { segment: 0, campaign: 1, player: 2 };
-    const selected = this.currentScopes(now, candidate).filter(p => p.scope.playerIds.includes(playerId))
+    const selected = this.currentScopes(now, candidate, includePending).filter(p => p.scope.playerIds.includes(playerId))
       .sort((a, b) => rank[a.scope.kind] - rank[b.scope.kind] || a.scope.priority - b.scope.priority || a.seq - b.seq);
     if (!selected.length) return { config: base, sources: [base.version] };
     const sources = [base.version, ...selected.map(p => p.version)], raw = structuredClone(base.raw);
@@ -324,12 +335,17 @@ export class ConfigRegistry {
     return this.db.isTransaction ? action() : this.transaction(action);
   }
   private validatePublications(now: number, candidate?: PreviewPublication) {
-    const entries = this.scopedPublications();
+    // Pending-aware sweep (codex round 5 finding): a sibling scoped proposal that's ALREADY published-but-
+    // pending must be included in both the players/boundaries this scan covers and the compose() conflict
+    // check itself (includePending=true below) -- otherwise a conflicting pending sibling is invisible to
+    // this self-check entirely, and the conflict only surfaces later as a live scopeConflict on a real
+    // player's resolve(), once both happen to settle admitted.
+    const entries = this.scopedAttempts();
     if (candidate?.scope) entries.push({ ...candidate, scope: candidate.scope });
     const players = new Set(entries.flatMap(p => p.scope.playerIds));
     const boundaries = new Set([now, ...(candidate ? [candidate.effective_at] : []), ...this.db.prepare('SELECT effective_at FROM registry_publications WHERE effective_at>=?').all(now).map(r => Number(r.effective_at)),
       ...entries.flatMap(p => p.scope.expiresAt !== null && p.scope.expiresAt >= now ? [p.scope.expiresAt] : [])]);
-    for (const at of boundaries) for (const player of players) this.compose(player, at, candidate);
+    for (const at of boundaries) for (const player of players) this.compose(player, at, candidate, true);
   }
   private actor(actor: AdminActor, now: number) { assertAdminActor(actor, now); }
   private permit(actor: AdminActor, policy: ReturnType<typeof registryPolicy>, approve = false, scope?: ConfigScope) {

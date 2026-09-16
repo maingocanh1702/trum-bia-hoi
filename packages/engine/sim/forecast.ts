@@ -118,11 +118,18 @@ export function compareEconomy(source:Game,before:readonly ConfigPeriod[],after:
   const beforeVersions=new Set(before.map(p=>p.config.version));
   const candidateVersions=new Set(after.map(p=>p.config.version).filter(v=>!beforeVersions.has(v)));
   const candidatePeriod=after.find(p=>candidateVersions.has(p.config.version));
-  const baselineK=versionServeStats(baselineRun.game.world.events.slice(startEvents),beforeVersions,before.at(-1)!.config.values.k.anchorValuePerServe);
+  const baselineAnchor=before.at(-1)!.config.values.k.anchorValuePerServe;
+  const baselineK=versionServeStats(baselineRun.game.world.events.slice(startEvents),beforeVersions,baselineAnchor);
   // No candidate-only version ever became reachable within the horizon (e.g. removing this player from a
   // scope collapses their "after" onto a version already in their own "before") -- there is nothing NEW to
   // measure, so nothing new can be exploited either. Falling back to null left this permanently unmeasurable
-  // even though the player experiences ONLY baseline, which is already trusted/admitted (codex round 4 finding).
-  const k={baseline:baselineK,candidate:candidatePeriod?versionServeStats(candidateRun.game.world.events.slice(startEvents),candidateVersions,candidatePeriod.config.values.k.anchorValuePerServe):baselineK};
+  // even though the player experiences ONLY baseline-equivalent versions, already trusted/admitted (round 4
+  // finding). But the fallback must still measure the CANDIDATE run's own events, not baselineRun's: these
+  // are two INDEPENDENT simulations from the same source, and an identical version set does not imply an
+  // identical serve distribution -- RNG/timing can diverge even when both runs pass through the same config
+  // (codex round 5 finding, in this exact fix).
+  const k={baseline:baselineK,candidate:candidatePeriod
+    ?versionServeStats(candidateRun.game.world.events.slice(startEvents),candidateVersions,candidatePeriod.config.values.k.anchorValuePerServe)
+    :versionServeStats(candidateRun.game.world.events.slice(startEvents),beforeVersions,baselineAnchor)};
   return {baseline,candidate,delta,k};
 }
