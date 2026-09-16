@@ -83,7 +83,7 @@ Notes: `offset` ≥ `total` returns an empty page (with `total` still reported).
 - `explain { target: "src/vuln.ts" }` — findings in a file (suffix path match accepted)
 - `explain { target: "runUserCommand" }` — findings in a function (resolved like `context`; ambiguous names return ranked candidates)
 
-A repo indexed without `--pdg` returns a clear "no taint layer" note. Caveats: findings are intra-procedural only — cross-function, closure/callback, property/field, and implicit flows are not modeled, so the absence of a finding is **not** proof of safety. `SANITIZES` (sanitizer-kill) edges are queryable via `cypher`.
+A repo indexed without `--pdg` returns a clear "no taint layer" note. Cross-function flows ARE modeled (summary composition over the call graph, context-insensitive) — a source flowing through helper functions into a sink is found; cross-function matching is by callee name, so a flow into one of two same-named callees over-attributes to both (a sound over-report, never a missed flow). Caveats: closure/callback, property/field, and implicit flows are still not modeled, so the absence of a finding is **not** proof of safety. `SANITIZES` (sanitizer-kill) edges are queryable via `cypher`.
 
 ### Control & data dependence (`pdg_query`)
 

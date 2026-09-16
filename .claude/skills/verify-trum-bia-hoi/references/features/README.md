@@ -191,5 +191,9 @@ incident is the receipt, not decoration:
   written.** (m02-doctor: "ban bare Date/Math" contradicted 94 legitimate uses; the writer had to
   HALT to expose it.)
 
-**Review-cap rule:** the 4-round review cap resets once after an owner-directed scope change; a
-second reset requires a new slice.
+**Review-round ceiling:** `max_review_rounds` (task frontmatter, default 3) is a hard stop for a
+headless ap3 writer — verified in `ap3/dispatch.sh`/`ap3/retry.sh`: there is no automatic reset.
+An owner raises it explicitly with `ap3/retry.sh --extend-rounds N <slug>` (or `--extend-budget
+USD <slug>`), which pins `max_review_rounds_override` and resumes the same in-flight lifecycle —
+never a silent or scope-change-triggered reset. A terminal `MAX_ROUNDS`/`VERIFY_HOST_FAIL` halt
+refuses to resume any other way (`retry.sh` line ~323/337).

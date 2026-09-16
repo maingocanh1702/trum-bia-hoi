@@ -13,7 +13,7 @@
     "dev": "vite --config apps/web/vite.config.ts",
     "build": "npm run typecheck && vite build --config apps/web/vite.config.ts",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test packages/engine/test/*.test.ts apps/server/test/*.test.ts apps/web/src/verify/*.test.ts apps/web/test/*.test.ts",
+    "test": "tsx --test packages/engine/test/*.test.ts apps/server/test/*.test.ts apps/web/src/verify/*.test.ts apps/web/test/*.test.ts scripts/verify/*.test.ts",
     "test:server": "tsx --test apps/server/test/*.test.ts",
     "sim": "tsx packages/engine/sim/headless.ts",
     "sim:onboarding": "tsx packages/engine/sim/headless.ts --onboarding-pair",
