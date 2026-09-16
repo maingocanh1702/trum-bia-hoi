@@ -36,6 +36,16 @@ test('a daily cap exhausted before a midday activation is retried at that activa
  assert.notEqual(report.delta.faucet,0);assert.equal(source.world.completedShifts,0);
 });
 
+test('a candidate whose after-timeline never introduces a version outside the before-timeline measures as baseline, not unmeasurable',()=>{
+ // Identical before/after timelines are the simplest case of "the candidate never becomes reachable" --
+ // e.g. removing a player from a scope collapses their after-timeline onto a version already in their
+ // before-timeline. There is nothing new to measure, so nothing new can be exploited either: k.candidate
+ // must equal k.baseline (already trusted/admitted), not silently stay unmeasurable forever (codex round 4).
+ const source=new Game(config,42,START);source.command({command:{type:'startShift'},at:START,idempotencyKey:'open'});
+ const report=compareEconomy(source,[{from:0,config}],[{from:0,config}],1);
+ assert.notEqual(report.k.candidate.served,0);assert.deepEqual(report.k.candidate,report.k.baseline);
+});
+
 test('forecast rejects unsupported horizons and ambiguous timelines before projecting',()=>{
  const source=new Game(config,42,START);
  for(const days of [0,-1,1.1,8,NaN,Infinity])assert.throws(()=>projectEconomy(source,[{from:0,config}],days),/forecast:days/);

@@ -105,8 +105,6 @@ function versionServeStats(events:readonly DomainEvent[],versions:ReadonlySet<st
   const k=mean===null?NaN:mean/anchor;
   return {served,totalValue,mean,kValue:Number.isFinite(k)?k:null};
 }
-const NO_CANDIDATE_PERIOD:ReturnType<typeof versionServeStats>={served:0,totalValue:null,mean:null,kValue:null};
-
 export function compareEconomy(source:Game,before:readonly ConfigPeriod[],after:readonly ConfigPeriod[],days=FORECAST_DAYS) {
   const startEvents=source.world.events.length;
   const baselineRun=projectEconomy(source,before,days),candidateRun=projectEconomy(source,after,days);
@@ -120,7 +118,11 @@ export function compareEconomy(source:Game,before:readonly ConfigPeriod[],after:
   const beforeVersions=new Set(before.map(p=>p.config.version));
   const candidateVersions=new Set(after.map(p=>p.config.version).filter(v=>!beforeVersions.has(v)));
   const candidatePeriod=after.find(p=>candidateVersions.has(p.config.version));
-  const k={baseline:versionServeStats(baselineRun.game.world.events.slice(startEvents),beforeVersions,before.at(-1)!.config.values.k.anchorValuePerServe),
-    candidate:candidatePeriod?versionServeStats(candidateRun.game.world.events.slice(startEvents),candidateVersions,candidatePeriod.config.values.k.anchorValuePerServe):NO_CANDIDATE_PERIOD};
+  const baselineK=versionServeStats(baselineRun.game.world.events.slice(startEvents),beforeVersions,before.at(-1)!.config.values.k.anchorValuePerServe);
+  // No candidate-only version ever became reachable within the horizon (e.g. removing this player from a
+  // scope collapses their "after" onto a version already in their own "before") -- there is nothing NEW to
+  // measure, so nothing new can be exploited either. Falling back to null left this permanently unmeasurable
+  // even though the player experiences ONLY baseline, which is already trusted/admitted (codex round 4 finding).
+  const k={baseline:baselineK,candidate:candidatePeriod?versionServeStats(candidateRun.game.world.events.slice(startEvents),candidateVersions,candidatePeriod.config.values.k.anchorValuePerServe):baselineK};
   return {baseline,candidate,delta,k};
 }

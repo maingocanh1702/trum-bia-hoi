@@ -633,3 +633,26 @@ test('a scoped proposal against a still-pending sibling for the same scope is re
   assert.throws(() => f.registry.propose(f.actor(), { key: 'race-b', baseVersion: base.version, snapshot: snapshotB, reason: 'B', scope }), /registry:staleBase/);
   resolveA(2.6);
 });
+
+test('scopeSource() never pairs a stale admitted snapshot with a newer pending sibling', t => {
+  let calls = 0;
+  let resolveSecond!: (k: number) => void;
+  const pendingSecond = new Promise<number>(resolve => { resolveSecond = resolve; });
+  // First publish (the admitted one) resolves immediately in-band; the second stays pending.
+  const f = fixture(t, config, candidate => { calls++; return calls === 1 ? candidate.values.k.value : pendingSecond; });
+  f.store.createPlayer('mismatch-player', 42);
+  const scope: ConfigScope = { kind: 'segment', id: 'mismatch-group', playerIds: ['mismatch-player'], priority: 0, expiresAt: null, previousVersion: null, ticketId: null };
+  const base = f.registry.config(f.registry.latest().version);
+  const snapshotA = structuredClone(base.raw); snapshotA.menu.bia.price = 51;
+  const draftA = f.registry.propose(f.actor(), { key: 'mismatch-a', baseVersion: base.version, snapshot: snapshotA, reason: 'A', scope });
+  f.registry.approve(f.actor('super', 'reviewer'), draftA.version);
+  f.registry.publish(f.actor(), draftA.version); // admitted immediately
+  const snapshotB = structuredClone(f.registry.config(draftA.version).raw); snapshotB.menu.bia.price = 57;
+  const draftB = f.registry.propose(f.actor(), { key: 'mismatch-b', baseVersion: f.registry.latest().version, snapshot: snapshotB, reason: 'B', scope: { ...scope, previousVersion: draftA.version } });
+  f.registry.approve(f.actor('super', 'reviewer'), draftB.version);
+  f.registry.publish(f.actor(), draftB.version); // stays pending -- codex round 4 found scopeSource() kept
+  // showing the stale admitted snapshot (51) here while other fields already reflected pending B.
+  const source = f.registry.scopeSource(f.actor(), 'segment', 'mismatch-group');
+  assert.equal(source.snapshot.menu.bia.price, 57);
+  resolveSecond(2.6);
+});

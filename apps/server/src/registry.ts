@@ -501,7 +501,10 @@ export class ConfigRegistry {
     const emergency = emergencyDraft(draft);
     this.currentBase(draft, scope, emergency, now);
     this.validateAdmission(this.config(draft.version), base); // Also fence drafts admitted before a validation fix.
-    const latest = scope ? this.predecessor(scope) : this.latest();
+    // Pending-aware on both branches (predecessor() already is, since round 3): a pending sibling has
+    // already reserved its scheduled slot, and an immediate-effective proposal against it must see that
+    // reservation now, not only after it settles (codex round 4 finding).
+    const latest = scope ? this.predecessor(scope) : this.latestAttempt();
     const at = emergency ? now : scheduledAt(now, draft.effective, policy, base);
     if (scope?.expiresAt !== null && scope?.expiresAt !== undefined && scope.expiresAt <= at) throw Error('registry:invalidExpiry');
     if (!emergency && latest && at < latest.effective_at) throw Error('registry:scheduleConflict');
@@ -523,7 +526,9 @@ export class ConfigRegistry {
   }
   draftSource(actor: AdminActor, version?: string, emergency = false) {
     const now = this.now(); this.actor(actor, now); if (emergency) this.emergencyPermit(actor);
-    const base = emergency ? this.active(now) : this.config(this.latest().version), source = version ? this.config(version) : base;
+    // Pending-aware, matching currentBase(): suggesting the last ADMITTED version as the base would fail
+    // staleBase immediately if a sibling default proposal is already pending (codex round 4 finding).
+    const base = emergency ? this.active(now) : this.config(this.latestAttempt()!.version), source = version ? this.config(version) : base;
     if (emergency && version && version !== base.version && !this.currentScopes(now).some(p => p.version === version)) throw Error('registry:inactiveEmergencySource');
     const scope = version ? this.scope(version) : undefined, snapshot = structuredClone(scope ? base.raw : source.raw);
     if (scope) patch(snapshot, source.raw, JSON.parse(this.proposal(version!).keys));
@@ -534,7 +539,10 @@ export class ConfigRegistry {
   scopeSource(actor: AdminActor, kind: string, id: string, emergency = false) {
     const now = this.now(); this.actor(actor, now); if (emergency) this.emergencyPermit(actor);
     if (!['segment', 'campaign', 'player'].includes(kind) || !id || id.length > 128) throw Error('registry:invalidInput'); // config-exempt:scope identity protocol
-    const last = this.scopedPublications().filter(p => p.scope.kind === kind && p.scope.id === id).at(-1);
+    // Pending-aware, and MUST match predecessor()'s view: pairing an admitted-only snapshot source with a
+    // pending-aware predecessor token returns a stale snapshot under a newer previousVersion, so an
+    // unrelated edit built on it silently reverts the pending change once both settle (codex round 4 finding).
+    const last = this.scopedAttempts().filter(p => p.scope.kind === kind && p.scope.id === id).at(-1);
     if (!last) throw Error('registry:missingScope');
     if (!emergency) return this.draftSource(actor, last.version);
     const active = this.currentScopes(now).find(p => p.scope.kind === kind && p.scope.id === id);
