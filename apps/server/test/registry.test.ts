@@ -6,18 +6,20 @@ import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { AddressInfo } from 'node:net';
 import { setTimeout as delay } from 'node:timers/promises';
-import { config, configContent, Game, loadConfig, seasonWindow, type Config } from '@tbh/engine';
+import { config, configContent, Game, loadConfig, seasonWindow, serveValueStats, type Config } from '@tbh/engine';
 import { GameStore } from '../src/store';
 import { createGameServer } from '../src/http';
-import { ConfigRegistry, registryPolicy, type AdminActor } from '../src/registry';
+import { ConfigRegistry, registryPolicy, type AdminActor, type ConfigScope, type MeasureK } from '../src/registry';
 const NOW = Date.parse('2026-09-10T10:00:00Z');
-function fixture(t: { after(fn: () => unknown): void }, seed = config) {
+// Default measurer trusts the candidate's own declared k.value -- identical to the pre-existing self-report
+// check, so every test below that never touches raw.k sees admission behave exactly as before this feature.
+function fixture(t: { after(fn: () => unknown): void }, seed = config, measureK?: MeasureK) {
   const dir = mkdtempSync(join(tmpdir(), 'tbh-registry-')), file = join(dir, 'game.db');
   let now = NOW; const stores: GameStore[] = [], connections: DatabaseSync[] = [];
-  const open = (c = seed) => { const s = new GameStore(file, c, () => now); stores.push(s); return s; };
+  const open = (c = seed) => { const s = new GameStore(file, c, () => now, measureK); stores.push(s); return s; };
   const store = open(), db = new DatabaseSync(file); connections.push(db);
   db.exec('PRAGMA foreign_keys=ON');
-  const registry = new ConfigRegistry(db, () => now);
+  const registry = new ConfigRegistry(db, () => now, measureK);
   t.after(() => { for (const s of stores) s.close(); for (const d of connections) d.close(); rmSync(dir, { recursive: true, force: true }); });
   const actor = (role: AdminActor['role'] = 'economy', subject: string = role): AdminActor => ({ subject, role, mfa: true, issuedAt: now, expiresAt: now + 3600000 });
   const draft = (edit: (raw: Config['raw']) => void, who = actor(), key = crypto.randomUUID()) => {
@@ -195,9 +197,9 @@ test('failed publication transaction leaves no activation or audit, and persiste
 test('schema7 migration seeds once while preserving actual prior career history and projection', t => {
   const f = fixture(t); f.store.createPlayer('legacy', 42); f.store.command('legacy', { idempotencyKey: 'open', command: { type: 'startShift' } });
   const before = f.store.read('legacy'); f.store.close();
-  f.db.exec('DROP TABLE registry_resolutions; DROP TABLE registry_support_uses; DROP TABLE registry_support; DROP TABLE registry_scopes; DROP TABLE admin_sessions; DROP TABLE admin_factors; DROP TABLE registry_audit; DROP TABLE registry_publications; DROP TABLE registry_approvals; DROP TABLE registry_proposals; PRAGMA user_version=7');
+  f.db.exec('DROP TABLE registry_resolutions; DROP TABLE registry_support_uses; DROP TABLE registry_support; DROP TABLE registry_scopes; DROP TABLE admin_sessions; DROP TABLE admin_factors; DROP TABLE registry_measurements; DROP TABLE registry_audit; DROP TABLE registry_publications; DROP TABLE registry_approvals; DROP TABLE registry_proposals; PRAGMA user_version=7');
   const migrated = f.open(); assert.deepEqual(migrated.read('legacy'), before);
-  assert.equal(f.db.prepare('PRAGMA user_version').get()!.user_version, 10);
+  assert.equal(f.db.prepare('PRAGMA user_version').get()!.user_version, 11);
   const raw = structuredClone(config.raw); raw._meta.version = 'replacement-seed'; raw.menu.bia.price += 2;
   assert.equal(f.open(loadConfig(raw)).createPlayer('next', 43).configVersion, config.version);
 });
@@ -313,6 +315,9 @@ test('an already-published threshold-deletion scope still opens shifts and can b
   f.db.prepare('INSERT INTO registry_scopes VALUES (?,?)').run(version, JSON.stringify(scope));
   f.db.prepare('INSERT INTO registry_approvals VALUES (?,?,?)').run(version, who.subject, f.now);
   f.db.prepare('INSERT INTO registry_publications(version,effective_at,published_at,changed_by,approved_by) VALUES (?,?,?,?,?)').run(version, f.now, f.now, who.subject, who.subject);
+  // Pre-fix rows shaped exactly like a publication admitted by a release before k-measurement existed --
+  // grandfathered 'admitted' on its own declared k.value, same as initializeMeasurements()'s own migration backfill.
+  f.db.prepare("INSERT INTO registry_measurements VALUES (?,'admitted',?,?)").run(version, raw.k.value, f.now);
   const store = f.open(), registry = store.registry, receipt = registry.publish(who, version);
   const resolved = registry.resolve('scope-player');
   assert.equal('leaveProgress' in resolved.raw.onboarding.loginPrompt, false);
@@ -477,4 +482,72 @@ test('archive and eligibility tuning waits for the common season boundary while 
   assert.equal(f.registry.active().version, before.version);
   assert.equal(f.registry.active().values.leaderboard.historySeasonsKept, config.values.leaderboard.historySeasonsKept);
   f.now++; assert.equal(f.registry.active().version, pub.version);
+});
+
+// A representative one-serve sample, scaled by the candidate's own declared bia price -- a stand-in for the
+// real forecast-worker measurement, proving serveValueStats/compareEconomy's k exposure end to end without
+// paying a multi-second bot simulation inside this suite.
+const sampleMeasurer: MeasureK = candidate => serveValueStats([{ t: 0, customerId: 'sample', customerType: 'thuong', orderId: 'sample-order',
+  dishes: ['bia'], payment: candidate.values.menu.bia.price * 4, tip: 0, credited: 0, hadMoi: false, stale: false, patienceRatio: 1 }], candidate).kValue!;
+
+test('a real pricing blowup that self-reports an in-band k is refused once actually measured (fails on main today)', t => {
+  const f = fixture(t, config, sampleMeasurer);
+  const d = f.draft(raw => { raw.menu.bia.price *= 50; }); // k.value/k.band left at the seed's own values -- self-report alone would admit this
+  f.registry.approve(f.actor('super', 'reviewer'), d.version);
+  assert.throws(() => f.registry.publish(f.actor(), d.version), (error: unknown) => {
+    assert.ok(error instanceof Error); assert.match(error.message, /^registry:bindingRange$/);
+    const e = error as Error & { measured: number; band: readonly number[] };
+    assert.ok(e.measured > e.band[1], `measured ${e.measured} should exceed band[1] ${e.band[1]}`);
+    assert.deepEqual([...e.band], [...config.values.k.band]);
+    return true;
+  });
+  assert.equal(f.db.prepare('SELECT state FROM registry_measurements WHERE version=?').get(d.version)!.state, 'refused');
+  assert.equal(f.registry.latest().version, config.version);
+  assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM registry_publications WHERE version=?').get(d.version)!.n, 1, 'the attempt is still audited, just never admitted');
+});
+
+test('a modest pricing change with a genuinely in-band measured k is admitted', t => {
+  const f = fixture(t, config, sampleMeasurer);
+  const d = f.draft(raw => { raw.menu.bia.price++; });
+  f.registry.approve(f.actor('super', 'reviewer'), d.version);
+  const pub = f.registry.publish(f.actor(), d.version);
+  const row = f.db.prepare('SELECT state, measured_k FROM registry_measurements WHERE version=?').get(d.version)!;
+  assert.equal(row.state, 'admitted'); assert.ok(Number(row.measured_k) >= config.values.k.band[0] && Number(row.measured_k) <= config.values.k.band[1]);
+  f.now = pub.effective_at; assert.equal(f.registry.active().version, d.version);
+});
+
+test('a pending async measurement never becomes active until it settles, and re-checking it throws kUnmeasured', async t => {
+  let resolveMeasurement!: (k: number) => void;
+  const pending = new Promise<number>(resolve => { resolveMeasurement = resolve; });
+  const f = fixture(t, config, () => pending), before = f.registry.latest();
+  const d = f.draft(raw => { raw.menu.bia.price++; });
+  f.registry.approve(f.actor('super', 'reviewer'), d.version);
+  const pub = f.registry.publish(f.actor(), d.version); // returns immediately; measurement still pending
+  assert.equal(pub.version, d.version);
+  assert.equal(f.registry.latest().version, before.version, 'a pending publication is not latest');
+  f.now = pub.effective_at;
+  assert.equal(f.registry.active().version, before.version, 'the player path never sees a pending publication as active');
+  assert.throws(() => f.registry.publish(f.actor(), d.version), /registry:kUnmeasured/);
+  resolveMeasurement(2.6); // settles in-band
+  await f.registry.settleMeasurements();
+  assert.equal(f.registry.latest().version, d.version);
+  assert.equal(f.registry.active().version, d.version);
+});
+
+test('resolve()/compose() never invoke the measurer on the real-player hot path -- only publish() does', t => {
+  const f = fixture(t);
+  f.store.createPlayer('alice', 42);
+  const scope: ConfigScope = { kind: 'segment', id: 'group', playerIds: ['alice'], priority: 0, expiresAt: null, previousVersion: null, ticketId: null };
+  f.publish(raw => { raw.menu.bia.price++; }); // admitted via the default (working) measurer
+  const scopedSnapshot = structuredClone(f.registry.config(f.registry.latest().version).raw); scopedSnapshot.menu.lac.price++;
+  const scopedProposal = f.registry.propose(f.actor(), { key: 'scoped-hotpath', baseVersion: f.registry.latest().version, snapshot: scopedSnapshot, reason: 'Scoped path', scope });
+  f.registry.approve(f.actor('super', 'reviewer'), scopedProposal.version);
+  f.registry.publish(f.actor(), scopedProposal.version); // also admitted via the default measurer
+  const throwing: MeasureK = () => { throw Error('registry:measurerCalledOnHotPath'); };
+  const restarted = new GameStore(f.file, config, () => f.now, throwing);
+  t.after(() => restarted.close());
+  assert.doesNotThrow(() => restarted.registry.resolve('alice'));
+  assert.doesNotThrow(() => restarted.registry.active());
+  const opened = restarted.command('alice', { idempotencyKey: 'open-hotpath', command: { type: 'startShift' } });
+  assert.ok(opened.result.ok);
 });

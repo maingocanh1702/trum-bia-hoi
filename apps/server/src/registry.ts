@@ -104,6 +104,23 @@ export function initializeScopes(db: DatabaseSync) {
       BEGIN SELECT RAISE(ABORT,'registry:appendOnly'); END;`);
   }
 }
+/** Separate from registry_publications so that table's insert-only trigger never needs an exception:
+ * this table alone allows exactly one 'pending' -> ('admitted'|'refused') transition, then is immutable too.
+ * Every publication that predates this migration is grandfathered as 'admitted' on its own declared k.value --
+ * it was already live/trusted under the old self-report-only regime; this must not regress an existing deploy. */
+export function initializeMeasurements(db: DatabaseSync, now: number) {
+  db.exec(`CREATE TABLE registry_measurements (version TEXT PRIMARY KEY REFERENCES registry_publications(version),
+    state TEXT NOT NULL CHECK(state IN ('pending','admitted','refused')), measured_k REAL, measured_at INTEGER) STRICT;
+    CREATE TRIGGER registry_measurements_update BEFORE UPDATE ON registry_measurements
+      WHEN NOT (OLD.state='pending' AND NEW.version=OLD.version AND NEW.state IN ('admitted','refused') AND NEW.measured_k IS NOT NULL AND NEW.measured_at IS NOT NULL)
+      BEGIN SELECT RAISE(ABORT,'registry:appendOnly'); END;
+    CREATE TRIGGER registry_measurements_delete BEFORE DELETE ON registry_measurements BEGIN SELECT RAISE(ABORT,'registry:appendOnly'); END;`);
+  const insert = db.prepare("INSERT INTO registry_measurements VALUES (?,'admitted',?,?)");
+  for (const row of db.prepare('SELECT version FROM registry_publications').all()) {
+    const snapshot = JSON.parse(String(db.prepare('SELECT snapshot FROM configs WHERE version=?').get(row.version)!.snapshot));
+    insert.run(String(row.version), Number(snapshot.k.value), now);
+  }
+}
 function patch(raw: Config['raw'], source: Config['raw'], keys: string[]) {
   for (const key of keys) {
     const parts = key.split('.');
@@ -119,10 +136,17 @@ function patch(raw: Config['raw'], source: Config['raw'], keys: string[]) {
   }
 }
 
+// Injected so registry.ts never spawns a Worker/sim itself: production wires the forecast worker (async, 9-18s);
+// tests wire a cheap sync stub. Defaulting to the candidate's own declared k.value reproduces today's
+// self-report admission exactly for any caller that never overrides it.
+export type MeasureK = (config: Config, version: string, actor: AdminActor) => number | Promise<number>;
+
 /** Shared internal service. No HTTP endpoint accepts AdminActor; the admin-auth adapter is a separate boundary. */
 export class ConfigRegistry {
   private readonly configs = new Map<string, Config>();
-  constructor(private readonly db: DatabaseSync, private readonly clock: () => number) {}
+  private readonly settling = new Map<string, Promise<void>>();
+  constructor(private readonly db: DatabaseSync, private readonly clock: () => number,
+    private readonly measureK: MeasureK = config => config.values.k.value) {}
   private now() {
     const now = this.clock();
     if (!Number.isSafeInteger(now) || now < 0 || !Number.isFinite(new Date(now).getTime())) throw Error('registry:invalidClock');
@@ -144,9 +168,12 @@ export class ConfigRegistry {
     }
     return config;
   }
-  latest() { return this.db.prepare('SELECT * FROM registry_publications WHERE version NOT IN (SELECT version FROM registry_scopes) ORDER BY seq DESC LIMIT 1').get() as Publication; }
+  // A publication only counts once its measurement is admitted -- a pending/refused row is invisible here,
+  // so the previous admitted version keeps serving; there is no window where an unmeasured/bad config is live.
+  private readonly ADMITTED = "version IN (SELECT version FROM registry_measurements WHERE state='admitted')";
+  latest() { return this.db.prepare(`SELECT * FROM registry_publications WHERE version NOT IN (SELECT version FROM registry_scopes) AND ${this.ADMITTED} ORDER BY seq DESC LIMIT 1`).get() as Publication; }
   active(now = this.now()) {
-    const row = this.db.prepare('SELECT version FROM registry_publications WHERE effective_at<=? AND version NOT IN (SELECT version FROM registry_scopes) ORDER BY seq DESC LIMIT 1').get(now);
+    const row = this.db.prepare(`SELECT version FROM registry_publications WHERE effective_at<=? AND version NOT IN (SELECT version FROM registry_scopes) AND ${this.ADMITTED} ORDER BY seq DESC LIMIT 1`).get(now);
     if (!row) throw Error('registry:missingActive');
     return this.config(String(row.version));
   }
@@ -377,7 +404,7 @@ export class ConfigRegistry {
           approve: !emergency && !publication && !approval && permitted(true) && (policy?.tier !== 'A' || draft?.changed_by !== actor.subject),
           publish: !publication && (emergency || !!approval) && permitted(false) },
         base: draft ? this.config(String(draft.base_version)).raw : null,
-        policy, approval, publication };
+        policy, approval, publication, measurement: publication ? this.measurementRow(version) ?? null : null };
     }, true);
   }
   auditPage(actor: AdminActor, after = 0) {
@@ -540,8 +567,48 @@ export class ConfigRegistry {
       return { version, token, supersedes, computedAt: now, activatesAt: at, expiresAt: scope?.expiresAt ?? null, audiencePlayers: ids.length,
         changedPlayers, pinnedShifts, keys: [...keys].sort(([a], [b]) => a.localeCompare(b)).map(([path, players]) => ({ path, players })) };
   }
+  private seedBand(): Config['values']['k']['band'] {
+    const seedVersion = this.db.prepare('SELECT version FROM registry_publications ORDER BY seq LIMIT 1').get()!.version;
+    return this.config(String(seedVersion)).values.k.band;
+  }
+  private measurementRow(version: string) {
+    const row = this.db.prepare('SELECT state, measured_k, measured_at FROM registry_measurements WHERE version=?').get(version);
+    return row ? { state: String(row.state) as 'pending' | 'admitted' | 'refused',
+      measured_k: row.measured_k === null ? null : Number(row.measured_k), measured_at: row.measured_at === null ? null : Number(row.measured_at) } : undefined;
+  }
+  /** Absent/pending -> not ready; refused carries both numbers as Error properties (never in .message, so the
+   * existing bare 'registry:bindingRange' HTTP 400 mapping keeps matching exactly, no second error string). */
+  private assertMeasured(version: string) {
+    const row = this.measurementRow(version);
+    if (!row || row.state === 'pending') throw Error('registry:kUnmeasured');
+    if (row.state === 'refused') throw Object.assign(new Error('registry:bindingRange'), { measured: row.measured_k, band: this.seedBand() });
+  }
+  /** Pure DB write, never throws -- callers decide what a refusal means for their own control flow. */
+  private finishMeasurement(version: string, measured: number): boolean {
+    const band = this.seedBand(), admitted = measured >= band[0] && measured <= band[1];
+    this.transaction(now => { this.db.prepare("UPDATE registry_measurements SET state=?,measured_k=?,measured_at=? WHERE version=? AND state='pending'")
+      .run(admitted ? 'admitted' : 'refused', measured, now, version); });
+    return admitted;
+  }
+  /** Called OUTSIDE publish()'s own transaction. A sync measurer (tests) settles admission inline before
+   * publish() returns; a Promise (production forecast worker) settles later -- publish() already returned
+   * the pending row, and active()/latest() keep serving the previous admitted version until this lands. */
+  private settleMeasurement(version: string, config: Config, actor: AdminActor) {
+    const result = this.measureK(config, version, actor);
+    if (typeof result === 'number') {
+      if (!this.finishMeasurement(version, result)) throw Object.assign(new Error('registry:bindingRange'), { measured: result, band: this.seedBand() });
+      return;
+    }
+    const promise = result.then(measured => { this.finishMeasurement(version, measured); },
+      // ponytail: leaves the row pending forever on a rejected measurement; add a retry queue if this ever fires in practice.
+      error => { console.error('registry:measurementFailed', version, error instanceof Error ? error.message : error); }
+    ).finally(() => this.settling.delete(version));
+    this.settling.set(version, promise);
+  }
+  /** Test-only determinism seam: await every in-flight async measurement instead of racing timers. */
+  async settleMeasurements() { await Promise.all([...this.settling.values()]); }
   publish(actor: AdminActor, version: string, expectedImpact?: string | null): Publication {
-    return this.transaction(now => {
+    const prepared = this.transaction(now => {
       this.actor(actor, now);
       const draft = this.proposal(version), base = this.config(draft.base_version), policy = this.policy(JSON.parse(draft.keys), base, this.scope(version));
       const scope = this.scope(version); this.permit(actor, policy, false, scope);
@@ -549,7 +616,7 @@ export class ConfigRegistry {
       const emergency = emergencyDraft(draft); if (emergency) this.emergencyPermit(actor, policy);
       if (!emergency && !approval) throw Error('registry:approvalRequired');
       const existing = this.db.prepare('SELECT * FROM registry_publications WHERE version=?').get(version) as Publication | undefined;
-      if (existing) return existing;
+      if (existing) { this.assertMeasured(version); return { publication: existing, config: null as Config | null }; }
       if (emergency) this.emergencyPermit(actor, this.policy(JSON.parse(draft.keys), base, scope, now));
       if ((emergency || scope && expectedImpact !== undefined) && (!expectedImpact || this.previewImpact(version, now).token !== expectedImpact)) throw Error('registry:staleImpact');
       const at = this.publicationAt(draft, now);
@@ -558,8 +625,13 @@ export class ConfigRegistry {
       if (count >= PUBLISH_PER_DAY) throw Error('registry:rateLimited');
       if (scope?.kind === 'player') this.supportAvailable(scope);
       const supersedes = emergency ? this.pendingSchedules(scope, now) : [], approvedBy = emergency ? actor.subject : String(approval!.approved_by);
+      const seq = Number(this.db.prepare('SELECT MAX(seq) AS n FROM registry_publications').get()!.n) + 1;
+      // Scope-conflict self-check runs against a PREVIEW candidate, exactly like previewPublication() does,
+      // because the real row is still one statement away -- and once inserted it starts 'pending', which
+      // active()/scopedPublications() would otherwise treat as not-yet-real for this very own consistency check.
+      this.validatePublications(now, { seq, version, scope, effective_at: at, published_at: now, changed_by: draft.changed_by, approved_by: approvedBy });
       this.db.prepare('INSERT INTO registry_publications VALUES (NULL,?,?,?,?,?)').run(version, at, now, draft.changed_by, approvedBy);
-      this.validatePublications(now);
+      this.db.prepare("INSERT INTO registry_measurements VALUES (?,'pending',NULL,NULL)").run(version);
       if (scope?.kind === 'player') this.db.prepare('INSERT INTO registry_support_uses VALUES (?,?)').run(scope.ticketId!, version);
       if (emergency) {
         for (const schedule of supersedes) this.audit('ConfigScheduleSuperseded', { ...schedule, byVersion: version, marker: `superseded by emergency ${version}`, at: now });
@@ -568,7 +640,9 @@ export class ConfigRegistry {
       this.audit('ConfigPublished', { version, emergency, scope: scope ?? null, keys: JSON.parse(draft.keys), effectiveAt: draft.effective, activatesAt: at,
         changedBy: draft.changed_by, publishedBy: actor.subject, approvedBy, reason: draft.reason,
         rollbackVersion: this.rollbackSource(loadConfig(JSON.parse(JSON.parse(draft.fingerprint).config)), draft.base_version), at: now });
-      return this.db.prepare('SELECT * FROM registry_publications WHERE version=?').get(version) as Publication;
+      return { publication: this.db.prepare('SELECT * FROM registry_publications WHERE version=?').get(version) as Publication, config: this.config(version) };
     });
+    if (prepared.config) this.settleMeasurement(version, prepared.config, actor);
+    return prepared.publication;
   }
 }

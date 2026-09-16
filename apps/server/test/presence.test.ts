@@ -146,10 +146,10 @@ test('lease state and checkpoints roll back together, and a malformed player doe
 test('schema6 checkpoint data stays intact when durable presence is added and invalid heartbeat clocks fail closed', t => {
   const f = fixture(t), a = f.view(); const before = f.store.read(a.playerId);
   const checkpoint = f.db.prepare('SELECT * FROM engine_checkpoints WHERE player_id=?').get(a.playerId);
-  f.store.close(); f.db.exec('DROP TABLE registry_resolutions; DROP TABLE registry_support_uses; DROP TABLE registry_support; DROP TABLE registry_scopes; DROP TABLE admin_sessions; DROP TABLE admin_factors; DROP TABLE registry_audit; DROP TABLE registry_publications; DROP TABLE registry_approvals; DROP TABLE registry_proposals; DROP TABLE client_presence; PRAGMA user_version=6');
+  f.store.close(); f.db.exec('DROP TABLE registry_resolutions; DROP TABLE registry_support_uses; DROP TABLE registry_support; DROP TABLE registry_scopes; DROP TABLE admin_sessions; DROP TABLE admin_factors; DROP TABLE registry_measurements; DROP TABLE registry_audit; DROP TABLE registry_publications; DROP TABLE registry_approvals; DROP TABLE registry_proposals; DROP TABLE client_presence; PRAGMA user_version=6');
   const migrated = f.open(); assert.deepEqual(migrated.read(a.playerId), before);
   assert.deepEqual(f.db.prepare('SELECT * FROM engine_checkpoints WHERE player_id=?').get(a.playerId), checkpoint);
-  assert.equal(f.db.prepare('PRAGMA user_version').get()!.user_version, 10);
+  assert.equal(f.db.prepare('PRAGMA user_version').get()!.user_version, 11);
   assert.ok(f.beat(a, {}, migrated).heartbeatUntil > f.now);
   for (const value of [0, 1, 2147483648]) {
     const raw = structuredClone(config.raw); raw._meta.version = `heartbeat-invalid-${value}`; raw.network.reconnectingUiDelayMs = value;

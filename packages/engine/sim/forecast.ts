@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { Game, nextDayAt, dayKey, type Config, type Command } from '../src/index';
+import { Game, nextDayAt, dayKey, serveValueStats, type Config, type Command } from '../src/index';
 import { createManagementPolicy, serveNext, STEP_MS, MANAGEMENT_MS, MAX_DAY_STEPS } from './policy';
 
 // config-exempt: BRD5.2 report horizon and calendar units; diagnostic, not gameplay tuning.
@@ -92,7 +92,13 @@ export function projectEconomy(source:Game,timeline:readonly ConfigPeriod[],days
 }
 
 export function compareEconomy(source:Game,before:readonly ConfigPeriod[],after:readonly ConfigPeriod[],days=FORECAST_DAYS) {
-  const baseline=projectEconomy(source,before,days).report,candidate=projectEconomy(source,after,days).report;
+  const startServes=source.world.serves.length;
+  const baselineRun=projectEconomy(source,before,days),candidateRun=projectEconomy(source,after,days);
+  const baseline=baselineRun.report,candidate=candidateRun.report;
   const delta=Object.fromEntries((['faucet','sink','penalties','depositRefunds','closingCoins'] as const).map(key=>[key,candidate.totals[key]-baseline.totals[key]]));
-  return {baseline,candidate,delta};
+  // The real per-serve k for each side, from the serves actually generated during this projection --
+  // the only place a candidate's TRUE economics get measured, not just its self-reported k.value.
+  const k={baseline:serveValueStats(baselineRun.game.world.serves.slice(startServes),before.at(-1)!.config),
+    candidate:serveValueStats(candidateRun.game.world.serves.slice(startServes),after.at(-1)!.config)};
+  return {baseline,candidate,delta,k};
 }

@@ -68,6 +68,22 @@
   candidate-vs-baseline simulation exists but doesn't check k; k-band checking exists but can't run
   against a candidate. Neither combination — and admission's `k.value` check is not one either — is
   proof that a price/cost/anchor/payout proposal's resulting k stays in band; see Uncovered paths.
+  **Correction (v5-admin-k-admission, 2026-09-17): this gap is closed.** `publish()` (`registry.ts`)
+  now requires a real *measured* k, not the self-reported scalar, before a version is admissible.
+  `compareEconomy()` (`packages/engine/sim/forecast.ts`) no longer discards `.game`: it now returns a
+  `k: {baseline, candidate}` pair via `serveValueStats()` over the serves each side actually generated,
+  and `reportFromBackup()` (`apps/server/src/forecast.ts`) pools every real player's candidate stats
+  (sum `totalValue`/`served`, then divide once, not a mean of means) into one `measuredK`. `publish()`
+  calls an injected `measureK(config, version, actor)` OUTSIDE its own DB transaction — a sync stub in
+  tests, the real forecast Worker (`measureKViaForecast`, reusing `forecastEconomy`, not a second
+  mechanism) in production — and records the result in a new append-only-except-once
+  `registry_measurements` table (`version`, `state: pending|admitted|refused`, `measured_k`,
+  `measured_at`). `active()`/`latest()` only ever return a publication whose measurement state is
+  `admitted`, so a pending or refused candidate is invisible to every real player's `resolve()`/
+  `compose()` — there is no window where an unmeasured or out-of-band config is live. Re-publishing a
+  still-pending version throws `registry:kUnmeasured`; a refused one throws `registry:bindingRange`
+  (bare message, so the existing HTTP 400 mapping keeps matching) with `measured`/`band` as *Error*
+  properties, never live-simulated on the hot path. See Existing proof and Uncovered paths below.
   League tier ids, location ids and
   the location fallback are treated as persisted-identity sets that cannot be renamed or removed
   ("These identifiers are persisted in careers. Tuning numbers cannot migrate their meaning.",
@@ -180,7 +196,19 @@
 `'authenticated emergency transport requires Super MFA and fresh confirmation, preserves retries and records independent post-review'` ·
 `'dev identities still require a private admin allowlist and server-verified TOTP before registry access'`.
 
-`apps/server/test/registry.test.ts` (24 tests, selected): `'published default config is used by real
+`apps/server/test/registry.test.ts` (28 tests, selected -- 4 added by v5-admin-k-admission, 2026-09-17):
+`'a real pricing blowup that self-reports an in-band k is refused once actually measured (fails on
+main today)'` · `'a modest pricing change with a genuinely in-band measured k is admitted'` ·
+`'a pending async measurement never becomes active until it settles, and re-checking it throws
+kUnmeasured'` · `'resolve()/compose() never invoke the measurer on the real-player hot path -- only
+publish() does'` (proves no Worker/sim ever runs on `compose()`'s real-player path, only inside
+`publish()`, and only outside its own DB transaction). Also updated: the schema7/8/9 migration tests
+in this file and in `admin-auth.test.ts`/`registry-scopes.test.ts`/`local-import.test.ts`/
+`client-sequence.test.ts`/`http.test.ts`/`checkpoint.test.ts`/`presence.test.ts`/`accounts.test.ts`
+now additionally drop `registry_measurements` before simulating an old schema, and assert
+`user_version=11`; `SCHEMA_VERSION` moved 10→11 for this migration.
+
+`apps/server/test/registry.test.ts` (28 tests total, selected pre-existing): `'published default config is used by real
 openings, never rewrites a live shift, and replays exactly after restart'` · `'Tier A requires a
 distinct Super approval and becomes active exactly at VN midnight across connections'` · `'tier
 classifier covers every section, flags beat broad balance groups, and mixed changes require all
@@ -234,8 +262,10 @@ activation is retried at that activation instead of skipped until tomorrow'`, `'
 unsupported horizons and ambiguous timelines before projecting'`, `'an existing signed lease separates
 returned principal and renews by location identity after multiplier tuning'` (the deepest case: renews
 a lease across a projected multiplier retune, checking deposit-refund/penalty math and per-location
-renewal identity). None of these five asserts a `k` value — confirms the Uncovered-paths claim below
-by direct reading, not just by grep.
+renewal identity). None of these five asserts a `k` value directly (unchanged by v5-admin-k-admission,
+which added `k` to `compareEconomy()`'s return but did not add assertions to these five) — the
+k-measurement proof instead lives in `registry.test.ts`'s new cases above, which exercise the field
+through `publish()`'s admission gate rather than through `compareEconomy()` in isolation.
 
 ## Verification procedure
 
@@ -257,23 +287,25 @@ by direct reading, not just by grep.
 
 ## Uncovered paths
 
-- **No tool combines real candidate simulation with a k-band check.** `/admin/forecast`
-  (`forecast.ts:19`'s `reportFromBackup()`/`compareEconomy()`) *does* simulate a candidate config
-  against real existing players' saves, but its `Totals` shape has no `k` field — it reports coin
-  economics only (`grep -n "\.k\b|kValue|k\.band|k\.value" packages/engine/sim/forecast.ts
-  apps/server/src/forecast.ts` → zero hits), covered by `apps/server/test/forecast.test.ts:37` `'real
-  worker forecasts all existing saves, preserves source rows and keeps the request event loop
-  responsive'`. `sim:career:gate` (`packages/engine/sim/career.ts:18`) checks k-band but
-  `simulateCareer()` always plays the module-level `config` singleton, built once from a static
-  import of `docs/config/economy.tbh.json` (`packages/engine/src/config.ts:1,367` — `loadConfig()`'s
-  default `input = seed`); its CLI (`career.ts:110-113`) takes only
-  `--days`/`--seed`/`--out`/`--check-advanced`, nothing that loads a different config. Same for
-  `sim:onboarding`/`sim:rush`. A registry proposal that changes price/cost/anchor/payout math
-  therefore has no automated way to confirm the *resulting* k stays in band — only `registry.ts:157`'s
-  cheap `k.value`-vs-`k.band` check runs, and it can pass while the real economy is badly broken (see
-  the k-invariant Gotcha). The closest manual workaround for a k-specific check — temporarily
-  overwriting `economy.tbh.json` with the candidate, running `npm run sim:career:gate`, then
-  reverting — is unautomated and risks leaving the wrong file committed if a step is skipped.
+- **Corrected (v5-admin-k-admission, 2026-09-17) — was "no tool combines real candidate simulation
+  with a k-band check."** `compareEconomy()` (`packages/engine/sim/forecast.ts`) now returns a real
+  `k: {baseline, candidate}` from `serveValueStats()`; `reportFromBackup()` pools it into one
+  `measuredK`; `publish()` gates admission on it via `registry_measurements` (see the Observable
+  contract correction above). `measureKViaForecast()` (`apps/server/src/forecast.ts`) is the
+  production `measureK`, reusing `forecastEconomy()` unchanged -- still the same real worker proven
+  off the event loop by `apps/server/test/forecast.test.ts:37` `'real worker forecasts all existing
+  saves, preserves source rows and keeps the request event loop responsive'`. What remains genuinely
+  uncovered: (1) `sim:career:gate` still only ever
+  plays the static `docs/config/economy.tbh.json` singleton, no candidate-config input — it is not the
+  mechanism that closed this gap, `publish()`'s own injected `measureK` is; (2) the *production*
+  `measureKViaForecast()` falls back to the candidate's own self-reported `k.value` when there are
+  zero real players to measure against (a brand-new/low-population deployment) — that fallback path is
+  not exercised by any automated test, only reasoned about; (3) a scoped (segment/campaign/player)
+  publication's own measurement uses the exact same `publish()` gate as a default one, but no test
+  here exercises a *scoped* candidate being refused for a bad measured k, only a default/unscoped one
+  (`apps/server/test/registry.test.ts`'s new cases, see Existing proof) — scope-conflict interaction
+  with a *pending* (not yet refused/admitted) scoped candidate is exercised only incidentally by
+  `publish()`'s own pre-insert `validatePublications()` self-check, not by a dedicated case.
 - Route **paths** are now confirmed against `http.ts` directly (see "How to reach it"), but this pass
   did not read every route handler's full body — request/response field shapes beyond what's cited
   above (e.g. `/admin/players`' pagination shape, `/admin/config`'s exact response envelope) are not
