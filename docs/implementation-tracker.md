@@ -605,3 +605,14 @@ Dedicated check: `npm run verify` in that temporary master worktree, with output
 | 2026-09-11 | Local v0.3 tag261f233 is serving5174/5175;7prior players and all source rows/pins preserved, runtime dev-account smoke0errors. Master ff/full verify proceeds separately; no push. |
 
 | 2026-09-16 | A1 LP1 hidden-dog blocker: JSON2.0.4 removes dog, retains125,000 scaled lifetime/four-seat gate; browser next-shift bundled config adoption; rules25 plans incoming rushes from incoming milestone/seat gates, preserving older replay. PASS:541/541 tests,20 paired k cohorts,15 rush cases,career42/99 k=3.46546/3.39320;14 mapped/production browser tests; independent review CLEAN. Evidence: artifacts/verification/improve-wave-ab/a1-*.log. Runtime/public deployment unchanged. |
+
+
+### PLAN-improve-2026-09-16 A5 — UI clarity, 2026-09-16
+
+Tap pouring and keg refill now have separate VI/EN stage labels; the shift book names customer rounds and explains their relationship to a table order. Active rest shows the config-derived recovery countdown, with a paused message for a configured zero rate. Native image preloads warm the existing tofu, phone and wooden-sign art on the first sheet visit. No engine, economy, save or art-content changes.
+
+Focused clarity 10/10 (VI/EN ×360/390/1280, recovery/reload, zero-rate, and historical direct-pour save cases); production/clarity follow-up 26/26, mapped browser paths 87/87 after a pre-existing shipper stock-button selector correction, assets, build/i18n and 537 unit/server tests pass. Axe 6/6 (102 scans) passes; the aggregate simulation gate and independent review are still running at this commit. Final receipts live under `artifacts/verification/codex-improve-ui-clarity/`; this is source verification, not a deployment or runtime cutover.
+
+| Date | Change |
+|---|---|
+| 2026-09-16 | A5 UI clarity implemented and focused checks pass; full simulation/review receipt follows separately. |

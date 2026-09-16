@@ -81,6 +81,12 @@ word.
 
 ## Existing proof
 
+- `apps/web/test/ui-clarity.spec.ts` — `A5 legacy pinned save shows direct pour without a refill or reserve in ${locale}` (VI/EN) loads the historical v12 archive and pins the direct-pour/no-reserve copy.
+
+- `apps/web/test/ui-clarity.spec.ts` — `A5 zero configured recovery rate shows paused recovery without an invalid ETA` pins the config-allowed zero-rate display without changing engine rules.
+
+- `apps/web/test/ui-clarity.spec.ts` — `A5 clear production stages, customer rounds and first-open art in ${locale} at ${viewport.width}px` (VI/EN × 360/390/1280px) checks the separate tap/refill labels, customer-round explanation, and manifest-backed tofu/phone/wood-sign preload plus decoded images on the first stock/upgrade visit. `A5 recovery ETA follows active rest, survives reload and disappears when stamina is full` reaches exhausted natural closure through engine commands, checks the configured active-rest countdown and reload/full recovery. Run with `npx playwright test apps/web/test/ui-clarity.spec.ts` (local config).
+
 - `packages/engine/test/menu.test.ts` (10 tests, all grep-confirmed): `'six actual menu dishes keep
   per-item ordered provenance and per-customer sales without mutating the report source'` (the core
   `menuReport` dish-tracking proof), `'a newly opened shift resets report coverage without rewriting
@@ -216,3 +222,9 @@ emit sites and kitchen-level unlock gating this file only reports on, doesn't ow
 [economy-k-ledger](economy-k-ledger.md) (`serveValueStats`'s money/`k` formula, consumed but not
 redefined here), [flyer-signboard-dog](flyer-signboard-dog.md) (`activateFlyer` proved safe mid-pause
 by the same `menu-pause.test.ts` test this file cites).
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-09-16 A5 | Cite UI clarity, first-open asset preload and active-rest ETA regression; no engine/config rule changes. |

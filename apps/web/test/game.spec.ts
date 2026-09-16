@@ -575,7 +575,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 
     await page.clock.runFor(1000); await expect(panel.getByRole('timer')).toHaveText('00:45');
     await panel.getByRole('button', { name: 'Nhập nguyên liệu còn thiếu', exact: true }).click();
     let cost = 0;
-    for (const line of fixture.lines) { cost += line.cost; await page.locator('.stock-row').nth(line.index).getByRole('button', { name: /^Đầy kho/ }).click(); }
+    for (const line of fixture.lines) { cost += line.cost; await page.locator('.stock-row').nth(line.index).getByRole('button', { name: /Đầy kho/ }).click(); }
     await page.keyboard.press('Escape'); await phone.click();
     await expect(panel.getByRole('button', { name: /^Giao cả đơn/ })).toBeEnabled();
     await panel.getByRole('button', { name: /^Giao cả đơn/ }).click();

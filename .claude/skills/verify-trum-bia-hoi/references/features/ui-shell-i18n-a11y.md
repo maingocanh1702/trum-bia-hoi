@@ -80,6 +80,12 @@
 
 ## Existing proof
 
+- `apps/web/test/ui-clarity.spec.ts` — `A5 legacy pinned save shows direct pour without a refill or reserve in ${locale}` (VI/EN) loads the historical v12 archive and pins the direct-pour/no-reserve copy.
+
+- `apps/web/test/ui-clarity.spec.ts` — `A5 zero configured recovery rate shows paused recovery without an invalid ETA` pins the config-allowed zero-rate display without changing engine rules.
+
+- `apps/web/test/ui-clarity.spec.ts` — `A5 clear production stages, customer rounds and first-open art in ${locale} at ${viewport.width}px` (VI/EN × 360/390/1280px) checks the separate tap/refill labels, customer-round explanation, and manifest-backed tofu/phone/wood-sign preload plus decoded images on the first stock/upgrade visit. `A5 recovery ETA follows active rest, survives reload and disappears when stamina is full` reaches exhausted natural closure through engine commands, checks the configured active-rest countdown and reload/full recovery. Run with `npx playwright test apps/web/test/ui-clarity.spec.ts` (local config).
+
 - `apps/web/remote-test/accessibility.spec.ts` — a templated `for locale of ['vi','en'] for viewport
   of [3 sizes]` double loop generating 6 real test names, each exactly:
   `` `M1-I18N/AXE local guest ${locale} ${viewport.width}x${viewport.height}` `` (`:5`) → `M1-I18N/AXE
@@ -216,3 +222,9 @@ lack of one) is that file's responsibility. [assets-manifest](assets-manifest.md
 (`App.tsx:36`) is inline SVG keyed by a hardcoded `icons` record, entirely independent of
 `assets/manifest.json`; only `<Sprite>` (used throughout this shell for game art) and `audio.ts` read
 the manifest — don't confuse a missing icon with a missing sprite.
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-09-16 A5 | Cite UI clarity, first-open asset preload and active-rest ETA regression; no engine/config rule changes. |
