@@ -20,15 +20,17 @@ admin (session, admin registry, shell, assets). Every file below now exists and 
   own webServer — you don't need to export it by hand to run `npm run test:e2e`).
 - Remote-mode UI tests need the isolated API fixture, never a mocked `/api` — each remote-tier config
   spins up its own `server.ts` fixture.
-- Ports are fixed today, not per-worktree (`verify:port` is wave V3): dev `5173` / API `5175`
-  (`npm run dev`, `npm run dev:server`); e2e legacy `playwright.config.ts` baseURL `4178`; remote
-  `playwright.remote.config.ts` baseURL `4179` / auth `4180`; dev-identity
-  `playwright.dev-identity.config.ts` same `4179`/`4180` (near-duplicate of remote, different
-  `testMatch`/`testIgnore`); accessibility `playwright.accessibility.config.ts` spreads dev-identity;
-  admin `playwright.admin.config.ts` baseURL `4181` / API `4182`; playable
-  `playwright.playable.config.ts`, 3 viewport projects, baseURL `4209/4211/4213`, auth+API
-  `4210/4212/4214`. Two worktrees running the UI tier at once on the main ports will collide — this
-  is a known gap, not yet fixed (see `SKILL.md` Stale-Build Rule).
+- Ports are resolved per-worktree by `scripts/verify/port.ts` (`verify:port`, wave V3, landed) for
+  five of the six Playwright configs — main workspace: dev `5173` / API `5175` (`npm run dev`,
+  `npm run dev:server` — these two are **not** wired to the resolver, still fixed regardless of
+  worktree); e2e legacy `playwright.config.ts` baseURL `4178`; remote `playwright.remote.config.ts`
+  baseURL `4179` / auth `4180`; dev-identity `playwright.dev-identity.config.ts` same `4179`/`4180`
+  (near-duplicate of remote, different `testMatch`/`testIgnore`); accessibility
+  `playwright.accessibility.config.ts` spreads dev-identity's already-resolved config instead of
+  reading the resolver directly; admin `playwright.admin.config.ts` baseURL `4181` / API `4182`;
+  playable `playwright.playable.config.ts`, 3 viewport projects, baseURL `4209/4211/4213`, auth+API
+  `4210/4212/4214`. Two worktrees' `dev`/`dev:server` still collide (see `SKILL.md` Stale-Build
+  Rule) — the six Playwright configs themselves do not.
 - This repo has 9 worktrees active in parallel at times (`git worktree list`); confirm you're testing
   the instance you think you are before trusting a result.
 

@@ -112,13 +112,17 @@ paths**, or you write the test now and cite it.
 
 ## Stale-Build Rule
 
-This repo runs many worktrees in parallel (`git worktree list` — nine at last count) that today
-share fixed dev/e2e/API ports (per-worktree ports are wave V3's `verify:port`). A green UI-tier
-result against a stale bundle or the wrong worktree's server is a false pass, and nothing catches it
-automatically yet. Before trusting a UI-tier result: confirm the server you hit was (re)started after
-your last source edit, and confirm which worktree/branch is actually listening on the port you used.
-Once wave V3 ships, `npm run verify:doctor` automates both checks and PASS is refused on a red
-doctor — this rule doesn't change then, it just stops being manual.
+This repo runs many worktrees in parallel (`git worktree list` — nine at last count).
+`scripts/verify/port.ts` (`verify:port`, wave V3, landed) gives five of the six Playwright configs
+per-worktree ports, so those no longer collide across worktrees — but `dev`/`dev:server` are NOT
+wired to it and still share fixed ports (`5173`/`5175`) regardless of worktree. `npm run
+verify:doctor` exists (wave V3, landed) and refuses PASS on a red repo/deps/binding/map check — but
+`--full`'s server/bridge/console checks are not functional from a plain CLI call today (see step 3
+above), so a green UI-tier result against a stale bundle or the wrong worktree's server is still a
+possible false pass on that front, and nothing catches it automatically yet. Before trusting a
+UI-tier result: confirm the server you hit was (re)started after your last source edit, and confirm
+which worktree/branch is actually listening on the port you used — this stays manual until a real
+browser-driving harness wires `--full`'s runners for real.
 
 ## Skip Format
 

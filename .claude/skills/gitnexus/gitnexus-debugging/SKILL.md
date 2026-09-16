@@ -22,7 +22,7 @@ description: "Use when the user is debugging a bug, tracing an error, or asking 
 4. gitnexus_cypher({statement: "MATCH path..."})                 → Custom traces if needed
 ```
 
-> If "Index is stale" → run `npx gitnexus analyze` in terminal.
+> If "Index is stale" → run `node .gitnexus/run.cjs analyze` in terminal (or `npx gitnexus analyze` if that runner doesn't exist yet).
 
 ## Checklist
 
