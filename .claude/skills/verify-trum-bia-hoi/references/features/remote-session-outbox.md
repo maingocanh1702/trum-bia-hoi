@@ -189,6 +189,26 @@
   lost-canonical-read retry, paused-during-verification, and every lost-response/reload/unrelated-
   cookie permutation of the switch flow; open the file directly for those exact names before citing
   one in a report.
+- `apps/server/test/accounts.test.ts` (7 cases) — `GameStore`-level proof of guest/Google linking, one
+  layer beneath `http.test.ts` above: `'a new guest visit atomically retires only the expected guest
+  and never a Google account'`, `'linking a server guest mid-shift preserves its exact world, history
+  and command receipts across restart'`, `'existing Google progress conflicts without mutation;
+  explicit keep-account switches without merging either history'` (the `accountTransition`/
+  `keepAccount` mechanics `google-link.spec.ts` drives over HTTP), `'a logout, expiry, replaced nonce
+  or other session cannot consume a pending Google authentication'`, `'authentication commits mapping,
+  consumed nonce, revoked credentials, new session and audit atomically'`, `'two SQLite connections
+  cannot reuse a nonce, claim one guest twice or fork one Google account'`, `'schema3 migration
+  preserves guest credentials, active history and ordered receipts without inventing an account'`.
+- `apps/server/test/store.test.ts` (11 cases) — the core `GameStore` persistence/durability proof
+  every route above ultimately relies on: command idempotency and cache invalidation across two live
+  connections, a real SQLite-failure rollback (`'a real SQLite failure between command and event
+  inserts rolls everything back and evicts mutated cache before retry'`), append-only/foreign-key/
+  schema enforcement, config-version dedup and rejection, a legacy rules19→rules20 migration backfill,
+  and — the two cases most relevant to this file's own scope — `'a paid lease survives SQLite restart;
+  offline expiry refunds the stored deposit once without earning credit'` and `'season rollover and
+  old service retries survive SQLite restart without moving revenue into the next season'` (both
+  restart-durability proofs, not gameplay-rule proofs — see [location-lease](location-lease.md) and
+  [seasons-leaderboard](seasons-leaderboard.md) for the rule-level citations).
 
 ## Verification procedure
 

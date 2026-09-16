@@ -127,6 +127,14 @@ dismissal, not a tap-serve outcome).
   `.toast-loss` mechanism).
 - `apps/web/test/kitchen.spec.ts` — `'kitchen warning disappears after real expiry and never leaves a
   stale dish link'`.
+- `apps/web/test/bridge.spec.ts` — `'serving a whole table increases economy.coins by exactly that
+  serve's coin_gain amount'`: the first UI-tier serve proof driven through `window.__TBH_VERIFY__`
+  instead of only DOM text — takes a `tbh.snapshot()` before serving, drives the same `'Phục vụ cả
+  mâm'` button as `game.spec.ts`, waits for the real `coin_gain` domain event, then asserts
+  `economy.coins` increased by exactly that event's `amount` (not just that a toast appeared). Its
+  golden-path selectors are copied verbatim from `game.spec.ts` (see the file's own header comment),
+  so this adds event/state-level proof on top of the existing DOM-only citation above, it doesn't
+  replace it.
 - Fixtures: `apps/web/test/fixtures/service-states.ts` (modes `early|late|grace|stale|rested`, real
   engine commands); `apps/web/test/fixtures/mixed-grace.ts` — **name is misleading for this feature**,
   it reaches `'grace'` via a beer-stockout (items never ready), not via the freshness clock, so its

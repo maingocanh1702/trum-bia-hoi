@@ -110,6 +110,21 @@ finding — cross-linked, not restated), cooler's freshness formula is
   unrelated test can proceed) in `dog-purchase.test.ts:11`, `progression.test.ts:11`,
   `menu.test.ts:106`, `signboard.test.ts:11`, and `shipper.test.ts:12` — none of these assert anything
   about the *upgrade mechanism itself* for `'stall'`; see Uncovered paths.
+- `apps/web/test/economy2.spec.ts` (4 top-level tests) — this file's UI-tier proof for the **keg**/
+  **glass**/**cooler** equipment cards specifically, distinct from `production.spec.ts`'s washer/
+  cooler/stall sprite-swap proof above: `` `new economy capacities, LP gate and glass purchases stay
+  paused at ${width}px` `` (×360/390px — the keg ("Vòi rót") info dialog's capacity text and its
+  disabled/`'Cần đạt'`-gated state before purchase, then the washer ("Bồn rửa") glass-purchase card:
+  buys 1 glass, asserts the exact coin debit, glass count and that the shift stays paused throughout),
+  `` `cooler explains each level and weather-adjusted HUD seconds in ${lang}/${weather}` `` (×2
+  langs ×3 weathers — the cooler card's per-level freshness-seconds text, weather-adjusted, plus a
+  real purchase click through the non-max levels), `` `upgrade and stock labels distinguish
+  ingredients from cooked dishes in ${lang}` `` (×2 langs — i18n labels on the kitchen/upgrade cards
+  *and* the stock screen in the same test). The fourth test, `'the local start action adopts the new
+  bundle from an old resting save, without repricing it on reload'`, is **not** an upgrade-purchase
+  test — it's a config-bundle-adoption-on-start regression that happens to share this spec file; see
+  [economy-k-ledger](economy-k-ledger.md)'s `config-pinning.spec.ts` citation for the closest sibling
+  proof of that mechanic.
 
 ## Verification procedure
 
