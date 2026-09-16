@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-16 18:26 · **Branch hiện tại:** `codex/improve-wave-ab`
+> **Cập nhật:** 2026-09-16 18:28 · **Branch hiện tại:** `codex/improve-wave-ab`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -164,7 +164,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S 🔒B
 - **Phase:** Phase 1
-- **Notes:** 5 kiểu khách ngồi; shipper local v7 có timer riêng, giao cả đơn, cap/timeout/closing/replay và UI điện thoại. Review shipper CLEAN tại307a3b0; football và acceptance đầy đủ còn thiếu.
+- **Notes:** A3 engine VIP census: `npm run sim:onboarding` đếm khách đến duy nhất qua 5 seed, tách overflow/onboarding và nhóm hệ số; không có gate LP/phase cho VIP. Hand-play ca 2 vẫn PENDING (xem `docs/improve-vip-proof.md`). 5 kiểu khách ngồi; shipper local v7 có timer riêng, giao cả đơn, cap/timeout/closing/replay và UI điện thoại. Review shipper CLEAN tại307a3b0; football và acceptance đầy đủ còn thiếu.
 
 ### F09 — Thời Tiết Quán — tối giản (hệ số độ hơi/tip/spawn)
 
