@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { Game, config, loadConfig, planDailyQuests, applyQuestEvent, questRewardQuote, dayKey, encodeSave, decodeSave, WEATHER, type Command, type Config, type Economy, type DailyQuest, type DomainEvent } from '../src';
+import { CURRENT_RULES, Game, config, loadConfig, planDailyQuests, applyQuestEvent, questRewardQuote, dayKey, encodeSave, decodeSave, WEATHER, type Command, type Config, type Economy, type DailyQuest, type DomainEvent } from '../src';
 const DAY = 86400000;
 const send = (g: Game, command: Command) => g.command({ command, at: g.world.now, idempotencyKey: `quests-${g.log.length}` });
 function snapshot(patch = (_: Economy) => {}) {
@@ -160,7 +160,7 @@ test('genuine rules11 campaign snapshots preserve history and begin daily quests
     const expected = JSON.parse(readFileSync(new URL(`./fixtures/legacy-flyer-${state}-v11-expected.json`, import.meta.url), 'utf8'));
     const g = decodeSave(text); assert.deepEqual(g.world, expected.world); assert.equal(g.world.daily, undefined);
     const prior = structuredClone(g.world); send(g, { type: 'activity', active: true });
-    assert.deepEqual(g.world, { ...prior, seasonEarned: 0, seasons: g.world.seasons, staminaAnchorAt: prior.now, staminaAnchorMs: prior.staminaMs, attendance: g.world.attendance, shift: { ...prior.shift!, menu: { eventStart: prior.events.length, serveStart: prior.serves.length, complete: false } }, nextId: prior.nextId + 2, events: [...prior.events, { id: `event-${prior.nextId + 1}`, type: 'menu_tracking_started', at: prior.now, configVersion: g.config.version, idempotencyKey: g.log.at(-1)!.idempotencyKey, data: { shiftId: prior.shift!.id, complete: false } }, g.world.events.at(-1)!] }); assert.equal(g.world.events.at(-1)!.type, 'attendance_day_opened'); assert.equal(g.log.at(-1)!.rulesVersion, 24);
+    assert.deepEqual(g.world, { ...prior, seasonEarned: 0, seasons: g.world.seasons, staminaAnchorAt: prior.now, staminaAnchorMs: prior.staminaMs, attendance: g.world.attendance, shift: { ...prior.shift!, menu: { eventStart: prior.events.length, serveStart: prior.serves.length, complete: false } }, nextId: prior.nextId + 2, events: [...prior.events, { id: `event-${prior.nextId + 1}`, type: 'menu_tracking_started', at: prior.now, configVersion: g.config.version, idempotencyKey: g.log.at(-1)!.idempotencyKey, data: { shiftId: prior.shift!.id, complete: false } }, g.world.events.at(-1)!] }); assert.equal(g.world.events.at(-1)!.type, 'attendance_day_opened'); assert.equal(g.log.at(-1)!.rulesVersion, CURRENT_RULES);
     assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
     send(g, { type: 'endShift' }); g.advance(g.world.now + g.config.values.shift.durationMs);
     assert.equal(g.world.phase, 'resting'); assert.equal(g.world.daily, undefined);

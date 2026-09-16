@@ -149,3 +149,9 @@ Engine (all in `packages/engine/src/engine.ts`, verified by grep of every call s
 [serve-outcomes](serve-outcomes.md) (shares the `customerValue`/`credit` call sites inside `case
 'serve':`), [save-replay-local](save-replay-local.md) (both config-pinning files are effectively the
 save/replay persistence tests for this same ledger — heavy overlap, not a separate concern).
+
+
+### A1 — 2026-09-16 proof
+- `apps/web/test/local-config.test.ts`: newer bundled config adoption only at next successful opening; running/historical pins, custom/newer versions and replay retained.
+- `packages/engine/test/progression.test.ts`: LP1 scaled threshold/four seats without dog; old pinned dog requirement still enforced.
+- `apps/web/test/improve-lp1.spec.ts`: production browser guest with real previously earned income migrates LP1, opens next shift, reloads unchanged with no visible dog. Run `npx playwright test --config playwright.improve.config.ts improve-lp1.spec.ts`.

@@ -603,3 +603,5 @@ Dedicated check: `npm run verify` in that temporary master worktree, with output
 | 2026-09-11 | Local v0.3 acceptance PASS:418tests,20paired k,15rush/2career,assets,3full-shift viewports; independent review CLEAN. Release tag and local SQLite-preserving cutover follow. |
 
 | 2026-09-11 | Local v0.3 tag261f233 is serving5174/5175;7prior players and all source rows/pins preserved, runtime dev-account smoke0errors. Master ff/full verify proceeds separately; no push. |
+
+| 2026-09-16 | A1 LP1 hidden-dog blocker: JSON2.0.4 removes dog, retains125,000 scaled lifetime/four-seat gate; browser next-shift bundled config adoption; rules25 plans incoming rushes from incoming milestone/seat gates, preserving older replay. PASS:541/541 tests,20 paired k cohorts,15 rush cases,career42/99 k=3.46546/3.39320;14 mapped/production browser tests; independent review CLEAN. Evidence: artifacts/verification/improve-wave-ab/a1-*.log. Runtime/public deployment unchanged. |

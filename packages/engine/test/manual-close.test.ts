@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { Game, config, loadConfig, currentGuests, kickAllQuote, customerValue, encodeSave, decodeSave, dayKey, type Command } from '../src';
+import { CURRENT_RULES, Game, config, loadConfig, currentGuests, kickAllQuote, customerValue, encodeSave, decodeSave, dayKey, type Command } from '../src';
 
 const send = (g: Game, command: Command, at = g.world.now) => g.command({ idempotencyKey: `close-${g.log.length}`, at, command });
 function create(at = 11000) {
@@ -108,7 +108,7 @@ test('the actual v3 close save retains its free served-table dismissal, results 
   assert.deepEqual(g.world.shift!.stats, expected.stats); assert.deepEqual(g.log.at(-1)!.result, expected.result);
   assert.deepEqual(g.world.events, JSON.parse(text).events); assert.ok(g.log.every(e => e.rulesVersion === 3));
   send(g, { type: 'activity', active: true });
-  assert.equal(g.log.at(-1)!.rulesVersion, 24); assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
+  assert.equal(g.log.at(-1)!.rulesVersion, CURRENT_RULES); assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
 });
 
 

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { Game, config, loadConfig, encodeSave, decodeSave, seasonWindow, seasonTier, type Command } from '../src';
+import { CURRENT_RULES, Game, config, loadConfig, encodeSave, decodeSave, seasonWindow, seasonTier, type Command } from '../src';
 import { credit } from '../src/rules';
 import { nextSeasonEnd } from '../src/seasons';
 const DAY = 86400000;
@@ -111,7 +111,7 @@ test('captured rules22 history remains unchanged; explicit adoption archives the
   const expected = JSON.parse(readFileSync(new URL('./fixtures/pre-seasons-v22-expected.json', import.meta.url), 'utf8'));
   assert.deepEqual(g.world, expected); assert.equal(g.log.at(-1)!.rulesVersion, 22);
   send(g, { type: 'activity', active: true, paused: true });
-  assert.equal(g.log.at(-1)!.rulesVersion, 24); assert.equal(g.world.seasonEarned, 0); assert.equal(g.world.seasons!.legacy.earned, expected.seasonEarned);
+  assert.equal(g.log.at(-1)!.rulesVersion, CURRENT_RULES); assert.equal(g.world.seasonEarned, 0); assert.equal(g.world.seasons!.legacy.earned, expected.seasonEarned);
   assert.equal(g.world.lifetimeEarned, expected.lifetimeEarned); assert.equal(g.world.peakLeague, null); replay(g);
   assert.throws(() => g.replay({ ...g.log.at(-1)!, rulesVersion: 22, idempotencyKey: 'downgraded' }), /replay:rulesVersion/);
 });

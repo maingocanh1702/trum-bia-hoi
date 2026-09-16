@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { Game, config, loadConfig, planRushes, summarizeRush, rushStatus, kickAllQuote, encodeSave, decodeSave, type Command, type Economy, type DomainEvent } from '../src';
+import { CURRENT_RULES, Game, config, loadConfig, planRushes, summarizeRush, rushStatus, kickAllQuote, encodeSave, decodeSave, type Command, type Economy, type DomainEvent } from '../src';
 const origin = Date.parse('2026-09-08T10:00:00Z');
 const send = (g: Game, command: Command, at = g.world.now) => g.command({ idempotencyKey: `schedule-${g.log.length}`, at, command });
 function create(patch = (_: Economy) => {}) {
@@ -61,7 +61,7 @@ test('genuine active v7 schedule and identifiers survive a same-time v8 command 
   for (const key of ['now', 'coins', 'reputation', 'rng', 'nextId'] as const) assert.equal(w[key], expected[key]);
   assert.deepEqual(w.shift!.rushes, expected.rushes); assert.deepEqual(w.shift!.stats, expected.stats); assert.deepEqual(w.events, JSON.parse(text).events);
   assert.deepEqual(g.log.at(-1)!.result, expected.result); send(g, { type: 'activity', active: true });
-  assert.equal(g.log.at(-1)!.rulesVersion, 24); assert.deepEqual(w.shift!.rushes, expected.rushes); assert.equal(w.shift!.rushScheduleSeed, undefined);
+  assert.equal(g.log.at(-1)!.rulesVersion, CURRENT_RULES); assert.deepEqual(w.shift!.rushes, expected.rushes); assert.equal(w.shift!.rushScheduleSeed, undefined);
   assert.equal(w.events.filter(e => e.type === 'rush_scheduled').length, 0);
   send(g, { type: 'endShift' }); g.advance(w.shift!.rushes[0].end);
   const ended = w.events.find(e => e.type === 'rush_ended')!; assert.deepEqual(ended.data, { kind: expected.rushes[0].kind });

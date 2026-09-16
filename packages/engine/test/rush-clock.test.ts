@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { Game, config, loadConfig, rushStatus, kickAllQuote, encodeSave, decodeSave, type Command, type Economy } from '../src';
+import { CURRENT_RULES, Game, config, loadConfig, rushStatus, kickAllQuote, encodeSave, decodeSave, type Command, type Economy } from '../src';
 const send = (g: Game, command: Command, at = g.world.now) => g.command({ idempotencyKey: `rush-${g.log.length}`, at, command });
 function create(patch?: (c: Economy) => void) {
   const raw = structuredClone(config.raw); raw.onboarding.enabled = false; raw.patience.thuongMs = 1000000;
@@ -85,7 +85,7 @@ test('real v4 closing rush replay preserves old earnings, then a same-timestamp 
   assert.ok(g.log.every(e => e.rulesVersion === 4));
   send(g, { type: 'activity', active: true });
   assert.equal(g.world.coins, expected.coins); assert.equal(g.world.shift!.rush, 'none');
-  assert.equal(g.world.events.at(-2)!.type, 'rush_ended'); assert.equal(g.world.events.at(-1)!.type, 'attendance_day_opened'); assert.equal(g.log.at(-1)!.rulesVersion, 24);
+  assert.equal(g.world.events.at(-2)!.type, 'rush_ended'); assert.equal(g.world.events.at(-1)!.type, 'attendance_day_opened'); assert.equal(g.log.at(-1)!.rulesVersion, CURRENT_RULES);
   assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
 });
 

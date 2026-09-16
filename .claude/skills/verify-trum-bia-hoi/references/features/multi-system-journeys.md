@@ -194,3 +194,9 @@ surface at least once: [table-lifecycle](table-lifecycle.md), [order-rounds-kitc
 [economy-k-ledger](economy-k-ledger.md), [save-replay-local](save-replay-local.md) most directly —
 plus rush/dog/life-path/shipper/signboard/flyer/seasons/locations/admin areas not yet written as
 their own feature files (see the README index).
+
+
+### A1 — 2026-09-16 proof
+- `apps/web/test/local-config.test.ts`: newer bundled config adoption only at next successful opening; running/historical pins, custom/newer versions and replay retained.
+- `packages/engine/test/progression.test.ts`: LP1 scaled threshold/four seats without dog; old pinned dog requirement still enforced.
+- `apps/web/test/improve-lp1.spec.ts`: production browser guest with real previously earned income migrates LP1, opens next shift, reloads unchanged with no visible dog. Run `npx playwright test --config playwright.improve.config.ts improve-lp1.spec.ts`.

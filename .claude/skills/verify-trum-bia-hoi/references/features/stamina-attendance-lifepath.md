@@ -236,3 +236,9 @@ upgrades gated by `lifePathGate`, a different gate mechanism reusing the same `l
 [economy-k-ledger](economy-k-ledger.md) (`credit()` is the only ledger mutator these claims call
 through; `sim:career:gate`'s `lifePath >= 4` precondition), `remote-session-outbox` (disconnection
 freezing of stamina/attendance, not yet written).
+
+
+### A1 — 2026-09-16 proof
+- `apps/web/test/local-config.test.ts`: newer bundled config adoption only at next successful opening; running/historical pins, custom/newer versions and replay retained.
+- `packages/engine/test/progression.test.ts`: LP1 scaled threshold/four seats without dog; old pinned dog requirement still enforced.
+- `apps/web/test/improve-lp1.spec.ts`: production browser guest with real previously earned income migrates LP1, opens next shift, reloads unchanged with no visible dog. Run `npx playwright test --config playwright.improve.config.ts improve-lp1.spec.ts`.

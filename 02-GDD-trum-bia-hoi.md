@@ -458,3 +458,5 @@ Mục tiêu: chứng minh **vòng lặp vận hành ca vui & economy cân**. KH�
 | 2026-09-11 | Owner Steer13 — presentation only: tồn `inventory.bia` gọi Bom bia / Beer keg, nhập bia là Mua bom / Buy keg; `beer.ready` là Cốc rót sẵn, thiết bị `keg` là Vòi rót / Beer taps (giữ tên cấp); HUD hiển thị riêng bom, rót sẵn, cốc sạch. Không đổi engine/config/economy. |
 
 | 2026-09-11 / Steer14 | owner 2026-09-11: pre-poured buffer 4/7/12/20/40 (JSON2.0.3 fallback after primary5/8/12/20/40 failed standard k; after playable-v0). §4 keg row matches JSON; existing prices/tap/batch/refill values are reconciled in prose, not retuned. Only the ready-buffer capacity changes; standard k2.5644–2.9168 and career42/99 k3.465461/3.393197≤3.5 passed full verify (406tests,15rush), review CLEAN. |
+
+| 2026-09-16 / A1 | §11 Đường Lên Trùm: LP1 cần4 ghế +50.000 Base ×k thu nhập trọn đời; bỏ chó đang ẩn cùng M6. JSON2.0.4, không bật hệ thống risk. Config cũ chỉ chuyển ở ca mới, không viết lại lịch sử. |

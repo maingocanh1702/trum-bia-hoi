@@ -54,8 +54,15 @@ export async function replaceSave(text: string | null, session: BootSession): Pr
   const game = text === null ? new Game(undefined, crypto.getRandomValues(new Uint32Array(1))[0], Date.now(), `guest-${crypto.randomUUID()}`) : decodeSave(text);
   await session.storage.replace(game, session.original);
 }
+/** Browser edition adopts a newer bundled release only when opening a new shift. */
+function newerBundledConfig(version: string): boolean {
+  if (!/^\d+\.\d+\.\d+$/.test(version)) return false; // Preserve custom/registry snapshot names.
+  const previous = version.split('.').map(Number), next = config.version.split('.').map(Number);
+  const changed = next.findIndex((part, i) => part !== previous[i]);
+  return changed >= 0 && next[changed] > previous[changed];
+}
 export function dispatch(game: Game, command: Command): Result {
-  return game.command({ idempotencyKey: crypto.randomUUID(), at: Math.max(Date.now(), game.world.now), command }, command.type === 'startShift' && !isEconomy2(game.config.raw) ? config : undefined);
+  return game.command({ idempotencyKey: crypto.randomUUID(), at: Math.max(Date.now(), game.world.now), command }, command.type === 'startShift' && (!isEconomy2(game.config.raw) || newerBundledConfig(game.config.version)) ? config : undefined);
 }
 export function download(text: string, name: string): void {
   const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));

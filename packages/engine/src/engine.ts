@@ -28,6 +28,8 @@ const MENU_PAUSE_RULES: RulesVersion = 16; // config-exempt: fixed replay protoc
 const LIVE_UPGRADE_RULES: RulesVersion = 17; // config-exempt: fixed replay protocol revision for owner live-upgrade policy
 const BATCH_RULES: RulesVersion = 18; // config-exempt: fixed replay protocol revision for stocked beer and wash batches
 const DISCONNECT_RULES: RulesVersion = 19; // config-exempt: replay protocol for trusted disconnection deadlines
+export const CURRENT_RULES: RulesVersion = 25; // config-exempt: opening progression uses the incoming config; historical rush schedules remain exact
+const OPENING_PROGRESS_RULES: RulesVersion = 25; // config-exempt: fixed replay protocol revision
 const CONNECTION_RULES: RulesVersion = 24; // config-exempt: replay protocol for hidden recovery and resting connection loss
 const SEASON_RULES: RulesVersion = 23; // config-exempt: replay protocol for real seasonal earnings
 const LEASE_RULES: RulesVersion = 22; // config-exempt: replay protocol for rental contracts
@@ -79,7 +81,7 @@ export class Game {
   }
   /** Takes ownership of integrity-checked server data. Untrusted saves MUST use decodeSave replay. */
   static restoreTrusted(configs: readonly Config[], snapshot: { seed: number; createdAt: number; world: World; log: LoggedCommand[] }, state: EngineCheckpoint): Game {
-    if (state.version !== 1 || !Number.isInteger(state.rulesVersion) || state.rulesVersion < 1 || state.rulesVersion > CONNECTION_RULES || // config-exempt: supported checkpoint/replay protocol revisions
+    if (state.version !== 1 || !Number.isInteger(state.rulesVersion) || state.rulesVersion < 1 || state.rulesVersion > CURRENT_RULES || // config-exempt: supported checkpoint/replay protocol revisions
         state.activeRushIndex !== null && (!Number.isSafeInteger(state.activeRushIndex) || state.activeRushIndex < 0) ||
         !Array.isArray(state.configVersions) || !configs.length || configs.length !== state.configVersions.length ||
         new Set(state.configVersions).size !== configs.length || configs.some((c, i) => c.version !== state.configVersions[i]) ||
@@ -673,17 +675,17 @@ export class Game {
   /** Opening config is supplied by a trusted registry adapter, never by a player command payload. */
   command(envelope: Envelope, openingConfig?: Config): Result {
     if (!validEnvelope(envelope)) return { ok: false, reason: 'invalidCommand' };
-    return this.applyCommand(envelope, CONNECTION_RULES, openingConfig, true);
+    return this.applyCommand(envelope, CURRENT_RULES, openingConfig, true);
   }
   /** Trusted adapter supplies one lossId per outage and reuses it only for retries. */
   disconnect(at: number, shiftId: string | null, lossId: string): Result {
     if (typeof lossId !== 'string' || !lossId) return { ok: false, reason: 'invalidCommand' };
-    return this.applyCommand({ at, idempotencyKey: `system:connectionLost:${shiftId}:${lossId}`, command: { type: 'connectionLost', shiftId, lossId } }, CONNECTION_RULES, undefined, true);
+    return this.applyCommand({ at, idempotencyKey: `system:connectionLost:${shiftId}:${lossId}`, command: { type: 'connectionLost', shiftId, lossId } }, CURRENT_RULES, undefined, true);
   }
   /** Trusted adapter orders connection generations; hidden recovery is not visible activity. */
   reconnect(at: number, recoveryId: string, active: boolean, paused = false): Result {
     return this.applyCommand({ at, idempotencyKey: `system:connectionRestored:${recoveryId}`,
-      command: { type: 'connectionRestored', recoveryId, active, paused } }, CONNECTION_RULES, undefined, true);
+      command: { type: 'connectionRestored', recoveryId, active, paused } }, CURRENT_RULES, undefined, true);
   }
   /** Persistence replay only. HTTP/UI callers always use command(), which selects current rules. */
   replay(entry: LoggedCommand, config = this.config): Result {
@@ -781,7 +783,8 @@ export class Game {
         const onboarding = c.onboarding.enabled && w.completedShifts === 0;
         if (changed && onboarding && !w.tables.some(table => c.upgrades.table.levels[table.level - 1].capacity >= c.onboarding.firstShift.firstGroupSize)) return fail('configOnboardingTables');
         const scheduled = !(onboarding && c.onboarding.firstShift.rushDisabled);
-        const plan = this.rulesVersion >= RUSH_SCHEDULE_RULES && scheduled ? planRushes(openingConfig, location, this.id('shift', false), day, w.now, this.rulesVersion >= ECONOMY_RULES ? w.lifePath : Infinity) : null;
+        const openingLevel = this.rulesVersion >= OPENING_PROGRESS_RULES ? lifePathStatus({ ...w, tables: w.tables.map(table => ({ ...table, capacity: c.upgrades.table.levels[table.level - 1].capacity })) }, openingConfig).level : w.lifePath;
+        const plan = this.rulesVersion >= RUSH_SCHEDULE_RULES && scheduled ? planRushes(openingConfig, location, this.id('shift', false), day, w.now, this.rulesVersion >= ECONOMY_RULES ? openingLevel : Infinity) : null;
         if (this.rulesVersion >= RUSH_SCHEDULE_RULES && scheduled && !plan) return fail('rushScheduleUnavailable');
         if (changed) {
           w.staminaMs = Math.round(w.staminaMs / this.config.values.shift.durationMs * c.shift.durationMs);

@@ -206,3 +206,9 @@ balances/ranking"* is a hard boundary, not a soft default. [multi-system-journey
 — the local→Google→claim→server flow spans browser IndexedDB, Google OAuth, and the SQLite server
 store in one player-facing journey; `local.ts`'s `boot()` is the substrate every other web-local
 session resumes through.
+
+
+### A1 — 2026-09-16 proof
+- `apps/web/test/local-config.test.ts`: newer bundled config adoption only at next successful opening; running/historical pins, custom/newer versions and replay retained.
+- `packages/engine/test/progression.test.ts`: LP1 scaled threshold/four seats without dog; old pinned dog requirement still enforced.
+- `apps/web/test/improve-lp1.spec.ts`: production browser guest with real previously earned income migrates LP1, opens next shift, reloads unchanged with no visible dog. Run `npx playwright test --config playwright.improve.config.ts improve-lp1.spec.ts`.

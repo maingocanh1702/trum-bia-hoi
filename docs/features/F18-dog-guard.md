@@ -93,3 +93,7 @@ is implemented by this purchase mechanism; sections4/5/8 remain open.
 | Date | Change |
 |---|---|
 | 2026-09-09 | Added local purchase/upgrade mechanism and derived dog stats; native state projection differs from the illustrative duplicated DogState in section2. Full combat/protection/server acceptance remains pending. |
+
+
+### 2026-09-16 — A1 / JSON2.0.4 (supersedes LP1 dog prerequisite above)
+M6 remains deferred and dog UI hidden. LP1 now needs only four seats and the configured lifetime threshold (50,000 Base ×2.5 =125,000 coins); no dog purchase is required. Historical config pins retain their original prerequisite.

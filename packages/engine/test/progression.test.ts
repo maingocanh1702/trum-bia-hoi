@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { Game, config, loadConfig, lifePathStatus, requirementStatus, lifePathRewardQuote, unlockQuote, kickAllQuote, customerValue, encodeSave, decodeSave, type Command, type Result, type Economy } from '../src';
+import { CURRENT_RULES, Game, config, loadConfig, lifePathStatus, requirementStatus, lifePathRewardQuote, unlockQuote, kickAllQuote, customerValue, encodeSave, decodeSave, type Command, type Result, type Economy } from '../src';
 const saved = readFileSync(new URL('./fixtures/legacy-progression-v5.json', import.meta.url), 'utf8');
 const send = (g: Game, command: Command) => g.command({ command, at: g.world.now, idempotencyKey: `progress-${g.log.length}` });
 function reachLP2() {
@@ -19,7 +19,7 @@ test('actual v5 history stays unchanged; current progression unlocks phone and L
   send(g, { type: 'activity', active: true }); assert.equal(g.world.lifePath, 1);
   const reached = g.world.events.filter(e => e.type === 'life_path_level_reached'); assert.equal(reached.length, 1); assert.equal(reached[0].data.level, 'LP1');
   const lp2 = reachLP2(); assert.deepEqual(lp2.world.claimedLifePaths, []); assert.equal(unlockQuote(lp2.world, lp2.config, 'qr').ok, true);
-  assert.deepEqual(decodeSave(encodeSave(lp2)).world, lp2.world); assert.equal(lp2.log.at(-1)!.rulesVersion, 24);
+  assert.deepEqual(decodeSave(encodeSave(lp2)).world, lp2.world); assert.equal(lp2.log.at(-1)!.rulesVersion, CURRENT_RULES);
   assert.deepEqual(lifePathStatus(lp2.world, lp2.config).rows.filter(r => r.claimable).map(r => r.id), ['LP1', 'LP2']);
   const lifetime = lp2.world.lifetimeEarned, season = lp2.world.seasonEarned, day = structuredClone(lp2.world.dayEarned);
   assert.equal(send(lp2, { type: 'claimLifePath', level: 2 }).ok, true); assert.equal(lp2.world.badgeShards, 1);
@@ -31,7 +31,7 @@ test('actual v5 history stays unchanged; current progression unlocks phone and L
 test('all configured subsidiary gates are enforced and kitchen cannot make the five-level core device goal unreachable', () => {
   const w = structuredClone(new Game().world); w.lifetimeEarned = config.values.lifePath.at(-1)!.lifetimeBase;
   const level = () => lifePathStatus(w, config).level;
-  assert.equal(level(), 0); w.dogLevel = 1; assert.equal(level(), 1);
+  assert.equal(w.dogLevel, 0); assert.equal(level(), 1);
   w.unlocks.push('phone'); w.equipment.stall = 3; assert.equal(level(), 2);
   w.unlocks.push('qr'); assert.equal(level(), 2);
   Object.assign(w.equipment, { keg: 3, washer: 3, cooler: 3 }); assert.equal(w.equipment.kitchen, 0); assert.equal(level(), 3);
@@ -119,4 +119,23 @@ test('phone and QR cannot require milestones that need them, including through e
   ]) { const raw = structuredClone(config.raw); patch(raw); assert.throws(() => loadConfig(raw), /config:progressionCycle/); }
   const earlier = structuredClone(config.raw); earlier.unlocks.phone.gate = 'LP0'; earlier.unlocks.qr.gate[1] = 'LP1';
   assert.doesNotThrow(() => loadConfig(earlier));
+});
+
+
+test('LP1 needs its scaled lifetime threshold and four seats, without deferred dog ownership; old config pins remain strict', () => {
+  const w = structuredClone(new Game().world), threshold = config.values.lifePath[1].lifetimeBase;
+  w.lifetimeEarned = threshold - 1;
+  assert.equal(lifePathStatus(w, config).level, 0);
+  w.lifetimeEarned = threshold; w.tables = w.tables.slice(0, 2);
+  assert.equal(w.tables.reduce((n, t) => n + t.capacity, 0), 4);
+  assert.equal(lifePathStatus(w, config).level, 1);
+  w.tables.pop(); assert.equal(lifePathStatus(w, config).level, 0);
+  const old = structuredClone(config.raw); old.lifePath[1].requires!.push('dog');
+  w.tables = structuredClone(new Game().world.tables);
+  assert.equal(lifePathStatus(w, loadConfig(old)).level, 0);
+  w.dogLevel = 1; assert.equal(lifePathStatus(w, loadConfig(old)).level, 1);
+  for (const token of ['unknown', 'LP1', 'phone']) {
+    const bad = structuredClone(config.raw); bad.lifePath[1].requires!.push(token);
+    assert.throws(() => loadConfig(bad), /config:/);
+  }
 });

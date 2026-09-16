@@ -493,3 +493,7 @@ Khi gen bằng ChatGPT, dùng rule:
 *Nguồn: `02-GDD-trum-bia-hoi.md` v1.5, `economy-spec-from-bundle.md`, `00-TONG-HOP-trumviahe.md`.*
 
 | 2026-09-09 local signs | Clarified Golden reputation as purchase gate, not a debit (GDD/original authority). Five original builtin sprites now assets/sign-{wood,neon,vintage,calligraphy,golden}.png, native1536×1024 alpha, scaled in DOM. Numeric config unchanged; these business signs remain separate from donation cosmetics. Release art approval pending. |
+
+
+### 2026-09-16 — A1 / JSON2.0.4 (supersedes LP1 dog prerequisite above)
+M6 remains deferred and dog UI hidden. LP1 now needs only four seats and the configured lifetime threshold (50,000 Base ×2.5 =125,000 coins); no dog purchase is required. Historical config pins retain their original prerequisite.
