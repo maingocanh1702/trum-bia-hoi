@@ -79,6 +79,33 @@ db_isolation_ok() { # <slug> -> 0 if this run's db_name (if any) can currently p
   return 0
 }
 
+# W5.2.4 review round-2 (K24 follow-up): shared by the SAME two call sites as db_isolation_ok, for
+# the SAME reason (W4.1 round-1 finding 1) -- a relaunch-prep failure must halt BEFORE the caller
+# deletes .ap3-run/READY-FOR-REVIEW, or retry.sh --review-only's own precondition (READY-FOR-REVIEW
+# must still exist) can never be satisfied and TASK_REFRESH_FAILED, despite being classified an
+# outage terminal, would always force a full worktree-wiping retry.sh <slug> instead -- exactly
+# what K23/K24 exist to prevent. No-op (returns 0) when there is nothing staged to refresh, or the
+# pinned task is missing entirely (launch_writer's own fallback then uses the tracked queue copy).
+# Idempotent: safe to call again as defense-in-depth inside launch_writer itself, for any caller
+# that launches without this pre-check (mirrors db_isolation_ok's own "INITIAL launch from
+# start_next has no run_review pre-check ahead of it" framing -- though for THIS check specifically
+# that path can never actually trigger it, since .ap3-run/TASK.md cannot yet exist on a fresh run's
+# very first launch). Refreshes rather than trusts a stale stage: see launch_writer's own comment
+# for why a copy made once at retry time can go stale before the writer actually launches. Never
+# follows a pre-existing destination symlink (.ap3-run/ is writer-writable; this runs unsandboxed).
+refresh_staged_task() { # <slug> -> 0 (including the no-op cases); 1 after halt() on a real failure
+  local slug="$1" wt="$WT/$1"
+  [ -f "$wt/.ap3-run/TASK.md" ] || return 0
+  [ -f "$RUNS/$slug/task.md" ] || return 0
+  # both steps guarded by the SAME if -- a bare `rm -f` that fails (e.g. an immutable/locked
+  # destination) would otherwise trip `set -e` and crash the whole dispatcher tick instead of a
+  # clean halt(); neither statement may run unguarded outside a test expression.
+  if ! rm -f "$wt/.ap3-run/TASK.md" || ! cp "$RUNS/$slug/task.md" "$wt/.ap3-run/TASK.md"; then
+    halt "$slug" TASK_REFRESH_FAILED "could not refresh $wt/.ap3-run/TASK.md from the pinned task before launch"
+    return 1
+  fi
+}
+
 cleanup_run_db() { # <slug> — idempotent no-op if this run never had a per-run database. Called
                    # from every terminal path (halt, finalize_ready, merge/reject archive) so the
                    # database is dropped on whichever one a given run actually reaches first.
@@ -120,7 +147,7 @@ pause_class() { # <class> <reason> [--keep-trust] — trust is re-earned by hand
 # own diff may have been fine, so trust is kept. Everything else (including MISSING_CONTEXT, a
 # bare HALT.md with no recognised reason, and REJECTED / "merged with human changes" below) is
 # writer-fault: the writer (or a human) produced something the run could not stand behind.
-OUTAGE_TERMINALS=" REVIEW_UNAVAILABLE PUSH_FAILED PR_FAILED REMOTE_TIP_MISMATCH EVIDENCE_FAILED FS_ISOLATION_UNSAFE NO_WRITER_SETTINGS DB_ISOLATION_LOST TELEMETRY_FAILED "
+OUTAGE_TERMINALS=" REVIEW_UNAVAILABLE PUSH_FAILED PR_FAILED REMOTE_TIP_MISMATCH EVIDENCE_FAILED FS_ISOLATION_UNSAFE NO_WRITER_SETTINGS DB_ISOLATION_LOST TELEMETRY_FAILED TASK_REFRESH_FAILED "
 terminal_kind() { # <reason> -> writer-fault | outage
   case "$OUTAGE_TERMINALS" in *" $1 "*) echo outage ;; *) echo writer-fault ;; esac
 }
@@ -383,6 +410,14 @@ finalize_ready() { # <slug> — review was CLEAN. Fail closed: READY means an OP
         echo;
         head -c 20000 "$RUNS/$slug/verify-host.txt";
         [ "$(wc -c < "$RUNS/$slug/verify-host.txt")" -gt 20000 ] && printf '\n... (truncated at 20000 bytes -- see ap3/state/runs/%s/verify-host.txt for the full output)\n' "$slug"; } > "$wt/.ap3-run/REVIEW-FINDINGS.md"
+      # W5.2.4 review round-2 (K24 follow-up): same reasoning as db_isolation_ok's own pre-check
+      # above -- refresh BEFORE destroying this run's recovery signal below, or a TASK_REFRESH_FAILED
+      # halt here could never actually be resumed via retry.sh --review-only. Explicit `return 0`,
+      # NOT a bare `return` (which would propagate refresh_staged_task's own `1` as THIS function's
+      # exit status): a halt is a normally-handled outcome, not a script error, matching every other
+      # halt-then-return in this function (bare `return` right after a direct `halt()` call already
+      # picks up halt's own reliable 0 exit -- see db_isolation_ok's identical pattern above).
+      refresh_staged_task "$slug" || return 0
       rm -f "$RUNS/$slug/result.json" "$wt/.ap3-run/READY-FOR-REVIEW"
       if launch_writer "$slug"; then
         log "RECONCILED $slug verify_host failure round $vh_round — re-dispatched fix writer"
@@ -540,6 +575,13 @@ run_review() { # <slug> — CLEAN -> finalize_ready ; FINDINGS -> fix loop or MA
     [ "$crc" -eq 1 ] && emit_findings_section Code "$RUNS/$slug/review-code.txt";
     [ "$sec" = FINDINGS ] && { echo; emit_findings_section Security "$RUNS/$slug/review-security.txt"; }; } \
     > "$wt/.ap3-run/REVIEW-FINDINGS.md"
+  # W5.2.4 review round-2 (K24 follow-up): same reasoning as db_isolation_ok's own pre-check above
+  # -- refresh BEFORE destroying this run's recovery signal below, or a TASK_REFRESH_FAILED halt
+  # here could never actually be resumed via retry.sh --review-only. Explicit `return 0`, NOT a bare
+  # `return` (which would propagate refresh_staged_task's own `1` as THIS function's exit status):
+  # a halt is a normally-handled outcome, not a script error -- see the matching comment on
+  # finalize_ready's identical pre-check above.
+  refresh_staged_task "$slug" || return 0
   rm -f "$RUNS/$slug/result.json" "$wt/.ap3-run/READY-FOR-REVIEW"
   if launch_writer "$slug"; then          # a refused writer already HALTed + logged inside launch_writer
     log "RECONCILED $slug findings round $round — re-dispatched fix writer"
@@ -650,7 +692,24 @@ launch_writer() { # <slug> — start (or restart) the sandboxed coding session, 
   # that point on. Without this the answer reached only the reviewer, which then enforced
   # instructions the writer had never been given. Preferred whenever present, for every later fix
   # round too, since an answered question stays answered.
+  #
+  # W5.2.4 review round-1 finding 3 (K24 follow-up): retry.sh's stage_pinned_task copies the pinned
+  # task ONCE, at retry time -- but THIS launch can happen a full dispatcher tick later (launchd
+  # fires every 15 min), or be a later fix-round relaunch from run_review's own FINDINGS loop. If
+  # the owner edits the pinned task again in that window, a stale staged copy would hand the writer
+  # instructions the reviewer (which always reads the LIVE ap3/state/runs/<slug>/task.md at review
+  # time) never re-confirmed against. refresh_staged_task (defined near db_isolation_ok) refreshes
+  # it from the pinned copy right here -- the last possible moment before AP3_TASK is actually
+  # handed to the writer -- so the two can never drift. review round-2: BOTH call sites that relaunch
+  # a writer already call this BEFORE deleting .ap3-run/READY-FOR-REVIEW (mirroring db_isolation_ok's
+  # own pattern, W4.1 round-1 finding 1), so a TASK_REFRESH_FAILED halt stays --review-only
+  # recoverable; this call is defense-in-depth for any future caller that launches without that
+  # pre-check (idempotent -- a no-op re-refresh of identical content when the pre-check already ran).
+  # A fresh run's FIRST launch (no prior stage) is untouched: refresh_staged_task no-ops when
+  # .ap3-run/TASK.md does not exist yet, so it still uses the tracked queue copy, identical to the
+  # pinned copy at that point since both were materialized from the same origin SHA.
   local wtask="$wt/ap3/queue/$slug.md"
+  refresh_staged_task "$slug" || return 1
   [ -f "$wt/.ap3-run/TASK.md" ] && wtask="$wt/.ap3-run/TASK.md"
   ( cd "$wt"
     if [ -f "$REPO/ap3/env" ]; then set -a; . "$REPO/ap3/env"; set +a; fi
@@ -741,7 +800,15 @@ reconcile_running() {
     # (never halt) only when the writer had genuinely already delivered a complete, reviewable
     # result -- the READY-FOR-REVIEW/verify gates directly below re-check exactly that. Any other
     # is_error, or this same subtype without a completed READY signal, still halts as before.
-    if [ "$(jget "$result" subtype "")" = error_max_budget_usd ] && [ -f "$run/READY-FOR-REVIEW" ] \
+    #
+    # W5.2.4 review round-1 finding 5 (K22 follow-up): this branch previously fired for ANY
+    # is_error that was not exactly `false` (the outer guard) as long as subtype/READY/verify
+    # matched -- including is_error MISSING entirely, or a non-boolean truthy value. That
+    # contradicts the surrounding fail-closed contract one line up ("require an EXPLICIT
+    # is_error:false"); the mirror of that rule is that THIS carve-out must require an EXPLICIT
+    # is_error:true, not merely "whatever was not false". A missing/malformed is_error with a
+    # coincidentally-matching subtype must still fall through to WRITER_ERROR below, same as before.
+    if [ "$(jget "$result" is_error MISSING)" = true ] && [ "$(jget "$result" subtype "")" = error_max_budget_usd ] && [ -f "$run/READY-FOR-REVIEW" ] \
       && [ "$(head -1 "$run/verify" 2>/dev/null || true)" = pass ]; then
       log "$slug: writer hit its own --max-budget-usd cap after delivering READY-FOR-REVIEW; cumulative spend \$$sp within budget \$$bt, proceeding to review"
     elif [ "$(jget "$result" subtype "")" = error_max_budget_usd ]; then

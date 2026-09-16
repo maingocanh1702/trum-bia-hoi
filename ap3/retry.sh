@@ -104,6 +104,55 @@ recreate_pinned_db() { # <label for error text, e.g. "--review-only"> -> exits 1
   fi
 }
 
+# W5.2.4 (K24): shared by every resume mode that can relaunch or re-review a writer session --
+# copies the PINNED ap3/state/runs/<slug>/task.md (the copy the owner amends and the reviewer
+# reads -- run_review's own `task="$RUNS/$slug/task.md"`) to <worktree>/.ap3-run/TASK.md, the copy
+# launch_writer prefers whenever present (K23 + follow-up df7686e). Before this, only --answer
+# staged the file: an owner amendment made alongside --extend-rounds/--extend-budget/--review-only
+# reached the reviewer (which reads the pinned copy directly) but never a writer relaunched out of
+# a later FINDINGS round (which reads whatever launch_writer finds staged -- the stale committed
+# queue copy, or a stale .ap3-run/TASK.md left over from an earlier --answer). Fails closed on
+# either side missing -- never silently leaves an amendment unseen. Must NEVER write the
+# git-TRACKED <worktree>/ap3/queue/<slug>.md instead: the writer commits with `git add -A`, so
+# that would put an undeclared file in the diff and halt the run SCOPE_DRIFT (measured -- see
+# K23's own comment on this exact trap).
+#
+# W5.2.4 review round-1 finding 1 (K24 follow-up): `.ap3-run/` is writable by the SANDBOXED
+# writer, and this `cp` runs UNSANDBOXED on the owner's machine. A writer that left
+# `.ap3-run/TASK.md` as a symlink would make this `cp` (which follows a destination symlink by
+# default) overwrite whatever that symlink points at with task content -- a file-clobber outside
+# the worktree entirely, on the owner's own filesystem. `rm -f` the destination first: it removes
+# the directory entry (never follows/deletes the symlink's TARGET), so the following `cp` always
+# creates a fresh regular file, no matter what a prior writer session left there.
+#
+# W5.2.4 review round-1 finding 4 (K24 follow-up): also sets STAGE_PINNED_TASK_CHANGED (0 or 1) --
+# whether the content just staged actually differs from what the writer would otherwise have seen
+# (the previously-staged .ap3-run/TASK.md if one exists, else the tracked ap3/queue/<slug>.md).
+# --review-only is the one caller that does not already mark owner_extended unconditionally (a
+# pure infra-outage retry with no task change is correctly NOT human-assisted); this flag lets it
+# mark owner_extended only when a real owner amendment rode along.
+stage_pinned_task() { # <label for error text> -- copies the pinned task.md into the worktree, or exits 1
+  local label="$1" rec_task="ap3/state/runs/$SLUG/task.md" baseline
+  [ -f "$rec_task" ] \
+    || { echo "retry: refusing $label $SLUG -- no pinned task at $rec_task to stage" >&2; exit 1; }
+  [ -d "$WT/.ap3-run" ] \
+    || { echo "retry: refusing $label $SLUG -- no $WT/.ap3-run to stage the task in" >&2; exit 1; }
+  if [ -f "$WT/.ap3-run/TASK.md" ]; then
+    baseline="$WT/.ap3-run/TASK.md"
+  else
+    baseline="$WT/ap3/queue/$SLUG.md"
+  fi
+  STAGE_PINNED_TASK_CHANGED=1
+  [ -f "$baseline" ] && cmp -s "$rec_task" "$baseline" && STAGE_PINNED_TASK_CHANGED=0
+  # both steps guarded by the SAME if -- a bare `rm -f` that fails (e.g. an immutable/locked
+  # destination) would otherwise trip `set -e` and crash the whole script instead of the clean,
+  # explanatory exit 1 every other refusal in this script gives.
+  if ! rm -f "$WT/.ap3-run/TASK.md" || ! cp "$rec_task" "$WT/.ap3-run/TASK.md"; then
+    echo "retry: refusing $label $SLUG -- could not place $rec_task at $WT/.ap3-run/TASK.md" >&2
+    exit 1
+  fi
+}
+
 if [ "$ANSWER" = 1 ]; then
   # W5.2.3 (K23): MISSING_CONTEXT is the one terminal that means the writer STOPPED ON PURPOSE to
   # ask an owner-level question -- the skill's own contradiction-handling rule tells it to halt
@@ -126,11 +175,6 @@ if [ "$ANSWER" = 1 ]; then
   # state (and never silently answer a question nobody can read).
   [ -f "$WT/.ap3-run/HALT.md" ] \
     || { echo "retry: refusing --answer $SLUG -- $WT/.ap3-run/HALT.md is missing (nothing to answer)" >&2; exit 1; }
-  REC_TASK="ap3/state/runs/$SLUG/task.md"
-  [ -f "$REC_TASK" ] \
-    || { echo "retry: refusing --answer $SLUG -- no pinned task at $REC_TASK to carry your answer" >&2; exit 1; }
-  [ -d "$WT/.ap3-run" ] \
-    || { echo "retry: refusing --answer $SLUG -- no $WT/.ap3-run to place the answered task in" >&2; exit 1; }
   # same guard the full-rewrite path uses below: a pushed branch means a PR exists, and what
   # happens to a PR is a human decision, never this script's.
   remote_out="$(git ls-remote --heads origin "ap3/$SLUG" 2>&1)" || {
@@ -141,24 +185,20 @@ if [ "$ANSWER" = 1 ]; then
     echo "retry: refusing --answer $SLUG -- origin already has branch ap3/$SLUG (a pushed branch means a PR exists -- human decision)" >&2
     exit 1
   fi
-  # K23 follow-up: the two task copies are NOT the same file, and only one of them reaches the
-  # writer. launch_writer passes AP3_TASK="<worktree>/ap3/queue/<slug>.md" (the copy committed on
-  # the run's branch); run_review and scope-check pass the PINNED ap3/state/runs/<slug>/task.md.
-  # An owner who writes the answer into the pinned copy -- the natural place, and what this
-  # script's own success message points at -- reaches the REVIEWER but never the WRITER, so the
-  # reviewer starts enforcing instructions the writer was never given. Measured on a real run:
-  # three owner amendments landed in the pinned copy, the writer saw none of them, and the loop
-  # only broke because the reviewer happened to quote one back through REVIEW-FINDINGS.md.
-  # Place the pinned copy where launch_writer will prefer it, so both sides read the same task.
-  # NOT over the worktree's ap3/queue/<slug>.md: that file is TRACKED on the run's branch, so
-  # overwriting it makes the worktree dirty, the writer commits it with `git add -A`, and the run
-  # halts SCOPE_DRIFT on a file no task ever declared (measured -- this is why .ap3-run/ is the
-  # destination). .ap3-run/ is gitignored, survives fix rounds, and is already the writer's own
-  # signal directory, so the answered task governs every later round too.
-  if ! cp "$REC_TASK" "$WT/.ap3-run/TASK.md"; then
-    echo "retry: refusing --answer $SLUG -- could not place $REC_TASK at $WT/.ap3-run/TASK.md (the writer would not see your answer)" >&2
-    exit 1
-  fi
+  # W5.2.4 review round-1 finding 2 (K24 follow-up): halt() drops the per-run database on EVERY
+  # halt, including MISSING_CONTEXT -- --review-only and --extend-* both recreate it before
+  # resuming, but --answer never did (a gap that predates K24; --answer never called this at all).
+  # A `needs_db` run relaunched without it would get DATABASE_URL_TEST rewritten to a database that
+  # no longer exists, and the relaunched writer's own verify would fail against a dead connection --
+  # wasting a full writer session on a run doomed from the start.
+  recreate_pinned_db --answer
+  # K23 follow-up (K24): the two task copies are NOT the same file, and only one of them reaches
+  # the writer -- see stage_pinned_task above for the full story. An owner who writes the answer
+  # into the pinned copy -- the natural place, and what this script's own success message points
+  # at -- reaches the REVIEWER but never the WRITER unless staged here too. Measured on a real
+  # run: three owner amendments landed in the pinned copy, the writer saw none of them, and the
+  # loop only broke because the reviewer happened to quote one back through REVIEW-FINDINGS.md.
+  stage_pinned_task --answer
   # Removed BEFORE the record is published: reconcile_running halts on HALT.md's mere presence, so
   # leaving it would re-halt this run on the very next tick no matter what the owner wrote.
   rm -f "$WT/.ap3-run/HALT.md"
@@ -190,7 +230,7 @@ if [ "$REVIEW_ONLY" = 1 ]; then
   # dispatch.sh (it unconditionally runs main() at the bottom, so it cannot be sourced for its
   # functions without also dispatching a tick).
   terminal="$(python3 "$DIR/rec.py" get "$REC" terminal unknown)"
-  case " REVIEW_UNAVAILABLE PUSH_FAILED PR_FAILED REMOTE_TIP_MISMATCH EVIDENCE_FAILED FS_ISOLATION_UNSAFE NO_WRITER_SETTINGS DB_ISOLATION_LOST TELEMETRY_FAILED " in
+  case " REVIEW_UNAVAILABLE PUSH_FAILED PR_FAILED REMOTE_TIP_MISMATCH EVIDENCE_FAILED FS_ISOLATION_UNSAFE NO_WRITER_SETTINGS DB_ISOLATION_LOST TELEMETRY_FAILED TASK_REFRESH_FAILED " in
     *" $terminal "*) : ;;
     *) echo "retry: refusing --review-only $SLUG -- terminal '$terminal' is not an outage terminal (use a full 'retry.sh $SLUG' instead)" >&2; exit 1 ;;
   esac
@@ -204,6 +244,21 @@ if [ "$REVIEW_ONLY" = 1 ]; then
     exit 1
   fi
   recreate_pinned_db --review-only
+  # K24: stage the pinned task now too -- if this resumed review still returns FINDINGS,
+  # run_review relaunches a fix writer that reads whatever is staged here (see stage_pinned_task
+  # above), and that must reflect any amendment the owner made to the pinned copy before retrying.
+  stage_pinned_task --review-only
+  # W5.2.4 review round-1 finding 4 (K24 follow-up): --review-only exists for pure infra-outage
+  # recovery (nothing about the task/code needed a human judgment call), so unlike --answer/
+  # --extend-* it does NOT mark owner_extended unconditionally -- a plain outage retry still counts
+  # toward clean_runs, correctly. But K24 also lets an owner ride a task amendment along with a
+  # --review-only resume, and THAT is exactly as human-assisted as --answer/--extend-*: only mark
+  # it when stage_pinned_task actually found the staged content changed.
+  if [ "$STAGE_PINNED_TASK_CHANGED" = 1 ]; then
+    python3 "$DIR/rec.py" setjson "$REC" owner_extended true
+    python3 "$DIR/rec.py" set "$REC" owner_extended_at "$(now)"
+    python3 "$DIR/rec.py" set "$REC" owner_extended_flags review-only-amendment
+  fi
   # security review round 1 finding 5: status is published LAST, once every other field this
   # resumed run depends on is already in place -- reconcile_running/reconcile_all key off `status`
   # alone to decide whether to touch this record at all, and each `rec.py set` below is its own
@@ -378,6 +433,10 @@ sys.exit(1) if not math.isfinite(v) else print(v)')"; then
     FLAGS_USED="${FLAGS_USED:+$FLAGS_USED,}extend-budget"
   fi
   recreate_pinned_db extend
+  # K24: stage the pinned task now too -- see stage_pinned_task above. If this resumed review
+  # still returns FINDINGS, run_review relaunches a fix writer that reads whatever is staged
+  # here, and that must reflect any amendment the owner made to the pinned copy before extending.
+  stage_pinned_task extend
 
   # Every check above passed -- now apply. security review round 1 finding 5: `status` is
   # published LAST, once every other field this resumed run depends on is already in place -- see
