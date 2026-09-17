@@ -786,3 +786,59 @@ test('a forecast report computed while an unrelated version was pending is stale
   assert.equal(f.db.prepare('SELECT state FROM registry_measurements WHERE version=?').get(draftW.version)!.state, 'admitted');
   assert.throws(() => f.registry.assertForecastCurrent(f.actor('viewer'), report), /registry:staleForecast/);
 });
+
+test('a pending emergency does not archive the schedule it names until it admits, and never does if refused (codex review round 1 finding)', async t => {
+  let resolveEmergency!: (k: number) => void;
+  const pendingEmergency = new Promise<number>(resolve => { resolveEmergency = resolve; });
+  let calls = 0;
+  const f = fixture(t, config, candidate => { calls++; return calls === 1 ? candidate.values.k.value : pendingEmergency; });
+  const base = f.registry.config(f.registry.latest().version);
+  const snapshotA = structuredClone(base.raw); snapshotA.shift.dailyEarnCapBase++;
+  const draftA = f.registry.propose(f.actor(), { key: 'schedule-a', baseVersion: base.version, snapshot: snapshotA, reason: 'Scheduled change', effective: 'next_day' });
+  f.registry.approve(f.actor('super', 'reviewer'), draftA.version);
+  const scheduled = f.registry.publish(f.actor(), draftA.version); // admitted, scheduled for tomorrow
+  assert.ok(scheduled.effective_at > f.now);
+  const snapshotE = structuredClone(base.raw); snapshotE.menu.bia.price++;
+  const draftE = f.registry.propose(f.actor('super'), { key: 'emergency', baseVersion: base.version, snapshot: snapshotE, reason: 'Emergency', emergency: true });
+  const preview = f.registry.impact(f.actor('super'), draftE.version);
+  f.registry.publish(f.actor('super'), draftE.version, preview.token); // stays pending -- measurement 2 hangs
+  assert.equal(f.db.prepare('SELECT state FROM registry_measurements WHERE version=?').get(draftE.version)!.state, 'pending');
+  // While the emergency is pending, the schedule it named must stay live -- not archived, not supersededBy it.
+  // publish()'s emergency branch writes the ConfigScheduleSuperseded audit synchronously, before its own
+  // measurement settles -- supersededBy() must not trust that record until the writer itself is admitted.
+  assert.equal(f.registry.details(f.actor('viewer'), draftA.version).phase, 'scheduled');
+  assert.equal(f.registry.details(f.actor('viewer'), draftA.version).supersededBy, null);
+  resolveEmergency(999); // out of band -- refused
+  await f.registry.settleMeasurements();
+  assert.equal(f.db.prepare('SELECT state FROM registry_measurements WHERE version=?').get(draftE.version)!.state, 'refused');
+  // Permanently: a refused emergency never takes effect, so the schedule it named stays visible forever.
+  assert.equal(f.registry.details(f.actor('viewer'), draftA.version).phase, 'scheduled');
+  assert.equal(f.registry.details(f.actor('viewer'), draftA.version).supersededBy, null);
+  f.now = scheduled.effective_at;
+  assert.equal(f.registry.active().version, draftA.version);
+});
+
+test('measureKViaForecast refuses a measurement whose registry state went stale while the worker ran (codex review round 1 finding)', { timeout: 120000 }, async t => {
+  const dir = mkdtempSync(join(tmpdir(), 'tbh-registry-stale-')), file = join(dir, 'game.db');
+  let calls = 0;
+  // The registry's OWN measurement attempt for the target version hangs forever -- irrelevant, since this
+  // test measures it independently via a standalone measureKViaForecast call. Only the SECOND (unrelated,
+  // scoped) publish needs to settle fast, admitting synchronously while the real worker is still mid-flight.
+  const store = new GameStore(file, config, () => NOW, c => { calls++; return calls === 1 ? new Promise<number>(() => {}) : c.values.k.value; });
+  t.after(() => { store.close(); rmSync(dir, { recursive: true, force: true }); });
+  const actor = (role: AdminActor['role'] = 'economy', subject: string = role): AdminActor => ({ subject, role, mfa: true, issuedAt: NOW, expiresAt: NOW + 3600000 });
+  store.createPlayer('stale-player', 42);
+  store.command('stale-player', { idempotencyKey: 'open', command: { type: 'startShift' } });
+  const registry = store.registry, base = registry.config(registry.latest().version), snapshot = structuredClone(base.raw); snapshot.menu.bia.price++;
+  const draft = registry.propose(actor(), { key: 'stale-target', baseVersion: base.version, snapshot, reason: 'Measure via real worker' });
+  registry.approve(actor('super', 'reviewer'), draft.version);
+  registry.publish(actor(), draft.version); // stays pending -- the registry's own attempt hangs, unused
+  const measuring = measureKViaForecast(store, actor(), draft.version); // independent real-worker measurement
+  await delay(3000); // let the worker's DB backup complete before mutating the live registry underneath it
+  const scopeW: ConfigScope = { kind: 'segment', id: 'stale-w', playerIds: ['stale-player'], priority: 0, expiresAt: null, previousVersion: null, ticketId: null };
+  const snapshotW = structuredClone(base.raw); snapshotW.menu.lac.price++;
+  const draftW = registry.propose(actor(), { key: 'stale-w', baseVersion: base.version, snapshot: snapshotW, reason: 'Unrelated settlement mid-flight', scope: scopeW });
+  registry.approve(actor('super', 'reviewer'), draftW.version);
+  registry.publish(actor(), draftW.version); // admits synchronously (call 2) while the worker is still mid-flight
+  await assert.rejects(measuring, /registry:staleForecast/);
+});

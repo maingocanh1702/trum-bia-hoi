@@ -373,8 +373,14 @@ export class ConfigRegistry {
     if (actor.role !== 'super' || !actor.mfa) throw Error('registry:forbidden');
     if (policy?.tiers.some(t => t === 'C')) throw Error('registry:emergencyTier');
   }
+  // The superseding effect doesn't exist until the superseding version itself admits: publish()'s emergency
+  // branch writes this audit record synchronously, before its OWN async measurement settles, so a pending
+  // (or later refused) emergency must not archive the schedule it named -- exactly the same "pending has no
+  // effect on scheduling" rule applied to the writer of the marker, not just its own scheduling (codex review
+  // round 1 finding, pending-vs-scope follow-up: a refused emergency permanently orphaned its target schedule).
   private supersededBy(version: string) {
-    return this.auditRecord<{ byVersion: string }>('ConfigScheduleSuperseded', version)?.byVersion ?? null;
+    const byVersion = this.auditRecord<{ byVersion: string }>('ConfigScheduleSuperseded', version)?.byVersion ?? null;
+    return byVersion && this.measurementRow(byVersion)?.state === 'admitted' ? byVersion : null;
   }
   // Admitted-only (codex round 6 finding 3): a pending or refused publication doesn't exist for scheduling,
   // so it must never show up as something an emergency displaces or a preview/audit lists as superseded.

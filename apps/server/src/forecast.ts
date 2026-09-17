@@ -71,6 +71,13 @@ export type EconomicForecast=ReturnType<typeof reportFromBackup>;
 export async function measureKViaForecast(store:GameStore,actor:AdminActor,version:string):Promise<number> {
   const report=await forecastEconomy(store,actor,version,new AbortController().signal);
   if(report.measuredK===null)throw Error('registry:forecastEmpty');
+  // The worker's simulation can run for many seconds against a backup copy taken at its start; if the live
+  // registry moved on in the meantime (another measurement settled, another version published), that "before"
+  // state is stale and this measurement must not silently admit the candidate on outdated data. Same check
+  // assertForecastCurrent() already gives the admin-facing preview path -- the admission path needs it too
+  // (codex review round 1 finding, pending-vs-scope follow-up). A rejection here leaves the row pending for a
+  // retry, exactly like any other measurement failure (registry:measurementFailed is logged, never thrown out).
+  store.registry.assertForecastCurrent(actor,report);
   return report.measuredK;
 }
 
