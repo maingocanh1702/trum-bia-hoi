@@ -8,6 +8,7 @@ EARLIER, separately-landed measured-k admission slice -- it does not bound this 
 
 ## Scope (files this task may and does touch)
 
+- `docs/prompts/k-admission-pending-vs-scope-followup.md` -- this file itself, the task authority.
 - `apps/server/src/registry.ts` -- the fix itself.
 - `apps/server/test/registry.test.ts` -- new/renamed regression tests.
 - `apps/server/src/forecast.ts` -- `reportFromBackup()` must thread the new `measurementRevision`

@@ -827,18 +827,61 @@ test('measureKViaForecast refuses a measurement whose registry state went stale 
   const store = new GameStore(file, config, () => NOW, c => { calls++; return calls === 1 ? new Promise<number>(() => {}) : c.values.k.value; });
   t.after(() => { store.close(); rmSync(dir, { recursive: true, force: true }); });
   const actor = (role: AdminActor['role'] = 'economy', subject: string = role): AdminActor => ({ subject, role, mfa: true, issuedAt: NOW, expiresAt: NOW + 3600000 });
-  store.createPlayer('stale-player', 42);
+  store.createPlayer('stale-player', 42); store.createPlayer('stale-w-player', 43);
   store.command('stale-player', { idempotencyKey: 'open', command: { type: 'startShift' } });
   const registry = store.registry, base = registry.config(registry.latest().version), snapshot = structuredClone(base.raw); snapshot.menu.bia.price++;
-  const draft = registry.propose(actor(), { key: 'stale-target', baseVersion: base.version, snapshot, reason: 'Measure via real worker' });
+  // Scoped, not default: a default proposal's audience is every player (scopeOverlap()), so the unrelated
+  // scoped settlement below (a disjoint audience) would itself be blocked as measurementPending if this
+  // candidate were default -- scoping it to its own disjoint player keeps the two truly independent.
+  const scopeTarget: ConfigScope = { kind: 'segment', id: 'stale-target', playerIds: ['stale-player'], priority: 0, expiresAt: null, previousVersion: null, ticketId: null };
+  const draft = registry.propose(actor(), { key: 'stale-target', baseVersion: base.version, snapshot, reason: 'Measure via real worker', scope: scopeTarget });
   registry.approve(actor('super', 'reviewer'), draft.version);
   registry.publish(actor(), draft.version); // stays pending -- the registry's own attempt hangs, unused
   const measuring = measureKViaForecast(store, actor(), draft.version); // independent real-worker measurement
-  await delay(3000); // let the worker's DB backup complete before mutating the live registry underneath it
-  const scopeW: ConfigScope = { kind: 'segment', id: 'stale-w', playerIds: ['stale-player'], priority: 0, expiresAt: null, previousVersion: null, ticketId: null };
+  // Not fully deterministic (there is no observable signal for "the worker's DB backup finished"), but
+  // bounded: a SQLite backup of this tiny test DB is I/O, not compute, so it cannot plausibly still be
+  // running after 5s even under heavy load, while the full simulation is documented at ~9-18s minimum in
+  // light load and has run 60-90s+ under this session's own observed heavy load -- so 5s reliably lands
+  // after the backup and well before completion in both directions (codex review round 2 finding: guard the
+  // "simulation finished first" direction explicitly instead of trusting the delay blindly).
+  let settledEarly = false;
+  measuring.then(() => { settledEarly = true; }, () => { settledEarly = true; });
+  await delay(5000);
+  assert.equal(settledEarly, false, 'the worker finished (or errored) before this test could mutate the registry mid-flight -- widen the simulated workload or the delay');
+  const scopeW: ConfigScope = { kind: 'segment', id: 'stale-w', playerIds: ['stale-w-player'], priority: 0, expiresAt: null, previousVersion: null, ticketId: null };
   const snapshotW = structuredClone(base.raw); snapshotW.menu.lac.price++;
   const draftW = registry.propose(actor(), { key: 'stale-w', baseVersion: base.version, snapshot: snapshotW, reason: 'Unrelated settlement mid-flight', scope: scopeW });
   registry.approve(actor('super', 'reviewer'), draftW.version);
   registry.publish(actor(), draftW.version); // admits synchronously (call 2) while the worker is still mid-flight
   await assert.rejects(measuring, /registry:staleForecast/);
+});
+
+test('a pending default proposal blocks any scoped proposal from being created, and vice versa (codex review round 2 finding)', async t => {
+  let resolveX!: (k: number) => void, resolveY!: (k: number) => void;
+  const pendingX = new Promise<number>(resolve => { resolveX = resolve; });
+  const pendingY = new Promise<number>(resolve => { resolveY = resolve; });
+  let calls = 0;
+  const f = fixture(t, config, candidate => { calls++; return calls === 1 ? pendingX : calls === 2 ? pendingY : candidate.values.k.value; });
+  f.store.createPlayer('overlap-player', 42);
+  const base = f.registry.config(f.registry.latest().version);
+  const snapshotX = structuredClone(base.raw); snapshotX.menu.bia.price++;
+  const draftX = f.registry.propose(f.actor(), { key: 'overlap-default', baseVersion: base.version, snapshot: snapshotX, reason: 'Default change' });
+  f.registry.approve(f.actor('super', 'reviewer'), draftX.version);
+  f.registry.publish(f.actor(), draftX.version); // stays pending -- measurement 1 hangs
+  // A default proposal's audience is every player (affectedPlayers()'s own reading of "no scope"): a
+  // scoped proposal must not be creatable while it's pending -- the two independently-valid publications
+  // this closes could otherwise compose into a schema-invalid config for a real player once both admit.
+  const scope: ConfigScope = { kind: 'segment', id: 'overlap-scope', playerIds: ['overlap-player'], priority: 0, expiresAt: null, previousVersion: null, ticketId: null };
+  const snapshotY = structuredClone(base.raw); snapshotY.menu.lac.price++;
+  assert.throws(() => f.registry.propose(f.actor(), { key: 'overlap-scoped', baseVersion: base.version, snapshot: snapshotY, reason: 'Scoped change', scope }), /registry:measurementPending/);
+  resolveX(2.6); await f.registry.settleMeasurements();
+  // Once X settles, the scoped proposal is no longer blocked -- publish it (staying pending itself) to set
+  // up the reverse direction: a pending scoped proposal must also block a new default one.
+  const afterX = f.registry.config(f.registry.latest().version), snapshotY2 = structuredClone(afterX.raw); snapshotY2.menu.lac.price++;
+  const draftY = f.registry.propose(f.actor(), { key: 'overlap-scoped', baseVersion: afterX.version, snapshot: snapshotY2, reason: 'Scoped change', scope });
+  f.registry.approve(f.actor('super', 'reviewer'), draftY.version);
+  f.registry.publish(f.actor(), draftY.version); // stays pending -- measurement 2 hangs
+  const snapshotZ = structuredClone(afterX.raw); snapshotZ.menu.bia.price += 2;
+  assert.throws(() => f.registry.propose(f.actor(), { key: 'overlap-default-2', baseVersion: afterX.version, snapshot: snapshotZ, reason: 'Another default change' }), /registry:measurementPending/);
+  resolveY(2.6);
 });

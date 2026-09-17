@@ -244,14 +244,19 @@ export class ConfigRegistry {
   // Two proposals can never be pending on overlapping scopes at once: currentBase() is the shared gate for
   // every entry point that creates or schedules a publication (propose, approve, publicationAt -> publish,
   // emergency or not), so this alone closes the base/scope race the old pending-aware plumbing tried to
-  // patch call-by-call. Two default (unscoped) proposals always overlap (there is only one default slot); a
-  // default and a scoped proposal never do (they don't compete for the same slot or chain off one another);
-  // two scoped proposals overlap if they're the SAME (kind,id) slot -- predecessor()/currentScopes() dedup
-  // by that key, so two pending entries for it would race exactly like the old default-base race, no matter
-  // what playerIds either one currently declares -- or if their audiences intersect at all (a genuine
-  // scopeConflict candidate, even across different slots).
+  // patch call-by-call. A default (unscoped) proposal's audience is every player (affectedPlayers()'s own
+  // reading of "no scope"), so it always overlaps -- another default (only one default slot exists) and any
+  // scoped proposal too: compose() layers a scoped patch on top of whatever the default resolves to, and two
+  // independently-valid pending proposals can still compose into a schema-invalid config once both admit,
+  // with neither's own preview/validate() ever having seen the other (codex review round 2 finding -- a
+  // pending default and a pending scoped proposal that never overlapped could each pass their own checks
+  // and then break a real player's resolve() once both settled). Two scoped proposals overlap if they're the
+  // SAME (kind,id) slot -- predecessor()/currentScopes() dedup by that key, so two pending entries for it
+  // would race exactly like the old default-base race, no matter what playerIds either one currently
+  // declares -- or if their audiences intersect at all (a genuine scopeConflict candidate, even across
+  // different slots).
   private scopeOverlap(a?: ConfigScope, b?: ConfigScope): boolean {
-    if (!a || !b) return !a && !b;
+    if (!a || !b) return true;
     if (a.kind === b.kind && a.id === b.id) return true;
     return a.playerIds.some(id => b.playerIds.includes(id));
   }
@@ -350,7 +355,7 @@ export class ConfigRegistry {
     const entries = this.scopedPublications();
     if (candidate?.scope) entries.push({ ...candidate, scope: candidate.scope });
     const players = new Set(entries.flatMap(p => p.scope.playerIds));
-    const boundaries = new Set([now, ...(candidate ? [candidate.effective_at] : []), ...this.db.prepare('SELECT effective_at FROM registry_publications WHERE effective_at>=?').all(now).map(r => Number(r.effective_at)),
+    const boundaries = new Set([now, ...(candidate ? [candidate.effective_at] : []), ...this.db.prepare(`SELECT effective_at FROM registry_publications WHERE effective_at>=? AND ${this.ADMITTED}`).all(now).map(r => Number(r.effective_at)),
       ...entries.flatMap(p => p.scope.expiresAt !== null && p.scope.expiresAt >= now ? [p.scope.expiresAt] : [])]);
     for (const at of boundaries) for (const player of players) this.compose(player, at, candidate);
   }
@@ -422,7 +427,13 @@ export class ConfigRegistry {
       const record = row.get(version);
       if (!record) throw Error('registry:missingVersion');
       if (this.supersededBy(version)) return 'archived';
-      if (record.effective_at !== null) return Number(record.effective_at) > now ? 'scheduled' : active.has(version) ? 'active' : 'archived';
+      // A published-but-not-admitted (pending or refused) version doesn't exist for scheduling purposes,
+      // exactly like it was never published: it falls through to whatever phase its underlying proposal
+      // would show (approved, having already cleared review -- retryMeasurement in details() is the
+      // dedicated pending-specific signal, unaffected by this) (codex review round 2 finding).
+      if (record.effective_at !== null && this.measurementRow(version)?.state === 'admitted') {
+        return Number(record.effective_at) > now ? 'scheduled' : active.has(version) ? 'active' : 'archived';
+      }
       return record.approved ? 'approved' : record.proposed ? 'draft' : 'snapshot';
     };
   }
@@ -603,7 +614,7 @@ export class ConfigRegistry {
     if (!Number.isSafeInteger(through) || through <= now) throw Error('registry:invalidInput');
     const candidate = this.previewPublication(version, now), scope = candidate.scope;
     const ids = this.affectedPlayers(version, now);
-    const times = [...new Set([now, candidate.effective_at, ...this.db.prepare('SELECT effective_at FROM registry_publications').all().map(p => Number(p.effective_at)),
+    const times = [...new Set([now, candidate.effective_at, ...this.db.prepare(`SELECT effective_at FROM registry_publications WHERE ${this.ADMITTED}`).all().map(p => Number(p.effective_at)),
       ...this.scopedPublications().flatMap(p => p.scope.expiresAt === null ? [] : [p.scope.expiresAt]), ...(scope?.expiresAt ? [scope.expiresAt] : [])])]
       .filter(at => at >= now && at < through).sort((a,b) => a-b);
     const players = ids.map(id => {
