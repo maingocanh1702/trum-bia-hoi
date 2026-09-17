@@ -196,8 +196,11 @@
 `'authenticated emergency transport requires Super MFA and fresh confirmation, preserves retries and records independent post-review'` ·
 `'dev identities still require a private admin allowlist and server-verified TOTP before registry access'`.
 
-`apps/server/test/registry.test.ts` (33 tests, selected -- 9 added by v5-admin-k-admission,
-2026-09-17, across its full supervised review loop): `'a real pricing blowup that self-reports an
+`apps/server/test/registry.test.ts` (48 tests total as of the pending-vs-scope follow-up below --
+`node --import tsx --test apps/server/test/registry.test.ts` reports the live count, since 3 of the
+`test(...)` call sites are `for` loops each expanding to 2-3 cases; a plain `grep -c '^test('` will
+undercount. Selected -- 9 added by v5-admin-k-admission, 2026-09-17, across its full supervised
+review loop): `'a real pricing blowup that self-reports an
 in-band k is refused once actually measured (fails on main today)'` · `'a modest pricing change with
 a genuinely in-band measured k is admitted'` · `'a pending async measurement never becomes active
 until it settles, and re-checking it throws kUnmeasured'` · `'resolve()/compose() never invoke the
@@ -220,16 +223,24 @@ updated: the schema7/8/9 migration tests in `registry.test.ts` and in
 `registry_measurements` before simulating an old schema, and assert `user_version=11`;
 `SCHEMA_VERSION` moved 10→11 for this migration.
 
-`apps/server/test/registry.test.ts` (pending-vs-scope follow-up, 2026-09-17, 4 new cases plus the
-rename above): `'a scoped conflict against a still-admitted original is caught immediately, even
+`apps/server/test/registry.test.ts` (pending-vs-scope follow-up, 2026-09-17, across its own
+supervised review loop; see the file itself for the exact count and names -- listed here selectively,
+not exhaustively): the cases written for the original acceptance criteria --
+`'a scoped conflict against a still-admitted original is caught immediately, even
 while its own cancellation is pending (round-6 finding 1)'` · `'overlapping-audience scoped proposals
-are refused as measurementPending while the first is still pending'` · `'an emergency cannot race a
+are refused as measurementPending while the first is still pending'` (a rewrite of a pre-existing
+case, not a new one) · `'an emergency cannot race a
 due-now-but-pending Tier C entry at the same scope slot to bypass emergencyTier'` ·
 `'pendingSchedules() excludes a refused future schedule from emergency displacement and preview'` ·
 `'a forecast report computed while an unrelated version was pending is stale after that version
-admits'`.
+admits'`; then the cases added while fixing the review loop's own findings: `'a pending emergency does
+not archive the schedule it names until it admits, and never does if refused'` ·
+`'measureKViaForecast refuses a measurement whose registry state went stale while the worker ran'` ·
+`'a pending default proposal blocks any scoped proposal from being created, and vice versa'` ·
+`'a forecast report stays current through an unrelated pending publication, and only goes stale once
+it admits'`.
 
-`apps/server/test/registry.test.ts` (33 tests total, selected pre-existing/24 of them): `'published default config is used by real
+`apps/server/test/registry.test.ts` (see the 48-tests-total note above; selected pre-existing/24 of them): `'published default config is used by real
 openings, never rewrites a live shift, and replays exactly after restart'` · `'Tier A requires a
 distinct Super approval and becomes active exactly at VN midnight across connections'` · `'tier
 classifier covers every section, flags beat broad balance groups, and mixed changes require all

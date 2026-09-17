@@ -885,3 +885,50 @@ test('a pending default proposal blocks any scoped proposal from being created, 
   assert.throws(() => f.registry.propose(f.actor(), { key: 'overlap-default-2', baseVersion: afterX.version, snapshot: snapshotZ, reason: 'Another default change' }), /registry:measurementPending/);
   resolveY(2.6);
 });
+
+test('a forecast report stays current through an unrelated pending publication, and only goes stale once it admits (codex review round 3 finding)', async t => {
+  let resolveW!: (k: number) => void;
+  const pendingW = new Promise<number>(resolve => { resolveW = resolve; });
+  const f = fixture(t, config, () => pendingW);
+  f.store.createPlayer('revision-w-player', 42); f.store.createPlayer('revision-v-player', 43);
+  const base = f.registry.config(f.registry.latest().version);
+  const scopeV: ConfigScope = { kind: 'segment', id: 'revision-v-scope', playerIds: ['revision-v-player'], priority: 0, expiresAt: null, previousVersion: null, ticketId: null };
+  const snapshotV = structuredClone(base.raw); snapshotV.menu.lac.price++;
+  const draftV = f.registry.propose(f.actor(), { key: 'revision-v', baseVersion: base.version, snapshot: snapshotV, reason: 'Candidate to forecast', scope: scopeV });
+  const report = f.registry.forecastPlan(f.actor('viewer'), draftV.version, f.now + 7 * 86400000);
+  assert.doesNotThrow(() => f.registry.assertForecastCurrent(f.actor('viewer'), report));
+  // W is unrelated and disjoint (different scope slot, different audience) from V -- merely PUBLISHING it
+  // (still pending, never admitting here) must not move admittedRevision(), unlike the old raw MAX(seq)-based
+  // registryRevision, which incremented the moment ANY publication was inserted regardless of outcome.
+  const scopeW: ConfigScope = { kind: 'segment', id: 'revision-w-scope', playerIds: ['revision-w-player'], priority: 0, expiresAt: null, previousVersion: null, ticketId: null };
+  const snapshotW = structuredClone(base.raw); snapshotW.menu.bia.price++;
+  const draftW = f.registry.propose(f.actor(), { key: 'revision-w', baseVersion: base.version, snapshot: snapshotW, reason: 'Unrelated publication', scope: scopeW });
+  f.registry.approve(f.actor('super', 'reviewer'), draftW.version);
+  f.registry.publish(f.actor(), draftW.version); // stays pending -- measurement hangs
+  assert.doesNotThrow(() => f.registry.assertForecastCurrent(f.actor('viewer'), report));
+  resolveW(2.6); await f.registry.settleMeasurements();
+  assert.throws(() => f.registry.assertForecastCurrent(f.actor('viewer'), report), /registry:staleForecast/);
+});
+
+test('measureKViaForecast really does call assertForecastCurrent, independent of any timing race (codex review round 3 finding)', { timeout: 120000 }, async t => {
+  const dir = mkdtempSync(join(tmpdir(), 'tbh-registry-actor-')), file = join(dir, 'game.db');
+  const start = Date.now(); // a real, advancing clock -- required so the actor's expiresAt can genuinely lapse
+  // The registry's OWN measurement attempt must hang forever (unused) -- otherwise the default synchronous
+  // self-report measurer would admit draft immediately, and the standalone measureKViaForecast call below
+  // would hit previewPublication()'s "already admitted" guard instead of the real worker path this test needs.
+  const store = new GameStore(file, config, () => Date.now(), () => new Promise<number>(() => {}));
+  t.after(() => { store.close(); rmSync(dir, { recursive: true, force: true }); });
+  store.createPlayer('actor-player', 42);
+  store.command('actor-player', { idempotencyKey: 'open', command: { type: 'startShift' } });
+  const registry = store.registry, base = registry.config(registry.latest().version), snapshot = structuredClone(base.raw); snapshot.menu.bia.price++;
+  // Valid long enough to pass forecastEconomy()'s own early actor check (before the worker even starts), but
+  // expires within 1s -- far shorter than the real worker's multi-second minimum (documented ~9-18s even
+  // under light load, 60-90s+ observed under this session's heavy load). If assertForecastCurrent() is
+  // genuinely invoked afterwards, its own actor check is the only place invalidActor could come from here --
+  // deterministic on the worker simply taking "more than an eyeblink", not on hitting a precise window.
+  const shortLived: AdminActor = { subject: 'economy', role: 'economy', mfa: true, issuedAt: start, expiresAt: start + 1000 };
+  const draft = registry.propose(shortLived, { key: 'actor-target', baseVersion: base.version, snapshot, reason: 'Measure via real worker' });
+  registry.approve({ subject: 'reviewer', role: 'super', mfa: true, issuedAt: start, expiresAt: start + 1000 }, draft.version);
+  registry.publish(shortLived, draft.version);
+  await assert.rejects(measureKViaForecast(store, shortLived, draft.version), /registry:invalidActor/);
+});

@@ -623,7 +623,16 @@ export class ConfigRegistry {
       return { id, revision: Number(this.db.prepare('SELECT revision FROM players WHERE id=?').get(id)!.revision), before, after, keys };
     });
     return { version, computedAt: now, through, activatesAt: candidate.effective_at,
-      registryRevision: candidate.seq-1, measurementRevision: this.measurementSeq(), players };
+      registryRevision: this.admittedRevision(), measurementRevision: this.measurementSeq(), players };
+  }
+  // candidate.seq itself must stay the RAW, unfiltered MAX(seq)+1 (previewPublication() above) -- compose()'s
+  // own sort ties on it, and it must sort after every real (including pending) row exactly like a genuine
+  // publish() would assign. But raw seq is a bad STALENESS signal: registry_publications.seq increments on
+  // every publish() regardless of outcome, so an unrelated publication merely going pending (never admitting)
+  // would already move it, contradicting "pending has no scheduling effect" for the one thing this field
+  // exists to detect (codex review round 3 finding). Admitted-only, like every other staleness/revision check.
+  private admittedRevision(): number {
+    return Number(this.db.prepare(`SELECT MAX(seq) AS n FROM registry_publications WHERE ${this.ADMITTED}`).get()!.n);
   }
   // registry_publications.seq alone misses a real staleness case: a measurement settling elsewhere (pending
   // -> admitted/refused) changes what compose() resolves for every player without inserting a new
@@ -638,7 +647,7 @@ export class ConfigRegistry {
     const candidate=this.previewPublication(report.version,now);
     const activation=candidate.effective_at>now?candidate.effective_at:null;
     const expected=report.activatesAt>report.computedAt?report.activatesAt:null;
-    if(candidate.seq-1!==report.registryRevision || this.measurementSeq()!==report.measurementRevision || activation!==expected)throw Error('registry:staleForecast');
+    if(this.admittedRevision()!==report.registryRevision || this.measurementSeq()!==report.measurementRevision || activation!==expected)throw Error('registry:staleForecast');
   }
   private previewImpact(version: string, now: number) {
       const candidate = this.previewPublication(version, now), scope = candidate.scope, at = candidate.effective_at;
@@ -655,8 +664,11 @@ export class ConfigRegistry {
         }
       }
       // Bind registry revisions and time-dependent resolution, not continuously changing live-shift counts.
+      // Admitted-only revision (not raw candidate.seq), same reasoning as forecastPlan()/assertForecastCurrent():
+      // an unrelated publication merely going pending must not make a held impact token look stale (codex
+      // review round 3 finding, same pattern as the forecast staleness one).
       const supersedes = emergencyDraft(this.proposal(version)) ? this.pendingSchedules(scope, now) : null;
-      const token = createHash('sha256').update(JSON.stringify({ revision: candidate.seq - 1, activation: at > now ? at : null, resolutions, supersedes })).digest('hex');
+      const token = createHash('sha256').update(JSON.stringify({ revision: this.admittedRevision(), activation: at > now ? at : null, resolutions, supersedes })).digest('hex');
       return { version, token, supersedes, computedAt: now, activatesAt: at, expiresAt: scope?.expiresAt ?? null, audiencePlayers: ids.length,
         changedPlayers, pinnedShifts, keys: [...keys].sort(([a], [b]) => a.localeCompare(b)).map(([path, players]) => ({ path, players })) };
   }
