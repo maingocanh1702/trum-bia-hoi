@@ -297,32 +297,10 @@ through `publish()`'s admission gate rather than through `compareEconomy()` in i
 
 ## Uncovered paths
 
-- **Corrected (v5-admin-k-admission, 2026-09-17) — was "no tool combines real candidate simulation
-  with a k-band check."** `compareEconomy()` (`packages/engine/sim/forecast.ts`) attributes serves to
-  "the candidate" by set difference (versions in the after-timeline but not the before-timeline, so a
-  scoped campaign that expires within the 7-day horizon is still measured on its own serves, not the
-  reverted baseline); `reportFromBackup()` (`apps/server/src/forecast.ts`) pools it into one
-  `measuredK`, requiring >=500 served (08-SPEC-economy-constants.md §1's own floor) before it's
-  non-null; `publish()` gates admission on it via `registry_measurements`. `measureKViaForecast()`
-  is the production `measureK`, reusing `forecastEconomy()`'s existing worker (still proven off the
-  event loop by `apps/server/test/forecast.test.ts:37`). It does **not** fall back to the candidate's
-  self-reported `k.value` on zero real data (that gap was closed and is now itself covered by tests,
-  see below) -- it throws `registry:forecastEmpty` and the row stays pending, fail-closed. A scoped
-  candidate refused by the real worker, and one whose scope expires mid-horizon, are both directly
-  exercised end to end (`apps/server/test/registry.test.ts`'s new cases, see Existing proof) --
-  including proving the refusal never composes into the affected player's `resolve()`. Genuinely
-  remaining: (1) `sim:career:gate` still only ever plays the static `docs/config/economy.tbh.json`
-  singleton, no candidate-config input -- it is not the mechanism that closed this gap, `publish()`'s
-  own injected `measureK` is; (2) `emergencyScopeReplacements()` (registry.ts, feeding the emergency
-  publish's own supersession audit trail) still reads the admitted-only `scopedPublications()`, not
-  the pending-aware `scopedAttempts()` introduced for `predecessor()`/`currentBase()`'s scope check --
-  an emergency publish racing a pending sibling for the same scope may not mark it superseded in the
-  audit trail, though `active()`/`compose()` still resolve correctly regardless (most-recent-admitted
-  always wins by `seq`); this is an audit-completeness gap, not a runtime economics one, deliberately
-  left for a narrower follow-up rather than widening this slice further; (3) `index()`'s admin-listing
-  `latest` field and `previewImpact()`'s boundary-time collection also stay admitted-only by choice
-  (display-only and preview-thoroughness-only respectively, not gates) -- untested by design, since
-  there is no admission-safety behavior to assert there.
+- Measured-k admission: core gate landed on `supervised/v5-admin-k-admission`; pending-vs-scope
+  semantics in follow-up -- see `docs/prompts/k-admission-handoff.md` for the current state and the
+  per-function checklist. Do not re-derive the behavior from this bullet; read the handoff and the
+  live source.
 - Route **paths** are now confirmed against `http.ts` directly (see "How to reach it"), but this pass
   did not read every route handler's full body — request/response field shapes beyond what's cited
   above (e.g. `/admin/players`' pagination shape, `/admin/config`'s exact response envelope) are not
