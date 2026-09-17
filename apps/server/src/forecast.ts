@@ -56,7 +56,7 @@ export function reportFromBackup(store:GameStore,actor:AdminActor,version:string
   // Below the spec's own representativeness floor, a measured k is noise, not a verdict either way --
   // stays unmeasured rather than certifying (or refusing) admission on too small a sample (codex round 2).
   const measuredK=candidateSafe&&candidateServed>=MIN_SERVED_FOR_MEASUREMENT?candidateTotalValue/candidateServed/anchor:null;
-  return {version,computedAt:plan.computedAt,through:plan.through,activatesAt:plan.activatesAt,registryRevision:plan.registryRevision,policy:FORECAST_POLICY,
+  return {version,computedAt:plan.computedAt,through:plan.through,activatesAt:plan.activatesAt,registryRevision:plan.registryRevision,measurementRevision:plan.measurementRevision,policy:FORECAST_POLICY,
     status:members.length?'complete' as const:'empty' as const,audiencePlayers:members.length,changedPlayers:plan.players.filter(p=>p.keys.length).length,
     keys:[...keys].map(([path,players])=>({path,players})),members,measuredK,
     totals:members.length?{baseline,candidate,delta:difference(baseline,candidate)}:null,

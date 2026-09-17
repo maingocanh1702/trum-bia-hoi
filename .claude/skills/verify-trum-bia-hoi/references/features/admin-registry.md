@@ -208,8 +208,10 @@ self-reported k.value'` and `'a scoped candidate refused by the real worker neve
 player's resolve()'` (exercise `measureKViaForecast`/`forecastEconomy`/`forecast-worker.mjs` end to
 end, not an injected stub) · `'a scoped campaign that expires within the forecast horizon is
 measured on its own serves, not the reverted baseline'` · `'a scoped proposal against a still-pending
-sibling for the same scope is rejected as stale, not silently accepted'` ·
-`'scopeSource() never pairs a stale admitted snapshot with a newer pending sibling'`.
+sibling for the same scope is refused as measurementPending, not silently accepted'` (renamed by the
+pending-vs-scope follow-up below, same case) ·
+`'scopeSource() stays admitted-only while a newer sibling for the same scope is still pending'`
+(renamed, same case).
 `packages/engine/test/forecast.test.ts` gained one case: `'a candidate whose after-timeline never
 introduces a version outside the before-timeline measures as baseline, not unmeasurable'`. Also
 updated: the schema7/8/9 migration tests in `registry.test.ts` and in
@@ -217,6 +219,15 @@ updated: the schema7/8/9 migration tests in `registry.test.ts` and in
 `http.test.ts`/`checkpoint.test.ts`/`presence.test.ts`/`accounts.test.ts` now additionally drop
 `registry_measurements` before simulating an old schema, and assert `user_version=11`;
 `SCHEMA_VERSION` moved 10→11 for this migration.
+
+`apps/server/test/registry.test.ts` (pending-vs-scope follow-up, 2026-09-17, 4 new cases plus the
+rename above): `'a scoped conflict against a still-admitted original is caught immediately, even
+while its own cancellation is pending (round-6 finding 1)'` · `'overlapping-audience scoped proposals
+are refused as measurementPending while the first is still pending'` · `'an emergency cannot race a
+due-now-but-pending Tier C entry at the same scope slot to bypass emergencyTier'` ·
+`'pendingSchedules() excludes a refused future schedule from emergency displacement and preview'` ·
+`'a forecast report computed while an unrelated version was pending is stale after that version
+admits'`.
 
 `apps/server/test/registry.test.ts` (33 tests total, selected pre-existing/24 of them): `'published default config is used by real
 openings, never rewrites a live shift, and replays exactly after restart'` · `'Tier A requires a
@@ -297,10 +308,26 @@ through `publish()`'s admission gate rather than through `compareEconomy()` in i
 
 ## Uncovered paths
 
-- Measured-k admission: core gate landed on `supervised/v5-admin-k-admission`; pending-vs-scope
-  semantics in follow-up -- see `docs/prompts/k-admission-handoff.md` for the current state and the
-  per-function checklist. Do not re-derive the behavior from this bullet; read the handoff and the
-  live source.
+- Measured-k admission: core gate landed on `supervised/v5-admin-k-admission`. **Pending-vs-scope
+  semantics are also closed (2026-09-17), by one unifying rule instead of the six rounds of per-site
+  patching `docs/prompts/k-admission-handoff.md` records:** a publication in measurement state
+  `pending` does not exist for scheduling purposes -- no effect on conflicts, schedules, emergency
+  replacements or forecast freshness, exactly like a publication that was never proposed; a refused
+  publication gets the identical treatment. `currentBase()` (`registry.ts`) is the single choke point
+  for this -- called from `propose()`, `approve()` and `publicationAt()` (which `publish()`,
+  `impact()` and `forecastPlan()` all route through) -- and refuses `registry:measurementPending`
+  whenever a proposal's scope overlaps ANY currently-pending publication (same (kind,id) slot
+  unconditionally, or any playerIds intersection), so two publications can never be pending on
+  overlapping scopes at once; every scope/schedule function in the file (`predecessor()`,
+  `currentScopes()`, `compose()`, `emergencyScopeReplacements()`, `pendingSchedules()`,
+  `validatePublications()`, `draftSource()`/`scopeSource()`) went back to reading admitted-only state,
+  since a competing pending sibling can no longer exist for them to reason about. Forecast freshness
+  additionally binds to a `measurementSeq()` generation counter (count of settled, non-pending
+  `registry_measurements` rows -- monotonic since each row transitions exactly once), not just
+  `registry_publications.seq`, so a measurement settling elsewhere invalidates an in-flight report even
+  though publishing a new version wasn't what changed. Proof: the 5 new/renamed cases cited above in
+  Existing proof, each written to fail on the pre-fix code and pass after (round-6 findings 1-4
+  verbatim in the handoff map 1:1 to these).
 - Route **paths** are now confirmed against `http.ts` directly (see "How to reach it"), but this pass
   did not read every route handler's full body — request/response field shapes beyond what's cited
   above (e.g. `/admin/players`' pagination shape, `/admin/config`'s exact response envelope) are not

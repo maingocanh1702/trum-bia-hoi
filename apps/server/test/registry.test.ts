@@ -614,7 +614,7 @@ test('a scoped campaign that expires within the forecast horizon is measured on 
   assert.equal(row.state, 'refused'); assert.ok(Number(row.measured_k) > config.values.k.band[1]);
 });
 
-test('a scoped proposal against a still-pending sibling for the same scope is rejected as stale, not silently accepted', t => {
+test('a scoped proposal against a still-pending sibling for the same scope is refused as measurementPending, not silently accepted', t => {
   let resolveA!: (k: number) => void;
   const pendingA = new Promise<number>(resolve => { resolveA = resolve; });
   let calls = 0;
@@ -627,14 +627,14 @@ test('a scoped proposal against a still-pending sibling for the same scope is re
   const draftA = f.registry.propose(f.actor(), { key: 'race-a', baseVersion: base.version, snapshot: snapshotA, reason: 'A', scope });
   f.registry.approve(f.actor('super', 'reviewer'), draftA.version);
   f.registry.publish(f.actor(), draftA.version); // stays pending -- measurement A is still hanging
-  // B targets the same scope with the same (as far as its own author can see) previousVersion=null --
-  // codex round 3 found this used to slip through and, once both settled, silently revert A's price change.
+  // B targets the same scope while A is still pending: currentBase() now refuses this outright, before base/
+  // predecessor staleness even enters into it -- two proposals can never be pending on overlapping scopes.
   const snapshotB = structuredClone(base.raw); snapshotB.menu.lac.price++;
-  assert.throws(() => f.registry.propose(f.actor(), { key: 'race-b', baseVersion: base.version, snapshot: snapshotB, reason: 'B', scope }), /registry:staleBase/);
+  assert.throws(() => f.registry.propose(f.actor(), { key: 'race-b', baseVersion: base.version, snapshot: snapshotB, reason: 'B', scope }), /registry:measurementPending/);
   resolveA(2.6);
 });
 
-test('scopeSource() never pairs a stale admitted snapshot with a newer pending sibling', t => {
+test('scopeSource() stays admitted-only while a newer sibling for the same scope is still pending', t => {
   let calls = 0;
   let resolveSecond!: (k: number) => void;
   const pendingSecond = new Promise<number>(resolve => { resolveSecond = resolve; });
@@ -650,16 +650,16 @@ test('scopeSource() never pairs a stale admitted snapshot with a newer pending s
   const snapshotB = structuredClone(f.registry.config(draftA.version).raw); snapshotB.menu.bia.price = 57;
   const draftB = f.registry.propose(f.actor(), { key: 'mismatch-b', baseVersion: f.registry.latest().version, snapshot: snapshotB, reason: 'B', scope: { ...scope, previousVersion: draftA.version } });
   f.registry.approve(f.actor('super', 'reviewer'), draftB.version);
-  f.registry.publish(f.actor(), draftB.version); // stays pending -- codex round 4 found scopeSource() kept
-  // showing the stale admitted snapshot (51) here while other fields already reflected pending B.
+  f.registry.publish(f.actor(), draftB.version); // stays pending -- doesn't exist for scheduling yet, so
+  // scopeSource() must keep returning the still-admitted A untouched, never a mix of A with pending B's price.
   const source = f.registry.scopeSource(f.actor(), 'segment', 'mismatch-group');
-  assert.equal(source.snapshot.menu.bia.price, 57);
+  assert.equal(source.snapshot.menu.bia.price, 51);
   resolveSecond(2.6);
 });
 
-test('overlapping equal-priority scoped proposals conflict at publish time even while both are still pending', t => {
-  // Every measurement hangs forever -- fine, this test only needs the SYNCHRONOUS pre-insert
-  // validatePublications() self-check inside publish(), which runs before measureK is ever invoked.
+test('overlapping-audience scoped proposals are refused as measurementPending while the first is still pending', t => {
+  // Every measurement hangs forever -- this test only needs currentBase()'s synchronous pre-insert check,
+  // which runs before measureK is ever invoked.
   const f = fixture(t, config, () => new Promise<number>(() => {}));
   f.store.createPlayer('conflict-player', 42);
   const base = f.registry.config(f.registry.latest().version);
@@ -668,13 +668,121 @@ test('overlapping equal-priority scoped proposals conflict at publish time even 
   const snapshotA = structuredClone(base.raw); snapshotA.menu.bia.price = 60;
   const draftA = f.registry.propose(f.actor(), { key: 'conflict-a', baseVersion: base.version, snapshot: snapshotA, reason: 'A', scope: scopeA });
   f.registry.approve(f.actor('super', 'reviewer'), draftA.version);
-  f.registry.publish(f.actor(), draftA.version); // stays pending -- same kind+priority, touches the same key
-  // B touches the SAME field with a DIFFERENT value: non-commutative with A, so real conflict. Before codex
-  // round 5's fix, A being merely pending (not yet admitted) made it invisible to B's own pre-insert
-  // self-check, so this slipped through -- and once both eventually admitted, a real player's resolve()
-  // would throw scopeConflict at runtime instead of B's own publish() catching it here.
+  f.registry.publish(f.actor(), draftA.version); // stays pending -- different scope id, but the same audience
+  // B shares A's audience while A is still pending: currentBase() refuses it outright at propose() time, long
+  // before B could ever reach its own scopeConflict self-check (codex round 5's original race -- A being
+  // merely pending made it invisible to B's own pre-insert check -- is closed earlier now: two proposals can
+  // never be pending on overlapping scopes at once).
   const snapshotB = structuredClone(base.raw); snapshotB.menu.bia.price = 70;
-  const draftB = f.registry.propose(f.actor(), { key: 'conflict-b', baseVersion: base.version, snapshot: snapshotB, reason: 'B', scope: scopeB });
+  assert.throws(() => f.registry.propose(f.actor(), { key: 'conflict-b', baseVersion: base.version, snapshot: snapshotB, reason: 'B', scope: scopeB }), /registry:measurementPending/);
+});
+
+test('a scoped conflict against a still-admitted original is caught immediately, even while its own cancellation is pending (round-6 finding 1)', t => {
+  let resolveCancel!: (k: number) => void;
+  const pendingCancel = new Promise<number>(resolve => { resolveCancel = resolve; });
+  let calls = 0;
+  // Call 1 (A's own publish) settles in-band immediately; call 2 (the cancellation) hangs. B, if the fix
+  // holds, never reaches a measurement call at all -- its conflict is caught synchronously before publish().
+  const f = fixture(t, config, candidate => { calls++; return calls === 2 ? pendingCancel : candidate.values.k.value; });
+  f.store.createPlayer('finding1-p1', 42); f.store.createPlayer('finding1-p2', 43);
+  const scopeA: ConfigScope = { kind: 'segment', id: 'finding1-a', playerIds: ['finding1-p1', 'finding1-p2'], priority: 0, expiresAt: null, previousVersion: null, ticketId: null };
+  const base = f.registry.config(f.registry.latest().version), snapshotA = structuredClone(base.raw); snapshotA.menu.bia.price = 60;
+  const draftA = f.registry.propose(f.actor(), { key: 'finding1-a', baseVersion: base.version, snapshot: snapshotA, reason: 'Scheduled scoped price', scope: scopeA, effective: 'next_day' });
+  f.registry.approve(f.actor('super', 'reviewer'), draftA.version);
+  const scheduled = f.registry.publish(f.actor(), draftA.version); // admitted, but scheduled for tomorrow
+  assert.ok(scheduled.effective_at > f.now);
+  assert.equal(f.db.prepare('SELECT state FROM registry_measurements WHERE version=?').get(draftA.version)!.state, 'admitted');
+  // Cancel it: same scope slot, previousVersion chains to A, but narrows the audience to p2 only -- p1 stays
+  // uncovered by the cancellation while it's pending, so a conflict against p1 must still see the admitted A.
+  const cancelScope: ConfigScope = { ...scopeA, playerIds: ['finding1-p2'], previousVersion: draftA.version };
+  // effective:'next_day' matches (not jumps ahead of) A's own reserved slot -- otherwise publicationAt()'s
+  // scheduleConflict fires here first, for an unrelated reason this test isn't about.
+  const cancelDraft = f.registry.propose(f.actor(), { key: 'finding1-cancel', baseVersion: base.version, snapshot: base.raw, reason: 'Cancel scoped price', scope: cancelScope, effective: 'next_day' });
+  f.registry.approve(f.actor('super', 'reviewer'), cancelDraft.version);
+  f.registry.publish(f.actor(), cancelDraft.version); // stays pending -- measurement 2 is still hanging
+  assert.equal(f.db.prepare('SELECT state FROM registry_measurements WHERE version=?').get(cancelDraft.version)!.state, 'pending');
+  // A conflicting second scope for p1: same kind+priority as A, touches the same key with a different value.
+  // p1 is outside the pending cancellation's audience, so this must NOT trip measurementPending -- it must
+  // instead see the still-admitted A and refuse immediately, never silently admit and crash a real player's
+  // resolve() later once day 14 actually arrives.
+  const scopeB: ConfigScope = { kind: 'segment', id: 'finding1-b', playerIds: ['finding1-p1'], priority: 0, expiresAt: null, previousVersion: null, ticketId: null };
+  const snapshotB = structuredClone(base.raw); snapshotB.menu.bia.price = 70;
+  const draftB = f.registry.propose(f.actor(), { key: 'finding1-b', baseVersion: base.version, snapshot: snapshotB, reason: 'Conflicting scoped price', scope: scopeB });
   f.registry.approve(f.actor('super', 'reviewer'), draftB.version);
+  assert.throws(() => f.registry.impact(f.actor(), draftB.version), /registry:scopeConflict/);
   assert.throws(() => f.registry.publish(f.actor(), draftB.version), /registry:scopeConflict/);
+  assert.equal(f.db.prepare('SELECT 1 FROM registry_publications WHERE version=?').get(draftB.version), undefined);
+  f.now = scheduled.effective_at;
+  assert.doesNotThrow(() => f.registry.resolve('finding1-p1'));
+  assert.equal(f.registry.resolve('finding1-p1').raw.menu.bia.price, 60);
+  resolveCancel(2.6);
+});
+
+test('an emergency cannot race a due-now-but-pending Tier C entry at the same scope slot to bypass emergencyTier', t => {
+  let resolveX!: (k: number) => void;
+  const pendingX = new Promise<number>(resolve => { resolveX = resolve; });
+  const f = fixture(t, config, () => pendingX);
+  f.store.createPlayer('finding2-p1', 42);
+  const scopeX: ConfigScope = { kind: 'segment', id: 'finding2-mixed', playerIds: ['finding2-p1'], priority: 0, expiresAt: null, previousVersion: null, ticketId: null };
+  const base = f.registry.config(f.registry.latest().version), snapshotX = structuredClone(base.raw); snapshotX.audio.enabled = !snapshotX.audio.enabled;
+  const draftX = f.registry.propose(f.actor('game'), { key: 'finding2-x', baseVersion: base.version, snapshot: snapshotX, reason: 'Tier C scoped toggle', scope: scopeX, effective: 'immediate' });
+  f.registry.approve(f.actor('super', 'reviewer'), draftX.version);
+  const published = f.registry.publish(f.actor('game'), draftX.version); // due now (immediate), measurement still hanging
+  assert.equal(published.effective_at, f.now);
+  assert.equal(f.db.prepare('SELECT state FROM registry_measurements WHERE version=?').get(draftX.version)!.state, 'pending');
+  // An emergency at the SAME slot, touching only a Tier A/B key of its own: if emergencyScopeReplacements()
+  // spuriously treated the due-now-but-pending X as governing content, emergencyTier (checked earlier in
+  // propose()) would fire first; instead the slot is refused outright by measurementPending, proving X's
+  // Tier C content is neither silently displaced nor able to leak a false emergencyTier pass-through.
+  const scopeZ: ConfigScope = { kind: 'segment', id: 'finding2-mixed', playerIds: ['finding2-p1'], priority: 0, expiresAt: null, previousVersion: null, ticketId: null };
+  const snapshotZ = structuredClone(base.raw); snapshotZ.menu.bia.price++;
+  const inputZ = { key: 'finding2-z', baseVersion: f.registry.active().version, snapshot: snapshotZ, reason: 'Emergency at the same slot', scope: scopeZ, emergency: true };
+  assert.throws(() => f.registry.propose(f.actor('super'), inputZ), /registry:measurementPending/);
+  resolveX(2.6);
+});
+
+test('pendingSchedules() excludes a refused future schedule from emergency displacement and preview', t => {
+  const f = fixture(t, config, candidate => candidate.raw.audio.enabled !== config.raw.audio.enabled ? 999 : candidate.values.k.value);
+  const base = f.registry.config(f.registry.latest().version);
+  const snapshotR = structuredClone(base.raw); snapshotR.audio.enabled = !snapshotR.audio.enabled;
+  const draftR = f.registry.propose(f.actor('game'), { key: 'refused-d', baseVersion: base.version, snapshot: snapshotR, reason: 'Tier C toggle, will measure out-of-band', effective: 'next_day' });
+  f.registry.approve(f.actor('super', 'reviewer'), draftR.version);
+  assert.throws(() => f.registry.publish(f.actor('game'), draftR.version), /registry:bindingRange/);
+  assert.equal(f.db.prepare('SELECT state FROM registry_measurements WHERE version=?').get(draftR.version)!.state, 'refused');
+  assert.ok(Number(f.db.prepare('SELECT effective_at FROM registry_publications WHERE version=?').get(draftR.version)!.effective_at) > f.now, 'still scheduled in the future, just refused');
+  // A refused publication doesn't exist for scheduling either: an emergency touching only a Tier A/B key of
+  // its own must not see the refused Tier C schedule as something it displaces -- if pendingSchedules() still
+  // included it, this emergency would spuriously throw emergencyTier.
+  const snapshotE = structuredClone(base.raw); snapshotE.menu.bia.price++;
+  const inputE = { key: 'emergency-d', baseVersion: f.registry.active().version, snapshot: snapshotE, reason: 'Unrelated emergency', emergency: true };
+  const draftE = f.registry.propose(f.actor('super'), inputE);
+  const preview = f.registry.impact(f.actor('super'), draftE.version);
+  assert.deepEqual(preview.supersedes, []);
+  f.registry.publish(f.actor('super'), draftE.version, preview.token);
+});
+
+test('a forecast report computed while an unrelated version was pending is stale after that version admits', async t => {
+  let resolveW!: (k: number) => void;
+  const pendingW = new Promise<number>(resolve => { resolveW = resolve; });
+  const f = fixture(t, config, () => pendingW);
+  f.store.createPlayer('forecast-w-player', 42); f.store.createPlayer('forecast-v-player', 43);
+  const base = f.registry.config(f.registry.latest().version);
+  // W and V are disjoint scoped slots (different id, different audience) so W admitting never trips V's OWN
+  // currentBase() (neither the default latest() nor predecessor(V.scope), both untouched by W) -- isolating
+  // the one thing that SHOULD go stale: the global measurementSeq() bump from W's settlement.
+  const scopeW: ConfigScope = { kind: 'segment', id: 'forecast-w-scope', playerIds: ['forecast-w-player'], priority: 0, expiresAt: null, previousVersion: null, ticketId: null };
+  const snapshotW = structuredClone(base.raw); snapshotW.menu.bia.price++;
+  const draftW = f.registry.propose(f.actor(), { key: 'forecast-w', baseVersion: base.version, snapshot: snapshotW, reason: 'Unrelated scoped change', scope: scopeW });
+  f.registry.approve(f.actor('super', 'reviewer'), draftW.version);
+  const publishedW = f.registry.publish(f.actor(), draftW.version); // due now, measurement still hanging
+  assert.equal(publishedW.effective_at, f.now);
+  const scopeV: ConfigScope = { kind: 'segment', id: 'forecast-v-scope', playerIds: ['forecast-v-player'], priority: 0, expiresAt: null, previousVersion: null, ticketId: null };
+  const snapshotV = structuredClone(base.raw); snapshotV.menu.lac.price++;
+  const draftV = f.registry.propose(f.actor(), { key: 'forecast-v', baseVersion: base.version, snapshot: snapshotV, reason: 'Scoped candidate', scope: scopeV });
+  const report = f.registry.forecastPlan(f.actor('viewer'), draftV.version, f.now + 7 * 86400000);
+  assert.doesNotThrow(() => f.registry.assertForecastCurrent(f.actor('viewer'), report));
+  // W settling doesn't touch registry_publications.seq at all -- registryRevision alone would miss this.
+  resolveW(2.6); await f.registry.settleMeasurements();
+  assert.equal(f.db.prepare('SELECT state FROM registry_measurements WHERE version=?').get(draftW.version)!.state, 'admitted');
+  assert.throws(() => f.registry.assertForecastCurrent(f.actor('viewer'), report), /registry:staleForecast/);
 });

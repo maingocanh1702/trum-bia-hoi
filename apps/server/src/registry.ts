@@ -168,18 +168,15 @@ export class ConfigRegistry {
     }
     return config;
   }
-  // A publication only counts once its measurement is admitted -- a pending/refused row is invisible here,
-  // so the previous admitted version keeps serving; there is no window where an unmeasured/bad config is live.
+  // Unifying rule (docs/prompts/k-admission-handoff.md): a pending publication does not exist for
+  // scheduling purposes -- no effect on conflicts, schedules, emergency replacements or forecast
+  // freshness, exactly like a publication that was never proposed. currentBase() below refuses
+  // registry:measurementPending before a new proposal's scope can ever overlap a currently-pending one,
+  // so two publications can never be pending on overlapping scopes at once -- every scope/schedule
+  // function in this file only ever needs to reason about ADMITTED rows. A refused publication doesn't
+  // exist for scheduling either, and gets the identical treatment throughout.
   private readonly ADMITTED = "version IN (SELECT version FROM registry_measurements WHERE state='admitted')";
   latest() { return this.db.prepare(`SELECT * FROM registry_publications WHERE version NOT IN (SELECT version FROM registry_scopes) AND ${this.ADMITTED} ORDER BY seq DESC LIMIT 1`).get() as Publication; }
-  // A pending sibling already claims this base slot for staleness purposes, even though it isn't admitted
-  // yet: without this, two default publications built against the same base can both pass currentBase(),
-  // and whichever settles second silently reverts the first's change (codex round 2 finding). Only a
-  // REFUSED attempt is truly as if it never happened -- everything else counts as "the latest attempt".
-  private readonly NOT_REFUSED = "version NOT IN (SELECT version FROM registry_measurements WHERE state='refused')";
-  private latestAttempt() {
-    return this.db.prepare(`SELECT * FROM registry_publications WHERE version NOT IN (SELECT version FROM registry_scopes) AND ${this.NOT_REFUSED} ORDER BY seq DESC LIMIT 1`).get() as Publication | undefined;
-  }
   active(now = this.now()) {
     const row = this.db.prepare(`SELECT version FROM registry_publications WHERE effective_at<=? AND version NOT IN (SELECT version FROM registry_scopes) AND ${this.ADMITTED} ORDER BY seq DESC LIMIT 1`).get(now);
     if (!row) throw Error('registry:missingActive');
@@ -215,17 +212,11 @@ export class ConfigRegistry {
       .map(r => ({ ...r, scope: JSON.parse(String(r.scope)) as ConfigScope })) as (Publication & { scope: ConfigScope })[];
   }
   // predecessor() is a staleness/draftSource helper, never on the player-facing compose() path (that's
-  // scopedPublications() above, which must stay admitted-only). It needs the scoped analog of
-  // latestAttempt(): a pending sibling for the SAME scope already claims that slot, so without this a
-  // second scoped proposal against the same predecessor can pass currentBase() while the first is still
-  // mid-measurement, and whichever settles second silently reverts the other (codex round 3 finding --
-  // the scoped shape of the round-2 default-base race).
-  private scopedAttempts() {
-    return this.db.prepare(`SELECT p.*,s.scope FROM registry_publications p JOIN registry_scopes s USING(version) WHERE ${this.NOT_REFUSED} ORDER BY seq`).all()
-      .map(r => ({ ...r, scope: JSON.parse(String(r.scope)) as ConfigScope })) as (Publication & { scope: ConfigScope })[];
-  }
+  // scopedPublications() above, which must stay admitted-only too). currentBase()'s measurementPending
+  // refusal already guarantees no second proposal for this same scope can ever be CREATED while a sibling
+  // is pending, so there is never a competing pending predecessor to reason about here.
   private predecessor(scope: ConfigScope) {
-    return this.scopedAttempts().filter(p => p.scope.kind === scope.kind && p.scope.id === scope.id).at(-1);
+    return this.scopedPublications().filter(p => p.scope.kind === scope.kind && p.scope.id === scope.id).at(-1);
   }
   private normalizeScope(scope: ConfigScope | undefined): ConfigScope | undefined {
     if (scope === undefined) return undefined;
@@ -250,8 +241,27 @@ export class ConfigRegistry {
     if (!governed.length) throw Error('registry:invalidKeys');
     return registryPolicy(governed, base, scope?.kind);
   }
+  // Two proposals can never be pending on overlapping scopes at once: currentBase() is the shared gate for
+  // every entry point that creates or schedules a publication (propose, approve, publicationAt -> publish,
+  // emergency or not), so this alone closes the base/scope race the old pending-aware plumbing tried to
+  // patch call-by-call. Two default (unscoped) proposals always overlap (there is only one default slot); a
+  // default and a scoped proposal never do (they don't compete for the same slot or chain off one another);
+  // two scoped proposals overlap if they're the SAME (kind,id) slot -- predecessor()/currentScopes() dedup
+  // by that key, so two pending entries for it would race exactly like the old default-base race, no matter
+  // what playerIds either one currently declares -- or if their audiences intersect at all (a genuine
+  // scopeConflict candidate, even across different slots).
+  private scopeOverlap(a?: ConfigScope, b?: ConfigScope): boolean {
+    if (!a || !b) return !a && !b;
+    if (a.kind === b.kind && a.id === b.id) return true;
+    return a.playerIds.some(id => b.playerIds.includes(id));
+  }
+  private pendingPublications(): { version: string; scope?: ConfigScope }[] {
+    return (this.db.prepare("SELECT version FROM registry_measurements WHERE state='pending'").all() as { version: unknown }[])
+      .map(row => ({ version: String(row.version), scope: this.scope(String(row.version)) }));
+  }
   private currentBase(draft: { base_version: string }, scope?: ConfigScope, emergency = false, now = this.now()) {
-    const reference = emergency ? this.active(now).version : this.latestAttempt()?.version;
+    if (this.pendingPublications().some(p => this.scopeOverlap(scope, p.scope))) throw Error('registry:measurementPending');
+    const reference = emergency ? this.active(now).version : this.latest()?.version;
     if (reference !== draft.base_version || scope && (this.predecessor(scope)?.version ?? null) !== scope.previousVersion) throw Error('registry:staleBase');
   }
   private supportAvailable(scope: ConfigScope) {
@@ -271,28 +281,26 @@ export class ConfigRegistry {
       this.audit('SupportRequested', { ticketId: id, ...input, requestedBy: actor.subject, at: now }); return id;
     });
   }
-  // includePending: for validatePublications()'s own conflict-detection sweep ONLY (see below) -- two
-  // overlapping equal-priority scoped proposals could otherwise each pass their own pre-insert self-check
-  // (neither sees the other while both are still pending measurement), and the conflict would only surface
-  // once both settle admitted, as a REAL player's resolve() throwing scopeConflict at runtime instead of
-  // being caught at publish time (codex round 5 finding). The real player-facing default (false, via
-  // scopedPublications()) is unchanged and must stay admitted-only (codex round 1).
-  private currentScopes(now: number, candidate?: PreviewPublication, includePending = false) {
+  // Always admitted-only (codex round 1): a pending/refused scoped override must never compose into a real
+  // player's resolved config, and currentBase()'s measurementPending refusal means there is never a pending
+  // sibling this needs to see anyway -- the old includePending branch (codex round 5) goes with it.
+  private currentScopes(now: number, candidate?: PreviewPublication) {
     const latest = new Map<string, ReturnType<ConfigRegistry['scopedPublications']>[number]>();
-    const entries = includePending ? this.scopedAttempts() : this.scopedPublications();
+    const entries = this.scopedPublications();
     if (candidate?.scope) entries.push({ ...candidate, scope: candidate.scope });
     for (const entry of entries) if (entry.effective_at <= now) latest.set(JSON.stringify([entry.scope.kind, entry.scope.id]), entry);
     return [...latest.values()].filter(p => p.scope.expiresAt === null || p.scope.expiresAt > now);
   }
   // Feeds real governance decisions (policy()'s displaced-keys and affectedPlayers()'s audience below), not
-  // just the audit trail -- reading the admitted-only scopedPublications() here let a pending Tier C scope
-  // followed by a pending A/B successor omit the earlier audience and bypass emergencyTier entirely
-  // (codex round 5 finding; an earlier pass here wrongly assumed this was audit-only and left it unfixed).
-  // "What's actually active NOW" (`active`, via currentScopes()) correctly stays admitted-only.
+  // just the audit trail. Admitted-only, like everything else here now: a pending Tier C scope cannot be
+  // omitted by a pending A/B successor, because currentBase()'s measurementPending refusal never lets that
+  // successor exist while the Tier C entry is still pending in the first place. The filter keeps the
+  // currently-active entry plus any not-yet-superseded future-scheduled one; an old entry already displaced
+  // by a later admission (no explicit supersede audit needed) drops out on its own.
   private emergencyScopeReplacements(scope: ConfigScope, now: number) {
     const matches = (p: { scope: ConfigScope }) => p.scope.kind === scope.kind && p.scope.id === scope.id;
     const active = this.currentScopes(now).find(matches)?.version;
-    return this.scopedAttempts().filter(matches).filter(p => p.version === active || p.effective_at > now && !this.supersededBy(p.version));
+    return this.scopedPublications().filter(matches).filter(p => p.version === active || p.effective_at > now && !this.supersededBy(p.version));
   }
   private affectedPlayers(version: string, now: number) {
     const scope = this.scope(version);
@@ -301,10 +309,10 @@ export class ConfigRegistry {
     const displaced = emergencyDraft(this.proposal(version)) ? this.emergencyScopeReplacements(scope, now).flatMap(p => p.scope.playerIds) : [];
     return [...new Set([...scope.playerIds, ...previous, ...displaced])].sort();
   }
-  private compose(playerId: string, now: number, candidate?: PreviewPublication, includePending = false): { config: Config; sources: string[] } {
+  private compose(playerId: string, now: number, candidate?: PreviewPublication): { config: Config; sources: string[] } {
     const base = candidate && !candidate.scope && candidate.effective_at <= now ? this.config(candidate.version) : this.active(now);
     const rank = { segment: 0, campaign: 1, player: 2 };
-    const selected = this.currentScopes(now, candidate, includePending).filter(p => p.scope.playerIds.includes(playerId))
+    const selected = this.currentScopes(now, candidate).filter(p => p.scope.playerIds.includes(playerId))
       .sort((a, b) => rank[a.scope.kind] - rank[b.scope.kind] || a.scope.priority - b.scope.priority || a.seq - b.seq);
     if (!selected.length) return { config: base, sources: [base.version] };
     const sources = [base.version, ...selected.map(p => p.version)], raw = structuredClone(base.raw);
@@ -335,17 +343,16 @@ export class ConfigRegistry {
     return this.db.isTransaction ? action() : this.transaction(action);
   }
   private validatePublications(now: number, candidate?: PreviewPublication) {
-    // Pending-aware sweep (codex round 5 finding): a sibling scoped proposal that's ALREADY published-but-
-    // pending must be included in both the players/boundaries this scan covers and the compose() conflict
-    // check itself (includePending=true below) -- otherwise a conflicting pending sibling is invisible to
-    // this self-check entirely, and the conflict only surfaces later as a live scopeConflict on a real
-    // player's resolve(), once both happen to settle admitted.
-    const entries = this.scopedAttempts();
+    // Admitted-only, like currentScopes(): currentBase()'s measurementPending refusal means a candidate can
+    // never share an overlapping scope with an already-pending sibling, so this self-check only ever needs
+    // admitted entries plus the candidate itself to catch a real conflict -- codex round 5's original gap
+    // (two proposals both pending at once) is closed earlier, at propose/approve/publish time, not here.
+    const entries = this.scopedPublications();
     if (candidate?.scope) entries.push({ ...candidate, scope: candidate.scope });
     const players = new Set(entries.flatMap(p => p.scope.playerIds));
     const boundaries = new Set([now, ...(candidate ? [candidate.effective_at] : []), ...this.db.prepare('SELECT effective_at FROM registry_publications WHERE effective_at>=?').all(now).map(r => Number(r.effective_at)),
       ...entries.flatMap(p => p.scope.expiresAt !== null && p.scope.expiresAt >= now ? [p.scope.expiresAt] : [])]);
-    for (const at of boundaries) for (const player of players) this.compose(player, at, candidate, true);
+    for (const at of boundaries) for (const player of players) this.compose(player, at, candidate);
   }
   private actor(actor: AdminActor, now: number) { assertAdminActor(actor, now); }
   private permit(actor: AdminActor, policy: ReturnType<typeof registryPolicy>, approve = false, scope?: ConfigScope) {
@@ -369,9 +376,11 @@ export class ConfigRegistry {
   private supersededBy(version: string) {
     return this.auditRecord<{ byVersion: string }>('ConfigScheduleSuperseded', version)?.byVersion ?? null;
   }
+  // Admitted-only (codex round 6 finding 3): a pending or refused publication doesn't exist for scheduling,
+  // so it must never show up as something an emergency displaces or a preview/audit lists as superseded.
   private pendingSchedules(scope: ConfigScope | undefined, now: number): SupersededSchedule[] {
     const rows = this.db.prepare(`SELECT p.*,d.keys FROM registry_publications p JOIN registry_proposals d USING(version)
-      WHERE p.effective_at>? ORDER BY p.seq`).all(now);
+      WHERE p.effective_at>? AND ${this.ADMITTED} ORDER BY p.seq`).all(now);
     return rows.filter(p => {
       const other = this.scope(String(p.version));
       return scope ? other?.kind === scope.kind && other.id === scope.id : !other;
@@ -517,10 +526,9 @@ export class ConfigRegistry {
     const emergency = emergencyDraft(draft);
     this.currentBase(draft, scope, emergency, now);
     this.validateAdmission(this.config(draft.version), base); // Also fence drafts admitted before a validation fix.
-    // Pending-aware on both branches (predecessor() already is, since round 3): a pending sibling has
-    // already reserved its scheduled slot, and an immediate-effective proposal against it must see that
-    // reservation now, not only after it settles (codex round 4 finding).
-    const latest = scope ? this.predecessor(scope) : this.latestAttempt();
+    // Admitted-only on both branches: currentBase() above already refused measurementPending if a sibling
+    // were pending, so the latest ADMITTED entry is always the right slot to check for scheduleConflict.
+    const latest = scope ? this.predecessor(scope) : this.latest();
     const at = emergency ? now : scheduledAt(now, draft.effective, policy, base);
     if (scope?.expiresAt !== null && scope?.expiresAt !== undefined && scope.expiresAt <= at) throw Error('registry:invalidExpiry');
     if (!emergency && latest && at < latest.effective_at) throw Error('registry:scheduleConflict');
@@ -542,9 +550,9 @@ export class ConfigRegistry {
   }
   draftSource(actor: AdminActor, version?: string, emergency = false) {
     const now = this.now(); this.actor(actor, now); if (emergency) this.emergencyPermit(actor);
-    // Pending-aware, matching currentBase(): suggesting the last ADMITTED version as the base would fail
-    // staleBase immediately if a sibling default proposal is already pending (codex round 4 finding).
-    const base = emergency ? this.active(now) : this.config(this.latestAttempt()!.version), source = version ? this.config(version) : base;
+    // Admitted-only, matching currentBase(): a pending sibling can never exist without currentBase() already
+    // refusing measurementPending against it, so the last ADMITTED version is always the right base to offer.
+    const base = emergency ? this.active(now) : this.config(this.latest()!.version), source = version ? this.config(version) : base;
     if (emergency && version && version !== base.version && !this.currentScopes(now).some(p => p.version === version)) throw Error('registry:inactiveEmergencySource');
     const scope = version ? this.scope(version) : undefined, snapshot = structuredClone(scope ? base.raw : source.raw);
     if (scope) patch(snapshot, source.raw, JSON.parse(this.proposal(version!).keys));
@@ -555,10 +563,10 @@ export class ConfigRegistry {
   scopeSource(actor: AdminActor, kind: string, id: string, emergency = false) {
     const now = this.now(); this.actor(actor, now); if (emergency) this.emergencyPermit(actor);
     if (!['segment', 'campaign', 'player'].includes(kind) || !id || id.length > 128) throw Error('registry:invalidInput'); // config-exempt:scope identity protocol
-    // Pending-aware, and MUST match predecessor()'s view: pairing an admitted-only snapshot source with a
-    // pending-aware predecessor token returns a stale snapshot under a newer previousVersion, so an
-    // unrelated edit built on it silently reverts the pending change once both settle (codex round 4 finding).
-    const last = this.scopedAttempts().filter(p => p.scope.kind === kind && p.scope.id === id).at(-1);
+    // Admitted-only, matching predecessor()'s view (must agree, or an unrelated edit built on a mismatched
+    // snapshot/previousVersion pair could revert a change once it admits) -- there is no pending sibling to
+    // reconcile against, since currentBase() never lets one exist alongside this scope.
+    const last = this.scopedPublications().filter(p => p.scope.kind === kind && p.scope.id === id).at(-1);
     if (!last) throw Error('registry:missingScope');
     if (!emergency) return this.draftSource(actor, last.version);
     const active = this.currentScopes(now).find(p => p.scope.kind === kind && p.scope.id === id);
@@ -598,14 +606,22 @@ export class ConfigRegistry {
       return { id, revision: Number(this.db.prepare('SELECT revision FROM players WHERE id=?').get(id)!.revision), before, after, keys };
     });
     return { version, computedAt: now, through, activatesAt: candidate.effective_at,
-      registryRevision: candidate.seq-1, players };
+      registryRevision: candidate.seq-1, measurementRevision: this.measurementSeq(), players };
   }
-  assertForecastCurrent(actor: AdminActor, report: { version: string; registryRevision: number; computedAt: number; activatesAt: number }) {
+  // registry_publications.seq alone misses a real staleness case: a measurement settling elsewhere (pending
+  // -> admitted/refused) changes what compose() resolves for every player without inserting a new
+  // publication row, so registryRevision can stay identical while the report's before/after is now wrong
+  // (codex round 6 finding 4). Every registry_measurements row transitions exactly once, so the count of
+  // settled (non-pending) rows is itself a monotonic generation counter -- no schema change needed.
+  private measurementSeq(): number {
+    return Number(this.db.prepare("SELECT COUNT(*) AS n FROM registry_measurements WHERE state!='pending'").get()!.n);
+  }
+  assertForecastCurrent(actor: AdminActor, report: { version: string; registryRevision: number; measurementRevision: number; computedAt: number; activatesAt: number }) {
     const now=this.now();this.actor(actor,now);
     const candidate=this.previewPublication(report.version,now);
     const activation=candidate.effective_at>now?candidate.effective_at:null;
     const expected=report.activatesAt>report.computedAt?report.activatesAt:null;
-    if(candidate.seq-1!==report.registryRevision || activation!==expected)throw Error('registry:staleForecast');
+    if(candidate.seq-1!==report.registryRevision || this.measurementSeq()!==report.measurementRevision || activation!==expected)throw Error('registry:staleForecast');
   }
   private previewImpact(version: string, now: number) {
       const candidate = this.previewPublication(version, now), scope = candidate.scope, at = candidate.effective_at;
