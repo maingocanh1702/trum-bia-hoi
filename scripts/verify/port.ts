@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
@@ -102,13 +102,21 @@ function parseWorktreeListPaths(porcelain: string): string[] {
 // gitdir path that doesn't exist (this repo's own test fixtures do exactly that) -- git then
 // fails outright ("fatal: not a git repository: <path>") rather than climbing up the directory
 // tree looking for another repo, since the `.git` file already resolved GIT_DIR definitively. So
-// on failure this returns [] (degrade to "no known siblings"), never the enclosing real repo's
-// worktree list -- see port.test.ts's fake-worktree fixtures, which rely on exactly this.
-function defaultListOtherWorktreeIds(cwd: string): string[] {
+// on that kind of failure this returns [] (degrade to "no known siblings"), never the enclosing
+// real repo's worktree list -- see port.test.ts's fake-worktree fixtures, which rely on exactly
+// this. The ONE failure mode that fails CLOSED instead is the git executable itself being
+// unresolvable (ENOENT on PATH lookup) -- that means the collision probe cannot run AT ALL, so
+// silently returning [] would revert to the pre-probe, collision-prone pure-hash behaviour without
+// any signal. A real "fatal: not a git repository" still degrades gracefully, since that's a
+// positive signal (git ran, found nothing usable) rather than an absence of the tool itself.
+function defaultListOtherWorktreeIds(cwd: string, env: NodeJS.ProcessEnv): string[] {
   let output: string;
   try {
-    output = execFileSync('git', ['worktree', 'list', '--porcelain'], { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
-  } catch {
+    output = execFileSync('git', ['worktree', 'list', '--porcelain'], { cwd, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+      throw new Error('Cannot resolve a collision-free port: the "git" executable was not found, so live sibling worktrees cannot be enumerated.');
+    }
     return [];
   }
   const resolvedCwd = resolve(cwd);
@@ -131,16 +139,19 @@ function defaultListOtherWorktreeIds(cwd: string): string[] {
   return ids;
 }
 
-// Deterministically assigns each id a base: sorted by id (never by enumeration/insertion order,
-// so the result never depends on `git worktree list`'s iteration order or which side calls this),
-// each id starts at its own hashed slot and, if that slot is within MAX_ROLE_OFFSET of an
-// already-assigned base (a real role-port collision, not just an exact base match), probes
-// forward one port at a time until it finds a base that collides with none of them.
-function assignBasesForIds(ids: string[]): Map<string, number> {
-  const sortedIds = [...new Set(ids)].sort();
-  const assignedBases: number[] = [];
-  const result = new Map<string, number>();
-  for (const id of sortedIds) {
+// Deterministically assigns a base to every id NOT already present in `fixed`: sorted by id
+// (never by enumeration/insertion order, so the result never depends on `git worktree list`'s
+// iteration order or which side calls this), each new id starts at its own hashed slot and, if
+// that slot is within MAX_ROLE_OFFSET of an already-assigned base (fixed or freshly assigned --
+// a real role-port collision, not just an exact base match), probes forward one port at a time
+// until it finds a base that collides with none of them. `fixed` entries are returned verbatim,
+// NEVER re-probed -- this is what gives an already-registered (incumbent) worktree a stable base
+// across the lifetime of other worktrees joining or leaving (see resolveRegisteredBases below).
+function assignBasesForIds(ids: string[], fixed: Map<string, number> = new Map()): Map<string, number> {
+  const result = new Map<string, number>(fixed);
+  const assignedBases: number[] = [...fixed.values()];
+  const newIds = [...new Set(ids)].filter((id) => !fixed.has(id)).sort();
+  for (const id of newIds) {
     let candidate = WORKTREE_BASE_FLOOR + hashToRange(id, WORKTREE_BASE_SPAN);
     while (assignedBases.some((base) => Math.abs(base - candidate) <= MAX_ROLE_OFFSET)) {
       candidate += 1;
@@ -149,6 +160,56 @@ function assignBasesForIds(ids: string[]): Map<string, number> {
     result.set(id, candidate);
   }
   return result;
+}
+
+// A worktree's `.git` FILE content is `gitdir: <mainRepo>/.git/worktrees/<name>` -- every sibling
+// worktree of the SAME repo shares the same `<mainRepo>/.git` prefix. That shared directory is the
+// one place on disk naturally reachable from every sibling without an extra `git` subprocess call
+// (which would hit the exact same fake-gitdir/real-repo-contamination gotcha `defaultListOtherWorktreeIds`
+// already works around). Returns undefined when the content doesn't match this shape (e.g. the
+// test suite's deliberately-fake `gitdir: /fake/main/.git/worktrees/...` targets that never exist
+// on disk still parse fine here -- but see loadRegistry/saveRegistry below, which degrade to a
+// no-op rather than fail when that derived directory isn't actually writable).
+function deriveRegistryPath(gitdirContent: string): string | undefined {
+  const match = /^gitdir:\s*(.+)\/worktrees\/[^/]+\/?$/.exec(gitdirContent.trim());
+  return match ? resolve(match[1], 'tbh-port-registry.json') : undefined;
+}
+
+function loadRegistry(path: string): Record<string, number> {
+  try {
+    const parsed = JSON.parse(readFileSync(path, 'utf8'));
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+// Best-effort: persistence only IMPROVES stability over the pure-hash-and-probe fallback, it's
+// never required for correctness of a single resolution, so a write failure (read-only fixture
+// directory, missing parent dir, concurrent writer) is silently ignored rather than propagated.
+function saveRegistry(path: string, data: Record<string, number>): void {
+  try {
+    writeFileSync(path, JSON.stringify(data));
+  } catch {
+    // no-op -- see comment above.
+  }
+}
+
+// Resolves the final base for every id in `liveIds` (self + others), preferring previously
+// REGISTERED bases for ids that already have one (so an incumbent worktree's base never moves just
+// because a new sibling joins later) and only handing out fresh probed bases to ids seen for the
+// first time. Registry entries for ids no longer in `liveIds` are dropped (garbage-collected) so a
+// removed/pruned worktree's slot is eventually reclaimed instead of leaking forever.
+function resolveRegisteredBases(liveIds: string[], registryPath: string | undefined): Map<string, number> {
+  const liveSet = new Set(liveIds);
+  const registered = registryPath ? loadRegistry(registryPath) : {};
+  const fixed = new Map<string, number>();
+  for (const [id, base] of Object.entries(registered)) {
+    if (liveSet.has(id) && Number.isInteger(base)) fixed.set(id, base);
+  }
+  const assigned = assignBasesForIds(liveIds, fixed);
+  if (registryPath) saveRegistry(registryPath, Object.fromEntries(assigned));
+  return assigned;
 }
 
 export function resolveBasePort(opts: ResolveOptions = {}): number {
@@ -161,9 +222,16 @@ export function resolveBasePort(opts: ResolveOptions = {}): number {
     return DEFAULT_BASE;
   }
   const selfId = getWorktreeIdentifier(cwd);
-  const listOtherWorktreeIds = opts.listOtherWorktreeIds ?? defaultListOtherWorktreeIds;
+  // Git subprocess PATH resolution is layered ON TOP of the real ambient environment (not
+  // replaced by `opts.env`) -- callers pass `env: {}`/a stripped env to control the
+  // TBH_PORT_BASE override check above, not to simulate an unusable shell PATH; only a test that
+  // explicitly sets PATH (see the "fails closed when git is unresolvable" test) makes git
+  // unresolvable here.
+  const gitEnv = { ...process.env, ...env };
+  const listOtherWorktreeIds = opts.listOtherWorktreeIds ?? ((c: string) => defaultListOtherWorktreeIds(c, gitEnv));
   const otherIds = listOtherWorktreeIds(cwd).filter((id) => id !== selfId);
-  const assigned = assignBasesForIds([selfId, ...otherIds]);
+  const registryPath = deriveRegistryPath(selfId);
+  const assigned = resolveRegisteredBases([selfId, ...otherIds], registryPath);
   return assigned.get(selfId)!;
 }
 
@@ -192,18 +260,39 @@ function parseRoleFlag(argv: string[]): PortRole | undefined {
   const flag = argv.find((arg) => arg.startsWith('--role='));
   if (flag === undefined) return undefined;
   const role = flag.slice('--role='.length);
-  if (!(role in ROLE_OFFSETS)) {
+  // An own-property check, not `role in ROLE_OFFSETS`: `in` also matches inherited
+  // Object.prototype members (e.g. --role=toString or --role=__proto__), which would otherwise
+  // print a bogus "port" instead of rejecting the flag.
+  if (!Object.hasOwn(ROLE_OFFSETS, role)) {
     throw new Error(`Invalid --role "${role}": must be one of ${Object.keys(ROLE_OFFSETS).join(', ')}`);
   }
   return role as PortRole;
 }
 
+// Test-only hook: spawning a REAL colliding pair of `git worktree`s to prove the collision probe
+// is stable across a separate process invocation is not possible in this project's sandboxed test
+// environment (`git worktree add` is permission-denied there). Setting this env var to a JSON
+// array of fake worktree identifiers lets a test drive the same subprocess-invocation path
+// (`node ... port.ts`) with a controlled, colliding fake set instead. Never read outside of the
+// CLI entrypoint below, and a no-op unless a test explicitly sets it.
+function parseTestOtherWorktreeIds(env: NodeJS.ProcessEnv): string[] | undefined {
+  const raw = env.TBH_TEST_OTHER_WORKTREE_IDS;
+  if (raw === undefined) return undefined;
+  const parsed = JSON.parse(raw);
+  if (!Array.isArray(parsed) || !parsed.every((id) => typeof id === 'string')) {
+    throw new Error('Invalid TBH_TEST_OTHER_WORKTREE_IDS: must be a JSON array of strings');
+  }
+  return parsed;
+}
+
 if (isMainModule()) {
+  const testOtherIds = parseTestOtherWorktreeIds(process.env);
+  const opts: ResolveOptions = testOtherIds !== undefined ? { listOtherWorktreeIds: () => testOtherIds } : {};
   const role = parseRoleFlag(process.argv.slice(2));
   if (role !== undefined) {
-    console.log(resolvePort(role));
+    console.log(resolvePort(role, opts));
   } else {
-    const ports = resolveAllPorts();
+    const ports = resolveAllPorts(opts);
     for (const [role, port] of Object.entries(ports)) {
       console.log(`${role}\t${port}`);
     }

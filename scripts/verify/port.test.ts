@@ -244,6 +244,127 @@ test('collision probe result does not depend on the enumerated worktree list\'s 
 // ... separate process runs" test above uses, now exercised with real sibling worktrees present
 // (this repo has several live worktrees today), proving the new probe is stable end-to-end against
 // genuine `git worktree list --porcelain` output, not just the injected-fake-id path above.
+test('CLI --role rejects inherited Object.prototype property names instead of printing a bogus port', () => {
+  const scriptPath = resolve('scripts/verify/port.ts');
+  for (const badRole of ['toString', '__proto__', 'hasOwnProperty', 'constructor']) {
+    assert.throws(
+      () => execFileSync(process.execPath, ['--import', 'tsx', scriptPath, `--role=${badRole}`], {
+        env: { ...process.env, TBH_PORT_BASE: '6300' }, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+      }),
+      /Invalid --role/,
+      `expected --role=${badRole} to be rejected`,
+    );
+  }
+});
+
+test('resolveBasePort fails closed (throws) instead of silently ignoring collisions when git itself is unresolvable', (t) => {
+  const cwd = worktreeDir(t, 'gitdir: /fake/main/.git/worktrees/no-git-branch\n');
+  assert.throws(
+    () => resolveBasePort({ cwd, env: { PATH: '' } }),
+    /git.*not found|git.*unresolvable|Cannot resolve/i,
+  );
+});
+
+test('resolveBasePort still degrades to a solo hash when git runs but reports no usable repository (fake fixtures keep working)', (t) => {
+  const cwd = worktreeDir(t, 'gitdir: /fake/main/.git/worktrees/still-degrades-branch\n');
+  // No PATH override here: git itself IS resolvable, it just fails with "not a git repository"
+  // against this fixture's nonexistent gitdir target -- that must keep degrading to [], not throw.
+  const base = resolveBasePort({ cwd, env: {} });
+  assert.ok(base >= 5200 && base < 5500, `base ${base} out of expected [5200,5500) range`);
+});
+
+test('an already-registered (incumbent) worktree keeps its resolved base when a colliding sibling joins later', (t) => {
+  const sharedDir = fixtureDir(t, 'shared-registry');
+  mkdirSync(resolve(sharedDir, '.git'), { recursive: true });
+  const commonGitDir = resolve(sharedDir, '.git');
+
+  const bySlot = new Map<number, string>();
+  let incumbentName: string | undefined;
+  let newcomerName: string | undefined;
+  for (let i = 0; i < 5000 && !newcomerName; i++) {
+    const name = `incumbent-registry-${i}`;
+    const content = `gitdir: ${commonGitDir}/worktrees/${name}\n`;
+    const slot = slotFor(content);
+    const existing = bySlot.get(slot);
+    if (existing !== undefined) {
+      incumbentName = existing;
+      newcomerName = name;
+      break;
+    }
+    bySlot.set(slot, name);
+  }
+  assert.ok(incumbentName && newcomerName, 'expected two candidate worktree names hashing to the same slot within 5000 tries');
+
+  function worktreeCwdFor(name: string): string {
+    const dir = fixtureDir(t, `registry-member-${name}`);
+    writeFileSync(resolve(dir, '.git'), `gitdir: ${commonGitDir}/worktrees/${name}\n`);
+    return dir;
+  }
+
+  const incumbentCwd = worktreeCwdFor(incumbentName!);
+  const newcomerCwd = worktreeCwdFor(newcomerName!);
+
+  // Incumbent starts ALONE (no siblings yet) and registers its base.
+  const incumbentBaseBeforeJoin = resolveBasePort({ cwd: incumbentCwd, env: {}, listOtherWorktreeIds: () => [] });
+
+  // Newcomer joins later, aware of the incumbent.
+  const incumbentContent = readFileSync(resolve(incumbentCwd, '.git'), 'utf8').trim();
+  const newcomerBase = resolveBasePort({ cwd: newcomerCwd, env: {}, listOtherWorktreeIds: () => [incumbentContent] });
+
+  // Incumbent's tooling runs AGAIN now that the newcomer is live -- its base must not have moved.
+  const newcomerContent = readFileSync(resolve(newcomerCwd, '.git'), 'utf8').trim();
+  const incumbentBaseAfterJoin = resolveBasePort({ cwd: incumbentCwd, env: {}, listOtherWorktreeIds: () => [newcomerContent] });
+
+  assert.equal(incumbentBaseAfterJoin, incumbentBaseBeforeJoin, 'an already-registered incumbent base must not change when a colliding sibling joins later');
+  assert.notEqual(newcomerBase, incumbentBaseBeforeJoin, 'the newcomer must not be handed the incumbent\'s already-registered base');
+  assert.ok(Math.abs(newcomerBase - incumbentBaseBeforeJoin) > MAX_ROLE_OFFSET, 'incumbent and newcomer bases must be separated by more than MAX_ROLE_OFFSET');
+});
+
+// `git init`/`git worktree add` are unavailable in this test's sandbox (see the real-live-worktree
+// test below), so a genuinely COLLIDING fake set can only be driven through a separate process via
+// the TBH_TEST_OTHER_WORKTREE_IDS test-only CLI hook (port.ts's own `parseTestOtherWorktreeIds`) --
+// this is what "the required fake-set cross-process stability proof" (missing before this test)
+// actually needs: proof that the SAME colliding fake set resolves to the SAME final base whether
+// computed in-process or by a separate `node ... port.ts` invocation, repeated.
+test('collision probe is stable for a genuinely colliding FAKE worktree set across separate process invocations', (t) => {
+  const bySlot = new Map<number, string>();
+  let contentA: string | undefined;
+  let contentB: string | undefined;
+  for (let i = 0; i < 5000 && !contentB; i++) {
+    const content = `gitdir: /fake/main/.git/worktrees/xproc-${i}\n`;
+    const slot = slotFor(content);
+    const existing = bySlot.get(slot);
+    if (existing !== undefined) {
+      contentA = existing;
+      contentB = content;
+      break;
+    }
+    bySlot.set(slot, content);
+  }
+  assert.ok(contentA && contentB, 'expected two candidates hashing to the same slot within 5000 tries');
+
+  const cwdA = worktreeDir(t, contentA!);
+  const inProcess = resolveBasePort({ cwd: cwdA, env: {}, listOtherWorktreeIds: () => [contentB!.trim()] });
+
+  const scriptPath = resolve('scripts/verify/port.ts');
+  const { TBH_PORT_BASE, ...envWithoutOverride } = process.env;
+  const runSubprocess = () => {
+    const output = execFileSync(process.execPath, ['--import', 'tsx', scriptPath], {
+      cwd: cwdA,
+      env: { ...envWithoutOverride, TBH_TEST_OTHER_WORKTREE_IDS: JSON.stringify([contentB!.trim()]) },
+      encoding: 'utf8',
+    });
+    const [role, port] = output.trim().split('\n')[0].split('\t');
+    assert.equal(role, 'e2e', 'expected the first printed role to be e2e (offset 0), i.e. the base itself');
+    return Number(port); // e2e's offset is 0, so its printed port IS the resolved base.
+  };
+
+  const firstSubprocess = runSubprocess();
+  const secondSubprocess = runSubprocess();
+  assert.equal(firstSubprocess, inProcess, 'a separate process invocation with the same colliding fake set must agree with the in-process result');
+  assert.equal(secondSubprocess, firstSubprocess, 'repeated separate process invocations with the same colliding fake set must agree with each other');
+});
+
 test('collision probe is stable for the real live worktree across repeated calls and a separate process invocation', () => {
   const cwd = resolve('.');
   const first = resolveAllPorts({ cwd, env: {} });
