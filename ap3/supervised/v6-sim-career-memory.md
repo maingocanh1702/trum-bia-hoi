@@ -85,3 +85,43 @@ state, and the blast radius is different.
 It touches the code that produces the k numbers the whole economy is validated against. A silent
 change to those numbers would invalidate every prior balance receipt. Run it by hand, not through
 the dispatcher.
+
+## Measured 2026-09-18 — the hypothesis above was wrong, and the rule that said "measure first" paid for itself
+
+3-day headless career, seed 42, `node --expose-gc`, sampled after each day (`process.memoryUsage`):
+
+| sample | rss MB | heapTotal MB | heapUsed MB |
+|---|---|---|---|
+| before | 90 | 17 | 8 |
+| day 1 | 797 | 69 | 24 |
+| day 2 | 1222 | 70 | 26 |
+| day 3 | 1428 | 74 | 39 |
+| after forced GC | 932 | 65 | 18 |
+
+`external` 2.4MB and `arrayBuffers` 0 throughout; `/usr/bin/time -l` max RSS 1552MB. Serialized sizes
+of the three suspected arrays at day 3: `game.log` 0.3MB, `w.serves` 0.5MB, `w.events` 6.5MB. They are
+not the problem — the JS heap never exceeded 74MB. The memory was **native**: `dayKey()`
+(`packages/engine/src/rules.ts`) built a new `Intl.DateTimeFormat` on every call, each owning an ICU
+formatter that V8 does not count in `heapUsed` and only frees when a major GC finalises the wrapper;
+with a tiny heap V8 had no reason to collect, and `nextDayAt`'s binary search multiplied the calls by
+~27. A forced GC returning 500MB in one step is the signature.
+
+Fix: one formatter per timezone, cached on first use (commit `c7f1f74`, branch
+`supervised/v6-sim-career-memory`). Same formatter, same output.
+
+| run | before | after |
+|---|---|---|
+| 3-day career max RSS | 1552MB | 198MB |
+| 3-day career wall | 11.6s | 1.3s |
+| `sim:career:gate` (30d, seeds 42/99) max RSS | 12-17GB reported; never fit this 16GB machine | **289MB**, 57s, PASS |
+| k seed 42 / 99 | 3.465461 / 3.393197 (recorded baseline) | 3.465460767 / 3.393196640 — identical |
+| log / serve / event counts at day 3 | 1522 / 2313 / 34924 | 1522 / 2313 / 34924 |
+
+The fix lives in engine code, which this spec told the writer not to touch without reporting. It is
+reported here: the change is a pure cache of a deterministic formatter, the test pins both the
+construction count and output equality with a fresh formatter, and the same `dayKey()` runs in the
+browser build on every tick — players were paying for the same leak, slower. Owner opens the PR.
+
+Follow-up outside this slice: `apps/web/src/local.ts:76` constructs an `Intl.DateTimeFormat` per event
+in a loop, and `App.tsx`/`MenuReport.tsx`/`AdminScope.tsx` build `Intl` formatters per render. None
+are per-tick, so none are this bug, but the same cache pattern applies and is cheap.
