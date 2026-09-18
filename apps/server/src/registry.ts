@@ -383,9 +383,19 @@ export class ConfigRegistry {
   // (or later refused) emergency must not archive the schedule it named -- exactly the same "pending has no
   // effect on scheduling" rule applied to the writer of the marker, not just its own scheduling (codex review
   // round 1 finding, pending-vs-scope follow-up: a refused emergency permanently orphaned its target schedule).
+  // More than one marker can exist for the same target version -- once the FIRST emergency to name it (E1)
+  // is refused, pendingSchedules()/emergencyScopeReplacements() see the schedule as never-superseded again
+  // (this method returning null for a refused-only writer), so a LATER emergency (E2) can legitimately claim
+  // the same schedule and admit. auditRecord()'s own LIMIT 1 always returns the OLDEST marker -- E1's, which
+  // stays refused forever -- so this reads every marker directly and returns the first ADMITTED writer,
+  // never assuming write order determines truth (codex review round 4 finding).
   private supersededBy(version: string) {
-    const byVersion = this.auditRecord<{ byVersion: string }>('ConfigScheduleSuperseded', version)?.byVersion ?? null;
-    return byVersion && this.measurementRow(byVersion)?.state === 'admitted' ? byVersion : null;
+    const rows = this.db.prepare("SELECT payload FROM registry_audit WHERE type='ConfigScheduleSuperseded' AND json_extract(payload,'$.version')=? ORDER BY seq").all(version) as { payload: unknown }[];
+    for (const row of rows) {
+      const byVersion = String((JSON.parse(String(row.payload)) as { byVersion: string }).byVersion);
+      if (this.measurementRow(byVersion)?.state === 'admitted') return byVersion;
+    }
+    return null;
   }
   // Admitted-only (codex round 6 finding 3): a pending or refused publication doesn't exist for scheduling,
   // so it must never show up as something an emergency displaces or a preview/audit lists as superseded.

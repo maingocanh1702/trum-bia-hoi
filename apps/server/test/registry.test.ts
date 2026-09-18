@@ -932,3 +932,41 @@ test('measureKViaForecast really does call assertForecastCurrent, independent of
   registry.publish(shortLived, draft.version);
   await assert.rejects(measureKViaForecast(store, shortLived, draft.version), /registry:invalidActor/);
 });
+
+test('a later admitted emergency supersedes a schedule even after an earlier emergency naming it was refused (codex review round 4 finding)', t => {
+  let calls = 0;
+  // Call 2 (E1's own measurement) is the only one out-of-band -- everything else admits in-band immediately.
+  const f = fixture(t, config, candidate => { calls++; return calls === 2 ? 999 : candidate.values.k.value; });
+  const base = f.registry.config(f.registry.latest().version);
+  const snapshotA = structuredClone(base.raw); snapshotA.shift.dailyEarnCapBase++;
+  const draftA = f.registry.propose(f.actor(), { key: 'schedule-a', baseVersion: base.version, snapshot: snapshotA, reason: 'Scheduled change', effective: 'next_day' });
+  f.registry.approve(f.actor('super', 'reviewer'), draftA.version);
+  const scheduled = f.registry.publish(f.actor(), draftA.version); // call 1 -- admits in-band, scheduled for tomorrow
+  assert.ok(scheduled.effective_at > f.now);
+  const snapshotE1 = structuredClone(base.raw); snapshotE1.menu.bia.price++;
+  const draftE1 = f.registry.propose(f.actor('super'), { key: 'e1', baseVersion: base.version, snapshot: snapshotE1, reason: 'First emergency', emergency: true });
+  const previewE1 = f.registry.impact(f.actor('super'), draftE1.version);
+  // A synchronous out-of-band result throws from publish() itself (settleMeasurement()'s own contract) --
+  // the row is still marked refused first, inside the same call, before the throw.
+  assert.throws(() => f.registry.publish(f.actor('super'), draftE1.version, previewE1.token), /registry:bindingRange/);
+  assert.equal(f.db.prepare('SELECT state FROM registry_measurements WHERE version=?').get(draftE1.version)!.state, 'refused');
+  // E1's marker is the OLDEST -- auditRecord()'s own LIMIT 1 would find only this one and stop, so a naive
+  // fix using it would keep reporting null forever even once a real superseder admits.
+  assert.equal(f.registry.details(f.actor('viewer'), draftA.version).supersededBy, null);
+  assert.equal(f.registry.details(f.actor('viewer'), draftA.version).phase, 'scheduled');
+  const snapshotE2 = structuredClone(base.raw); snapshotE2.menu.lac.price++;
+  const draftE2 = f.registry.propose(f.actor('super'), { key: 'e2', baseVersion: base.version, snapshot: snapshotE2, reason: 'Second emergency', emergency: true });
+  const previewE2 = f.registry.impact(f.actor('super'), draftE2.version);
+  // A refused writer doesn't count as "already handled" -- E2 must still see A as a live target to supersede.
+  assert.deepEqual(previewE2.supersedes!.map(s => s.version), [draftA.version]);
+  f.registry.publish(f.actor('super'), draftE2.version, previewE2.token); // call 3 -- admits in-band
+  assert.equal(f.db.prepare('SELECT state FROM registry_measurements WHERE version=?').get(draftE2.version)!.state, 'admitted');
+  // Now A really is superseded -- by E2 (the admitted writer), not stuck on E1 (refused, but written first).
+  assert.equal(f.registry.details(f.actor('viewer'), draftA.version).supersededBy, draftE2.version);
+  assert.equal(f.registry.details(f.actor('viewer'), draftA.version).phase, 'archived');
+  // A third emergency no longer sees A as a pending target -- it was genuinely (not just apparently) superseded.
+  const snapshotE3 = structuredClone(f.registry.active().raw); snapshotE3.menu.dau.price++;
+  const draftE3 = f.registry.propose(f.actor('super'), { key: 'e3', baseVersion: f.registry.active().version, snapshot: snapshotE3, reason: 'Third emergency', emergency: true });
+  const previewE3 = f.registry.impact(f.actor('super'), draftE3.version);
+  assert.deepEqual(previewE3.supersedes, []);
+});
