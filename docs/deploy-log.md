@@ -70,3 +70,28 @@ Rollback: restore immutable deploy `6aa3df1ade7c9b5eeba5662b` through Netlify's 
 | Date | Change |
 |---|---|
 | 2026-09-17 | Owner-authorized Wave A/B guest publication; exact-source public smoke PASS and rollback receipt recorded. |
+
+
+## Netlify freshness check — 2026-09-18 (no deployment)
+
+Owner asked to update https://trumbiahoi.netlify.app/ to the latest main. The check found nothing to publish: a guest build from current main is the same build that is already live, apart from its identity label. No Netlify operation was performed; the live deploy `6aaacf25a465a8fb1d8e9267` is untouched.
+
+| Field | Result |
+|---|---|
+| Live built-source commit | `36c8db43e61b7dec4e424f7da123e71b3818ffc5` (Wave A/B, published 2026-09-17) |
+| Candidate source | `9227661131cef08e8182dfb56fc577d782a938df` — main after PR #14 (supervised P1 k-admission) |
+| Guest build | `npm run build:guest` PASS, 123 static files, same count as the live deployment |
+| `assets/index-*.js` | Byte-identical to the served chunk after substituting the referenced App chunk filename |
+| `assets/App-*.js` | 340069 bytes both sides; exactly 20 bytes differ — the 40- and 12-character `__TBH_COMMIT__` labels and the 8-character index chunk hash they cascade into |
+| `assets/index-*.css` | Identical content hash `index-DBDzTQ7N.css`, unchanged since Wave A/B |
+| Player-visible change | None. Settings would show `9227661131ce` instead of `36c8db43e61b`; nothing else differs |
+
+Reason: everything merged since the live build is server-side or documentation. The only source file on the candidate that the browser bundle could reach is `packages/engine/sim/forecast.ts`, imported solely by `apps/server/src/forecast.ts`; `apps/web/src/AdminForecast.tsx` takes a type-only import from the server module, and the admin app is excluded from a guest build in any case. The k-admission registry change has no guest surface, because the guest edition has no API.
+
+### Served index digest no longer matches the Wave A/B receipt — explained
+
+The Wave A/B receipt records index SHA-256 `8be2fa76b6d2b922c77626335531485f9a40620c78fc8a0cc736a440e51ea1ec`; anonymous HTTPS now returns `a53e7002613c92ce6fec85047f3183f0c62b91c29d5f784dadb4ebf28124a44f`. This is not a different deployment. Netlify now injects a hosting comment, `<meta name="hosting-provider">` and `<meta name="netlify-deploy">` into served HTML; the uploaded file is 461 bytes and the served one 997, and they are identical once that injected block is removed. Future receipts should hash the uploaded artifact, and treat a served-HTML digest as a platform-dependent value rather than an equality assertion.
+
+| Date | Change |
+|---|---|
+| 2026-09-18 | Freshness check only; no build published, no site setting changed, no rollback consumed. |
