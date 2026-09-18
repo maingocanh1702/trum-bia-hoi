@@ -4,14 +4,15 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync, chmodSync 
 import { resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import net from 'node:net';
 import { resolveAllPorts, resolveBasePort, collectOtherWorktreeIds } from './port';
 
-// WORKTREE_BASE_FLOOR/WORKTREE_BASE_SPAN/MAX_ROLE_OFFSET below duplicate port.ts's private
-// constants (5200/300/39) the same way this file already duplicates the hash formula in
+// WORKTREE_BASE_FLOOR/WINDOW/WINDOWS below duplicate port.ts's private constants
+// (10000/40/1250) the same way this file already duplicates the hash formula in
 // "matches the sha256-hash formula" -- port.ts intentionally keeps them unexported.
-const WORKTREE_BASE_FLOOR = 5200;
-const WORKTREE_BASE_SPAN = 300;
-const MAX_ROLE_OFFSET = 39; // max(ROLE_OFFSETS) after adding dev-web=37, dev-api=38, dev-preview=39
+const WORKTREE_BASE_FLOOR = 10000;
+const WINDOW = 40;
+const WINDOWS = 1250;
 
 const LITERAL_PORTS = {
   'e2e': 4178,
@@ -30,8 +31,12 @@ const LITERAL_PORTS = {
   'dev-preview': 4217,
 } as const;
 
-function slotFor(id: string): number {
-  return createHash('sha256').update(id.trim()).digest().readUInt32BE(0) % WORKTREE_BASE_SPAN;
+function windowFor(id: string): number {
+  return createHash('sha256').update(id.trim()).digest().readUInt32BE(0) % WINDOWS;
+}
+
+function baseForWindow(window: number): number {
+  return WORKTREE_BASE_FLOOR + WINDOW * window;
 }
 
 function fixtureDir(t: { after(fn: () => unknown): void }, kind: string): string {
@@ -63,7 +68,8 @@ test('resolves a hashed base plus fixed collision-free per-role offsets in a wor
   const cwd = worktreeDir(t, 'gitdir: /fake/main/.git/worktrees/fake-branch\n');
   const ports = resolveAllPorts({ cwd, env: {} });
   const base = ports['e2e']; // offset('e2e') is 0 by construction
-  assert.ok(base >= 5200 && base < 5500, `base ${base} out of expected [5200,5500) range`);
+  assert.ok(base >= WORKTREE_BASE_FLOOR && base < WORKTREE_BASE_FLOOR + WINDOW * WINDOWS, `base ${base} out of expected [${WORKTREE_BASE_FLOOR},${WORKTREE_BASE_FLOOR + WINDOW * WINDOWS}) range`);
+  assert.equal((base - WORKTREE_BASE_FLOOR) % WINDOW, 0, 'a worktree base must land exactly on a window boundary');
   assert.notEqual(base, LITERAL_PORTS['e2e'], 'worktree base must differ from the main-workspace default');
   for (const role of Object.keys(LITERAL_PORTS) as (keyof typeof LITERAL_PORTS)[]) {
     const offset = LITERAL_PORTS[role] - LITERAL_PORTS['e2e'];
@@ -81,8 +87,7 @@ test('worktree base matches the sha256-hash formula for independently computed i
   for (const content of gitdirContents) {
     const cwd = worktreeDir(t, content);
     const ports = resolveAllPorts({ cwd, env: {} });
-    const digest = createHash('sha256').update(content.trim()).digest();
-    const expectedBase = 5200 + (digest.readUInt32BE(0) % 300);
+    const expectedBase = baseForWindow(windowFor(content));
     assert.equal(ports['e2e'], expectedBase, `base mismatch for identifier "${content.trim()}"`);
   }
 });
@@ -159,59 +164,37 @@ test('CLI --role=<role> prints only that role\'s resolved port, for capturing in
   assert.equal(output.trim(), String(expected));
 });
 
-test('collision probe separates two live worktrees whose bases hash to the exact same slot', (t) => {
-  const bySlot = new Map<number, string>();
+test('collision probe separates two live worktrees whose bases hash to the exact same window with distinct, adjacent windows', (t) => {
+  const byWindow = new Map<number, string>();
   let contentA: string | undefined;
   let contentB: string | undefined;
   for (let i = 0; i < 5000 && !contentB; i++) {
     const content = `gitdir: /fake/main/.git/worktrees/collision-${i}\n`;
-    const slot = slotFor(content);
-    const existing = bySlot.get(slot);
+    const window = windowFor(content);
+    const existing = byWindow.get(window);
     if (existing !== undefined) {
       contentA = existing;
       contentB = content;
       break;
     }
-    bySlot.set(slot, content);
+    byWindow.set(window, content);
   }
-  assert.ok(contentA && contentB, 'expected two candidates hashing to the same slot within 5000 tries');
+  assert.ok(contentA && contentB, 'expected two candidates hashing to the same window within 5000 tries');
 
   const cwdA = worktreeDir(t, contentA!);
   const cwdB = worktreeDir(t, contentB!);
   const baseA = resolveBasePort({ cwd: cwdA, env: {}, listOtherWorktreeIds: () => [contentB!.trim()] });
   const baseB = resolveBasePort({ cwd: cwdB, env: {}, listOtherWorktreeIds: () => [contentA!.trim()] });
-  assert.notEqual(baseA, baseB, 'worktrees hashing to the same slot must resolve to different final bases');
-  assert.equal(baseA, WORKTREE_BASE_FLOOR + slotFor(contentA!), 'each side computes the same deterministic winner');
-});
+  assert.notEqual(baseA, baseB, 'worktrees hashing to the same window must resolve to different final bases');
 
-test('collision probe also separates two worktrees whose bases hash to DIFFERENT slots but land within MAX_ROLE_OFFSET of each other', (t) => {
-  const bySlot = new Map<number, string>();
-  let contentA: string | undefined;
-  let contentB: string | undefined;
-  outer:
-  for (let i = 0; i < 5000; i++) {
-    const content = `gitdir: /fake/main/.git/worktrees/near-${i}\n`;
-    const slot = slotFor(content);
-    for (const [existingSlot, existingContent] of bySlot) {
-      const diff = Math.abs(existingSlot - slot);
-      if (diff > 0 && diff <= MAX_ROLE_OFFSET) {
-        contentA = existingContent;
-        contentB = content;
-        break outer;
-      }
-    }
-    if (!bySlot.has(slot)) bySlot.set(slot, content);
-  }
-  assert.ok(contentA && contentB, 'expected two candidates with near-colliding (but distinct) slots within 5000 tries');
-
-  const cwdA = worktreeDir(t, contentA!);
-  const cwdB = worktreeDir(t, contentB!);
-  const baseA = resolveBasePort({ cwd: cwdA, env: {}, listOtherWorktreeIds: () => [contentB!.trim()] });
-  const baseB = resolveBasePort({ cwd: cwdB, env: {}, listOtherWorktreeIds: () => [contentA!.trim()] });
-  assert.ok(
-    Math.abs(baseA - baseB) > MAX_ROLE_OFFSET,
-    `bases ${baseA} and ${baseB} must end up more than MAX_ROLE_OFFSET (${MAX_ROLE_OFFSET}) apart after the probe`,
-  );
+  // Whichever id sorts first (lexicographically) wins the raw hashed window; the other is
+  // pushed to the very NEXT window (adjacent, i.e. exactly WINDOW ports further), never further --
+  // the probe only widens its search past one step if that next window is ALSO taken.
+  const sortedFirst = [contentA!.trim(), contentB!.trim()].sort()[0];
+  const winnerBase = sortedFirst === contentA!.trim() ? baseA : baseB;
+  const loserBase = sortedFirst === contentA!.trim() ? baseB : baseA;
+  assert.equal(winnerBase, baseForWindow(windowFor(sortedFirst)), 'the lexicographically-first id keeps the raw hashed window');
+  assert.equal(loserBase, winnerBase + WINDOW, 'the other id must land on the very next (adjacent) window');
 });
 
 test('collision probe result does not depend on the enumerated worktree list\'s iteration order', (t) => {
@@ -270,7 +253,10 @@ test('resolveBasePort still degrades to a solo hash when git runs but reports no
   // No PATH override here: git itself IS resolvable, it just fails with "not a git repository"
   // against this fixture's nonexistent gitdir target -- that must keep degrading to [], not throw.
   const base = resolveBasePort({ cwd, env: {} });
-  assert.ok(base >= 5200 && base < 5500, `base ${base} out of expected [5200,5500) range`);
+  assert.ok(
+    base >= WORKTREE_BASE_FLOOR && base < WORKTREE_BASE_FLOOR + WINDOW * WINDOWS,
+    `base ${base} out of expected [${WORKTREE_BASE_FLOOR},${WORKTREE_BASE_FLOOR + WINDOW * WINDOWS}) range`,
+  );
 });
 
 // `git worktree add` is unavailable in this sandbox, so a genuinely unreadable REAL sibling can't
@@ -300,87 +286,30 @@ test('collision discovery still skips a sibling whose .git has plainly disappear
   assert.deepEqual(collectOtherWorktreeIds(porcelain, resolve('/some/other/self-cwd')), []);
 });
 
-test('resolveBasePort fails closed when the port registry file exists but contains invalid JSON', (t) => {
-  const sharedDir = fixtureDir(t, 'corrupt-registry');
-  mkdirSync(resolve(sharedDir, '.git'), { recursive: true });
-  const commonGitDir = resolve(sharedDir, '.git');
-  writeFileSync(resolve(commonGitDir, 'tbh-port-registry.json'), '{not valid json');
-  const cwd = worktreeDir(t, `gitdir: ${commonGitDir}/worktrees/corrupt-branch\n`);
-  assert.throws(
-    () => resolveBasePort({ cwd, env: {}, listOtherWorktreeIds: () => [] }),
-    /port registry.*invalid JSON/i,
-    'corrupt registry state must fail closed, not be silently treated as an empty registry',
-  );
-});
-
-test('resolveBasePort fails closed when the port registry path cannot be written for a reason other than a missing directory', (t) => {
-  if (process.getuid && process.getuid() === 0) return; // root bypasses permission bits
-  const sharedDir = fixtureDir(t, 'unwritable-registry');
-  mkdirSync(resolve(sharedDir, '.git'), { recursive: true });
-  const commonGitDir = resolve(sharedDir, '.git');
-  // A pre-existing, VALID, readable registry file whose file mode blocks writes -- so the read
-  // half succeeds (proving this is a write-path failure, not the read-path failure the previous
-  // test already covers) and only the subsequent writeFileSync fails, with EACCES, not ENOENT.
-  const registryPath = resolve(commonGitDir, 'tbh-port-registry.json');
-  writeFileSync(registryPath, '{}');
-  chmodSync(registryPath, 0o444);
-  const cwd = worktreeDir(t, `gitdir: ${commonGitDir}/worktrees/unwritable-branch\n`);
+// Unlike the "unreadable .git FILE" test above (chmod 0o000 on the .git FILE itself -- stat()
+// doesn't need read permission on its target, only search permission on the parent directories,
+// so that case only breaks the later readFileSync), THIS reproduces the review's actual repro
+// (`/var/root/.git`): a sibling whose ENCLOSING DIRECTORY a non-root user cannot traverse at all,
+// so `statSync` on the `.git` path itself throws EACCES. Before the fix, isWorktreeCwd() used
+// `existsSync` first, which swallows every stat error (including EACCES) into "false" --
+// silently treating the sibling as absent instead of failing closed.
+test('collision discovery fails closed when a sibling worktree path itself cannot be stat-ed (EACCES on its parent directory)', (t) => {
+  if (process.getuid && process.getuid() === 0) return; // root bypasses permission bits; nothing to exercise
+  const parentDir = fixtureDir(t, 'unstatable-parent');
+  const childDir = resolve(parentDir, 'worktree-child');
+  mkdirSync(childDir);
+  writeFileSync(resolve(childDir, '.git'), 'gitdir: /fake/main/.git/worktrees/unstatable\n');
+  chmodSync(parentDir, 0o000);
+  const porcelain = `worktree ${childDir}\nHEAD 0000000000000000000000000000000000000000\nbranch refs/heads/unstatable\n\n`;
   try {
     assert.throws(
-      () => resolveBasePort({ cwd, env: {}, listOtherWorktreeIds: () => [] }),
-      /port registry.*could not be written/i,
-      'a failed registry write must fail closed, not be silently swallowed as best-effort',
+      () => collectOtherWorktreeIds(porcelain, resolve('/some/other/self-cwd')),
+      /could not be inspected/,
+      'an EACCES stat-ing a sibling path must propagate, not silently drop that sibling from the live set',
     );
   } finally {
-    chmodSync(registryPath, 0o644);
+    chmodSync(parentDir, 0o755);
   }
-});
-
-test('an already-registered (incumbent) worktree keeps its resolved base when a colliding sibling joins later', (t) => {
-  const sharedDir = fixtureDir(t, 'shared-registry');
-  mkdirSync(resolve(sharedDir, '.git'), { recursive: true });
-  const commonGitDir = resolve(sharedDir, '.git');
-
-  const bySlot = new Map<number, string>();
-  let incumbentName: string | undefined;
-  let newcomerName: string | undefined;
-  for (let i = 0; i < 5000 && !newcomerName; i++) {
-    const name = `incumbent-registry-${i}`;
-    const content = `gitdir: ${commonGitDir}/worktrees/${name}\n`;
-    const slot = slotFor(content);
-    const existing = bySlot.get(slot);
-    if (existing !== undefined) {
-      incumbentName = existing;
-      newcomerName = name;
-      break;
-    }
-    bySlot.set(slot, name);
-  }
-  assert.ok(incumbentName && newcomerName, 'expected two candidate worktree names hashing to the same slot within 5000 tries');
-
-  function worktreeCwdFor(name: string): string {
-    const dir = fixtureDir(t, `registry-member-${name}`);
-    writeFileSync(resolve(dir, '.git'), `gitdir: ${commonGitDir}/worktrees/${name}\n`);
-    return dir;
-  }
-
-  const incumbentCwd = worktreeCwdFor(incumbentName!);
-  const newcomerCwd = worktreeCwdFor(newcomerName!);
-
-  // Incumbent starts ALONE (no siblings yet) and registers its base.
-  const incumbentBaseBeforeJoin = resolveBasePort({ cwd: incumbentCwd, env: {}, listOtherWorktreeIds: () => [] });
-
-  // Newcomer joins later, aware of the incumbent.
-  const incumbentContent = readFileSync(resolve(incumbentCwd, '.git'), 'utf8').trim();
-  const newcomerBase = resolveBasePort({ cwd: newcomerCwd, env: {}, listOtherWorktreeIds: () => [incumbentContent] });
-
-  // Incumbent's tooling runs AGAIN now that the newcomer is live -- its base must not have moved.
-  const newcomerContent = readFileSync(resolve(newcomerCwd, '.git'), 'utf8').trim();
-  const incumbentBaseAfterJoin = resolveBasePort({ cwd: incumbentCwd, env: {}, listOtherWorktreeIds: () => [newcomerContent] });
-
-  assert.equal(incumbentBaseAfterJoin, incumbentBaseBeforeJoin, 'an already-registered incumbent base must not change when a colliding sibling joins later');
-  assert.notEqual(newcomerBase, incumbentBaseBeforeJoin, 'the newcomer must not be handed the incumbent\'s already-registered base');
-  assert.ok(Math.abs(newcomerBase - incumbentBaseBeforeJoin) > MAX_ROLE_OFFSET, 'incumbent and newcomer bases must be separated by more than MAX_ROLE_OFFSET');
 });
 
 // `git init`/`git worktree add` are unavailable in this test's sandbox (see the real-live-worktree
@@ -391,21 +320,21 @@ test('an already-registered (incumbent) worktree keeps its resolved base when a 
 // separate `node ... port.ts` invocation, repeated -- for BOTH sides of the collision, not just one
 // (review round 3, finding "the required every-worktree subprocess proof remains incomplete").
 test('collision probe is stable for a genuinely colliding FAKE worktree set across separate process invocations, for both sides', (t) => {
-  const bySlot = new Map<number, string>();
+  const byWindow = new Map<number, string>();
   let contentA: string | undefined;
   let contentB: string | undefined;
   for (let i = 0; i < 5000 && !contentB; i++) {
     const content = `gitdir: /fake/main/.git/worktrees/xproc-${i}\n`;
-    const slot = slotFor(content);
-    const existing = bySlot.get(slot);
+    const window = windowFor(content);
+    const existing = byWindow.get(window);
     if (existing !== undefined) {
       contentA = existing;
       contentB = content;
       break;
     }
-    bySlot.set(slot, content);
+    byWindow.set(window, content);
   }
-  assert.ok(contentA && contentB, 'expected two candidates hashing to the same slot within 5000 tries');
+  assert.ok(contentA && contentB, 'expected two candidates hashing to the same window within 5000 tries');
 
   const cwdA = worktreeDir(t, contentA!);
   const cwdB = worktreeDir(t, contentB!);
@@ -481,4 +410,42 @@ test('collision probe is stable for the real live worktree across repeated calls
   } else {
     assert.deepEqual(fromSeparateProcess, first, 'a separate process invocation against the real live worktree list must agree');
   }
+});
+
+// The deterministic window assignment says nothing about what else is bound on this machine --
+// bind a REAL loopback server on the deterministic window's own base port (its 'e2e' role port,
+// offset 0) before resolving, so the resolver's own live-port-guard subprocess (a genuinely
+// separate `node` process) has to detect a port held by THIS test process across process
+// boundaries, exactly like it would for a stray dev server left running by something else.
+test('live-port guard skips a deterministic window whose role port is already bound, and reports the one-line deviation', async (t) => {
+  const gitdirContent = 'gitdir: /fake/main/.git/worktrees/live-guard-branch\n';
+  const cwd = worktreeDir(t, gitdirContent);
+  const selfId = gitdirContent.trim();
+  const deterministicWindow = windowFor(selfId);
+  const deterministicBase = baseForWindow(deterministicWindow);
+  const blockedPort = deterministicBase; // 'e2e' offset is 0
+
+  const server = net.createServer();
+  await new Promise<void>((resolvePromise, reject) => {
+    server.once('error', reject);
+    server.listen(blockedPort, '127.0.0.1', () => resolvePromise());
+  });
+  t.after(() => new Promise<void>((r) => server.close(() => r())));
+
+  const stderrChunks: string[] = [];
+  const originalWrite = process.stderr.write.bind(process.stderr);
+  process.stderr.write = ((chunk: unknown) => {
+    stderrChunks.push(String(chunk));
+    return true;
+  }) as typeof process.stderr.write;
+  t.after(() => { process.stderr.write = originalWrite; });
+
+  const finalBase = resolveBasePort({ cwd, env: {}, listOtherWorktreeIds: () => [] });
+
+  assert.notEqual(finalBase, deterministicBase, 'resolver must skip the deterministic window whose role port is already bound');
+  assert.equal(finalBase, deterministicBase + WINDOW, 'resolver must advance to the very next window once the deterministic one is occupied');
+  assert.ok(
+    stderrChunks.some((line) => line.includes(String(deterministicWindow)) && line.includes(String(blockedPort))),
+    `expected a one-line stderr deviation naming the deterministic window (${deterministicWindow}) and the bound port (${blockedPort}), got: ${JSON.stringify(stderrChunks)}`,
+  );
 });

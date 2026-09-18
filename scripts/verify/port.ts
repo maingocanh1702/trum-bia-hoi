@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
@@ -40,9 +40,8 @@ export interface ResolveOptions {
 // offsets that would reproduce today's 5173/5175/4173 (995/997/-5 -- the last is even negative,
 // since 4173 < DEFAULT_BASE). Byte-identical reproduction of those three is explicitly not
 // required (see the task's Problem/Acceptance sections); tidy offsets in the same 0-36 range as
-// every other role keep MAX_ROLE_OFFSET small (39), so the collision probe below only needs to
-// widen its search rarely, instead of ALWAYS probing (which reproducing 995/997 as offsets would
-// force, since that would push MAX_ROLE_OFFSET past WORKTREE_BASE_SPAN).
+// every other role keep MAX_ROLE_OFFSET small (39), fitting inside one 40-wide window with room
+// to spare (offsets 995/997 would not fit in any fixed-width window at all).
 const ROLE_OFFSETS: Record<PortRole, number> = {
   'e2e': 0,
   'dev-identity-web': 1,
@@ -61,8 +60,15 @@ const ROLE_OFFSETS: Record<PortRole, number> = {
 };
 
 const DEFAULT_BASE = 4178;
-const WORKTREE_BASE_FLOOR = 5200;
-const WORKTREE_BASE_SPAN = 300;
+// A worktree base is FLOOR + WINDOW * (window index). Windows are 40 ports wide -- wider than
+// MAX_ROLE_OFFSET(39), so a window holds every role -- and bases always land on a 40-grid, so two
+// DISTINCT windows can never be within MAX_ROLE_OFFSET of each other: the "near collision" class
+// that plagued the old 5200+hash%300 scheme (a bare per-port probe over a much narrower span) is
+// gone by construction here, not by probing. WINDOWS(1250) * WINDOW(40) spans exactly
+// 10000..59999. See the OWNER AMENDMENT in the task file for the full rationale.
+const WORKTREE_BASE_FLOOR = 10000;
+const WINDOW = 40;
+const WINDOWS = 1250;
 const MAX_ROLE_OFFSET = Math.max(...Object.values(ROLE_OFFSETS));
 const PORT_BASE_MIN = 1;
 const PORT_BASE_MAX = 65535 - MAX_ROLE_OFFSET;
@@ -77,9 +83,21 @@ function parsePortBaseOverride(raw: string): number {
   return base;
 }
 
+// `statSync` directly, never `existsSync` first: `existsSync` swallows EVERY stat failure
+// (including EACCES -- e.g. a parent directory a non-root user can't traverse, like /var/root)
+// and reports it identically to "doesn't exist", which would silently treat an unreadable sibling
+// as absent instead of failing closed. Only ENOENT (genuinely absent -- ordinary pruned-worktree
+// churn) degrades to false here; every other error (EACCES, ...) propagates to the caller.
 function isWorktreeCwd(cwd: string): boolean {
   const gitPath = resolve(cwd, '.git');
-  return existsSync(gitPath) && statSync(gitPath).isFile();
+  let stat: ReturnType<typeof statSync>;
+  try {
+    stat = statSync(gitPath);
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return false;
+    throw err;
+  }
+  return stat.isFile();
 }
 
 function getWorktreeIdentifier(cwd: string): string {
@@ -140,8 +158,8 @@ export function collectOtherWorktreeIds(porcelain: string, resolvedCwd: string):
     if (resolvedPath === resolvedCwd) continue;
     try {
       // The main worktree's `.git` is a directory, not a file -- it always resolves to
-      // DEFAULT_BASE (never the hashed scheme), and DEFAULT_BASE(4178) sits >1000 below
-      // WORKTREE_BASE_FLOOR(5200), so it can never collide with a worktree base by construction.
+      // DEFAULT_BASE (never the hashed scheme), and DEFAULT_BASE(4178) sits well below
+      // WORKTREE_BASE_FLOOR(10000), so it can never collide with a worktree base by construction.
       if (!isWorktreeCwd(resolvedPath)) continue;
       ids.push(getWorktreeIdentifier(resolvedPath));
     } catch (err) {
@@ -152,97 +170,111 @@ export function collectOtherWorktreeIds(porcelain: string, resolvedCwd: string):
   return ids;
 }
 
-// Deterministically assigns a base to every id NOT already present in `fixed`: sorted by id
-// (never by enumeration/insertion order, so the result never depends on `git worktree list`'s
-// iteration order or which side calls this), each new id starts at its own hashed slot and, if
-// that slot is within MAX_ROLE_OFFSET of an already-assigned base (fixed or freshly assigned --
-// a real role-port collision, not just an exact base match), probes forward one port at a time
-// until it finds a base that collides with none of them. `fixed` entries are returned verbatim,
-// NEVER re-probed -- this is what gives an already-registered (incumbent) worktree a stable base
-// across the lifetime of other worktrees joining or leaving (see resolveRegisteredBases below).
-function assignBasesForIds(ids: string[], fixed: Map<string, number> = new Map()): Map<string, number> {
-  const result = new Map<string, number>(fixed);
-  const assignedBases: number[] = [...fixed.values()];
-  const newIds = [...new Set(ids)].filter((id) => !fixed.has(id)).sort();
-  for (const id of newIds) {
-    let candidate = WORKTREE_BASE_FLOOR + hashToRange(id, WORKTREE_BASE_SPAN);
-    while (assignedBases.some((base) => Math.abs(base - candidate) <= MAX_ROLE_OFFSET)) {
-      candidate += 1;
+// Deterministically assigns a WINDOW INDEX (0..WINDOWS-1) to every live id: sorted by id (never
+// by enumeration/insertion order, so the result never depends on `git worktree list`'s iteration
+// order or which side calls this), each id in that sorted order starts at its own hashed window
+// and, if that window is already taken by an earlier id in the sort, linear-probes forward
+// (mod WINDOWS) to the next free window. This is a PURE function of the live id set -- every
+// worktree computes the same assignment from the same list, so no shared state is needed and the
+// registry this replaced is gone entirely (see the OWNER AMENDMENT in the task file).
+function assignWindows(ids: string[]): Map<string, number> {
+  const result = new Map<string, number>();
+  const takenWindows = new Set<number>();
+  const sortedIds = [...new Set(ids)].sort();
+  for (const id of sortedIds) {
+    let window = hashToRange(id, WINDOWS);
+    while (takenWindows.has(window)) {
+      window = (window + 1) % WINDOWS;
     }
-    assignedBases.push(candidate);
-    result.set(id, candidate);
+    takenWindows.add(window);
+    result.set(id, window);
   }
   return result;
 }
 
-// A worktree's `.git` FILE content is `gitdir: <mainRepo>/.git/worktrees/<name>` -- every sibling
-// worktree of the SAME repo shares the same `<mainRepo>/.git` prefix. That shared directory is the
-// one place on disk naturally reachable from every sibling without an extra `git` subprocess call
-// (which would hit the exact same fake-gitdir/real-repo-contamination gotcha `defaultListOtherWorktreeIds`
-// already works around). Returns undefined when the content doesn't match this shape (e.g. the
-// test suite's deliberately-fake `gitdir: /fake/main/.git/worktrees/...` targets that never exist
-// on disk still parse fine here -- but see loadRegistry/saveRegistry below, which degrade to a
-// no-op only for that specific "directory doesn't exist" (ENOENT) case, and fail closed for any
-// other read/write failure against a derived path that DOES exist on disk).
-function deriveRegistryPath(gitdirContent: string): string | undefined {
-  const match = /^gitdir:\s*(.+)\/worktrees\/[^/]+\/?$/.exec(gitdirContent.trim());
-  return match ? resolve(match[1], 'tbh-port-registry.json') : undefined;
+function baseForWindow(window: number): number {
+  return WORKTREE_BASE_FLOOR + WINDOW * window;
 }
 
-// ENOENT (no registry file yet -- first run, or a test fixture's derived path never existed on
-// disk in the first place) is a legitimate, expected "empty registry" signal and degrades quietly.
-// Any OTHER read failure (corrupt JSON, EACCES, a directory sitting where the file should be, ...)
-// fails CLOSED instead: the registry is the only thing keeping an incumbent worktree's base from
-// being silently reassigned when a sibling joins, so treating unreadable state as "empty" would
-// quietly reintroduce the exact bug the registry exists to prevent.
-function loadRegistry(path: string): Record<string, number> {
-  let raw: string;
-  try {
-    raw = readFileSync(path, 'utf8');
-  } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return {};
-    throw new Error(`Cannot resolve a collision-free port: the port registry "${path}" could not be read (${(err as Error).message}).`);
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch (err) {
-    throw new Error(`Cannot resolve a collision-free port: the port registry "${path}" contains invalid JSON (${(err as Error).message}).`);
-  }
-  return parsed && typeof parsed === 'object' ? (parsed as Record<string, number>) : {};
+function rolePortsForWindow(window: number): number[] {
+  const base = baseForWindow(window);
+  return Object.values(ROLE_OFFSETS).map((offset) => base + offset);
 }
 
-// ENOENT here means the registry's PARENT directory doesn't exist -- exactly what every test
-// fixture's fake `gitdir: /fake/main/.git/worktrees/...` target produces, since that directory
-// never exists on disk. That case stays best-effort/no-op: persistence only improves stability
-// over the pure-hash-and-probe fallback, it's never required for correctness of a single
-// resolution. Any OTHER write failure (EACCES, EISDIR, ENOSPC, ...) means a REAL, existing
-// registry location just failed to accept the incumbent's base -- silently swallowing that would
-// let the next sibling's read see stale/partial state, so it fails CLOSED instead.
-function saveRegistry(path: string, data: Record<string, number>): void {
-  try {
-    writeFileSync(path, JSON.stringify(data));
-  } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return;
-    throw new Error(`Cannot resolve a collision-free port: the port registry "${path}" could not be written (${(err as Error).message}).`);
-  }
+// A tiny standalone script run in a fresh `node` subprocess: for each candidate port, try to bind
+// a TCP server to it on loopback, then close it immediately. Reports back (as JSON on stdout) the
+// subset that were already occupied by SOME other process. This has to be a subprocess because
+// Node's `net` module has no synchronous bind API, and resolveBasePort() below must stay fully
+// synchronous -- it's called at module-eval time by apps/web/vite.config.ts and by every already-
+// wired Playwright config (out of this slice's scope; they can't be changed to `await`).
+const LIVE_PORT_PROBE_SCRIPT = `
+const net = require('node:net');
+const ports = JSON.parse(process.argv[1]);
+const occupied = [];
+let indeterminate = false;
+let remaining = ports.length;
+function report() { process.stdout.write(JSON.stringify({ occupied, indeterminate })); }
+if (remaining === 0) { report(); process.exit(0); }
+function done() { remaining -= 1; if (remaining === 0) report(); }
+for (const port of ports) {
+  const server = net.createServer();
+  server.once('error', (err) => {
+    // EADDRINUSE is a genuine "something else is bound here" signal. Any OTHER error (e.g. this
+    // process's own sandbox denying bind() outright with EPERM/EACCES, unrelated to what else is
+    // on the machine) means the check itself couldn't run -- that is NOT proof of occupancy.
+    if (err && err.code === 'EADDRINUSE') occupied.push(port);
+    else indeterminate = true;
+    done();
+  });
+  server.listen(port, '127.0.0.1', () => { server.close(() => done()); });
+}
+`;
+
+interface PortCheck {
+  boundPort: number | undefined;
+  // true when the bind CHECK itself couldn't run (e.g. this environment denies binding loopback
+  // sockets at all) -- distinct from a clean "nothing is bound here" result.
+  indeterminate: boolean;
 }
 
-// Resolves the final base for every id in `liveIds` (self + others), preferring previously
-// REGISTERED bases for ids that already have one (so an incumbent worktree's base never moves just
-// because a new sibling joins later) and only handing out fresh probed bases to ids seen for the
-// first time. Registry entries for ids no longer in `liveIds` are dropped (garbage-collected) so a
-// removed/pruned worktree's slot is eventually reclaimed instead of leaking forever.
-function resolveRegisteredBases(liveIds: string[], registryPath: string | undefined): Map<string, number> {
-  const liveSet = new Set(liveIds);
-  const registered = registryPath ? loadRegistry(registryPath) : {};
-  const fixed = new Map<string, number>();
-  for (const [id, base] of Object.entries(registered)) {
-    if (liveSet.has(id) && Number.isInteger(base)) fixed.set(id, base);
+function checkPorts(ports: number[]): PortCheck {
+  const output = execFileSync(process.execPath, ['-e', LIVE_PORT_PROBE_SCRIPT, JSON.stringify(ports)], {
+    encoding: 'utf8',
+  });
+  const parsed = JSON.parse(output) as { occupied: number[]; indeterminate: boolean };
+  return { boundPort: parsed.occupied[0], indeterminate: parsed.indeterminate };
+}
+
+// The deterministic window assignment above is a pure function of live worktree ids -- it says
+// nothing about what else is bound on this machine right now (a stray dev server, another tool
+// entirely). Test-bind every role port the deterministic window would hand out; if any is already
+// in use, advance to the next window that is BOTH free on the wire AND not already claimed by a
+// sibling worktree in `windows` (never hand out a window another live worktree is about to use).
+// This step is inherently time-of-check/time-of-use dependent by design -- the stderr line is
+// what makes a deviation visible instead of silent. If the bind check itself is unavailable in
+// this environment (indeterminate), the deterministic assignment is trusted as-is -- an inability
+// to double-check for stray processes must never turn into "no port can ever be resolved."
+function applyLivePortGuard(deterministicWindow: number, windows: Map<string, number>, selfId: string): number {
+  const claimedBySiblings = new Set(
+    [...windows.entries()].filter(([id]) => id !== selfId).map(([, w]) => w),
+  );
+  const first = checkPorts(rolePortsForWindow(deterministicWindow));
+  if (first.indeterminate || first.boundPort === undefined) return deterministicWindow;
+  let window = deterministicWindow;
+  for (let tries = 0; tries < WINDOWS; tries++) {
+    window = (window + 1) % WINDOWS;
+    if (claimedBySiblings.has(window)) continue;
+    const check = checkPorts(rolePortsForWindow(window));
+    if (check.indeterminate) return deterministicWindow;
+    if (check.boundPort === undefined) {
+      process.stderr.write(
+        `tbh-port: window ${deterministicWindow} (base ${baseForWindow(deterministicWindow)}) deviated -- `
+          + `port ${first.boundPort} already in use; using window ${window} (base ${baseForWindow(window)}) instead\n`,
+      );
+      return window;
+    }
   }
-  const assigned = assignBasesForIds(liveIds, fixed);
-  if (registryPath) saveRegistry(registryPath, Object.fromEntries(assigned));
-  return assigned;
+  throw new Error('Cannot resolve a collision-free port: every window is either claimed by a live sibling worktree or has a port already in use.');
 }
 
 export function resolveBasePort(opts: ResolveOptions = {}): number {
@@ -263,9 +295,10 @@ export function resolveBasePort(opts: ResolveOptions = {}): number {
   const gitEnv = { ...process.env, ...env };
   const listOtherWorktreeIds = opts.listOtherWorktreeIds ?? ((c: string) => defaultListOtherWorktreeIds(c, gitEnv));
   const otherIds = listOtherWorktreeIds(cwd).filter((id) => id !== selfId);
-  const registryPath = deriveRegistryPath(selfId);
-  const assigned = resolveRegisteredBases([selfId, ...otherIds], registryPath);
-  return assigned.get(selfId)!;
+  const windows = assignWindows([selfId, ...otherIds]);
+  const deterministicWindow = windows.get(selfId)!;
+  const finalWindow = applyLivePortGuard(deterministicWindow, windows, selfId);
+  return baseForWindow(finalWindow);
 }
 
 export function resolvePort(role: PortRole, opts: ResolveOptions = {}): number {
