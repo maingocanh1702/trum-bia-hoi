@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync, chmodSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { resolveAllPorts, resolveBasePort } from './port';
+import { resolveAllPorts, resolveBasePort, collectOtherWorktreeIds } from './port';
 
 // WORKTREE_BASE_FLOOR/WORKTREE_BASE_SPAN/MAX_ROLE_OFFSET below duplicate port.ts's private
 // constants (5200/300/39) the same way this file already duplicates the hash formula in
@@ -273,6 +273,69 @@ test('resolveBasePort still degrades to a solo hash when git runs but reports no
   assert.ok(base >= 5200 && base < 5500, `base ${base} out of expected [5200,5500) range`);
 });
 
+// `git worktree add` is unavailable in this sandbox, so a genuinely unreadable REAL sibling can't
+// be created via git itself -- but collectOtherWorktreeIds (split out of
+// defaultListOtherWorktreeIds precisely for this) can be driven directly with synthetic porcelain
+// text pointing at a real fixture whose `.git` we control the permission bits of.
+test('collision discovery fails closed instead of silently skipping a sibling whose .git is unreadable for a non-ENOENT reason', (t) => {
+  if (process.getuid && process.getuid() === 0) return; // root bypasses permission bits; nothing to exercise
+  const dir = worktreeDir(t, 'gitdir: /fake/main/.git/worktrees/unreadable-branch\n');
+  const gitFile = resolve(dir, '.git');
+  chmodSync(gitFile, 0o000);
+  const porcelain = `worktree ${dir}\nHEAD 0000000000000000000000000000000000000000\nbranch refs/heads/unreadable\n\n`;
+  try {
+    assert.throws(
+      () => collectOtherWorktreeIds(porcelain, resolve('/some/other/self-cwd')),
+      /could not be inspected/,
+      'an EACCES on a sibling .git file must propagate, not silently drop that sibling from the live set',
+    );
+  } finally {
+    chmodSync(gitFile, 0o644);
+  }
+});
+
+test('collision discovery still skips a sibling whose .git has plainly disappeared (ordinary pruned-worktree churn)', () => {
+  const goneDir = resolve('.qa', 'port-gone-does-not-exist');
+  const porcelain = `worktree ${goneDir}\nHEAD 0000000000000000000000000000000000000000\nbranch refs/heads/gone\n\n`;
+  assert.deepEqual(collectOtherWorktreeIds(porcelain, resolve('/some/other/self-cwd')), []);
+});
+
+test('resolveBasePort fails closed when the port registry file exists but contains invalid JSON', (t) => {
+  const sharedDir = fixtureDir(t, 'corrupt-registry');
+  mkdirSync(resolve(sharedDir, '.git'), { recursive: true });
+  const commonGitDir = resolve(sharedDir, '.git');
+  writeFileSync(resolve(commonGitDir, 'tbh-port-registry.json'), '{not valid json');
+  const cwd = worktreeDir(t, `gitdir: ${commonGitDir}/worktrees/corrupt-branch\n`);
+  assert.throws(
+    () => resolveBasePort({ cwd, env: {}, listOtherWorktreeIds: () => [] }),
+    /port registry.*invalid JSON/i,
+    'corrupt registry state must fail closed, not be silently treated as an empty registry',
+  );
+});
+
+test('resolveBasePort fails closed when the port registry path cannot be written for a reason other than a missing directory', (t) => {
+  if (process.getuid && process.getuid() === 0) return; // root bypasses permission bits
+  const sharedDir = fixtureDir(t, 'unwritable-registry');
+  mkdirSync(resolve(sharedDir, '.git'), { recursive: true });
+  const commonGitDir = resolve(sharedDir, '.git');
+  // A pre-existing, VALID, readable registry file whose file mode blocks writes -- so the read
+  // half succeeds (proving this is a write-path failure, not the read-path failure the previous
+  // test already covers) and only the subsequent writeFileSync fails, with EACCES, not ENOENT.
+  const registryPath = resolve(commonGitDir, 'tbh-port-registry.json');
+  writeFileSync(registryPath, '{}');
+  chmodSync(registryPath, 0o444);
+  const cwd = worktreeDir(t, `gitdir: ${commonGitDir}/worktrees/unwritable-branch\n`);
+  try {
+    assert.throws(
+      () => resolveBasePort({ cwd, env: {}, listOtherWorktreeIds: () => [] }),
+      /port registry.*could not be written/i,
+      'a failed registry write must fail closed, not be silently swallowed as best-effort',
+    );
+  } finally {
+    chmodSync(registryPath, 0o644);
+  }
+});
+
 test('an already-registered (incumbent) worktree keeps its resolved base when a colliding sibling joins later', (t) => {
   const sharedDir = fixtureDir(t, 'shared-registry');
   mkdirSync(resolve(sharedDir, '.git'), { recursive: true });
@@ -323,10 +386,11 @@ test('an already-registered (incumbent) worktree keeps its resolved base when a 
 // `git init`/`git worktree add` are unavailable in this test's sandbox (see the real-live-worktree
 // test below), so a genuinely COLLIDING fake set can only be driven through a separate process via
 // the TBH_TEST_OTHER_WORKTREE_IDS test-only CLI hook (port.ts's own `parseTestOtherWorktreeIds`) --
-// this is what "the required fake-set cross-process stability proof" (missing before this test)
-// actually needs: proof that the SAME colliding fake set resolves to the SAME final base whether
-// computed in-process or by a separate `node ... port.ts` invocation, repeated.
-test('collision probe is stable for a genuinely colliding FAKE worktree set across separate process invocations', (t) => {
+// this is what "the required fake-set cross-process stability proof" actually needs: proof that the
+// SAME colliding fake set resolves to the SAME final base whether computed in-process or by a
+// separate `node ... port.ts` invocation, repeated -- for BOTH sides of the collision, not just one
+// (review round 3, finding "the required every-worktree subprocess proof remains incomplete").
+test('collision probe is stable for a genuinely colliding FAKE worktree set across separate process invocations, for both sides', (t) => {
   const bySlot = new Map<number, string>();
   let contentA: string | undefined;
   let contentB: string | undefined;
@@ -344,14 +408,17 @@ test('collision probe is stable for a genuinely colliding FAKE worktree set acro
   assert.ok(contentA && contentB, 'expected two candidates hashing to the same slot within 5000 tries');
 
   const cwdA = worktreeDir(t, contentA!);
-  const inProcess = resolveBasePort({ cwd: cwdA, env: {}, listOtherWorktreeIds: () => [contentB!.trim()] });
+  const cwdB = worktreeDir(t, contentB!);
+  const inProcessA = resolveBasePort({ cwd: cwdA, env: {}, listOtherWorktreeIds: () => [contentB!.trim()] });
+  const inProcessB = resolveBasePort({ cwd: cwdB, env: {}, listOtherWorktreeIds: () => [contentA!.trim()] });
+  assert.notEqual(inProcessA, inProcessB, 'sanity: the two sides must not share a base in-process either');
 
   const scriptPath = resolve('scripts/verify/port.ts');
   const { TBH_PORT_BASE, ...envWithoutOverride } = process.env;
-  const runSubprocess = () => {
+  const runSubprocess = (cwd: string, otherContent: string) => {
     const output = execFileSync(process.execPath, ['--import', 'tsx', scriptPath], {
-      cwd: cwdA,
-      env: { ...envWithoutOverride, TBH_TEST_OTHER_WORKTREE_IDS: JSON.stringify([contentB!.trim()]) },
+      cwd,
+      env: { ...envWithoutOverride, TBH_TEST_OTHER_WORKTREE_IDS: JSON.stringify([otherContent]) },
       encoding: 'utf8',
     });
     const [role, port] = output.trim().split('\n')[0].split('\t');
@@ -359,27 +426,59 @@ test('collision probe is stable for a genuinely colliding FAKE worktree set acro
     return Number(port); // e2e's offset is 0, so its printed port IS the resolved base.
   };
 
-  const firstSubprocess = runSubprocess();
-  const secondSubprocess = runSubprocess();
-  assert.equal(firstSubprocess, inProcess, 'a separate process invocation with the same colliding fake set must agree with the in-process result');
-  assert.equal(secondSubprocess, firstSubprocess, 'repeated separate process invocations with the same colliding fake set must agree with each other');
+  const firstA = runSubprocess(cwdA, contentB!.trim());
+  const secondA = runSubprocess(cwdA, contentB!.trim());
+  assert.equal(firstA, inProcessA, 'side A: a separate process invocation must agree with the in-process result');
+  assert.equal(secondA, firstA, 'side A: repeated separate process invocations must agree with each other');
+
+  const firstB = runSubprocess(cwdB, contentA!.trim());
+  const secondB = runSubprocess(cwdB, contentA!.trim());
+  assert.equal(firstB, inProcessB, 'side B: a separate process invocation must agree with the in-process result');
+  assert.equal(secondB, firstB, 'side B: repeated separate process invocations must agree with each other');
+
+  assert.notEqual(firstA, firstB, 'both sides of the colliding fake set must stay separated across separate process invocations too');
 });
 
+// This repo's real `git worktree list` can include a live sibling this SANDBOXED test session has
+// no read access to at all (e.g. one created under a path this environment's own OS-level sandbox
+// denies outright, distinct from an ordinary Unix permission bit) -- collision discovery now fails
+// closed rather than silently degrading in that case (see the collectOtherWorktreeIds fail-closed
+// tests above), so "stable" here means either succeeding identically every time, or failing closed
+// identically every time -- never flapping, and never silently swallowing an inspection failure to
+// produce a possibly-incomplete answer.
 test('collision probe is stable for the real live worktree across repeated calls and a separate process invocation', () => {
   const cwd = resolve('.');
-  const first = resolveAllPorts({ cwd, env: {} });
-  const second = resolveAllPorts({ cwd, env: {} });
-  assert.deepEqual(first, second, 'repeated in-process calls against the real live worktree list must agree');
+  const attemptInProcess = (): { ok: Record<string, number> } | { failed: true } => {
+    try {
+      return { ok: resolveAllPorts({ cwd, env: {} }) };
+    } catch {
+      return { failed: true };
+    }
+  };
+  const first = attemptInProcess();
+  const second = attemptInProcess();
+  assert.deepEqual(first, second, 'repeated in-process calls against the real live worktree list must agree, including failing closed the same way');
 
   const { TBH_PORT_BASE, ...envWithoutOverride } = process.env;
   const scriptPath = resolve('scripts/verify/port.ts');
-  const output = execFileSync(process.execPath, ['--import', 'tsx', scriptPath], {
-    cwd, env: envWithoutOverride, encoding: 'utf8',
-  });
-  const fromSeparateProcess: Record<string, number> = {};
-  for (const line of output.trim().split('\n').filter(Boolean)) {
-    const [role, port] = line.split('\t');
-    fromSeparateProcess[role] = Number(port);
+  let fromSeparateProcess: { ok: Record<string, number> } | { failed: true };
+  try {
+    const output = execFileSync(process.execPath, ['--import', 'tsx', scriptPath], {
+      cwd, env: envWithoutOverride, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    const parsed: Record<string, number> = {};
+    for (const line of output.trim().split('\n').filter(Boolean)) {
+      const [role, port] = line.split('\t');
+      parsed[role] = Number(port);
+    }
+    fromSeparateProcess = { ok: parsed };
+  } catch {
+    fromSeparateProcess = { failed: true };
   }
-  assert.deepEqual(fromSeparateProcess, first, 'a separate process invocation against the real live worktree list must agree');
+
+  if ('failed' in first) {
+    assert.ok('failed' in fromSeparateProcess, 'a separate process invocation must fail closed the same way the in-process call did, not silently succeed with a possibly-incomplete view');
+  } else {
+    assert.deepEqual(fromSeparateProcess, first, 'a separate process invocation against the real live worktree list must agree');
+  }
 });

@@ -102,26 +102,40 @@ function parseWorktreeListPaths(porcelain: string): string[] {
 // gitdir path that doesn't exist (this repo's own test fixtures do exactly that) -- git then
 // fails outright ("fatal: not a git repository: <path>") rather than climbing up the directory
 // tree looking for another repo, since the `.git` file already resolved GIT_DIR definitively. So
-// on that kind of failure this returns [] (degrade to "no known siblings"), never the enclosing
-// real repo's worktree list -- see port.test.ts's fake-worktree fixtures, which rely on exactly
-// this. The ONE failure mode that fails CLOSED instead is the git executable itself being
-// unresolvable (ENOENT on PATH lookup) -- that means the collision probe cannot run AT ALL, so
-// silently returning [] would revert to the pre-probe, collision-prone pure-hash behaviour without
-// any signal. A real "fatal: not a git repository" still degrades gracefully, since that's a
-// positive signal (git ran, found nothing usable) rather than an absence of the tool itself.
+// on THAT specific, positively-identified failure this returns [] (degrade to "no known
+// siblings"), never the enclosing real repo's worktree list -- see port.test.ts's fake-worktree
+// fixtures, which rely on exactly this. Every OTHER git failure (permission denied, corrupt repo,
+// unsafe-ownership refusal, ...) now fails CLOSED (throws) instead of also degrading to []: the
+// registry that gives an incumbent worktree a stable base only works if sibling discovery is
+// either complete or loudly incomplete, never silently incomplete -- see review round 3, finding
+// "Collision safety still fails open".
 function defaultListOtherWorktreeIds(cwd: string, env: NodeJS.ProcessEnv): string[] {
   let output: string;
   try {
-    output = execFileSync('git', ['worktree', 'list', '--porcelain'], { cwd, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    output = execFileSync('git', ['worktree', 'list', '--porcelain'], { cwd, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+    const nodeErr = err as NodeJS.ErrnoException & { stderr?: Buffer | string };
+    if (nodeErr.code === 'ENOENT') {
       throw new Error('Cannot resolve a collision-free port: the "git" executable was not found, so live sibling worktrees cannot be enumerated.');
     }
-    return [];
+    const stderr = nodeErr.stderr ? nodeErr.stderr.toString() : '';
+    if (/not a git repository/i.test(stderr)) {
+      return [];
+    }
+    throw new Error(`Cannot resolve a collision-free port: "git worktree list --porcelain" failed unexpectedly (${(stderr || nodeErr.message).trim()}).`);
   }
-  const resolvedCwd = resolve(cwd);
+  return collectOtherWorktreeIds(output, resolve(cwd));
+}
+
+// Split out from defaultListOtherWorktreeIds so the fail-closed policy below is unit-testable
+// directly against synthetic porcelain text, without needing a real `git worktree add` (permission-
+// denied in this sandbox) or mutating any real sibling worktree's `.git` file. A listed path whose
+// `.git` has plainly disappeared (ENOENT -- ordinary pruned/removed-worktree churn) is skipped, the
+// same as before; a listed path whose `.git` exists but can't be inspected for any OTHER reason
+// (e.g. EACCES) now propagates instead of silently vanishing from the live set.
+export function collectOtherWorktreeIds(porcelain: string, resolvedCwd: string): string[] {
   const ids: string[] = [];
-  for (const path of parseWorktreeListPaths(output)) {
+  for (const path of parseWorktreeListPaths(porcelain)) {
     const resolvedPath = resolve(path);
     if (resolvedPath === resolvedCwd) continue;
     try {
@@ -130,10 +144,9 @@ function defaultListOtherWorktreeIds(cwd: string, env: NodeJS.ProcessEnv): strin
       // WORKTREE_BASE_FLOOR(5200), so it can never collide with a worktree base by construction.
       if (!isWorktreeCwd(resolvedPath)) continue;
       ids.push(getWorktreeIdentifier(resolvedPath));
-    } catch {
-      // Unreadable/pruned/permission-denied worktree entry (e.g. `prunable gitdir file points to
-      // non-existent location`, or a sibling this OS user can't stat) -- skip it rather than fail
-      // the whole resolution over one stale or inaccessible entry.
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') continue;
+      throw new Error(`Cannot resolve a collision-free port: sibling worktree "${resolvedPath}" could not be inspected (${(err as Error).message}).`);
     }
   }
   return ids;
@@ -169,29 +182,49 @@ function assignBasesForIds(ids: string[], fixed: Map<string, number> = new Map()
 // already works around). Returns undefined when the content doesn't match this shape (e.g. the
 // test suite's deliberately-fake `gitdir: /fake/main/.git/worktrees/...` targets that never exist
 // on disk still parse fine here -- but see loadRegistry/saveRegistry below, which degrade to a
-// no-op rather than fail when that derived directory isn't actually writable).
+// no-op only for that specific "directory doesn't exist" (ENOENT) case, and fail closed for any
+// other read/write failure against a derived path that DOES exist on disk).
 function deriveRegistryPath(gitdirContent: string): string | undefined {
   const match = /^gitdir:\s*(.+)\/worktrees\/[^/]+\/?$/.exec(gitdirContent.trim());
   return match ? resolve(match[1], 'tbh-port-registry.json') : undefined;
 }
 
+// ENOENT (no registry file yet -- first run, or a test fixture's derived path never existed on
+// disk in the first place) is a legitimate, expected "empty registry" signal and degrades quietly.
+// Any OTHER read failure (corrupt JSON, EACCES, a directory sitting where the file should be, ...)
+// fails CLOSED instead: the registry is the only thing keeping an incumbent worktree's base from
+// being silently reassigned when a sibling joins, so treating unreadable state as "empty" would
+// quietly reintroduce the exact bug the registry exists to prevent.
 function loadRegistry(path: string): Record<string, number> {
+  let raw: string;
   try {
-    const parsed = JSON.parse(readFileSync(path, 'utf8'));
-    return parsed && typeof parsed === 'object' ? parsed : {};
-  } catch {
-    return {};
+    raw = readFileSync(path, 'utf8');
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return {};
+    throw new Error(`Cannot resolve a collision-free port: the port registry "${path}" could not be read (${(err as Error).message}).`);
   }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    throw new Error(`Cannot resolve a collision-free port: the port registry "${path}" contains invalid JSON (${(err as Error).message}).`);
+  }
+  return parsed && typeof parsed === 'object' ? (parsed as Record<string, number>) : {};
 }
 
-// Best-effort: persistence only IMPROVES stability over the pure-hash-and-probe fallback, it's
-// never required for correctness of a single resolution, so a write failure (read-only fixture
-// directory, missing parent dir, concurrent writer) is silently ignored rather than propagated.
+// ENOENT here means the registry's PARENT directory doesn't exist -- exactly what every test
+// fixture's fake `gitdir: /fake/main/.git/worktrees/...` target produces, since that directory
+// never exists on disk. That case stays best-effort/no-op: persistence only improves stability
+// over the pure-hash-and-probe fallback, it's never required for correctness of a single
+// resolution. Any OTHER write failure (EACCES, EISDIR, ENOSPC, ...) means a REAL, existing
+// registry location just failed to accept the incumbent's base -- silently swallowing that would
+// let the next sibling's read see stale/partial state, so it fails CLOSED instead.
 function saveRegistry(path: string, data: Record<string, number>): void {
   try {
     writeFileSync(path, JSON.stringify(data));
-  } catch {
-    // no-op -- see comment above.
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return;
+    throw new Error(`Cannot resolve a collision-free port: the port registry "${path}" could not be written (${(err as Error).message}).`);
   }
 }
 
