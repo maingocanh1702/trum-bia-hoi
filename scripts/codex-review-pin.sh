@@ -96,4 +96,18 @@ if [ "${1:-}" = "review" ]; then
   exec "$REAL_BIN" "${PIN_FLAGS[@]}" review "$@"
 fi
 
-exec "$REAL_BIN" "$@"
+# K25: this pass-through is an ALLOW-LIST, not a catch-all. PIN_FLAGS -- and above all
+# `mcp_servers={}` -- is what keeps the reviewer hermetic; anything reaching the real CLI through
+# here gets NONE of those pins, so an unpinned model session carrying the owner's full MCP server
+# set was one mistyped argument away from the reviewer whose verdict the gate trusts. The
+# subcommands below are the documented reason this path exists (`codex login`/`codex logout`) plus
+# the version/help flags: none of them starts a model session, so no pin applies to them and
+# refusing them would break real use for no benefit. Everything else fails closed.
+case "${1:-}" in
+  login|logout|--version|-V|--help|-h)
+    exec "$REAL_BIN" "$@"
+    ;;
+esac
+
+echo "CODEX_PIN_REFUSED: '${1:-}' would reach the Codex CLI without the review pins (model, reasoning effort, service tier, mcp_servers={}). Only review, login, logout, --version and --help pass through this wrapper; invoke $REAL_BIN directly if that is genuinely what you want." >&2
+exit 2

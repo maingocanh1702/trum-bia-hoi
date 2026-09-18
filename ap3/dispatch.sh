@@ -551,8 +551,22 @@ run_review() { # <slug> — CLEAN -> finalize_ready ; FINDINGS -> fix loop or MA
   # pair (I4's own "gated on the SAME round/budget ceilings" contract), which a hand-rolled float
   # comparison at each site cannot guarantee (raw subtraction can put an intended-exact $0.50
   # fractionally on either side of the boundary).
-  if ! python3 "$DIR/aplib.py" budget-remaining "$(jget "$rec" budget_usd 0)" "$(jget "$rec" spent_usd 0)" >/dev/null; then
-    halt "$slug" BUDGET "insufficient remaining budget for another fix round"; return
+  # K26: the floor this call site passes is NOT the $0.50 review floor. $0.50 answers "is another
+  # review round worth attempting?"; this site is about to relaunch a fix WRITER, and a writer with
+  # $1 of headroom burns it without reaching a commit -- coming back HALT BUDGET having produced
+  # nothing reviewable, which is the one halt state retry.sh has no supported recovery mode for
+  # (measured twice on agent-verification-m03-dev-port-wire). Same canonical budget_remaining(),
+  # same rounding, an explicit floor per call site. A class may raise it via writer_min_budget_usd
+  # (validated at lint time, so a malformed value can never fail open into the default here).
+  local wfloor wrem
+  wfloor="$(CLS="$(jget "$rec" class "")" R="$ROUTINES" python3 -c 'import json,os
+try:
+    c = json.load(open(os.environ["R"]))["classes"][os.environ["CLS"]]
+except Exception:
+    c = {}
+print(c.get("writer_min_budget_usd", 2.0))')"
+  if ! wrem="$(python3 "$DIR/aplib.py" budget-remaining "$(jget "$rec" budget_usd 0)" "$(jget "$rec" spent_usd 0)" "$wfloor")"; then
+    halt "$slug" BUDGET "insufficient remaining budget for another fix round: \$$wrem remaining, writer floor \$$wfloor"; return
   fi
   # W4.1 round-1 review finding 1: check the DB-isolation precondition BEFORE destroying this
   # run's recovery signal (READY-FOR-REVIEW/result.json) below. launch_writer enforces the SAME
