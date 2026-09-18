@@ -97,3 +97,8 @@ is implemented by this purchase mechanism; sections4/5/8 remain open.
 
 ### 2026-09-16 — A1 / JSON2.0.4 (supersedes LP1 dog prerequisite above)
 M6 remains deferred and dog UI hidden. LP1 now needs only four seats and the configured lifetime threshold (50,000 Base ×2.5 =125,000 coins); no dog purchase is required. Historical config pins retain their original prerequisite.
+
+## Changelog (append-only)
+| Ngày | Thay đổi |
+|---|---|
+| 2026-09-18 owner | M6 (kể cả chó) **quay lại story** ở hồi 3 (từ LP4, ca ~90–120) — đè quyết định hoãn 11/09; chó ở làn "An ninh" của sheet Nâng cấp; bot sim không mua chó cho tới khi M6 bật. Chờ `risk-m6-story` (Đợt 5). Nguồn: `docs/DESIGN-story-3-tuan-2026-09-18.md` §2b/§2c, `docs/PLAN-vui-3-ca-2026-09-18.md` §1, `docs/FEEDBACK-2026-09-17.md` §II.2 v3.3 |

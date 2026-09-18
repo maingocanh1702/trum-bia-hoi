@@ -165,3 +165,4 @@ Audit rows imported from the original checkout describe its reference engine and
 | Date | Reconciled game update |
 |---|---|
 | 2026-09-09 | Adopted latest handoff numbers as config2.0.1, preserving owner pause/live-upgrade policy and immutable1.x snapshots. Rules21 station/demand/glass/LP-gate implementation is under verification; lease lifecycle and actual career measurements remain pending. Current evidence: docs/build-progress.md. |
+| 2026-09-18 owner | Mâm theo số ghế: bàn 1 ghế → khách gọi **bia hoặc 1 mồi tức thì** (lạc/nem, `pBeer` 0,7, không món bếp); bàn 2 ghế → bia + 1 mồi (bếp nếu mở); bàn Lv3 → mồi thứ 2 (`pExtraMoi` 0,35). Luật "chỉ gọi món còn hàng / chỉ giao khi đủ món" giữ. Chờ S1/S4. Nguồn: `docs/DESIGN-story-3-tuan-2026-09-18.md` §2b/§2c, `docs/PLAN-vui-3-ca-2026-09-18.md` §1, `docs/FEEDBACK-2026-09-17.md` §II.2 v3.3 |

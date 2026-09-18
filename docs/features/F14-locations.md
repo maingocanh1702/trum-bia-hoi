@@ -106,3 +106,4 @@ Verified throughce7564b:234 engine/server checks,77browser checks,config/build,1
 | Date | Change |
 |---|---|
 | 2026-09-11 Steer18 / M5-F14-SUMMARY | Shift book shows the historical location multiplier from existing shift/lease events and the pinned config, including rented→fallback on calendar expiry. Moving after closing leaves the old book intact; missing legacy provenance is labeled unavailable. Shared readonly server/local presentation; rules and economy unchanged. |
+| 2026-09-18 owner | Mỗi mặt bằng có **`tableSlots`** (Hẻm 4 · Ngõ Chợ 4 · Bến Xe 5 · Gần Công Sở 6 · Gần SVĐ 6 · Hồ Bia Đêm 7 · Phố Cổ 8 · Ga Metro 8 · Phố Tây 8); `leaseDays` 7 → 3; được thuê thẳng mặt bằng cao hơn khi đủ LP; bàn vượt chỗ ở mặt bằng nhỏ hơn tạm gấp lại (không nhận khách). Chờ `location-slots` (Đợt 5) / S1. Nguồn: `docs/DESIGN-story-3-tuan-2026-09-18.md` §2b/§2c, `docs/PLAN-vui-3-ca-2026-09-18.md` §1, `docs/FEEDBACK-2026-09-17.md` §II.2 v3.3 |

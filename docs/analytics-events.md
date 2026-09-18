@@ -144,3 +144,5 @@ This is local engine provenance; remote collection/registry publication is pendi
 | Date | Change |
 |---|---|
 | 2026-09-09 | Added successful config pin transition event and clarified candidate-versus-active version provenance for refused openings. |
+
+> 2026-09-18 owner (chờ S1/S4/`story-ending`): sự kiện mới `queue_overflow{reason:noSeat|full}` (cặp không có chỗ / hàng đợi đầy — không phạt), `table_upgraded{what: chair|dish|comfort, level}`, `story_ended{lifePath:7, shift}`; sổ ca thêm "cặp không có chỗ" và "từ chối tại cửa". Nguồn: `docs/DESIGN-story-3-tuan-2026-09-18.md` §2c.

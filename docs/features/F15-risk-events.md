@@ -78,3 +78,8 @@ type RiskEvent = {
 - Expired risk event resolves exactly once.
 - Inspection cannot be answered by client-side correct answer leakage.
 - Offline theft has caps and clear summary.
+
+## Changelog (append-only)
+| Ngày | Thay đổi |
+|---|---|
+| 2026-09-18 owner | **M6 quay lại story** ở hồi 3: bảo kê xuất hiện từ LP4 (gate mới, ngoài `chancePerShift`), chó (F18), kiểm tra theo flag; mùa 2 "Bảo kê" = M6 đầy đủ. Đè quyết định hoãn 11/09. Chờ `risk-m6-story` (Đợt 5). Nguồn: `docs/DESIGN-story-3-tuan-2026-09-18.md` §2b/§2c, `docs/PLAN-vui-3-ca-2026-09-18.md` §1, `docs/FEEDBACK-2026-09-17.md` §II.2 v3.3 |

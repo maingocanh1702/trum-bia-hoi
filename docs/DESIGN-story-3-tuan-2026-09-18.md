@@ -1,4 +1,4 @@
-# DESIGN — Story 3 tuần + Mùa 21 ngày — Trùm Bia Hơi (v1.2, 18/09/2026)
+# DESIGN — Story 3 tuần + Mùa 21 ngày — Trùm Bia Hơi (v1.3, 18/09/2026)
 
 > Quyết định owner 18/09 đêm: người chơi **chơi hết game (full story) sau 3 tuần chơi liên tục = 8 ca × 12 phút/ngày = 168 ca**; không chơi hàng ngày thì tự giãn (mọi mốc neo theo **số ca**, không theo ngày lịch). Full story = LP0–7 + 9 mặt bằng + mọi nâng cấp + **lớp rủi ro M6**. Sau màn kết: **mùa 21 ngày** có bảng xếp hạng, mỗi mùa mới thêm gameplay mới.
 > Ưu tiên trải nghiệm (owner 18/09): (1) onboarding nhìn-là-hiểu (PLAN §0 P0) → (2) mua sắm lần lượt → (3) economy. §2b = hành trình người chơi theo ca.
@@ -37,6 +37,23 @@ Số ca lấy từ bot W9 (8 ca/ngày); người thật thường nhanh hơn 10�
 Bốn "vòng quay lại" chồng lên nhau theo chu kỳ tăng dần — **30 phút** (cooldown) → **ngày** (trần 8 ca, điểm danh) → **3 ngày** (hợp đồng mặt bằng) → **21 ngày** (mùa) — để lúc nào cũng có một lý do gần để mở app lại. Người chơi 6 ca/ngày đi cùng hành trình nhưng kết ở ~ngày 25; 4 ca/ngày ~ngày 38.
 
 Chỗ dễ rơi (churn) và cách đỡ: (a) cuối ca 1 — nếu không thấy ngay "mua được gì" → chip Bàn 2 vừa đủ tiền; (b) ca 4 — cooldown 30 phút lần đầu → phải có ETA + gợi ý "mở lại sau 30 phút, khách vẫn đông"; (c) ca ~8–12 — 4 bàn 1 ghế, cặp bỏ đi nhiều, tích 10 k cho ghế đầu → chip "còn thiếu" + sổ ca đếm cặp; (d) ngày 8–14 — hàng đợi dài, bỏ đi 15–17 % → toast lý do + Mời về; (e) sau LP7 — không còn story → mùa + bảng xếp hạng phải mở ngay ở màn kết.
+
+## 2c. Map hành trình → docs hiện có (truy vết; ✅ = đã có chủ · ⚠ = doc có nhưng còn luật cũ, đã ghi changelog 18/09 · ✗ = chưa có chủ, ghi nợ)
+
+| # | Giai đoạn | Luật (GDD / SPEC / Fxx) | Số (08-SPEC § / JSON) | Mốc ROADMAP | Slice PLAN | Chỗ chưa có chủ |
+|---|---|---|---|---|---|---|
+| 0 | Bước vào quán | F27 ✅ (ca 1: 1 khách 1 bia, `firstShift`; luật #5 đè 18/09) · F25 ✅ (I.1 mặc định vi) · F01 GDD §10 ✅ · 03-SPEC §9 serve ✅ · F04 cốc/bom ✅ (rót tức thì II.1 ⚠) · GDD §17 + 05/09-SPEC ⚠ (5 luật P0 mới ghi changelog) | §13 ca; JSON `onboarding`, `keg` | M1, M2 | `fun-onboarding-visual`, `fun-locale-default-vi`, S2 | ✗ 09-SPEC chưa có màn sân quán ca 1 tối giản + 3 mũi tên (chỉ changelog) |
+| 1 | Ca đầu — quán cóc | F03 = 03-SPEC ⚠ (header v1.4) · F06 tip/uy tín ✅ + D12 ⚠ · F07 khách ⚠ (cặp `pPair`, từ chối tại cửa) · GDD §5 ⚠ | §3 spawn/nhóm/hàng đợi; JSON `spawn`, `runtime.queue*`, `patience` | M1 | S1, S3, `fun-next-goal`, `fun-buy-buttons-reason` | ✗ sổ ca đếm "cặp không có chỗ" (F01/analytics-events) · ✗ chip mục tiêu kế tiếp (F10 UI / 09-SPEC) |
+| 2 | Mở rộng sân | F10 ✅ (bàn 2–4) ⚠ thứ tự mở khoá · F08 Giờ Vàng ✅ + telegraph ✅, ⚠ "không rush < 2 bàn" · F07 vội/lai rai ✅ · F04 nhập bia (A2 wave-ab ✅) · 03-SPEC §9 + 08 §9 "tiễn ngồi lỳ" ⚠ (`kickTable` II.3) · GDD §10 cooldown ✅ + D8 ⚠ | §6 rush, §8 bàn, §9, §13; JSON `rush`, `upgrades.table`, `shift` | M1, M3 | S1, S3, `fb-kick-table`, S5 (D8) | ✗ `shift.noCooldownFirstShifts` chỉ ở 08 changelog |
+| 3 | Cặp vào quán | F10 ⚠ (ghế 2 = đón cặp + mâm, `chairsAfterTables`) · F02/F11 ⚠ (mâm theo ghế: 1 ghế bia hoặc mồi tức thì; 2 ghế bia + mồi) · F04 ✅ · F13 ⚠ (LP1–2 nén, "4 seats") · F14 ✅ (Ngõ Chợ/Bến Xe gate LP1) | §8, §11 mở khoá, §15 LP; JSON `lifePath`, `unlocks` | M3, M5 | S1, S4, S5 | ✗ F10 chưa có 3 làn + progressive disclosure |
+| 4 | Chủ quán | F14 ⚠ (`tableSlots`, `leaseDays` 3, thuê thẳng, gấp bàn) · F10 Lv3 ⚠ (lợi ích = mồi 2) · F11 bếp 2–3 ✅ · F05 độ hơi + hầm lạnh ✅ · F10 unlocks QR/tờ rơi ✅ · 08 §10 biển hiệu ✅ · F07 VIP/shipper ✅ · F09 thời tiết ✅ · F08 nặng ✅ · F13 LP3–4 ⚠ · F06 uy tín ✅ | §5, §7, §8, §10, §11, §16 mặt bằng | M3, M5 | S4, S5, `location-slots` | — |
+| 5 | Lên phố | F14 ⚠ Phố Cổ 8 chỗ · F10 ⚠ bàn 5–8, Lv4 `tipMult` (cũng chạm F06 công thức tip) · F13 LP5 ⚠ · **F15 + F18 ⚠** (M6 hoãn 11/09 → vào story hồi 3, bảo kê từ LP4) · 08 §17 rủi ro ✅ | §8, §17; JSON `risk`, `dog` | M5, **M6** | `risk-m6-story`, S5 | ✗ gate "bảo kê từ LP4" chưa có trong F15 (chỉ `chancePerShift`) |
+| 6 | Trùm | F10 thiết bị Lv5/bếp Lv4 ⚠ (×0,5) · F13 LP6–7 ⚠ + **màn kết** · F12 peak tiers ⚠ (= thang LP) · GDD §10 trần ngày ⚠ (D24) | §8, §13, §15 | M5 | S5, `story-ending` | ✗ màn kết "Chuyện quán bạn" chưa có spec màn hình (09-SPEC chỉ changelog) · ✗ F13 chưa có khái niệm "kết" |
+| 7 | Sau kết — mùa | F12 ⚠ (ranking 7/14 ngày → 21, contest bỏ) · F28 leaderboard ✅ · F17 nhiệm vụ mùa ✅ · F19 World Cup (mùa 3, M8) ✅ · F21 xổ số ✅ · F20 donate ✅ | §15, §18; JSON `league.seasons` | M5, M7, M8 | `season-21d` | ✗ "mỗi mùa một lớp gameplay mới" chưa có doc điều phối (đề xuất: mục §5 doc này là chủ) |
+
+Xuyên suốt: `docs/analytics-events.md` (sự kiện mới: `queue_overflow{noSeat}`, `table_upgraded{what}`, `story_ended`) ✗ · `docs/implementation-tracker.md` (F03/F10/F13/F14/F15 đổi trạng thái khi S1–S6 làm) · `10-SPEC` (rules 28, migration D2) ⚠ · `docs/config/economy.tbh.json` 2.1.0 (S5).
+
+Kết luận map: mọi giai đoạn đều **có doc chủ** ở tầng luật (GDD + F-file), nhưng 10 F-file đang giữ luật cũ ở chỗ journey đổi (⚠ — đã ghi changelog 18/09 trỏ về đây) và có 8 chỗ ✗ chưa có chủ, đều là **UI/analytics/màn kết** — đúng phần P0 và Đợt 5 sẽ viết spec khi làm slice.
 
 ## 3. Số nén (base; hiển thị ×2,5) — bộ W2
 
@@ -111,3 +128,4 @@ bàn 2 ca 3–4 · bàn 3 ca ~20 · bàn 4 ca 35–36 · ghế 2 đầu ca 43–
 | 2026-09-18 | v1.1 — owner giữ cooldown/trần ca; §3b thời gian tới 8 bàn Lv4 theo 8 và 6 ca/ngày; bỏ đi: 99 % là hàng đợi → hàng đợi 1 + ghế/8 + kiên nhẫn 24 s (W9: 15–17 % / 9–10 %) |
 | 2026-09-18 | v1 — lập từ quyết định owner (3 tuần / 8 ca / M6 / mùa 21 ngày) + sim W1–W3 (`~/keg-matrix/feedback-0917/runW.sh`, `wsum.py`) |
 | 2026-09-18 | v1.2 — §2b hành trình người chơi 8 giai đoạn (ca, thứ học, quyết định, vòng quay lại, điểm churn); ưu tiên trải nghiệm P0 |
+| 2026-09-18 | v1.3 — §2c map hành trình → docs (GDD/F-file/08-SPEC/ROADMAP/slice) + 8 chỗ chưa có chủ; changelog trỏ về đây ghi vào F06–F18 |

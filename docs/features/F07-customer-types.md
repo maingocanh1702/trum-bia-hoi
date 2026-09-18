@@ -135,3 +135,4 @@ type Customer = {
 | 2026-09-09 review correction | Configuration must retain exactly the phone prerequisite; another unlock cannot replace it even if that unlock has a valid customized gate. Added rejection regression for QR substitution. |
 
 | 2026-09-09 review receipt | Local delivery full-diff review ef0c053..307a3b0 CLEAN,77 unit/33 E2E/config/build/assets and30 sim rows green. Full customer mix/football/server acceptance remains in progress. |
+| 2026-09-18 owner | Cỡ nhóm **độc lập với quán**: `spawn.pPair` 0,5 (một nửa khách đến theo cặp); cặp gặp quán chưa có bàn 2 ghế → `queue_overflow{reason:noSeat}`, không phạt, không trừ uy tín, có toast + đếm trong sổ ca. Nhóm ≤ 2. Kiên nhẫn thường 18 → 24 s; hàng đợi 1 + ghế/8. Chờ S1/S3, rules 28. Nguồn: `docs/DESIGN-story-3-tuan-2026-09-18.md` §2b/§2c, `docs/PLAN-vui-3-ca-2026-09-18.md` §1, `docs/FEEDBACK-2026-09-17.md` §II.2 v3.3 |
