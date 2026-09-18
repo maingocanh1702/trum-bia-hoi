@@ -129,5 +129,7 @@ Từ GDD §17 + analysis: cốc bọt (đầy→xẹp→cờ vàng) · phục v�
 |---|---|
 | v0.2 | Trỏ screen spec sang `09-SPEC-uiux-screens.md`; pipeline asset Blender MCP ở `docs/asset-blender-pipeline.md`. |
 | v0.1 | Khung đầu: art direction + tokens (từ GDD §17), layout HUD + component (từ `uiux-analysis`), **asset/icon list** đếm được (từ §17 + `design-component-catalog`), phân nhãn ✅/🔧/📐. Sản xuất bắt đầu Phase 1. |
+| 2026-09-18 owner P0 | Onboarding nhìn-là-hiểu: 5 luật thị giác (một chỗ sáng theo trạng thái engine; số bay từ gốc tới đích; khách nói bằng icon; HUD ca 1 = 3 thứ + mở dần; step guide dự phòng) — PLAN 18/09 §0 P0, slice `fun-onboarding-visual`; hành trình người chơi: DESIGN-story-3-tuan §2b. |
 
 *Nguồn: `02-GDD-trum-bia-hoi.md` §17, `uiux-analysis-trumviahe.md`, `design-component-catalog-trumviahe.md`.*
+

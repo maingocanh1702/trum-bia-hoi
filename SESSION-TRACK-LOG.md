@@ -15,6 +15,7 @@ k gate D4(a), hàng đợi 1 + ghế/8. Sim trên engine thật (bản vá đo `
 `artifacts/verification/feedback-0918-sim/`): bộ **W9** đạt LP7 ca 146–151, 8 bàn Lv4 ca 156–163, bỏ đi có phạt 15–17 % / 9–10 %.
 Docs: `docs/PLAN-vui-3-ca-2026-09-18.md` v1.6 (thay 2 plan cũ) · `docs/FEEDBACK-2026-09-17.md` v3.3 ·
 `docs/DESIGN-story-3-tuan-2026-09-18.md` v1.1 · GDD v1.13 · 03-SPEC v1.4 · 04/08/ROADMAP changelog · HANDOFF v1.42 · TRANG-THAI 18/09.
+Owner xếp ưu tiên trải nghiệm: onboarding nhìn-là-hiểu (P0, slice `fun-onboarding-visual` đầu Đợt 1, F27 luật #5 đè) → mua sắm lần lượt → economy; hành trình người chơi 8 giai đoạn ở DESIGN §2b.
 **Việc kế:** owner chơi bản Netlify (wave-ab) rồi feedback; dán prompt Wave 0+1 (PLAN §10) vào Claude Code; JSON 2.1.0 chỉ đổi ở S5.
 
 ## Agent-verification M1/M2 hoàn tất — 2026-09-16

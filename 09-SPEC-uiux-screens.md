@@ -255,3 +255,4 @@ Hit ≥ 44px; bàn ≥ sprite; không hover; màu không là tín hiệu duy nh�
 |---|---|
 | v1.0 | Bản đầu 2026-09-08: IA, HUD wireframe + component/state, 4 luồng lõi, màn phụ theo phase, component library, motion/âm, microcopy i18n, onboarding, a11y, checklist. Phản ánh popover Order + cờ mất nhóm đã build (slice p0-ui-serve-popover--r2). |
 | v1.1 | Theo audit 08/09: header thêm layout tham khảo ưu tiên (ảnh HUD gốc, sân quán không gian) và nói rõ §3.1 là card-list prototype; nhãn P1–P4 = thứ tự code; §11 đổi tên. Không đổi nội dung màn/component. |
+| 2026-09-18 owner P0 | Màn sân quán ca 1 tối giản (ví · bom · chip mục tiêu), sheet Nâng cấp mở dần theo mở khoá, bong bóng "2 ghế" cho cặp bị từ chối, vòng kiên nhẫn hàng đợi, màn kết LP7 "Chuyện quán bạn" — PLAN 18/09 §0/§4, DESIGN-story-3-tuan §2b. |

@@ -1,6 +1,7 @@
-# DESIGN — Story 3 tuần + Mùa 21 ngày — Trùm Bia Hơi (v1.1, 18/09/2026)
+# DESIGN — Story 3 tuần + Mùa 21 ngày — Trùm Bia Hơi (v1.2, 18/09/2026)
 
 > Quyết định owner 18/09 đêm: người chơi **chơi hết game (full story) sau 3 tuần chơi liên tục = 8 ca × 12 phút/ngày = 168 ca**; không chơi hàng ngày thì tự giãn (mọi mốc neo theo **số ca**, không theo ngày lịch). Full story = LP0–7 + 9 mặt bằng + mọi nâng cấp + **lớp rủi ro M6**. Sau màn kết: **mùa 21 ngày** có bảng xếp hạng, mỗi mùa mới thêm gameplay mới.
+> Ưu tiên trải nghiệm (owner 18/09): (1) onboarding nhìn-là-hiểu (PLAN §0 P0) → (2) mua sắm lần lượt → (3) economy. §2b = hành trình người chơi theo ca.
 > Số ở đây = ứng viên **đã sim** trên engine thật (bộ **W9** = W2 + hàng đợi ngắn + kiên nhẫn 24 s + thuê thẳng mặt bằng; bot 8 ca/ngày, seed 42 + 99, 28 ngày). S5 chốt. Owner 18/09 đêm: **giữ nguyên cooldown 30 phút và trần ca 8/6/5** — không phải ai cũng chơi đủ 8 ca; mốc neo theo ca nên số ngày tự giãn. Chỉ giữ bản mới nhất. Bổ sung cho `FEEDBACK-2026-09-17.md` §II.2 v3.3 (bàn ghế) — không lặp lại phần đó.
 
 ## 1. Vì sao phải nén
@@ -17,6 +18,25 @@ Economy hiện tại thừa kế từ trumviahe — game idle sống bằng **th
 | Sau kết | 22+ | Phố Cổ / Ga Metro / Phố Tây (8 chỗ bàn), bàn 8, mùa + bảng xếp hạng | post-game |
 
 Thu nhập/ngày W9: 11 k (ngày 1) → 95–112 k (6) → 226 k (10) → 474–654 k (14) → 928–987 k (19) → trần 1 tr (20). Trọn đời: 188–212 k (ngày 6) · 868–891 k (10) · 2,4–2,7 tr (14) · 5,1–5,7 tr (18) · 7,6–8 tr (21). LP: 1+2 ngày 5 · 3+4 ngày 10 · 5 ngày 13 · **6+7 ngày 19**. k quan sát 6,5 (8 bàn Lv4 + tip; D4(a) bắt buộc). Xu dư ngày 28: 5,5–6 tr → S5 có thể nâng đuôi thiết bị ×0,5 → ×0,7 hoặc để M6 làm sink.
+
+## 2b. Hành trình người chơi — từ lần mở link đến màn kết (owner hỏi 18/09)
+
+Số ca lấy từ bot W9 (8 ca/ngày); người thật thường nhanh hơn 10–20 % ở giai đoạn 2–4 vì ưu tiên bàn/ghế trước thiết bị. Mỗi giai đoạn có **một thứ mới để học**, **một quyết định mới**, và **một vòng quay lại** (lý do mở app lần sau).
+
+| # | Giai đoạn | Ca (ngày @8) | Người chơi thấy / học | Quyết định mới | Mở ra | Vòng quay lại |
+|---|---|---|---|---|---|---|
+| 0 | **Bước vào quán** | phút 0–2 của ca 1 | Mở link → vào thẳng sân quán tiếng Việt: 1 bàn 1 ghế, bom bia sáng "rót sẵn". Khách đầu tới ≤ 8 s, bong bóng 🍺, bàn sáng viền, ✅ nhấp nháy → chạm → xu bay lên ví. Không đọc gì. | chạm ✅ | — | — |
+| 1 | **Ca đầu — quán cóc** | ca 1 (ngày 1) | Khách lẻ vào ra; **cặp đứng cửa, bong bóng "2 ghế", quay đi** (không phạt); người xếp hàng có vòng kiên nhẫn. Kết ca: sổ ca 3 số + "10 cặp không có chỗ"; chip *Bàn 2 — 1.500 xu*; ~850–1.150 xu + 750 khởi đầu → **mua bàn 2 ngay**. | mua món đầu tiên | bàn 2 | ca 2 mở ngay (không cooldown) |
+| 2 | **Mở rộng sân** | ca 2–9 (ngày 1–2) | Bàn 3 (~ca 4–5), bàn 4 (~ca 8–9); bom cạn lần đầu → "Nhập bia" không pause; khách vội (kiên nhẫn ngắn), khách lai rai chiếm bàn; Giờ Vàng nhẹ có báo trước 20 s; ca 4 gặp **cooldown 30 phút** lần đầu (chip hiện ETA). Step guide chỉ bật nếu mất 3 khách liên tiếp. | phục vụ ai trước · nhập bia lúc nào · mời bàn lỳ về (Đợt 3) | bàn 3, 4; nút Mời về | cooldown 30 phút; trần 8 ca/ngày |
+| 3 | **Cặp vào quán** | ca ~10–45 (ngày 2–6) | Đủ 4 bàn → làn ghế mở; **ghế 2 đầu tiên = thu nhập ×3**, cặp ngồi, mâm bia + mồi → kho lạc/nem, bếp Lv1 xuất hiện trong làn Tốc độ; bom/cốc/rửa bắt đầu nghẽn thật → nâng bom, mua cốc. LP1 (4 bàn) rồi LP2 (~ca 40): điện thoại, Ngõ Chợ/Bến Xe hiện trong bảng mặt bằng; Lv2 đầu tiên (khách gọi thêm đợt). | ghế hay thiết bị trước · bàn nào lên Lv2 | 4 ghế, bếp Lv1, Lv2, LP1–2 | "còn thiếu … xu" cho món kế; ca/ngày |
+| 4 | **Chủ quán** | ca ~45–90 (ngày 6–11) | Thuê Ngõ Chợ/Bến Xe (5 chỗ → bàn 5), hợp đồng 3 ngày; Lv2 hết, Lv3 đầu (mồi 2) → bếp Lv2–3, hầm lạnh (bia mất hơi thành áp lực), QR, tờ rơi, biển hiệu; VIP, shipper, thời tiết, Giờ Vàng nặng; uy tín bắt đầu có nghĩa. LP3 + LP4 (~ca 80). | thuê mặt bằng hay nâng cấp · chuẩn bị gì trước Giờ Vàng nặng | mặt bằng 2–3, Lv3, bếp 3, LP3–4 | hết hạn hợp đồng (3 ngày) |
+| 5 | **Lên phố** | ca ~90–120 (ngày 11–15) | LP4 mở **Phố Cổ (8 chỗ)** → bàn 6–8; Lv4 đầu (bàn VIP, tip ×1,25); LP5 (~ca 105). **Lớp rủi ro M6** bước vào: bảo kê gõ cửa từ LP4, mua chó ở làn An ninh, kiểm tra (flag). Mỗi ca có 3–4 bàn cùng gọi → sáng theo hạn phục vụ gần nhất. | trả bảo kê hay chống · bàn nào Lv4 trước | 8 bàn, Lv4, M6, LP5 | rủi ro theo ca |
+| 6 | **Trùm** | ca ~120–150 (ngày 15–19) | Thiết bị Lv5, bếp Lv4, mọi bàn Lv4, nâng ghế; thu nhập ~1 tr/ngày chạm trần; LP6 (thiết bị max) rồi **LP7 = màn kết** "Chuyện quán bạn" (3 con số + huy hiệu Trùm) ở ca ~146–151. | tiêu xu dư vào gì (M6, cosmetic) | LP6–7, màn kết | — |
+| 7 | **Sau kết — mùa** | ca 150+ (ngày 19+) | Quán giữ nguyên; bảng xếp hạng mùa 21 ngày; mùa 2 "Bảo kê" đầy đủ, mùa 3 "Mùa bóng"…; trần ngày theo bậc. | đua top hay chơi nhàn | mỗi mùa một lớp mới | mùa 21 ngày |
+
+Bốn "vòng quay lại" chồng lên nhau theo chu kỳ tăng dần — **30 phút** (cooldown) → **ngày** (trần 8 ca, điểm danh) → **3 ngày** (hợp đồng mặt bằng) → **21 ngày** (mùa) — để lúc nào cũng có một lý do gần để mở app lại. Người chơi 6 ca/ngày đi cùng hành trình nhưng kết ở ~ngày 25; 4 ca/ngày ~ngày 38.
+
+Chỗ dễ rơi (churn) và cách đỡ: (a) cuối ca 1 — nếu không thấy ngay "mua được gì" → chip Bàn 2 vừa đủ tiền; (b) ca 4 — cooldown 30 phút lần đầu → phải có ETA + gợi ý "mở lại sau 30 phút, khách vẫn đông"; (c) ca ~8–12 — 4 bàn 1 ghế, cặp bỏ đi nhiều, tích 10 k cho ghế đầu → chip "còn thiếu" + sổ ca đếm cặp; (d) ngày 8–14 — hàng đợi dài, bỏ đi 15–17 % → toast lý do + Mời về; (e) sau LP7 — không còn story → mùa + bảng xếp hạng phải mở ngay ở màn kết.
 
 ## 3. Số nén (base; hiển thị ×2,5) — bộ W2
 
@@ -90,3 +110,4 @@ bàn 2 ca 3–4 · bàn 3 ca ~20 · bàn 4 ca 35–36 · ghế 2 đầu ca 43–
 |---|---|
 | 2026-09-18 | v1.1 — owner giữ cooldown/trần ca; §3b thời gian tới 8 bàn Lv4 theo 8 và 6 ca/ngày; bỏ đi: 99 % là hàng đợi → hàng đợi 1 + ghế/8 + kiên nhẫn 24 s (W9: 15–17 % / 9–10 %) |
 | 2026-09-18 | v1 — lập từ quyết định owner (3 tuần / 8 ca / M6 / mùa 21 ngày) + sim W1–W3 (`~/keg-matrix/feedback-0917/runW.sh`, `wsum.py`) |
+| 2026-09-18 | v1.2 — §2b hành trình người chơi 8 giai đoạn (ca, thứ học, quyết định, vòng quay lại, điểm churn); ưu tiên trải nghiệm P0 |
