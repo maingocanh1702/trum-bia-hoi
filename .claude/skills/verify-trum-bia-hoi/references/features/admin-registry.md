@@ -299,6 +299,15 @@ which added `k` to `compareEconomy()`'s return but did not add assertions to the
 k-measurement proof instead lives in `registry.test.ts`'s new cases above, which exercise the field
 through `publish()`'s admission gate rather than through `compareEconomy()` in isolation.
 
+`apps/server/test/forecast.test.ts` (4 cases) — server-tier proof of the forecast Worker path that
+`measureKViaForecast()` rides on: `'seven-day registry plan includes removed audience and expiry
+boundaries even when activation is masked'`, `'real worker forecasts all existing saves, preserves
+source rows and keeps the request event loop responsive'`, `'forecast cancellation releases its worker
+slot and empty audiences do not fabricate revenue'`, `'a later scoped publication invalidates the
+report even while its default proposal base remains current'`. Run
+`node --import tsx --test apps/server/test/forecast.test.ts`. (Citation restored 2026-09-18: the
+v5-admin-k-admission squash rewrote this section and dropped it; `verify:map` caught the gap.)
+
 ## Verification procedure
 
 - `node --import tsx --test apps/server/test/admin-auth.test.ts apps/server/test/registry.test.ts apps/server/test/registry-scopes.test.ts packages/engine/test/forecast.test.ts`

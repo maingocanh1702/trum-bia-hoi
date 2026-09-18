@@ -93,6 +93,14 @@ report's own contract).
 
 ## Existing proof
 
+- `packages/engine/test/daykey-formatter.test.ts` — all 3 (entirely this file's; the VN-midnight
+  day boundary every rollover in this feature keys on): `'dayKey reuses one formatter per timezone
+  instead of constructing one per call'` (pins the `Intl.DateTimeFormat` construction count at <= 1
+  across ~1050 calls — the v6-sim-career-memory leak: each formatter owns native ICU memory that
+  `heapUsed` never counts), `'the cached formatter yields exactly what a fresh formatter yields'`
+  (including one millisecond either side of VN midnight and `nextDayAt` landing exactly on it),
+  `'a different timezone gets its own cached formatter and never leaks into the first'`. Run
+  `node --import tsx --test packages/engine/test/daykey-formatter.test.ts`.
 - `packages/engine/test/rush-clock.test.ts` — all 9 (entirely this file's: the shift-local rush
   countdown intersects `endShift`/closing timing, not rush *scheduling*): `'warning fires exactly
   once at the configured boundary and active rush has its own remaining clock'`, `'closing ends the
