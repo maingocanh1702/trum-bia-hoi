@@ -4,6 +4,11 @@ import { kitchenGame, sendKitchen } from '../../../../packages/engine/test/fixtu
 import { playMenu } from '../../../../packages/engine/test/fixtures/menu';
 
 const mode = process.argv[2] ?? 'live';
+if (mode === 'inspect') {
+  const restored = decodeSave(readFileSync(0, 'utf8'));
+  process.stdout.write(JSON.stringify({ metrics: menuReport(restored.world, restored.config)?.metrics, closed: restored.world.events.filter(e => e.type === 'shift_closed') }));
+  process.exit(0);
+}
 const g = mode.startsWith('legacy') ? decodeSave(readFileSync(`packages/engine/test/fixtures/legacy-kitchen-${mode === 'legacy-closed' ? 'expired' : 'queued'}-v13.json`, 'utf8')) : kitchenGame(2);
 if (mode === 'live') {
   playMenu(g, () => menuReport(g.world, g.config)!.rows.every(r => r.sold > 0));

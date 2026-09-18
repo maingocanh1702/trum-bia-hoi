@@ -74,6 +74,9 @@ station is defined by a batch duration + a batch size; the engine reads
 
 ## Existing proof
 
+- `packages/engine/test/feedback.test.ts` — `pending beer distinguishes empty raw stock from reserved refill, clean glasses and an already prepared tray`; `simultaneous deadlines observe a blocked pan before another expiring table frees it, and a busy tap is distinct`; `expiry records the ready or pending cause before waste and counts whole customers once, separate from queue losses`. The shared `orderPreparation` helper supplies current order/guide status and rules26 deadline observation. Run `node --import tsx --test packages/engine/test/feedback.test.ts`.
+- `apps/web/test/feedback.spec.ts` — `A4 ${locale} actual empty and refilling order feedback agrees with the guide at ${width}px` (VI/EN ×360/390/1280), and `A4 ${locale} ${mode} advice uses observed losses and survives reload`. Run `npx playwright test apps/web/test/feedback.spec.ts`.
+
 - `packages/engine/test/kitchen.test.ts`: `'actual upgrades open exactly the configured dishes and
   all intermediate burner limits'`, `'stock shortage starts no cooking; one real restock starts only
   one matching dish and the rest waits'`, `'actual completion deadline and hidden pause agree under
@@ -212,3 +215,12 @@ customer per round; `avgTicket` is the separate figure computed from `orders = n
 Set(serves.map(s=>s.orderId)).size` (the unique-order/round count). More rounds add more
 independent per-customer samples to `served` — that doesn't systematically move `kValue`, only
 `avgTicket` (order-sized ticket) is order-count-sensitive.
+
+## Changelog — A4
+| Date | Change |
+|---|---|
+| 2026-09-16 | Add current order feedback and rules26 loss evidence regression citations; historical replay remains unchanged. |
+
+
+### Wave B — 2026-09-16 proof
+- `packages/engine/test/menu.test.ts` covers six KPI numerators and round denominators; `apps/web/test/menu.spec.ts` checks VI/EN metric labels, current/closed/partial/empty states, pause, export and reload on360×740/390×844/1280×720. Whole-shift metrics are absent for partial legacy provenance.

@@ -11,8 +11,8 @@ for (const width of [360, 390]) test(`new economy capacities, LP gate and glass 
   await page.goto('/'); const snapshot = async () => fixture('inspect', await readSave(page));
   await page.getByRole('button', { name: 'Vòi rót', exact: true }).click(); const keg = page.getByRole('dialog', { name: 'Vòi rót', exact: true });
   const capacity = seed.upgrades.keg.kegStorage[2];
-  await expect(keg.getByText(new RegExp(`rót sẵn tối đa ${capacity} cốc$`))).toBeVisible();
-  await expect(keg.getByText(`3 vòi · 1.6 s/cốc · rót sẵn tối đa ${capacity} cốc`, { exact: true })).toBeVisible();
+  await expect(keg.getByText(new RegExp(`dự trữ ${capacity} cốc$`))).toBeVisible();
+  await expect(keg.getByText(`Rót ra cốc: 3 vòi · 1.6 s/cốc · dự trữ ${capacity} cốc`, { exact: true })).toBeVisible();
   await expect(keg.getByRole('button', { name: /^Nâng ·/ })).toBeDisabled(); await expect(keg.locator('.upgrade-card').getByRole('status')).toContainText('Cần đạt');
   const before = await snapshot(); await page.clock.runFor(30000); const after = await snapshot();
   expect(after.beer).toEqual(before.beer); expect(after.remaining).toBe(before.remaining);

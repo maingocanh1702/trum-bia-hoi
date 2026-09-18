@@ -20,13 +20,13 @@ for (const width of [360, 390]) test(`stocked beer capacity and upgrade comparis
   await page.screenshot({ path: `.qa/batch-yard-${width}.png` });
   await keg.click(); const panel = page.getByRole('dialog', { name: 'Vòi rót', exact: true });
   await page.clock.runFor(1000); const before = await snapshot();
-  await expect(panel.getByText(/rót sẵn tối đa 5 cốc$/)).toHaveCount(2);
-  await expect(panel.getByText('5 ly/mẻ · 3s', { exact: true })).toBeVisible();
+  await expect(panel.getByText(/dự trữ 5 cốc$/)).toHaveCount(2);
+  await expect(panel.getByText('Nạp từ bom vào dự trữ: 5 cốc/mẻ · 3 s', { exact: true })).toBeVisible();
   await expect(panel.getByText('Rót sẵn 0/5 cốc · +5 cốc / 3 s', { exact: true })).toBeVisible();
   await expect(panel.getByText('Bom nhựa + vòi tay', { exact: true })).toBeVisible();
   await expect(page.locator('.beer-pipeline')).toContainText('Bia: 0 cốc sẵn · bom');
   await expect(page.locator('.beer-stock')).toHaveAccessibleName(/^Bom bia \d+\/\d+ cốc$/);
-  await expect(panel.getByText('5 ly/mẻ · 2.7s', { exact: true })).toBeVisible();
+  await expect(panel.getByText('Nạp từ bom vào dự trữ: 5 cốc/mẻ · 2.7 s', { exact: true })).toBeVisible();
   await panel.getByRole('button', { name: /^Nâng ·/ }).click(); await page.clock.runFor(40000);
   const held = await snapshot(); expect(held.paused).toBe(true); expect(held.beer.remainingMs).toBe(before.beer.remainingMs); expect(held.beer.progress).toBe(before.beer.progress); expect(held.inventory).toEqual(before.inventory); expect(held.remaining).toBe(before.remaining); expect(held.equipment.keg).toBe(2);
   await expect(keg.locator('img')).toHaveAttribute('src', /keg-lv2-imagegen-v1\.png/);

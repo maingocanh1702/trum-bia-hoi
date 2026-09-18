@@ -402,12 +402,12 @@ Gốc dùng "20 đá / 20 kẹo / 40 kẹo" — bia hơi không có đá/kẹo �
 - Thưởng cuối Vụ = **bó nguyên liệu theo hạng** (không xu) qua hòm thư; top 10 → huy chương + khắc tên. 🟡 bảng lượng theo hạng: Cốc Nhựa {bia 20, lac 10, nem 5} … Trùm {bia 300, lac 150, nem 100, long 20} (server config).
 - 2 bảng: **Xếp hạng** theo bậc xuyên mặt bằng · **Dạo Phố** theo `location × bậc`.
 
-**Đường Lên Trùm (LP0–LP7, `lifetimeEarned` base ×k):** — engine đã cài 09/09: lên mốc ngay khi `lifetimeEarned` chạm ngưỡng, thưởng `rewardCoinBase` vào `coins` (ngoài ledger xếp hạng), event `life_path_level_reached`; 🟡 **điều kiện phụ (ghế, chó, phone, QR, peak) chưa enforce** cho tới khi F13/F16 vào engine. LP dùng làm gate: giờ vàng heavy (§6), thiết bị Lv4/Lv5 (§8), mặt bằng (§16).
+**Đường Lên Trùm (LP0–LP7, `lifetimeEarned` base ×k):** — engine đã cài 09/09: lên mốc ngay khi `lifetimeEarned` chạm ngưỡng, thưởng `rewardCoinBase` vào `coins` (ngoài ledger xếp hạng), event `life_path_level_reached`; **Điều kiện phụ (ghế, phone, QR, peak) được kiểm tra từ config; JSON2.0.4 bỏ chó khỏi LP1 khi M6 hoãn.** LP dùng làm gate: giờ vàng heavy (§6), thiết bị Lv4/Lv5 (§8), mặt bằng (§16).
 
 | Mốc | Tên | lifetime base | ×k | Điều kiện phụ | Thưởng base | ×k | Gate mở |
 |:--:|---|--:|--:|---|---|---|---|
 | LP0 | Bưng Bê | 0 | 0 | — | — | — | start |
-| LP1 | Phụ Quán | 50.000 | 125.000 | 4 ghế quy đổi + chó | 5.000 + thùng nhỏ | 12.500 | Điện thoại, mặt bằng LP1 |
+| LP1 | Phụ Quán | 50.000 | 125.000 | 4 ghế quy đổi | 5.000 + thùng nhỏ | 12.500 | Điện thoại, mặt bằng LP1 |
 | LP2 | Tay Ngang | 150.000 | 375.000 | Quầy Lv3 + Điện thoại | 10.000 + mảnh HH | 25.000 | QR, Tờ rơi, mặt bằng LP2 |
 | LP3 | Chủ Sạp | 500.000 | 1.250.000 | thiết bị Lv3 + QR | 20.000 + thùng vừa | 50.000 | mặt bằng LP3 |
 | LP4 | Chủ Quán | 1.500.000 | 3.750.000 | tờ rơi + peak Bom Bạc | 50.000 + mảnh + tem | 125.000 | Phố Cổ |
@@ -622,3 +622,5 @@ Các số sim/19-test trong các dòng sau thuộc engine tham chiếu của che
 | 2026-09-10 / JSON2.0.2 | `onboarding.loginPrompt.leaveProgress.{minCompletedShifts,minLifetimeEarned}` (Tier C, Game Admin, next applicable pin) defaults1/1. The departure invitation appears when completed shifts OR canonical lifetime earned coins reach the corresponding threshold. `minLifetimeEarned` uses displayed coins, without Base/k scaling, and does not alter earnings or any economy number. Positive safe integers only. Old snapshot bytes stay unchanged; missing presentation thresholds use the registry seed. |
 
 | 2026-09-11 / JSON2.0.3 | owner 2026-09-11: pre-poured buffer 4/7/12/20/40 (Steer14 fallback; primary5/8/12/20/40 failed standard k at seeds42/99:3.0297/3.1504). After playable-v0: only kegStorage grows; kegBatch2/3/5/8/14, refillMs12/8/6/5/4s, pourSlots and pourMs unchanged. Sustained throughput unchanged; old shift/registry pins remain immutable. Accepted after full verify:406tests,10standard cohorts k2.5644–2.9168,15rush, career42/99 k3.465461/3.393197≤3.5; review CLEAN. |
+
+| 2026-09-16 / JSON2.0.4 / A1 | Bỏ điều kiện chó khỏi LP1 khi M6 hoãn; giữ mốc50.000 Base ×k =125.000 xu và4 ghế. Không đổi kinh tế khác. Save cũ giữ config/rules; browser edition nhận seed mới ở lần mở ca kế tiếp. |

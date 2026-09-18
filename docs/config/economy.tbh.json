@@ -1,8 +1,8 @@
 {
   "_meta": {
     "name": "Trùm Bia Hơi — economy config",
-    "version": "2.0.3",
-    "date": "2026-09-11",
+    "version": "2.0.4",
+    "date": "2026-09-16",
     "spec": "08-SPEC-economy-constants.md (cùng số, cùng tên trường)",
     "rules": [
       "Trường kết thúc bằng 'Base' = xu/uy tín gốc, NHÂN k lúc load: displayed = round(valueBase * k).",
@@ -1423,8 +1423,7 @@
         "crate.small"
       ],
       "requires": [
-        "4 seats",
-        "dog"
+        "4 seats"
       ]
     },
     {

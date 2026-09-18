@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { Game, config, loadConfig, flyerQuote, WEATHER, RUSH_TYPES, arrivalIntervalMs, encodeSave, decodeSave, requirementStatus, type Command, type Economy } from '../src';
+import { CURRENT_RULES, Game, config, loadConfig, flyerQuote, WEATHER, RUSH_TYPES, arrivalIntervalMs, encodeSave, decodeSave, requirementStatus, type Command, type Economy } from '../src';
 const send = (g: Game, command: Command) => g.command({ command, at: g.world.now, idempotencyKey: `flyer-${g.log.length}` });
 function setup(patch = (_: Economy) => {}) {
   const raw = structuredClone(config.raw); raw.onboarding.enabled = false; raw.rush.schedule.perShift = 0; raw.unlocks.flyer.gate = 'LP0';
@@ -144,7 +144,7 @@ test('genuine rules10 weather and neon histories replay unchanged through curren
     assert.equal(g.log.at(-1)!.rulesVersion, 10); g.advance(g.world.shift!.nextSpawnAt + 1);
     const previous = structuredClone(g.world); assert.ok(send(g, { type: 'activity', active: true }).ok);
     assert.deepEqual(g.world, { ...previous, seasonEarned: 0, seasons: g.world.seasons, staminaAnchorAt: previous.now, staminaAnchorMs: previous.staminaMs, attendance: g.world.attendance, shift: { ...previous.shift!, menu: { eventStart: previous.events.length, serveStart: previous.serves.length, complete: false } }, nextId: previous.nextId + 2, events: [...previous.events, { id: `event-${previous.nextId + 1}`, type: 'menu_tracking_started', at: previous.now, configVersion: g.config.version, idempotencyKey: g.log.at(-1)!.idempotencyKey, data: { shiftId: previous.shift!.id, complete: false } }, g.world.events.at(-1)!] }); assert.equal(g.world.events.at(-1)!.type, 'attendance_day_opened');
-    assert.equal(g.log.at(-1)!.rulesVersion, 24); assert.equal(g.world.flyers, undefined);
+    assert.equal(g.log.at(-1)!.rulesVersion, CURRENT_RULES); assert.equal(g.world.flyers, undefined);
     assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
   }
 });

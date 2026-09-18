@@ -59,6 +59,8 @@
 
 ## Existing proof
 
+- `packages/engine/test/feedback.test.ts` — `genuine rules25 losses and summaries replay unchanged, then mixed old and new evidence remains explicitly unknown`. Fixture `legacy-feedback-v25.json` was generated from07430a95ec6f8f2799650344511dbda2f8a19f12; SHA256 pins the entire original world, including closed summary, before current-rule adoption. `A4 ${locale} ${mode} advice uses observed losses and survives reload` in `apps/web/test/feedback.spec.ts` covers local migration/reload.
+
 - `packages/engine/test/checkpoint.test.ts` (ENGINE tier, pure in-memory, no I/O), 5 tests: `'every
   archived replay state restores its actual bookkeeping and continues with identical events,
   currency and retry results'`, `'rules1 through24 preserve an active rush through closing and
@@ -206,3 +208,22 @@ balances/ranking"* is a hard boundary, not a soft default. [multi-system-journey
 — the local→Google→claim→server flow spans browser IndexedDB, Google OAuth, and the SQLite server
 store in one player-facing journey; `local.ts`'s `boot()` is the substrate every other web-local
 session resumes through.
+
+
+### A1 — 2026-09-16 proof
+- `apps/web/test/local-config.test.ts`: newer bundled config adoption only at next successful opening; running/historical pins, custom/newer versions and replay retained.
+- `packages/engine/test/progression.test.ts`: LP1 scaled threshold/four seats without dog; old pinned dog requirement still enforced.
+- `apps/web/test/improve-lp1.spec.ts`: production browser guest with real previously earned income migrates LP1, opens next shift, reloads unchanged with no visible dog. Run `npx playwright test --config playwright.improve.config.ts improve-lp1.spec.ts`.
+
+## Changelog — A4
+| Date | Change |
+|---|---|
+| 2026-09-16 | Add current order feedback and rules26 loss evidence regression citations; historical replay remains unchanged. |
+
+
+### Wave B — 2026-09-16 proof
+- `packages/engine/test/menu.test.ts` — 'genuine rules26 close events remain byte-equivalent before adding rules27 metrics on a new shift'. `apps/web/test/menu.spec.ts` — 'Sổ ca shows actual dish counts, pauses while open and updates after closing and survives reload at …' now checks actual backup-button downloads contain every exact KPI. Rules27 adds close-event fields; rules≤26 payloads remain exact.
+
+## Netlify guest build — 2026-09-16
+
+`apps/web/guest-test/guest.spec.ts` → `static guest serves, restocks, upgrades, closes shift and persists across reload/new tab without API`: production guest build on 360×740, 390×844, 1280×720; full service/restock/pause/upgrade/next-day journey, Settings SHA, six close KPIs equal backup, reload/new-tab preservation, admin/online-ranking hidden and zero API/Google requests. Run `npm run build:guest`, copy `apps/web/dist` to `.qa/guest-dist`, then `npx playwright test --config playwright.guest.config.ts`; `TBH_GUEST_URL` targets the verified draft or live URL without a local server. Normal remote/account mechanics are unchanged.

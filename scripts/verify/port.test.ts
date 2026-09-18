@@ -8,6 +8,7 @@ import { resolveAllPorts } from './port';
 
 const LITERAL_PORTS = {
   'e2e': 4178,
+  'guest-web': 4183,
   'dev-identity-web': 4179,
   'dev-identity-api': 4180,
   'admin-web': 4181,

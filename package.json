@@ -30,7 +30,8 @@
     "verify:port": "node --import tsx scripts/verify/port.ts",
     "verify:map": "node --import tsx scripts/verify/map-coverage.ts",
     "verify:doctor": "node --import tsx scripts/verify/doctor.ts",
-    "verify:all": "npm run verify && npm run verify:doctor"
+    "verify:all": "npm run verify && npm run verify:doctor",
+    "build:guest": "VITE_TBH_GUEST_ONLY=1 npm run build && cp deploy/netlify/_headers deploy/netlify/_redirects apps/web/dist/"
   },
   "type": "module",
   "engines": {

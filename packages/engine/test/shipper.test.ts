@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { Game, config, loadConfig, DISHES, WEATHER, deliveryBundles, deliveryInterval, deliveryQuote, dayKey, kickAllQuote, encodeSave, decodeSave, type Command, type Economy, type Weather } from '../src';
+import { CURRENT_RULES, Game, config, loadConfig, DISHES, WEATHER, deliveryBundles, deliveryInterval, deliveryQuote, dayKey, kickAllQuote, encodeSave, decodeSave, type Command, type Economy, type Weather } from '../src';
 const origin = Date.parse('2026-09-08T10:00:00Z');
 const send = (g: Game, command: Command) => g.command({ command, at: g.world.now, idempotencyKey: `ship-${g.log.length}` });
 function owner({ weather = 'sunny', buy = true, rested = false, at = origin, patch = (_: Economy) => {} }: { weather?: Weather; buy?: boolean; rested?: boolean; at?: number; patch?: (c: Economy) => void } = {}) {
@@ -54,7 +54,7 @@ test('actual v6 phone-owned history stays inert until a current command arms a f
   assert.equal(w.now, expected.now); assert.equal(w.coins, expected.coins); assert.equal(w.lifetimeEarned, expected.lifetime); assert.equal(w.nextId, expected.nextId);
   assert.deepEqual(w.inventory, expected.inventory); assert.deepEqual(w.events, JSON.parse(saved).events); assert.deepEqual(g.log.at(-1)!.result, expected.result);
   assert.equal(w.delivery, null); assert.equal(w.nextDeliveryAt, null);
-  send(g, { type: 'activity', active: true }); assert.equal(g.log.at(-1)!.rulesVersion, 24);
+  send(g, { type: 'activity', active: true }); assert.equal(g.log.at(-1)!.rulesVersion, CURRENT_RULES);
   assert.equal(w.nextDeliveryAt, w.now + deliveryInterval(w, g.config));
   const end = w.nextDeliveryAt!, small = decodeSave(encodeSave(g));
   while (small.world.now < end) small.advance(Math.min(end, small.world.now + 1000));

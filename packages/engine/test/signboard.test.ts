@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { Game, config, loadConfig, SIGN_STYLES, WEATHER, signboardQuote, deliveryInterval, encodeSave, decodeSave, requirementStatus, type Command, type Economy, type SignStyle } from '../src';
+import { CURRENT_RULES, Game, config, loadConfig, SIGN_STYLES, WEATHER, signboardQuote, deliveryInterval, encodeSave, decodeSave, requirementStatus, type Command, type Economy, type SignStyle } from '../src';
 const send = (g: Game, command: Command) => g.command({ command, at: g.world.now, idempotencyKey: `sign-${g.log.length}` });
 function setup(patch = (_: Economy) => {}) {
   const raw = structuredClone(config.raw); raw.shift.startingCoinsBase = 1000000; raw.onboarding.enabled = false; raw.rush.schedule.perShift = 0; raw.unlocks.phone.gate = 'LP0';
@@ -69,7 +69,7 @@ test('real v8 delivery and rush saves retain all recorded fields before and afte
     for (const [key, value] of Object.entries(expected)) if (key !== 'source') assert.deepEqual(historical[key], value, `historical ${name}:${key}`);
     assert.deepEqual(g.world.events, source.events); assert.equal(g.log.at(-1)!.rulesVersion, 8); assert.equal(g.world.signStyle, undefined);
     const before = structuredClone(g.world); assert.ok(send(g, { type: 'activity', active: true }).ok);
-    assert.deepEqual(g.world, { ...before, seasonEarned: 0, seasons: g.world.seasons, staminaAnchorAt: before.now, staminaAnchorMs: before.staminaMs, attendance: g.world.attendance, shift: { ...before.shift!, menu: { eventStart: before.events.length, serveStart: before.serves.length, complete: false } }, nextId: before.nextId + 2, events: [...before.events, { id: `event-${before.nextId + 1}`, type: 'menu_tracking_started', at: before.now, configVersion: g.config.version, idempotencyKey: g.log.at(-1)!.idempotencyKey, data: { shiftId: before.shift!.id, complete: false } }, g.world.events.at(-1)!] }); assert.equal(g.world.events.at(-1)!.type, 'attendance_day_opened'); assert.equal(g.log.at(-1)!.rulesVersion, 24); assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
+    assert.deepEqual(g.world, { ...before, seasonEarned: 0, seasons: g.world.seasons, staminaAnchorAt: before.now, staminaAnchorMs: before.staminaMs, attendance: g.world.attendance, shift: { ...before.shift!, menu: { eventStart: before.events.length, serveStart: before.serves.length, complete: false } }, nextId: before.nextId + 2, events: [...before.events, { id: `event-${before.nextId + 1}`, type: 'menu_tracking_started', at: before.now, configVersion: g.config.version, idempotencyKey: g.log.at(-1)!.idempotencyKey, data: { shiftId: before.shift!.id, complete: false } }, g.world.events.at(-1)!] }); assert.equal(g.world.events.at(-1)!.type, 'attendance_day_opened'); assert.equal(g.log.at(-1)!.rulesVersion, CURRENT_RULES); assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
   }
 });
 

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { Game, config, loadConfig, isEconomy2, leaseQuote, leaveLocationQuote, encodeSave, decodeSave, type Command } from '../src';
+import { CURRENT_RULES, Game, config, loadConfig, isEconomy2, leaseQuote, leaveLocationQuote, encodeSave, decodeSave, type Command } from '../src';
 const send = (g: Game, command: Command, key = `lease-${g.log.length}`) => g.command({ command, at: g.world.now, idempotencyKey: key });
 function game(patch?: (raw: typeof import('../../../docs/config/economy.tbh.json')) => void) {
   const raw = structuredClone(config.raw); assert.ok(isEconomy2(raw)); raw.shift.startingCoinsBase = 1000000;
@@ -128,7 +128,7 @@ test('the captured actual rules21 save replays unchanged and adopts leasing only
   const save = readFileSync(new URL('./fixtures/pre-lease-v21.json', import.meta.url), 'utf8');
   const g = decodeSave(save), expected = JSON.parse(readFileSync(new URL('./fixtures/pre-lease-v21-expected.json', import.meta.url), 'utf8'));
   assert.deepEqual(g.world, expected); assert.equal(g.log.at(-1)!.rulesVersion, 21); assert.equal(g.world.lease, undefined);
-  send(g, { type: 'activity', active: true, paused: true }); assert.equal(g.log.at(-1)!.rulesVersion, 24); replay(g);
+  send(g, { type: 'activity', active: true, paused: true }); assert.equal(g.log.at(-1)!.rulesVersion, CURRENT_RULES); replay(g);
   const modern = game(); rent(modern); const entry = structuredClone(modern.log.at(-1)!); entry.rulesVersion = 21;
   assert.throws(() => game().replay(entry), /replay:rulesVersion/);
 });

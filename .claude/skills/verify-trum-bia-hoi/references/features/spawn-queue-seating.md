@@ -93,6 +93,14 @@ independent shipper lane — because they share the same autonomous tick machine
 
 ## Existing proof
 
+- `npm run sim:onboarding` (`packages/engine/sim/headless.ts`) — five seeds in each cold/full-menu
+  and onboarding-on/off cohort count unique admitted customer IDs through the real command/advance
+  bot. The census reconciles admitted + rejected arrivals with shift stats, reports observed customer
+  types, and excludes forced onboarding, unknown-type overflow, weather/rush modifiers and signs
+  from the sunny/non-rush/no-sign baseline. Each five-seed baseline must remain within 30% of
+  the configured VIP probability adjusted for the per-group cap. Repeated service rounds never
+  count as new arrivals. This engine proof does not establish human recognition of a VIP on the
+  public build; Wave A3's shift-2 hand-play acceptance remains pending.
 - `packages/engine/test/arrival-interval.test.ts` (all 5): `'ordinary hot and humid arrivals get
   their configured speedup across actual seeded groups'` (per-weather `nextSpawnAt`/interval pin
   across 5 seeds), `'ordinary baseline floor and multiplier remain configurable without weakening
@@ -227,3 +235,9 @@ cadence and delivery interval both consume), [flyer-signboard-dog](flyer-signboa
 (`signWeightMult` on customer-type mix; neon signboard style shortens the delivery interval),
 [economy-k-ledger](economy-k-ledger.md) (delivery net/bonus flow through the same `credit()` family,
 but are excluded from `k` itself since `k` only counts seated serves).
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-09-16 | Wave A3 adds the five-seed headless VIP arrival census, denominator/exclusion rules and explicit pending human observation. No spawn gate, weight or production behaviour changes. |

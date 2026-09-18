@@ -81,6 +81,12 @@ same `quests.ts` file — cross-link, not restated here.
 
 ## Existing proof
 
+- `apps/web/test/ui-clarity.spec.ts` — `A5 legacy pinned save shows direct pour without a refill or reserve in ${locale}` (VI/EN) loads the historical v12 archive and pins the direct-pour/no-reserve copy.
+
+- `apps/web/test/ui-clarity.spec.ts` — `A5 zero configured recovery rate shows paused recovery without an invalid ETA` pins the config-allowed zero-rate display without changing engine rules.
+
+- `apps/web/test/ui-clarity.spec.ts` — `A5 clear production stages, customer rounds and first-open art in ${locale} at ${viewport.width}px` (VI/EN × 360/390/1280px) checks the separate tap/refill labels, customer-round explanation, and manifest-backed tofu/phone/wood-sign preload plus decoded images on the first stock/upgrade visit. `A5 recovery ETA follows active rest, survives reload and disappears when stamina is full` reaches exhausted natural closure through engine commands, checks the configured active-rest countdown and reload/full recovery. Run with `npx playwright test apps/web/test/ui-clarity.spec.ts` (local config).
+
 - `packages/engine/test/well-rested.test.ts` (11 tests, the bonus-mechanic itself): `'rest must be
   strictly longer than six hours and a start retry consumes the opening day only once'`, `'each
   customer receives the rounded combined-service bonus without changing base k records'`, `'the exact
@@ -236,3 +242,15 @@ upgrades gated by `lifePathGate`, a different gate mechanism reusing the same `l
 [economy-k-ledger](economy-k-ledger.md) (`credit()` is the only ledger mutator these claims call
 through; `sim:career:gate`'s `lifePath >= 4` precondition), `remote-session-outbox` (disconnection
 freezing of stamina/attendance, not yet written).
+
+
+### A1 — 2026-09-16 proof
+- `apps/web/test/local-config.test.ts`: newer bundled config adoption only at next successful opening; running/historical pins, custom/newer versions and replay retained.
+- `packages/engine/test/progression.test.ts`: LP1 scaled threshold/four seats without dog; old pinned dog requirement still enforced.
+- `apps/web/test/improve-lp1.spec.ts`: production browser guest with real previously earned income migrates LP1, opens next shift, reloads unchanged with no visible dog. Run `npx playwright test --config playwright.improve.config.ts improve-lp1.spec.ts`.
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-09-16 A5 | Cite UI clarity, first-open asset preload and active-rest ETA regression; no engine/config rule changes. |

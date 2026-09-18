@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { Game, config, loadConfig, encodeSave, decodeSave, validEnvelope, dayKey, type Command } from '../src';
+import { CURRENT_RULES, Game, config, loadConfig, encodeSave, decodeSave, validEnvelope, dayKey, type Command } from '../src';
 const start = Date.parse('2026-09-09T16:59:30Z');
 const send = (g: Game, command: Command) => g.command({ command, at: g.world.now, idempotencyKey: `disconnect-test-${g.log.length}` });
 function readyOrder() {
@@ -209,7 +209,7 @@ test('genuine cb389e0 rules19 absent-day history survives rules20 adoption witho
   const expected = JSON.parse(readFileSync(new URL('./fixtures/legacy-v19-absence-expected.json', import.meta.url), 'utf8'));
   assert.equal(expected.source, 'cb389e088fadd05f77b6ed20e1f96de34833ac2b');
   const g = decodeSave(saved); assert.deepEqual(g.world, expected.world); roundtrip(g);
-  send(g, { type: 'activity', active: false }); assert.equal(g.log.at(-1)!.rulesVersion, 24);
+  send(g, { type: 'activity', active: false }); assert.equal(g.log.at(-1)!.rulesVersion, CURRENT_RULES);
   const countBefore = count(g, 'quest_generated');
   g.advance(g.world.now + 1000 * 86400000); assert.equal(count(g, 'quest_generated'), countBefore); roundtrip(g);
 });

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { Game, loadConfig, encodeSave, decodeSave, dayKey, validEnvelope } from '../src';
+import { CURRENT_RULES, config, Game, loadConfig, encodeSave, decodeSave, dayKey, validEnvelope } from '../src';
 import { pinConfig, nextPin, servePin, restPin, mixedPinGame } from './fixtures/config-pinning';
 import { sendKitchen } from './fixtures/kitchen';
 const open = (g: Game, key = `pin-${g.log.length}`) => ({ command: { type: 'startShift' } as const, at: g.world.now, idempotencyKey: key });
@@ -95,7 +95,7 @@ test('single-config saves stay v2; multi-config saves reject missing, duplicated
 test('a genuine rules13 service history survives current adoption and a new pinned shift without rewriting its recorded prefix', () => {
   const g = decodeSave(readFileSync(new URL('./fixtures/legacy-kitchen-served-v13.json', import.meta.url), 'utf8'));
   const prefix = structuredClone(g.world.events); sendKitchen(g, { type: 'activity', active: true });
-  restPin(g); assert.ok(g.command(open(g), nextPin()).ok); assert.equal(g.log.at(-1)!.rulesVersion, 24);
+  restPin(g); assert.ok(g.command(open(g), nextPin()).ok); assert.equal(g.log.at(-1)!.rulesVersion, CURRENT_RULES);
   assert.deepEqual(g.world.events.slice(0, prefix.length), prefix); assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
 });
 
@@ -155,4 +155,18 @@ test('a candidate designed for larger initial tables cannot strand the first gro
   const returning = mixedPinGame(); restPin(returning);
   assert.ok(returning.command(open(returning), candidate).ok); assert.equal(returning.world.shift!.onboarding, false);
   assert.deepEqual(decodeSave(encodeSave(returning)).world, returning.world);
+});
+
+
+test('next-shift admission uses incoming LP requirements and seat capacities for rush planning without mutating failed openings', () => {
+  const oldRaw = structuredClone(config.raw); oldRaw.lifePath[1].requires = ['4 seats', 'dog'];
+  const old = loadConfig(oldRaw), nextRaw = structuredClone(config.raw); nextRaw._meta.version = 'incoming-lp';
+  const next = loadConfig(nextRaw);
+  for (const rulesVersion of [24, 25] as const) {
+    const g = new Game(old, 42, 0); g.world.lifetimeEarned = next.values.lifePath[1].lifetimeBase; g.world.completedShifts = 1;
+    assert.equal(g.world.lifePath, 0);
+    assert.ok(g.replay({ at: 0, idempotencyKey: 'open-new-lp', command: { type: 'startShift' }, configVersion: next.version, rulesVersion, result: { ok: true } }, next).ok);
+    assert.equal(g.world.lifePath, 1);
+    assert.equal(g.world.shift!.rushes.some(r => r.kind === 'heavy'), rulesVersion >= 25);
+  }
 });

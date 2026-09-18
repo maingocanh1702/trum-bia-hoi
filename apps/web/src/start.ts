@@ -6,7 +6,7 @@ export type RemoteSession = { remote: RemoteGame; game: RemoteGame; storage: nul
 export type Session = BootSession | RemoteSession;
 export type StartState = { session: Session } | { local: string; legacy: string | null } | { error: string } | { reauth: RemoteGame };
 async function startSession(mode?: 'local' | 'remote' | 'reauthenticate'): Promise<StartState> {
-  if (mode === 'local' || import.meta.env.VITE_TBH_LOCAL === '1') return { session: await boot() };
+  if (mode === 'local' || import.meta.env.VITE_TBH_LOCAL === '1' || import.meta.env.VITE_TBH_GUEST_ONLY === '1') return { session: await boot() };
   try {
     if (!mode && localStorage.getItem('tbh.remote.v1') === null) {
       const storage = await BrowserSave.open();

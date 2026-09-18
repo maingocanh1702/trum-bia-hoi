@@ -65,6 +65,8 @@ Engine (all in `packages/engine/src/engine.ts`, verified by grep of every call s
 
 ## Existing proof
 
+- `packages/engine/test/feedback.test.ts` — `expiry records the ready or pending cause before waste and counts whole customers once, separate from queue losses`; `genuine rules25 losses and summaries replay unchanged, then mixed old and new evidence remains explicitly unknown`. `menuReport.losses` reconciles one customer count per queue/seated loss with `stats.lost`; it does not alter money or historical `menu_mix_summary` payloads. Run `node --import tsx --test packages/engine/test/feedback.test.ts`.
+
 - `packages/engine/test/economy2.test.ts` — 10 cases (flat, no `describe`), e.g. `'a new shift fills
   real reserve, pours through its one tap and starts refilling the vacancy immediately'`, `'glass
   purchases respect owned capacity, exact price, pause and retry identity'`, `'both complete config
@@ -149,3 +151,18 @@ Engine (all in `packages/engine/src/engine.ts`, verified by grep of every call s
 [serve-outcomes](serve-outcomes.md) (shares the `customerValue`/`credit` call sites inside `case
 'serve':`), [save-replay-local](save-replay-local.md) (both config-pinning files are effectively the
 save/replay persistence tests for this same ledger — heavy overlap, not a separate concern).
+
+
+### A1 — 2026-09-16 proof
+- `apps/web/test/local-config.test.ts`: newer bundled config adoption only at next successful opening; running/historical pins, custom/newer versions and replay retained.
+- `packages/engine/test/progression.test.ts`: LP1 scaled threshold/four seats without dog; old pinned dog requirement still enforced.
+- `apps/web/test/improve-lp1.spec.ts`: production browser guest with real previously earned income migrates LP1, opens next shift, reloads unchanged with no visible dog. Run `npx playwright test --config playwright.improve.config.ts improve-lp1.spec.ts`.
+
+## Changelog — A4
+| Date | Change |
+|---|---|
+| 2026-09-16 | Add current order feedback and rules26 loss evidence regression citations; historical replay remains unchanged. |
+
+
+### Wave B — 2026-09-16 proof
+- `packages/engine/test/menu.test.ts` — 'five production seeds export exact six shift KPIs matching service records and deterministic replay'; 'flat beer and snack numerators use served rounds, while empty and partial shifts never invent ratios'. Same canonical serveValueStats basis, no credit/throughput term.

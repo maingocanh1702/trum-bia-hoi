@@ -51,6 +51,12 @@ single-feature file); it's for the crossings.
 
 ## Existing proof
 
+- `apps/web/test/feedback.spec.ts` — `A4 ${locale} ${mode} advice uses observed losses and survives reload` consumes command-produced saves, migrates to IndexedDB and reloads observed loss evidence. `apps/web/remote-test/feedback.spec.ts` — `A4 real server supplies loss evidence without event history and remote advice survives reconnect` uses DOM commands and the isolated real API, verifies authoritative `menu.losses` without `world.events`, then reloads. Commands: `npx playwright test apps/web/test/feedback.spec.ts`; `TBH_PORT_BASE=4178 npx playwright test --config playwright.remote.config.ts apps/web/remote-test/feedback.spec.ts`.
+
+- `apps/web/test/quick-beer-stock.spec.ts` — `A2 HUD full beer refill keeps live time and survives reload in ${locale} at ${viewport.width}px` (VI/EN × 360/390/1280px) uses a real DOM purchase and replay inspection to assert full-quote quantity/cost, stock including in-flight batches, one restock event, unpaused timer/reload, 44px and warning-specific axe. Boundaries: `A2 empty raw beer stock remains a refill warning while a batch is still preparing`, `A2 low beer stock keeps the exact unaffordable quote disabled in ${locale}`, and `A2 full beer stock has no low-stock warning or zero-quantity quick purchase`. `A2 stock at the configured batch boundary has no warning despite a nonzero refill quote` pins `stock === batchSize < cap` separately from the full-stock boundary.
+- `apps/web/remote-test/quick-beer-stock.spec.ts` — `A2 quick beer refill uses the real server while the shift remains live and reloads once` consumes stock through DOM serving against the isolated API, purchases through the HUD, and checks the authoritative charge/stock, no pause and reload. Run `TBH_PORT_BASE=4178 npx playwright test --config playwright.remote.config.ts apps/web/remote-test/quick-beer-stock.spec.ts`; 4179/4180 must be free because this fixture binds those test ports. Local proof uses `npx playwright test apps/web/test/quick-beer-stock.spec.ts`.
+
+
 **`apps/web/test/game.spec.ts`** — local mode only (`VITE_TBH_LOCAL=1`), 22 top-level tests, 40
 runtime executions once viewport/mode loops are counted. **None of these 22 cross local↔remote** —
 the crossing they exercise is reload-persistence / legacy-migration / locale. 15 of 22 genuinely
@@ -194,3 +200,29 @@ surface at least once: [table-lifecycle](table-lifecycle.md), [order-rounds-kitc
 [economy-k-ledger](economy-k-ledger.md), [save-replay-local](save-replay-local.md) most directly —
 plus rush/dog/life-path/shipper/signboard/flyer/seasons/locations/admin areas not yet written as
 their own feature files (see the README index).
+
+
+### A1 — 2026-09-16 proof
+- `apps/web/test/local-config.test.ts`: newer bundled config adoption only at next successful opening; running/historical pins, custom/newer versions and replay retained.
+- `packages/engine/test/progression.test.ts`: LP1 scaled threshold/four seats without dog; old pinned dog requirement still enforced.
+- `apps/web/test/improve-lp1.spec.ts`: production browser guest with real previously earned income migrates LP1, opens next shift, reloads unchanged with no visible dog. Run `npx playwright test --config playwright.improve.config.ts improve-lp1.spec.ts`.
+
+## Changelog
+
+| Date | Change |
+|---|---|
+
+| 2026-09-16 A2 | Cite direct HUD full-beer purchase in local and real-server UI; raw empty is distinct from ready/batch reserve. Balance targets remain OPEN in docs/improve-a2-stock.md. |
+
+## Changelog — A4
+| Date | Change |
+|---|---|
+| 2026-09-16 | Add current order feedback and rules26 loss evidence regression citations; historical replay remains unchanged. |
+
+
+### Wave B — 2026-09-16 proof
+- Wave B: `packages/engine/test/menu.test.ts` proves five seeded full shifts → exact close-event metrics → encode/decode replay → next-shift preservation. `apps/web/test/menu.spec.ts` verifies actual DOM backup export/reload and empty/partial coverage. `apps/web/remote-test/remote.spec.ts` exercises authoritative report over real API and lost-ack recovery; UI never computes game KPIs.
+
+## Netlify guest build — 2026-09-16
+
+`apps/web/guest-test/guest.spec.ts` → `static guest serves, restocks, upgrades, closes shift and persists across reload/new tab without API`: production guest build on 360×740, 390×844, 1280×720; full service/restock/pause/upgrade/next-day journey, Settings SHA, six close KPIs equal backup, reload/new-tab preservation, admin/online-ranking hidden and zero API/Google requests. Run `npm run build:guest`, copy `apps/web/dist` to `.qa/guest-dist`, then `npx playwright test --config playwright.guest.config.ts`; `TBH_GUEST_URL` targets the verified draft or live URL without a local server. Normal remote/account mechanics are unchanged.

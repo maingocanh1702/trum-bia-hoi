@@ -326,3 +326,7 @@ structurally separate cookie/session system; admin auth (`admin-auth.ts`) does n
 opens the account panel that calls into `linkGoogle`/`googleChallenge`.
 [multi-system-journeys](multi-system-journeys.md) — local→Google→server and guest→Google-switch are
 exactly the cross-tier journeys that belong there, not duplicated here.
+
+
+### Wave B — 2026-09-16 proof
+- `apps/web/remote-test/remote.spec.ts` — 'real server serves once after lost acknowledgement, retains queue across reload, menus pause and reports resync' now compares all six displayed metrics with the authoritative API report before/after reload. Run with playwright.remote.config.ts (isolated server, no mocked responses).

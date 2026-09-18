@@ -2,7 +2,7 @@ import legacy from '../../../docs/config/legacy/economy-1.7.3.json';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { Game, config, loadConfig, beerStatus, washerStatus, encodeSave, decodeSave, type Command, type Economy } from '../src';
+import { CURRENT_RULES, Game, config, loadConfig, beerStatus, washerStatus, encodeSave, decodeSave, type Command, type Economy } from '../src';
 const send = (g: Game, command: Command) => g.command({ command, at: g.world.now, idempotencyKey: `batch-${g.log.length}` });
 function game(patch?: (c: Economy) => void) {
   const raw = structuredClone(legacy); raw.shift.startingCoinsBase = 100000;
@@ -83,7 +83,7 @@ test('the actual v17 paused save replays exactly and adopts enabled batches only
   const text = readFileSync(new URL('./fixtures/batch-v17.json', import.meta.url), 'utf8');
   const g = decodeSave(text), original = JSON.parse(text), w = g.world;
   assert.ok(g.log.every(e => e.rulesVersion === 17)); assert.deepEqual(w.events, original.events); assert.equal(w.beer, undefined);
-  send(g, { type: 'activity', active: true }); assert.equal(g.log.at(-1)!.rulesVersion, 24);
+  send(g, { type: 'activity', active: true }); assert.equal(g.log.at(-1)!.rulesVersion, CURRENT_RULES);
   assert.equal(w.beer, undefined); assert.equal(g.config.values.upgrades.keg.refillEnabled, false);
   send(g, { type: 'endShift' }); g.advance(w.now + 100000);
   g.advance(w.now + g.config.values.shift.durationMs / g.config.values.shift.regenRate);

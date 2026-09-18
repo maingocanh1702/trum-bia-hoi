@@ -62,6 +62,12 @@
 
 ## Existing proof
 
+- `apps/web/test/ui-clarity.spec.ts` — `A5 legacy pinned save shows direct pour without a refill or reserve in ${locale}` (VI/EN) loads the historical v12 archive and pins the direct-pour/no-reserve copy.
+
+- `apps/web/test/ui-clarity.spec.ts` — `A5 zero configured recovery rate shows paused recovery without an invalid ETA` pins the config-allowed zero-rate display without changing engine rules.
+
+- `apps/web/test/ui-clarity.spec.ts` — `A5 clear production stages, customer rounds and first-open art in ${locale} at ${viewport.width}px` (VI/EN × 360/390/1280px) checks the separate tap/refill labels, customer-round explanation, and manifest-backed tofu/phone/wood-sign preload plus decoded images on the first stock/upgrade visit. `A5 recovery ETA follows active rest, survives reload and disappears when stamina is full` reaches exhausted natural closure through engine commands, checks the configured active-rest countdown and reload/full recovery. Run with `npx playwright test apps/web/test/ui-clarity.spec.ts` (local config).
+
 - `npm run check:assets` (real run on this commit): `PASS: 132 manifest entries, 32 paired SFX. 3
   sprite placeholders; 121 draft files (drafts accepted for release).` — exit 0.
 - `python3 scripts/check_assets.py --release` (real run on this commit): exit 1 —
@@ -151,3 +157,9 @@ fallback heuristic. [onboarding-guide](onboarding-guide.md) — the forced first
 (`c.onboarding.firstShift.firstOrder`) renders through the same `menuAsset` map.
 [ui-shell-i18n-a11y](ui-shell-i18n-a11y.md) — `Icon` vs `Sprite` boundary (inline SVG vs
 manifest-driven).
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-09-16 A5 | Cite UI clarity, first-open asset preload and active-rest ETA regression; no engine/config rule changes. |

@@ -88,6 +88,8 @@
 
 ## Existing proof
 
+- `apps/web/test/feedback.spec.ts` — `A4 ${locale} actual empty and refilling order feedback agrees with the guide at ${width}px` (VI/EN ×360/390/1280): wait-ready uses the actual current order cause, including empty raw stock and a reserved refill with raw stock zero. Run `npx playwright test apps/web/test/feedback.spec.ts`.
+
 - `packages/engine/test/game.test.ts`, inside `'startup rejects configurations that create fractional
   stock, unusable equipment or silent audio crashes'` (a table-driven `assert.throws` test): the
   `'first customer can never fit'` case sets `c.onboarding.firstShift.firstGroupSize = 99` and asserts
@@ -243,3 +245,8 @@ the two sims (with `sim:rush`) that pin the `k` invariant this repo treats as bi
 [table-lifecycle](table-lifecycle.md) — the `configOnboardingTables`/`config:firstGroup` capacity
 gates exist because the first onboarding group must fit an actual table from that feature's state
 machine.
+
+## Changelog — A4
+| Date | Change |
+|---|---|
+| 2026-09-16 | Add current order feedback and rules26 loss evidence regression citations; historical replay remains unchanged. |

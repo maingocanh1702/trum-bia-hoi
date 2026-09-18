@@ -64,6 +64,16 @@ test('real server serves once after lost acknowledgement, retains queue across r
   const location = page.getByRole('region', { name: 'Địa điểm trong ca', exact: true });
   await expect(location.locator('[data-shift-location="hem_nho"]')).toHaveText('HẺM NHỎ ×1');
   expect((await snapshot(page)).shiftLocation.locations).toEqual([{ id: 'hem_nho', mult: 1 }]);
+  const menu = page.getByRole('region', { name: 'Món trong ca', exact: true });
+  await menu.locator('summary').click();
+  const metrics = (await snapshot(page)).menu.metrics;
+  expect(metrics.served).toBe(1); expect(metrics.beerServed).toBe(1);
+  for (const key of ['served', 'mean', 'kValue', 'moiRate', 'staleRate', 'lost']) await expect(menu.locator(`[data-metric="${key}"]`)).toHaveAttribute('title', String(metrics[key]));
+  await page.reload(); await expect(page.locator('.network-status')).toContainText('Đã đồng bộ');
+  await page.getByRole('button', { name: 'Sổ ca', exact: true }).click(); await menu.locator('summary').click();
+  expect((await snapshot(page)).menu.metrics).toEqual(metrics);
+  await expect(menu.getByRole('heading', { name: 'Số đo ca', exact: true })).toBeVisible();
+  expect(errors).toEqual([]);
 });
 
 test('offline restock and in-shift upgrade use durable ordered commands and current menu presence on return', async ({ page }) => {

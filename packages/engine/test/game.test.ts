@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { Game, kickAllQuote, config, loadConfig, encodeSave, decodeSave, credit, customerValue, dayKey, restockQuote, type Command, type Economy } from '../src/index';
+import { CURRENT_RULES, Game, kickAllQuote, config, loadConfig, encodeSave, decodeSave, credit, customerValue, dayKey, restockQuote, type Command, type Economy } from '../src/index';
 
 function create(patch?: (c: Economy) => void) {
   const raw = structuredClone(config.raw);
@@ -186,7 +186,7 @@ test('v1 save migrates without changing prior fines, identifiers or an in-progre
   assert.ok(data.events.every((e: { idempotencyKey: string; configVersion: string }) => e.idempotencyKey && e.configVersion === g.config.version));
   assert.deepEqual(decodeSave(migrated).world, g.world);
   assert.equal(send(g, { type: 'activity', active: true }).ok, true);
-  assert.equal(g.log.at(-1)!.rulesVersion, 24);
+  assert.equal(g.log.at(-1)!.rulesVersion, CURRENT_RULES);
   assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
   data.events[0].configVersion = 'tampered';
   assert.throws(() => decodeSave(JSON.stringify(data)), /event-mismatch/);

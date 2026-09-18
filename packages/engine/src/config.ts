@@ -86,6 +86,11 @@ function shape(value: unknown, expected: unknown, path: string): void {
   if (expected === null) {
     if (value !== null && (typeof value !== 'number' || !Number.isFinite(value))) throw Error(`config:${path}`);
   } else if (Array.isArray(expected)) {
+    // Prerequisite lists are grammatical tokens, not fixed level/capacity tables.
+    if (/^lifePath\.\d+\.requires$/.test(path)) {
+      if (!Array.isArray(value) || !value.every(token => typeof token === 'string')) throw Error(`config:${path}:array`);
+      return; // validate() still rejects unknown tokens and dependency cycles.
+    }
     if (!Array.isArray(value) || value.length !== expected.length) throw Error(`config:${path}:array`);
     expected.forEach((v, i) => shape(value[i], v, `${path}.${i}`));
   } else if (typeof expected === 'object') {

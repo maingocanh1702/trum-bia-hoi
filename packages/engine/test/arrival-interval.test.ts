@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { Game, config, loadConfig, WEATHER, RUSH_TYPES, arrivalIntervalMs, encodeSave, decodeSave, type Economy, type Weather, type Command } from '../src';
+import { CURRENT_RULES, Game, config, loadConfig, WEATHER, RUSH_TYPES, arrivalIntervalMs, encodeSave, decodeSave, type Economy, type Weather, type Command } from '../src';
 
 const send = (g: Game, command: Command) => g.command({ command, at: g.world.now, idempotencyKey: `arrival-${g.log.length}` });
 function snapshot(weather: Weather, patch = (_: Economy) => {}) {
@@ -71,7 +71,7 @@ test('genuine v9 hot and humid histories keep their old cadence until a new inte
     assert.equal(w.shift!.nextSpawnAt - latestArrival(g).at, 10500 * Number(latestArrival(g).data.size));
     const pending = w.shift!.nextSpawnAt;
     assert.ok(send(g, { type: 'activity', active: true }).ok);
-    assert.equal(g.log.at(-1)!.rulesVersion, 24);
+    assert.equal(g.log.at(-1)!.rulesVersion, CURRENT_RULES);
     assert.deepEqual(w, { ...historical, seasonEarned: 0, seasons: w.seasons, staminaAnchorAt: w.now, staminaAnchorMs: w.staminaMs, attendance: w.attendance, shift: { ...historical.shift!, menu: { eventStart: historical.events.length, serveStart: historical.serves.length, complete: false } }, nextId: historical.nextId + 2, events: [...historical.events, { id: `event-${historical.nextId + 1}`, type: 'menu_tracking_started', at: historical.now, configVersion: g.config.version, idempotencyKey: g.log.at(-1)!.idempotencyKey, data: { shiftId: historical.shift!.id, complete: false } }, w.events.at(-1)!] }); assert.equal(w.events.at(-1)!.type, 'attendance_day_opened');
     assert.equal(w.shift!.nextSpawnAt, pending);
     g.advance(pending);

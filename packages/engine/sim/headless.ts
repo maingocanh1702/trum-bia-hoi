@@ -8,6 +8,8 @@ const signStyle = process.argv.find(arg => arg.startsWith('--sign='))?.slice('--
 if (signStyle && !SIGN_STYLES.includes(signStyle)) throw Error('Unknown sign style');
 const flyerStart = process.argv.includes('--flyer');
 const rows = [];
+const arrivalRows: { onboardingEnabled: boolean; profile: string; seed: number; spawned: number; rejected: number;
+  forced: number; baselineGuests: number; baselineVip: number; expectedVip: number; counts: Record<string, number> }[] = [];
 const onboardingModes = process.argv.includes('--onboarding-pair') ? [true, false] : [seedConfig.raw.onboarding.enabled];
 for (const onboardingEnabled of onboardingModes) {
 for (const kitchenLevel of [seedConfig.raw.runtime.initialKitchenLevel, seedConfig.raw.upgrades.kitchen.priceBase.length - 1]) {
@@ -27,15 +29,21 @@ for (const seed of SEEDS) {
   if (flyerStart) { w.lifePath = config.values.lifePath.findIndex(row => row.id === config.values.unlocks.flyer.gate); w.reputation = config.values.unlocks.flyer.repBase * config.values.unlocks.flyer.stockCap; }
   if (restedStart) game.advance(w.now + config.values.shift.wellRested.requiresRestHours * 3600000 + 1);
   const send = (command: Command) => game.command({ idempotencyKey: `sim-${game.log.length}`, at: w.now, command });
+  const seenCustomers = new Set<string>(), seenShifts = new Set<string>(), counts: Record<string, number> = {};
+  let finishedArrivals = 0, eventCursor = 0, spawned = 0, rejected = 0, forced = 0, baselineGuests = 0, baselineVip = 0, expectedVip = 0;
+  const baselineWeights = Object.entries(config.values.customerTypes).filter(([, type]) => type.usesTable && type.weight > 0);
+  const vipP = config.values.customerTypes.vip.weight / baselineWeights.reduce((sum, [, type]) => sum + type.weight, 0);
   let steps = 0;
   while (w.serves.length < MIN_SERVED && steps++ < MAX_STEPS) {
     if (w.phase === 'resting' && w.staminaMs >= config.values.shift.durationMs) {
+      const previousArrivals = w.shift?.stats.arrived ?? 0;
       const start = send({ type: 'startShift' });
       if (!start.ok && start.reason === 'dailyShiftCap') {
         game.advance(w.now + 24 * 60 * 60 * 1000); // config-exempt: calendar unit conversion; the bot waits online
         continue;
       }
       assert.ok(start.ok, start.reason ?? 'Cannot start shift');
+      finishedArrivals += previousArrivals;
     }
     if (flyerStart && w.phase === 'open' && !w.shift!.flyersUsed) {
       if (!flyerQuote(w, config).buyReason) send({ type: 'buyFlyer' });
@@ -53,8 +61,39 @@ for (const seed of SEEDS) {
     if (delivery?.ready) send({ type: 'serveDelivery', deliveryId: delivery.order.id });
     for (const t of ready) send({ type: 'serve', tableId: t.id, orderId: t.order!.id });
     game.advance(w.now + STEP_MS);
+    for (const event of w.events.slice(eventCursor)) {
+      if (event.type === 'queue_overflow') rejected += Number(event.data.size);
+      if (event.type !== 'customer_spawned') continue;
+      const group = [...w.queue, ...w.tables.flatMap(table => table.group ? [table.group] : [])].find(group => group.id === event.data.groupId);
+      assert.ok(group, `seed ${seed}: arrival observer missed ${event.data.groupId}; reduce sampling step`);
+      spawned += Number(event.data.size);
+      assert.equal(group.customers.length, event.data.size);
+      for (const customer of group.customers) {
+        assert.ok(!seenCustomers.has(customer.id), `duplicate arrival ${customer.id}`);
+        seenCustomers.add(customer.id);
+        counts[customer.type] = (counts[customer.type] ?? 0) + 1;
+      }
+      const firstOnboarding = w.shift!.onboarding && !seenShifts.has(w.shift!.id);
+      seenShifts.add(w.shift!.id);
+      if (firstOnboarding) { forced += group.customers.length; continue; }
+      // Only the unmodified sunny/non-rush/no-sign pool has denominator sum(raw weights).
+      if (event.data.weather !== 'sunny' || event.data.rush !== 'none' || signStyle) continue;
+      assert.deepEqual(config.values.weather.sunny.customerWeightMult, {}, 'baseline requires unmodified sunny weights');
+      baselineGuests += group.customers.length;
+      baselineVip += group.customers.filter(customer => customer.type === 'vip').length;
+      // E[min(Binomial(group size, vipP), VIP cap)]: cap applies after the first VIP too.
+      let combinations = 1;
+      for (let vip = 0; vip <= group.customers.length; vip++) {
+        expectedVip += Math.min(vip, config.values.customerTypes.vip.maxPerGroupPhase2) * combinations * vipP ** vip * (1 - vipP) ** (group.customers.length - vip);
+        combinations *= (group.customers.length - vip) / (vip + 1);
+      }
+    }
+    eventCursor = w.events.length;
   }
   assert.ok(w.serves.length >= MIN_SERVED, `seed ${seed}: insufficient serves`);
+  assert.equal(seenCustomers.size, spawned, 'all admitted arrivals counted once, independent of service rounds');
+  assert.equal(spawned + rejected, finishedArrivals + w.shift!.stats.arrived);
+  arrivalRows.push({ onboardingEnabled, profile: kitchenLevel ? 'full-menu' : 'cold-menu', seed, spawned, rejected, forced, counts, baselineGuests, baselineVip, expectedVip: +expectedVip.toFixed(3) });
   const { mean, kValue: k } = serveValueStats(w.serves, config);
   assert.ok(mean !== null && k !== null, 'measured service value must be representable');
   const bonus = w.serves.reduce((sum, serve) => sum + (serve.wellRestedBonus ?? 0), 0);
@@ -70,3 +109,13 @@ for (const seed of SEEDS) {
 console.table(rows);
 for (const row of rows) assert.ok(row.k >= seedConfig.values.k.band[0] && row.k <= seedConfig.values.k.band[1], `seed ${row.seed}: k=${row.k} outside band`);
 console.log('PASS: actual customer payment + tip / anchor; no throughput term, >=1000 serves per seed in cold and fully unlocked menu profiles.');
+
+console.log('VIP arrival census: spawned = admitted unique customers; rejected types are unknown; forced onboarding and modified pools are excluded from baseline.');
+console.table(arrivalRows.map(({ counts, ...row }) => ({ ...row, ...counts })));
+for (const onboardingEnabled of onboardingModes) for (const profile of ['cold-menu', 'full-menu']) {
+  const cohort = arrivalRows.filter(row => row.onboardingEnabled === onboardingEnabled && row.profile === profile);
+  const actual = cohort.reduce((sum, row) => sum + row.baselineVip, 0), expected = cohort.reduce((sum, row) => sum + row.expectedVip, 0);
+  if (signStyle) continue; // Sign-specific distribution is covered by signboard.test.ts, not this baseline.
+  assert.ok(expected > 0 && Math.abs(actual - expected) / expected <= 0.3, `${profile}, onboarding=${onboardingEnabled}: five-seed VIP baseline ${actual} vs expected ${expected}`); // config-exempt: Wave A3 measurement tolerance, not a production weight.
+}
+console.log(signStyle ? 'INFO: signed cohort reports arrivals only; baseline comparison excluded.' : 'PASS: five-seed VIP baseline agrees with configured weights and per-group cap; human shift-2 observation remains pending.');
