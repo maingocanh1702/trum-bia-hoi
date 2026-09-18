@@ -1,5 +1,6 @@
 import { GameStore } from './store';
 import { createGameServer } from './http';
+import { measureKViaForecast } from './forecast';
 
 const path = process.env.TBH_DB, origin = process.env.TBH_ORIGIN;
 if (!path || !origin) throw Error('Set TBH_DB and TBH_ORIGIN before starting the API.');
@@ -8,7 +9,11 @@ const port = Number(process.env.TBH_PORT ?? 5175), ttl = Number(process.env.TBH_
 const rateMax = Number(process.env.TBH_RATE_MAX ?? 600), rateWindowMs = Number(process.env.TBH_RATE_WINDOW_MS ?? 60000);
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw Error('Invalid TBH_PORT'); // config-exempt: TCP port range
 process.umask(0o077); // config-exempt: newly created database files are private to the server OS account
-const store = new GameStore(path);
+const store: GameStore = new GameStore(path, undefined, undefined, (_config, version, actor) => measureKViaForecast(store, actor, version));
+// Resume any measurement left pending by a restart or prior worker failure. Explicit, not constructor-wired --
+// the forecast worker builds its own throwaway GameStore from a backup copy to run this exact measurement,
+// and must never race it via the constructor's default self-report measurer (see resumePendingMeasurements()).
+store.registry.resumePendingMeasurements();
 const server = createGameServer(store, { origin, sessionTtlMs: ttl, rateMax, rateWindowMs, googleClientId: process.env.TBH_GOOGLE_CLIENT_ID, adminAccountsFile: process.env.TBH_ADMIN_ACCOUNTS_FILE });
 server.on('error', error => { console.error(error.message); store.close(); process.exitCode = 1; });
 server.listen(port, '127.0.0.1', () => console.log(`Trùm Bia Hơi API: http://127.0.0.1:${port}`));

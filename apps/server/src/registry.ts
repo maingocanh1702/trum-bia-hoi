@@ -104,6 +104,23 @@ export function initializeScopes(db: DatabaseSync) {
       BEGIN SELECT RAISE(ABORT,'registry:appendOnly'); END;`);
   }
 }
+/** Separate from registry_publications so that table's insert-only trigger never needs an exception:
+ * this table alone allows exactly one 'pending' -> ('admitted'|'refused') transition, then is immutable too.
+ * Every publication that predates this migration is grandfathered as 'admitted' on its own declared k.value --
+ * it was already live/trusted under the old self-report-only regime; this must not regress an existing deploy. */
+export function initializeMeasurements(db: DatabaseSync, now: number) {
+  db.exec(`CREATE TABLE registry_measurements (version TEXT PRIMARY KEY REFERENCES registry_publications(version),
+    state TEXT NOT NULL CHECK(state IN ('pending','admitted','refused')), measured_k REAL, measured_at INTEGER) STRICT;
+    CREATE TRIGGER registry_measurements_update BEFORE UPDATE ON registry_measurements
+      WHEN NOT (OLD.state='pending' AND NEW.version=OLD.version AND NEW.state IN ('admitted','refused') AND NEW.measured_k IS NOT NULL AND NEW.measured_at IS NOT NULL)
+      BEGIN SELECT RAISE(ABORT,'registry:appendOnly'); END;
+    CREATE TRIGGER registry_measurements_delete BEFORE DELETE ON registry_measurements BEGIN SELECT RAISE(ABORT,'registry:appendOnly'); END;`);
+  const insert = db.prepare("INSERT INTO registry_measurements VALUES (?,'admitted',?,?)");
+  for (const row of db.prepare('SELECT version FROM registry_publications').all()) {
+    const snapshot = JSON.parse(String(db.prepare('SELECT snapshot FROM configs WHERE version=?').get(row.version)!.snapshot));
+    insert.run(String(row.version), Number(snapshot.k.value), now);
+  }
+}
 function patch(raw: Config['raw'], source: Config['raw'], keys: string[]) {
   for (const key of keys) {
     const parts = key.split('.');
@@ -119,10 +136,17 @@ function patch(raw: Config['raw'], source: Config['raw'], keys: string[]) {
   }
 }
 
+// Injected so registry.ts never spawns a Worker/sim itself: production wires the forecast worker (async, 9-18s);
+// tests wire a cheap sync stub. Defaulting to the candidate's own declared k.value reproduces today's
+// self-report admission exactly for any caller that never overrides it.
+export type MeasureK = (config: Config, version: string, actor: AdminActor) => number | Promise<number>;
+
 /** Shared internal service. No HTTP endpoint accepts AdminActor; the admin-auth adapter is a separate boundary. */
 export class ConfigRegistry {
   private readonly configs = new Map<string, Config>();
-  constructor(private readonly db: DatabaseSync, private readonly clock: () => number) {}
+  private readonly settling = new Map<string, Promise<void>>();
+  constructor(private readonly db: DatabaseSync, private readonly clock: () => number,
+    private readonly measureK: MeasureK = config => config.values.k.value) {}
   private now() {
     const now = this.clock();
     if (!Number.isSafeInteger(now) || now < 0 || !Number.isFinite(new Date(now).getTime())) throw Error('registry:invalidClock');
@@ -144,9 +168,17 @@ export class ConfigRegistry {
     }
     return config;
   }
-  latest() { return this.db.prepare('SELECT * FROM registry_publications WHERE version NOT IN (SELECT version FROM registry_scopes) ORDER BY seq DESC LIMIT 1').get() as Publication; }
+  // Unifying rule (docs/prompts/k-admission-handoff.md): a pending publication does not exist for
+  // scheduling purposes -- no effect on conflicts, schedules, emergency replacements or forecast
+  // freshness, exactly like a publication that was never proposed. currentBase() below refuses
+  // registry:measurementPending before a new proposal's scope can ever overlap a currently-pending one,
+  // so two publications can never be pending on overlapping scopes at once -- every scope/schedule
+  // function in this file only ever needs to reason about ADMITTED rows. A refused publication doesn't
+  // exist for scheduling either, and gets the identical treatment throughout.
+  private readonly ADMITTED = "version IN (SELECT version FROM registry_measurements WHERE state='admitted')";
+  latest() { return this.db.prepare(`SELECT * FROM registry_publications WHERE version NOT IN (SELECT version FROM registry_scopes) AND ${this.ADMITTED} ORDER BY seq DESC LIMIT 1`).get() as Publication; }
   active(now = this.now()) {
-    const row = this.db.prepare('SELECT version FROM registry_publications WHERE effective_at<=? AND version NOT IN (SELECT version FROM registry_scopes) ORDER BY seq DESC LIMIT 1').get(now);
+    const row = this.db.prepare(`SELECT version FROM registry_publications WHERE effective_at<=? AND version NOT IN (SELECT version FROM registry_scopes) AND ${this.ADMITTED} ORDER BY seq DESC LIMIT 1`).get(now);
     if (!row) throw Error('registry:missingActive');
     return this.config(String(row.version));
   }
@@ -174,9 +206,15 @@ export class ConfigRegistry {
   }
   private scopedPublications() {
     // ponytail: scan admin publication history; index scope/effective boundaries if this catalog becomes large.
-    return this.db.prepare(`SELECT p.*,s.scope FROM registry_publications p JOIN registry_scopes s USING(version) ORDER BY seq`).all()
+    // Same admitted-only gate as active()/latest(): a pending/refused scoped override must never compose
+    // into a real player's resolved config (codex round 1 finding -- this was the actual bypass).
+    return this.db.prepare(`SELECT p.*,s.scope FROM registry_publications p JOIN registry_scopes s USING(version) WHERE ${this.ADMITTED} ORDER BY seq`).all()
       .map(r => ({ ...r, scope: JSON.parse(String(r.scope)) as ConfigScope })) as (Publication & { scope: ConfigScope })[];
   }
+  // predecessor() is a staleness/draftSource helper, never on the player-facing compose() path (that's
+  // scopedPublications() above, which must stay admitted-only too). currentBase()'s measurementPending
+  // refusal already guarantees no second proposal for this same scope can ever be CREATED while a sibling
+  // is pending, so there is never a competing pending predecessor to reason about here.
   private predecessor(scope: ConfigScope) {
     return this.scopedPublications().filter(p => p.scope.kind === scope.kind && p.scope.id === scope.id).at(-1);
   }
@@ -203,8 +241,33 @@ export class ConfigRegistry {
     if (!governed.length) throw Error('registry:invalidKeys');
     return registryPolicy(governed, base, scope?.kind);
   }
+  // Two proposals can never be pending on overlapping scopes at once: currentBase() is the shared gate for
+  // every entry point that creates or schedules a publication (propose, approve, publicationAt -> publish,
+  // emergency or not), so this alone closes the base/scope race the old pending-aware plumbing tried to
+  // patch call-by-call. A default (unscoped) proposal's audience is every player (affectedPlayers()'s own
+  // reading of "no scope"), so it always overlaps -- another default (only one default slot exists) and any
+  // scoped proposal too: compose() layers a scoped patch on top of whatever the default resolves to, and two
+  // independently-valid pending proposals can still compose into a schema-invalid config once both admit,
+  // with neither's own preview/validate() ever having seen the other (codex review round 2 finding -- a
+  // pending default and a pending scoped proposal that never overlapped could each pass their own checks
+  // and then break a real player's resolve() once both settled). Two scoped proposals overlap if they're the
+  // SAME (kind,id) slot -- predecessor()/currentScopes() dedup by that key, so two pending entries for it
+  // would race exactly like the old default-base race, no matter what playerIds either one currently
+  // declares -- or if their audiences intersect at all (a genuine scopeConflict candidate, even across
+  // different slots).
+  private scopeOverlap(a?: ConfigScope, b?: ConfigScope): boolean {
+    if (!a || !b) return true;
+    if (a.kind === b.kind && a.id === b.id) return true;
+    return a.playerIds.some(id => b.playerIds.includes(id));
+  }
+  private pendingPublications(): { version: string; scope?: ConfigScope }[] {
+    return (this.db.prepare("SELECT version FROM registry_measurements WHERE state='pending'").all() as { version: unknown }[])
+      .map(row => ({ version: String(row.version), scope: this.scope(String(row.version)) }));
+  }
   private currentBase(draft: { base_version: string }, scope?: ConfigScope, emergency = false, now = this.now()) {
-    if ((emergency ? this.active(now).version : this.latest().version) !== draft.base_version || scope && (this.predecessor(scope)?.version ?? null) !== scope.previousVersion) throw Error('registry:staleBase');
+    if (this.pendingPublications().some(p => this.scopeOverlap(scope, p.scope))) throw Error('registry:measurementPending');
+    const reference = emergency ? this.active(now).version : this.latest()?.version;
+    if (reference !== draft.base_version || scope && (this.predecessor(scope)?.version ?? null) !== scope.previousVersion) throw Error('registry:staleBase');
   }
   private supportAvailable(scope: ConfigScope) {
     const ticket = this.db.prepare('SELECT player_id FROM registry_support WHERE id=?').get(scope.ticketId!);
@@ -223,6 +286,9 @@ export class ConfigRegistry {
       this.audit('SupportRequested', { ticketId: id, ...input, requestedBy: actor.subject, at: now }); return id;
     });
   }
+  // Always admitted-only (codex round 1): a pending/refused scoped override must never compose into a real
+  // player's resolved config, and currentBase()'s measurementPending refusal means there is never a pending
+  // sibling this needs to see anyway -- the old includePending branch (codex round 5) goes with it.
   private currentScopes(now: number, candidate?: PreviewPublication) {
     const latest = new Map<string, ReturnType<ConfigRegistry['scopedPublications']>[number]>();
     const entries = this.scopedPublications();
@@ -230,6 +296,12 @@ export class ConfigRegistry {
     for (const entry of entries) if (entry.effective_at <= now) latest.set(JSON.stringify([entry.scope.kind, entry.scope.id]), entry);
     return [...latest.values()].filter(p => p.scope.expiresAt === null || p.scope.expiresAt > now);
   }
+  // Feeds real governance decisions (policy()'s displaced-keys and affectedPlayers()'s audience below), not
+  // just the audit trail. Admitted-only, like everything else here now: a pending Tier C scope cannot be
+  // omitted by a pending A/B successor, because currentBase()'s measurementPending refusal never lets that
+  // successor exist while the Tier C entry is still pending in the first place. The filter keeps the
+  // currently-active entry plus any not-yet-superseded future-scheduled one; an old entry already displaced
+  // by a later admission (no explicit supersede audit needed) drops out on its own.
   private emergencyScopeReplacements(scope: ConfigScope, now: number) {
     const matches = (p: { scope: ConfigScope }) => p.scope.kind === scope.kind && p.scope.id === scope.id;
     const active = this.currentScopes(now).find(matches)?.version;
@@ -276,10 +348,14 @@ export class ConfigRegistry {
     return this.db.isTransaction ? action() : this.transaction(action);
   }
   private validatePublications(now: number, candidate?: PreviewPublication) {
+    // Admitted-only, like currentScopes(): currentBase()'s measurementPending refusal means a candidate can
+    // never share an overlapping scope with an already-pending sibling, so this self-check only ever needs
+    // admitted entries plus the candidate itself to catch a real conflict -- codex round 5's original gap
+    // (two proposals both pending at once) is closed earlier, at propose/approve/publish time, not here.
     const entries = this.scopedPublications();
     if (candidate?.scope) entries.push({ ...candidate, scope: candidate.scope });
     const players = new Set(entries.flatMap(p => p.scope.playerIds));
-    const boundaries = new Set([now, ...(candidate ? [candidate.effective_at] : []), ...this.db.prepare('SELECT effective_at FROM registry_publications WHERE effective_at>=?').all(now).map(r => Number(r.effective_at)),
+    const boundaries = new Set([now, ...(candidate ? [candidate.effective_at] : []), ...this.db.prepare(`SELECT effective_at FROM registry_publications WHERE effective_at>=? AND ${this.ADMITTED}`).all(now).map(r => Number(r.effective_at)),
       ...entries.flatMap(p => p.scope.expiresAt !== null && p.scope.expiresAt >= now ? [p.scope.expiresAt] : [])]);
     for (const at of boundaries) for (const player of players) this.compose(player, at, candidate);
   }
@@ -302,12 +378,30 @@ export class ConfigRegistry {
     if (actor.role !== 'super' || !actor.mfa) throw Error('registry:forbidden');
     if (policy?.tiers.some(t => t === 'C')) throw Error('registry:emergencyTier');
   }
+  // The superseding effect doesn't exist until the superseding version itself admits: publish()'s emergency
+  // branch writes this audit record synchronously, before its OWN async measurement settles, so a pending
+  // (or later refused) emergency must not archive the schedule it named -- exactly the same "pending has no
+  // effect on scheduling" rule applied to the writer of the marker, not just its own scheduling (codex review
+  // round 1 finding, pending-vs-scope follow-up: a refused emergency permanently orphaned its target schedule).
+  // More than one marker can exist for the same target version -- once the FIRST emergency to name it (E1)
+  // is refused, pendingSchedules()/emergencyScopeReplacements() see the schedule as never-superseded again
+  // (this method returning null for a refused-only writer), so a LATER emergency (E2) can legitimately claim
+  // the same schedule and admit. auditRecord()'s own LIMIT 1 always returns the OLDEST marker -- E1's, which
+  // stays refused forever -- so this reads every marker directly and returns the first ADMITTED writer,
+  // never assuming write order determines truth (codex review round 4 finding).
   private supersededBy(version: string) {
-    return this.auditRecord<{ byVersion: string }>('ConfigScheduleSuperseded', version)?.byVersion ?? null;
+    const rows = this.db.prepare("SELECT payload FROM registry_audit WHERE type='ConfigScheduleSuperseded' AND json_extract(payload,'$.version')=? ORDER BY seq").all(version) as { payload: unknown }[];
+    for (const row of rows) {
+      const byVersion = String((JSON.parse(String(row.payload)) as { byVersion: string }).byVersion);
+      if (this.measurementRow(byVersion)?.state === 'admitted') return byVersion;
+    }
+    return null;
   }
+  // Admitted-only (codex round 6 finding 3): a pending or refused publication doesn't exist for scheduling,
+  // so it must never show up as something an emergency displaces or a preview/audit lists as superseded.
   private pendingSchedules(scope: ConfigScope | undefined, now: number): SupersededSchedule[] {
     const rows = this.db.prepare(`SELECT p.*,d.keys FROM registry_publications p JOIN registry_proposals d USING(version)
-      WHERE p.effective_at>? ORDER BY p.seq`).all(now);
+      WHERE p.effective_at>? AND ${this.ADMITTED} ORDER BY p.seq`).all(now);
     return rows.filter(p => {
       const other = this.scope(String(p.version));
       return scope ? other?.kind === scope.kind && other.id === scope.id : !other;
@@ -343,7 +437,13 @@ export class ConfigRegistry {
       const record = row.get(version);
       if (!record) throw Error('registry:missingVersion');
       if (this.supersededBy(version)) return 'archived';
-      if (record.effective_at !== null) return Number(record.effective_at) > now ? 'scheduled' : active.has(version) ? 'active' : 'archived';
+      // A published-but-not-admitted (pending or refused) version doesn't exist for scheduling purposes,
+      // exactly like it was never published: it falls through to whatever phase its underlying proposal
+      // would show (approved, having already cleared review -- retryMeasurement in details() is the
+      // dedicated pending-specific signal, unaffected by this) (codex review round 2 finding).
+      if (record.effective_at !== null && this.measurementRow(version)?.state === 'admitted') {
+        return Number(record.effective_at) > now ? 'scheduled' : active.has(version) ? 'active' : 'archived';
+      }
       return record.approved ? 'approved' : record.proposed ? 'draft' : 'snapshot';
     };
   }
@@ -375,9 +475,16 @@ export class ConfigRegistry {
         reviewTicket: this.auditRecord<EmergencyTicket>('ConfigEmergencyReviewOpened', version), review: this.auditRecord<EmergencyReview>('ConfigEmergencyReviewed', version), snapshot: config.raw, scope: scope ?? null, previous, draft: draft ?? null,
         permissions: { propose: !['support', 'viewer'].includes(actor.role),
           approve: !emergency && !publication && !approval && permitted(true) && (policy?.tier !== 'A' || draft?.changed_by !== actor.subject),
-          publish: !publication && (emergency || !!approval) && permitted(false) },
+          publish: !publication && (emergency || !!approval) && permitted(false),
+          // A stuck-pending publication (e.g. a worker failure the restart-recovery sweep hasn't reached
+          // yet) is otherwise invisible to an admin -- publish=false already, and phase reads 'archived'
+          // once its effective_at passes, indistinguishable from a version that really was superseded.
+          // Calling POST /admin/publish again on this exact version retries the measurement (codex round 2);
+          // this flag is what makes that discoverable without a UI change (out of scope for this server
+          // slice -- see measurement.state above for the same information) (codex round 3 finding).
+          retryMeasurement: !!publication && this.measurementRow(version)?.state === 'pending' && permitted(false) },
         base: draft ? this.config(String(draft.base_version)).raw : null,
-        policy, approval, publication };
+        policy, approval, publication, measurement: publication ? this.measurementRow(version) ?? null : null };
     }, true);
   }
   auditPage(actor: AdminActor, after = 0) {
@@ -446,6 +553,8 @@ export class ConfigRegistry {
     const emergency = emergencyDraft(draft);
     this.currentBase(draft, scope, emergency, now);
     this.validateAdmission(this.config(draft.version), base); // Also fence drafts admitted before a validation fix.
+    // Admitted-only on both branches: currentBase() above already refused measurementPending if a sibling
+    // were pending, so the latest ADMITTED entry is always the right slot to check for scheduleConflict.
     const latest = scope ? this.predecessor(scope) : this.latest();
     const at = emergency ? now : scheduledAt(now, draft.effective, policy, base);
     if (scope?.expiresAt !== null && scope?.expiresAt !== undefined && scope.expiresAt <= at) throw Error('registry:invalidExpiry');
@@ -468,7 +577,9 @@ export class ConfigRegistry {
   }
   draftSource(actor: AdminActor, version?: string, emergency = false) {
     const now = this.now(); this.actor(actor, now); if (emergency) this.emergencyPermit(actor);
-    const base = emergency ? this.active(now) : this.config(this.latest().version), source = version ? this.config(version) : base;
+    // Admitted-only, matching currentBase(): a pending sibling can never exist without currentBase() already
+    // refusing measurementPending against it, so the last ADMITTED version is always the right base to offer.
+    const base = emergency ? this.active(now) : this.config(this.latest()!.version), source = version ? this.config(version) : base;
     if (emergency && version && version !== base.version && !this.currentScopes(now).some(p => p.version === version)) throw Error('registry:inactiveEmergencySource');
     const scope = version ? this.scope(version) : undefined, snapshot = structuredClone(scope ? base.raw : source.raw);
     if (scope) patch(snapshot, source.raw, JSON.parse(this.proposal(version!).keys));
@@ -479,6 +590,9 @@ export class ConfigRegistry {
   scopeSource(actor: AdminActor, kind: string, id: string, emergency = false) {
     const now = this.now(); this.actor(actor, now); if (emergency) this.emergencyPermit(actor);
     if (!['segment', 'campaign', 'player'].includes(kind) || !id || id.length > 128) throw Error('registry:invalidInput'); // config-exempt:scope identity protocol
+    // Admitted-only, matching predecessor()'s view (must agree, or an unrelated edit built on a mismatched
+    // snapshot/previousVersion pair could revert a change once it admits) -- there is no pending sibling to
+    // reconcile against, since currentBase() never lets one exist alongside this scope.
     const last = this.scopedPublications().filter(p => p.scope.kind === kind && p.scope.id === id).at(-1);
     if (!last) throw Error('registry:missingScope');
     if (!emergency) return this.draftSource(actor, last.version);
@@ -490,8 +604,16 @@ export class ConfigRegistry {
     return this.transaction(now => { this.actor(actor, now); return this.previewImpact(version, now); });
   }
   private previewPublication(version: string, now: number): PreviewPublication {
+      const existing = this.db.prepare('SELECT * FROM registry_publications WHERE version=?').get(version) as Publication | undefined;
+      if (existing) {
+        // A still-pending measurement means publish() already committed and validated this row once;
+        // return the REAL committed shape (no re-schedule, no re-validate) so forecastPlan()/reportFromBackup()
+        // can measure it (codex round 1 finding -- this guard made production measurement unreachable).
+        // A settled (admitted/refused) version keeps the original terminal guard unchanged.
+        if (this.measurementRow(version)?.state !== 'pending') throw Error('registry:alreadyPublished');
+        return { ...existing, scope: this.scope(version) };
+      }
       const draft = this.proposal(version), scope = this.scope(version), at = this.publicationAt(draft, now);
-      if (this.db.prepare('SELECT 1 FROM registry_publications WHERE version=?').get(version)) throw Error('registry:alreadyPublished');
       const candidate: PreviewPublication = { seq: Number(this.db.prepare('SELECT MAX(seq) AS n FROM registry_publications').get()!.n) + 1,
         version, scope, effective_at: at, published_at: now, changed_by: draft.changed_by, approved_by: 'preview' };
       this.validatePublications(now, candidate);
@@ -502,7 +624,7 @@ export class ConfigRegistry {
     if (!Number.isSafeInteger(through) || through <= now) throw Error('registry:invalidInput');
     const candidate = this.previewPublication(version, now), scope = candidate.scope;
     const ids = this.affectedPlayers(version, now);
-    const times = [...new Set([now, candidate.effective_at, ...this.db.prepare('SELECT effective_at FROM registry_publications').all().map(p => Number(p.effective_at)),
+    const times = [...new Set([now, candidate.effective_at, ...this.db.prepare(`SELECT effective_at FROM registry_publications WHERE ${this.ADMITTED}`).all().map(p => Number(p.effective_at)),
       ...this.scopedPublications().flatMap(p => p.scope.expiresAt === null ? [] : [p.scope.expiresAt]), ...(scope?.expiresAt ? [scope.expiresAt] : [])])]
       .filter(at => at >= now && at < through).sort((a,b) => a-b);
     const players = ids.map(id => {
@@ -511,14 +633,31 @@ export class ConfigRegistry {
       return { id, revision: Number(this.db.prepare('SELECT revision FROM players WHERE id=?').get(id)!.revision), before, after, keys };
     });
     return { version, computedAt: now, through, activatesAt: candidate.effective_at,
-      registryRevision: candidate.seq-1, players };
+      registryRevision: this.admittedRevision(), measurementRevision: this.measurementSeq(), players };
   }
-  assertForecastCurrent(actor: AdminActor, report: { version: string; registryRevision: number; computedAt: number; activatesAt: number }) {
+  // candidate.seq itself must stay the RAW, unfiltered MAX(seq)+1 (previewPublication() above) -- compose()'s
+  // own sort ties on it, and it must sort after every real (including pending) row exactly like a genuine
+  // publish() would assign. But raw seq is a bad STALENESS signal: registry_publications.seq increments on
+  // every publish() regardless of outcome, so an unrelated publication merely going pending (never admitting)
+  // would already move it, contradicting "pending has no scheduling effect" for the one thing this field
+  // exists to detect (codex review round 3 finding). Admitted-only, like every other staleness/revision check.
+  private admittedRevision(): number {
+    return Number(this.db.prepare(`SELECT MAX(seq) AS n FROM registry_publications WHERE ${this.ADMITTED}`).get()!.n);
+  }
+  // registry_publications.seq alone misses a real staleness case: a measurement settling elsewhere (pending
+  // -> admitted/refused) changes what compose() resolves for every player without inserting a new
+  // publication row, so registryRevision can stay identical while the report's before/after is now wrong
+  // (codex round 6 finding 4). Every registry_measurements row transitions exactly once, so the count of
+  // settled (non-pending) rows is itself a monotonic generation counter -- no schema change needed.
+  private measurementSeq(): number {
+    return Number(this.db.prepare("SELECT COUNT(*) AS n FROM registry_measurements WHERE state!='pending'").get()!.n);
+  }
+  assertForecastCurrent(actor: AdminActor, report: { version: string; registryRevision: number; measurementRevision: number; computedAt: number; activatesAt: number }) {
     const now=this.now();this.actor(actor,now);
     const candidate=this.previewPublication(report.version,now);
     const activation=candidate.effective_at>now?candidate.effective_at:null;
     const expected=report.activatesAt>report.computedAt?report.activatesAt:null;
-    if(candidate.seq-1!==report.registryRevision || activation!==expected)throw Error('registry:staleForecast');
+    if(this.admittedRevision()!==report.registryRevision || this.measurementSeq()!==report.measurementRevision || activation!==expected)throw Error('registry:staleForecast');
   }
   private previewImpact(version: string, now: number) {
       const candidate = this.previewPublication(version, now), scope = candidate.scope, at = candidate.effective_at;
@@ -535,13 +674,73 @@ export class ConfigRegistry {
         }
       }
       // Bind registry revisions and time-dependent resolution, not continuously changing live-shift counts.
+      // Admitted-only revision (not raw candidate.seq), same reasoning as forecastPlan()/assertForecastCurrent():
+      // an unrelated publication merely going pending must not make a held impact token look stale (codex
+      // review round 3 finding, same pattern as the forecast staleness one).
       const supersedes = emergencyDraft(this.proposal(version)) ? this.pendingSchedules(scope, now) : null;
-      const token = createHash('sha256').update(JSON.stringify({ revision: candidate.seq - 1, activation: at > now ? at : null, resolutions, supersedes })).digest('hex');
+      const token = createHash('sha256').update(JSON.stringify({ revision: this.admittedRevision(), activation: at > now ? at : null, resolutions, supersedes })).digest('hex');
       return { version, token, supersedes, computedAt: now, activatesAt: at, expiresAt: scope?.expiresAt ?? null, audiencePlayers: ids.length,
         changedPlayers, pinnedShifts, keys: [...keys].sort(([a], [b]) => a.localeCompare(b)).map(([path, players]) => ({ path, players })) };
   }
+  private seedBand(): Config['values']['k']['band'] {
+    const seedVersion = this.db.prepare('SELECT version FROM registry_publications ORDER BY seq LIMIT 1').get()!.version;
+    return this.config(String(seedVersion)).values.k.band;
+  }
+  private measurementRow(version: string) {
+    const row = this.db.prepare('SELECT state, measured_k, measured_at FROM registry_measurements WHERE version=?').get(version);
+    return row ? { state: String(row.state) as 'pending' | 'admitted' | 'refused',
+      measured_k: row.measured_k === null ? null : Number(row.measured_k), measured_at: row.measured_at === null ? null : Number(row.measured_at) } : undefined;
+  }
+  /** Pure DB write, never throws -- callers decide what a refusal means for their own control flow. */
+  private finishMeasurement(version: string, measured: number): boolean {
+    const band = this.seedBand(), admitted = measured >= band[0] && measured <= band[1];
+    this.transaction(now => { this.db.prepare("UPDATE registry_measurements SET state=?,measured_k=?,measured_at=? WHERE version=? AND state='pending'")
+      .run(admitted ? 'admitted' : 'refused', measured, now, version); });
+    return admitted;
+  }
+  /** Called OUTSIDE publish()'s own transaction. A sync measurer (tests) settles admission inline before
+   * publish() returns; a Promise (production forecast worker) settles later -- publish() already returned
+   * the pending row, and active()/latest() keep serving the previous admitted version until this lands. */
+  private settleMeasurement(version: string, config: Config, actor: AdminActor) {
+    const result = this.measureK(config, version, actor);
+    if (typeof result === 'number') {
+      if (!this.finishMeasurement(version, result)) throw Object.assign(new Error('registry:bindingRange'), { measured: result, band: this.seedBand() });
+      return;
+    }
+    const promise = result.then(measured => { this.finishMeasurement(version, measured); },
+      // ponytail: leaves the row pending forever on a rejected measurement; add a retry queue if this ever fires in practice.
+      error => { console.error('registry:measurementFailed', version, error instanceof Error ? error.message : error); }
+    ).finally(() => this.settling.delete(version));
+    this.settling.set(version, promise);
+  }
+  /** Test-only determinism seam: await every in-flight async measurement instead of racing timers. */
+  async settleMeasurements() { await Promise.all([...this.settling.values()]); }
+  /** Recovery for a restart mid-measurement, or after a worker failure that left a row pending forever
+   * (codex round 1 finding). The original publishing admin's session is long gone by restart time, so this
+   * uses a synthetic system actor -- same pattern as 'system:seed' in initializeRegistry(). A resumed
+   * version that turns out refused must not throw out of here.
+   * Called explicitly by the production entrypoint (apps/server/src/main.ts) after constructing its store --
+   * NOT wired into the GameStore constructor itself. forecastEconomy()'s worker also constructs a throwaway
+   * GameStore from a BACKUP COPY of the same database to run the very measurement this method would resume;
+   * auto-calling this from the constructor would race that measurement using this default self-report
+   * measurer and settle the row before the real one runs (codex round 2 finding, caught before it shipped). */
+  async resumePendingMeasurements() {
+    const system: AdminActor = { subject: 'system:measurement-resume', role: 'super', mfa: true, issuedAt: this.now(), expiresAt: this.now() + 3600000 };
+    for (const row of this.db.prepare("SELECT version FROM registry_measurements WHERE state='pending'").all()) {
+      const version = String(row.version);
+      try {
+        // Never duplicate a measurement a concurrent publish() retry (or an earlier resume pass) already kicked.
+        if (!this.settling.has(version)) this.settleMeasurement(version, this.config(version), system);
+        // Serialized on purpose: forecastEconomy()'s single-flight `running` mutex admits only one
+        // measurement at a time, so firing every pending row concurrently just lets the first grab the
+        // lock and forces the rest to fail with forecastBusy and stay pending forever (codex round 2).
+        await (this.settling.get(version) ?? Promise.resolve());
+      }
+      catch (error) { console.error('registry:measurementResumeFailed', version, error instanceof Error ? error.message : error); }
+    }
+  }
   publish(actor: AdminActor, version: string, expectedImpact?: string | null): Publication {
-    return this.transaction(now => {
+    const prepared = this.transaction(now => {
       this.actor(actor, now);
       const draft = this.proposal(version), base = this.config(draft.base_version), policy = this.policy(JSON.parse(draft.keys), base, this.scope(version));
       const scope = this.scope(version); this.permit(actor, policy, false, scope);
@@ -549,7 +748,15 @@ export class ConfigRegistry {
       const emergency = emergencyDraft(draft); if (emergency) this.emergencyPermit(actor, policy);
       if (!emergency && !approval) throw Error('registry:approvalRequired');
       const existing = this.db.prepare('SELECT * FROM registry_publications WHERE version=?').get(version) as Publication | undefined;
-      if (existing) return existing;
+      if (existing) {
+        const row = this.measurementRow(version);
+        if (row?.state === 'refused') throw Object.assign(new Error('registry:bindingRange'), { measured: row.measured_k, band: this.seedBand() });
+        if (row?.state === 'admitted') return { publication: existing, config: null as Config | null, retry: false };
+        // Still pending: a re-publish call on a stuck version retries the measurement instead of just
+        // re-throwing kUnmeasured forever -- recovers from a transient forecastBusy/timeout without
+        // needing a full server restart (codex round 2 finding).
+        return { publication: existing, config: this.config(version), retry: true };
+      }
       if (emergency) this.emergencyPermit(actor, this.policy(JSON.parse(draft.keys), base, scope, now));
       if ((emergency || scope && expectedImpact !== undefined) && (!expectedImpact || this.previewImpact(version, now).token !== expectedImpact)) throw Error('registry:staleImpact');
       const at = this.publicationAt(draft, now);
@@ -558,8 +765,13 @@ export class ConfigRegistry {
       if (count >= PUBLISH_PER_DAY) throw Error('registry:rateLimited');
       if (scope?.kind === 'player') this.supportAvailable(scope);
       const supersedes = emergency ? this.pendingSchedules(scope, now) : [], approvedBy = emergency ? actor.subject : String(approval!.approved_by);
+      const seq = Number(this.db.prepare('SELECT MAX(seq) AS n FROM registry_publications').get()!.n) + 1;
+      // Scope-conflict self-check runs against a PREVIEW candidate, exactly like previewPublication() does,
+      // because the real row is still one statement away -- and once inserted it starts 'pending', which
+      // active()/scopedPublications() would otherwise treat as not-yet-real for this very own consistency check.
+      this.validatePublications(now, { seq, version, scope, effective_at: at, published_at: now, changed_by: draft.changed_by, approved_by: approvedBy });
       this.db.prepare('INSERT INTO registry_publications VALUES (NULL,?,?,?,?,?)').run(version, at, now, draft.changed_by, approvedBy);
-      this.validatePublications(now);
+      this.db.prepare("INSERT INTO registry_measurements VALUES (?,'pending',NULL,NULL)").run(version);
       if (scope?.kind === 'player') this.db.prepare('INSERT INTO registry_support_uses VALUES (?,?)').run(scope.ticketId!, version);
       if (emergency) {
         for (const schedule of supersedes) this.audit('ConfigScheduleSuperseded', { ...schedule, byVersion: version, marker: `superseded by emergency ${version}`, at: now });
@@ -568,7 +780,16 @@ export class ConfigRegistry {
       this.audit('ConfigPublished', { version, emergency, scope: scope ?? null, keys: JSON.parse(draft.keys), effectiveAt: draft.effective, activatesAt: at,
         changedBy: draft.changed_by, publishedBy: actor.subject, approvedBy, reason: draft.reason,
         rollbackVersion: this.rollbackSource(loadConfig(JSON.parse(JSON.parse(draft.fingerprint).config)), draft.base_version), at: now });
-      return this.db.prepare('SELECT * FROM registry_publications WHERE version=?').get(version) as Publication;
+      return { publication: this.db.prepare('SELECT * FROM registry_publications WHERE version=?').get(version) as Publication, config: this.config(version), retry: false };
     });
+    if (prepared.config) {
+      // Never duplicate an already in-flight settlement (a resume, or another concurrent retry).
+      if (!this.settling.has(version)) this.settleMeasurement(version, prepared.config, actor);
+      // A fresh publish (retry=false) always returns -- the caller sees a pending Publication and awaits
+      // settleMeasurements()/polls details(), matching the documented "admin response says pending" contract.
+      // A retry (existing, still-pending version) reports whether the nudge actually resolved it yet.
+      if (prepared.retry && this.measurementRow(version)?.state !== 'admitted') throw Error('registry:kUnmeasured');
+    }
+    return prepared.publication;
   }
 }

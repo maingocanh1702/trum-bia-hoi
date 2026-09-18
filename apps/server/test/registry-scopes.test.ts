@@ -212,8 +212,8 @@ test('failed runtime composition rolls back catch-up and save changes without si
 test('schema9 migration preserves default publication, approval, existing careers and historical replay', t => {
   const f = fixture(t); const pub = f.publish(c => { c.menu.bia.price++; });
   f.store.command('alice', { idempotencyKey: 'open', command: { type: 'startShift' } }); const before = f.store.read('alice'); f.store.close();
-  f.db.exec('DROP TABLE registry_resolutions; DROP TABLE registry_support_uses; DROP TABLE registry_support; DROP TABLE registry_scopes; PRAGMA user_version=9');
-  const migrated = f.open(); assert.equal(f.db.prepare('PRAGMA user_version').get()!.user_version, 10);
+  f.db.exec('DROP TABLE registry_resolutions; DROP TABLE registry_support_uses; DROP TABLE registry_support; DROP TABLE registry_scopes; DROP TABLE registry_measurements; PRAGMA user_version=9');
+  const migrated = f.open(); assert.equal(f.db.prepare('PRAGMA user_version').get()!.user_version, 11);
   assert.deepEqual(migrated.read('alice'), before); assert.equal(migrated.registry.latest().version, pub.version);
   assert.equal(migrated.registry.resolve('alice').version, pub.version);
 });

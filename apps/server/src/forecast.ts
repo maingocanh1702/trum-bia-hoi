@@ -8,6 +8,9 @@ import type { AdminActor } from './registry';
 
 // config-exempt: report worker resource/deployment limits, not economy tuning.
 const TIMEOUT_MS=600000, HEAP_MB=1024;
+// config-exempt: 08-SPEC-economy-constants.md §1 measurement methodology floor ("k = mean(payment+tip)/82.5
+// on >=500 served"), not gameplay tuning -- matches packages/engine/sim/career.ts's own >=500 assertion.
+const MIN_SERVED_FOR_MEASUREMENT=500;
 let running=false;
 type Totals=ReturnType<typeof projectEconomy>['report']['totals'];
 const checked=(n:number)=>{if(!Number.isSafeInteger(n))throw Error('registry:forecastAmount');return n;};
@@ -24,23 +27,59 @@ export function reportFromBackup(store:GameStore,actor:AdminActor,version:string
     let target=daily.get(row.date);if(!target){target={date:row.date,baseline:empty(),candidate:empty()};daily.set(row.date,target);}
     sum(target[side],row);
   }};
+  let candidateTotalValue=0,candidateServed=0,candidateSafe=true;
   for(const player of plan.players) {
     const snapshot=store.read(player.id),game=store.fork(player.id);
-    const result=player.keys.length?compareEconomy(game,player.before,player.after):(()=>{const report=projectEconomy(game,player.before).report;return {baseline:report,candidate:report};})();
+    let result:{baseline:ReturnType<typeof projectEconomy>['report'];candidate:ReturnType<typeof projectEconomy>['report']};
+    if(player.keys.length) {
+      const compared=compareEconomy(game,player.before,player.after);
+      result=compared;
+      // Only a player who actually diverges under the candidate tells us anything about ITS real economics --
+      // one whose resolved config never changes within this horizon (masked by a more specific scope, or the
+      // change activates beyond the forecast window) must not smuggle baseline-labeled-candidate data into the
+      // pool (codex round 1 finding: a price hike scheduled past the horizon measured in-band on zero real data).
+      if(compared.k.candidate.totalValue===null)candidateSafe=false;
+      else {candidateTotalValue=checked(candidateTotalValue+compared.k.candidate.totalValue);candidateServed=checked(candidateServed+compared.k.candidate.served);}
+    } else {
+      const report=projectEconomy(game,player.before).report;
+      result={baseline:report,candidate:report};
+    }
     sum(baseline,result.baseline.totals);sum(candidate,result.candidate.totals);
     aggregate(result.baseline.rows,'baseline');aggregate(result.candidate.rows,'candidate');
     members.push({id:player.id,revision:player.revision,snapshotRevision:snapshot.revision,inputConfigVersion:game.config.version,commandHash:result.baseline.commandHash,candidateHash:result.candidate.commandHash});
     for(const key of player.keys)keys.set(key,(keys.get(key)??0)+1);
   }
   for(const totals of [baseline,candidate])if(totals.closingCoins!==totals.openingCoins+totals.faucet+totals.depositRefunds-totals.sink-totals.penalties)throw Error('registry:forecastConservation');
-  return {version,computedAt:plan.computedAt,through:plan.through,activatesAt:plan.activatesAt,registryRevision:plan.registryRevision,policy:FORECAST_POLICY,
+  // Pooled across every real player actually simulated under the candidate -- mean of means would misweight
+  // a low-volume player the same as a high-volume one, so this sums totalValue/served first, then divides once.
+  const anchor=store.registry.config(version).values.k.anchorValuePerServe;
+  // Below the spec's own representativeness floor, a measured k is noise, not a verdict either way --
+  // stays unmeasured rather than certifying (or refusing) admission on too small a sample (codex round 2).
+  const measuredK=candidateSafe&&candidateServed>=MIN_SERVED_FOR_MEASUREMENT?candidateTotalValue/candidateServed/anchor:null;
+  return {version,computedAt:plan.computedAt,through:plan.through,activatesAt:plan.activatesAt,registryRevision:plan.registryRevision,measurementRevision:plan.measurementRevision,policy:FORECAST_POLICY,
     status:members.length?'complete' as const:'empty' as const,audiencePlayers:members.length,changedPlayers:plan.players.filter(p=>p.keys.length).length,
-    keys:[...keys].map(([path,players])=>({path,players})),members,
+    keys:[...keys].map(([path,players])=>({path,players})),members,measuredK,
     totals:members.length?{baseline,candidate,delta:difference(baseline,candidate)}:null,
     daily:[...daily.values()].sort((a,b)=>a.date.localeCompare(b.date)),
     vndRevenue:{status:'unavailable' as const,reason:'No observed donation data; free gameplay sales are not VND revenue.'}};
 }
 export type EconomicForecast=ReturnType<typeof reportFromBackup>;
+/** The production MeasureK: reuses the existing forecast Worker (async, off the event loop) rather than a
+ * second mechanism. Throws when there is no real measured data (no players, or none actually experience the
+ * candidate within the horizon) -- the row stays 'pending' rather than silently certifying the self-reported
+ * k.value, which is exactly the gap this feature closes (codex round 1 finding: fail closed, not open). */
+export async function measureKViaForecast(store:GameStore,actor:AdminActor,version:string):Promise<number> {
+  const report=await forecastEconomy(store,actor,version,new AbortController().signal);
+  if(report.measuredK===null)throw Error('registry:forecastEmpty');
+  // The worker's simulation can run for many seconds against a backup copy taken at its start; if the live
+  // registry moved on in the meantime (another measurement settled, another version published), that "before"
+  // state is stale and this measurement must not silently admit the candidate on outdated data. Same check
+  // assertForecastCurrent() already gives the admin-facing preview path -- the admission path needs it too
+  // (codex review round 1 finding, pending-vs-scope follow-up). A rejection here leaves the row pending for a
+  // retry, exactly like any other measurement failure (registry:measurementFailed is logged, never thrown out).
+  store.registry.assertForecastCurrent(actor,report);
+  return report.measuredK;
+}
 
 /** Copy + simulate off the HTTP event loop; a failed/cancelled report never returns partial totals. */
 export async function forecastEconomy(store:GameStore,actor:AdminActor,version:string,signal:AbortSignal):Promise<EconomicForecast> {

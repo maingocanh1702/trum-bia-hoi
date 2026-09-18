@@ -8,10 +8,10 @@ import { captureSeasonBackup } from './season-snapshot';
 import { Competition, type ImportReview } from './competition';
 import { rankSnapshot, rankPage, rankRows, rankSettings, archiveSettings, type SeasonSnapshot, validateRankQuery, type RankSnapshot, type RankQuery, type RankSource } from './leaderboard';
 import { importBaseline, competitivePeriods, type ImportBaseline } from './competitive-score';
-import { ConfigRegistry, initializeRegistry, initializeScopes, heartbeatTiming } from './registry';
+import { ConfigRegistry, initializeRegistry, initializeScopes, initializeMeasurements, heartbeatTiming, type MeasureK } from './registry';
 import { Game, config as seedConfig, configContent, decodeSave, loadConfig, validEnvelope, type Config, type Command, type DomainEvent, type EngineCheckpoint, type LoggedCommand, type World } from '@tbh/engine';
 
-const SCHEMA_VERSION = 10, CACHE_SIZE = 64; // config-exempt: persistence format and bounded process cache, not game tuning
+const SCHEMA_VERSION = 11, CACHE_SIZE = 64; // config-exempt: persistence format and bounded process cache, not game tuning
 const GOOGLE_CHALLENGE_TTL_MS = 300000; // config-exempt: five-minute authentication nonce lifetime, not gameplay time
 const EVENT_PAGE_SIZE = 100; // config-exempt: transport history page bound, not gameplay tuning
 type PlayerRow = { id: string; seed: number; created_at: number; config_version: string; now: number; revision: number; projection: string };
@@ -49,7 +49,7 @@ export class GameStore {
   private seasonSweep?: Promise<void>;
   private readonly seasonAbort = new AbortController();
   private readonly cache = new Map<string, LiveGame & { revision: number }>();
-  constructor(readonly path: string, config: Config = seedConfig, private readonly clock = Date.now) {
+  constructor(readonly path: string, config: Config = seedConfig, private readonly clock = Date.now, measureK?: MeasureK) {
     const candidate = loadConfig(config.raw);
     heartbeatTiming(candidate);
     this.db = new DatabaseSync(path);
@@ -126,7 +126,8 @@ export class GameStore {
       if (Number(version) < 8) initializeRegistry(this.db, registered, this.now());
       if (Number(version) < 9) initializeAdmin(this.db);
       if (Number(version) < 10) initializeScopes(this.db);
-      this.registry = new ConfigRegistry(this.db, () => this.now());
+      if (Number(version) < 11) initializeMeasurements(this.db, this.now());
+      this.registry = new ConfigRegistry(this.db, () => this.now(), measureK);
       this.adminAuth = new AdminAuth(this.db, () => this.now());
       this.competition = new Competition(this.db, () => this.now());
       heartbeatTiming(this.registry.active());
