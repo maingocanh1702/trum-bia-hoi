@@ -21,6 +21,9 @@ const LITERAL_PORTS = {
   'playable-api-1': 4212,
   'playable-web-2': 4213,
   'playable-api-2': 4214,
+  'dev-web': 4215,
+  'dev-api': 4216,
+  'dev-preview': 4217,
 } as const;
 
 type Ports = Record<string, number>;
@@ -188,6 +191,56 @@ for (const { file } of CONFIGS) {
     assertWiredToResolver(file);
   });
 }
+
+test('apps/web/vite.config.ts imports and calls the resolver, with no leftover hardcoded dev ports', () => {
+  const source = readFileSync(resolve('apps/web/vite.config.ts'), 'utf8');
+  assert.match(
+    source,
+    /from ['"](\.\.\/\.\.\/)?scripts\/verify\/port['"]/,
+    'apps/web/vite.config.ts must import the resolver from scripts/verify/port',
+  );
+  assert.match(source, /resolvePort\(/, 'apps/web/vite.config.ts must call resolvePort(...)');
+  for (const literal of [5173, 5175, 4173]) {
+    assert.doesNotMatch(
+      source,
+      new RegExp(`\\b${literal}\\b`),
+      `apps/web/vite.config.ts must no longer hardcode literal dev port ${literal}`,
+    );
+  }
+});
+
+test('apps/web/vite.config.ts server/preview ports and the /api proxy default derive from the resolver', (t) => {
+  const cwd = mainWorkspaceDir(t);
+  const defaultPorts = resolveAllPorts({ cwd, env: {} });
+  const defaultConfig = loadConfig('apps/web/vite.config.ts', cwd, defaultCaseEnv()) as {
+    server: { port: number; proxy: { '/api': { target: string } } };
+    preview: { port: number };
+  };
+  assert.equal(defaultConfig.server.port, defaultPorts['dev-web']);
+  assert.equal(defaultConfig.preview.port, defaultPorts['dev-preview']);
+  assert.equal(defaultConfig.server.proxy['/api'].target, `http://127.0.0.1:${defaultPorts['dev-api']}`);
+
+  const overridePorts = resolveAllPorts({ env: { TBH_PORT_BASE: '5300' } });
+  const overrideConfig = loadConfig('apps/web/vite.config.ts', resolve('.'), overrideCaseEnv('5300')) as {
+    server: { port: number; proxy: { '/api': { target: string } } };
+    preview: { port: number };
+  };
+  assert.equal(overrideConfig.server.port, overridePorts['dev-web']);
+  assert.equal(overrideConfig.preview.port, overridePorts['dev-preview']);
+  assert.equal(overrideConfig.server.proxy['/api'].target, `http://127.0.0.1:${overridePorts['dev-api']}`);
+});
+
+test('package.json wires dev/dev:server to the resolver-derived ports', () => {
+  const pkg = JSON.parse(readFileSync(resolve('package.json'), 'utf8'));
+  assert.match(pkg.scripts['dev'], /vite --config apps\/web\/vite\.config\.ts/);
+  assert.match(
+    pkg.scripts['dev:server'],
+    /scripts\/verify\/port\.ts.*--role=dev-api/,
+    '"dev:server" must capture a resolver-derived TBH_PORT before invoking apps/server/src/main.ts',
+  );
+  assert.match(pkg.scripts['dev:server'], /TBH_PORT=/);
+  assert.doesNotMatch(pkg.scripts['dev:server'], /\b5175\b/);
+});
 
 test('with TBH_PORT_BASE unset, every scoped config resolves to today\'s literal ports (main workspace)', (t) => {
   const cwd = mainWorkspaceDir(t);
