@@ -1,5 +1,7 @@
 # 📐 SPEC — Hệ Bàn (Table System) — Trùm Bia Hơi
 
+> 🟢 **Owner 17–18/09/2026 (v1.4) — đè lên §5 "mua thêm bàn vs nâng sức chứa":** `Table.capacity` = số ghế (1–2), mua từng ghế; `Table.level` không còn quyết định sức chứa mà là **lợi ích** (Lv2 `extraRounds` +1, Lv3 `pExtraMoi`, Lv4 `tipMult` 1,25); mâm mỗi khách theo số ghế (1 ghế: bia *hoặc* 1 mồi tức thì; 2 ghế: bia + 1 mồi); nhóm ≤ 2, cỡ nhóm độc lập với quán (`spawn.pPair`), cặp không có bàn 2 ghế → `queue_overflow{reason:noSeat}` không phạt; ghế 2 chỉ mở sau đủ 4 bàn, nâng bàn cần 2 ghế; số bàn tối đa theo mặt bằng (`tableSlots`); mua bàn/ghế/nâng cấp không đòi bàn trống (áp cho nhóm kế); hàng đợi `1 + ghế/8`; command mới `kickTable` (mời bàn nhâm nhi về, tốn xu + uy tín). Luật đầy đủ + số: `docs/FEEDBACK-2026-09-17.md` §II.2 v3.3, §II.3.
+
 > Spec triển khai cho dev. Đào sâu §5 của `02-GDD-trum-bia-hoi.md`. Trả lời 4 câu hỏi còn thiếu: (1) state machine bàn+khách, (2) serve theo khách hay bàn, (3) phạt cụm tính sao, (4) mua thêm bàn vs nâng sức chứa. Nhãn: 🟢 CORE = cốt lõi; 🟡 = số cần playtest.
 > Ngày: 2026-06. Bám cơ chế gốc trumviahe (ghế đơn) nhưng nâng đơn vị thành **bàn**.
 
@@ -272,6 +274,7 @@ t-0    Order hết patience → bàn vào GRACE: viền ĐỎ pulse, cả nhóm 
 ## Changelog (append-only — thêm dòng mới, KHÔNG ghi đè)
 | Ver | Thay đổi |
 |---|---|
+| v1.4 | Owner 17–18/09: mô hình bàn ghế v3.3 (ghế = sức chứa + mâm, cấp bàn = lợi ích, thứ tự bàn→ghế→cấp, cặp độc lập, hàng đợi 1 + ghế/8, `kickTable`) — ghi ở header; §5 cũ chỉ còn giá trị lịch sử. Nguồn: `docs/FEEDBACK-2026-09-17.md` v3.3 · `docs/PLAN-vui-3-ca-2026-09-18.md` v1.6 · `docs/DESIGN-story-3-tuan-2026-09-18.md` v1.1 |
 | v1.0 | Bản đầu: domain model bàn + 4 quyết định (state machine §2/§3; serve theo Order §4; phạt cụm §5; mua thêm bàn vs nâng sức chứa §6). |
 | v1.1 | 5 điểm review: `OrderItem` gắn `customerId` (§1); chốt một-bàn-một-nhóm (§1,§7); kết thúc buổi khi Order đợt ≥2 fail (§5); giữ bàn khi còn Chí Phèo (§8); hủy/waste món đã chuẩn bị khi Order fail (§8). |
 | v1.2 | Thêm §9 "Serve race & grace window" (chạm phục vụ trễ → khách bỏ đi: 2 đồng hồ patience/freshness, grace 2 tầng, quy tắc gộp chống double-count, UI/animation mức bàn). Prototype dời §10. |

@@ -1,4 +1,4 @@
-# 📌 TRẠNG THÁI BỘ DOCS — Trùm Bia Hơi (cập nhật 08/09/2026)
+# 📌 TRẠNG THÁI BỘ DOCS — Trùm Bia Hơi (cập nhật 18/09/2026)
 
 > Bản **mới nhất**, thay cho mọi bản trước (không giữ lịch sử). Cập nhật lần cuối: 08/09/2026, sau khi áp nốt các việc còn lại. Trả lời: bộ docs đã đủ để giao dev/designer build game chưa, còn gì chờ chủ dự án.
 > Kiểm bằng cách mở từng file HANDOFF trỏ tới và đối chiếu với `docs/config/economy.tbh.json` (nguồn số).
@@ -44,10 +44,19 @@ Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **2 việc nh�
 
 **Cách viết doc giao việc (áp cho mọi bổ sung sau này):** chỉ định nghĩa đầu vào, đầu ra mong muốn, plugin/công cụ (Blender MCP cho asset…), acceptance/QA. Không viết quy trình từng bước — cách build do dev/agent tự quyết.
 
+**Quyết định owner 17–18/09/2026 (đang hiệu lực, ghi đè mục tương ứng ở trên khi mâu thuẫn; nguồn: `docs/PLAN-vui-3-ca-2026-09-18.md` §1 D1–D25):**
+10. Mục đích v1.0 = **vui khi tự chơi 3 ca**; ca = bận đầu (giữ 1 chạm giao mâm); 3 ca đầu không cooldown; HUD "mục tiêu kế tiếp" + sheet 3 làn; nút nhanh không pause.
+11. **Mô hình bàn ghế v3.3**: 1 bàn 1 ghế → bàn 2–4 (kèm ghế) → ghế 2 từng bàn (chỉ sau đủ 4 bàn; ghế 2 = đón cặp + mâm bia và mồi) → cấp bàn (Lv2 đợt thêm · Lv3 mồi 2 · Lv4 tip ×1,25). Cặp độc lập với quán; từ chối tại cửa không phạt; hàng đợi 1 + ghế/8. Số chỗ bàn theo mặt bằng.
+12. **k gate D4(a)**: đo trên đơn chuẩn; k quan sát được vượt 3,5.
+13. **Full story = 168 ca** (3 tuần × 8 ca), LP nén (LP7 = 2 tr base = màn kết), **M6 mở lại** vào hồi 3, trần ngày 400 k base, hợp đồng mặt bằng 3 ngày, `tableSlots`. Cooldown 30 phút và trần ca 8/6/5 giữ.
+14. **Mùa 21 ngày**, bảng xếp hạng theo mùa; mỗi mùa mới thêm một lớp gameplay.
+15. Số kinh tế đi kèm = ứng viên đã sim (W9), **S5 chốt** vào JSON 2.1.0 / rules 28 — chưa sửa JSON.
+
 ## 4. Còn chờ chủ dự án (đều đã có default, không chặn dev)
 
 | # | Việc | Default đang dùng | Cần khi |
 |---|---|---|---|
+| 0 | **D24 trần ngày 400 k base, D25 hàng đợi 1 + ghế/8** — owner chưa bác | dùng default (đã sim W9) | S5 |
 | 1 | **Content bank** (câu hỏi kiểm tra · quest pool · lời thoại khách) + **tính năng kiểm tra** | ⏸ pending theo bạn; `docs/content/` là đề xuất; `risk.inspection.enabled=false` | M5–M6 |
 | 2 | **Cổng nhận donate tự động (nếu muốn) · mức age gate** | QR chuyển khoản + admin xác nhận tay; age gate là config | M7 |
 | 3 | **Nguồn lịch/tỉ số Cúp Bóng Đá** | Admin nhập tay (tier C); API thật = adapter + flag | M8 |
@@ -90,3 +99,4 @@ Ba mục item-list (hành phi, đá lạnh, giá cosmetic) đã **chốt theo đ
 | 2026-09-08 local history/time | Tracker v0.8.1: save v2 đọc v1, pause hidden/offline, recovery import/reset; 26 unit + 9 E2E, 10-row cold/full sim pass. Review corrections đang chờ re-review độc lập, không nâng trạng thái hoàn tất. |
 
 | 2026-09-09 rules10 | Local config seed1.7.1 records ordinary-vs-active spawn-floor semantics; numeric values unchanged. See F08/F09 and build-progress for implementation/review evidence. |
+| 2026-09-18 | Thêm quyết định 17–18/09 (mục 3 #10–15) + hàng chờ D24/D25; trỏ tới PLAN-vui-3-ca, FEEDBACK v3.3, DESIGN-story-3-tuan; GDD v1.13, 03-SPEC v1.4, HANDOFF v1.42 |

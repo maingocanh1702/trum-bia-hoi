@@ -1,4 +1,4 @@
-# 🍺 HANDOFF — Trùm Bia Hơi — điểm vào cho Designer & Dev (v1.41)
+# 🍺 HANDOFF — Trùm Bia Hơi — điểm vào cho Designer & Dev (v1.42)
 
 > **Tương ứng với `00-TONG-HOP-trumviahe.md`** (bản nghiên cứu game gốc) — nhưng đây là bản **của Trùm Bia Hơi**: đọc file này trước mọi file khác. Mục tiêu: một designer (có Blender MCP) và một dev cầm bộ docs này là **tạo asset và code được game**, không cần hỏi lại lịch sử.
 > Ngày: 2026-09-10 (v1.41). **Cách đọc bộ docs (chốt founder 09/09):** ràng buộc là **luật chơi** (`02-GDD` + `03-SPEC`), **số** (`08-SPEC` + `docs/config/economy.tbh.json`), **không-hardcode/config admin** (`trum-bia-hoi-brd-admin.md` §5.2), **bất biến đo k** (`04-SPEC` §5), **server-authoritative + engine thuần** (`10-SPEC` §7/§1; thứ tự code: lưu localStorage trước, server sau — §4.2). Mọi thứ còn lại — kiến trúc, module, thư viện, **layout, màn hình, design** — do dev/designer **tự quyết**. `prototype/` là bản thử nghiệm lưu trữ, KHÔNG phải điểm xuất phát.
@@ -176,6 +176,7 @@ Giao việc: `11-PROMPT-PACK` Phần A (designer) và Phần B (dev) — cả ha
 ## Changelog (append-only)
 | Ver | Thay đổi |
 |---|---|
+| v1.42 | **Owner 17–18/09:** plan hiện hành = `docs/PLAN-vui-3-ca-2026-09-18.md` (thay PLAN-improve 16/09 + PLAN-feedback 17/09); luật bàn ghế v3.3 ở `docs/FEEDBACK-2026-09-17.md` §II.2; story 3 tuần + mùa 21 ngày ở `docs/DESIGN-story-3-tuan-2026-09-18.md`. GDD v1.13, 03-SPEC v1.4, 04-SPEC (k gate D4a), 08-SPEC changelog "chờ 2.1.0". Đọc 3 doc này ngay sau HANDOFF trước khi làm bất kỳ slice economy/UI nào. |
 | v1.6 | Theo `docs/TRANG-THAI-DOCS.md`: thêm layout tham khảo (ảnh HUD gốc, §2.2 mục 8) · UI invariants + luật viết doc giao việc (§6) · §4.2 thêm Onboarding (F27), Trạng thái mạng (F23 §8), âm thanh B7 · §4.4 việc dev tạo ở slice đầu (analytics-events, vi.json, manifest, port check:config, sim k, placeholder) · §4.5 quyết định mở + default · §2.2 cảnh báo check:config còn trỏ prototype · §2.3 bỏ "gate đang chặn" · bản đồ docs thêm F27/reference/audit · ngày header sửa 08/09. |
 | v1.5 | **Bỏ prototype khỏi đường đi + trả tự do layout/design** (founder 09/09): header nêu rõ 5 nhóm ràng buộc, còn lại tự quyết; 09/05-SPEC + F24 và phần lớn 10-SPEC hạ xuống tham khảo; 04-SPEC thành lưu trữ (giữ §5 đo k); mục 2.2 và §4.3 sửa theo; prompt-pack v1.5 (2 brief tiếng Anh). |
 | v1.4 | Phần A của prompt-pack đổi sang **giao việc** (danh sách asset + tool + I/O, model tự quyết cách làm) → mục 2.1 và §4.3 sửa theo. |

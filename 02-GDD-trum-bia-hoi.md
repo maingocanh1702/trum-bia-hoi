@@ -1,4 +1,4 @@
-# 🍺 GAME DESIGN DOCUMENT — Trùm Bia Hơi (v1.12)
+# 🍺 GAME DESIGN DOCUMENT — Trùm Bia Hơi (v1.13)
 
 > Tài liệu thiết kế game hoàn chỉnh. Tổng hợp từ nghiên cứu game tham chiếu `trumviahe.com` (`00-TONG-HOP`, `economy-spec-from-bundle`) + các quyết định chuyển hóa trong `01-MAP-tra-da-to-bia-hoi.md` (v0.9). Ngày: 2026-06. Người chơi mục tiêu: người Việt, mobile-first.
 >
@@ -112,6 +112,12 @@ Vòng đời cốc: `clean → in_use(reservedGlassId) → dirty → queue → w
 
 ## 5. Hệ Bàn (đơn vị chính, Lớp 2 mở rộng)
 
+> 🟢 **Owner 17–18/09/2026 — thay hẳn bảng "cấp bàn = sức chứa 2/4/6/8" dưới đây** (số chờ S5, luật đã chốt; chi tiết `docs/FEEDBACK-2026-09-17.md` §II.2 v3.3):
+> - Khởi đầu **1 bàn × 1 ghế**; thứ tự mở khoá tuyến tính **bàn 2 → 3 → 4 (kèm 1 ghế) → ghế thứ 2 từng bàn (chỉ sau đủ 4 bàn) → nâng cấp bàn (bàn phải có 2 ghế)**. Tối đa **2 ghế/bàn**; số chỗ đặt bàn theo mặt bằng (`tableSlots`: Hẻm 4 … Phố Cổ/Ga Metro/Phố Tây 8).
+> - **Ghế** quyết định mâm: bàn 1 ghế đón khách lẻ gọi *bia hoặc 1 mồi tức thì*; bàn 2 ghế đón **cặp** và mỗi khách gọi *bia + 1 mồi*. Cỡ nhóm **độc lập với quán** (`spawn.pPair` 0,5): cặp gặp quán chưa có bàn 2 ghế → bỏ đi tại cửa, không phạt.
+> - **Cấp bàn = một lợi ích khác mỗi cấp, cộng dồn**: Lv2 khách gọi thêm 1 đợt · Lv3 mồi thứ 2 · Lv4 tip ×1,25. Bỏ gate huy hiệu Kết Nối của bàn VIP. Nâng ghế Lv1–3 (kiên nhẫn ×1/1,15/1,30) là làn riêng.
+> - Bàn/ghế mua được cả khi bàn đang có khách (áp cho nhóm kế). Hàng đợi **1 + ghế/8** (cầu thừa từ chối tại cửa, không trừ uy tín). Giá theo giá trị biên đo trên engine: bàn 1,5 k/4 k/8 k xu, ghế 10 k/15 k/22,5 k/30 k xu (bộ W9, chờ S5).
+
 **Domain model:**
 ```ts
 type Table = {
@@ -221,6 +227,8 @@ Mỗi loại ép một quyết định: VIP/vội = tốc độ, bàn lai rai = 
 
 ## 10. Thể lực, Ca & Trần ngày (gating)
 
+> 🟢 **Owner 18/09:** 3 ca đầu (trọn đời) mở không cần cooldown; từ ca 4 áp luật dưới. Cooldown 30 phút và trần ca 8/6/5 **giữ nguyên**. Trần ngày 200 k base → **400 k base (1 tr xu)** cho story (D24, sim W9). Full story = **168 ca** (3 tuần × 8 ca), mọi mốc neo theo **số ca**.
+
 - Thể lực **12 phút/ca**; hồi 0.4×realtime (~30 phút, **chỉ đếm khi active**); phải đầy 100% mới mở ca.
 - Cooldown tính **từ khi khách về hết**. Anti-idle: pause khi không theo dõi tab.
 - Trần **8/6/5 ca/ngày** (newbie/regular/veteran); **hard cap doanh thu = 500.000 xu/ngày** (= 200k ×k). Sau cap: vẫn phục vụ nhưng `appliedCoin=0`. ✅ **Đo live (gốc): với veteran, SỐ CA (5) thường ràng buộc TRƯỚC trần tiền** (5 ca ≈ 145k < 200k) → trần tiền chỉ chặn top-throughput.
@@ -231,6 +239,8 @@ Mỗi loại ép một quyết định: VIP/vội = tốc độ, bàn lai rai = 
 ---
 
 ## 11. Hai hệ tiến trình + Vụ Bia (meta, Lớp 5)
+
+> 🟢 **Owner 18/09 — nén cho game 3 tuần:** Đường Lên Trùm LP1–7 `lifetimeBase` 8 k · 20 k · 80 k · 280 k · 680 k · 1,2 tr · 2 tr (thay 50 k … 50 tr); LP7 = **màn kết** ("Chuyện quán bạn" + huy hiệu Trùm); LP1 `requires` "4 seats" ↔ 4 bàn 1 ghế, không gate bàn 2–4 bằng LP. Giải Nhậu 8 bậc = cùng thang. **Vụ Bia = mùa 21 ngày**, bảng xếp hạng theo mùa; mùa 1 = story, mỗi mùa sau thêm một lớp gameplay (M6 → M8 → …). Chi tiết `docs/DESIGN-story-3-tuan-2026-09-18.md`.
 
 > **Bảng đổi tên (cascade từ `item-list-upgrade-levels.md` v1.4):** League → **Giải Nhậu**, Season → **Vụ Bia**, Life Path → **Đường Lên Trùm**, Đền Thiêng → **Bàn Thờ Ông Địa**. Chi tiết bảng tên bậc/mốc: xem `docs/item-list-upgrade-levels.md` §15.
 
@@ -258,6 +268,8 @@ Mỗi loại ép một quyết định: VIP/vội = tốc độ, bàn lai rai = 
 ---
 
 ## 12. Mặt bằng (multiplier + rent + cọc)
+
+> 🟢 **Owner 18/09:** mỗi mặt bằng có **số chỗ đặt bàn** `tableSlots` (4 · 4 · 5 · 6 · 6 · 7 · 8 · 8 · 8) — đổi mặt bằng là bước tiến thật, không chỉ hệ số nhân; hợp đồng `leaseDays` 7 → **3**; được thuê thẳng mặt bằng cao hơn khi đủ LP; bàn vượt chỗ ở mặt bằng nhỏ hơn tạm gấp lại.
 
 9 vị trí vỉa hè, multiplier ×1.0→×1.8, rent/ngày `Dn(e)=round(700·(e/5)·(1+e/50)) ×k`. Trả trước cả kỳ (**7 ngày**) + **cọc 25% (hoàn lại)**; rời sớm mất cọc + về Hẻm Nhỏ. Gate theo Đường Lên Trùm.
 - Hẻm Nhỏ (start) → … → **Gần Sân Vận Động** (vị trí hot mới, ăn theo World Cup) → Phố Cổ (LP4) → Ga Metro (LP5) → Khu Phố Tây (LP6).
@@ -408,7 +420,9 @@ Mục tiêu: chứng minh **vòng lặp vận hành ca vui & economy cân**. KH�
 | Hạng mục | Nhãn | Ghi chú |
 |---|---|---|
 | Phục vụ theo ca, 5 lớp economy | 🟢 CORE | nền tảng |
-| Hệ bàn (đơn vị chính) | 🟢 CORE | spec: `03-SPEC-he-ban.md` |
+| Hệ bàn (đơn vị chính) | 🟢 CORE | spec: `03-SPEC-he-ban.md`; **mô hình v3.3 (18/09): ghế = mâm, cấp bàn = lợi ích, thứ tự bàn→ghế→cấp** |
+| Story 3 tuần (168 ca) + mùa 21 ngày | 🟢 owner 18/09 | `docs/DESIGN-story-3-tuan-2026-09-18.md`; số chờ S5 |
+| Lớp rủi ro M6 trong story (hồi 3) | 🟢 owner 18/09 | mở lại quyết định hoãn 11/09 |
 | Bia mất hơi (concept) | 🟢 CORE | hậu quả thì 🟡 |
 | Menu 6 món (danh mục) | 🟢 CORE | giá/vốn cụ thể 🟡 |
 | Server-authoritative, Pixi+React | 🟢 CORE | trạng thái đích; thứ tự code: localStorage trước, server sau (chốt 08/09, 10-SPEC §9) |
@@ -460,3 +474,4 @@ Mục tiêu: chứng minh **vòng lặp vận hành ca vui & economy cân**. KH�
 | 2026-09-11 / Steer14 | owner 2026-09-11: pre-poured buffer 4/7/12/20/40 (JSON2.0.3 fallback after primary5/8/12/20/40 failed standard k; after playable-v0). §4 keg row matches JSON; existing prices/tap/batch/refill values are reconciled in prose, not retuned. Only the ready-buffer capacity changes; standard k2.5644–2.9168 and career42/99 k3.465461/3.393197≤3.5 passed full verify (406tests,15rush), review CLEAN. |
 
 | 2026-09-16 / A1 | §11 Đường Lên Trùm: LP1 cần4 ghế +50.000 Base ×k thu nhập trọn đời; bỏ chó đang ẩn cùng M6. JSON2.0.4, không bật hệ thống risk. Config cũ chỉ chuyển ở ca mới, không viết lại lịch sử. |
+| v1.13 | **Owner 17–18/09:** §5 mô hình bàn ghế v3.3 (1 bàn 1 ghế → bàn 2–4 → ghế 2 → cấp bàn; ghế = mâm; cấp bàn = đợt thêm / mồi 2 / tip; cặp độc lập với quán; hàng đợi 1 + ghế/8); §10 3 ca đầu không cooldown, trần ngày 400 k base; §11 LP nén (LP7 2 tr base = màn kết), mùa 21 ngày; §12 `tableSlots` + hợp đồng 3 ngày; §20 thêm story 3 tuần + M6. Số là ứng viên đã sim (W9), chờ S5 vào JSON 2.1.0 / rules 28. Nguồn: `docs/FEEDBACK-2026-09-17.md` v3.3 · `docs/PLAN-vui-3-ca-2026-09-18.md` v1.6 · `docs/DESIGN-story-3-tuan-2026-09-18.md` v1.1 |

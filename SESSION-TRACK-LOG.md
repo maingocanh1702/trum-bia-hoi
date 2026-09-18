@@ -7,6 +7,16 @@
 
 ---
 
+## Design session owner + Claude — 2026-09-18 (Cowork)
+
+Merge `codex/deploy-wave-ab-netlify` → `main` (Đợt 0 xong, verify:all xanh, `5eb5f31`); k-admission PR #14 vào main
+cùng lúc (phiên khác). Chốt 25 quyết định D1–D25 (PLAN §1): mô hình bàn ghế v3.3, story 168 ca, mùa 21 ngày, M6 mở lại,
+k gate D4(a), hàng đợi 1 + ghế/8. Sim trên engine thật (bản vá đo `~/keg-matrix/feedback-0917/mkvar4.sh`, log
+`artifacts/verification/feedback-0918-sim/`): bộ **W9** đạt LP7 ca 146–151, 8 bàn Lv4 ca 156–163, bỏ đi có phạt 15–17 % / 9–10 %.
+Docs: `docs/PLAN-vui-3-ca-2026-09-18.md` v1.6 (thay 2 plan cũ) · `docs/FEEDBACK-2026-09-17.md` v3.3 ·
+`docs/DESIGN-story-3-tuan-2026-09-18.md` v1.1 · GDD v1.13 · 03-SPEC v1.4 · 04/08/ROADMAP changelog · HANDOFF v1.42 · TRANG-THAI 18/09.
+**Việc kế:** owner chơi bản Netlify (wave-ab) rồi feedback; dán prompt Wave 0+1 (PLAN §10) vào Claude Code; JSON 2.1.0 chỉ đổi ở S5.
+
 ## Agent-verification M1/M2 hoàn tất — 2026-09-16
 
 12 PR merge (`#1`→`#12`, `docs/how-skill` → `agent-verification-m02-tbh-fixture`): skill `/how`
