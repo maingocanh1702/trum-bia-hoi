@@ -12,6 +12,7 @@
 3. **Bắt đầu game: 1 khách vào, gọi 1 cốc bia.** Người chơi phục vụ như bình thường (1 chạm ✅). Không kịp trong thời gian quy định → khách rời đi + **toast icon/số xu và uy tín thực trừ** (owner cập nhật 08/09; không text giải thích hoặc nút Đóng).
 4. **Khách rời đi 3 lần liên tiếp → toast số trừ + hướng dẫn step-by-step theo config.**
 5. **Lần đầu chơi game cũng có hướng dẫn step-by-step.**
+   > 🟢 **Owner 18/09 (đè luật #5):** onboarding = **màn chơi tự dạy, nhìn là hiểu** — không overlay step-by-step lần đầu; chỉ 3 mũi tên chỉ không chặn (khách → ✅ → ví). Step guide giữ làm **dự phòng**: mất 3 khách liên tiếp (luật #4) hoặc 45 s không chạm gì. Năm luật thị giác + acceptance người thật: PLAN 18/09 §0 P0, §4 `fun-onboarding-visual`.
 
 ## 2. Product rules (suy ra để dev không phải hỏi)
 
@@ -73,3 +74,4 @@ Funnel dashboard admin (BRD §3): mở ca 1 → serve đầu → đóng ca 1 →
 | 2026-09-10 15:30 Steer #5 | Owner restores guest device persistence across new tabs/browser reopen; keep writer lock/exact-session guard and Google attach/restore. Account-only durable history, achievements, ranking and cross-device restore remain. Supersedes 08:18 and prior ephemeral-guest interpretation; guest departure upsell removed. See account-modes.md and current receipt for verification. |
 
 | 2026-09-11 Steer18 | Local acceptance: onboarding.enabled also gates a retained guide at render; existing admin threshold/step contents publish without deployment, with VI/EN/reduced-motion evidence. Paired standard on/off simulations use the same payment formula and stay in2–3. No engine/config values change. See milestone closure M2-ONBOARDING. |
+| 2026-09-18 owner P0 | Ưu tiên #1 của trải nghiệm = onboarding nhìn-là-hiểu: highlight một chỗ, xu bay từ gốc, khách nói bằng icon, HUD ca 1 tối giản + progressive disclosure, step guide thành dự phòng (đè luật #5). Acceptance mới: 5 người mới tắt hướng dẫn ≥ 4/5 phục vụ ≤ 20 s và mua bàn 2 kết ca 1 không mở help. Nguồn: `docs/PLAN-vui-3-ca-2026-09-18.md` §0 P0 + §4 `fun-onboarding-visual` |

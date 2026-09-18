@@ -51,6 +51,7 @@ Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **2 việc nh�
 13. **Full story = 168 ca** (3 tuần × 8 ca), LP nén (LP7 = 2 tr base = màn kết), **M6 mở lại** vào hồi 3, trần ngày 400 k base, hợp đồng mặt bằng 3 ngày, `tableSlots`. Cooldown 30 phút và trần ca 8/6/5 giữ.
 14. **Mùa 21 ngày**, bảng xếp hạng theo mùa; mỗi mùa mới thêm một lớp gameplay.
 15. Số kinh tế đi kèm = ứng viên đã sim (W9), **S5 chốt** vào JSON 2.1.0 / rules 28 — chưa sửa JSON.
+16. **Thứ tự ưu tiên trải nghiệm:** (1) onboarding nhìn-là-hiểu (F27 luật #5 đè: step guide chỉ là dự phòng) → (2) mua sắm lần lượt → (3) economy. Slice `fun-onboarding-visual` đứng đầu Đợt 1.
 
 ## 4. Còn chờ chủ dự án (đều đã có default, không chặn dev)
 

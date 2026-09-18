@@ -365,6 +365,8 @@ Mỗi loại ép một quyết định: VIP/vội = tốc độ, bàn lai rai = 
 
 ## 17. UI/UX & Art Direction
 
+> 🟢 **Owner 18/09 — ưu tiên #1 của trải nghiệm: nhìn màn hình là hiểu cách chơi.** Năm luật: thứ cần chạm thì sáng (một chỗ); số đổi thì bay từ gốc tới đích; khách nói bằng icon; HUD ca 1 chỉ 3 thứ + mở dần theo mở khoá; step guide chỉ là dự phòng. Chi tiết PLAN 18/09 §0 P0.
+
 - **Fonts:** Be Vietnam Pro (body) + Chakra Petch (nút/số). **Màu:** vàng bia (amber) + bọt trắng + đỏ ghế nhựa + navy modal + CTA đỏ. Bo góc 8–16px, nút min-height 52px.
 - **HUD 3 vùng:** top (trạng thái: thể lực, xu, uy tín, thời tiết, rush timer) / center (sân quán: bàn, khách, cốc) / bottom (hành động). Rail tài nguyên hệ "pill".
 - **Phục vụ = chạm**; có grace window. Cốc có animation bọt (đầy → xẹp → cờ vàng mất hơi).
@@ -475,3 +477,4 @@ Mục tiêu: chứng minh **vòng lặp vận hành ca vui & economy cân**. KH�
 
 | 2026-09-16 / A1 | §11 Đường Lên Trùm: LP1 cần4 ghế +50.000 Base ×k thu nhập trọn đời; bỏ chó đang ẩn cùng M6. JSON2.0.4, không bật hệ thống risk. Config cũ chỉ chuyển ở ca mới, không viết lại lịch sử. |
 | v1.13 | **Owner 17–18/09:** §5 mô hình bàn ghế v3.3 (1 bàn 1 ghế → bàn 2–4 → ghế 2 → cấp bàn; ghế = mâm; cấp bàn = đợt thêm / mồi 2 / tip; cặp độc lập với quán; hàng đợi 1 + ghế/8); §10 3 ca đầu không cooldown, trần ngày 400 k base; §11 LP nén (LP7 2 tr base = màn kết), mùa 21 ngày; §12 `tableSlots` + hợp đồng 3 ngày; §20 thêm story 3 tuần + M6. Số là ứng viên đã sim (W9), chờ S5 vào JSON 2.1.0 / rules 28. Nguồn: `docs/FEEDBACK-2026-09-17.md` v3.3 · `docs/PLAN-vui-3-ca-2026-09-18.md` v1.6 · `docs/DESIGN-story-3-tuan-2026-09-18.md` v1.1 |
+| v1.13b | §17: ưu tiên #1 = onboarding nhìn-là-hiểu (5 luật thị giác), F27 luật #5 đè. Nguồn: `docs/PLAN-vui-3-ca-2026-09-18.md` §0 P0 + §4 `fun-onboarding-visual` |
