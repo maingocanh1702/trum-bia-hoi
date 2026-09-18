@@ -196,7 +196,7 @@
 `'authenticated emergency transport requires Super MFA and fresh confirmation, preserves retries and records independent post-review'` ·
 `'dev identities still require a private admin allowlist and server-verified TOTP before registry access'`.
 
-`apps/server/test/registry.test.ts` (48 tests total as of the pending-vs-scope follow-up below --
+`apps/server/test/registry.test.ts` (51 tests total as of the pending-vs-scope follow-up below --
 `node --import tsx --test apps/server/test/registry.test.ts` reports the live count, since 3 of the
 `test(...)` call sites are `for` loops each expanding to 2-3 cases; a plain `grep -c '^test('` will
 undercount. Selected -- 9 added by v5-admin-k-admission, 2026-09-17, across its full supervised
@@ -240,7 +240,7 @@ not archive the schedule it names until it admits, and never does if refused'` �
 `'a forecast report stays current through an unrelated pending publication, and only goes stale once
 it admits'`.
 
-`apps/server/test/registry.test.ts` (see the 48-tests-total note above; selected pre-existing/24 of them): `'published default config is used by real
+`apps/server/test/registry.test.ts` (see the 51-tests-total note above; selected pre-existing/24 of them): `'published default config is used by real
 openings, never rewrites a live shift, and replays exactly after restart'` · `'Tier A requires a
 distinct Super approval and becomes active exactly at VN midnight across connections'` · `'tier
 classifier covers every section, flags beat broad balance groups, and mixed changes require all
