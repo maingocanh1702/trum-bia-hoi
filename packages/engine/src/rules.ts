@@ -3,8 +3,19 @@ import { signboardStyle } from './signboard';
 import { isEconomy2, DISHES, type Config, type Dish, type Equipment, type Rush } from './config';
 import type { WorldView, Customer, Order, Table, World } from './types';
 
+// One formatter per timezone, built on first use. An Intl.DateTimeFormat owns a native ICU formatter
+// that V8 does not count in heapUsed and only frees when a major GC finalises the wrapper; built per
+// call in this hot path (every step, plus nextDayAt's binary search) it grew a 3-day headless career
+// to 1.4GB RSS on a 38MB JS heap. Same formatter, same output -- day keys and rollovers are unchanged.
+const dayKeyFormatters = new Map<string, Intl.DateTimeFormat>();
 export function dayKey(now: number, c: Config): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: c.values.shift.dayRollover.tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+  const tz = c.values.shift.dayRollover.tz;
+  let formatter = dayKeyFormatters.get(tz);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' });
+    dayKeyFormatters.set(tz, formatter);
+  }
+  return formatter.format(now);
 }
 /** Project the current rush first; upcoming slots are only relevant while accepting guests. */
 export function rushStatus(w: WorldView, c: Config) {
