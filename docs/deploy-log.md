@@ -95,3 +95,47 @@ The Wave A/B receipt records index SHA-256 `8be2fa76b6d2b922c77626335531485f9a40
 | Date | Change |
 |---|---|
 | 2026-09-18 | Freshness check only; no build published, no site setting changed, no rollback consumed. |
+
+## v6 guest update published — 2026-09-18 (Asia/Ho_Chi_Minh)
+
+| Field | Verified release receipt |
+|---|---|
+| Site | https://trumbiahoi.netlify.app/ — public browser-only guest edition |
+| Gameplay change | `0549542` (#16): `dayKey()` caches one `Intl.DateTimeFormat` per timezone. No config, rules, asset or UI change; config 2.0.4 / rules 27 unchanged |
+| Built source commit | `d966975b1f018cfe43de0951117eedc7c3db6ead` — Settings displays `d966975b1f01` (one docs commit above #16; bundle content identical to #16) |
+| Immutable deploy | `6aad0f63f2091edfe7f7cf7b` — tested draft promoted via `restoreSiteDeploy`, not rebuilt |
+| Promoted at | 2026-09-18 10:21 UTC / 17:21 Asia/Ho_Chi_Minh |
+| Static upload | 123 files; `netlify deploy --no-build --filter @tbh/web --dir=apps/web/dist`; no API/functions/database/credentials |
+| Uploaded index SHA-256 | `34b805019e18072000c3413b4006274540049bf0645eb26a89e9cc4e5c90be57` |
+| File-manifest SHA-256 | `2bb8145d79479ae04c02e64d4f5a7961cd2e2d0339709ebb193a87f6a1a25191` (sorted `find`, sha256 of per-file sha256 list) |
+| Served index SHA-256 | `d19f5ee4837bb0e399f6607b42500ab59ae53863d3027634624500a0f857b1e0` — differs from the uploaded file by Netlify's injected hosting comment and two `<meta>` tags only (see the 2026-09-18 freshness check above); platform-dependent, not an equality assertion |
+| Previous deploy / rollback | `6aaacf25a465a8fb1d8e9267` (Wave A/B, 2026-09-17) |
+| Public browser smoke | **3/3 PASS**: 390×844 (34.0s), 360×740 (35.6s), 1280×720 (33.1s), `--workers=1`, exact source SHA asserted |
+
+Why publish a change with no visible feature: the same `dayKey()` runs in the browser on every engine
+tick. Each call built a native ICU formatter that V8's heap accounting never sees and only frees on a
+major GC; in the headless career sim that grew RSS by ~400MB per simulated day (3-day run 1552MB →
+198MB after the fix; the full 30-day gate 12–17GB → 289MB). A player's tab pays the same cost, slower.
+
+Verification chain: `verify:all` on main after #16 — 587/587 tests, config/i18n/build, paired
+onboarding, rush, career gate (k 3.465460767 / 3.393196640, identical to the recorded baseline),
+doctor green after restoring two feature-map citations (`d966975`). Whole `verify:all`: 134s wall,
+442MB max RSS — before #16 it did not finish on this 16GB machine. Local guest smoke on
+`.qa/guest-dist` 3/3; draft smoke on `6aad0f63…--trumbiahoi.netlify.app` 3/3 (a first draft run
+failed only its build-label assertion because the expected SHA was given as `0549542` while the build
+was made at `d966975`; retained as `draft-smoke-wrong-label.log`, re-run with the correct label 3/3);
+public smoke 3/3.
+
+Evidence in `artifacts/verification/deploy-v6-daykey/`: `verify-all.log`, `guest-smoke.log`,
+`draft-smoke2.log`, `draft-smoke-wrong-label.log`, `public-smoke.log`, `nl-draft2.json`,
+`nl-promote.json` (ignored artifacts, not republished by this log).
+
+Preservation: browser-origin IndexedDB saves untouched (no storage change in this build); Netlify
+visitor access, password and badge settings untouched; the primary checkout stayed on `main`.
+
+Rollback: restore `6aaacf25a465a8fb1d8e9267` through Netlify's deployment restore action.
+
+| Date | Change |
+|---|---|
+| 2026-09-18 | Owner-authorized v6 guest publication (dayKey formatter cache); draft and public smoke 3/3; rollback receipt recorded. |
+

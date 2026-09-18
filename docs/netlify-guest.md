@@ -56,3 +56,22 @@ Full receipt, test retries, hashes and rollback deploy `6aa3df1ade7c9b5eeba5662b
 | Date | Change |
 |---|---|
 | 2026-09-17 | Publish Wave A/B guest update; existing public access, browser persistence and local preview remain unchanged. |
+
+## v6 guest update published — 2026-09-18
+
+Live: **https://trumbiahoi.netlify.app/**. Built source `d966975b1f018cfe43de0951117eedc7c3db6ead`
+(gameplay change `0549542`, #16: per-timezone `Intl.DateTimeFormat` cache in `dayKey()` — a native
+memory leak on every engine tick, invisible to the JS heap), immutable deploy `6aad0f63f2091edfe7f7cf7b`.
+Settings shows `d966975b1f01`. Draft and public three-viewport smokes passed 3/3. No config, rules,
+asset, UI or storage change; rollback deploy `6aaacf25a465a8fb1d8e9267`. Full receipt:
+[deployment log](deploy-log.md#v6-guest-update-published--2026-09-18-asiaho_chi_minh).
+
+The CLI is installed and linked (`~/.npm-global/bin/netlify`, `.netlify/state.json`); from the repo
+root it must be invoked with `--filter @tbh/web` (or from outside the repo) or the workspace prompt
+blocks non-interactive use. Re-run the public smoke with
+`TBH_GUEST_URL=https://trumbiahoi.netlify.app TBH_GUEST_COMMIT=d966975b1f018cfe43de0951117eedc7c3db6ead npx playwright test --config playwright.guest.config.ts --workers=1`.
+
+| Date | Change |
+|---|---|
+| 2026-09-18 | Publish v6 guest update; public access, browser persistence and local services unchanged. |
+
