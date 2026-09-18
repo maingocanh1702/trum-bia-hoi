@@ -100,3 +100,4 @@ readable from the shift book.
 | Ngày | Thay đổi |
 |---|---|
 | 2026-09-16 | v1 — lập từ ca chơi thử Netlify + closure report 10–11/09 |
+| 2026-09-18 | **Thay bởi `docs/PLAN-vui-3-ca-2026-09-18.md`.** Đợt A/B đã xong trên `codex/deploy-wave-ab-netlify` (config 2.0.4 / rules 27, publish 17/09); C/D/E chuyển sang plan mới §7–§8. Không cập nhật file này nữa. |
