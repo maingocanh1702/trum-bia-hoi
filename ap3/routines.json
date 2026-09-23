@@ -22,10 +22,14 @@
         "package.json",
         ".gitignore"
       ],
-      "budget_usd_max": 16,
+      "budget_usd_max": 50,
       "max_runs_per_day": 6,
       "review": "codex",
-      "security_review": "auto"
+      "security_review": "auto",
+      "preflight_budget_usd": 3.0,
+      "auto_resolve": {
+        "resolve_budget_usd": 3.0
+      }
     },
     "server-guard": {
       "status": "enabled",
@@ -44,5 +48,6 @@
       "review": "codex",
       "security_review": "always"
     }
-  }
+  },
+  "_budget_mode": "MEASUREMENT since 2026-09-24 (owner): budget ceilings (budget_usd_max, preflight_budget_usd, auto_resolve.resolve_budget_usd) are deliberately generous so no run is cut off by a cap while real costs are collected -- writer cost in ap3/state/evidence.local.jsonl (total_cost_usd, resolver_cost_usd), pre-flight cost in ap3/state/preflight/<slug>.json (cost_total). Queue tasks with budget_usd = the class budget_usd_max. Revisit once each class has ~10 runs and set each cap from the observed distribution. max_runs_per_day still bounds daily spend."
 }
