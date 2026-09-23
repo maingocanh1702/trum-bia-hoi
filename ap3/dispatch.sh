@@ -84,24 +84,49 @@ db_isolation_ok() { # <slug> -> 0 if this run's db_name (if any) can currently p
 # deletes .ap3-run/READY-FOR-REVIEW, or retry.sh --review-only's own precondition (READY-FOR-REVIEW
 # must still exist) can never be satisfied and TASK_REFRESH_FAILED, despite being classified an
 # outage terminal, would always force a full worktree-wiping retry.sh <slug> instead -- exactly
-# what K23/K24 exist to prevent. No-op (returns 0) when there is nothing staged to refresh, or the
-# pinned task is missing entirely (launch_writer's own fallback then uses the tracked queue copy).
+# what K23/K24 exist to prevent. W5.2.6 review (security 1): NO no-op case any more -- every launch
+# stages the pinned task, a missing pinned task or a bad .ap3-run/ halts (see the function body).
 # Idempotent: safe to call again as defense-in-depth inside launch_writer itself, for any caller
 # that launches without this pre-check (mirrors db_isolation_ok's own "INITIAL launch from
-# start_next has no run_review pre-check ahead of it" framing -- though for THIS check specifically
-# that path can never actually trigger it, since .ap3-run/TASK.md cannot yet exist on a fresh run's
-# very first launch). Refreshes rather than trusts a stale stage: see launch_writer's own comment
+# start_next has no run_review pre-check ahead of it" framing). Refreshes rather than trusts a stale
+# stage: see launch_writer's own comment
 # for why a copy made once at retry time can go stale before the writer actually launches. Never
 # follows a pre-existing destination symlink (.ap3-run/ is writer-writable; this runs unsandboxed).
-refresh_staged_task() { # <slug> -> 0 (including the no-op cases); 1 after halt() on a real failure
-  local slug="$1" wt="$WT/$1"
-  [ -f "$wt/.ap3-run/TASK.md" ] || return 0
-  [ -f "$RUNS/$slug/task.md" ] || return 0
-  # both steps guarded by the SAME if -- a bare `rm -f` that fails (e.g. an immutable/locked
-  # destination) would otherwise trip `set -e` and crash the whole dispatcher tick instead of a
-  # clean halt(); neither statement may run unguarded outside a test expression.
-  if ! rm -f "$wt/.ap3-run/TASK.md" || ! cp "$RUNS/$slug/task.md" "$wt/.ap3-run/TASK.md"; then
-    halt "$slug" TASK_REFRESH_FAILED "could not refresh $wt/.ap3-run/TASK.md from the pinned task before launch"
+refresh_staged_task() { # <slug> -> 0 after staging; 1 after halt() on any failure (never a silent no-op)
+  local slug="$1" wt="$WT/$1" run="$WT/$1/.ap3-run" dst="$WT/$1/.ap3-run/TASK.md" src="$RUNS/$1/task.md"
+  # W5.2.6 review round (security 1): there is NO no-op case any more. The old "nothing staged yet
+  # -> return 0 and let launch_writer fall back to the tracked queue copy" was itself the fail-open:
+  # a fix writer that DELETED .ap3-run/TASK.md (writer-writable) silently sent the next round back
+  # to the tracked copy, minus every owner amendment. Every launch -- the first one included --
+  # now stages the pinned task; launch_writer hands the writer that file and nothing else.
+  # .ap3-run/ itself must be a real, non-symlink directory (a symlinked parent would let the
+  # unsandboxed rm/cp below escape the worktree); it is gitignored in every target, so creating it
+  # from here on the first launch never dirties the diff.
+  if [ -L "$run" ]; then
+    halt "$slug" TASK_REFRESH_FAILED "$run is a symlink (writer-writable location points elsewhere) -- refusing to stage the task through it"
+    return 1
+  fi
+  if [ ! -d "$run" ] && ! mkdir -p "$run"; then
+    halt "$slug" TASK_REFRESH_FAILED "could not create $run to stage the pinned task"
+    return 1
+  fi
+  if [ ! -f "$src" ]; then
+    halt "$slug" TASK_REFRESH_FAILED "the pinned $src is missing -- refusing to launch a writer on an unknown task"
+    return 1
+  fi
+  # Whatever sits at the destination is replaced by a fresh regular file: a symlink (live or
+  # dangling) is unlinked, never followed; any other non-regular entry (a directory, a fifo) is
+  # refused outright rather than worked around. Both steps guarded by the SAME if -- a bare
+  # `rm -f` that fails (e.g. an immutable/locked destination) would otherwise trip `set -e` and
+  # crash the whole dispatcher tick instead of a clean halt().
+  if [ -L "$dst" ]; then
+    :   # rm -f below removes the link itself
+  elif [ -e "$dst" ] && [ ! -f "$dst" ]; then
+    halt "$slug" TASK_REFRESH_FAILED "$dst is not a regular file (writer-writable .ap3-run/ holds something unexpected there) -- refusing to refresh over it"
+    return 1
+  fi
+  if ! rm -f "$dst" || ! cp "$src" "$dst"; then
+    halt "$slug" TASK_REFRESH_FAILED "could not refresh $dst from the pinned task before launch"
     return 1
   fi
 }
@@ -210,6 +235,257 @@ os.replace(tmp, os.environ["REC"])
 '
 }
 
+# W5.2.5 review (code 3 / security 2): the ONE reader of the K26 writer floor. It comes from the run
+# record (pinned at START from the origin snapshot); a record written before this field existed
+# falls back to the kit constant. Nothing here reads ap3/routines.json -- a live registry is not
+# policy authority mid-run (see the pin at record creation in start_next).
+writer_floor() { # <record.json> -> prints the floor
+  local f; f="$(jget "$1" writer_min_budget_usd "")"
+  [ -n "$f" ] || f="$(python3 -c 'import sys; sys.path.insert(0, sys.argv[1]); import aplib; print(aplib.WRITER_MIN_BUDGET_USD)' "$DIR")"
+  printf '%s\n' "$f"
+}
+
+# ---------------------------------------------------------------- W6 (I1): intake pre-flight
+# preflight_gate <slug> <path> <origin_sha> <wt> <rjson> <cls> <task_model> -> 0 = start the run;
+# 1 = do not start this tick (already logged/notified; caller removes the worktree).
+preflight_gate() {
+  local slug="$1" path="$2" origin_sha="$3" wt="$4" rjson="$5" cls="$6" tmodel="$7"
+  local pol on budget model blob cache qfile out rc cost nq
+  # AP3_PREFLIGHT=0 turns the intake gate off globally -- an ops kill switch (and what the kit's
+  # own e2e fakes set, since they do not run a real read-only session). The per-class `preflight`
+  # flag is the normal control; this is the blunt override above it.
+  [ "${AP3_PREFLIGHT:-1}" = 0 ] && return 0
+  pol="$(python3 "$DIR/aplib.py" resolve-policy "$rjson" "$cls")"
+  on="$(printf '%s' "$pol" | python3 -c 'import json,sys;print("true" if json.load(sys.stdin)["preflight"] else "false")')"
+  [ "$on" = true ] || return 0
+  budget="$(printf '%s' "$pol" | python3 -c 'import json,sys;print(json.load(sys.stdin)["preflight_budget_usd"])')"
+  model="$tmodel"
+  [ -n "$model" ] || model="$(jget "$rjson" "classes.$cls.writer_model" "")"
+  [ -n "$model" ] || model="$(jget "$rjson" writer_model "")"
+  [ -n "$model" ] || model="claude-sonnet-5"
+  # W6 review round (code 2 / security 4): the pre-flight validates the WHOLE origin snapshot, not
+  # just the task file, so the cache key is the task blob AND the origin commit. A source change on
+  # origin/main (new commit) re-runs the pre-flight even if the task text is byte-identical.
+  blob="$(git rev-parse "$origin_sha:$path" 2>/dev/null || echo "")"
+  local ckey="${blob}@${origin_sha}"
+  mkdir -p "$STATE/preflight" "$STATE/questions"
+  cache="$STATE/preflight/$slug.json"; qfile="$STATE/questions/$slug.md"
+  if [ -f "$cache" ] && [ -n "$blob" ] && [ "$(jget "$cache" key "")" = "$ckey" ]; then
+    case "$(jget "$cache" verdict "")" in
+      READY) return 0 ;;
+      QUESTIONS) log "NEEDS_CONTEXT $slug (waiting for owner context -- questions in ap3/state/questions/$slug.md)"; return 1 ;;
+    esac
+  fi
+  # cumulative pre-flight spend across every attempt on this slug (held / unavailable attempts too),
+  # and a bound on how many times an UNAVAILABLE pre-flight may retry before it escalates.
+  local pf_total pf_unavail
+  pf_total="$(jget "$cache" cost_total 0)"
+  pf_unavail="$(jget "$cache" unavailable_attempts 0)"
+  set +e
+  out="$(bash "$DIR/preflight.sh" --task "$wt/$path" --model "$model" --budget "$budget" --cwd "$wt" 2>&1)"
+  rc=$?
+  set -e
+  cost="$(printf '%s\n' "$out" | grep '^AP3_PREFLIGHT_COST:' | tail -1 | cut -d' ' -f2)"
+  [ -n "$cost" ] || cost=null
+  case "$rc" in
+    0)
+      CK="$ckey" PC="$cost" PTOT="$pf_total" PT="$(now)" PF="$cache" python3 -c 'import json,os
+c=json.loads(os.environ["PC"]); tot=float(os.environ["PTOT"])+(c if isinstance(c,(int,float)) else 0)
+json.dump({"key":os.environ["CK"],"verdict":"READY","cost":c,"cost_total":round(tot,6),"unavailable_attempts":0,"at":os.environ["PT"]},open(os.environ["PF"],"w"))'
+      rm -f "$qfile"
+      log "PREFLIGHT_READY $slug"
+      return 0 ;;
+    1)
+      # the questions, minus the machine lines, plus how to answer them
+      { echo "# $slug -- the intake pre-flight needs owner context before this task can start"
+        echo
+        echo "Answer by adding a \`## Owner context\` section to \`ap3/queue/$slug.md\` (one paragraph per question is enough),"
+        echo "commit and push main. The next dispatcher tick re-checks the changed task and starts it when it is READY."
+        echo "Generated $(now) at origin/main ${origin_sha:0:7}."
+        echo
+        printf '%s\n' "$out" | grep -vE '^AP3_PREFLIGHT(_COST)?:'
+      } > "$qfile"
+      nq="$(grep -cE '^[0-9]+\.' "$qfile" || true)"
+      CK="$ckey" PC="$cost" PTOT="$pf_total" PT="$(now)" PF="$cache" python3 -c 'import json,os
+c=json.loads(os.environ["PC"]); tot=float(os.environ["PTOT"])+(c if isinstance(c,(int,float)) else 0)
+json.dump({"key":os.environ["CK"],"verdict":"QUESTIONS","cost":c,"cost_total":round(tot,6),"unavailable_attempts":0,"at":os.environ["PT"]},open(os.environ["PF"],"w"))'
+      log "NEEDS_CONTEXT $slug ($nq questions -- see ap3/state/questions/$slug.md; answer in the task's '## Owner context', push main)"
+      notify "❓ NEEDS_CONTEXT $slug: $nq question(s) before this task can start. $(printf '%s\n' "$out" | grep -E '^[0-9]+\.' | head -5 | cut -c1-200 | tr '\n' ' ') -- answer in ap3/queue/$slug.md '## Owner context', push main"
+      return 1 ;;
+    *)
+      # W6 review round (code 4): an UNAVAILABLE pre-flight is NOT retried forever. Accumulate the
+      # attempt's cost, bound the retries, and escalate (hold, not start) once the bound is hit.
+      local na=$((pf_unavail + 1))
+      CK="$ckey" PC="$cost" PTOT="$pf_total" NA="$na" PT="$(now)" PF="$cache" python3 -c 'import json,os
+c=json.loads(os.environ["PC"]); tot=float(os.environ["PTOT"])+(c if isinstance(c,(int,float)) else 0)
+json.dump({"key":os.environ["CK"],"verdict":"UNAVAILABLE","cost":c,"cost_total":round(tot,6),"unavailable_attempts":int(os.environ["NA"]),"at":os.environ["PT"]},open(os.environ["PF"],"w"))'
+      if [ "$na" -ge "${AP3_PREFLIGHT_MAX_UNAVAIL:-3}" ]; then
+        log "PREFLIGHT_UNAVAILABLE $slug (no verdict after $na attempts -- holding; run it by hand or check the model/budget)"
+        notify "❓ PREFLIGHT_UNAVAILABLE $slug: the intake pre-flight gave no verdict $na times -- held for the owner"
+      else
+        log "PREFLIGHT_UNAVAILABLE $slug (attempt $na; retry next tick)"
+      fi
+      return 1 ;;
+  esac
+}
+
+# ---------------------------------------------------------------- W6 (I2/I3): the halt resolver
+# auto_resolve <slug> <reason> [<halt_cause>] -- called at the END of halt(). Reads ONLY the
+# policy pinned into the record at START. Every resolution goes through retry.sh with
+# AP3_RESOLVER=1 (the same fail-closed resume mechanics an owner uses), marks the record
+# agent_resolved, and re-opens the class; nothing here ever bumps clean_runs.
+resolver_escalate() { # <slug> <reason> <why>
+  log "ESCALATE $1 ($2): $3"
+  notify "🙋 ESCALATE $1 ($2): $3 -- owner action needed"
+}
+auto_resolve() {
+  local slug="$1" reason="$2" cause="${3:-}" rec="$RUNS/$1/record.json" wt="$WT/$1"
+  local cls pol retries extend mctx widen rbudget maxres
+  # AP3_AUTORESOLVE=0 turns the halt resolver off globally -- an ops kill switch, and what the
+  # kit's own non-resolver e2e fakes set (so a halt behaves exactly as it did pre-W6). The
+  # per-class auto_resolve policy is the normal control; this is the blunt override above it.
+  [ "${AP3_AUTORESOLVE:-1}" = 0 ] && return 0
+  [ -f "$rec" ] || return 0
+  cls="$(jget "$rec" class unknown)"
+  pol="$(python3 "$DIR/rec.py" get "$rec" policy "")"
+  [ -n "$pol" ] && [ "$pol" != null ] || return 0     # pre-W6 record: no pinned policy, no resolver
+  read -r retries extend mctx widen rbudget maxres <<< "$(printf '%s' "$pol" | python3 -c 'import json,sys
+p=json.load(sys.stdin).get("auto_resolve",{})
+print(p.get("outage_retries",0), p.get("extend","none"), p.get("missing_context","never"),
+      "true" if p.get("scope_widen") else "false", p.get("resolve_budget_usd",1.0), p.get("max_resolutions",0))')"
+  local flags="" mark_agent=1 pinned="$RUNS/$slug/task.md" halt_md="$wt/.ap3-run/HALT.md"
+  case "$reason" in
+    MISSING_CONTEXT)
+      [ "$mctx" = evidence-only ] || return 0
+      [ -f "$halt_md" ] || return 0
+      local nres; nres="$(jget "$rec" auto_resolutions 0)"
+      if [ "$nres" -ge "$maxres" ]; then resolver_escalate "$slug" "$reason" "resolver already decided $nres time(s) on this run (max $maxres)"; return 0; fi
+      local model rout rrc rcost rtext
+      local -a rargs
+      model="$(jget "$rec" writer_model claude-sonnet-5)"
+      rargs=(--task "$pinned" --halt "$halt_md" --model "$model" --budget "$rbudget" --cwd "$wt")
+      [ -f "$wt/.ap3-run/REVIEW-FINDINGS.md" ] && rargs+=(--findings "$wt/.ap3-run/REVIEW-FINDINGS.md")
+      set +e
+      rout="$(bash "$DIR/resolve.sh" "${rargs[@]}" 2>&1)"
+      rrc=$?
+      set -e
+      printf '%s\n' "$rout" > "$RUNS/$slug/resolve.r$((nres+1)).txt"
+      rcost="$(printf '%s\n' "$rout" | grep '^AP3_RESOLUTION_COST:' | tail -1 | cut -d' ' -f2)"
+      [ -n "$rcost" ] && [ "$rcost" != null ] && jsetj "$rec" resolver_cost_usd "$(python3 -c 'import sys;print(round(float(sys.argv[1])+float(sys.argv[2]),6))' "$(jget "$rec" resolver_cost_usd 0)" "$rcost")"
+      case "$rrc" in
+        0)
+          rtext="$(printf '%s\n' "$rout" | grep -vE '^AP3_RESOLUTION(_COST)?:')"
+          { echo; echo "## AGENT ANSWER (evidence-only resolver, $(now))"; echo
+            echo "The owner was not consulted. The decision below was made by the ap3 resolver because the repository refutes the alternative; the evidence is listed. Follow it as you would an owner answer."; echo
+            printf '%s\n' "$rtext"; } >> "$pinned"
+          jsetj "$rec" auto_resolutions "$((nres+1))"
+          if AP3_RESOLVER=1 bash "$DIR/retry.sh" --answer "$slug" >/dev/null 2>&1; then flags="answer"; else resolver_escalate "$slug" "$reason" "resolver decided but the relaunch was refused (see retry.sh)"; return 0; fi ;;
+        1) resolver_escalate "$slug" "$reason" "resolver found no refuting evidence -- the writer's question in ap3/state/runs/$slug/resolve.r$((nres+1)).txt needs the owner"; return 0 ;;
+        *) log "RESOLVER_UNAVAILABLE $slug (no verdict from the resolver session)"; return 0 ;;
+      esac ;;
+    SCOPE_DRIFT)
+      [ "$widen" = true ] || return 0
+      # W6 review round (code 3): a drifted path can contain spaces or glob characters; read the
+      # DRIFT lines into an array without word-splitting or globbing, and pass them to widen-scope
+      # as separate quoted args. scope-check.sh prints "DRIFT <path> (<why>)" -- the path is
+      # everything between "DRIFT " and the trailing " (<why>)".
+      local base; base="$(jget "$rec" base_sha "")"
+      local -a drift_arr=(); local line pth
+      while IFS= read -r line; do
+        case "$line" in "DRIFT "*)
+          pth="${line#DRIFT }"; pth="${pth% (*}"
+          [ -n "$pth" ] && drift_arr+=("$pth") ;;
+        esac
+      done < <( cd "$wt" && AP3_TASK="$pinned" bash "$DIR/scope-check.sh" --base "$base" 2>/dev/null || true )
+      if [ "${#drift_arr[@]}" -eq 0 ] && [ -f "$halt_md" ]; then
+        # the writer halted itself (HALT.md) before committing: take the repo paths it named that exist
+        while IFS= read -r pth; do
+          [ -n "$pth" ] && [ -f "$wt/$pth" ] && drift_arr+=("$pth")
+        done < <(grep -oE '[A-Za-z0-9_./-]+\.[A-Za-z0-9]+' "$halt_md" | sort -u)
+      fi
+      [ "${#drift_arr[@]}" -gt 0 ] || { resolver_escalate "$slug" "$reason" "could not determine which files drifted"; return 0; }
+      local wout orj files
+      # the class ceiling comes from the origin snapshot this run was pinned from, never the
+      # mutable working tree (the same authority rule every other policy read follows)
+      orj="$(mktemp)"; git show "$base:ap3/routines.json" > "$orj" 2>/dev/null || git show "origin/main:ap3/routines.json" > "$orj" 2>/dev/null || : > "$orj"
+      if ! wout="$( cd "$REPO" && AP3_ROUTINES="$orj" python3 "$DIR/aplib.py" widen-scope "$pinned" "${drift_arr[@]}" 2>&1 )"; then
+        rm -f "$orj"
+        resolver_escalate "$slug" "$reason" "$(printf '%s\n' "$wout" | head -1)"; return 0
+      fi
+      rm -f "$orj"
+      files="${drift_arr[*]}"
+      { echo; echo "## AGENT RESOLUTION (scope widened, $(now))"; echo
+        echo "The committed change needed these files, which are inside the class's allowed_scope: $files. The task's scope now includes them (registration points and companions count as scope). Re-run your self scope-check; nothing else about the task changed."; } >> "$pinned"
+      jsetj "$rec" scope "$(python3 "$DIR/aplib.py" frontmatter "$pinned" | python3 -c 'import json,sys;print(json.dumps(json.load(sys.stdin).get("scope",[])))')"
+      rm -f "$halt_md"
+      if AP3_RESOLVER=1 bash "$DIR/retry.sh" --answer "$slug" >/dev/null 2>&1; then flags="scope-widen"; else resolver_escalate "$slug" "$reason" "scope widened in the pinned task but the relaunch was refused (see retry.sh)"; return 0; fi ;;
+    MAX_ROUNDS|BUDGET|VERIFY_HOST_FAIL)
+      [ "$extend" = to-cap ] || return 0
+      [ -f "$wt/.ap3-run/READY-FOR-REVIEW" ] || { resolver_escalate "$slug" "$reason" "nothing reviewable (no READY-FOR-REVIEW) -- a ceiling extension cannot resume this; needs a full retry or a smaller task"; return 0; }
+      local want_rounds=0 want_budget=0
+      case "$reason:$cause" in
+        MAX_ROUNDS:*|VERIFY_HOST_FAIL:verify_host_rounds) want_rounds=1 ;;
+        BUDGET:*|VERIFY_HOST_FAIL:verify_host_budget) want_budget=1 ;;
+        *) return 0 ;;   # verify_host_mutated and anything unclassified: never extended
+      esac
+      local args="" round target cap budget delta
+      if [ "$want_rounds" = 1 ]; then
+        [ "$(jget "$rec" auto_extended_rounds 0)" = 0 ] || { resolver_escalate "$slug" "$reason" "round ceiling already extended once by the resolver -- the slice needs a split/replan, not more rounds"; return 0; }
+        # W6 review round (code 5): resuming re-reviews the unchanged diff once, so a real fix round
+        # needs target >= round+2. If round+2 exceeds the hard ceiling of 5, an extension would only
+        # buy the redundant re-review and re-halt with no fixer -- escalate now instead of burning it.
+        round="$(jget "$rec" review_round 0)"; target=$((round + 2))
+        [ "$target" -le 5 ] || { resolver_escalate "$slug" "$reason" "round $round is too close to the hard ceiling (5) to fund a real fix round -- needs a split/replan, not more rounds"; return 0; }
+        args="--extend-rounds $target"
+      fi
+      # a round extension with too little budget for a writer relaunch is pointless: top up too
+      cap="$(jget "$rec" budget_cap_usd 0)"; budget="$(jget "$rec" budget_usd 0)"
+      delta="$(python3 -c 'import sys;c=float(sys.argv[1]);b=float(sys.argv[2]);print(round(c-b,4) if c>b else 0)' "$cap" "$budget")"
+      if [ "$want_budget" = 1 ] || { [ "$want_rounds" = 1 ] && ! python3 "$DIR/aplib.py" budget-remaining "$budget" "$(jget "$rec" spent_usd 0)" "$(writer_floor "$rec")" >/dev/null; }; then
+        [ "$(jget "$rec" auto_extended_budget 0)" = 0 ] || { resolver_escalate "$slug" "$reason" "budget already extended to the class cap once by the resolver -- needs a split/replan"; return 0; }
+        [ "$delta" != 0 ] || { resolver_escalate "$slug" "$reason" "budget_usd $budget is already the class cap -- needs a split/replan"; return 0; }
+        args="$args --extend-budget $delta"
+      fi
+      # shellcheck disable=SC2086
+      if AP3_RESOLVER=1 bash "$DIR/retry.sh" $args "$slug" >/dev/null 2>&1; then
+        [ "$want_rounds" = 1 ] && jsetj "$rec" auto_extended_rounds 1
+        case "$args" in *--extend-budget*) jsetj "$rec" auto_extended_budget 1 ;; esac
+        flags="extend(${args// /_})"
+      else
+        resolver_escalate "$slug" "$reason" "retry.sh refused the extension ($args)"; return 0
+      fi ;;
+    *)
+      # outage terminals: resume the review step, bounded
+      [ "$(terminal_kind "$reason")" = outage ] || return 0
+      [ -f "$wt/.ap3-run/READY-FOR-REVIEW" ] || return 0
+      local n; n="$(jget "$rec" auto_retries 0)"
+      [ "$n" -lt "$retries" ] || { resolver_escalate "$slug" "$reason" "outage retries exhausted ($n/$retries)"; return 0; }
+      if AP3_RESOLVER=1 bash "$DIR/retry.sh" --review-only "$slug" >/dev/null 2>&1; then
+        # a plain infra retry is not a decision (the owner's own --review-only rule): the run
+        # still counts as unattended if it merges unchanged
+        jsetj "$rec" auto_retries "$((n+1))"; flags="review-only"; mark_agent=0
+      else
+        resolver_escalate "$slug" "$reason" "retry.sh --review-only refused"; return 0
+      fi ;;
+  esac
+  [ -n "$flags" ] || return 0
+  # W6 review round (code/security 6): retry.sh's mark_assisted is the SOLE writer of
+  # agent_resolved / agent_resolved_flags (it set them on this record during the resume above, iff
+  # this was a decision path -- an infra retry deliberately leaves them unset). auto_resolve does
+  # NOT touch them, so the audit field can never read "answer,answer". `flags` here is only the
+  # log/notify label. mark_agent distinguishes a decision (resolver) from a plain infra retry.
+  # the class re-opens: the halt that paused it is being handled. last_exception keeps the halt;
+  # clean_runs was already reset by halt() on a writer-fault (correct: this run will not count).
+  jsetj "$TRUST" "$cls.paused" false
+  if [ "$mark_agent" = 1 ]; then
+    log "RESOLVED $slug ($reason -> $flags; class $cls re-opened, run marked agent_resolved)"
+    notify "🤖 RESOLVED $slug: $reason -> $flags (agent-resolved, will not count toward clean_runs). Veto: touch ap3/PAUSED, or reject the PR."
+  else
+    log "RESOLVED $slug ($reason -> $flags; class $cls re-opened, infra retry $(jget "$rec" auto_retries 0)/$retries)"
+    notify "🔁 RESOLVED $slug: $reason -> automatic $flags retry ($(jget "$rec" auto_retries 0)/$retries)"
+  fi
+}
+
 halt() { # <slug> <reason> <msg> [<halt_cause>] -- halt_cause is an optional MACHINE-READABLE
         # sub-reason, currently used only by VERIFY_HOST_FAIL (finalize_ready's three call sites)
         # so retry.sh's extend gate can tell an exhausted-ceiling halt (recoverable) from a
@@ -229,6 +505,10 @@ halt() { # <slug> <reason> <msg> [<halt_cause>] -- halt_cause is an optional MAC
   notify "⛔ HALT $slug ($reason): $msg"
   log "RECONCILED $slug HALT $reason — $msg (worktree kept for forensics)"
   DID_RECONCILE=1
+  # W6 (I2/I3): the halt is recorded and the class paused exactly as before; THEN the policy
+  # resolver gets one look. A resolution re-opens the class and resumes the run (marked
+  # agent_resolved); anything else leaves the halt as it stands for the owner.
+  auto_resolve "$slug" "$reason" "$cause" || true
 }
 
 # review round-6 finding 2: the single place a PR is reused, discovered or created. Called
@@ -390,10 +670,15 @@ finalize_ready() { # <slug> — review was CLEAN. Fail closed: READY means an OP
       # pre-flight check uses -- this call site diverging (even if each individually "worked")
       # violates I4's own "gated on the SAME round/budget ceilings" contract: the same (budget,
       # spent) pair must be equally (un)fundable everywhere it is asked.
-      if ! python3 "$DIR/aplib.py" budget-remaining "$(jget "$rec" budget_usd 0)" "$(jget "$rec" spent_usd 0)" >/dev/null; then
+      # W5.2.5 review (security 3): this path relaunches a fix WRITER, so it asks the K26 writer
+      # question (pinned floor, default $2), not the $0.50 "another review round?" question --
+      # with $1 left it used to launch the very writer run_review's own pre-flight refuses.
+      local vh_floor vh_rem
+      vh_floor="$(writer_floor "$rec")"
+      if ! vh_rem="$(python3 "$DIR/aplib.py" budget-remaining "$(jget "$rec" budget_usd 0)" "$(jget "$rec" spent_usd 0)" "$vh_floor")"; then
         # W5.2.1 (K21): halt_cause verify_host_budget -- retry.sh --extend-budget can raise
         # budget_usd and resume, the SAME field budget_remaining() reads above.
-        halt "$slug" VERIFY_HOST_FAIL "verify_host exited $vh_rc and insufficient remaining budget for another fix round: $verify_host (see ap3/state/runs/$slug/verify-host.txt)" verify_host_budget
+        halt "$slug" VERIFY_HOST_FAIL "verify_host exited $vh_rc and insufficient remaining budget for another fix round (\$$vh_rem remaining, writer floor \$$vh_floor): $verify_host (see ap3/state/runs/$slug/verify-host.txt)" verify_host_budget
         return
       fi
       # security review round 1 finding 3: verify_host's captured output is a real DB-backed
@@ -558,13 +843,11 @@ run_review() { # <slug> — CLEAN -> finalize_ready ; FINDINGS -> fix loop or MA
   # (measured twice on agent-verification-m03-dev-port-wire). Same canonical budget_remaining(),
   # same rounding, an explicit floor per call site. A class may raise it via writer_min_budget_usd
   # (validated at lint time, so a malformed value can never fail open into the default here).
+  # W5.2.5 review (code 3 / security 2): the floor is read from the record it was pinned into at
+  # START, never from the mutable working-tree registry (which used to fail OPEN into $2 on any
+  # read/parse/class error, and could be edited under a running run).
   local wfloor wrem
-  wfloor="$(CLS="$(jget "$rec" class "")" R="$ROUTINES" python3 -c 'import json,os
-try:
-    c = json.load(open(os.environ["R"]))["classes"][os.environ["CLS"]]
-except Exception:
-    c = {}
-print(c.get("writer_min_budget_usd", 2.0))')"
+  wfloor="$(writer_floor "$rec")"
   if ! wrem="$(python3 "$DIR/aplib.py" budget-remaining "$(jget "$rec" budget_usd 0)" "$(jget "$rec" spent_usd 0)" "$wfloor")"; then
     halt "$slug" BUDGET "insufficient remaining budget for another fix round: \$$wrem remaining, writer floor \$$wfloor"; return
   fi
@@ -719,12 +1002,11 @@ launch_writer() { # <slug> — start (or restart) the sandboxed coding session, 
   # own pattern, W4.1 round-1 finding 1), so a TASK_REFRESH_FAILED halt stays --review-only
   # recoverable; this call is defense-in-depth for any future caller that launches without that
   # pre-check (idempotent -- a no-op re-refresh of identical content when the pre-check already ran).
-  # A fresh run's FIRST launch (no prior stage) is untouched: refresh_staged_task no-ops when
-  # .ap3-run/TASK.md does not exist yet, so it still uses the tracked queue copy, identical to the
-  # pinned copy at that point since both were materialized from the same origin SHA.
-  local wtask="$wt/ap3/queue/$slug.md"
+  # W5.2.6 review round (security 1): the writer is handed the staged pinned copy on EVERY launch,
+  # the first one included -- there is no tracked-queue-copy fallback any more (that fallback was
+  # the fail-open: a writer deleting .ap3-run/TASK.md silently dropped every owner amendment).
+  local wtask="$wt/.ap3-run/TASK.md"
   refresh_staged_task "$slug" || return 1
-  [ -f "$wt/.ap3-run/TASK.md" ] && wtask="$wt/.ap3-run/TASK.md"
   ( cd "$wt"
     if [ -f "$REPO/ap3/env" ]; then set -a; . "$REPO/ap3/env"; set +a; fi
     if [ -n "$db_url_override" ]; then export DATABASE_URL_TEST="$db_url_override"; fi
@@ -749,6 +1031,14 @@ reconcile_running() {
   # review step --review-only resumes -- so drop the previous attempt's signal files and
   # re-dispatch exactly the way a findings round does.
   if [ "$(jget "$rec" answer_pending false)" = true ]; then
+    # W5.2.5 review (code 2): refresh the staged task BEFORE consuming answer_pending or dropping
+    # the attempt's signal files -- same ordering rule as run_review / finalize_ready. A
+    # TASK_REFRESH_FAILED raised here leaves answer_pending=true on the halted record, which is
+    # exactly what `retry.sh --answer` now accepts for that terminal; raised inside launch_writer
+    # AFTER the flag was cleared, the run had no accepting recovery mode at all (only the
+    # worktree-wiping full retry K23/K24 exist to avoid). Explicit `return 0`: a halt is a handled
+    # outcome, not a script error.
+    refresh_staged_task "$slug" || return 0
     jsetj "$rec" answer_pending false
     rm -f "$result" "$run/READY-FOR-REVIEW" "$run/HALT.md"
     if launch_writer "$slug"; then          # a refused writer already HALTed + logged inside launch_writer
@@ -892,6 +1182,12 @@ reconcile_ready() { # <slug> — a PR is open; watch for merge / close
         if [ "$(jget "$rec" owner_extended false)" = true ]; then
           jsetj "$rec" human_interventions 1
           notify "🎉 merged unchanged $slug (owner-extended $(jget "$rec" owner_extended_flags "") -- not counted toward clean_runs)"
+        elif [ "$(jget "$rec" agent_resolved false)" = true ]; then
+          # W6: no human touched the run, but a decision was made mid-run by the resolver. Honest
+          # column: human_interventions 0, agent_resolved_runs +1, clean_runs untouched.
+          jsetj "$rec" human_interventions 0
+          jsetj "$TRUST" "$cls.agent_resolved_runs" "$(( $(jget "$TRUST" "$cls.agent_resolved_runs" 0) + 1 ))"
+          notify "🎉 merged unchanged $slug (agent-resolved $(jget "$rec" agent_resolved_flags "") -- agent_resolved_runs=$(jget "$TRUST" "$cls.agent_resolved_runs" 0), not counted toward clean_runs)"
         else
           jsetj "$rec" human_interventions 0
           jsetj "$TRUST" "$cls.clean_runs" "$(( $(jget "$TRUST" "$cls.clean_runs" 0) + 1 ))"
@@ -1335,6 +1631,14 @@ for s in slugs:
       jset "$inv" origin_sha "$origin_sha"; jset "$inv" reason "$reason"; jset "$inv" at "$(now)"
       log "INVALID_TASK $slug"; notify "INVALID_TASK $slug (see lint)"; continue
     fi
+    # W6 (I1): the intake pre-flight -- ask the OWNER before a writer burns budget discovering the
+    # task lacks context. Runs in this worktree (the origin snapshot), cached per task blob id, and
+    # a QUESTIONS verdict holds the task (NEEDS_CONTEXT) until the task file changes on origin/main.
+    if ! preflight_gate "$slug" "$path" "$origin_sha" "$wt" "$rjson" "$cls" "$task_model"; then
+      git worktree remove --force "$wt" 2>/dev/null || true
+      git branch -D "ap3/$slug" 2>/dev/null || true
+      continue
+    fi
     # review round-1 finding 3: db_per_run provisioning is fail-closed -- a missing
     # DATABASE_URL_TEST/AP3_DB_ADMIN_URL or a failed CREATE DATABASE must refuse to start this
     # candidate (retried next tick, self-resolving once ap3/env or connectivity is fixed), never
@@ -1419,10 +1723,24 @@ print(prefix + suffix)')"
     [ -n "$rmodel" ] || rmodel="$(jget "$rjson" writer_model "")"
     [ -n "$rmodel" ] || rmodel="claude-sonnet-5"
     rfixmodel="$(jget "$rjson" "classes.$cls.fix_model" "")"
+    # W5.2.5 review (code 3 / security 2): the K26 writer floor is policy too, so it is pinned here
+    # from the SAME origin snapshot lint validated -- never re-read from the mutable working tree
+    # mid-run, where a stale/edited/corrupt registry could lower it or fail OPEN into the default
+    # and relaunch exactly the underfunded writer K26 exists to block.
+    local rwfloor rpolicy rcap rpfcost
+    rwfloor="$(jget "$rjson" "classes.$cls.writer_min_budget_usd" "")"
+    [ -n "$rwfloor" ] || rwfloor="$(python3 -c 'import sys; sys.path.insert(0, sys.argv[1]); import aplib; print(aplib.WRITER_MIN_BUDGET_USD)' "$DIR")"
+    # W6: the resolved preflight/auto_resolve policy and the class budget cap are pinned from the
+    # SAME origin snapshot, so a mid-run registry edit can neither widen what the resolver may do
+    # nor raise the ceiling it may extend to. auto_resolve() reads only the record.
+    rpolicy="$(python3 "$DIR/aplib.py" resolve-policy "$rjson" "$cls")"
+    rcap="$(jget "$rjson" "classes.$cls.budget_usd_max" 0)"
+    rpfcost="null"; [ -f "$STATE/preflight/$slug.json" ] && rpfcost="$(jget "$STATE/preflight/$slug.json" cost null)"
     # D3: db_per_run's database (rdbname) was already created fail-closed, above, before any
     # run-state was written for this candidate -- reused here only to pin it into the record.
     RSLUG="$slug" RCLASS="$cls" RRISK="$risk" RBASE="$origin_sha" RBUDGET="$budget" RSTART="$(now)" \
-      RSEC="$rsec" RMODEL="$rmodel" RFEATURE="$feature" RMILESTONE="$milestone" RMILESTONEID="$milestone_id" RFIXMODEL="$rfixmodel" \
+      RSEC="$rsec" RMODEL="$rmodel" RFEATURE="$feature" RMILESTONE="$milestone" RMILESTONEID="$milestone_id" RFIXMODEL="$rfixmodel" RWFLOOR="$rwfloor" \
+      RPOLICY="$rpolicy" RCAP="$rcap" RPFCOST="$rpfcost" \
       RSCOPE="$cscope" RVERIFY="$cverify" RINV="$cinv" RDBNAME="$rdbname" \
       RREC="$RUNS/$slug/record.json" python3 -c 'import json,os
 o={"slug":os.environ["RSLUG"],"class":os.environ["RCLASS"],"risk":os.environ["RRISK"],
@@ -1430,6 +1748,9 @@ o={"slug":os.environ["RSLUG"],"class":os.environ["RCLASS"],"risk":os.environ["RR
    "scope":json.loads(os.environ["RSCOPE"]),"verify":os.environ["RVERIFY"],
    "invariant_tokens":json.loads(os.environ["RINV"]),
    "security_policy":os.environ["RSEC"],"writer_model":os.environ["RMODEL"],
+   "writer_min_budget_usd":float(os.environ["RWFLOOR"]),
+   "policy":json.loads(os.environ["RPOLICY"]),"budget_cap_usd":float(os.environ["RCAP"] or 0),
+   "preflight_cost_usd":(lambda v: float(v) if v not in ("", "null", "None") else None)(os.environ.get("RPFCOST", "")),
    "started_by":"ap3-dispatch","started_at":os.environ["RSTART"],
    "nonce":os.environ["RSLUG"]+"-"+os.environ["RSTART"],
    "status":"running","phase":"writing","review_round":0}

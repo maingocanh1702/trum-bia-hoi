@@ -52,11 +52,17 @@ def main(argv):
         "total_cost_usd": cost,
         "permission_denials": dens,
         "verify": rec.get("verify", "unavailable"),
-        "review_rounds": rec.get("review_round", 0),
+        # K28: null when the record carries no review_round at all (never a fabricated 0); a real
+        # 0 -- a run halted before its first review -- is emitted as 0.
+        "review_rounds": rec.get("review_round"),
         "review_verdict": rec.get("review_verdict", "unavailable"),
         "security_review": rec.get("security_review", "not_required"),
         "terminal": rec.get("terminal", "unavailable"),
         "terminal_kind": rec.get("terminal_kind"),
+        # K28: the machine-readable sub-reason halt() records (today only for VERIFY_HOST_FAIL:
+        # verify_host_rounds | verify_host_budget | verify_host_mutated); null on every other halt
+        # and on READY, so the ledger can separate an exhausted ceiling from a mutated worktree.
+        "halt_cause": rec.get("halt_cause"),
         "verify_host": rec.get("verify_host", "n/a"),
         "feature": rec.get("feature"),
         "escalated_model": rec.get("escalated_model"),
@@ -66,6 +72,13 @@ def main(argv):
         # W5.2 I3 (K16/K19): absence is a known fact (this run was never owner-extended), not an
         # unknown one -- False, not null, matching report.sh/the trust ladder's own reading of it.
         "owner_extended": rec.get("owner_extended", False),
+        # W6: a run the resolver decided on mid-run (never counted toward clean_runs), the flags
+        # naming what it did, and the two read-only session costs that are NOT in total_cost_usd
+        # (the writer's own metering) -- null when the run predates W6 or never needed them.
+        "agent_resolved": rec.get("agent_resolved", False),
+        "agent_resolved_flags": rec.get("agent_resolved_flags"),
+        "preflight_cost_usd": rec.get("preflight_cost_usd"),
+        "resolver_cost_usd": rec.get("resolver_cost_usd"),
     }
     print(json.dumps(row))
     return 0
