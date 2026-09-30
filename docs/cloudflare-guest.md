@@ -122,7 +122,17 @@ gửi 780 heartbeat cách nhau 1 giây (một ca 12 phút cộng phần đóng q
   - Tạo Google Client ID với origin `https://trumbiahoi.com`.
   - Backup SQLite lên R2.
   - Hoàn tất các tiêu chí M4 còn mở.
+- **Trang admin** (`/admin`, `apps/web/src/Admin.tsx` + `/admin/*` trên server) lên cùng lúc với API, không lên sớm hơn:
+  - Bản guest cố ý tắt admin: không có trong bundle, `/admin` bị redirect 302 về trang chủ. Game guest dùng config đóng gói sẵn,
+    nên thay đổi config từ admin chỉ có tác dụng với người chơi trên server.
+  - Phải cùng origin `trumbiahoi.com`: server chỉ nhận đúng một `TBH_ORIGIN` và cookie `__Host-tbh-admin` là `SameSite=Strict`.
+  - Khi chuyển sang bản build thường, `_redirects` đổi `/admin` thành rewrite `/admin / 200`. Đã thử bằng `wrangler dev`
+    2026-09-30: trả `index.html` với mã 200, đường dẫn vẫn là `/admin` nên `main.tsx` mở trang admin; `/admin/` cần thêm một rule riêng.
+  - Cần `TBH_ADMIN_ACCOUNTS_FILE` trên VM (quyền 0600, ngoài repo; Google `sub`, vai trò, khoá TOTP) theo
+    [admin-auth](admin-auth.md), cùng Google Client ID.
+  - Nên đặt thêm Cloudflare Access trước `/admin` và `/api/admin/*` làm lớp bảo vệ thứ hai; lớp này không thay Google + TOTP của server.
 
 | Date | Change |
 |---|---|
 | 2026-09-30 | Owner moves the guest edition to Cloudflare Workers static assets on `trumbiahoi.com` and accepts the origin save reset. Added `wrangler.jsonc`, `npm run cf`, host-neutral `deploy/static/`; local workerd checks and guest smoke 3/3 PASS. No deployment performed. API stays off Workers (measured) and is planned for Oracle VM + Cloudflare Tunnel. |
+| 2026-09-30 | Recorded the admin page plan: ships with the M4 API on the same origin, `/admin / 200` rewrite verified on the local Cloudflare runtime, Cloudflare Access recommended as an extra layer. |
