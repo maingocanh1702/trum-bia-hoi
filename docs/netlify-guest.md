@@ -75,3 +75,11 @@ blocks non-interactive use. Re-run the public smoke with
 |---|---|
 | 2026-09-18 | Publish v6 guest update; public access, browser persistence and local services unchanged. |
 
+
+## Moving to Cloudflare — owner decision 2026-09-30
+
+The Netlify Free plan's credit model (15 credits per production deploy, 20 per GB, whole site paused when credits run out) no longer fits this 55 MB guest build. The owner chose Cloudflare Workers static assets on `trumbiahoi.com` and accepted that browser saves start over on the new origin. The static header/redirect files moved unchanged from `deploy/netlify/` to `deploy/static/`; `npm run build:guest` and `netlify.toml` still produce the same Netlify upload. This site stays as published until the first Cloudflare release passes its public smoke; replacing it with a redirect needs a separate owner go-ahead. Procedure and local verification: [Cloudflare guest](cloudflare-guest.md).
+
+| Date | Change |
+|---|---|
+| 2026-09-30 | Owner decision to move the guest edition to Cloudflare (`trumbiahoi.com`); save reset accepted. `deploy/netlify/` renamed to `deploy/static/`; no Netlify operation performed. |

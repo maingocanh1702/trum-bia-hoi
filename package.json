@@ -31,7 +31,8 @@
     "verify:map": "node --import tsx scripts/verify/map-coverage.ts",
     "verify:doctor": "node --import tsx scripts/verify/doctor.ts",
     "verify:all": "npm run verify && npm run verify:doctor",
-    "build:guest": "VITE_TBH_GUEST_ONLY=1 npm run build && cp deploy/netlify/_headers deploy/netlify/_redirects apps/web/dist/"
+    "build:guest": "VITE_TBH_GUEST_ONLY=1 npm run build && cp deploy/static/_headers deploy/static/_redirects apps/web/dist/",
+    "cf": "npx --yes wrangler@4.144.0"
   },
   "type": "module",
   "engines": {

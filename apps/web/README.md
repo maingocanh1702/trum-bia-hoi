@@ -59,3 +59,11 @@ flow; replacement preserves the exact damaged rows in a backup. Google Client ID
 ### Netlify guest hosting — owner decision 2026-09-11
 
 The owner requests a separate browser-only guest edition on their existing `trumbiahoi.netlify.app` site. See [Netlify guest deployment](../../docs/netlify-guest.md) for its explicit build mode, device-save limits and verification. This supersedes the local-only hosting restriction for this static edition; the accepted localhost v0.3 runtime and SQLite are unchanged. Oracle/API and real Google remain separate future work.
+
+### Cloudflare guest hosting — owner decision 2026-09-30
+
+The guest edition moves to Cloudflare Workers static assets on `trumbiahoi.com`; browser saves restart on the new origin (accepted). Same `npm run build:guest` output; header/redirect files now live in `deploy/static/`. See [Cloudflare guest](../../docs/cloudflare-guest.md).
+
+| Date | Change |
+|---|---|
+| 2026-09-30 | Guest hosting target changed from Netlify to Cloudflare; build mode and gameplay unchanged. |

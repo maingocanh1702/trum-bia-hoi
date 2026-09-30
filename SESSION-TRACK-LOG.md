@@ -7,6 +7,17 @@
 
 ---
 
+## Hosting: Netlify → Cloudflare — 2026-09-30 (Claude Code)
+
+Owner chốt: bản guest chuyển sang **Cloudflare Workers static assets** ở `trumbiahoi.com` (gói Free), **chấp nhận save
+bắt đầu lại** do đổi origin. Lý do: gói free Netlify tính credit (15/deploy, 20/GB, hết credit thì dừng site). Thêm
+`wrangler.jsonc`, `npm run cf` (wrangler 4.144.0 qua npx), đổi `deploy/netlify/` → `deploy/static/`. `wrangler dev`: header,
+redirect, cache khớp Netlify; guest smoke 3/3 PASS; **chưa deploy**. API M4 **không** chạy trên Workers (đo: heartbeat
+p50 10,5 ms CPU > giới hạn 10 ms của gói Free; khoảng 2.900 dòng SQLite/ca) → Oracle VM (owner đã có tài khoản) + Cloudflare Tunnel.
+Chi tiết: `docs/cloudflare-guest.md`.
+**Việc kế:** owner đưa `trumbiahoi.com` vào Cloudflare và nối repo (các bước ở doc) → deploy lần đầu + smoke công khai → ghi
+biên nhận; dựng VM Oracle (Ubuntu 24.04 ARM, public subnet) → script setup + Tunnel + sửa rate-limit IP/tiền tố `/api` trước khi mở API.
+
 ## Design session owner + Claude — 2026-09-18 (Cowork)
 
 Merge `codex/deploy-wave-ab-netlify` → `main` (Đợt 0 xong, verify:all xanh, `5eb5f31`); k-admission PR #14 vào main
