@@ -3,11 +3,12 @@ import { writeFileSync, readFileSync } from 'node:fs';
 const config=JSON.parse(readFileSync('docs/config/economy.tbh.json','utf8'));
 const snapshot = async (page: Page) => (await (await page.request.get('/api/player/state')).json()).world;
 const synced = (page: Page) => expect(page.locator('.network-status')).toContainText('Đã đồng bộ');
-// `mayVanish`: a serve click may lose its order to the real clock between the poll and the click (the table is cleaned and the
-// button is gone); that is play, not a failure. A command the server rejects still fails the test.
-async function purchase(page:Page,button:Locator,mayVanish=false){
+// A serve click may lose its order to the real clock between the poll and the click (the table is cleaned, the button detaches). That is
+// play, not a failure -- but only when `orderGone` confirms on the server that this very order is no longer open. Any other click failure
+// (an overlay, a disabled control, a broken selector) and any command the server rejects still fails the test.
+async function purchase(page:Page,button:Locator,orderGone?:()=>Promise<boolean>){
   const receipt=page.waitForResponse(r=>r.url().endsWith('/api/player/command')&&r.request().method()==='POST');
-  try{await button.click({timeout:5000});}catch(error){receipt.catch(()=>{});if(mayVanish)return false;throw error;}
+  try{await button.click({timeout:5000});}catch(error){receipt.catch(()=>{});if(orderGone&&await orderGone())return false;throw error;}
   const response=await receipt;expect(response.ok()).toBe(true);
   await expect(page.locator('.network-status strong')).toHaveCount(0);
   return true;
@@ -42,7 +43,8 @@ test('default guest full shift', async ({ page, context }) => {
     for(const table of w.tables.filter((t:{order?:{state:string,items:{state:string}[]}})=>t.order&&['pending','grace'].includes(t.order.state)&&t.order.items.every(i=>i.state==='ready'))){
       // Table buttons persist when the order bubble disappears at its deadline.
       await page.locator(`[data-table-id="${table.id}"] .table-object`).click();const serve=page.getByRole('button',{name:'Phục vụ cả mâm',exact:true});
-      if(await serve.count()&&await serve.isEnabled())await purchase(page,serve,true);
+      const orderGone=async()=>{const now=(await snapshot(page)).tables.find((t:{id:string})=>t.id===table.id);return now?.order?.id!==table.order.id||!['pending','grace'].includes(now.order.state);};
+      if(await serve.count()&&await serve.isEnabled())await purchase(page,serve,orderGone);
       // A cooldown/rejected order can leave its context panel open; dismiss it before the next table.
       await page.keyboard.press('Escape');
     }
