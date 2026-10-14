@@ -81,6 +81,11 @@ export function parseProgressRequirement(token: string, c: Economy): ProgressReq
   throw Error(`config:progressRequirement:${token}`);
 }
 
+// Presentation-only thresholds added after earlier releases. Older pinned snapshots predate them and keep their raw bytes;
+// a snapshot that carries one must still shape-check it, and the web client falls back to the bundled seed for the absent ones.
+const ADDED_LATER = new Set(['onboarding.loginPrompt.leaveProgress', 'onboarding.idleToGuideMs',
+  'onboarding.featureReveal.hudAfterShifts', 'onboarding.featureReveal.upgradeAllAfterShifts', 'onboarding.featureReveal.journeyAfterShifts']);
+
 /** Complete snapshots only: a partial or malformed config must never become live. */
 function shape(value: unknown, expected: unknown, path: string): void {
   if (expected === null) {
@@ -95,13 +100,10 @@ function shape(value: unknown, expected: unknown, path: string): void {
     expected.forEach((v, i) => shape(value[i], v, `${path}.${i}`));
   } else if (typeof expected === 'object') {
     if (!value || typeof value !== 'object' || Array.isArray(value)) throw Error(`config:${path}:object`);
-    const e = expected as Record<string, unknown>, v = value as Record<string, unknown>;
-    // Old pinned snapshots predate these presentation-only thresholds; preserve their raw bytes.
-    if (path === 'onboarding.loginPrompt' && 'leaveProgress' in e && !('leaveProgress' in v)) {
-      const { leaveProgress: _, ...previous } = e; shape(value, previous, path); return;
-    }
-    if (Object.keys(e).some(k => !(k in v)) || Object.keys(v).some(k => !(k in e))) throw Error(`config:${path}:keys`);
-    for (const k of Object.keys(e)) shape(v[k], e[k], path ? `${path}.${k}` : k);
+    const e = expected as Record<string, unknown>, v = value as Record<string, unknown>, at = (k: string) => path ? `${path}.${k}` : k;
+    const keys = Object.keys(e).filter(k => k in v || !ADDED_LATER.has(at(k)));
+    if (keys.some(k => !(k in v)) || Object.keys(v).some(k => !(k in e))) throw Error(`config:${path}:keys`);
+    for (const k of keys) shape(v[k], e[k], at(k));
   } else if (typeof value !== typeof expected || (typeof value === 'number' && !Number.isFinite(value))) {
     throw Error(`config:${path}:type`);
   }
@@ -264,6 +266,9 @@ function validate(c: Economy): void {
     whole(c.onboarding.loginPrompt.leaveProgress.minCompletedShifts, 'loginPrompt.minCompletedShifts', 1);
     whole(c.onboarding.loginPrompt.leaveProgress.minLifetimeEarned, 'loginPrompt.minLifetimeEarned', 1);
   }
+  if ('idleToGuideMs' in c.onboarding) whole(c.onboarding.idleToGuideMs, 'onboarding.idleToGuideMs', 1);
+  const reveal: Record<string, number> = c.onboarding.featureReveal;
+  for (const key of ['hudAfterShifts', 'upgradeAllAfterShifts', 'journeyAfterShifts']) if (key in reveal) whole(reveal[key], `featureReveal.${key}`);
   if (c.onboarding.firstShift.firstGroupSize > initialTable.capacity || c.onboarding.firstShift.guaranteedFirstGroupWithinMs < c.runtime.tableSeatingMs) throw Error('config:firstGroup');
   if (!DISHES.every(d => c.menu[d].unlock.kitchenLevel < c.upgrades.kitchen.priceBase.length)) throw Error('config:menuKitchenLevel');
   for (const p of [c.tip.patienceThreshold, c.demandMix.pMoi, c.demandMix.pNemGivenMoi, c.demandMix.pSecondRound]) {
