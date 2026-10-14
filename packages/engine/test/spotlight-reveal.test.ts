@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Game, config, decodeSave, loadConfig, type ServeRecord } from '../src';
-import { beerOut, firstGoal, pickSpotlight, servedOrders } from '../../../apps/web/src/spotlight';
+import { beerOut, firstGoal, pickSpotlight, queuePatience, servedOrders } from '../../../apps/web/src/spotlight';
 import { featureReveal, idleToGuideMs, revealed } from '../../../apps/web/src/reveal';
 
 const free = { sheet: null, dialogOpen: false };
@@ -94,4 +94,20 @@ test('feature reveal follows completed shifts, onboarding off shows everything a
 
 test('served orders are counted once per order, not per guest', () => {
   assert.equal(servedOrders({ serves: [serve('a'), serve('a'), serve('b')] }), 2);
+});
+
+test('the door ring drains with the least patient guest and keeps a sliver while a rules-v1 group is still held for graceMs', () => {
+  const door = (rules?: number) => {
+    const g = open(); if (rules) (g as unknown as { rulesVersion: number }).rulesVersion = rules; // the client cannot see this
+    const w = g.world, arrivedAt = w.now, group = { id: 'door-1', rounds: 1, arrivedAt, customers: [{ id: 'c1', type: 'thuong' as const, patienceMs: 3000, enjoyMs: 1000 }, { id: 'c2', type: 'thuong' as const, patienceMs: 9000, enjoyMs: 1000 }] };
+    w.tables.forEach(t => { t.state = 'occupied'; t.until = null; }); // every seat taken: the group has to wait at the door
+    w.queue.push(group); g.advance(arrivedAt + 3100);
+    return { group, kept: w.queue.length === 1, ring: queuePatience(group, w.now), graceMs: g.config.values.patience.graceMs };
+  };
+  const group = { id: 'g', arrivedAt: 1000, customers: [{ patienceMs: 8000 }, { patienceMs: 4000 }] } as never;
+  assert.equal(queuePatience(group, 1000), 1); assert.equal(queuePatience(group, 3000), 0.5);
+  const current = door(), v1 = door(1);
+  assert.equal(current.kept, false, 'current rules drop the group at its least patient guest');
+  assert.equal(v1.kept, true, 'rules v1 hold it graceMs longer'); assert.ok(v1.graceMs > 100);
+  assert.ok(v1.ring > 0, 'so the ring never reads empty while the group is still there');
 });

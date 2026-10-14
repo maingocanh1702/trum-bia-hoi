@@ -16,8 +16,8 @@
   settings button, `:363-367`), weather row (`:368`), `stall-scene` (equipment buttons, business-unlock
   props, `:369-376`), and a `<nav aria-label={t('brand')} className="bottom-nav">` (`:388-393`) with
   up to 4 buttons: shift/book toggle, stock, upgrades, journey (with a numeric `nav-badge`
-  claimable-count badge). **Since 2026-10-14 (fun-onboarding-visual) shift 1 shows only the wallet, the keg and the settings button:**
-  the shift clock, weather/rush row, stock strip, cooler/washer/kitchen, glass counter and the whole nav stay hidden until
+  claimable-count badge). **Since 2026-10-14 (fun-onboarding-visual) shift 1 shows only the wallet and the keg:**
+  the settings gear, the shift clock, weather/rush row, stock strip, cooler/washer/kitchen, glass counter and the whole nav stay hidden until
   `onboarding.featureReveal.hudAfterShifts` completed shifts (Upgrades/Journey buttons have their own thresholds, the Upgrades
   sheet shows one card until `upgradeAllAfterShifts`). `reveal.ts` `revealed()` is the single switch; 1.x snapshots and `onboarding.enabled=false`
   reveal everything. Exactly one element may carry `data-spotlight` (`spotlight.ts`), numbers travel through the decorative `.fly-layer`

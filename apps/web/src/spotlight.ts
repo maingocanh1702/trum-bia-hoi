@@ -17,6 +17,18 @@ const activeOrder = (t: Table) => t.order && ['pending', 'grace'].includes(t.ord
 const isReady = (t: Table) => { const o = activeOrder(t); return !!o && o.items.length > 0 && o.items.every(i => i.state === 'ready'); };
 export const servedOrders = (w: Pick<WorldView, 'serves'>) => new Set(w.serves.map(s => s.orderId)).size;
 
+const RING_FLOOR = 0.04; // config-exempt: visual floor only, never a game number
+
+/**
+ * Share of a queued group's patience left (0..1), the same projection as the order bubble's bar: the queue deadline is arrival plus
+ * the least patient guest. Rules-v1 saves add `graceMs` to that deadline and the client cannot see the rules version, so the ring
+ * keeps a last sliver instead of reading empty while the group is still standing there.
+ */
+export function queuePatience(group: WorldView['queue'][number], now: number): number {
+  const total = Math.min(...group.customers.map(x => x.patienceMs));
+  return Math.max(RING_FLOOR, (group.arrivedAt + total - now) / total);
+}
+
 /** Keg empty, nothing brewing and no raw stock: only a restock brings beer back. */
 export function beerOut(w: WorldView, c: Config): boolean {
   const beer = beerStatus(w, c);

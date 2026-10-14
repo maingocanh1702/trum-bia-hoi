@@ -36,7 +36,8 @@ for (const viewport of viewports) {
     await load(page, null, fresh());
     // Minimal HUD (P0 d): everything else stays hidden until it unlocks.
     await expect(page.locator('.money')).toBeVisible(); await expect(page.locator('.equipment-object.keg')).toBeVisible();
-    for (const hidden of ['.bottom-nav', '.stock-strip', '.energy', '.weather-row', '.equipment-object.cooler', '.equipment-object.washer', '.glass-counter', '.quest-trigger', '.guide']) await expect(page.locator(hidden)).toHaveCount(0);
+    for (const hidden of ['.bottom-nav', '.stock-strip', '.energy', '.weather-row', '.equipment-object.cooler', '.equipment-object.washer', '.glass-counter', '.quest-trigger', '.guide', '.settings-button']) await expect(page.locator(hidden)).toHaveCount(0);
+    await expect(page.locator('.hud button')).toHaveCount(0); // the header holds the wallet and nothing else; the goal chip of slice 3 fills the free slot
     await expect(lit(page)).toHaveCount(0);
     await page.getByRole('button', { name: 'Mở ca', exact: true }).click();
     // Guest sits at ~7.2 s, the order is ready at ~10 s. Follow the pointer guest -> check -> Serve -> wallet; never two at once.
@@ -114,7 +115,8 @@ for (const viewport of viewports) test(`P0 the ready check with its pointer pass
   await page.setViewportSize(viewport);
   const f = fixture('ready'); await load(page, f.save, f.now, false);
   await expect(page.locator('.table-order-hint.is-ready[data-spotlight]')).toHaveCount(1); await expect(page.locator('.spotlight-arrow')).toHaveCount(1);
-  const box = (await page.locator('.table-order-hint.is-ready').boundingBox())!; expect(box.height).toBeGreaterThanOrEqual(44); expect(box.width).toBeGreaterThanOrEqual(44);
+  const hint = page.locator('.table-order-hint.is-ready'); // measured once its 180 ms entrance animation has settled
+  for (const side of ['width', 'height'] as const) await expect.poll(async () => (await hint.boundingBox())![side]).toBeGreaterThanOrEqual(44);
   expect((await axe(page)).violations).toEqual([]);
   await page.locator('.table-order-hint.is-ready').click();
   await expect(page.locator('#active-table-order .primary[data-spotlight]')).toHaveCount(1); await expect(lit(page)).toHaveCount(1);
@@ -153,7 +155,7 @@ for (const viewport of viewports) {
   test(`P0 after shift 1 the HUD opens up and the Upgrades sheet holds exactly one card at ${viewport.width}px`, async ({ page, tbh }) => {
     await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
     const f = fixture('rest'); await load(page, f.save, f.now, false);
-    for (const shown of ['.energy', '.weather-row', '.stock-strip', '.equipment-object.cooler', '.equipment-object.washer', '.glass-counter']) await expect(page.locator(shown)).toBeVisible();
+    for (const shown of ['.energy', '.weather-row', '.stock-strip', '.equipment-object.cooler', '.equipment-object.washer', '.glass-counter', '.settings-button']) await expect(page.locator(shown)).toBeVisible();
     await expect(page.locator('.bottom-nav button')).toHaveText([/Mở ca/, /Nhập hàng/, /Nâng cấp/]); // the journey button waits for shift 2
     await expect(lit(page)).toHaveCount(1); await expect(lit(page)).toContainText('Nâng cấp'); // between shifts the first goal calls
     await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click();

@@ -20,8 +20,8 @@
   `apps/web/src/spotlight.ts` `pickSpotlight()` chooses the single thing that calls for a tap (ready order check → beer restock when the keg,
   raw stock and any batch are all empty and affordable → between shifts the first goal) and `App.tsx` marks exactly that element
   `data-spotlight` (never two). First play (`onboarding.enabled && stepGuide.onFirstPlay && completedShifts === 0`) adds a pointer arrow
-  (`.spotlight-arrow`) guest → check → wallet and no banner. `reveal.ts` `revealed()` hides everything but wallet · keg · settings until
-  `featureReveal.hudAfterShifts` (timer, weather/rush row, stock strip, cooler/washer/kitchen, glass counter, bottom nav; Upgrades and Journey
+  (`.spotlight-arrow`) guest → check → wallet and no banner. `reveal.ts` `revealed()` hides everything but wallet · keg until
+  `featureReveal.hudAfterShifts` (Settings gear, timer, weather/rush row, stock strip, cooler/washer/kitchen, glass counter, bottom nav; Upgrades and Journey
   buttons have their own thresholds) and shows only one table's upgrade card (the first that can level up, an empty one when any is) in the Upgrades sheet until `upgradeAllAfterShifts`.
   `DoorQueue.tsx` renders queued groups with patience rings and a refused group's bubble (`door.seats` / `door.full`, from `queue_overflow {size}`);
   `FlyingFeedback.tsx` + `App.tsx` `launch()` fly coins from the served table to the wallet and drop lost reputation from the leaving table or the door.
@@ -117,8 +117,9 @@
   `P0 the door shows patience rings and a refused group of ${2|1} says "${2 ghế|Hết chỗ}" at ${w}px` (×6, + axe on `.door`) ·
   `P0 after shift 1 the HUD opens up and the Upgrades sheet holds exactly one card at ${w}px` (×3, + axe) ·
   `P0 after shift 2 the full Upgrades list and the Journey button open and nothing blinks`.
-  Unit proof: `packages/engine/test/spotlight-reveal.test.ts` (6 cases: `pickSpotlight` precedence, first-play pointer, restock boundaries,
-  first-goal window, `revealed()` thresholds incl. onboarding-off, 1.x pins and old-pin seed fallback) and `packages/engine/test/presentation.test.ts`
+  Unit proof: `packages/engine/test/spotlight-reveal.test.ts` (7 cases: `pickSpotlight` precedence, first-play pointer, restock boundaries,
+  first-goal window, `revealed()` thresholds incl. onboarding-off, 1.x pins and old-pin seed fallback, and the door ring's `queuePatience`
+  against a real rules-v1 engine that holds a queued group `graceMs` past its patience) and `packages/engine/test/presentation.test.ts`
   `first play shows no step banner; the fallback starts on idleness before the first serve, once, within the daily cap` and
   `reveal thresholds and the idle window are optional in old pins, validated when present, and never fractional or negative`.
   Specs that are not about onboarding keep the whole HUD through `apps/web/test/fixtures/full-hud.ts` (`fullHud(raw)` zeroes the four reveal thresholds)
