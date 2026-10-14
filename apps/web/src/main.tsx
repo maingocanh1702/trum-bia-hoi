@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client';
 import { translate } from './i18n';
 import './style.css';
 import './reference-layout.css';
+import './onboarding-visual.css';
 const root = createRoot(document.getElementById('root')!);
 const t = (key: string) => translate(navigator.language.toLowerCase().split('-')[0] === 'en' ? 'en' : 'vi', key);
 root.render(<p role="status">{t('save.loading')}</p>);
