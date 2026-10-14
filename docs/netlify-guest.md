@@ -78,8 +78,18 @@ blocks non-interactive use. Re-run the public smoke with
 
 ## Moving to Cloudflare — owner decision 2026-09-30
 
-The Netlify Free plan's credit model (15 credits per production deploy, 20 per GB, whole site paused when credits run out) no longer fits this 55 MB guest build. The owner chose Cloudflare Workers static assets on `trumbiahoi.com` and accepted that browser saves start over on the new origin. The static header/redirect files moved unchanged from `deploy/netlify/` to `deploy/static/`; `npm run build:guest` and `netlify.toml` still produce the same Netlify upload. This site stays as published until the first Cloudflare release passes its public smoke; replacing it with a redirect needs a separate owner go-ahead. Procedure and local verification: [Cloudflare guest](cloudflare-guest.md).
+The Netlify Free plan's credit model (15 credits per production deploy, 20 per GB, whole site paused when credits run out) no longer fits this 55 MB guest build. The owner chose Cloudflare Workers static assets on `trumbiahoi.com` and accepted that browser saves start over on the new origin. The static header/redirect files moved unchanged from `deploy/netlify/` to `deploy/static/`; `npm run build:guest` and `netlify.toml` still produce the same Netlify upload. This site stays as published until the first Cloudflare release passes its public smoke; replacing it with a redirect needs a separate owner go-ahead (revised 2026-10-14: this site stays live in parallel, see the next section). Procedure and local verification: [Cloudflare guest](cloudflare-guest.md).
 
 | Date | Change |
 |---|---|
 | 2026-09-30 | Owner decision to move the guest edition to Cloudflare (`trumbiahoi.com`); save reset accepted. `deploy/netlify/` renamed to `deploy/static/`; no Netlify operation performed. |
+
+## Netlify stays live in parallel — owner decision 2026-10-14
+
+The owner revised the 2026-09-30 decision: this site is **not** retired and gets **no** redirect to `trumbiahoi.com`. Each guest release is built once (`npm run build:guest`) and the same `apps/web/dist` is published to both this site and Cloudflare (`https://trumbiahoi.com/`); `netlify.toml` stays as the Netlify build record. The two origins keep separate browser saves (accepted): progress on `trumbiahoi.netlify.app` is not visible on `trumbiahoi.com` and the reverse. The credit limits above apply to this site only; if the Netlify credits run out this site pauses and `trumbiahoi.com` is unaffected.
+
+Release procedure for both hosts (stage both, promote both only on the owner's word, one deploy-log entry carrying both receipts): [Cloudflare guest — Phát hành lên hai host](cloudflare-guest.md#phát-hành-lên-hai-host). This document remains the reference for the Netlify side: CLI draft, promote, rollback and past receipts.
+
+| Date | Change |
+|---|---|
+| 2026-10-14 | Owner decision: Netlify stays published in parallel with Cloudflare from one shared build; no redirect, `netlify.toml` kept, separate saves per origin. Supersedes the redirect path left open by the 2026-09-30 entry. No Netlify operation performed. |

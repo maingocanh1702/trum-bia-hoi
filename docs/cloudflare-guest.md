@@ -1,11 +1,14 @@
-# Bản guest trên Cloudflare — quyết định chủ dự án 2026-09-30
+# Bản guest trên Cloudflare — quyết định chủ dự án 2026-09-30, sửa 2026-10-14
 
-Đích: **https://trumbiahoi.com/** trên Cloudflare Workers static assets, gói Free. Thay cho
-`trumbiahoi.netlify.app` ([Netlify guest](netlify-guest.md)). Gói Free của Netlify giờ tính theo credit: 300 credit/tháng,
-15 credit mỗi lần deploy production, 20 credit/GB băng thông; hết credit thì cả site bị dừng. Bản build hiện tại
-nặng 55 MB (123 file), màn hình đầu đã tải khoảng 5,6 MB.
+Bản guest phát hành lên **hai host song song** từ cùng một lần build (`npm run build:guest` → `apps/web/dist`):
+**https://trumbiahoi.com/** trên Cloudflare Workers static assets (gói Free) và **https://trumbiahoi.netlify.app/** trên Netlify
+([Netlify guest](netlify-guest.md)). Netlify không bị thay thế (quyết định 2026-10-14). Gói Free của Netlify giờ tính theo credit:
+300 credit/tháng, 15 credit mỗi lần deploy production, 20 credit/GB băng thông; hết credit thì cả site Netlify bị dừng,
+còn `trumbiahoi.com` không bị ảnh hưởng. Bản build hiện tại nặng 55 MB (123 file), màn hình đầu đã tải khoảng 5,6 MB.
 
 ## Quyết định 2026-09-30
+
+_Sửa 2026-10-14: không chuyển hẳn khỏi Netlify, hai host chạy song song. Xem mục kế tiếp._
 
 - **Chuyển bản guest sang Cloudflare Workers static assets**, tên miền `trumbiahoi.com`. Không có Worker script:
   mọi request đều là file tĩnh trong `apps/web/dist`. Chế độ build giữ nguyên `VITE_TBH_GUEST_ONLY=1`.
@@ -15,6 +18,15 @@ nặng 55 MB (123 file), màn hình đầu đã tải khoảng 5,6 MB.
 - **API (M4) không chạy trên Cloudflare Workers** (lý do và số đo ở mục cuối). Kế hoạch: Oracle Cloud VM + Cloudflare Tunnel.
 - Engine, economy, config và gameplay không đổi.
 
+## Quyết định 2026-10-14 (sửa quyết định 2026-09-30)
+
+- **Phát hành song song, không chuyển hẳn.** Cùng một bản build lên cả Cloudflare (`https://trumbiahoi.com/`) và Netlify
+  (`https://trumbiahoi.netlify.app/`). Netlify không bị bỏ và không gắn redirect sang `trumbiahoi.com`; `netlify.toml` ở lại.
+  Mục "Chuyển hẳn khỏi Netlify" của bản trước không còn áp dụng.
+- **Hai origin, hai save riêng, đã chấp nhận.** Save của bản guest nằm trong IndexedDB theo origin, nên tiến độ ở
+  `trumbiahoi.netlify.app` và ở `trumbiahoi.com` không thấy nhau. Vẫn không làm công cụ chuyển save.
+- Không đổi: Worker không có script, API (M4) không chạy trên Workers, engine/economy/config/gameplay.
+
 ## Trong repo
 
 | File | Vai trò |
@@ -22,7 +34,7 @@ nặng 55 MB (123 file), màn hình đầu đã tải khoảng 5,6 MB.
 | `wrangler.jsonc` | Worker `trumbiahoi`: chỉ có assets từ `./apps/web/dist`, gắn custom domain `trumbiahoi.com`. `workers_dev: false` để production chỉ có một origin; `preview_urls: true` để mỗi version có URL xem trước cho smoke test. |
 | `deploy/static/_headers`, `deploy/static/_redirects` | Đổi tên từ `deploy/netlify/` (nội dung không đổi). Netlify và Cloudflare đọc cùng định dạng; `npm run build:guest` chép hai file vào `apps/web/dist`. |
 | `npm run cf -- <lệnh>` | Chạy `wrangler@4.144.0` cố định phiên bản qua `npx`; không thêm dependency vào lockfile. |
-| `netlify.toml` | Giữ đến khi chuyển hẳn sang Cloudflare, rồi xoá trong một thay đổi riêng. |
+| `netlify.toml` | Giữ: Netlify vẫn là host song song (2026-10-14). Cùng lệnh `npm run build:guest` và thư mục `apps/web/dist` với Cloudflare, nên hai host nhận đúng một bộ file. Không xoá. |
 
 ## Thiết lập một lần (chủ dự án làm trên dashboard)
 
@@ -47,7 +59,13 @@ nặng 55 MB (123 file), màn hình đầu đã tải khoảng 5,6 MB.
 Nếu không nối repo mà deploy bằng máy local: chạy `npm run cf -- login` (đăng nhập bằng trình duyệt), hoặc đặt
 `CLOUDFLARE_API_TOKEN` và `CLOUDFLARE_ACCOUNT_ID` trong môi trường tiến trình. Không commit token, không đưa token vào bản build.
 
+**Từ 2026-10-14**, phát hành hai host đi bằng CLI từ máy local với một `apps/web/dist` duy nhất (mục "Phát hành lên hai host"),
+nên cần đường đăng nhập CLI ở trên. Build tự động khi nối repo (bước 2) chạy trên máy của Cloudflare và tạo một dist riêng:
+version sinh ra từ push chỉ để xem thử, không promote làm bản phát hành, vì không chứng minh được trùng byte với bản Netlify.
+
 ## Phát hành (mỗi lần)
+
+Đây là phần Cloudflare. Mỗi lần phát hành đi theo [Phát hành lên hai host](#phát-hành-lên-hai-host) ngay bên dưới.
 
 1. Verify source như với Netlify: `npm run verify:all`, `npm run check:assets`.
 2. Tạo version, **chưa lên production**:
@@ -61,18 +79,43 @@ Nếu không nối repo mà deploy bằng máy local: chạy `npm run cf -- logi
 6. Ghi biên nhận vào [deploy-log](deploy-log.md): source commit, version ID mới và cũ (để rollback),
    SHA-256 của `index.html` đã upload, SHA-256 manifest file, SHA-256 `index.html` đang phục vụ (phải bằng file upload), kết quả smoke.
 
+## Phát hành lên hai host
+
+Mỗi lần phát hành (quyết định 2026-10-14): **một lần `npm run build:guest`, một thư mục `apps/web/dist`, đưa lên cả hai host.**
+Build lại giữa chừng là hai host có thể phục vụ hai bản khác nhau, nên không làm.
+
+1. **Verify source một lần:** `npm run verify:all`, `npm run check:assets`. Ghi source commit (`git rev-parse HEAD`).
+2. **Build một lần:** `npm run build:guest`. Ghi SHA-256 của `apps/web/dist/index.html` và SHA-256 manifest file; một cặp số
+   này là biên nhận chung của cả hai host.
+3. **Stage cả hai, chưa host nào lên production.** Upload đúng thư mục đó bằng CLI từ máy local:
+   - Cloudflare: `npm run cf -- versions upload --message "<source sha>"`. Ghi version ID mới, version ID đang chạy (để rollback) và preview URL.
+   - Netlify: `netlify deploy --no-build --filter @tbh/web --dir=apps/web/dist` (không có `--prod` nên chỉ là draft; xem
+     [Netlify guest](netlify-guest.md)). Ghi draft deploy ID, deploy ID đang chạy (để rollback) và draft URL.
+4. **Smoke cả hai bản stage**, đủ ba viewport, `--workers=1`:
+   `TBH_GUEST_URL=<preview-url hoặc draft-url> TBH_GUEST_COMMIT=<source sha> npx playwright test --config playwright.guest.config.ts --workers=1`.
+   Một bên đỏ thì không promote bên nào; sửa rồi quay lại bước 1, hai bản stage cũ bỏ.
+5. **Dừng và báo chủ dự án** hai biên nhận stage (ID, URL, hash, kết quả smoke). **Chỉ promote khi chủ dự án nói.** Smoke xanh không phải là lệnh promote.
+6. **Promote cả hai** đúng bản đã test, theo lời chủ dự án: Cloudflare `npm run cf -- versions deploy <version-id>@100% --yes` (hoặc dashboard);
+   Netlify promote đúng draft đã test (restore deploy, không build lại). Nếu chỉ một host lên được: ghi trạng thái lệch vào deploy-log và thử lại
+   host còn lại; chỉ rollback host đã lên khi chủ dự án nói.
+7. **Smoke công khai cả hai:** như bước 4 với `TBH_GUEST_URL=https://trumbiahoi.com`, rồi với `TBH_GUEST_URL=https://trumbiahoi.netlify.app`.
+8. **Một mục [deploy-log](deploy-log.md) mang cả hai biên nhận:** source commit; index SHA-256 và manifest SHA-256 của dist (một cặp cho cả hai host);
+   Netlify: deploy ID mới và cũ, SHA-256 index đang phục vụ (Netlify chèn thẻ nên chỉ ghi lại, không đòi bằng file upload);
+   Cloudflare: version ID mới và cũ, SHA-256 index đang phục vụ (phải bằng file upload); kết quả smoke từng host.
+
 ## Rollback
 
 Dashboard *Deployments* → version trước → *Rollback*, hoặc `npm run cf -- rollback <version-id>` (có hỏi xác nhận).
 Rollback chỉ đổi file được phục vụ, không đụng tới save trong trình duyệt. Quay về được một trong 100 version gần nhất.
 
-## Chuyển hẳn khỏi Netlify
+## Chuyển hẳn khỏi Netlify — không làm (2026-10-14)
 
-- Site Netlify giữ nguyên đến khi bản đầu tiên trên Cloudflare qua smoke công khai.
-- Sau đó, **chỉ khi chủ dự án đồng ý**: deploy lên Netlify một site chỉ chứa `_redirects` với
-  `/* https://trumbiahoi.com/:splat 301!` (tốn một lần deploy, 15 credit), hoặc để site cũ đứng yên.
-  Người chơi trên Netlify sẽ bắt đầu lại ở `trumbiahoi.com` (đã chấp nhận ngày 2026-09-30).
-- Xoá `netlify.toml` trong một thay đổi riêng.
+Kế hoạch cũ của mục này (redirect, xoá `netlify.toml`) đã bị chủ dự án bỏ ngày 2026-10-14; Netlify ở lại song song.
+
+- Site Netlify tiếp tục được phát hành cùng bản build với Cloudflare, theo mục "Phát hành lên hai host". `netlify.toml` giữ nguyên.
+- **Không** deploy lên Netlify một site chỉ chứa `_redirects` với `/* https://trumbiahoi.com/:splat 301!`, và không xoá `netlify.toml`.
+- Người chơi ở mỗi origin giữ save riêng của origin đó (đã chấp nhận); không chuyển save giữa hai origin.
+- Nếu sau này muốn chuyển hẳn khỏi Netlify (redirect, xoá `netlify.toml`), đó là một quyết định mới của chủ dự án, ghi thành mục riêng.
 
 ## Kiểm tra cục bộ 2026-09-30 (chưa deploy)
 
@@ -136,3 +179,4 @@ gửi 780 heartbeat cách nhau 1 giây (một ca 12 phút cộng phần đóng q
 |---|---|
 | 2026-09-30 | Owner moves the guest edition to Cloudflare Workers static assets on `trumbiahoi.com` and accepts the origin save reset. Added `wrangler.jsonc`, `npm run cf`, host-neutral `deploy/static/`; local workerd checks and guest smoke 3/3 PASS. No deployment performed. API stays off Workers (measured) and is planned for Oracle VM + Cloudflare Tunnel. |
 | 2026-09-30 | Recorded the admin page plan: ships with the M4 API on the same origin, `/admin / 200` rewrite verified on the local Cloudflare runtime, Cloudflare Access recommended as an extra layer. |
+| 2026-10-14 | Owner decision: the guest edition is published on both hosts in parallel from one build — Netlify (`trumbiahoi.netlify.app`, `netlify.toml` stays) and Cloudflare (`trumbiahoi.com`). Netlify is not retired and gets no redirect; the two origins keep separate browser saves (accepted). Rewrote the opening paragraph and the `netlify.toml` row, replaced the "Chuyển hẳn khỏi Netlify" plan, added the "Phát hành lên hai host" procedure. No deployment performed, no host setting changed. |

@@ -7,7 +7,20 @@
 
 ---
 
+## Hosting: Netlify + Cloudflare song song — 2026-10-14 (Claude Code)
+
+Owner chốt (sửa quyết định 2026-09-30): bản guest **phát hành lên cả hai host song song** từ một lần build — Netlify
+(`trumbiahoi.netlify.app`, `netlify.toml` giữ nguyên) và Cloudflare Workers static assets (`trumbiahoi.com`). Netlify **không** bị bỏ,
+**không** gắn redirect sang `trumbiahoi.com`. Hai origin = hai save riêng (chấp nhận). Quy trình: `docs/cloudflare-guest.md` →
+"Phát hành lên hai host" (build một lần, upload cùng `apps/web/dist` lên cả hai, stage cả hai, chỉ promote khi owner nói, một mục
+deploy-log mang cả hai biên nhận). Docs đã sửa: `docs/cloudflare-guest.md`, `docs/netlify-guest.md`, `apps/web/README.md`. **Chưa deploy gì**,
+chưa đổi cài đặt Netlify/Cloudflare. Branch `deploy/cloudflare-guest-dual-host` (2 commit hosting prep + 1 commit docs) → PR vào `main`, owner review/merge.
+**Việc kế:** owner merge PR → đưa `trumbiahoi.com` vào Cloudflare (các bước ở doc) → lần phát hành đầu theo quy trình hai host. Nối repo Cloudflare
+chỉ cho bản xem thử; bản phát hành đi bằng CLI từ một dist để chứng minh hai host trùng byte.
+
 ## Hosting: Netlify → Cloudflare — 2026-09-30 (Claude Code)
+
+_(Sửa 2026-10-14: không chuyển hẳn khỏi Netlify, hai host chạy song song — xem block ngay trên.)_
 
 Owner chốt: bản guest chuyển sang **Cloudflare Workers static assets** ở `trumbiahoi.com` (gói Free), **chấp nhận save
 bắt đầu lại** do đổi origin. Lý do: gói free Netlify tính credit (15/deploy, 20/GB, hết credit thì dừng site). Thêm
