@@ -29,45 +29,19 @@ test('static guest serves, restocks, upgrades, closes shift and persists across 
   await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
   await expect(page.locator('.order-panel')).toHaveCount(0);
   await expect(page.locator('.toast-gain')).toBeVisible();
-  await page.getByRole('button', { name: 'Nhập hàng', exact: true }).click();
-  await page.locator('.stock-row').first().getByRole('button', { name: 'Mua bom +1 · 12 xu', exact: true }).click();
-  const energy = await page.locator('.energy strong').textContent();
-  await page.clock.runFor(5000);
-  await expect(page.locator('.energy strong')).toHaveText(energy!);
-  await page.keyboard.press('Escape');
-  // Earn the upgrade through ordinary service; no injected wallet or fixture config.
-  for (let step = 0; step < 150; step++) {
+  // Shift 1 is the minimal first-shift HUD: wallet, keg and tables. Serve through ordinary play until it closes by itself;
+  // the quick beer button refills the keg when it appears. No injected wallet or fixture config.
+  const book = page.getByRole('heading', { name: 'Sổ ca hôm nay', exact: true });
+  for (let step = 0; step < 200 && !(await book.isVisible()); step++) {
     await page.clock.fastForward(4000);
     if (await page.locator('.table-order-hint.is-ready').count()) {
       await page.locator('.table-order-hint.is-ready').first().click(); await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
       await expect(page.locator('.order-panel')).toHaveCount(0);
     }
-    if (step % 10 === 0) {
-      await page.getByRole('button', { name: 'Nhập hàng', exact: true }).click();
-      for (const row of await page.locator('.stock-row').all()) {
-        const buy = row.getByRole('button').last();
-        if (await buy.count() && await buy.isEnabled()) await buy.click();
-      }
-      await page.keyboard.press('Escape');
-    }
+    const refill = page.locator('.beer-stock-warning button:enabled');
+    if (await refill.count()) await refill.click();
   }
-  await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click();
-  const upgrade = page.locator('.upgrade-card button:enabled').first();
-  await expect(upgrade).toBeVisible(); await upgrade.click();
-  await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: 'Cài đặt', exact: true }).click();
-  await expect(page.locator('.build-version code')).toHaveAttribute('title', process.env.TBH_GUEST_COMMIT ?? execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim());
-  const before = await exported(page);
-  expect(before.world.shift!.stats.served).toBeGreaterThan(0);
-  expect(Object.values(before.world.equipment).some(level => level > 1)).toBe(true);
-  await page.getByRole('button', { name: /Tài khoản/ }).click();
-  await expect(page.locator('.account-panel')).toContainText('Đăng nhập, đồng bộ và bảng xếp hạng online chưa mở');
-  await expect(page.locator('.account-benefits, .account-google')).toHaveCount(0);
-  await page.screenshot({ path: `.qa/guest-account-${info.project.name}.png` });
-  await page.keyboard.press('Escape');
-  await page.clock.fastForward(before.durationMs);
-  await page.clock.fastForward(600000);
-  await expect(page.getByRole('heading', { name: 'Sổ ca hôm nay', exact: true })).toBeVisible();
+  await expect(book).toBeVisible();
   const metrics = page.getByRole('region', { name: 'Món trong ca', exact: true });
   await metrics.locator('summary').click();
   await expect(metrics.getByRole('heading', { name: 'Số đo ca', exact: true })).toBeVisible();
@@ -78,6 +52,27 @@ test('static guest serves, restocks, upgrades, closes shift and persists across 
     values[key] = await value.getAttribute('title');
   }
   await page.screenshot({ path: `.qa/guest-metrics-${info.project.name}.png` });
+  await page.keyboard.press('Escape');
+  // The HUD opens after shift 1: restock, then the first goal (one card) earned through ordinary service.
+  await page.getByRole('button', { name: 'Nhập hàng', exact: true }).click();
+  await page.locator('.stock-row').first().getByRole('button', { name: 'Mua bom +1 · 12 xu', exact: true }).click();
+  const energy = await page.locator('.energy strong').textContent();
+  await page.clock.runFor(5000);
+  await expect(page.locator('.energy strong')).toHaveText(energy!); // the open sheet keeps the world paused
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click();
+  const upgrade = page.locator('.upgrade-card button:enabled').first();
+  await expect(upgrade).toBeVisible(); await upgrade.click();
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Cài đặt', exact: true }).click();
+  await expect(page.locator('.build-version code')).toHaveAttribute('title', process.env.TBH_GUEST_COMMIT ?? execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim());
+  const before = await exported(page);
+  expect(before.world.shift!.stats.served).toBeGreaterThan(0);
+  expect(before.world.tables.some(table => table.level > 1)).toBe(true);
+  await page.getByRole('button', { name: /Tài khoản/ }).click();
+  await expect(page.locator('.account-panel')).toContainText('Đăng nhập, đồng bộ và bảng xếp hạng online chưa mở');
+  await expect(page.locator('.account-benefits, .account-google')).toHaveCount(0);
+  await page.screenshot({ path: `.qa/guest-account-${info.project.name}.png` });
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Cài đặt', exact: true }).click();
   const closed = await exported(page), event = closed.world.events.filter(e => e.type === 'shift_closed').at(-1)!;

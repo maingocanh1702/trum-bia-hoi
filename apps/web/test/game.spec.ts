@@ -1,4 +1,5 @@
 import { readSave, waitSaved, readBackups } from './storage';
+import { bootFresh } from './fresh-game';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -17,17 +18,16 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
     await page.setViewportSize(viewport);
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
-    // Lazy screen boot needs the browser scheduler; freeze only once the entry screen is ready.
+    // Lazy screen boot needs the browser scheduler; freeze only once the shell is ready. Full HUD from shift 1: onboarding's own HUD is first-shift-visual.spec.ts.
     await page.clock.install({ time: new Date('2026-09-08T10:00:00Z') });
-    await page.goto('/');
-    await expect(page.getByRole('button', { name: 'Vào quán', exact: true })).toBeVisible();
-    await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 1000));
-    await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+    await bootFresh(page);
+    await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 4000)); // the clock runs until paused: leave room for a loaded machine
     await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
     await page.clock.runFor(11100);
     await page.getByRole('button', { name: 'Xem mâm · bàn 1', exact: true }).first().click();
     await expect(page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true })).toHaveCount(1);
-    await expect(page.locator('.guide')).toContainText('Chạm Phục vụ');
+    await expect(page.locator('.guide')).toHaveCount(0); // first play is taught by the single spotlight, not a banner
+    await expect(page.locator('#active-table-order .primary[data-spotlight]')).toHaveCount(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const tables = await page.locator('.table-object').all();
     for (const button of await page.locator('.stock-strip > button').all()) {
@@ -91,7 +91,6 @@ test('a neglected first shift closes after remaining guests expire and shows onl
   for (const icon of await page.locator('.toast-loss svg').all()) expect((await icon.boundingBox())!.width).toBeGreaterThan(0);
   await expect(page.locator('.lost-bubble')).toHaveCount(0);
   await expect(page.getByText('Khách chờ lâu quá', { exact: false })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Bỏ qua', exact: true }).click();
   await page.clock.fastForward(720000);
   // A late Chi Pheo may still be waiting after exhaustion; drain the configured deadline.
   const c = JSON.parse(readFileSync('docs/config/economy.tbh.json', 'utf8')) as typeof import('../../../docs/config/economy.tbh.json');
@@ -106,7 +105,7 @@ test('a neglected first shift closes after remaining guests expire and shows onl
 test('tapped order stays live, returns keyboard focus, and closes on customer expiry', async ({ page }) => {
   await page.clock.install({ time: new Date('2026-09-08T10:00:00Z') });
   await page.clock.pauseAt(new Date('2026-09-08T10:00:00Z'));
-  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await bootFresh(page);
   await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
   await page.clock.runFor(8100);
   const originalCustomer = await page.locator('.seat-customer').first().getAttribute('data-customer-id');
@@ -241,7 +240,7 @@ for (const width of [360, 390]) {
 
 test('muting, guide skipping and reduced-motion preference survive normal play', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await bootFresh(page, { guideDone: false, guideIndex: 1, muted: false }); // the fallback guide is already showing, as after three lost guests
   await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
   await page.getByRole('button', { name: 'Bỏ qua', exact: true }).click();
   await page.getByRole('button', { name: 'Cài đặt', exact: true }).click();
@@ -255,7 +254,7 @@ test('muting, guide skipping and reduced-motion preference survive normal play',
 test('hidden and offline time preserves the current order and remaining shift', async ({ page }) => {
   await page.clock.install({ time: new Date('2026-09-08T10:00:00Z') });
   await page.clock.pauseAt(new Date('2026-09-08T10:00:00Z'));
-  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await bootFresh(page);
   await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
   await page.clock.runFor(11100);
   const timeBefore = await page.locator('.energy strong').textContent();
@@ -308,9 +307,8 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 
   test(`manual close shows its fee, allows cancellation and debits consuming guests once at ${viewport.width}px`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.clock.install({ time: new Date('2026-09-08T10:00:00Z') });
-    await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+    await bootFresh(page);
     await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
-    await page.getByRole('button', { name: 'Bỏ qua', exact: true }).click();
     await page.clock.runFor(11100);
     await page.locator('.table-order-hint').first().click();
     await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();

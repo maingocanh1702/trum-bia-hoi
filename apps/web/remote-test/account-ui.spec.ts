@@ -259,6 +259,7 @@ for (const path of ['/auth/session', '/player/connect']) test(`new-tab bootstrap
 
 for (const committed of [false, true]) test(`new-tab guest recovery applies a pending upgrade once (server committed=${committed})`, async ({ page, context }) => {
   await enter(page); await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
+  await expect.poll(async () => (await snapshot(page)).world.phase).toBe('open');
   await page.getByRole('button', { name: 'Vòi rót', exact: true }).click();
   const before = (await snapshot(page)).world; let credited: any;
   await page.route('**/api/player/command', async route => {

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { Game, config, loadConfig, encodeSave, deliveryQuote, DISHES, restockQuote, type Command } from '../../../../packages/engine/src';
-const raw = structuredClone(config.raw);
+import { fullHud } from './full-hud';
+const raw = fullHud(structuredClone(config.raw));
 raw.shift.startingCoinsBase = 100000; raw.lifePath[1].lifetimeBase = 1; raw.lifePath[2].lifetimeBase = 2; raw.spawn.baseMs = raw.shift.durationMs * 2;
 for (const stock of Object.values(raw.inventory.startingStock)) stock.fill(0);
 for (const name of ['sunny', 'hot', 'humid', 'rain', 'cold'] as const) raw.weather[name].weight = name === 'sunny' ? 1 : 0;

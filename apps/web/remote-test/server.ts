@@ -5,8 +5,10 @@ import { OAuth2Client } from 'google-auth-library';
 import { config, loadConfig, Game, encodeSave } from '@tbh/engine';
 import { GameStore } from '../../server/src/store';
 import { createGameServer } from '../../server/src/http';
+import { fullHud } from '../test/fixtures/full-hud';
 let offset = 0;
-const raw = structuredClone(config.raw); raw._meta.version = 'remote-browser-fixture'; raw.shift.startingCoinsBase = 100000; raw.leaderboard.topN = 2;
+// These suites are about accounts, sync and ranking, not onboarding: every HUD control exists from shift 1 (first-shift-visual.spec.ts proves the minimal HUD).
+const raw = fullHud(structuredClone(config.raw)); raw._meta.version = 'remote-browser-fixture'; raw.shift.startingCoinsBase = 100000; raw.leaderboard.topN = 2;
 // Accessibility coverage reveals later menus without changing progress, purchases or production config.
 if (process.env.TBH_A11Y_TEST === '1') { raw.onboarding.featureReveal.questsAfterShifts = 0; raw.onboarding.featureReveal.leagueAfterShifts = 0; }
 const store = new GameStore(':memory:', loadConfig(raw), () => Date.now() + offset);
