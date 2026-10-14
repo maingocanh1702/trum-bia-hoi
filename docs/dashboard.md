@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-09-17 01:15 · **Branch hiện tại:** `codex/deploy-wave-ab-netlify`
+> **Cập nhật:** 2026-10-15 02:54 · **Branch hiện tại:** `feat/fun-onboarding-visual`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -200,7 +200,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 1
-- **Notes:** Steer18 local onboarding PASS: existing admin threshold/step/on-off publication verified in VI/EN; retained guide hidden when disabled;20 paired k cohorts and418unit/server PASS. Real Google minute5/consent PENDING; five-user playtest owner-WAIVED.
+- **Notes:** Steer18 local onboarding PASS: existing admin threshold/step/on-off publication verified in VI/EN; retained guide hidden when disabled;20 paired k cohorts and418unit/server PASS. Real Google minute5/consent PENDING; five-user playtest owner-WAIVED. Wave 1 / S1 `fun-onboarding-visual` (2026-10-15, branch `feat/fun-onboarding-visual`): PLAN 18/09 P0 built UI-only — one spotlight at a time, coins/reputation flying from their source, door queue with patience rings and refused-group bubble, minimal shift-1 HUD + progressive disclosure (Tier C `onboarding.featureReveal.*`/`idleToGuideMs`, JSON 2.0.5), step guide demoted to a fallback. `verify:all` 595 tests, sims and doctor green; 390/360/1280 e2e + axe 0 violations; five-new-player test = empty owner checklist (`phase0-alpha-playtest.md` §6) → SKIPPED, not PASS.
 
 ### F11 — Bếp & Mồi Nóng — bếp 4 cấp, 3 mồi nóng
 

@@ -15,8 +15,13 @@
 - `GameView()` (`:95-493`) is the main shell: `<header class="hud">` (coins, stamina/shift clock,
   settings button, `:363-367`), weather row (`:368`), `stall-scene` (equipment buttons, business-unlock
   props, `:369-376`), and a `<nav aria-label={t('brand')} className="bottom-nav">` (`:388-393`) with
-  exactly 4 buttons: shift/book toggle, stock, upgrades, journey (with a numeric `nav-badge`
-  claimable-count badge).
+  up to 4 buttons: shift/book toggle, stock, upgrades, journey (with a numeric `nav-badge`
+  claimable-count badge). **Since 2026-10-14 (fun-onboarding-visual) shift 1 shows only the wallet, the keg and the settings button:**
+  the shift clock, weather/rush row, stock strip, cooler/washer/kitchen, glass counter and the whole nav stay hidden until
+  `onboarding.featureReveal.hudAfterShifts` completed shifts (Upgrades/Journey buttons have their own thresholds, the Upgrades
+  sheet shows one card until `upgradeAllAfterShifts`). `reveal.ts` `revealed()` is the single switch; 1.x snapshots and `onboarding.enabled=false`
+  reveal everything. Exactly one element may carry `data-spotlight` (`spotlight.ts`), numbers travel through the decorative `.fly-layer`
+  and queued groups render in `.door` — proof in `apps/web/test/first-shift-visual.spec.ts` (see [onboarding-guide](onboarding-guide.md)).
 - Sheets: a `Sheet` union of 15 named values + `null` (`:22`): `account, seasons, locations, stock,
   upgrades, book, close, journey, settings, config, dog, delivery, signboard, flyer, quests`. Every
   open sheet renders through one shared `<SheetDialog>` (`:40-47`) — a native `<dialog>`
@@ -243,6 +248,9 @@ the manifest — don't confuse a missing icon with a missing sprite.
 ### Wave B — 2026-09-16 proof
 - `apps/web/test/menu.spec.ts` — three Sổ ca scenarios include keyboard-native Details, VI/EN six metrics, exact backup export and whole-page axe with the panel expanded (six scans); empty/partial legacy case prevents fabricated ratios. Run `npx playwright test apps/web/test/menu.spec.ts`.
 
-## Netlify guest build — 2026-09-16
+### fun-onboarding-visual — 2026-10-14
+- `apps/web/test/first-shift-visual.spec.ts` — minimal first-shift HUD, single spotlight, flying numbers (+ reduced motion), door queue, post-shift-1 reveal and the one-card Upgrades sheet, each at 390×844 · 360×740 · 1280×720 with `AxeBuilder` (wcag2a/aa, 21aa, 22aa) on the ready check, empty-keg warning, door and sheet. Specs that are not about onboarding reveal the HUD through `fixtures/full-hud.ts` / `fresh-game.ts`; the remote/a11y server (`remote-test/server.ts`) does the same, so the 17-screen axe sweep keeps covering the full HUD.
+
+## Netlify guest build — 2026-09-16 (updated 2026-10-14: shift 1 is the minimal HUD, so restock/upgrade happen after it closes)
 
 `apps/web/guest-test/guest.spec.ts` → `static guest serves, restocks, upgrades, closes shift and persists across reload/new tab without API`: production guest build on 360×740, 390×844, 1280×720; full service/restock/pause/upgrade/next-day journey, Settings SHA, six close KPIs equal backup, reload/new-tab preservation, admin/online-ranking hidden and zero API/Google requests. Run `npm run build:guest`, copy `apps/web/dist` to `.qa/guest-dist`, then `npx playwright test --config playwright.guest.config.ts`; `TBH_GUEST_URL` targets the verified draft or live URL without a local server. Normal remote/account mechanics are unchanged.
