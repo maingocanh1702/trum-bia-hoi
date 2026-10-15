@@ -1,12 +1,12 @@
 # F25 — Ngôn Ngữ, Tài Khoản & Đăng Nhập (Localization)
 
-> Phase 1+. First-run language choice and account flow. Players can play as guest, but account login is required for durable cloud save and competitive/social surfaces.
+> Phase 1+. Language (Vietnamese by default, switched in Settings; no first-run language screen since 2026-10-15) and account flow. Players can play as guest, but account login is required for durable cloud save and competitive/social surfaces.
 
 > **Current owner decision — 2026-09-10 15:30, Steer #5:** guest keeps stall, coins, upgrades and current day/shift on this device across browser/new-tab visits. Durable player history, achievements, ranking and cross-device restore require a Google account. New Google attaches current progress once; existing Google restores directly. This supersedes the 08:18 fresh-visit interpretation and conflicting historical checkpoints below. See [account modes](../account-modes.md). No guest data-loss warning on leaving.
 
 ## 1. Scope
 
-- First-launch language selection: Vietnamese (`vi`) or English (`en`).
+- Language: Vietnamese (`vi`) by default whatever the browser says; English (`en`) is a saved choice made in Settings (no first-launch language screen — owner 17/09, FEEDBACK I.1).
 - Guest play without login.
 - Google sign-in / account creation.
 - Prompt guest users to sign in for save, Giải Nhậu, multi-device play, and payments.
@@ -233,6 +233,8 @@ No HTTP upload, approval or cloud UI is active. Details: [server guide](../../ap
 | 2026-09-10 verified local claim core |51a0734 passes271tests/config/build and80MB exact import/reopen/retry; native independent code/security review found no actionable introduced defect. `.qa/local-import-verification.json`. Imported history remains pending approval; public upload, cold-read performance and web cutover remain unfinished. |
 
 ## First-run language implementation — 2026-09-10
+
+> **Superseded 2026-10-15** (owner 17/09, FEEDBACK I.1): the language entry described here was removed; the default is Vietnamese, a saved English stays, Settings switches. Kept as history — see §3, §6 and the 2026-10-15 changelog row.
 
 The existing welcome now gates local/remote boot until a vi/en choice is accepted.
 Browser language suggests vi/en (otherwise vi); selecting persists immediately.
