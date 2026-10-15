@@ -263,9 +263,6 @@ progress::-webkit-progress-value { background: var(--beerAmber); border-radius: 
 .language-entry { min-height:100svh; display:grid; place-items:center; padding:24px 16px; color:var(--cream); }
 .language-entry .welcome-content { width:min(100%,420px); padding:28px 24px 32px; gap:16px; border:1px solid var(--panelBorder); border-radius:28px; background:var(--panel); box-shadow:0 8px 0 var(--panelDeep),0 14px 36px #0003; }
 .language-entry h1 { color:var(--coinGold); font-size:28px; }.language-entry h2 { font-size:18px; }
-.language-entry fieldset { display:flex; flex-wrap:wrap; gap:8px; width:100%; margin:0; padding:12px 0 0; border:0; }
-.language-entry legend { width:100%; font-weight:700; }.language-entry label { flex:1 1 120px; display:flex; align-items:center; justify-content:center; gap:8px; min-height:52px; padding:12px; background:var(--panelRaised); border:2px solid transparent; border-radius:16px; cursor:pointer; }
-.language-entry label:has(:checked) { border-color:var(--coinGold); }.language-entry input { margin:0; accent-color:var(--coinGold); }.language-entry label:focus-within { outline:3px solid var(--info); outline-offset:3px; }
 .language-entry .primary { min-height:52px; border-radius:16px; }.language-entry [role=alert] { color:var(--cream); font-weight:700; }
 
 .account-panel { display: grid; gap: 18px; }
