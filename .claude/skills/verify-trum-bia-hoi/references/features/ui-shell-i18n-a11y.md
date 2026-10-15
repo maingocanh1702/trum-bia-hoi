@@ -2,9 +2,12 @@
 
 ## Observable contract
 
-- `App()` (`App.tsx:49-68`) gates on `settings.localeAccepted` — shows a `language-entry` welcome
-  form (`aria-label={t('entry.title')}`, a `vi`/`en` radio fieldset, `Sprite id="glass-full"`) until
-  a locale is explicitly accepted via submit (`:60-67`), then renders `StartedApp()`.
+- **Since 2026-10-15 (fun-locale-default-vi, FEEDBACK I.1) there is no language screen.** `App()` renders
+  `StartedApp()` at once and only sets `<html lang>`/title from `locale.ts` `savedLocale()`: a clean profile is
+  Vietnamese whatever `navigator.language` says, an explicitly saved `en` stays `en`, anything else is `vi`, and
+  Settings → Ngôn ngữ is the only switch. `readSettings()` ignores the removed `localeAccepted`/`welcomed` keys. The
+  `main.tsx` loading text reads the same saved locale. The `language-entry` CSS class survives only as the layout
+  of the remote account-mode chooser.
 - `StartedApp()` (`:69-94`) dispatches on `start()`'s `StartState` union: `'reauth' in state` → a
   recovery `<Account>` panel; `'session' in state` → either a two-mode chooser (`account.modes`
   heading, guest/google buttons, `:78-85`, gated by a `sessionStorage['tbh.playing']`
@@ -122,17 +125,23 @@
   gap an earlier pass claimed. **Still genuinely untested in its own right:** focus-return-on-close,
   and whether `Escape` behaves the same across all 15 `Sheet` variants or only the two these specs
   happen to open.
-- `apps/web/remote-test/locale.spec.ts` is the dedicated locale/bootstrap lifecycle suite for the
-  `App()`/`language-entry` gate documented above — an earlier pass here cited no test for it.
-  `` `language entry precedes server creation and preserves the live shift at
-  ${viewport.width}x${viewport.height}` `` (`:3`, 3-viewport parametrized) asserts the entry form
-  blocks any `/api/` request or IndexedDB/journal creation until a locale is submitted, 44px hit
-  targets on the radio labels, and that `Escape`/reload cannot skip it. `'preference storage refusal
-  keeps the entry retryable and never creates a remote player'` (`:23`) is real (non-axe) proof of the
-  `entry.storageError` path the Uncovered-paths axe gap references. `'invalid stored locale cannot
-  skip the language choice through a stale accepted flag'` (`:34`) and `'a failed game module offers
-  retry before language selection or any player mutation'` (`:38`) cover legacy-preference/migration
-  and module-load-failure cases respectively.
+- `apps/web/test/locale-default.spec.ts` (local build, FEEDBACK I.1 acceptance) proves the new contract
+  on 390×844 · 360×740 · 1280×720: `a clean profile on a ${language} browser opens straight into the Vietnamese yard
+  and Settings keeps English across reload` (`en-US` / `en-GB` / `fr-FR`: no `.language-entry`, no radio,
+  `html[lang=vi]`, Settings → English → reload still English), `a saved English choice stays English on a
+  Vietnamese browser, and a saved Vietnamese one stays Vietnamese on an English browser`, and `settings written
+  by the removed language screen still load, and an unknown language falls back to Vietnamese`. Unit proof:
+  `packages/engine/test/presentation.test.ts` `only a saved choice picks the language: a first run is Vietnamese
+  whatever the browser says`.
+- `apps/web/remote-test/locale.spec.ts` is the remote counterpart (the account-mode chooser "Chọn cách chơi" is the
+  first screen): `first run opens in Vietnamese without a language screen and keeps the live shift when Settings
+  switches it at ${w}x${h}` (3 viewports; same player, shift and coins after the switch, reload stays English),
+  `browser language ${language} never picks the language: the first screen is Vietnamese` (`en-US`/`vi-VN`/`fr-FR`),
+  `a saved English choice stays English on a Vietnamese browser`, `settings written by the removed language screen
+  keep ${locale} without restarting a live shift`, `an invalid stored language falls back to Vietnamese and still
+  opens the game` and `a failed game module offers retry before any player mutation`. The older entry-screen
+  cases (server creation blocked until a locale is accepted, radio hit targets, storage-refusal retry) were
+  removed with the screen.
 
 ## Verification procedure
 
@@ -150,9 +159,10 @@
 - For the 3-viewport layout matrix specifically (not a11y), `npx playwright test --config
   playwright.playable.config.ts` (`apps/web/playable-test/shift.spec.ts`) is the closest existing
   proof, though it doesn't run axe.
-- `npx playwright test --config playwright.remote.config.ts apps/web/remote-test/locale.spec.ts` —
-  run for any change to the `language-entry` gate, locale persistence, or pre-server-creation
-  bootstrap order (see Existing proof).
+- `npx playwright test apps/web/test/locale-default.spec.ts` and `npx playwright test --config
+  playwright.remote.config.ts apps/web/remote-test/locale.spec.ts` — run for any change to locale
+  persistence/defaulting (`locale.ts`, `readSettings()`), the Settings language switch or bootstrap order
+  (see Existing proof).
 
 ## Uncovered paths
 
@@ -250,6 +260,9 @@ the manifest — don't confuse a missing icon with a missing sprite.
 
 ### fun-onboarding-visual — 2026-10-14
 - `apps/web/test/first-shift-visual.spec.ts` — minimal first-shift HUD, single spotlight, flying numbers (+ reduced motion), door queue, post-shift-1 reveal and the one-card Upgrades sheet, each at 390×844 · 360×740 · 1280×720 with `AxeBuilder` (wcag2a/aa, 21aa, 22aa) on the ready check, empty-keg warning, door and sheet. Specs that are not about onboarding reveal the HUD through `fixtures/full-hud.ts` / `fresh-game.ts`; the remote/a11y server (`remote-test/server.ts`) does the same, so the 17-screen axe sweep keeps covering the full HUD.
+
+### fun-locale-default-vi — 2026-10-15
+- No language screen (FEEDBACK I.1): `locale.ts` `savedLocale()`/`localeOf()` decide the language (saved `en` stays, everything else is `vi`, never `navigator.language`). Proof: `apps/web/test/locale-default.spec.ts` (3 viewports), `apps/web/remote-test/locale.spec.ts` (rewritten for the account-mode chooser), `packages/engine/test/presentation.test.ts` `only a saved choice picks the language…`. The specs that used to click `'Vào quán'` or the language radios now open the game directly; remote specs start an English run from a saved choice via `apps/web/remote-test/locale-seed.ts`. The guest build's browser-only notice moved from the removed screen to Settings → Tài khoản (asserted in `guest.spec.ts`).
 
 ## Netlify guest build — 2026-09-16 (updated 2026-10-14: shift 1 is the minimal HUD, so restock/upgrade happen after it closes)
 

@@ -84,7 +84,7 @@ dismissal, not a tap-serve outcome).
     reason:'orderExpired', outcome:'expired'}`.
   - **rested** (a modifier, not its own outcome): advance past `wellRested.requiresRestHours` before
     starting the shift, then serve early — exercises `wellRestedBonus()` stacking on any outcome.
-- UI taps by aria name (`game.spec.ts`): `'Vào quán'` → `'Mở ca'` → `'Xem mâm · bàn 1'` →
+- UI taps by aria name (`game.spec.ts`): `'Mở ca'` → `'Xem mâm · bàn 1'` →
   `'Phục vụ cả mâm'` (disabled until `o.items.every(i.state==='ready')`) → `'Đóng'`.
 
 ## Existing proof

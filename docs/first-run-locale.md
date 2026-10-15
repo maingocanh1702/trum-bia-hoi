@@ -1,5 +1,11 @@
 # First-run language entry
 
+> **Superseded 2026-10-15 (owner 17/09, `docs/FEEDBACK-2026-09-17.md` I.1; slice `fun-locale-default-vi`).** There is no language entry any more:
+> the game opens straight into the yard in Vietnamese whatever the browser language is, a saved English choice stays English, and Settings is the
+> only place that changes it (`apps/web/src/locale.ts`). The decision table below is kept for history; only its "changing language in Settings" and
+> "never erase a gameplay save" lines still hold. Legacy settings with `localeAccepted`/`welcomed` still load (the keys are ignored).
+
+
 Base `6df1228`. F25 §3/§6/§10 requires choosing or accepting vi/en before the
 first gameplay screen. Move the existing welcome into a pre-boot entry, before
 local save creation or remote session/connect requests. Keep the native-language
@@ -44,3 +50,5 @@ Next: Google web link/claim/conflict and configured three-benefit soft invitatio
 then remaining M4 acceptance → M6–M9. Live Google Client ID still not provided.
 
 | 2026-09-10 verified | 5871453 passes350unit/3final presentation/131browser/config/build and independent review. Locale exit criterion PASS; full account and M4 acceptance remain open. |
+
+| 2026-10-15 fun-locale-default-vi | Entry screen, `localeAccepted` gate and the entry-only copy removed; default `vi` regardless of `navigator.language`; saved `en` kept; Settings switches. Contract above superseded. |

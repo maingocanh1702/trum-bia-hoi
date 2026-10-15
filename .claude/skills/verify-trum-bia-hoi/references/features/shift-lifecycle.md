@@ -73,7 +73,7 @@ report's own contract).
   visibility flag; know the side effect before assuming otherwise.
 - No command drives `'closing'→'resting'` directly — it's autonomous, gated on
   table/queue/delivery being clear (`processDue()`, `engine.ts:425`).
-- UI: `'Vào quán'`/`'Mở ca'` → `startShift`; `'Sổ ca'` sheet → `endShift`/`kickAll` (exact button
+- UI: `'Mở ca'` → `startShift` (the old `'Vào quán'` language screen is gone); `'Sổ ca'` sheet → `endShift`/`kickAll` (exact button
   chain documented in table-lifecycle.md). Hidden/offline: `document.visibilitychange` →
   `syncActivity()` (`App.tsx:177-181`).
 - **Corrected claim**: hidden/offline is **not** identical in both runtime modes, and `activity` does
