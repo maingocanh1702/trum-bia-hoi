@@ -2,8 +2,6 @@ import { test, expect, type Page } from '@playwright/test';
 const snapshot = async (page: Page) => (await page.request.get('/api/player/state')).json();
 async function enter(page: Page) {
   await page.goto('/');
-  await page.getByRole('radio', { name: 'Tiếng Việt', exact: true }).check();
-  await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
   await page.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
   await expect(page.locator('.network-status')).toContainText('Đã đồng bộ');
 }

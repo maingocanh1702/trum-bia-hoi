@@ -10,8 +10,6 @@ for (const locale of ['vi', 'en']) for (const mode of ['stale', 'crowded', 'fres
       localStorage.setItem('tbh.settings.v1', JSON.stringify({ locale, localeAccepted: true, welcomed: true, guideDone: true, guideIndex: null, muted: true }));
     }, { save: fixture.save, locale });
     await page.goto('/');
-    const welcome = page.getByRole('button', { name: locale === 'vi' ? 'Vào quán' : 'Enter the yard', exact: true });
-    if (await welcome.isVisible()) await welcome.click();
     await expect(page.locator('.game-shell')).toBeVisible();
     const book = page.getByRole('button', { name: locale === 'vi' ? 'Sổ ca' : 'Shift book', exact: true }).first();
     await book.click();

@@ -1,12 +1,12 @@
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { writeFileSync } from 'node:fs';
+import { seedLocale } from './locale-seed';
 async function seed(page: Page, subject: string) {
   const r = await page.request.post('/api/__test/rank?subject=' + subject); expect(r.ok(), await r.text()).toBe(true); return r.json() as Promise<{ players: { playerId: string }[] }>;
 }
 async function enter(page: Page, locale = 'vi') {
-  await page.goto('/'); await page.getByRole('radio', { name: locale === 'vi' ? 'Tiếng Việt' : 'English', exact: true }).check();
-  await page.getByRole('button', { name: locale === 'vi' ? 'Vào quán' : 'Enter the stall', exact: true }).click();
+  await seedLocale(page, locale); await page.goto('/');
   await expect(page.locator('.network-status')).toContainText(locale === 'vi' ? 'Đã đồng bộ' : 'Synced');
 }
 async function board(page: Page, locale = 'vi') {

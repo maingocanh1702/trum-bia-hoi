@@ -8,7 +8,9 @@ import { waitSaved } from './storage';
 const viewports = [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1280, height: 720 }];
 const fixture = (mode: string, arg?: string, save?: string) => JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/first-shift-visual.ts', mode, ...(arg ? [arg] : [])], { encoding: 'utf8', input: save }));
 const settings = { locale: 'vi', localeAccepted: true, welcomed: true, guideDone: false, guideIndex: null, muted: true };
-const axe = (page: Page, include?: string) => { const b = new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']); return (include ? b.include(include) : b).analyze(); };
+// axe reads colours at the instant it runs: let finite entrance animations (bubble, customer tag, door) finish first, or it measures them half-faded.
+const settled = (page: Page) => page.waitForFunction(() => document.getAnimations().every(a => a.effect?.getComputedTiming().iterations === Infinity || a.playState !== 'running'));
+const axe = async (page: Page, include?: string) => { await settled(page); const b = new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']); return (include ? b.include(include) : b).analyze(); };
 const lit = (page: Page) => page.locator('[data-spotlight]');
 /**
  * Boot a guest (a brand-new game when `save` is null). `controlled` freezes the clock one second ahead so page.clock.runFor drives
