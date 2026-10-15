@@ -73,7 +73,7 @@ Logged-in account can:
 ## 6. Localization rules
 
 - All user-facing strings use translation keys.
-- Default locale: browser language if `vi` or `en`, otherwise `vi`.
+- Default locale: `vi`, whatever the browser language says (owner 17/09, FEEDBACK I.1; was: the browser language when `vi` or `en`). A saved `en` stays `en`; the language changes in Settings only.
 - Locale can be changed in settings any time.
 - Numeric/currency formatting follows locale, but game currency remains `xu`.
 - Content fallback: missing `en` key falls back to `vi` and logs `i18n_missing_key`.

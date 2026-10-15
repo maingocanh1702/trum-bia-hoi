@@ -7,7 +7,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
     const f = fixture(), errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
     await page.setViewportSize(viewport); await page.clock.pauseAt(new Date(f.now));
     await page.addInitScript(save => { if (!localStorage.getItem('quest-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('quest-seeded', '1'); } }, f.save);
-    await page.goto('/'); 
+    await page.goto('/');
     const trigger = page.getByRole('button', { name: 'Nhiệm vụ ngày', exact: true }); await trigger.click();
     const panel = page.getByRole('dialog', { name: 'Nhiệm vụ ngày', exact: true }), row = panel.locator('[data-quest="serve_tables"]');
     await expect(row.getByRole('button', { name: 'Nhận thưởng', exact: true })).toBeDisabled();
@@ -37,7 +37,7 @@ test('open daily sheet expires an unclaimed reward at VN midnight', async ({ pag
   const f = fixture(true); await page.setViewportSize({ width: 390, height: 844 });
   await page.clock.pauseAt(new Date(f.now));
   await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), f.save);
-  await page.goto('/'); 
+  await page.goto('/');
   await page.locator('.table-order-hint.is-ready').first().click(); await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
   await page.getByRole('button', { name: 'Nhiệm vụ ngày', exact: true }).click();
   const panel = page.getByRole('dialog', { name: 'Nhiệm vụ ngày', exact: true });
@@ -54,7 +54,7 @@ for (const threshold of [2, 3]) {
     const f = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/quests.ts', `--onboarding=${threshold}`], { encoding: 'utf8' }));
     await page.setViewportSize({ width: 390, height: 844 }); await page.clock.pauseAt(new Date(f.now));
     await page.addInitScript(save => { if (!localStorage.getItem('quest-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('quest-seeded', '1'); } }, f.save);
-    await page.goto('/'); 
+    await page.goto('/');
     await expect(page.getByRole('button', { name: 'Nhiệm vụ ngày', exact: true })).toHaveCount(0);
     for (let completed = 0; completed < threshold; completed++) {
       await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();

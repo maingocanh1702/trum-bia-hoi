@@ -9,7 +9,7 @@ test('serving a whole table increases economy.coins by exactly that serve\'s coi
   await page.goto('/');
   await expect(page.locator('.game-shell')).toBeVisible();
   await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 1000));
-  
+
   await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
   await page.clock.runFor(11100);
   await page.getByRole('button', { name: 'Xem mâm · bàn 1', exact: true }).first().click();

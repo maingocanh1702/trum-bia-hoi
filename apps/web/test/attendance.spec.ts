@@ -7,7 +7,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
     const f = fixture(), errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
     await page.setViewportSize(viewport); await page.clock.pauseAt(new Date(f.now));
     await page.addInitScript(save => { if (!localStorage.getItem('attendance-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('attendance-seeded', '1'); } }, f.save);
-    await page.goto('/'); 
+    await page.goto('/');
     await page.getByRole('button', { name: 'Nhiệm vụ ngày', exact: true }).click();
     const panel = page.getByRole('region', { name: 'Điểm danh 7 ngày', exact: true }), cells = panel.locator('.attendance-track li');
     await expect(cells).toHaveCount(f.rewards.length); await expect(cells.nth(0)).toContainText('Đã nhận'); await expect(cells.nth(1)).toContainText('Đã qua');
@@ -30,7 +30,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
 }
 test('live midnight expires an unclaimed check-in and wraps after the seventh observed day', async ({ page }) => {
   const f = fixture(); await page.setViewportSize({ width: 390, height: 844 }); await page.clock.pauseAt(new Date(f.now));
-  await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), f.save); await page.goto('/'); 
+  await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), f.save); await page.goto('/');
   await page.getByRole('button', { name: 'Nhiệm vụ ngày', exact: true }).click(); const panel = page.locator('.attendance-panel');
   await expect(panel.getByRole('button', { name: `Nhận +${f.rewards[5]} uy tín`, exact: true })).toBeEnabled();
   await page.clock.runFor(1100); await expect(panel.locator('[aria-current]')).toContainText('Ngày 7'); await expect(panel.locator('li').nth(5)).toContainText('Đã qua');
@@ -41,7 +41,7 @@ test('live midnight expires an unclaimed check-in and wraps after the seventh ob
 });
 test('returning after offline days resets the cycle without backfilling rewards or attendance', async ({ page }) => {
   const f = fixture(), now = f.now + 86400000 * 3; await page.clock.pauseAt(new Date(now));
-  await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), f.save); await page.goto('/'); 
+  await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), f.save); await page.goto('/');
   await page.getByRole('button', { name: 'Nhiệm vụ ngày', exact: true }).click(); const panel = page.locator('.attendance-panel');
   await expect(panel.locator('[aria-current]')).toContainText('Ngày 1'); await expect(panel.locator('[data-state="claimed"]')).toHaveCount(0);
   await expect(page.locator('.stock-strip .reputation')).toHaveText(new Intl.NumberFormat('vi-VN').format(f.reputation));

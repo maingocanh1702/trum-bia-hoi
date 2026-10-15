@@ -11,7 +11,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
     const f = fixture(), errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
     await page.setViewportSize(viewport); await page.clock.pauseAt(new Date(f.now));
     await page.addInitScript(save => { if (!localStorage.getItem('menu-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('menu-seeded', '1'); } }, f.save);
-    await page.goto('/'); 
+    await page.goto('/');
     await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
     const panel = page.getByRole('region', { name: 'Món trong ca', exact: true });
     await panel.scrollIntoViewIfNeeded(); await expect(panel.locator('tbody tr')).toHaveCount(6);

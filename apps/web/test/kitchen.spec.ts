@@ -7,7 +7,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
     const f = fixture(), errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
     await page.setViewportSize(viewport); await page.clock.pauseAt(new Date(f.now));
     await page.addInitScript(save => { if (!localStorage.getItem('kitchen-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('kitchen-seeded', '1'); } }, f.save);
-    await page.goto('/'); 
+    await page.goto('/');
     const yard = page.getByRole('button', { name: 'Bếp', exact: true }); await yard.scrollIntoViewIfNeeded();
     const box = (await yard.boundingBox())!; expect(box.height).toBeGreaterThanOrEqual(44); expect(box.width).toBeGreaterThanOrEqual(44);
     expect(await yard.evaluate(el => { const r = el.getBoundingClientRect(); return el.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)); })).toBe(true);
