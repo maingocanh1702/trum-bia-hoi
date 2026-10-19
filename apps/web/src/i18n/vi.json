@@ -725,5 +725,7 @@
   "metrics.lost": "Khách bỏ đi",
   "metrics.unavailable": "Ca cũ chưa có đủ dữ liệu để tính số đo cả ca.",
   "metrics.basis": "Có mồi {moi}/{served} lượt · Mất hơi {stale}/{beer} cốc đã phục vụ · Khách đến {arrived} · Hàng chờ đầy {rejected}.",
-  "metrics.note": "DT bia/lượt gồm tiền món và boa, không gồm thưởng hay đơn ship. k đo giá trị mỗi lượt, không đo tốc độ phục vụ. Tỷ lệ không có mẫu hiện —; số hiển thị làm tròn, bản lưu giữ số gốc."
+  "metrics.note": "DT bia/lượt gồm tiền món và boa, không gồm thưởng hay đơn ship. k đo giá trị mỗi lượt, không đo tốc độ phục vụ. Tỷ lệ không có mẫu hiện —; số hiển thị làm tròn, bản lưu giữ số gốc.",
+  "door.seats": "{n} ghế",
+  "door.full": "Hết chỗ"
 }

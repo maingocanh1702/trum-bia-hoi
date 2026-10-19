@@ -725,5 +725,7 @@
   "metrics.lost": "Customers lost",
   "metrics.unavailable": "This legacy shift lacks enough data for whole-shift metrics.",
   "metrics.basis": "With snacks {moi}/{served} rounds · Flat {stale}/{beer} beers served · Arrivals {arrived} · Queue full {rejected}.",
-  "metrics.note": "Value per round includes dish payments and tips, excluding bonuses and deliveries. k measures value, not serving speed. Rates without a sample show —; displayed values are rounded and backups retain exact values."
+  "metrics.note": "Value per round includes dish payments and tips, excluding bonuses and deliveries. k measures value, not serving speed. Rates without a sample show —; displayed values are rounded and backups retain exact values.",
+  "door.seats": "{n} seats",
+  "door.full": "No room"
 }

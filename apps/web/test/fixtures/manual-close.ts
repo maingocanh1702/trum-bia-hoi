@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { Game, config, loadConfig, encodeSave, currentGuests, kickAllQuote, type Command } from '../../../../packages/engine/src';
+import { fullHud } from './full-hud';
 const mode = process.argv[2];
-const raw = structuredClone(config.raw);
+const raw = fullHud(structuredClone(config.raw));
 for (const k of ['hot', 'humid', 'rain', 'cold'] as const) raw.weather[k].weight = 0;
 if (mode === 'poor') raw.shift.startingCoinsBase = 1;
 if (mode === 'occupied') {

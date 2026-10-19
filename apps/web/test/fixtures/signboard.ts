@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { Game, config, loadConfig, encodeSave, signboardQuote, WEATHER, type Command } from '../../../../packages/engine/src';
-const raw = structuredClone(config.raw); raw.shift.startingCoinsBase = 1000000; raw.signboard.styles.golden.repBase = 1;
+import { fullHud } from './full-hud';
+const raw = fullHud(structuredClone(config.raw)); raw.shift.startingCoinsBase = 1000000; raw.signboard.styles.golden.repBase = 1;
 for (const weather of WEATHER) raw.weather[weather].weight = weather === 'sunny' ? 1 : 0;
 const g = new Game(loadConfig(raw), 42, Date.parse('2026-09-08T10:00:00Z'));
 const send = (command: Command) => { const r = g.command({ command, at: g.world.now, idempotencyKey: `sign-fixture-${g.log.length}` }); assert.ok(r.ok, r.reason ?? 'fixture command'); };

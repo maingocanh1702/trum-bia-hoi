@@ -69,24 +69,23 @@ export function download(text: string, name: string): void {
   const link = document.createElement('a'); link.href = url; link.download = name; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000); // config-exempt: browser download lifetime
 }
+/**
+ * F27 (owner 2026-09-18): the step banner is only a fallback. First play is taught by the screen itself (spotlight.ts);
+ * the banner starts after `lostStreakToGuide` lost guests, or on `ui_idle` (no tap for `idleToGuideMs`) before anyone was ever served.
+ */
 export function advanceGuide(settings: Settings, game: { world: WorldView; config: Config }, events: DomainEvent[], uiEvent?: string): void {
   const c = game.config.values.onboarding;
   if (!c.enabled) return;
+  const fallback = () => { settings.guideIndex = c.stepGuide.steps.findIndex(s => s.waitFor === 'order_ready'); settings.guideRuns++; };
   for (const e of [...events, ...(uiEvent ? [{ type: uiEvent, data: {}, at: game.world.now }] : [])]) {
     const day = new Intl.DateTimeFormat('en-CA', { timeZone: game.config.values.shift.dayRollover.tz }).format(e.at);
     if (settings.guideDay !== day) { settings.guideDay = day; settings.guideRuns = 0; }
-    if (e.type === 'shift_opened') {
-      settings.lostStreak = 0;
-      if (!settings.guideDone && c.stepGuide.onFirstPlay) settings.guideIndex = 0;
-    }
-    if (e.type === 'customer_served') settings.lostStreak = 0;
+    if (e.type === 'shift_opened' || e.type === 'customer_served') settings.lostStreak = 0;
     if (e.type === 'customer_left') {
       settings.lostStreak += Number(('count' in e.data ? e.data.count : 1) ?? 1);
-      if (settings.lostStreak >= c.lostStreakToGuide && settings.guideRuns < c.stepGuide.maxAutoRepeatsPerDay) {
-        settings.guideIndex = c.stepGuide.steps.findIndex(s => s.waitFor === 'order_ready');
-        settings.guideRuns++; settings.lostStreak = 0;
-      }
+      if (settings.lostStreak >= c.lostStreakToGuide && settings.guideRuns < c.stepGuide.maxAutoRepeatsPerDay) { fallback(); settings.lostStreak = 0; }
     }
+    if (e.type === 'ui_idle' && settings.guideIndex === null && game.world.serves.length === 0 && settings.guideRuns < c.stepGuide.maxAutoRepeatsPerDay) fallback();
     const step = settings.guideIndex === null ? null : c.stepGuide.steps[settings.guideIndex];
     if (step?.waitFor === e.type && (!step.onlyAfter || game.world.completedShifts > 0)) {
       settings.guideIndex!++;

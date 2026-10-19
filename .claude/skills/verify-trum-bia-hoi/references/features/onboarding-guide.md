@@ -4,15 +4,29 @@
 
 - Config (`docs/config/economy.tbh.json:1100-1172`, tier C, `_rule: "F27 (🟢 ràng buộc 08/09)..."`), real shape:
   `enabled: true`, `firstShift: {guaranteedFirstGroupWithinMs: 8000, firstGroupType: 'thuong', firstGroupSize: 1,
-  firstOrder: ['bia'], riskEventsDisabled: true, rushDisabled: true}`, `lostStreakToGuide: 3`,
+  firstOrder: ['bia'], riskEventsDisabled: true, rushDisabled: true}`, `lostStreakToGuide: 3`, `idleToGuideMs: 45000` (JSON 2.0.5),
   `stepGuide: {onFirstPlay: true, skippable: true, maxAutoRepeatsPerDay: 2, steps: [5 entries]}`,
   `loginPrompt: {afterFirstShift: true, onLeaderboardOpen: true, onLeaveWithProgress: true, cooldownShifts: 3,
   leaveProgress: {minCompletedShifts: 1, minLifetimeEarned: 1}}`, `hints.*`, `featureReveal:
-  {upgradeAfterShifts: 1, questsAfterShifts: 2, leagueAfterShifts: 3, locationsAfterLifePathLevel: 1}`,
+  {upgradeAfterShifts: 1, questsAfterShifts: 2, leagueAfterShifts: 3, locationsAfterLifePathLevel: 1,
+  hudAfterShifts: 1, upgradeAllAfterShifts: 2, journeyAfterShifts: 2}` (the last three and `idleToGuideMs` are JSON 2.0.5 keys:
+  older pins lack them, `config.ts` `ADDED_LATER` lets those load byte-for-byte and `reveal.ts` reads the seed for the absent ones),
   `targets: {firstServeWithinMs: 30000, firstShiftLostGroupsMax: 1}`. The 5 `stepGuide.steps` entries
   (`id`/`waitFor`/`copyKey`, `open_upgrade` also carries `onlyAfter: "shift_closed"`) — see Gotchas for
   what `onlyAfter`'s value actually does. `k.band` (the invariant `sim:onboarding` checks against) is
   `[2.0, 3.0]` (`economy.tbh.json:132-134`), not hardcoded in the sim.
+- **fun-onboarding-visual (2026-10-14, PLAN "Vui 3 ca" P0) — the screen teaches itself; the step banner is a fallback.** UI-only on the
+  unchanged engine; every piece is a pure projection of `WorldView` + config:
+  `apps/web/src/spotlight.ts` `pickSpotlight()` chooses the single thing that calls for a tap (ready order check → beer restock when the keg,
+  raw stock and any batch are all empty and affordable → between shifts the first goal) and `App.tsx` marks exactly that element
+  `data-spotlight` (never two). First play (`onboarding.enabled && stepGuide.onFirstPlay && completedShifts === 0`) adds a pointer arrow
+  (`.spotlight-arrow`) guest → check → wallet and no banner. `reveal.ts` `revealed()` hides everything but wallet · keg until
+  `featureReveal.hudAfterShifts` (Settings gear, timer, weather/rush row, stock strip, cooler/washer/kitchen, glass counter, bottom nav; Upgrades and Journey
+  buttons have their own thresholds) and shows only one table's upgrade card (the first that can level up, an empty one when any is) in the Upgrades sheet until `upgradeAllAfterShifts`.
+  `DoorQueue.tsx` renders queued groups with patience rings and a refused group's bubble (`door.seats` / `door.full`, from `queue_overflow {size}`);
+  `FlyingFeedback.tsx` + `App.tsx` `launch()` fly coins from the served table to the wallet and drop lost reputation from the leaving table or the door.
+  `local.ts` `advanceGuide()` no longer starts the banner at first play: it starts after `lostStreakToGuide` lost guests or on the synthetic
+  `ui_idle` event (no tap for `onboarding.idleToGuideMs` while a shift runs and nobody was ever served), capped by `maxAutoRepeatsPerDay`.
 - Engine (`packages/engine/src/engine.ts`): `World.lostStreak` starts at `0` (`:66`), `+= 1` on a queue
   arrival timing out (`:415`, emits `customer_left` reason `'queue'`), `++` on an order timing out
   (`:511`, emits `order_expired`), reset to `0` on shift-open (`:808`) and on a successful
@@ -40,8 +54,10 @@
   non-negative integer or `null`.
 - `advanceGuide(settings, game, events, uiEvent?)` (`local.ts:65-90`): no-op if `!c.enabled`. Buckets
   events by a VN-timezone day key (`Intl.DateTimeFormat('en-CA', {timeZone: shift.dayRollover.tz})`,
-  `:69-70`) and resets `guideRuns` on day change. `shift_opened` → `lostStreak = 0`; if
-  `!guideDone && stepGuide.onFirstPlay`, `guideIndex = 0` (`:73`). `customer_served` → `lostStreak = 0`
+  `:69-70`) and resets `guideRuns` on day change. `shift_opened` → `lostStreak = 0`; **since 2026-10-14 it no longer
+  sets `guideIndex = 0` at first play** (the screen teaches itself — see the fun-onboarding-visual bullet above; the old
+  `!guideDone && stepGuide.onFirstPlay` auto-start is gone). The synthetic `ui_idle` event starts the same fallback step
+  once `guideIndex === null`, `world.serves.length === 0` and `guideRuns < maxAutoRepeatsPerDay`. `customer_served` → `lostStreak = 0`
   (`:75`). `customer_left` → `lostStreak += event.count ?? 1`; once it reaches `lostStreakToGuide`
   *and* `guideRuns < maxAutoRepeatsPerDay`, jumps `guideIndex` to the step whose `waitFor ===
   'order_ready'`, increments `guideRuns`, resets `lostStreak` (`:77-81`). Step advance: when the
@@ -88,6 +104,26 @@
 
 ## Existing proof
 
+- **fun-onboarding-visual (2026-10-14).** `apps/web/test/first-shift-visual.spec.ts` (local config, engine-made saves from
+  `apps/web/test/fixtures/first-shift-visual.ts`, DOM-only, 390×844 · 360×740 · 1280×720 where marked ×3; run
+  `npx playwright test apps/web/test/first-shift-visual.spec.ts --workers=2`):
+  `P0 first shift shows wallet, keg and one thing to tap at a time at ${w}px` (×3: minimal HUD, at most one `[data-spotlight]` on every 250 ms frame,
+  stages guest → check → serve → wallet in order, the pointer retires after the first serve, no `.guide`, no horizontal scroll) ·
+  `P0 coins fly from the table to the wallet and lost reputation falls from the guest at ${w}px` (×3) ·
+  `P0 numbers and spotlights keep their cue without motion when the player asks for reduced motion` ·
+  `P0 the step guide is only a fallback: idleness before the first serve starts it once and a tap resets the wait` ·
+  `P0 the ready check with its pointer passes axe and keeps 44px targets at ${w}px` (×3) ·
+  `P0 an empty keg is greyed and exactly the refill button asks for a tap` (+ axe) ·
+  `P0 the door shows patience rings and a refused group of ${2|1} says "${2 ghế|Hết chỗ}" at ${w}px` (×6, + axe on `.door`) ·
+  `P0 after shift 1 the HUD opens up and the Upgrades sheet holds exactly one card at ${w}px` (×3, + axe) ·
+  `P0 after shift 2 the full Upgrades list and the Journey button open and nothing blinks`.
+  Unit proof: `packages/engine/test/spotlight-reveal.test.ts` (7 cases: `pickSpotlight` precedence, first-play pointer, restock boundaries,
+  first-goal window, `revealed()` thresholds incl. onboarding-off, 1.x pins and old-pin seed fallback, and the door ring's `queuePatience`
+  against a real rules-v1 engine that holds a queued group `graceMs` past its patience) and `packages/engine/test/presentation.test.ts`
+  `first play shows no step banner; the fallback starts on idleness before the first serve, once, within the daily cap` and
+  `reveal thresholds and the idle window are optional in old pins, validated when present, and never fractional or negative`.
+  Specs that are not about onboarding keep the whole HUD through `apps/web/test/fixtures/full-hud.ts` (`fullHud(raw)` zeroes the four reveal thresholds)
+  or `apps/web/test/fresh-game.ts` (`bootFresh`); the five-new-player test is an owner playtest (`docs/phase0-alpha-playtest.md` §6), never PASS here.
 - `apps/web/test/feedback.spec.ts` — `A4 ${locale} actual empty and refilling order feedback agrees with the guide at ${width}px` (VI/EN ×360/390/1280): wait-ready uses the actual current order cause, including empty raw stock and a reserved refill with raw stock zero. Run `npx playwright test apps/web/test/feedback.spec.ts`.
 
 - `packages/engine/test/game.test.ts`, inside `'startup rejects configurations that create fractional
@@ -250,3 +286,4 @@ machine.
 | Date | Change |
 |---|---|
 | 2026-09-16 | Add current order feedback and rules26 loss evidence regression citations; historical replay remains unchanged. |
+| 2026-10-14 fun-onboarding-visual | First play no longer starts the step banner: spotlight + pointer, minimal first-shift HUD, door queue, flying numbers; the banner is a fallback (lost streak or `idleToGuideMs`). JSON 2.0.5 adds `onboarding.idleToGuideMs` and `featureReveal.{hudAfterShifts, upgradeAllAfterShifts, journeyAfterShifts}`. New proof cited above; the five-new-player test stays an owner playtest. |
