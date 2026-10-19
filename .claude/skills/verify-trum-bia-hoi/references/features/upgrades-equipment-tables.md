@@ -256,3 +256,13 @@ freshness-formula effect), [table-lifecycle](table-lifecycle.md) (the table stat
 |---|---|
 | 2026-09-16 | Add current order feedback and rules26 loss evidence regression citations; historical replay remains unchanged. |
 | 2026-10-14 fun-onboarding-visual | UI only: until `onboarding.featureReveal.upgradeAllAfterShifts` completed shifts the Upgrades sheet shows exactly one card, the first table that can still level up, an empty one when any is (`spotlight.ts` `firstGoal()`, 3 750 xu on config 2.0.5), and the Upgrades nav button / that card's buy button take the single spotlight while it is affordable and unbought; the full list (equipment, tables, business, flyer, sign, locations) opens afterwards. The table upgrade command, its price and its `tableBusy` rule are unchanged. Proof: `apps/web/test/first-shift-visual.spec.ts` `P0 after shift 1 the HUD opens up and the Upgrades sheet holds exactly one card at ${w}px` (×3) and `P0 after shift 2 the full Upgrades list and the Journey button open and nothing blinks`. |
+
+## fun-buy-buttons-reason — 2026-10-19
+
+- **Priced buttons, one reason.** `App.tsx` `tableCard` / `buyTableButton` read the engine quotes `tableUpgradeQuote` / `buyTableQuote` (`rules.ts`): the button always carries its price
+  (`upgrade.buy` / `upgrade.addTablePrice`) and, when dimmed, a `.buy-reason` line wired with `aria-describedby` that holds the FIRST refusal the command itself would give
+  (`reason.tableBusy` "Bàn đang có khách" · `reason.notEnoughCoins` · `reason.badgeRequired` / `reason.reputationRequired {n}` · `reason.maxTables`); at the top level the button says "Đã tối đa" itself and no line is added.
+- **Proof:** `apps/web/test/buy-reasons.spec.ts` — `a dimmed table button keeps its price and names exactly one reason: guests, then coins; an affordable one has none, at ${w}px` (×3) and
+  `a table at Lv3 says it needs the badge, an affordable table has no reason, and the last table bought turns the buy button into "all tables built" at ${w}px` (×3); fixtures from the real engine: `apps/web/test/fixtures/buy-reasons.ts` modes `states`, `rich`.
+  Engine side (unchanged from fun-next-goal): `packages/engine/test/goal-quotes.test.ts` pins that the quotes say what the commands say.
+- Engine rule unchanged: while a table is `occupied` the command still answers `tableBusy`; letting a purchase proceed on an occupied table is Wave 2 (S1).

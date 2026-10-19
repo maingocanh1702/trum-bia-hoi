@@ -748,5 +748,22 @@
   "lane.guests": "Khách",
   "settings.goal": "Gợi ý mục tiêu",
   "settings.on": "Đang bật",
-  "settings.off": "Đã tắt"
+  "settings.off": "Đã tắt",
+  "reason.notEnoughCoins": "Chưa đủ xu",
+  "reason.tableBusy": "Bàn đang có khách",
+  "reason.maxLevel": "Đã tối đa",
+  "reason.maxTables": "Quán đã đủ bàn",
+  "reason.badgeRequired": "Cần huy hiệu Kết Nối",
+  "reason.reputationRequired": "Cần {n} uy tín",
+  "reason.seatPriceUnconfigured": "Chưa có giá bàn này",
+  "reason.outsideShiftOnly": "Đóng ca rồi hãy nâng",
+  "upgrade.addTablePrice": "Mua thêm bàn · {cost} xu",
+  "leave.beer": "Hết bia",
+  "leave.food": "Hết mồi",
+  "leave.wait": "Chờ lâu quá",
+  "leave.seat": "Hết chỗ",
+  "loss.ariaReason": "{reason}. Trừ {coins} xu và {reputation} uy tín",
+  "loss.ariaFree": "{reason}. Khách ra về, không mất xu hay uy tín",
+  "book.reasons": "Vì sao khách đi",
+  "book.reasonsNone": "Chưa có khách nào bỏ đi."
 }

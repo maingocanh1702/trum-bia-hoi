@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-10-19 14:04 · **Branch hiện tại:** `feat/fun-next-goal`
+> **Cập nhật:** 2026-10-19 15:02 · **Branch hiện tại:** `feat/fun-buy-buttons-reason`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 

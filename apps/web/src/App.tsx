@@ -6,7 +6,7 @@ import { Seasons } from './Seasons';
 import { Leaderboard } from './Leaderboard';
 import { Locations } from './Locations';
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { buyGlassQuote, isEconomy2, BUSINESS_UNLOCKS, menuReport, orderPreparation, beerStatus, washerStatus, kitchenStatus, flyerQuote, SIGN_STYLES, signboardQuote, DISHES, EQUIPMENT, currentGuests, deliveryQuote, dogUpgradeQuote, encodeSave, freshnessMs, kickAllQuote, lifePathStatus, restockQuote, rushStatus, stockCap, unlockQuote, upgradeQuote, wellRestedRemaining, type BusinessUnlock, type Command, type Equipment, type Order, type RequirementStatus, type Table, type DomainEvent, type Game } from '../../../packages/engine/src';
+import { buyGlassQuote, buyTableQuote, tableUpgradeQuote, isEconomy2, BUSINESS_UNLOCKS, menuReport, orderPreparation, beerStatus, washerStatus, kitchenStatus, flyerQuote, SIGN_STYLES, signboardQuote, DISHES, EQUIPMENT, currentGuests, deliveryQuote, dogUpgradeQuote, encodeSave, freshnessMs, kickAllQuote, lifePathStatus, restockQuote, rushStatus, stockCap, unlockQuote, upgradeQuote, wellRestedRemaining, type BusinessUnlock, type Command, type Equipment, type Order, type RequirementStatus, type Table, type DomainEvent, type Game } from '../../../packages/engine/src';
 import { Sprite, TableSeats, menuAsset, reactions, hasSpriteArt } from './assets';
 import { translate } from './i18n';
 import { advanceGuide, dispatch, download, readSettings, writeSettings, replaceSave, type BootSession } from './local';
@@ -24,6 +24,8 @@ import { savedLocale } from './locale';
 import { beerOut, firstGoal, pickSpotlight } from './spotlight';
 import { GoalChip } from './GoalChip';
 import { listGoals, pickNextGoal, type Goal } from './goals';
+import { leaveRows } from './leave-reasons';
+import { batchToast, type BatchToast } from './batch-toast';
 
 // Owner 2026-09-11: risk features are deferred; legacy UI remains testable only in an explicit dev preview.
 const guestOnly = import.meta.env.VITE_TBH_GUEST_ONLY === '1';
@@ -105,7 +107,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   const saveSequence = useRef(0);
   const [recoveryError, setRecoveryError] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
-  const [toast, setToast] = useState<{ text: string; kind: string; id?: string; gain?: number; loss?: { coins: number; reputation: number } } | null>(null);
+  const [toast, setToast] = useState<BatchToast | null>(null);
   const [floaters, setFloaters] = useState<Floater[]>([]);
   const [turnedAway, setTurnedAway] = useState<TurnedAway[]>([]);
   const floaterId = useRef(0);
@@ -137,7 +139,6 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   const processEvents = (incoming?: DomainEvent[]) => {
     const events = incoming ?? game.world.events.slice(cursor.current); cursor.current = game.world.events.length;
     advanceGuide(prefs.current, game, events);
-    let loss: { coins: number; reputation: number } | undefined;
     for (const e of events) {
       sound.event(e);
       if (e.type === 'order_expired') setSelectedTable(current => current === e.data.tableId ? null : current);
@@ -149,23 +150,12 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
         setTurnedAway(list => [...list, row]);
         setTimeout(() => setTurnedAway(list => list.filter(x => x.id !== row.id)), 2200); // config-exempt: transient door feedback lifetime
       }
-      if (e.type === 'order_expired' || e.type === 'shipper_missed' || (e.type === 'customer_left' && e.data.reason === 'queue')) {
-        loss ??= { coins: 0, reputation: 0 };
-        loss.coins += Number(e.data.penalty); loss.reputation += Number(e.data.reputation);
-      }
-      if (e.type === 'attendance_claimed') setToast({ text: translate(prefs.current.locale, 'attendance.received', { n: Number(e.data.reputation) }), kind: 'early' });
-      if (e.type === 'quest_claimed') setToast({ text: translate(prefs.current.locale, 'quests.received', { coin: Number(e.data.coin), rep: Number(e.data.reputation) }), kind: 'early' });
-      if (e.type === 'daily_bonus_claimed') setToast({ text: translate(prefs.current.locale, 'quests.bonusReceived'), kind: 'early' });
-      if (e.type === 'shipper_arrived') setToast({ text: translate(prefs.current.locale, 'delivery.arrived'), kind: 'early' });
       if (e.type === 'shipper_missed' || e.type === 'shipper_completed') setSheet(current => current === 'delivery' ? null : current);
-      if (e.type === 'shipper_completed') setToast({ id: e.id, text: translate(prefs.current.locale, 'delivery.completed', { n: Number(e.data.credited) }), kind: 'earlyNoTip', gain: Number(e.data.credited) });
-      if (e.type === 'order_served') {
-        const kind = e.data.outcome === 'early' && e.data.tipped === false ? 'earlyNoTip' : String(e.data.outcome);
-        setToast({ id: e.id, text: translate(prefs.current.locale, `outcome.${kind}`, { n: Number(e.data.amount) }), kind, gain: Number(e.data.amount) });
-      }
-      if (e.type === 'shift_closed') { setSelectedTable(null); setSheet('book'); if (!events.some(event => event.type === 'shipper_completed')) setToast({ text: translate(prefs.current.locale, 'book.closed'), kind: 'early' }); }
+      if (e.type === 'shift_closed') { setSelectedTable(null); setSheet('book'); }
     }
-    if (loss) setToast({ text: '', kind: 'loss', loss });
+    // One toast per batch (batch-toast.ts): the last reward wins, a loss names ONE reason and replaces it, a refused group never hides a reward.
+    const batch = batchToast(events, (key, params) => translate(prefs.current.locale, key, params));
+    if (batch) setToast(batch);
     return events.length;
   };
   const run = async (cmd: Command) => {
@@ -305,12 +295,17 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   const closeQuote = kickAllQuote(w, game.config);
 
   const report = remote ? remote.menu : sheet === 'book' || sheet === 'upgrades' ? menuReport((game as Game).world, game.config) : null;
+  const leave = report && shift ? leaveRows(report.losses, shift.stats.rejected) : []; // the shift book's "why guests left", most first
   const guideOrder = w.tables.filter(table => table.order && ['pending', 'grace'].includes(table.order.state))
     .sort((a, b) => a.order!.placedAt + a.order!.patienceMs - b.order!.placedAt - b.order!.patienceMs)[0]?.order;
   // F27/P0(a): at most one element carries data-spotlight; first-play also gets a pointer arrow on it.
   const spot = pickSpotlight(w, game.config, { sheet, dialogOpen: Boolean(sheet || selectedEquipment) });
   const goal = firstGoal(w, game.config), beerEmpty = beerOut(w, game.config);
   const next = settings.goalChip ? pickNextGoal(w, game.config) : null; // the chip; the Settings switch only hides it
+  const leaveFree = toast?.loss ? !toast.loss.coins && !toast.loss.reputation : false; // a group turned away at the door costs nothing
+  const leaveLabel = !toast?.loss ? '' : toast.reason && leaveFree ? t('loss.ariaFree', { reason: t(`leave.${toast.reason}`) })
+    : toast.reason ? t('loss.ariaReason', { reason: t(`leave.${toast.reason}`), coins: num(toast.loss.coins), reputation: num(toast.loss.reputation) })
+    : t('loss.aria', { coins: num(toast.loss.coins), reputation: num(toast.loss.reputation) });
   const sheetGoals = sheet === 'upgrades' ? listGoals(w, game.config) : [], sheetGoal = sheet === 'upgrades' && !show.upgradeList ? pickNextGoal(w, game.config) : null;
   const goalTarget = useRef<string | null>(null);
   useEffect(() => {
@@ -406,12 +401,18 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
     if (card.kind === 'table') { const i = w.tables.findIndex(x => x.id === card.tableId); return tableCard(w.tables[i], i); }
     if (card.kind === 'equipment') return upgradeCard(card.equipment);
     if (card.kind === 'business') return businessCard(card.item);
-    if (card.kind === 'buyTable') return <button key={goal.id} data-goal={goal.id} className="secondary full" onClick={() => run({ type: 'buyTable' })}>{t('upgrade.addTable')}</button>;
+    if (card.kind === 'buyTable') return buyTableButton(goal.id);
     return entryCard(goal);
   }
+  /** F27/P3 + FEEDBACK II.4: every buy button shows its price and, when dimmed, exactly one reason: the first refusal its command would give (rules.ts quotes). */
+  const whyNot = (reason: string | null, n = 0) => reason ? t(`reason.${reason}`, { n: num(n) }) : '';
+  function buyTableButton(id: string) {
+    const q = buyTableQuote(w, game.config), why = whyNot(q.reason);
+    return <div className="buy-card" key={id} data-goal={id}><button className="secondary full" disabled={!q.ok} aria-describedby={why ? 'buy-table-reason' : undefined} onClick={() => run({ type: 'buyTable' })}>{q.cost === null ? t('upgrade.addTable') : t('upgrade.addTablePrice', { cost: num(q.cost) })}</button>{why && <p id="buy-table-reason" className="buy-reason" role="status">{why}</p>}</div>;
+  }
   function tableCard(table: Table, i: number) {
-    const next = c.upgrades.table.levels[table.level];
-    return <div className="upgrade-card" key={table.id} data-goal={`table:${table.id}`}><Sprite id={`table-lv${table.level}-empty`} /><h3>{t('table', { n: i + 1 })}</h3><p>{t('table.seats', { n: table.capacity })}</p><button {...lit(spot.target?.kind === 'goal' && goal?.table.id === table.id)} disabled={!next || table.state !== 'empty' || w.coins < next.priceBase} onClick={() => run({ type: 'upgradeTable', tableId: table.id })}>{next ? t('upgrade.buy', { cost: num(next.priceBase) }) : t('upgrade.max')}</button></div>;
+    const q = tableUpgradeQuote(w, game.config, table), why = q.gate === 'maxLevel' ? '' : whyNot(q.reason, q.next?.repBase?.[0]); // top level: nothing is left to buy, so the button's own label "Đã tối đa" is the one reason, even while guests sit there (the command answers the transient tableBusy first, which would only mislead)
+    return <div className="upgrade-card" key={table.id} data-goal={`table:${table.id}`}><Sprite id={`table-lv${table.level}-empty`} /><h3>{t('table', { n: i + 1 })}</h3><p>{t('table.seats', { n: table.capacity })}</p><button {...lit(spot.target?.kind === 'goal' && goal?.table.id === table.id)} disabled={!q.ok} aria-describedby={why ? `table-reason-${table.id}` : undefined} onClick={() => run({ type: 'upgradeTable', tableId: table.id })}>{q.next ? t('upgrade.buy', { cost: num(q.cost!) }) : t('upgrade.max')}</button>{why && <p id={`table-reason-${table.id}`} className="buy-reason" role="status">{why}</p>}</div>;
   }
 
   return <div className="game-shell" data-save-state={saveError ? 'error' : saving ? 'saving' : 'saved'} data-frame={frame}>
@@ -455,9 +456,10 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
         {show.upgrades && <button {...lit(spot.target?.kind === 'upgradesNav')} onClick={() => open('upgrades')}><Icon name="upgrade" /><span>{t('nav.upgrades')}</span></button>}
         {show.journey && <button onClick={() => open('journey')}><Icon name="star" /><span>{t('nav.journey')}</span>{claimCount > 0 && <b className="nav-badge" aria-hidden="true">{claimCount}</b>}</button>}
       </nav>}
-      {toast?.loss ? <div className="toast toast-loss" role="status" aria-label={t('loss.aria', { coins: num(toast.loss.coins), reputation: num(toast.loss.reputation) })}>
-        <span className="loss-value" aria-hidden="true"><Icon name="coin" /><strong>{toast.loss.coins ? '−' : ''}{num(toast.loss.coins)}</strong></span>
-        <span className="loss-value" aria-hidden="true"><Icon name="star" /><strong>{toast.loss.reputation ? '−' : ''}{num(toast.loss.reputation)}</strong></span>
+      {toast?.loss ? <div className="toast toast-loss" role="status" data-reason={toast.reason} aria-label={leaveLabel}>
+        {toast.reason && <strong className="loss-reason" aria-hidden="true">{t(`leave.${toast.reason}`)}</strong>}
+        {!(leaveFree && toast.reason) && <><span className="loss-value" aria-hidden="true"><Icon name="coin" /><strong>{toast.loss.coins ? '−' : ''}{num(toast.loss.coins)}</strong></span>
+        <span className="loss-value" aria-hidden="true"><Icon name="star" /><strong>{toast.loss.reputation ? '−' : ''}{num(toast.loss.reputation)}</strong></span></>}
       </div> : toast?.gain !== undefined ? <div key={toast.id} className={`toast toast-gain gain-${toast.kind}`} role="status" aria-label={toast.text}>
         <span className="gain-reaction" aria-hidden="true">{reactions[toast.kind]}</span><strong aria-hidden="true">+{num(toast.gain)}</strong><Icon name="coin" />
       </div> : toast && <button className={`toast toast-${toast.kind}`} role="status" onClick={() => setToast(null)}>{toast.text}<span aria-hidden="true">×</span></button>}
@@ -519,7 +521,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
       {sheet === 'upgrades' && show.upgradeList && <>{upgradeHint}<button className="sign-entry full" onClick={() => open('locations')}><Icon name="star" /><span><strong>{t('nav.locations')}</strong><small>{t(`location.${w.location}`)}</small></span><span aria-hidden="true">›</span></button>{showDeferredRisk && <button className="dog-entry full" onClick={() => open('dog')}><Sprite id={`dog-idle-lv${w.dogLevel || 1}`} /><span><strong>{t('dog.title')}</strong><small>{t(`dog.level${w.dogLevel}`)}</small></span><span aria-hidden="true">›</span></button>}<section className="goal-lane" aria-labelledby="lane-capacity"><h3 id="lane-capacity">{t('lane.capacity')}</h3><h3 id="upgrade-tables" tabIndex={-1}>{t('upgrade.tables')}</h3><div className="upgrade-grid">{sheetGoals.filter(g => g.card.kind === 'table').map(renderCard)}</div>{sheetGoals.filter(g => g.card.kind === 'buyTable').map(renderCard)}</section><section className="goal-lane" aria-labelledby="lane-speed"><h3 id="lane-speed">{t('lane.speed')}</h3><button className="sign-entry full kitchen-entry" onClick={() => { setSheet(null); setSelectedEquipment('kitchen'); }}><Sprite id={`kitchen-lv${Math.max(1, kitchen.level)}`} /><span><strong>{t('kitchen.live')}</strong><small>{kitchen.level ? t('kitchen.slots', { busy: kitchen.busy, total: kitchen.slots }) : t('kitchen.locked')}</small></span><span aria-hidden="true">›</span></button><p className="sheet-intro">{t('upgrade.copy')}</p><div className="upgrade-grid">{sheetGoals.filter(g => g.lane === 'speed').map(renderCard)}</div></section><section className="goal-lane" aria-labelledby="lane-guests"><h3 id="lane-guests">{t('lane.guests')}</h3>{sheetGoals.filter(g => g.card.kind === 'signboard' || g.card.kind === 'flyer').map(renderCard)}<h3>{t('business.title')}</h3><div className="business-grid">{sheetGoals.filter(g => g.card.kind === 'business').map(renderCard)}</div></section></>}
       {sheet === 'book' && (shift ? <>{show.quests && <button className="secondary full" onClick={() => open('quests')}>{t('quests.title')}</button>}<p className="sheet-intro">{t('shift')} · {time(Math.min(shift.closedAt ?? w.now, shift.endsAt) - shift.startedAt - shift.pausedMs)}<b>{t(`weather.${shift.weather}`)}</b></p><section aria-label={t('book.location')} className="shift-location"><h3>{t('book.location')}</h3>
             {shiftLocation ? <p>{shiftLocation.locations.map((row, i) => <span key={row.id}>{i > 0 && ' → '}<span data-shift-location={row.id}>{t(`location.${row.id}`)} ×{row.mult.toLocaleString(locale === 'vi' ? 'vi-VN' : 'en-US')}</span></span>)}</p> : <p>{t('book.locationUnknown')}</p>}
-            <p>{t('book.locationNote')}</p></section><dl className="ledger">{(['served', 'lost', 'payment', 'tip', 'penalty', 'spent'] as const).map(key => <div key={key}><dt>{t(`book.${key}`)}</dt><dd>{num(shift.stats[key])}</dd></div>)}{(shift.stats.deliveryCompleted ?? 0) > 0 && <><div><dt>{t('book.deliveryCompleted')}</dt><dd>{shift.stats.deliveryCompleted}</dd></div><div><dt>{t('book.deliveryNet')}</dt><dd>{num(shift.stats.deliveryNet ?? 0)}</dd></div></>}{(shift.stats.deliveryMissed ?? 0) > 0 && <div><dt>{t('book.deliveryMissed')}</dt><dd>{shift.stats.deliveryMissed}</dd></div>}{shift.stats.wellRestedBonus > 0 && <div><dt>{t('book.wellRestedBonus')}</dt><dd>{num(shift.stats.wellRestedBonus)}</dd></div>}<div className="ledger-total"><dt>{t('book.net')}</dt><dd>{num(shift.stats.credited - shift.stats.penalty - shift.stats.spent)}</dd></div></dl>{upgradeHint}<MenuReport report={report} t={t} num={num} locale={locale} /><button className="secondary full" onClick={() => open('flyer')}>{t('flyer.title')}</button>{rushReports.length > 0 && <table className="rush-report"><caption>{t('book.rushes')}</caption><thead><tr><th scope="col">{t('book.rushKind')}</th><th scope="col">{t('book.rushServed')}</th><th scope="col">{t('book.rushLost')}</th><th scope="col">{t('book.rushRevenue')}</th></tr></thead><tbody>{rushReports.map(e => <tr key={e.id}><th scope="row">{t(`rush.${e.data.kind}`)}</th><td>{num(Number(e.data.served))}</td><td>{num(Number(e.data.lost))}</td><td>{num(Number(e.data.revenue))}</td></tr>)}</tbody></table>}{inShift && <div className="button-stack"><button className="primary" onClick={() => run({ type: 'endShift' })}>{t('book.end')}</button><button className="secondary" disabled={!c.shift.kickAllAllowed} onClick={() => { setCloseShift(shift.id); open('close'); }}>{t('book.kick', { cost: num(closeQuote.cost) })}</button></div>}</> : <p>{t('book.none')}</p>)}
+            <p>{t('book.locationNote')}</p></section><dl className="ledger">{(['served', 'lost', 'payment', 'tip', 'penalty', 'spent'] as const).map(key => <div key={key}><dt>{t(`book.${key}`)}</dt><dd>{num(shift.stats[key])}</dd></div>)}{(shift.stats.deliveryCompleted ?? 0) > 0 && <><div><dt>{t('book.deliveryCompleted')}</dt><dd>{shift.stats.deliveryCompleted}</dd></div><div><dt>{t('book.deliveryNet')}</dt><dd>{num(shift.stats.deliveryNet ?? 0)}</dd></div></>}{(shift.stats.deliveryMissed ?? 0) > 0 && <div><dt>{t('book.deliveryMissed')}</dt><dd>{shift.stats.deliveryMissed}</dd></div>}{shift.stats.wellRestedBonus > 0 && <div><dt>{t('book.wellRestedBonus')}</dt><dd>{num(shift.stats.wellRestedBonus)}</dd></div>}<div className="ledger-total"><dt>{t('book.net')}</dt><dd>{num(shift.stats.credited - shift.stats.penalty - shift.stats.spent)}</dd></div></dl>{report && <section className="leave-reasons" aria-label={t('book.reasons')}><h3>{t('book.reasons')}</h3>{leave.length ? <ol>{leave.map(row => <li key={row.reason} data-reason={row.reason}><span>{t(`leave.${row.reason}`)}</span><b>{num(row.count)}</b></li>)}</ol> : <p>{t('book.reasonsNone')}</p>}</section>}{upgradeHint}<MenuReport report={report} t={t} num={num} locale={locale} /><button className="secondary full" onClick={() => open('flyer')}>{t('flyer.title')}</button>{rushReports.length > 0 && <table className="rush-report"><caption>{t('book.rushes')}</caption><thead><tr><th scope="col">{t('book.rushKind')}</th><th scope="col">{t('book.rushServed')}</th><th scope="col">{t('book.rushLost')}</th><th scope="col">{t('book.rushRevenue')}</th></tr></thead><tbody>{rushReports.map(e => <tr key={e.id}><th scope="row">{t(`rush.${e.data.kind}`)}</th><td>{num(Number(e.data.served))}</td><td>{num(Number(e.data.lost))}</td><td>{num(Number(e.data.revenue))}</td></tr>)}</tbody></table>}{inShift && <div className="button-stack"><button className="primary" onClick={() => run({ type: 'endShift' })}>{t('book.end')}</button><button className="secondary" disabled={!c.shift.kickAllAllowed} onClick={() => { setCloseShift(shift.id); open('close'); }}>{t('book.kick', { cost: num(closeQuote.cost) })}</button></div>}</> : <p>{t('book.none')}</p>)}
       {sheet === 'journey' && <>
         {!guestOnly && show.league && <button className="sign-entry full" onClick={() => open('seasons')}><Icon name="star" /><strong>{t('nav.seasons')}</strong><span aria-hidden="true">›</span></button>}
         <div className="journey-summary"><span>{t('journey.current')}</span><h3>{levelName(w.lifePath)}</h3><p>{num(w.lifetimeEarned)} {t('journey.earned')}</p>{nextMilestone && <><progress aria-label={t('journey.next', { name: levelName(nextMilestone.index) })} max={nextMilestone.lifetimeBase} value={Math.min(w.lifetimeEarned, nextMilestone.lifetimeBase)} /><p>{t('journey.next', { name: levelName(nextMilestone.index) })}</p></>}</div>

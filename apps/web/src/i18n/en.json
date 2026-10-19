@@ -748,5 +748,22 @@
   "lane.guests": "Guests",
   "settings.goal": "Goal hint",
   "settings.on": "On",
-  "settings.off": "Off"
+  "settings.off": "Off",
+  "reason.notEnoughCoins": "Not enough coins",
+  "reason.tableBusy": "Table has guests",
+  "reason.maxLevel": "Max level",
+  "reason.maxTables": "All tables are built",
+  "reason.badgeRequired": "Needs the Connection badge",
+  "reason.reputationRequired": "Needs {n} reputation",
+  "reason.seatPriceUnconfigured": "This table has no price yet",
+  "reason.outsideShiftOnly": "Close the shift to upgrade",
+  "upgrade.addTablePrice": "Buy another table · {cost} coins",
+  "leave.beer": "Out of beer",
+  "leave.food": "Out of snacks",
+  "leave.wait": "Waited too long",
+  "leave.seat": "No room",
+  "loss.ariaReason": "{reason}. Lost {coins} coins and {reputation} reputation",
+  "loss.ariaFree": "{reason}. The guests left; no coins or reputation lost",
+  "book.reasons": "Why guests left",
+  "book.reasonsNone": "No guest has left yet."
 }

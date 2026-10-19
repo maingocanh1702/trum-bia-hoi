@@ -5,6 +5,7 @@ import './style.css';
 import './reference-layout.css';
 import './onboarding-visual.css';
 import './goals.css';
+import './reasons.css';
 const root = createRoot(document.getElementById('root')!);
 const t = (key: string) => translate(savedLocale(), key);
 root.render(<p role="status">{t('save.loading')}</p>);
