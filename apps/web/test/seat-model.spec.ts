@@ -7,6 +7,8 @@ import { readSave, waitSaved } from './storage';
 
 // Seat model (rules 28, plan S1): through the DOM only -- tables 2-4, then a second chair once four tables stand,
 // every button with its price and exactly one reason while dimmed, in vi and en. State is read back through the real engine.
+// The reason under a dimmed button is the `reason.*` line Wave 1's buy buttons read from the engine quotes (merge, stage 00); S1 first showed the
+// `error.*` text of the same refusal (the same words with a full stop; English "All tables are built" instead of "Your stall has all its tables.").
 const fixture = () => JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/seat-model.ts'], { encoding: 'utf8' }));
 const inspect = (save: string) => JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/seat-model.ts', 'inspect'], { encoding: 'utf8', input: JSON.stringify({ save }) }));
 // The accessibility tier's audit (remote-test/accessibility.spec.ts, same tags) on the open sheet; finite animations are
@@ -38,25 +40,25 @@ for (const locale of ['vi', 'en'] as const) for (const viewport of [{ width: 390
     const sheet = page.getByRole('dialog'), cards = sheet.locator('#upgrade-tables ~ .upgrade-grid .upgrade-card'), first = cards.first();
     await expect(cards).toHaveCount(1); await expect(first.getByText(t('table.seats', { n: 1 }), { exact: true })).toBeVisible();
     const chair = first.getByRole('button', { name: t('upgrade.buyChair', { cost: xu(f.chairPrice) }), exact: true });
-    await expect(chair).toBeDisabled(); await expect(first.getByText(t('error.chairsLocked'), { exact: true })).toBeVisible();
+    await expect(chair).toBeDisabled(); await expect(first.getByText(t('reason.chairsLocked'), { exact: true })).toBeVisible();
     const level = first.getByRole('button', { name: t('upgrade.buy', { cost: xu(f.levelPrice) }), exact: true });
-    await expect(level).toBeDisabled(); await expect(first.getByText(t('error.tableNeedsChairs'), { exact: true })).toBeVisible();
+    await expect(level).toBeDisabled(); await expect(first.getByText(t('reason.tableNeedsChairs'), { exact: true })).toBeVisible();
     expect(await axe(page)).toEqual([]);
     for (const [i, price] of (f.tablePrices as number[]).entries()) {
       const buy = sheet.getByRole('button', { name: t('upgrade.buyTable', { cost: xu(price) }), exact: true });
       await expect(buy).toBeEnabled(); await buy.click(); await expect(cards).toHaveCount(i + 2);
     }
     await expect(sheet.getByRole('button', { name: t('upgrade.addTable'), exact: true })).toBeDisabled();
-    await expect(sheet.getByText(t('error.maxTables'), { exact: true })).toBeVisible();
+    await expect(sheet.getByText(t('reason.maxTables'), { exact: true })).toBeVisible();
     await expect(chair).toBeEnabled(); await chair.click();
     await expect(first.getByText(t('table.seats', { n: 2 }), { exact: true })).toBeVisible(); await expect(chair).toHaveCount(0);
     // The usual starting coins are left: the next chair and the paired table's level each say "not enough coins";
     // the one-chair table's level still names the missing chair.
     const second = cards.nth(1);
     await expect(second.getByRole('button', { name: t('upgrade.buyChair', { cost: xu(f.nextChairPrice) }), exact: true })).toBeDisabled();
-    await expect(second.getByText(t('error.notEnoughCoins'), { exact: true })).toBeVisible();
-    await expect(second.getByText(t('error.tableNeedsChairs'), { exact: true })).toBeVisible();
-    await expect(level).toBeDisabled(); await expect(first.getByText(t('error.notEnoughCoins'), { exact: true })).toBeVisible();
+    await expect(second.getByText(t('reason.notEnoughCoins'), { exact: true })).toBeVisible();
+    await expect(second.getByText(t('reason.tableNeedsChairs'), { exact: true })).toBeVisible();
+    await expect(level).toBeDisabled(); await expect(first.getByText(t('reason.notEnoughCoins'), { exact: true })).toBeVisible();
     expect(await axe(page)).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await tbh.shot(`seat-model-${locale}-${viewport.width}.png`);
