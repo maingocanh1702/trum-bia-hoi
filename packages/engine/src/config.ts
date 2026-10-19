@@ -86,6 +86,9 @@ export function parseProgressRequirement(token: string, c: Economy): ProgressReq
 const ADDED_LATER = new Set(['nextGoal', 'onboarding.loginPrompt.leaveProgress', 'onboarding.idleToGuideMs',
   'onboarding.featureReveal.hudAfterShifts', 'onboarding.featureReveal.upgradeAllAfterShifts', 'onboarding.featureReveal.journeyAfterShifts']);
 
+// Sections that joined a governance tier after earlier releases (tier -> names); shape() lets an older pinned snapshot lack exactly these.
+const TIER_SECTIONS_ADDED_LATER: Record<string, readonly string[]> = { C: ['nextGoal'] };
+
 /** Complete snapshots only: a partial or malformed config must never become live. */
 function shape(value: unknown, expected: unknown, path: string): void {
   if (expected === null) {
@@ -96,9 +99,13 @@ function shape(value: unknown, expected: unknown, path: string): void {
       if (!Array.isArray(value) || !value.every(token => typeof token === 'string')) throw Error(`config:${path}:array`);
       return; // validate() still rejects unknown tokens and dependency cycles.
     }
-    // The tier registry lists grow with every new section; a snapshot pinned before that keeps the shorter list.
-    if (/^_meta\.governance\.tiers\.[A-C]\.sections$/.test(path)) {
-      if (!Array.isArray(value) || !value.every(name => typeof name === 'string')) throw Error(`config:${path}:array`);
+    // The tier registry decides who may edit which section, so a list is exact: the seed's membership, minus only the sections that
+    // joined that tier later (a snapshot pinned before then keeps the shorter list). No duplicate, unknown, moved or missing name.
+    const tier = /^_meta\.governance\.tiers\.([A-C])\.sections$/.exec(path);
+    if (tier) {
+      const later = TIER_SECTIONS_ADDED_LATER[tier[1]] ?? [];
+      if (!Array.isArray(value) || !value.every(name => typeof name === 'string') || new Set(value).size !== value.length
+        || value.some(name => !expected.includes(name)) || expected.some(name => !value.includes(name) && !later.includes(name))) throw Error(`config:${path}:array`);
       return;
     }
     if (!Array.isArray(value) || value.length !== expected.length) throw Error(`config:${path}:array`);

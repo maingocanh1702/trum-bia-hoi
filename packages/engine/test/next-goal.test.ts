@@ -80,10 +80,21 @@ test('an old pin without nextGoal keeps its bytes and the chip reads the seed; b
   const tuned = structuredClone(raw); tuned._meta.version = 'tuned'; tuned.nextGoal.reachMult = 2.5; assert.equal(reachMult(loadConfig(tuned)), 2.5);
 });
 
-test('a snapshot pinned before nextGoal joined tier C keeps its shorter tier list, and the list must still be strings', () => {
-  const raw = structuredClone(config.raw) as any, sections = raw._meta.governance.tiers.C.sections as string[];
+test('a snapshot pinned before nextGoal joined tier C keeps exactly its shorter tier list; any other list is refused', () => {
+  const raw = structuredClone(config.raw) as any, tiers = raw._meta.governance.tiers, sections = tiers.C.sections as string[];
   assert.ok(sections.includes('nextGoal'));
   const old = structuredClone(raw); old._meta.version = 'old-tier-list'; old._meta.governance.tiers.C.sections = sections.filter(name => name !== 'nextGoal'); delete old.nextGoal;
   assert.equal(JSON.stringify(loadConfig(old).raw), JSON.stringify(old));
-  for (const bad of [['onboarding', 1], 'onboarding', null]) { const broken = structuredClone(raw); broken._meta.governance.tiers.C.sections = bad; assert.throws(() => loadConfig(broken), /config:_meta.governance.tiers.C.sections:array/, JSON.stringify(bad)); }
+  // The tier lists say who may edit what (the server registry reads them): only that exact legacy list loads, never a loosened one.
+  const refused = (tier: 'A' | 'B' | 'C', list: unknown, why: string) => {
+    const broken = structuredClone(raw); broken._meta.governance.tiers[tier].sections = list;
+    assert.throws(() => loadConfig(broken), new RegExp(`config:_meta.governance.tiers.${tier}.sections:array`), why);
+  };
+  refused('C', ['onboarding', 1], 'not strings'); refused('C', 'onboarding', 'not an array'); refused('C', null, 'null');
+  refused('C', [], 'empty C'); refused('A', [], 'empty A');
+  refused('C', [...sections, sections[0]], 'duplicate'); refused('C', [...sections, 'bogus'], 'unknown name');
+  refused('C', sections.filter(name => name !== 'onboarding'), 'a section that did not join later may not be missing');
+  refused('C', sections.filter(name => name !== 'nextGoal' && name !== 'audio'), 'the legacy exception covers nextGoal only');
+  refused('B', [...tiers.B.sections, 'nextGoal'], 'a section moved into another tier');
+  refused('A', tiers.A.sections.slice(1), 'a missing tier A section');
 });
