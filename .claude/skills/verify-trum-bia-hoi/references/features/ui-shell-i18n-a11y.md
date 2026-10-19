@@ -94,11 +94,13 @@
 
 - `apps/web/test/build-info.spec.ts` — `A6 settings shows the build commit in ${locale} at ${viewport.width}px` (VI/EN ×360/390/1280) opens Settings through the DOM, checks the short SHA/full title against the checkout used by Vite, and verifies no overflow or console errors. Run with the default `playwright.config.ts`; screenshot receipts use `a6-build-<locale>-<width>.png`.
 
+- `apps/web/test/instant-pour.spec.ts` (local tier, saves made by `apps/web/test/fixtures/instant-pour.ts` through the real engine): `instant pour: the keg shows one set of numbers and "rót sẵn" counts the beers a guest can get right now (${locale}) at ${w}×${h}` (vi/en × 390 · 360 · 1280: four beers but three clean glasses read `Rót sẵn 3/4 cốc` on the HUD badge and in the pipeline line, the keg sheet shows the reserve + refill of the current and the next level and neither the tap line nor `Đang rót n/m vòi`, axe 0), `instant pour: a guest's beer is in the tray the moment the order is placed, and the badge drops by one (vi) at ${w}×${h}` (the first frame that shows the order shows `.table-order-hint.is-ready`, `data-preparation="ready"`, an enabled Serve) and `instant pour: a capacity pin keeps its tap numbers and waits for the pour (vi) at ${w}×${h}` (an old pin keeps the tap line, `Đang rót 0/1 vòi` and `data-preparation="preparing"` for `pourMs`). The keg sheet is also audited by axe in vi and en at three viewports (0 violations). Run `npx playwright test apps/web/test/instant-pour.spec.ts`.
+
 - `apps/web/test/ui-clarity.spec.ts` — `A5 legacy pinned save shows direct pour without a refill or reserve in ${locale}` (VI/EN) loads the historical v12 archive and pins the direct-pour/no-reserve copy.
 
 - `apps/web/test/ui-clarity.spec.ts` — `A5 zero configured recovery rate shows paused recovery without an invalid ETA` pins the config-allowed zero-rate display without changing engine rules.
 
-- `apps/web/test/ui-clarity.spec.ts` — `A5 clear production stages, customer rounds and first-open art in ${locale} at ${viewport.width}px` (VI/EN × 360/390/1280px) checks the separate tap/refill labels, customer-round explanation, and manifest-backed tofu/phone/wood-sign preload plus decoded images on the first stock/upgrade visit. `A5 recovery ETA follows active rest, survives reload and disappears when stamina is full` reaches exhausted natural closure through engine commands, checks the configured active-rest countdown and reload/full recovery. Run with `npx playwright test apps/web/test/ui-clarity.spec.ts` (local config).
+- `apps/web/test/ui-clarity.spec.ts` — `A5 clear production stages, customer rounds and first-open art in ${locale} at ${viewport.width}px` (VI/EN × 360/390/1280px) checks the keg's reserve and refill labels (a seat-model game has no tap line since S2 `eco21-instant-pour`; the tap/refill pair of a capacity pin is pinned by `apps/web/test/instant-pour.spec.ts`), customer-round explanation, and manifest-backed tofu/phone/wood-sign preload plus decoded images on the first stock/upgrade visit. `A5 recovery ETA follows active rest, survives reload and disappears when stamina is full` reaches exhausted natural closure through engine commands, checks the configured active-rest countdown and reload/full recovery. Run with `npx playwright test apps/web/test/ui-clarity.spec.ts` (local config).
 
 - `apps/web/remote-test/accessibility.spec.ts` — a templated `for locale of ['vi','en'] for viewport
   of [3 sizes]` double loop generating 6 real test names, each exactly:
@@ -260,6 +262,8 @@ the manifest — don't confuse a missing icon with a missing sprite.
 | 2026-09-16 A6 | Cite the Settings build-SHA label in both locales/three viewports; historical deployment receipt is in docs/deploy-log.md. |
 
 | 2026-09-16 A2 | Cite direct HUD full-beer purchase in local and real-server UI; raw empty is distinct from ready/batch reserve. Balance targets remain OPEN in docs/improve-a2-stock.md. |
+
+| 2026-10-20 S2 | Cite `instant-pour.spec.ts` (keg one set of numbers, instant tray, capacity pin's tap, axe 0 on the keg sheet); the A5 line now names the keg's reserve + refill labels. Strings added: `production.tank`, `production.instantHint`, `goal.fx.keg` (vi + en, `check:i18n` 912 paired keys). |
 
 | 2026-10-19 S1 | Cite `requirement-copy.test.ts` (every requirement key has vi + en copy, bundled and pinned configs); rules 28 added the `requirement.tables` row. |
 
