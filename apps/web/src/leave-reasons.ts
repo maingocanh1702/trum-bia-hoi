@@ -31,6 +31,20 @@ export function dominantLeaveReason(events: readonly Leave[]): LeaveReason | nul
   return LEAVE_REASONS.reduce<LeaveReason | null>((best, reason) => total[reason] > (best ? total[best] : 0) ? reason : best, null);
 }
 
+/** The events whose coin/reputation penalty the loss toast adds up: guests who left, and a missed delivery. */
+export const isLossEvent = (event: Leave): boolean => event.type === 'order_expired' || event.type === 'shipper_missed' || event.type === 'customer_left' && event.data.reason === 'queue';
+
+/**
+ * The one reason of a batch's toast. When something was lost, the guests who paid that penalty decide it (a group turned away in the same
+ * batch lost nothing and does not); a missed delivery is not a guest leaving, so a batch that contains one stays numeric-only.
+ * With nothing lost, a group turned away at the door is the reason.
+ */
+export function toastReason(events: readonly Leave[]): LeaveReason | null {
+  const lost = events.filter(isLossEvent);
+  if (!lost.length) return dominantLeaveReason(events);
+  return lost.some(event => event.type === 'shipper_missed') ? null : dominantLeaveReason(lost);
+}
+
 /**
  * The shift book's list: guests lost per reason, most first (ties in `LEAVE_REASONS` order), zero rows left out.
  * `losses` is the engine's per-cause report (`menuReport().losses`: preparation causes + `queue`), `turnedAway` the shift's `stats.rejected`.

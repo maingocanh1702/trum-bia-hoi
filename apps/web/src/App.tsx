@@ -24,7 +24,7 @@ import { savedLocale } from './locale';
 import { beerOut, firstGoal, pickSpotlight } from './spotlight';
 import { GoalChip } from './GoalChip';
 import { listGoals, pickNextGoal, type Goal } from './goals';
-import { dominantLeaveReason, leaveRows, type LeaveReason } from './leave-reasons';
+import { isLossEvent, leaveRows, toastReason, type LeaveReason } from './leave-reasons';
 
 // Owner 2026-09-11: risk features are deferred; legacy UI remains testable only in an explicit dev preview.
 const guestOnly = import.meta.env.VITE_TBH_GUEST_ONLY === '1';
@@ -150,7 +150,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
         setTurnedAway(list => [...list, row]);
         setTimeout(() => setTurnedAway(list => list.filter(x => x.id !== row.id)), 2200); // config-exempt: transient door feedback lifetime
       }
-      if (e.type === 'order_expired' || e.type === 'shipper_missed' || (e.type === 'customer_left' && e.data.reason === 'queue')) {
+      if (isLossEvent(e)) {
         loss ??= { coins: 0, reputation: 0 };
         loss.coins += Number(e.data.penalty); loss.reputation += Number(e.data.reputation);
       }
@@ -168,7 +168,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
     }
     // F27/P3: a loss toast names exactly one reason (out of beer · waited too long · no seat); a group turned away at the door costs
     // nothing, so its toast carries the reason alone and never replaces a reward toast of the same batch.
-    const reason = dominantLeaveReason(events);
+    const reason = toastReason(events);
     if (loss) setToast({ text: '', kind: 'loss', loss, reason: reason ?? undefined });
     else if (reason === 'seat' && !events.some(e => e.type === 'order_served' || e.type === 'shipper_completed' || e.type === 'shift_closed')) setToast({ text: '', kind: 'loss', loss: { coins: 0, reputation: 0 }, reason });
     return events.length;

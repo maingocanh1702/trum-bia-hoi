@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Game, PREPARATION_CAUSES, config, loadConfig, menuReport, type DomainEvent } from '../../../packages/engine/src';
-import { LEAVE_REASONS, dominantLeaveReason, leaveReason, leaveRows } from '../src/leave-reasons';
+import { LEAVE_REASONS, dominantLeaveReason, isLossEvent, leaveReason, leaveRows, toastReason } from '../src/leave-reasons';
 
 // F27/P3 (fun-buy-buttons-reason): every guest who leaves has exactly one reason, and the shift book ranks them by guests lost.
 const ev = (type: string, data: DomainEvent['data']): Pick<DomainEvent, 'type' | 'data'> => ({ type, data });
@@ -24,6 +24,19 @@ test('one toast, one reason: the cause that cost the most guests wins, ties go b
   assert.equal(dominantLeaveReason([ev('order_expired', { cause: 'beerStock', count: 1 }), ev('customer_left', { reason: 'queue', count: 3 })]), 'wait');
   assert.equal(dominantLeaveReason([ev('queue_overflow', { size: 2 }), ev('order_expired', { cause: 'foodStock', count: 2 })]), 'food', 'tie: snacks before seat');
   assert.equal(dominantLeaveReason([ev('queue_overflow', { size: 2 })]), 'seat');
+});
+
+test('a toast takes its reason from the guests who paid its penalty: a shipper miss keeps it numeric-only, a refused group only speaks when nothing was lost', () => {
+  assert.equal(toastReason([]), null);
+  assert.equal(toastReason([ev('queue_overflow', { size: 2 })]), 'seat', 'nothing lost: the group turned away at the door is the reason');
+  assert.equal(toastReason([ev('order_expired', { cause: 'beerStock', count: 1, penalty: 5 }), ev('queue_overflow', { size: 3 })]), 'beer', 'a bigger refused group does not rename a loss it did not cause');
+  assert.equal(toastReason([ev('shipper_missed', { penalty: 7 }), ev('queue_overflow', { size: 2 })]), null, 'a missed delivery has no guest reason, and the refused group is not its reason');
+  assert.equal(toastReason([ev('shipper_missed', { penalty: 7 }), ev('order_expired', { cause: 'ready', count: 1 })]), null, 'numbers of a mixed loss are not one guest reason');
+  assert.equal(toastReason([ev('shipper_missed', { penalty: 7 })]), null);
+  assert.equal(toastReason([ev('customer_left', { reason: 'queue', count: 2 }), ev('order_expired', { cause: 'foodStock', count: 1 })]), 'wait');
+  for (const type of ['order_expired', 'shipper_missed']) assert.equal(isLossEvent(ev(type, {})), true, type);
+  assert.equal(isLossEvent(ev('customer_left', { reason: 'queue' })), true); assert.equal(isLossEvent(ev('customer_left', { reason: 'expired' })), false, 'the per-guest record beside order_expired');
+  assert.equal(isLossEvent(ev('queue_overflow', { size: 1 })), false);
 });
 
 test('the shift book ranks reasons by guests lost, folds every waiting cause into one row, hides zero rows and keeps ties in a fixed order', () => {
