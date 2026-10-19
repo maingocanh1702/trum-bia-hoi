@@ -25,11 +25,11 @@ for (const locale of ['vi', 'en']) for (const mode of ['stale', 'crowded', 'fres
       const heading = page.locator('#upgrade-tables');
       await expect(heading).toBeInViewport(); await expect(heading).toBeFocused();
       await page.keyboard.press('Tab');
-      await expect(page.locator('#upgrade-tables ~ .upgrade-grid button:enabled, #upgrade-tables ~ button:enabled').first()).toBeFocused();
+      await expect(page.locator('#upgrade-tables ~ .upgrade-grid button:enabled, #upgrade-tables ~ .buy-card button:enabled').first()).toBeFocused();
       // Repeat from within Upgrades, where no sheet transition runs the effect.
       await hint.getByRole('button').focus(); await page.keyboard.press('Enter');
       await expect(heading).toBeFocused(); await page.keyboard.press('Tab');
-      await expect(page.locator('#upgrade-tables ~ .upgrade-grid button:enabled, #upgrade-tables ~ button:enabled').first()).toBeFocused();
+      await expect(page.locator('#upgrade-tables ~ .upgrade-grid button:enabled, #upgrade-tables ~ .buy-card button:enabled').first()).toBeFocused();
     }
     await page.screenshot({ path: `.qa/m1-upgrade-${locale}-${mode}.png` });
   });

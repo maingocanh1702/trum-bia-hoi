@@ -79,7 +79,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
   });
 }
 
-test('a neglected first shift closes after remaining guests expire and shows only numeric loss feedback', async ({ page }) => {
+test('a neglected first shift closes after remaining guests expire and shows the numbers of the loss with exactly one reason', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.clock.install({ time: new Date('2026-09-08T10:00:00Z') });
   await page.goto('/');
@@ -87,7 +87,9 @@ test('a neglected first shift closes after remaining guests expire and shows onl
   await page.clock.runFor(29000);
   await expect(page.locator('.toast-loss')).toBeVisible();
   await expect(page.locator('.toast-loss')).toHaveAccessibleName(/Trừ \d+ xu và \d+ uy tín/);
-  await expect(page.locator('.toast-loss')).toHaveText(/^[−\d\s.,]+$/);
+  // PLAN P3 (owner 18/09, supersedes the 08/09 numbers-only rule): the numbers stay, and the toast names ONE reason; nobody served the ready order, so the guest waited too long.
+  await expect(page.locator('.toast-loss')).toHaveText(/^Chờ lâu quá[−\d\s.,]+$/);
+  await expect(page.locator('.toast-loss .loss-reason')).toHaveCount(1);
   for (const icon of await page.locator('.toast-loss svg').all()) expect((await icon.boundingBox())!.width).toBeGreaterThan(0);
   await expect(page.locator('.lost-bubble')).toHaveCount(0);
   await expect(page.getByText('Khách chờ lâu quá', { exact: false })).toHaveCount(0);
@@ -141,7 +143,7 @@ test('tapped order stays live, returns keyboard focus, and closes on customer ex
   await expect(panel).toBeVisible();
   await page.clock.runFor(101);
   await expect(panel).toHaveCount(0);
-  await expect(page.locator('.toast-loss')).toHaveText(/^[−\d\s.,]+$/);
+  await expect(page.locator('.toast-loss')).toHaveText(/^Chờ lâu quá[−\d\s.,]+$/);
   await expect(page.locator('.table-object').first()).toBeFocused();
   await expect(page.locator(`[data-customer-id="${originalCustomer}"]`)).toHaveCount(0);
   await expect(page.locator('.lost-bubble')).toHaveCount(0);
