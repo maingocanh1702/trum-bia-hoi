@@ -7,6 +7,38 @@
 
 ---
 
+## Wave 1 "Vui 3 ca" — 4 slice UI xong, chờ owner review — 2026-10-19 (autorun)
+
+Plan `docs/PLAN-vui-3-ca-2026-09-18.md` v1.9 (viết lại 14/10: 7 prompt supervised, mọi slice là supervised theo CLAUDE.md). Quyết định owner 14/10: bản guest lên **cả Netlify (`trumbiahoi.netlify.app`) và Cloudflare Workers (`trumbiahoi.com`) song song**, cùng một bản build; Netlify không bị thay/redirect, hai origin = hai save riêng. Phần chuẩn bị Cloudflare nằm ở PR #17 (`deploy/cloudflare-guest-dual-host`, phiên riêng, chưa merge); owner còn việc một lần trước Prompt 3 (đưa domain vào Cloudflare + `npm run cf -- login`).
+Đợt 1, xếp chồng, chưa merge, chưa deploy: #18 `fun-onboarding-visual` (JSON 2.0.5) → #19 `fun-locale-default-vi` → #20 `fun-next-goal` (JSON 2.0.6, Tier C `nextGoal.reachMult`) → #21 `fun-buy-buttons-reason`. Không đổi luật engine, `CURRENT_RULES` vẫn 27, không đổi số economy hiện có. Mỗi slice: `verify:all` xanh (slice 4: 616 test), e2e local/remote/admin/guest/playable + axe 0, Codex (`gpt-5.6-terra`, wrapper ghim): slice 1–3 CLEAN trên diff cuối; slice 4 qua 4 vòng (vòng 3 sửa toast "hết chỗ" đè toast thưởng cùng batch, vòng 4 không còn lỗi code — chỉ còn lỗi gắn bằng chứng với commit, đã chạy lại toàn bộ trên tip cuối).
+Quyết định/đổi hướng owner cần biết: (1) P3 18/09 thay luật 08/09 "toast mất khách chỉ có số" — toast nay có đúng 1 lý do (Hết bia · Hết mồi · Chờ lâu quá · Hết chỗ); (2) chip mục tiêu lọc theo trung bình xu mỗi ca đã đóng, không phải "ca gần nhất" (thế giới không lưu số ca gần nhất giữa ca); (3) nút "Mua thêm bàn" nay mờ khi không mua được (trước đây luôn bật rồi báo lỗi); (4) `shape()` chỉ nhận đúng danh sách section cũ của snapshot đã pin (Codex #20); (5) cổng Settings ẩn ở ca 1 (slice 1) nên chip chỉ tắt được sau ca 1.
+Chưa làm / của owner: test 5 người mới của `fun-onboarding-visual` (checklist trống ở `docs/phase0-alpha-playtest.md` §6) — luôn là SKIPPED, không phải PASS.
+**Việc kế:** owner merge #18 → #19 → #20 → #21 (PR #17 độc lập), chơi thử bản local 5 phút; Đợt 2 economy 2.1 (rules 28) làm trên `feat/economy-2-1`; Prompt 3 (deploy v-fb1 lên hai host) sau khi Đợt 1 + Cloudflare vào `main` và owner xong việc Cloudflare.
+
+## Hosting: Netlify + Cloudflare song song — 2026-10-14 (Claude Code)
+
+Owner chốt (sửa quyết định 2026-09-30): bản guest **phát hành lên cả hai host song song** từ một lần build — Netlify
+(`trumbiahoi.netlify.app`, `netlify.toml` giữ nguyên) và Cloudflare Workers static assets (`trumbiahoi.com`). Netlify **không** bị bỏ,
+**không** gắn redirect sang `trumbiahoi.com`. Hai origin = hai save riêng (chấp nhận). Quy trình: `docs/cloudflare-guest.md` →
+"Phát hành lên hai host" (build một lần, upload cùng `apps/web/dist` lên cả hai, stage cả hai, chỉ promote khi owner nói, một mục
+deploy-log mang cả hai biên nhận). Docs đã sửa: `docs/cloudflare-guest.md`, `docs/netlify-guest.md`, `apps/web/README.md`. **Chưa deploy gì**,
+chưa đổi cài đặt Netlify/Cloudflare. Branch `deploy/cloudflare-guest-dual-host` (2 commit hosting prep + 1 commit docs) → PR vào `main`, owner review/merge.
+**Việc kế:** owner merge PR → đưa `trumbiahoi.com` vào Cloudflare (các bước ở doc) → lần phát hành đầu theo quy trình hai host. Nối repo Cloudflare
+chỉ cho bản xem thử; bản phát hành đi bằng CLI từ một dist để chứng minh hai host trùng byte.
+
+## Hosting: Netlify → Cloudflare — 2026-09-30 (Claude Code)
+
+_(Sửa 2026-10-14: không chuyển hẳn khỏi Netlify, hai host chạy song song — xem block ngay trên.)_
+
+Owner chốt: bản guest chuyển sang **Cloudflare Workers static assets** ở `trumbiahoi.com` (gói Free), **chấp nhận save
+bắt đầu lại** do đổi origin. Lý do: gói free Netlify tính credit (15/deploy, 20/GB, hết credit thì dừng site). Thêm
+`wrangler.jsonc`, `npm run cf` (wrangler 4.144.0 qua npx), đổi `deploy/netlify/` → `deploy/static/`. `wrangler dev`: header,
+redirect, cache khớp Netlify; guest smoke 3/3 PASS; **chưa deploy**. API M4 **không** chạy trên Workers (đo: heartbeat
+p50 10,5 ms CPU > giới hạn 10 ms của gói Free; khoảng 2.900 dòng SQLite/ca) → Oracle VM (owner đã có tài khoản) + Cloudflare Tunnel.
+Chi tiết: `docs/cloudflare-guest.md`.
+**Việc kế:** owner đưa `trumbiahoi.com` vào Cloudflare và nối repo (các bước ở doc) → deploy lần đầu + smoke công khai → ghi
+biên nhận; dựng VM Oracle (Ubuntu 24.04 ARM, public subnet) → script setup + Tunnel + sửa rate-limit IP/tiền tố `/api` trước khi mở API.
+
 ## Design session owner + Claude — 2026-09-18 (Cowork)
 
 Merge `codex/deploy-wave-ab-netlify` → `main` (Đợt 0 xong, verify:all xanh, `5eb5f31`); k-admission PR #14 vào main

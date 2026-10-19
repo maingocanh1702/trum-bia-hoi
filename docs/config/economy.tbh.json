@@ -119,6 +119,7 @@
           ],
           "sections": [
             "onboarding",
+            "nextGoal",
             "audio"
           ]
         }
@@ -1095,6 +1096,7 @@
       "rushDisabled": true
     },
     "lostStreakToGuide": 3,
+    "idleToGuideMs": 45000,
     "stepGuide": {
       "onFirstPlay": true,
       "skippable": true,
@@ -1148,12 +1150,18 @@
       "upgradeAfterShifts": 1,
       "questsAfterShifts": 2,
       "leagueAfterShifts": 3,
-      "locationsAfterLifePathLevel": 1
+      "locationsAfterLifePathLevel": 1,
+      "hudAfterShifts": 1,
+      "upgradeAllAfterShifts": 2,
+      "journeyAfterShifts": 2
     },
     "targets": {
       "firstServeWithinMs": 30000,
       "firstShiftLostGroupsMax": 1
     }
+  },
+  "nextGoal": {
+    "reachMult": 3
   },
   "quests": {
     "daily": {

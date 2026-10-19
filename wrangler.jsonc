@@ -1,0 +1,17 @@
+// Cloudflare Workers static assets for the browser-only guest edition (owner decision 2026-09-30).
+// No Worker script runs: every request is a static asset from apps/web/dist, which `npm run build:guest`
+// produces together with deploy/static/_headers and _redirects. Procedure: docs/cloudflare-guest.md.
+{
+  "name": "trumbiahoi",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./apps/web/dist",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "none"
+  },
+  // Production is served only from trumbiahoi.com: a second production origin would keep a separate
+  // browser save. Version preview URLs (<version>-trumbiahoi.<account>.workers.dev) stay on for smoke tests.
+  "workers_dev": false,
+  "preview_urls": true,
+  "routes": [{ "pattern": "trumbiahoi.com", "custom_domain": true }]
+}

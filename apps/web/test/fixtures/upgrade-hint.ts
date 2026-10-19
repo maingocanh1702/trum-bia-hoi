@@ -3,8 +3,9 @@ import { Game, config, loadConfig, decodeSave, encodeSave } from '../../../../pa
 const mode = process.argv[2];
 let g: Game;
 if (mode === 'crowded') {
-  // The wallet affords the next table, so the tables lane opened by the hint has an actionable control.
-  const raw = structuredClone(config.raw); raw.onboarding.enabled = false; raw.patience.thuongMs = 600000; raw.shift.startingCoinsBase = 100000;
+  const raw = structuredClone(config.raw); raw.onboarding.enabled = false; raw.patience.thuongMs = 600000;
+  // The wallet affords the next table and every table is busy, so the one enabled control of the tables lane is "buy table" (dimmed buy buttons are not focusable).
+  raw.shift.startingCoinsBase = 100000;
   g = new Game(loadConfig(raw), 42, Date.parse('2026-09-08T10:00:00Z'));
   g.command({ at: g.world.now, idempotencyKey: 'start', command: { type: 'startShift' } }); g.advance(g.world.now + 180000);
 } else {

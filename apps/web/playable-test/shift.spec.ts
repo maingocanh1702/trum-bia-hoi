@@ -3,17 +3,19 @@ import { writeFileSync, readFileSync } from 'node:fs';
 const config=JSON.parse(readFileSync('docs/config/economy.tbh.json','utf8'));
 const snapshot = async (page: Page) => (await (await page.request.get('/api/player/state')).json()).world;
 const synced = (page: Page) => expect(page.locator('.network-status')).toContainText('Đã đồng bộ');
-async function purchase(page:Page,button:Locator){
+// A serve click may lose its order to the real clock between the poll and the click (the table is cleaned, the button detaches). That is
+// play, not a failure -- but only when `orderGone` confirms on the server that this very order is no longer open. Any other click failure
+// (an overlay, a disabled control, a broken selector) and any command the server rejects still fails the test.
+async function purchase(page:Page,button:Locator,orderGone?:()=>Promise<boolean>){
   const receipt=page.waitForResponse(r=>r.url().endsWith('/api/player/command')&&r.request().method()==='POST');
-  await button.click({timeout:5000});const response=await receipt;expect(response.ok()).toBe(true);
+  try{await button.click({timeout:5000});}catch(error){receipt.catch(()=>{});if(orderGone&&await orderGone())return false;throw error;}
+  const response=await receipt;expect(response.ok()).toBe(true);
   await expect(page.locator('.network-status strong')).toHaveCount(0);
+  return true;
 }
 async function enter(page: Page) {
   await page.goto('/');
-  await expect(page.locator('.language-entry, .game-shell')).toBeVisible();
-  const language = page.getByRole('radio', { name: 'Tiếng Việt', exact: true });
-  if (await language.isVisible()) { await language.check(); await page.getByRole('button', { name: 'Vào quán', exact: true }).click(); }
-  await expect(page.locator('.language-entry, .game-shell')).toBeVisible();
+  await expect(page.locator('.language-entry, .game-shell')).toBeVisible(); // the account-mode screen or, once chosen, the yard: never a language screen
   const guest = page.getByRole('button', { name: 'Chơi không đăng nhập', exact: true });
   if (await guest.isVisible()) await guest.click();
   await synced(page);
@@ -38,36 +40,36 @@ test('default guest full shift', async ({ page, context }) => {
     for(const table of w.tables.filter((t:{order?:{state:string,items:{state:string}[]}})=>t.order&&['pending','grace'].includes(t.order.state)&&t.order.items.every(i=>i.state==='ready'))){
       // Table buttons persist when the order bubble disappears at its deadline.
       await page.locator(`[data-table-id="${table.id}"] .table-object`).click();const serve=page.getByRole('button',{name:'Phục vụ cả mâm',exact:true});
-      if(await serve.count()&&await serve.isEnabled())await purchase(page,serve);
+      const orderGone=async()=>{const now=(await snapshot(page)).tables.find((t:{id:string})=>t.id===table.id);return now?.order?.id!==table.order.id||!['pending','grace'].includes(now.order.state);};
+      if(await serve.count()&&await serve.isEnabled())await purchase(page,serve,orderGone);
       // A cooldown/rejected order can leave its context panel open; dismiss it before the next table.
       await page.keyboard.press('Escape');
     }
+    // Shift 1 is the minimal HUD (wallet, keg, tables): no stock sheet or upgrades yet. Reload keeps the same guest shift.
     if(!restored&&w.shift.stats.served>0){
-      await page.getByRole('button',{name:'Nhập hàng',exact:true}).click();await expect(page.getByRole('button',{name:/Thùng Cấp Cứu/})).toHaveCount(0);await expect.poll(async()=>(await snapshot(page)).paused).toBe(true);
-      const before=await snapshot(page);const row=page.locator('.stock-row').first();const full=row.getByRole('button',{name:/^(Mua bom )?Đầy kho/});
-      if(await full.isEnabled()){await purchase(page,full);restocked=true;}
-      await page.waitForTimeout(1500);const after=await snapshot(page);expect(after.staminaMs).toBe(before.staminaMs);expect(after.paused).toBe(true);
       await page.reload();await synced(page);expect((await snapshot(page)).shift.id).toBe(firstShift);expect((await snapshot(page)).playerId).toBe(playerId);restored=true;
-      // Reload closes menus and resumes this same guest shift.
     }
-    if(!upgraded&&w.shift.stats.served>upgradeAfter){
-      await page.getByRole('button',{name:'Nâng cấp',exact:true}).click();await expect(page.locator('.dog-entry')).toHaveCount(0);const card=page.locator('.upgrade-card').filter({has:page.getByRole('heading',{name:'Quầy hàng',exact:true})});await expect(card.getByRole('button',{name:/^Nâng ·/})).toBeVisible();await expect(card.locator('img')).toHaveCount(2);
-      // Seat model (rules 28): a one-table shop's first purchase is table 2 (plan §7 owner line 3), bought mid-shift.
-      const button=page.getByRole('dialog').getByRole('button',{name:/^Mua bàn ·/});await expect(button).toBeVisible();
-      if(await button.isEnabled()){const before=await snapshot(page);await purchase(page,button);await expect.poll(async()=>(await snapshot(page)).tables.length).toBe(before.tables.length+1);upgraded=true;}
-      upgradeAfter=w.shift.stats.served+5;await page.keyboard.press('Escape');
-    }
-    if(Object.entries(w.inventory).some(([dish,n])=>config.menu[dish].unlock.kitchenLevel<=w.equipment.kitchen&&typeof n==='number'&&n<=2)&&w.phase==='open'){
-      await page.getByRole('button',{name:'Nhập hàng',exact:true}).click();
-      for(const row of await page.locator('.stock-row').all()){const full=row.getByRole('button',{name:/^(Mua bom )?Đầy kho/});if(await full.count()&&await full.isEnabled()){await purchase(page,full);restocked=true;}}
-      await page.keyboard.press('Escape');
-    }
-    if(w.shift.stats.served>0&&await page.getByRole('button',{name:'Bỏ qua',exact:true}).isVisible())await page.getByRole('button',{name:'Bỏ qua',exact:true}).click();
+    // The keg's own quick button refills beer without pausing the shift.
+    const refill=page.locator('.beer-stock-warning button:enabled');
+    if(w.phase==='open'&&await refill.count()){await purchase(page,refill);restocked=true;}
     if(w.shift.stats.served>0&&w.shift.stats.served%10===0)await page.screenshot({path:`.qa/playable-${viewport.width}-live.png`});
     writeFileSync(`.qa/playable-${viewport.width}-progress.json`,JSON.stringify({at:Date.now(),firstPlayableMs,fps,phase:w.phase,remaining:w.shift.endsAt-w.now,coins:w.coins,served:w.shift.stats.served,restocked,upgraded}));
     await page.waitForTimeout(1000);
   }
-  w=await snapshot(page);expect(w.phase).toBe('resting');expect(w.completedShifts).toBe(1);expect(w.shift.closedAt-w.shift.startedAt-w.shift.pausedMs).toBeGreaterThanOrEqual(config.shift.durationMs);expect(w.shift.stats.served).toBeGreaterThan(0);expect({restored,restocked,upgraded,washing,readyBuffer}).toEqual({restored:true,restocked:true,upgraded:true,washing:true,readyBuffer:true});
+  w=await snapshot(page);expect(w.phase).toBe('resting');expect(w.completedShifts).toBe(1);
+  // The closing book opens by itself once the client has seen the shift end (it can lag the server by a poll): close it before the HUD steps.
+  const book=page.getByRole('heading',{name:'Sổ ca hôm nay',exact:true});await expect(book).toBeVisible();await page.keyboard.press('Escape');await expect(book).toBeHidden();
+  // The HUD opens after shift 1: the stock sheet pauses and restocks, and the Upgrades sheet holds exactly the first goal.
+  await page.getByRole('button',{name:'Nhập hàng',exact:true}).click();await expect(page.getByRole('button',{name:/Thùng Cấp Cứu/})).toHaveCount(0);
+  const stockRow=page.locator('.stock-row').first(),fullStock=stockRow.getByRole('button',{name:/^(Mua bom )?Đầy kho/});
+  if(await fullStock.isEnabled()){await purchase(page,fullStock);restocked=true;}
+  await page.keyboard.press('Escape');
+  await page.getByRole('button',{name:'Nâng cấp',exact:true}).click();await expect(page.locator('.dog-entry')).toHaveCount(0);
+  // Seat model (rules 28): the one card is table 2, the purchase a one-table shop earns first (plan §7 owner line 3); buying it needs no empty table.
+  const goal=page.getByRole('dialog').getByRole('button',{name:/^Mua bàn ·/});await expect(page.locator('dialog[open] [data-goal]')).toHaveCount(1);
+  if(await goal.isEnabled()){const before=await snapshot(page);await purchase(page,goal);await expect.poll(async()=>(await snapshot(page)).tables.length).toBe(before.tables.length+1);upgraded=true;}
+  await page.keyboard.press('Escape');w=await snapshot(page);expect(w.shift.closedAt-w.shift.startedAt-w.shift.pausedMs).toBeGreaterThanOrEqual(config.shift.durationMs);expect(w.shift.stats.served).toBeGreaterThan(0);expect({restored,restocked,upgraded,washing,readyBuffer}).toEqual({restored:true,restocked:true,upgraded:true,washing:true,readyBuffer:true});
+  await page.getByRole('button',{name:'Sổ ca',exact:true}).first().click();
   await expect(page.getByRole('heading',{name:'Sổ ca hôm nay',exact:true})).toBeVisible();await page.screenshot({path:`.qa/playable-${viewport.width}-summary.png`});
   await page.keyboard.press('Escape');const saved=await snapshot(page);await page.close();page=await context.newPage();watch(page);await page.setViewportSize(viewport);await enter(page);const reopened=await snapshot(page);
   expect(reopened.playerId).toBe(playerId);expect(reopened.completedShifts).toBe(1);expect(reopened.coins).toBe(saved.coins);expect(reopened.equipment).toEqual(saved.equipment);const shop=(x:typeof saved)=>x.tables.map((t:{id:string,capacity:number,level:number})=>[t.id,t.capacity,t.level]);expect(shop(reopened)).toEqual(shop(saved));expect(reopened.shift.id).toBe(firstShift);

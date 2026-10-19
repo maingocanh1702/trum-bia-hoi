@@ -10,8 +10,6 @@ for (const locale of ['vi', 'en']) for (const mode of ['stale', 'crowded', 'fres
       localStorage.setItem('tbh.settings.v1', JSON.stringify({ locale, localeAccepted: true, welcomed: true, guideDone: true, guideIndex: null, muted: true }));
     }, { save: fixture.save, locale });
     await page.goto('/');
-    const welcome = page.getByRole('button', { name: locale === 'vi' ? 'Vào quán' : 'Enter the yard', exact: true });
-    if (await welcome.isVisible()) await welcome.click();
     await expect(page.locator('.game-shell')).toBeVisible();
     const book = page.getByRole('button', { name: locale === 'vi' ? 'Sổ ca' : 'Shift book', exact: true }).first();
     await book.click();
@@ -27,11 +25,11 @@ for (const locale of ['vi', 'en']) for (const mode of ['stale', 'crowded', 'fres
       const heading = page.locator('#upgrade-tables');
       await expect(heading).toBeInViewport(); await expect(heading).toBeFocused();
       await page.keyboard.press('Tab');
-      await expect(page.locator('#upgrade-tables ~ .upgrade-grid button:enabled, #upgrade-tables ~ button:enabled').first()).toBeFocused();
+      await expect(page.locator('#upgrade-tables ~ .upgrade-grid button:enabled, #upgrade-tables ~ .buy-card button:enabled').first()).toBeFocused();
       // Repeat from within Upgrades, where no sheet transition runs the effect.
       await hint.getByRole('button').focus(); await page.keyboard.press('Enter');
       await expect(heading).toBeFocused(); await page.keyboard.press('Tab');
-      await expect(page.locator('#upgrade-tables ~ .upgrade-grid button:enabled, #upgrade-tables ~ button:enabled').first()).toBeFocused();
+      await expect(page.locator('#upgrade-tables ~ .upgrade-grid button:enabled, #upgrade-tables ~ .buy-card button:enabled').first()).toBeFocused();
     }
     await page.screenshot({ path: `.qa/m1-upgrade-${locale}-${mode}.png` });
   });

@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { readFileSync, writeFileSync } from 'node:fs';
+import { seedLocale } from './locale-seed';
 for (const locale of ['vi', 'en']) for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1280, height: 720 }]) {
   test(`M1-I18N/AXE local guest ${locale} ${viewport.width}x${viewport.height}`, async ({ page }) => {
     test.setTimeout(180000); page.setDefaultTimeout(10000); await page.setViewportSize(viewport);
@@ -19,8 +20,8 @@ for (const locale of ['vi', 'en']) for (const viewport of [{ width: 390, height:
     };
     const click = (key: string) => page.getByRole('button', { name: t(key), exact: true }).first().click();
     const close = () => page.locator('dialog[open] .sheet-header button').click();
-    await page.goto('/'); await page.getByRole('radio', { name: locale === 'vi' ? 'Tiếng Việt' : 'English', exact: true }).check();
-    await audit('language'); await click('continue'); await expect(page.getByRole('button', { name: t('account.playGuest'), exact: true })).toBeVisible(); await audit('guest-choice'); await click('account.playGuest');
+    await seedLocale(page, locale); await page.goto('/');
+    await expect(page.getByRole('button', { name: t('account.playGuest'), exact: true })).toBeVisible(); await audit('guest-choice'); await click('account.playGuest');
     await expect(page.locator('.game-shell')).toBeVisible(); await audit('rest');
     await click('nav.shift'); await expect(page.locator('.table-order-hint').first()).toBeVisible({ timeout: 20000 });
     await audit('yard'); await page.locator('.table-order-hint').first().click(); await audit('order');

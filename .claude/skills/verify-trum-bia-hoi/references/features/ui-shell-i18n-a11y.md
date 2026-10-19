@@ -2,9 +2,12 @@
 
 ## Observable contract
 
-- `App()` (`App.tsx:49-68`) gates on `settings.localeAccepted` — shows a `language-entry` welcome
-  form (`aria-label={t('entry.title')}`, a `vi`/`en` radio fieldset, `Sprite id="glass-full"`) until
-  a locale is explicitly accepted via submit (`:60-67`), then renders `StartedApp()`.
+- **Since 2026-10-15 (fun-locale-default-vi, FEEDBACK I.1) there is no language screen.** `App()` renders
+  `StartedApp()` at once and only sets `<html lang>`/title from `locale.ts` `savedLocale()`: a clean profile is
+  Vietnamese whatever `navigator.language` says, an explicitly saved `en` stays `en`, anything else is `vi`, and
+  Settings → Ngôn ngữ is the only switch. `readSettings()` ignores the removed `localeAccepted`/`welcomed` keys. The
+  `main.tsx` loading text reads the same saved locale. The `language-entry` CSS class survives only as the layout
+  of the remote account-mode chooser.
 - `StartedApp()` (`:69-94`) dispatches on `start()`'s `StartState` union: `'reauth' in state` → a
   recovery `<Account>` panel; `'session' in state` → either a two-mode chooser (`account.modes`
   heading, guest/google buttons, `:78-85`, gated by a `sessionStorage['tbh.playing']`
@@ -15,8 +18,13 @@
 - `GameView()` (`:95-493`) is the main shell: `<header class="hud">` (coins, stamina/shift clock,
   settings button, `:363-367`), weather row (`:368`), `stall-scene` (equipment buttons, business-unlock
   props, `:369-376`), and a `<nav aria-label={t('brand')} className="bottom-nav">` (`:388-393`) with
-  exactly 4 buttons: shift/book toggle, stock, upgrades, journey (with a numeric `nav-badge`
-  claimable-count badge).
+  up to 4 buttons: shift/book toggle, stock, upgrades, journey (with a numeric `nav-badge`
+  claimable-count badge). **Since 2026-10-14 (fun-onboarding-visual) shift 1 shows only the wallet and the keg (plus, since 2026-10-15 (fun-next-goal), the "Mục tiêu kế tiếp" chip right under the wallet — see [upgrades-equipment-tables](upgrades-equipment-tables.md)):**
+  the settings gear, the shift clock, weather/rush row, stock strip, cooler/washer/kitchen, glass counter and the whole nav stay hidden until
+  `onboarding.featureReveal.hudAfterShifts` completed shifts (Upgrades/Journey buttons have their own thresholds, the Upgrades
+  sheet shows one card until `upgradeAllAfterShifts`). `reveal.ts` `revealed()` is the single switch; 1.x snapshots and `onboarding.enabled=false`
+  reveal everything. Exactly one element may carry `data-spotlight` (`spotlight.ts`), numbers travel through the decorative `.fly-layer`
+  and queued groups render in `.door` — proof in `apps/web/test/first-shift-visual.spec.ts` (see [onboarding-guide](onboarding-guide.md)).
 - Sheets: a `Sheet` union of 15 named values + `null` (`:22`): `account, seasons, locations, stock,
   upgrades, book, close, journey, settings, config, dog, delivery, signboard, flyer, quests`. Every
   open sheet renders through one shared `<SheetDialog>` (`:40-47`) — a native `<dialog>`
@@ -117,17 +125,23 @@
   gap an earlier pass claimed. **Still genuinely untested in its own right:** focus-return-on-close,
   and whether `Escape` behaves the same across all 15 `Sheet` variants or only the two these specs
   happen to open.
-- `apps/web/remote-test/locale.spec.ts` is the dedicated locale/bootstrap lifecycle suite for the
-  `App()`/`language-entry` gate documented above — an earlier pass here cited no test for it.
-  `` `language entry precedes server creation and preserves the live shift at
-  ${viewport.width}x${viewport.height}` `` (`:3`, 3-viewport parametrized) asserts the entry form
-  blocks any `/api/` request or IndexedDB/journal creation until a locale is submitted, 44px hit
-  targets on the radio labels, and that `Escape`/reload cannot skip it. `'preference storage refusal
-  keeps the entry retryable and never creates a remote player'` (`:23`) is real (non-axe) proof of the
-  `entry.storageError` path the Uncovered-paths axe gap references. `'invalid stored locale cannot
-  skip the language choice through a stale accepted flag'` (`:34`) and `'a failed game module offers
-  retry before language selection or any player mutation'` (`:38`) cover legacy-preference/migration
-  and module-load-failure cases respectively.
+- `apps/web/test/locale-default.spec.ts` (local build, FEEDBACK I.1 acceptance) proves the new contract
+  on 390×844 · 360×740 · 1280×720: `a clean profile on a ${language} browser opens straight into the Vietnamese yard
+  and Settings keeps English across reload` (`en-US` / `en-GB` / `fr-FR`: no `.language-entry`, no radio,
+  `html[lang=vi]`, Settings → English → reload still English), `a saved English choice stays English on a
+  Vietnamese browser, and a saved Vietnamese one stays Vietnamese on an English browser`, and `settings written
+  by the removed language screen still load, and an unknown language falls back to Vietnamese`. Unit proof:
+  `packages/engine/test/presentation.test.ts` `only a saved choice picks the language: a first run is Vietnamese
+  whatever the browser says`.
+- `apps/web/remote-test/locale.spec.ts` is the remote counterpart (the account-mode chooser "Chọn cách chơi" is the
+  first screen): `first run opens in Vietnamese without a language screen and keeps the live shift when Settings
+  switches it at ${w}x${h}` (3 viewports; same player, shift and coins after the switch, reload stays English),
+  `browser language ${language} never picks the language: the first screen is Vietnamese` (`en-US`/`vi-VN`/`fr-FR`),
+  `a saved English choice stays English on a Vietnamese browser`, `settings written by the removed language screen
+  keep ${locale} without restarting a live shift`, `an invalid stored language falls back to Vietnamese and still
+  opens the game` and `a failed game module offers retry before any player mutation`. The older entry-screen
+  cases (server creation blocked until a locale is accepted, radio hit targets, storage-refusal retry) were
+  removed with the screen.
 - `apps/web/test/requirement-copy.test.ts` — `every progress requirement a bundled or pinned config can show has vi and en copy`
   walks every life-path `requires` token and every unlock gate of the bundled config and the two still-pinnable legacy configs
   (`docs/config/legacy/economy-2.0.4.json`, `economy-1.7.3.json`), rebuilds the `requirement.<kind>` / `requirement.<target>` /
@@ -152,9 +166,10 @@
 - For the 3-viewport layout matrix specifically (not a11y), `npx playwright test --config
   playwright.playable.config.ts` (`apps/web/playable-test/shift.spec.ts`) is the closest existing
   proof, though it doesn't run axe.
-- `npx playwright test --config playwright.remote.config.ts apps/web/remote-test/locale.spec.ts` —
-  run for any change to the `language-entry` gate, locale persistence, or pre-server-creation
-  bootstrap order (see Existing proof).
+- `npx playwright test apps/web/test/locale-default.spec.ts` and `npx playwright test --config
+  playwright.remote.config.ts apps/web/remote-test/locale.spec.ts` — run for any change to locale
+  persistence/defaulting (`locale.ts`, `readSettings()`), the Settings language switch or bootstrap order
+  (see Existing proof).
 
 ## Uncovered paths
 
@@ -252,6 +267,26 @@ the manifest — don't confuse a missing icon with a missing sprite.
 ### Wave B — 2026-09-16 proof
 - `apps/web/test/menu.spec.ts` — three Sổ ca scenarios include keyboard-native Details, VI/EN six metrics, exact backup export and whole-page axe with the panel expanded (six scans); empty/partial legacy case prevents fabricated ratios. Run `npx playwright test apps/web/test/menu.spec.ts`.
 
-## Netlify guest build — 2026-09-16
+### fun-onboarding-visual — 2026-10-14
+- `apps/web/test/first-shift-visual.spec.ts` — minimal first-shift HUD, single spotlight, flying numbers (+ reduced motion), door queue, post-shift-1 reveal and the one-card Upgrades sheet, each at 390×844 · 360×740 · 1280×720 with `AxeBuilder` (wcag2a/aa, 21aa, 22aa) on the ready check, empty-keg warning, door and sheet. Specs that are not about onboarding reveal the HUD through `fixtures/full-hud.ts` / `fresh-game.ts`; the remote/a11y server (`remote-test/server.ts`) does the same, so the 17-screen axe sweep keeps covering the full HUD.
+
+### fun-locale-default-vi — 2026-10-15
+- No language screen (FEEDBACK I.1): `locale.ts` `savedLocale()`/`localeOf()` decide the language (saved `en` stays, everything else is `vi`, never `navigator.language`). Proof: `apps/web/test/locale-default.spec.ts` (3 viewports), `apps/web/remote-test/locale.spec.ts` (rewritten for the account-mode chooser), `packages/engine/test/presentation.test.ts` `only a saved choice picks the language…`. The specs that used to click `'Vào quán'` or the language radios now open the game directly; remote specs start an English run from a saved choice via `apps/web/remote-test/locale-seed.ts`. The guest build's browser-only notice moved from the removed screen to Settings → Tài khoản (asserted in `guest.spec.ts`).
+
+## Netlify guest build — 2026-09-16 (updated 2026-10-14: shift 1 is the minimal HUD, so restock/upgrade happen after it closes)
 
 `apps/web/guest-test/guest.spec.ts` → `static guest serves, restocks, upgrades, closes shift and persists across reload/new tab without API`: production guest build on 360×740, 390×844, 1280×720; full service/restock/pause/upgrade/next-day journey, Settings SHA, six close KPIs equal backup, reload/new-tab preservation, admin/online-ranking hidden and zero API/Google requests. Run `npm run build:guest`, copy `apps/web/dist` to `.qa/guest-dist`, then `npx playwright test --config playwright.guest.config.ts`; `TBH_GUEST_URL` targets the verified draft or live URL without a local server. Normal remote/account mechanics are unchanged.
+
+## fun-buy-buttons-reason — 2026-10-19 (loss toast reasons, shift book)
+
+- **One reason per leaving guest** (PLAN P3, supersedes the 2026-09-08 "numeric toast only" override — F27/F07 changelog): `apps/web/src/leave-reasons.ts` maps engine events to `beer` / `food` / `wait` / `seat`
+  (`order_expired.cause` beerStock/beerRefill → beer, foodStock → food, any other cause → wait; `customer_left{reason:'queue'}` → wait; `queue_overflow` → seat). `processEvents` shows one `.toast-loss` per batch with `data-reason`,
+  the numbers (`.loss-value` ×2) and one `.loss-reason`; a group turned away at the door costs nothing, so its toast shows the reason alone and never replaces the toast of ANY other event of the batch
+  (`apps/web/src/batch-toast.ts` is the one projection: the last reward wins, a loss names ONE reason and replaces it). Shipper misses stay numeric-only (no guest reason).
+- **Shift book "Vì sao khách đi"** (`.leave-reasons`): the same reasons ranked by guests lost (`leaveRows`, most first, zero rows hidden, ties in beer · food · wait · seat order) from `menuReport().losses` + `shift.stats.rejected`.
+- **Proof:** `apps/web/test/leave-reasons.test.ts` (mapping per engine cause, dominant reason of a batch, ranking, and that on a real neglected shift the rows add up to `stats.lost + stats.rejected`);
+  `apps/web/test/batch-toast.test.ts` (a refused group never hides the toast of a `quest_claimed` / `attendance_claimed` / `daily_bonus_claimed` / `shipper_*` / `order_served` / `shift_closed` event in either order; loss beats reward; last reward wins);
+  `apps/web/test/buy-reasons.spec.ts` — `when a guest leaves the toast says why in one reason (${label}) at ${w}px` (Hết bia · Chờ lâu quá · Hết chỗ × 3 viewports, live engine event, accessible name, no overflow, axe 0) and
+  `the shift book lists why guests left, most guests first, at ${w}px` (×3; counts restated from the engine, order differs from the default one so the ranking is observable); `apps/web/test/game.spec.ts`
+  `a neglected first shift closes after remaining guests expire and shows the numbers of the loss with exactly one reason` and the expiry assertion in `tapped order stays live, returns keyboard focus, and closes on customer expiry`.
+- **HUD "Nhập bia" does not pause** (PLAN §4 check row): already proven by `apps/web/test/quick-beer-stock.spec.ts` `A2 HUD full beer refill keeps live time and survives reload in ${locale} at ${w}px` (`paused === false`, no dialog, `remaining` keeps counting).

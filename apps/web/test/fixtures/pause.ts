@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
-import { Game, encodeSave, decodeSave } from '../../../../packages/engine/src';
+import { Game, config, loadConfig, encodeSave, decodeSave } from '../../../../packages/engine/src';
+import { fullHud } from './full-hud';
 const input = process.argv[2] === 'inspect' ? JSON.parse(readFileSync(0, 'utf8')) : null;
-const g = input ? decodeSave(input.save) : new Game(undefined, 42, Date.parse('2026-09-09T10:00:00Z'));
+const g = input ? decodeSave(input.save) : new Game(loadConfig(fullHud(structuredClone(config.raw))), 42, Date.parse('2026-09-09T10:00:00Z'));
 if (!input) { g.command({ command: { type: 'startShift' }, at: g.world.now, idempotencyKey: 'pause-open' }); g.advance(g.world.now + 8100); }
 const w = g.world, orderId = input?.orderId ?? w.tables.find(t => t.order)!.order!.id;
 const order = w.tables.find(t => t.order?.id === orderId)?.order;

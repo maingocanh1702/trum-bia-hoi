@@ -2,6 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromium, test, expect, type Page } from '@playwright/test';
+import { seedLocale } from './locale-seed';
 const session = async (page: Page) => (await (await page.request.post('/api/auth/session', { data: {}, headers: { Origin: 'http://127.0.0.1:4179' } })).json());
 const snapshot = async (page: Page) => (await (await page.request.get('/api/player/state')).json());
 const journal = (page: Page) => page.evaluate(() => JSON.parse(localStorage.getItem('tbh.remote.v1')!));
@@ -12,9 +13,7 @@ window.google={accounts:{id:{initialize(o){this.options=o;window.__googleCallbac
 renderButton(el,style){const o=this.options,b=document.createElement('button');b.textContent=style.locale==='vi'?'Tiếp tục với Google':'Continue with Google';b.onclick=async()=>{const r=await fetch('/api/__test/sign?subject=${subject}&nonce='+o.nonce);o.callback(await r.json())};el.append(b)},disableAutoSelect(){},cancel(){}}}};` }));
 }
 async function enter(page: Page, locale = 'vi') {
-  await page.goto('/');
-  await page.getByRole('radio', { name: locale === 'vi' ? 'Tiếng Việt' : 'English', exact: true }).check();
-  await page.getByRole('button', { name: locale === 'vi' ? 'Vào quán' : 'Enter the stall', exact: true }).click();
+  await seedLocale(page, locale); await page.goto('/');
   await page.getByRole('button', { name: locale === 'vi' ? 'Chơi không đăng nhập' : 'Play without signing in', exact: true }).click();
   await expect(page.locator('.network-status')).toContainText(locale === 'vi' ? 'Đã đồng bộ' : 'Synced');
 }
@@ -168,9 +167,7 @@ for (const locale of ['vi', 'en']) test(`Google sign-in restores the account dir
 });
 
 for (const locale of ['vi', 'en']) test(`two play modes offer direct Google sign-in before opening a shift in ${locale}`, async ({ page }) => {
-  await gis(page, `entry-account-${locale}`); await page.goto('/');
-  await page.getByRole('radio', { name: locale === 'vi' ? 'Tiếng Việt' : 'English', exact: true }).check();
-  await page.getByRole('button', { name: locale === 'vi' ? 'Vào quán' : 'Enter the stall', exact: true }).click();
+  await gis(page, `entry-account-${locale}`); await seedLocale(page, locale); await page.goto('/');
   const entry = page.getByRole('region', { name: locale === 'vi' ? 'Chọn cách chơi' : 'Choose how to play', exact: true });
   await expect(entry.getByRole('button')).toHaveCount(2);
   await expect(entry).toContainText(locale === 'vi' ? 'Lịch sử chơi, thành tích, xếp hạng' : 'Play history, achievements, ranking');
@@ -259,6 +256,7 @@ for (const path of ['/auth/session', '/player/connect']) test(`new-tab bootstrap
 
 for (const committed of [false, true]) test(`new-tab guest recovery applies a pending upgrade once (server committed=${committed})`, async ({ page, context }) => {
   await enter(page); await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
+  await expect.poll(async () => (await snapshot(page)).world.phase).toBe('open');
   await page.getByRole('button', { name: 'Vòi rót', exact: true }).click();
   const before = (await snapshot(page)).world; let credited: any;
   await page.route('**/api/player/command', async route => {

@@ -49,7 +49,7 @@
   replays. `replaceSave()` (`:52+`) also calls `decodeSave(text)` (`:54`) for the corruption-recovery
   file-upload path.
 - UI, exact ARIA strings driven by the specs (`account-local.spec.ts`, `browser-save.spec.ts`):
-  button `'Vào quán'` (enter), `'Cài đặt'` (settings), `'Tải bản lưu dự phòng'` (export/download
+  button `'Cài đặt'` (settings; the `'Vào quán'` language screen was removed 2026-10-15), `'Tải bản lưu dự phòng'` (export/download
   backup), `/Tài khoản/` (account panel trigger), dialog named `'Tài khoản'` containing text
   `'Tiến độ này đang lưu trên thiết bị'`, button `'Chơi không đăng nhập'` (continue-local — declines
   Google), button `'Tiếp tục với Google'` (Google continue, present but not exercised by this spec),

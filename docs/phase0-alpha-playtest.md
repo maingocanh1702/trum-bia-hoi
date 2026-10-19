@@ -107,6 +107,34 @@ ngoại lệ advanced career của 04-SPEC §5 (≥30 ngày, LP4+, soft cap3.5) 
 quả guest 3 ca. Người điều phối báo cả mẫu số, thiếu dữ liệu và lỗi lặp lại; owner ghi quyết định
 vào SESSION-TRACK-LOG theo ROADMAP. Phiếu trống, build xanh hay hosted smoke không tự đóng C/E.
 
+## 6. fun-onboarding-visual — 5 người mới, tắt mọi hướng dẫn (owner chạy, CHƯA CHẠY)
+
+> **Việc của owner, không phải của agent.** Agent chỉ dựng build; mọi ô dưới đây để trống tới khi có
+> người thật. Báo cáo slice ghi các dòng này là `SKIPPED: owner playtest`, không bao giờ là PASS.
+> Nguồn: `PLAN-vui-3-ca-2026-09-18.md` §4 `fun-onboarding-visual`, F27 changelog 2026-10-14.
+
+Cách chạy: guest mới, save mới, không giải thích, không mở Cài đặt › Xem lại hướng dẫn. Điều phối viên chỉ quan sát. Ghi build SHA trong Cài đặt.
+
+**Lưu ý đúng với build Đợt 1:** engine vẫn mở quán với 3 bàn × 2 chỗ, nên món duy nhất trong sheet
+Nâng cấp sau ca 1 là **nâng một bàn đang trống (3.750 xu)**, không phải "Bàn 2" của mô hình ghế Đợt 2. Bong bóng
+"2 ghế" chỉ hiện khi hàng chờ đầy và một nhóm bị từ chối ở cửa — hiếm ở Đợt 1; nếu không ai thấy,
+ghi `KHÔNG QUAN SÁT ĐƯỢC` thay vì chấm đạt/không đạt.
+
+| Tester | Phục vụ khách đầu (giây từ **Mở ca**) | Mua món đầu sau ca 1 **không** mở Help? Có/Không | Nói đúng vì sao cặp bỏ đi? Có/Không/Không thấy | Số câu "cái này để làm gì" trong 3 ca | Ghi chú · ảnh |
+|---|---:|---|---|---:|---|
+| T01 |  |  |  |  |  |
+| T02 |  |  |  |  |  |
+| T03 |  |  |  |  |  |
+| T04 |  |  |  |  |  |
+| T05 |  |  |  |  |  |
+
+| Ngưỡng PLAN §4 | Cách tính | Kết quả |
+|---|---|---|
+| ≥ 4/5 phục vụ khách đầu ≤ 20 s | Đếm T01–T05 có giây ≤ 20; thiếu mẫu không thành PASS |  |
+| ≥ 4/5 mua món đầu kết ca 1 không mở Help | Đếm "Có" cột 3 |  |
+| ≥ 4/5 nói đúng vì sao cặp bỏ đi | Đếm "Có" cột 4; "Không thấy" không tính vào mẫu số, ghi riêng |  |
+| ≤ 1 câu "cái này để làm gì" trong 3 ca | Mỗi tester ≤ 1 ở cột 5 |  |
+
 ## Lưu trữ prototype — không phải hướng dẫn cho bản thử hiện tại
 
 Nội dung cũ giữ nguyên bên dưới để truy vết. Theo HANDOFF09/09, prototype đã lưu trữ; các human-only
@@ -234,3 +262,5 @@ Final decision is `PASS` only when every row above has human evidence and no rep
 | 2026-09-16 | Chuẩn bị phiếu closed playtest C/E 10–15 người ×3 ca, sáu KPI/mẫu số, partial/mixed-config, SHA/build và survey. Số đo ca chờ tích hợp; giữ nguyên phiếu prototype trong phần lưu trữ và waiver, không ghi kết quả người chơi hay triển khai chưa xảy ra. |
 
 | 2026-09-16 / Wave B | Số đo ca đã qua kiểm thử UI, server và export trên nhánh A/B; cập nhật trạng thái hướng dẫn, giữ trống toàn bộ kết quả người chơi và không tuyên bố đã deploy. |
+
+| 2026-10-14 / fun-onboarding-visual | Thêm §6: phiếu trống cho bài test 5 người mới (tắt mọi hướng dẫn) của PLAN 18/09 §4. Owner chạy; không có kết quả người chơi nào được ghi, không đổi waiver lịch sử. |

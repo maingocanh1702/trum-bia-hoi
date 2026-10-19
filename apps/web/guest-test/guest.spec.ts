@@ -20,8 +20,8 @@ test('static guest serves, restocks, upgrades, closes shift and persists across 
   context.on('response', r => { if (r.status() >= 400) errors.push(`${r.status()} ${r.url()}`); });
   await page.clock.install({ time: new Date('2026-09-11T10:00:00Z') });
   await page.goto('/');
-  await expect(page.getByText(/Bản chơi trên trình duyệt/)).toBeVisible();
-  await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  // Straight into the yard in Vietnamese: no language screen (FEEDBACK I.1). The browser-only notice now lives in Settings > Account.
+  await expect(page.locator('.game-shell')).toBeVisible(); await expect(page.locator('html')).toHaveAttribute('lang', 'vi');
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 500));
   await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
   await page.clock.runFor(11100);
@@ -29,28 +29,40 @@ test('static guest serves, restocks, upgrades, closes shift and persists across 
   await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
   await expect(page.locator('.order-panel')).toHaveCount(0);
   await expect(page.locator('.toast-gain')).toBeVisible();
-  await page.getByRole('button', { name: 'Nhập hàng', exact: true }).click();
-  await page.locator('.stock-row').first().getByRole('button', { name: 'Mua bom +1 · 12 xu', exact: true }).click();
-  const energy = await page.locator('.energy strong').textContent();
-  await page.clock.runFor(5000);
-  await expect(page.locator('.energy strong')).toHaveText(energy!);
-  await page.keyboard.press('Escape');
-  // Earn the upgrade through ordinary service; no injected wallet or fixture config.
-  for (let step = 0; step < 150; step++) {
+  // Shift 1 is the minimal first-shift HUD: wallet, keg and tables. Serve through ordinary play until it closes by itself;
+  // the quick beer button refills the keg when it appears. No injected wallet or fixture config.
+  const book = page.getByRole('heading', { name: 'Sổ ca hôm nay', exact: true });
+  // A 12-minute shift plus the guests still at their tables takes 180-197 steps of 4 s: leave real headroom.
+  for (let step = 0; step < 300 && !(await book.isVisible()); step++) {
     await page.clock.fastForward(4000);
     if (await page.locator('.table-order-hint.is-ready').count()) {
       await page.locator('.table-order-hint.is-ready').first().click(); await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
       await expect(page.locator('.order-panel')).toHaveCount(0);
     }
-    if (step % 10 === 0) {
-      await page.getByRole('button', { name: 'Nhập hàng', exact: true }).click();
-      for (const row of await page.locator('.stock-row').all()) {
-        const buy = row.getByRole('button').last();
-        if (await buy.count() && await buy.isEnabled()) await buy.click();
-      }
-      await page.keyboard.press('Escape');
-    }
+    const refill = page.locator('.beer-stock-warning button:enabled');
+    if (await refill.count()) await refill.click();
   }
+  await expect(book).toBeVisible();
+  const metrics = page.getByRole('region', { name: 'Món trong ca', exact: true });
+  await metrics.locator('summary').click();
+  await expect(metrics.getByRole('heading', { name: 'Số đo ca', exact: true })).toBeVisible();
+  const values: Record<string, string | null> = {};
+  for (const key of ['served', 'mean', 'kValue', 'moiRate', 'staleRate', 'lost']) {
+    const value = metrics.locator(`[data-metric="${key}"]`);
+    await expect(value).toHaveAttribute('title', /[0-9]/);
+    values[key] = await value.getAttribute('title');
+  }
+  await page.screenshot({ path: `.qa/guest-metrics-${info.project.name}.png` });
+  await page.keyboard.press('Escape');
+  // The HUD opens after shift 1: restock, then the first goal (one card) earned through ordinary service.
+  await page.getByRole('button', { name: 'Nhập hàng', exact: true }).click();
+  // The quick refill of the loop may already have topped the stock up (15/15): then there is nothing to buy, and the pause check below still holds.
+  const bom = page.locator('.stock-row').first().getByRole('button', { name: 'Mua bom +1 · 12 xu', exact: true });
+  if (await bom.isEnabled()) await bom.click();
+  const energy = await page.locator('.energy strong').textContent();
+  await page.clock.runFor(5000);
+  await expect(page.locator('.energy strong')).toHaveText(energy!); // the open sheet keeps the world paused
+  await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click();
   // Seat model (rules 28): the first purchase a one-table shop earns is table 2 (plan §7 owner line 3).
   const upgrade = page.getByRole('dialog').getByRole('button', { name: /^Mua bàn · / });
@@ -63,23 +75,9 @@ test('static guest serves, restocks, upgrades, closes shift and persists across 
   const shop = (world: World) => world.tables.map(table => [table.id, table.capacity, table.level]);
   expect(before.world.tables).toHaveLength(2);
   await page.getByRole('button', { name: /Tài khoản/ }).click();
-  await expect(page.locator('.account-panel')).toContainText('Đăng nhập, đồng bộ và bảng xếp hạng online chưa mở');
+  await expect(page.locator('.account-panel')).toContainText(/Bản chơi trên trình duyệt.*Đăng nhập, đồng bộ và bảng xếp hạng online chưa mở/);
   await expect(page.locator('.account-benefits, .account-google')).toHaveCount(0);
   await page.screenshot({ path: `.qa/guest-account-${info.project.name}.png` });
-  await page.keyboard.press('Escape');
-  await page.clock.fastForward(before.durationMs);
-  await page.clock.fastForward(600000);
-  await expect(page.getByRole('heading', { name: 'Sổ ca hôm nay', exact: true })).toBeVisible();
-  const metrics = page.getByRole('region', { name: 'Món trong ca', exact: true });
-  await metrics.locator('summary').click();
-  await expect(metrics.getByRole('heading', { name: 'Số đo ca', exact: true })).toBeVisible();
-  const values: Record<string, string | null> = {};
-  for (const key of ['served', 'mean', 'kValue', 'moiRate', 'staleRate', 'lost']) {
-    const value = metrics.locator(`[data-metric="${key}"]`);
-    await expect(value).toHaveAttribute('title', /[0-9]/);
-    values[key] = await value.getAttribute('title');
-  }
-  await page.screenshot({ path: `.qa/guest-metrics-${info.project.name}.png` });
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Cài đặt', exact: true }).click();
   const closed = await exported(page), event = closed.world.events.filter(e => e.type === 'shift_closed').at(-1)!;

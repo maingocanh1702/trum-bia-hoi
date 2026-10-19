@@ -139,3 +139,21 @@ Rollback: restore `6aaacf25a465a8fb1d8e9267` through Netlify's deployment restor
 |---|---|
 | 2026-09-18 | Owner-authorized v6 guest publication (dayKey formatter cache); draft and public smoke 3/3; rollback receipt recorded. |
 
+
+## Cloudflare preparation — 2026-09-30 (no deployment)
+
+Owner moved the guest edition to Cloudflare Workers static assets on `trumbiahoi.com` ([Cloudflare guest](cloudflare-guest.md)). This entry records local checks only; nothing was uploaded to Cloudflare or Netlify, and the live Netlify deploy `6aad0f63f2091edfe7f7cf7b` is untouched.
+
+| Field | Local result |
+|---|---|
+| Source | `a775fc065ec1c675f2ac16ed5fb4f439cf99425f` + this change (`wrangler.jsonc`, `deploy/static/`), `npm run build:guest`, 123 files |
+| Runtime | `wrangler dev` 4.144.0 (local workerd + asset-worker) |
+| Headers / redirects | `/` no-cache revalidate + 3 security headers; `/assets/*` immutable; `/admin` and `/admin/*` 302 → `/`; `_headers`/`_redirects` not served |
+| Served vs built `index.html` | Identical SHA-256 `d9a44ff3bff5c93bf9b52f8002b52fc91a46991f44506241aaf1260b87c3d6fd` — no injected markup |
+| Guest smoke | `guest.spec.ts` against the local runtime: 3/3 PASS (390×844, 360×740, 1280×720) |
+
+Future Cloudflare receipts use the Worker version ID in place of the Netlify deploy ID, and the served index hash is expected to equal the uploaded one.
+
+| Date | Change |
+|---|---|
+| 2026-09-30 | Cloudflare hosting prepared and checked locally; no deployment, no site setting changed. |

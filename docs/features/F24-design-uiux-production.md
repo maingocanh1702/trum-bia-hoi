@@ -154,3 +154,4 @@ Mobile stock actions occupy three equal columns below the item instead of clippi
 the full-stock button. Retain the owner's portrait, rounded street-game language.
 
 | 2026-09-09 | Owner-requested management pause with persistent stock menu, localized hint, frozen yard motion and mobile restock button fit. Previous live-menu behavior is superseded. |
+| 2026-10-19 fun-buy-buttons-reason | The loss toast keeps its numeric coin/reputation values and adds ONE reason label (F07, PLAN P3); no motion added, reduced-motion unchanged. |

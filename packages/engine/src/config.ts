@@ -91,6 +91,14 @@ export function parseProgressRequirement(token: string, c: Economy): ProgressReq
   throw Error(`config:progressRequirement:${token}`);
 }
 
+// Presentation-only thresholds added after earlier releases. Older pinned snapshots predate them and keep their raw bytes;
+// a snapshot that carries one must still shape-check it, and the web client falls back to the bundled seed for the absent ones.
+const ADDED_LATER = new Set(['nextGoal', 'onboarding.loginPrompt.leaveProgress', 'onboarding.idleToGuideMs',
+  'onboarding.featureReveal.hudAfterShifts', 'onboarding.featureReveal.upgradeAllAfterShifts', 'onboarding.featureReveal.journeyAfterShifts']);
+
+// Sections that joined a governance tier after earlier releases (tier -> names); shape() lets an older pinned snapshot lack exactly these.
+const TIER_SECTIONS_ADDED_LATER: Record<string, readonly string[]> = { C: ['nextGoal'] };
+
 /** Complete snapshots only: a partial or malformed config must never become live. */
 function shape(value: unknown, expected: unknown, path: string): void {
   if (expected === null) {
@@ -101,17 +109,23 @@ function shape(value: unknown, expected: unknown, path: string): void {
       if (!Array.isArray(value) || !value.every(token => typeof token === 'string')) throw Error(`config:${path}:array`);
       return; // validate() still rejects unknown tokens and dependency cycles.
     }
+    // The tier registry decides who may edit which section, so a list is exact: the seed's membership, minus only the sections that
+    // joined that tier later (a snapshot pinned before then keeps the shorter list). No duplicate, unknown, moved or missing name.
+    const tier = /^_meta\.governance\.tiers\.([A-C])\.sections$/.exec(path);
+    if (tier) {
+      const later = TIER_SECTIONS_ADDED_LATER[tier[1]] ?? [];
+      if (!Array.isArray(value) || !value.every(name => typeof name === 'string') || new Set(value).size !== value.length
+        || value.some(name => !expected.includes(name)) || expected.some(name => !value.includes(name) && !later.includes(name))) throw Error(`config:${path}:array`);
+      return;
+    }
     if (!Array.isArray(value) || value.length !== expected.length) throw Error(`config:${path}:array`);
     expected.forEach((v, i) => shape(value[i], v, `${path}.${i}`));
   } else if (typeof expected === 'object') {
     if (!value || typeof value !== 'object' || Array.isArray(value)) throw Error(`config:${path}:object`);
-    const e = expected as Record<string, unknown>, v = value as Record<string, unknown>;
-    // Old pinned snapshots predate these presentation-only thresholds; preserve their raw bytes.
-    if (path === 'onboarding.loginPrompt' && 'leaveProgress' in e && !('leaveProgress' in v)) {
-      const { leaveProgress: _, ...previous } = e; shape(value, previous, path); return;
-    }
-    if (Object.keys(e).some(k => !(k in v)) || Object.keys(v).some(k => !(k in e))) throw Error(`config:${path}:keys`);
-    for (const k of Object.keys(e)) shape(v[k], e[k], path ? `${path}.${k}` : k);
+    const e = expected as Record<string, unknown>, v = value as Record<string, unknown>, at = (k: string) => path ? `${path}.${k}` : k;
+    const keys = Object.keys(e).filter(k => k in v || !ADDED_LATER.has(at(k)));
+    if (keys.some(k => !(k in v)) || Object.keys(v).some(k => !(k in e))) throw Error(`config:${path}:keys`);
+    for (const k of keys) shape(v[k], e[k], at(k));
   } else if (typeof value !== typeof expected || (typeof value === 'number' && !Number.isFinite(value))) {
     throw Error(`config:${path}:type`);
   }
@@ -290,6 +304,10 @@ function validate(c: Economy): void {
     whole(c.onboarding.loginPrompt.leaveProgress.minCompletedShifts, 'loginPrompt.minCompletedShifts', 1);
     whole(c.onboarding.loginPrompt.leaveProgress.minLifetimeEarned, 'loginPrompt.minLifetimeEarned', 1);
   }
+  if ('idleToGuideMs' in c.onboarding) whole(c.onboarding.idleToGuideMs, 'onboarding.idleToGuideMs', 1);
+  if ('nextGoal' in c && !(Number.isFinite(c.nextGoal.reachMult) && c.nextGoal.reachMult > 0)) throw Error('config:nextGoal.reachMult');
+  const reveal: Record<string, number> = c.onboarding.featureReveal;
+  for (const key of ['hudAfterShifts', 'upgradeAllAfterShifts', 'journeyAfterShifts']) if (key in reveal) whole(reveal[key], `featureReveal.${key}`);
   // The forced first guest must fit a new table; at one chair that guest's tray is one item (D14).
   const firstSeats = isSeatModel(c) ? CHAIRS_WITH_TABLE : c.upgrades.table.levels[c.runtime.initialTableLevel - 1].capacity;
   if (c.onboarding.firstShift.firstGroupSize > firstSeats || c.onboarding.firstShift.guaranteedFirstGroupWithinMs < c.runtime.tableSeatingMs ||

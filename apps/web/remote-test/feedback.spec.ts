@@ -3,7 +3,7 @@ import { furnishShop } from './seat-shop';
 
 test('A4 real server supplies loss evidence without event history and remote advice survives reconnect', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
-  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await page.goto('/');
   await page.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
   await expect(page.locator('.network-status')).toContainText('Đã đồng bộ');
   // A one-chair shop turns every pair away at the door, so "buy tables" would outrank the ready-tray loss this test is about.

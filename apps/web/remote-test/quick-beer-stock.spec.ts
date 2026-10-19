@@ -11,7 +11,6 @@ test('A2 quick beer refill uses the real server while the shift remains live and
   page.on('pageerror', e => errors.push(e.message));
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
   await page.goto('/');
-  await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
   await page.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
   await expect(page.locator('.network-status')).toContainText('Đã đồng bộ');
   // One table with one chair pours too little beer for the loop below to drain the keg; furnish the shop first.

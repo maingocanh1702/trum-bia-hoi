@@ -5,7 +5,6 @@ const journal = (page: Page) => page.evaluate(() => JSON.parse(localStorage.getI
 const snapshot = async (page: Page) => (await page.request.get('/api/player/state')).json();
 async function enter(page: Page) {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
   await page.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
   await expect(page.locator('.network-status')).toContainText('Đã đồng bộ');
 }
@@ -134,7 +133,7 @@ test('server closes beyond grace while the visible client yard stays frozen', as
 test('existing local archive is untouched and a second tab cannot overwrite the remote action stream', async ({ page, context }) => {
   const original = '{"an-existing-local-archive":"kept byte for byte"}';
   await page.addInitScript(text => { if (!localStorage.getItem('tbh.save.v1')) localStorage.setItem('tbh.save.v1', text); }, original);
-  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Tiến độ đã lưu trên máy' })).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('tbh.remote.v1'))).toBeNull();
   await page.getByRole('button', { name: 'Mở quán mới trên server' }).click();
@@ -252,7 +251,7 @@ for (const damage of ['missing chunk', 'invalid revision']) test(`normal startup
     return legacy;
   }, damage);
   let newSession = false; page.on('request', r => { if (r.url().endsWith('/api/auth/session')) newSession = true; });
-  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await page.goto('/');
   await expect(page.getByRole('alert')).toContainText('Bản lưu chưa đọc được');
   await expect(page.getByRole('button', { name: 'Tải bản lưu gốc', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Tải bản lưu localStorage cũ', exact: true })).toBeVisible();
@@ -338,8 +337,9 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
     const latencyMs = visibleAt + offset - event.at;
     expect(latencyMs).toBeGreaterThanOrEqual(0); expect(latencyMs).toBeLessThanOrEqual(1000);
     const toast = page.locator('.toast-loss');
-    await expect(toast).toHaveAccessibleName(`Trừ ${event.data.penalty} xu và ${event.data.reputation} uy tín`);
-    await expect(toast).toHaveText(/^[−\d\s.,]+$/); await expect(page.locator('.order-panel')).toHaveCount(0);
+    // PLAN P3: the toast keeps the numbers and names exactly one reason; nobody served the ready order, so the guest waited too long.
+    await expect(toast).toHaveAccessibleName(`Chờ lâu quá. Trừ ${event.data.penalty} xu và ${event.data.reputation} uy tín`);
+    await expect(toast).toHaveText(/^Chờ lâu quá[−\d\s.,]+$/); await expect(toast.locator('.loss-reason')).toHaveCount(1); await expect(page.locator('.order-panel')).toHaveCount(0);
     const after = (await snapshot(page)).world;
     expect(after.phase).toBe('open'); expect(!!after.paused).toBe(false); expect(after.shift.stats.lost).toBeGreaterThan(0);
     expect(after.staminaMs).toBeLessThan(before.staminaMs);

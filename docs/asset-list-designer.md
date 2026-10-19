@@ -704,7 +704,7 @@ Era: Vietnam early-to-mid 2000s street vibe — aged aluminum/inox, worn red pla
 | U38 | `ai-assistant-panel` | F22 | Panel trợ lý AI, không che bàn nguy cấp | DOM panel | P3 |
 | U39 | `ai-quota-pill` | F22 | Pill quota/lượt hỏi còn lại | DOM pill | P3 |
 | U40 | `ai-suggestion-card` | F22 | Card gợi ý nâng cấp/ưu tiên theo state | DOM card | P3 |
-| U41 | `language-select-screen` | F25 | First-run language screen VI/EN | DOM screen | P1 |
+| U41 | `language-select-screen` | F25 | ~~First-run language screen VI/EN~~ — dropped 2026-10-15 (owner 17/09 FEEDBACK I.1: straight into the game, Vietnamese by default) | DOM screen | — |
 | U42 | `login-prompt` | F25 | Prompt đăng nhập để lưu tiến trình/thành tích/đua top | DOM modal | P1 |
 | U43 | `guest-progress-claim` | F25 | Màn claim/migrate guest progress | DOM screen | P2 |
 | U44 | `account-conflict-screen` | F25 | Màn xử lý Google account đã có progress | DOM screen | P2 |

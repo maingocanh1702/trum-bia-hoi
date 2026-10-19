@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
+import { bootFresh } from './fresh-game';
 async function exported(page: Page) {
   const pending = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Tải bản lưu dự phòng', exact: true }).click();
@@ -12,8 +13,7 @@ async function exported(page: Page) {
 }
 test('local account panel preserves the live archive and never creates a server career or Google request', async ({ page }) => {
   const external: string[] = []; page.on('request', r => { if (r.url().includes('/api/') || r.url().includes('accounts.google.com')) external.push(r.url()); });
-  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
-  await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
+  await bootFresh(page); await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
   await page.getByRole('button', { name: 'Cài đặt', exact: true }).click(); const before = await exported(page);
   await page.getByRole('button', { name: /Tài khoản/ }).click();
   const panel = page.getByRole('dialog', { name: 'Tài khoản', exact: true });
