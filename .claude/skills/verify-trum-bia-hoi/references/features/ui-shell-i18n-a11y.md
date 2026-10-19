@@ -128,6 +128,13 @@
   skip the language choice through a stale accepted flag'` (`:34`) and `'a failed game module offers
   retry before language selection or any player mutation'` (`:38`) cover legacy-preference/migration
   and module-load-failure cases respectively.
+- `apps/web/test/requirement-copy.test.ts` — `every progress requirement a bundled or pinned config can show has vi and en copy`
+  walks every life-path `requires` token and every unlock gate of the bundled config and the two still-pinnable legacy configs
+  (`docs/config/legacy/economy-2.0.4.json`, `economy-1.7.3.json`), rebuilds the `requirement.<kind>` / `requirement.<target>` /
+  `league.<target>` / `lifePath.<id>` keys the Upgrades and Journey sheets render, and asserts each exists in `vi.json` and `en.json`.
+  It is the static proof for a missing requirement string (the accessibility tier only sees one at runtime, on a screen that renders
+  it); it pins `requirement.tables` from rules 28, where LP1 requires "4 tables". Run
+  `node --import tsx --test apps/web/test/requirement-copy.test.ts`.
 
 ## Verification procedure
 
@@ -238,6 +245,8 @@ the manifest — don't confuse a missing icon with a missing sprite.
 | 2026-09-16 A6 | Cite the Settings build-SHA label in both locales/three viewports; historical deployment receipt is in docs/deploy-log.md. |
 
 | 2026-09-16 A2 | Cite direct HUD full-beer purchase in local and real-server UI; raw empty is distinct from ready/batch reserve. Balance targets remain OPEN in docs/improve-a2-stock.md. |
+
+| 2026-10-19 S1 | Cite `requirement-copy.test.ts` (every requirement key has vi + en copy, bundled and pinned configs); rules 28 added the `requirement.tables` row. |
 
 
 ### Wave B — 2026-09-16 proof
