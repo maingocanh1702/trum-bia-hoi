@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-10-20 04:23 · **Branch hiện tại:** `feat/eco21-seat-model`
+> **Cập nhật:** 2026-10-20 06:48 · **Branch hiện tại:** `feat/eco21-instant-pour`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -92,7 +92,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 0
-- **Notes:** Rules21: mua ly theo tổng sở hữu40, quote/debit/retry và menu pause đã kiểm tra; giữ replay1.x. Engine mới: cốc định danh, auto-rót/rửa, huỷ đơn trả cốc bẩn; regression + replay pass. Đang tích hợp UI/art.
+- **Notes:** Rules21: mua ly theo tổng sở hữu40, quote/debit/retry và menu pause đã kiểm tra; giữ replay1.x. Engine mới: cốc định danh, auto-rót/rửa, huỷ đơn trả cốc bẩn; regression + replay pass. Đang tích hợp UI/art. Rules 28 (S2 `eco21-instant-pour`): rót tức thì — cốc `in_use` ngay tick đặt đơn khi `beer.ready > 0`, freshness bắt đầu lúc đó, UI bom một bộ số ("Rót sẵn n cốc" = min(bia sẵn, cốc sạch)).
 
 ### F01 — Vòng Lặp Mở Ca — ca 12 phút, thể lực, trần ngày 500k
 
