@@ -7,6 +7,7 @@ for (const name of ['sunny', 'hot', 'humid', 'rain', 'cold'] as const) raw.weath
 const g = new Game(loadConfig(raw), 42, Date.parse('2026-09-08T10:00:00Z'));
 const send = (command: Command) => { const result = g.command({ command, at: g.world.now, idempotencyKey: `shipper-fixture-${g.log.length}` }); assert.ok(result.ok, result.reason ?? 'fixture command'); };
 send({ type: 'upgrade', kind: 'stall' }); send({ type: 'restock', dish: 'lac', mode: 'full' }); send({ type: 'upgradeDog', level: 1 }); send({ type: 'restock', dish: 'bia', mode: 'one' });
+while (g.world.tables.length < 4) send({ type: 'buyTable' }); // LP1 (phone gate) counts four tables in the seat model
 if (process.argv.includes('rested')) g.advance(g.world.now + raw.shift.wellRested.requiresRestHours * 3600000 + 1);
 send({ type: 'startShift' }); g.advance(g.world.now + 11000);
 const table = g.world.tables.find(t => t.order)!; send({ type: 'serve', tableId: table.id, orderId: table.order!.id }); send({ type: 'buyUnlock', item: 'phone' });

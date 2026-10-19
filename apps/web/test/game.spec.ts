@@ -45,9 +45,10 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
     const coins = await page.locator('.money strong').textContent();
     expect(await page.locator('.money').ariaSnapshot()).toContain('Xu');
     expect(await page.locator('.glass-counter').ariaSnapshot()).toContain('Cốc sạch');
-    await expect(page.locator('.seat')).toHaveCount(6);
+    // Seat model (rules 28): a new game is one table with one chair, taken by the first guest.
+    await expect(page.locator('.seat')).toHaveCount(1);
     await expect(page.locator('.seat-customer')).toHaveCount(1);
-    await expect(page.locator('.seat-empty')).toHaveCount(5);
+    await expect(page.locator('.seat-empty')).toHaveCount(0);
     await waitSaved(page);
     // A slow lazy module takes longer than a served guest's entire consumption time.
     if (viewport.width === 390) await page.route('**/src/App.tsx*', async route => { await new Promise(resolve => setTimeout(resolve, 12000)); await route.continue(); }, { times: 1 });
@@ -104,8 +105,11 @@ test('a neglected first shift closes after remaining guests expire and shows onl
 });
 
 test('tapped order stays live, returns keyboard focus, and closes on customer expiry', async ({ page }) => {
-  await page.clock.install({ time: new Date('2026-09-08T10:00:00Z') });
-  await page.clock.pauseAt(new Date('2026-09-08T10:00:00Z'));
+  // Seat model: a new game has one table; this save bought its second so focus can move between two table triggers.
+  const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/two-tables.ts'], { encoding: 'utf8' }));
+  await page.clock.install({ time: new Date(fixture.now) });
+  await page.clock.pauseAt(new Date(fixture.now));
+  await page.addInitScript(save => { if (!localStorage.getItem('two-tables-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('two-tables-seeded', '1'); } }, fixture.save);
   await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
   await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
   await page.clock.runFor(8100);
@@ -401,7 +405,8 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 
     await expect(hud).toHaveText('Nhịp quán bình thường');
     await page.clock.fastForward(fixture.second.start - fixture.first.end + 1);
     await expect(hud).toHaveText('Nhịp quán bình thường');
-    await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
+    // The last guests may already have left (seat model: fewer seated groups), and a finished shift opens its book itself.
+    if (!(await page.getByRole('dialog', { name: 'Sổ ca hôm nay', exact: true }).isVisible())) await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
     const report = page.getByRole('table', { name: 'Giờ Vàng trong ca' }); await report.scrollIntoViewIfNeeded(); await expect(report).toBeVisible();
     const stored = JSON.parse(await readSave(page));
     const ended = stored.events.find((e: { type: string }) => e.type === 'rush_ended').data;
