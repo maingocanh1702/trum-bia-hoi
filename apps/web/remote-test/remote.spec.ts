@@ -320,17 +320,20 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
     const expired = page.waitForResponse(async response => response.url().includes('/api/player/events?') && response.ok() &&
       (await response.json()).events.some((row: any) => row.event.type === 'order_expired' && row.event.data.orderId === orderId), { timeout: 45000 });
     const painted = page.evaluate(() => new Promise<number>(resolve => {
+      // The expiry's toast says "waited too long" (data-reason="wait"). A new shop has one table (seat model): a pair that arrives first is turned away at
+      // the door, which costs nothing and is not a loss; its toast shows the reason "seat" alone, earlier, and must not stand for the expiry.
+      const loss = () => document.querySelector('.toast-loss[data-reason="wait"]');
       const observer = new MutationObserver(() => {
-        if (!document.querySelector('.toast-loss')) return;
+        if (!loss()) return;
         observer.disconnect();
         const frame = () => {
-          const node = document.querySelector('.toast-loss');
+          const node = loss();
           if (node && Number(getComputedStyle(node).opacity) > 0) resolve(Date.now());
           else requestAnimationFrame(frame);
         };
         requestAnimationFrame(frame);
       });
-      observer.observe(document.body, { childList: true, subtree: true });
+      observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-reason'] });
     }));
     const [response, visibleAt] = await Promise.all([expired, painted]);
     const event = (await response.json()).events.find((row: any) => row.event.type === 'order_expired' && row.event.data.orderId === orderId).event;
