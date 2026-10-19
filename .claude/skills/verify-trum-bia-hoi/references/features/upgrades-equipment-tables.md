@@ -248,6 +248,18 @@ freshness-formula effect), [table-lifecycle](table-lifecycle.md) (the table stat
   `apps/web/test/next-goal.spec.ts` (3 viewports: chip from shift 1, tap → sheet at the item, chip moves on after each purchase and says what is
   missing, three lanes in order, LP-gated keg skipped, Settings switch + reload, old pin, English copy; axe 0 violations).
   Run `npx playwright test apps/web/test/next-goal.spec.ts` and `node --import tsx --test packages/engine/test/goal-quotes.test.ts packages/engine/test/next-goal.test.ts`.
+- **Merged with the seat model (stage 00, 2026-10-20).** Under rules 28 a table level adds no seat (chairs do) and carries no benefit until S4, so `goals.ts` gives a level
+  no effect and it is never eligible for the chip (the sheet still lists it, dimmed, "Bàn cần 2 ghế"); a new shop's first goal is table 2 (`goal.buyTable`, "+1 chỗ"; English "Seats +1").
+  The Wave 1 cases above run on a capacity snapshot (fixture modes `closed`, `oldpin` of `apps/web/test/fixtures/next-goal.ts`: the frozen `docs/config/legacy/economy-2.0.4.json`
+  with a custom version, so the bundled seat model never replaces it; the brand-new case loads `closed 0 300`). The bundled seat model has its own cases in the same spec:
+  `on the seat model a brand-new save's first goal is the second table, and a tap opens the sheet at that one card at ${w}px` (×3: chip "Mua bàn mới · +1 chỗ", "1.500 xu · thiếu 750",
+  one `[data-goal="buyTable"]` card, dimmed with "Chưa đủ xu", axe 0), `on the seat model the chip moves on after every table bought and says what is still missing at ${w}px` (×3: 1.500 → 4.000 → 8.000 xu),
+  `on the seat model the full Upgrades sheet keeps its three lanes and a table level is listed but never the chip at ${w}px` (×3), `on the seat model the chip is English in English, with the units of the English copy`;
+  `a goal behind the life-path gate is never the chip: it skips the keg and points at the sign` now builds its save with real seat commands (fixture mode `gated`: the alley filled to `tableSlots`,
+  a chair on each table, every table to the level its badge gate allows, every device to the life-path gate). Engine side: `packages/engine/test/next-goal.test.ts`
+  `a new seat-model save points at table 2: capacity lane, the first rung of the table ladder, nothing filtered before a shift has closed` · `the chip walks the table ladder and moves on to the speed lane once the alley is full: levels and chairs are not its goals yet` · `a game on a pre-seat snapshot with the Wave 1 keys still gets a chip, and its first goal is the table upgrade it can afford`;
+  `packages/engine/test/goal-quotes.test.ts` `buyTableQuote (seat model) prices the n-th table from the ladder like the command: wallet, then the alley ceiling` · `buyChairQuote matches buyChair: locked until the shop owns chairsAfterTables tables, then the wallet, then a pair is the most` · `tableUpgradeQuote (seat model) matches upgradeTable: two chairs first, then badge, reputation, wallet and top level; guests never block it`
+  (the Wave 1 quote tests carry the suffix `(capacity snapshot)`); `packages/engine/test/seat-model.test.ts` `a pre-seat snapshot from Wave 1 (JSON 2.0.5/2.0.6: the capacity model plus presentation keys) still loads, bytes kept; a bad key or tier list still fails closed`.
 - `config.ts` `shape()` now accepts a shorter `_meta.governance.tiers.{A,B,C}.sections` list in a pinned snapshot (the registry lists grow with
   every new section); without it every save pinned before JSON 2.0.6 stopped loading.
 
@@ -272,8 +284,14 @@ freshness-formula effect), [table-lifecycle](table-lifecycle.md) (the table stat
   `a table at Lv3 says it needs the badge, an affordable table has no reason, and the last table bought turns the buy button into "all tables built" at ${w}px` (×3); fixtures from the real engine: `apps/web/test/fixtures/buy-reasons.ts` modes `states`, `rich`.
   Engine side (unchanged from fun-next-goal): `packages/engine/test/goal-quotes.test.ts` pins that the quotes say what the commands say.
 - Engine rule unchanged: while a table is `occupied` the command still answers `tableBusy`; letting a purchase proceed on an occupied table is Wave 2 (S1).
+- **Merged with the seat model (stage 00, 2026-10-20).** The three table-button cases above run on a capacity snapshot (fixture modes `states`, `rich`, `maxed`: frozen 2.0.4 file, custom version);
+  on the bundled seat model (rules 28: `buyTableQuote` / `buyChairQuote` / `tableUpgradeQuote`, a purchase never needs an empty table) the same promises are pinned by
+  `a dimmed seat button keeps its price and names exactly one reason: coins, then four tables, then two chairs, at ${w}px` (×3: "Mua bàn · N xu" dimmed with "Chưa đủ xu", "Thêm ghế · N xu" with "Mua đủ bàn trước", "Nâng · N xu" with "Bàn cần 2 ghế", 44 px, axe 0),
+  `with four tables a chair is for sale and lets its table level up, the next chair costs more, and the full alley says "all tables built" at ${w}px` (×3: "Quán đã đủ bàn", chair price follows the chairs owned shop-wide, a pair has no chair button) and
+  `a pair at its top level says "Đã tối đa" and nothing else, with guests or without, at ${w}px` (×3); fixtures `apps/web/test/fixtures/buy-reasons.ts` modes `seat-states`, `seat-rich`, `seat-maxed`.
 
 ## Changelog — S1 seat model
 | Date | Change |
 |---|---|
 | 2026-10-19 | S1 rules 28: seat-model quotes/commands/events and the minimal Upgrades UI cited; capacity-model citations above stay valid for pinned old snapshots. |
+| 2026-10-20 stage 00 | Wave 1 × S1 merge (autopilot stage 00): the chip, the three lanes, the buy-button reasons and the one-card sheet are proven on both models — capacity snapshot (frozen 2.0.4 file, fixture modes `closed` / `oldpin` / `states` / `rich` / `maxed` / `rest`) and the bundled seat model (`seat-*` fixture modes and the `on the seat model …` / `seat …` cases cited above). A table level has no effect and is not a chip goal under rules 28 until S4. English chip effect "Seats +{n}" (was "+{n} seats", which printed "+1 seats"). |
