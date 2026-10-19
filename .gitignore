@@ -51,3 +51,6 @@ ap3/env
 ap3/state/
 ap3/PAUSED
 .ap3-run/
+
+# Wrangler local dev state
+.wrangler/
