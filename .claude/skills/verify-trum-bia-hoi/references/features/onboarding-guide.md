@@ -20,7 +20,7 @@
   `apps/web/src/spotlight.ts` `pickSpotlight()` chooses the single thing that calls for a tap (ready order check → beer restock when the keg,
   raw stock and any batch are all empty and affordable → between shifts the first goal) and `App.tsx` marks exactly that element
   `data-spotlight` (never two). First play (`onboarding.enabled && stepGuide.onFirstPlay && completedShifts === 0`) adds a pointer arrow
-  (`.spotlight-arrow`) guest → check → wallet and no banner. `reveal.ts` `revealed()` hides everything but wallet · keg until
+  (`.spotlight-arrow`) guest → check → wallet and no banner. `reveal.ts` `revealed()` hides everything but wallet · keg · the goal chip (fun-next-goal, 2026-10-15; Settings can switch it off) until
   `featureReveal.hudAfterShifts` (Settings gear, timer, weather/rush row, stock strip, cooler/washer/kitchen, glass counter, bottom nav; Upgrades and Journey
   buttons have their own thresholds) and shows only one table's upgrade card (the first that can level up, an empty one when any is) in the Upgrades sheet until `upgradeAllAfterShifts`.
   `DoorQueue.tsx` renders queued groups with patience rings and a refused group's bubble (`door.seats` / `door.full`, from `queue_overflow {size}`);
