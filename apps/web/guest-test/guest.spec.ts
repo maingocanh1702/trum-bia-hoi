@@ -20,8 +20,8 @@ test('static guest serves, restocks, upgrades, closes shift and persists across 
   context.on('response', r => { if (r.status() >= 400) errors.push(`${r.status()} ${r.url()}`); });
   await page.clock.install({ time: new Date('2026-09-11T10:00:00Z') });
   await page.goto('/');
-  await expect(page.getByText(/Bản chơi trên trình duyệt/)).toBeVisible();
-  await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  // Straight into the yard in Vietnamese: no language screen (FEEDBACK I.1). The browser-only notice now lives in Settings > Account.
+  await expect(page.locator('.game-shell')).toBeVisible(); await expect(page.locator('html')).toHaveAttribute('lang', 'vi');
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 500));
   await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
   await page.clock.runFor(11100);
@@ -32,7 +32,8 @@ test('static guest serves, restocks, upgrades, closes shift and persists across 
   // Shift 1 is the minimal first-shift HUD: wallet, keg and tables. Serve through ordinary play until it closes by itself;
   // the quick beer button refills the keg when it appears. No injected wallet or fixture config.
   const book = page.getByRole('heading', { name: 'Sổ ca hôm nay', exact: true });
-  for (let step = 0; step < 200 && !(await book.isVisible()); step++) {
+  // A 12-minute shift plus the guests still at their tables takes 180-197 steps of 4 s: leave real headroom.
+  for (let step = 0; step < 300 && !(await book.isVisible()); step++) {
     await page.clock.fastForward(4000);
     if (await page.locator('.table-order-hint.is-ready').count()) {
       await page.locator('.table-order-hint.is-ready').first().click(); await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
@@ -70,7 +71,7 @@ test('static guest serves, restocks, upgrades, closes shift and persists across 
   expect(before.world.shift!.stats.served).toBeGreaterThan(0);
   expect(before.world.tables.some(table => table.level > 1)).toBe(true);
   await page.getByRole('button', { name: /Tài khoản/ }).click();
-  await expect(page.locator('.account-panel')).toContainText('Đăng nhập, đồng bộ và bảng xếp hạng online chưa mở');
+  await expect(page.locator('.account-panel')).toContainText(/Bản chơi trên trình duyệt.*Đăng nhập, đồng bộ và bảng xếp hạng online chưa mở/);
   await expect(page.locator('.account-benefits, .account-google')).toHaveCount(0);
   await page.screenshot({ path: `.qa/guest-account-${info.project.name}.png` });
   await page.keyboard.press('Escape');

@@ -15,10 +15,7 @@ async function purchase(page:Page,button:Locator,orderGone?:()=>Promise<boolean>
 }
 async function enter(page: Page) {
   await page.goto('/');
-  await expect(page.locator('.language-entry, .game-shell')).toBeVisible();
-  const language = page.getByRole('radio', { name: 'Tiếng Việt', exact: true });
-  if (await language.isVisible()) { await language.check(); await page.getByRole('button', { name: 'Vào quán', exact: true }).click(); }
-  await expect(page.locator('.language-entry, .game-shell')).toBeVisible();
+  await expect(page.locator('.language-entry, .game-shell')).toBeVisible(); // the account-mode screen or, once chosen, the yard: never a language screen
   const guest = page.getByRole('button', { name: 'Chơi không đăng nhập', exact: true });
   if (await guest.isVisible()) await guest.click();
   await synced(page);

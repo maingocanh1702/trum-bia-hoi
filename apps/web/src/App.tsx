@@ -20,6 +20,7 @@ import { Icon } from './Icon';
 import { DoorQueue, type TurnedAway } from './DoorQueue';
 import { FlyingFeedback, type Floater } from './FlyingFeedback';
 import { idleToGuideMs, revealed } from './reveal';
+import { savedLocale } from './locale';
 import { beerOut, firstGoal, pickSpotlight } from './spotlight';
 
 // Owner 2026-09-11: risk features are deferred; legacy UI remains testable only in an explicit dev preview.
@@ -40,25 +41,11 @@ function SheetDialog({ title, close, children, view, pausedLabel }: { title: str
   </dialog>;
 }
 
+/** Owner 2026-09-17 (FEEDBACK I.1): no language screen. The game opens in Vietnamese; a saved English choice stays; Settings switches it. */
 export function App() {
-  const [settings, setSettings] = useState(readSettings);
-  const [error, setError] = useState(false);
-  const t = (key: string) => translate(settings.locale, key);
-  useEffect(() => { document.documentElement.lang = settings.locale; document.title = t('brand'); }, [settings.locale]);
-  const choose = (locale: typeof settings.locale, accept = false) => {
-    const next = { ...settings, locale, localeAccepted: accept, welcomed: accept || settings.welcomed };
-    try { writeSettings(next); setSettings(next); setError(false); }
-    catch { setSettings({ ...settings, locale }); setError(true); }
-  };
-  if (settings.localeAccepted) return <StartedApp />;
-  return <main className="language-entry"><form className="welcome-content" aria-label={t('entry.title')} onSubmit={e => { e.preventDefault(); choose(settings.locale, true); }}>
-    <Sprite id="glass-full" /><h1>{t('brand')}</h1><h2>{t('welcome.title')}</h2>
-    <fieldset><legend>{t('entry.language')}</legend>{(['vi','en'] as const).map(locale => <label key={locale} lang={locale}>
-      <input type="radio" name="locale" value={locale} checked={settings.locale === locale} onChange={() => choose(locale)} />{t(`language.${locale}`)}
-    </label>)}</fieldset>
-    <p>{t('welcome.copy')}</p>{guestOnly && <p>{t('guest.browserOnly')}</p>}{error && <p role="alert">{t('entry.storageError')}</p>}
-    <button className="primary" type="submit">{t('continue')}</button><small>{t('rest.free')}</small>
-  </form></main>;
+  const locale = savedLocale();
+  useEffect(() => { document.documentElement.lang = locale; document.title = translate(locale, 'brand'); }, [locale]);
+  return <StartedApp />;
 }
 function StartedApp() {
   const [state, setState] = useState<StartState | null>(null);

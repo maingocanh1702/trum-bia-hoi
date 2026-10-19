@@ -4,8 +4,11 @@ import type { Result, WorldView } from '@tbh/engine';
 declare global { interface Window { linkTransport: RemoteGame; linkResult?: PlayerSession | { error: string }; commandResult?: Result } }
 const journal = (page: Page) => page.evaluate(() => JSON.parse(localStorage.getItem('tbh.remote.v1')!));
 const snapshot = async (page: Page) => (await page.request.get('/api/player/state')).json();
+const withoutGame = new WeakSet<Page>();
 async function openTransport(page: Page) {
-  // Keep the entry form unaccepted: this test owns the sole production RemoteGame instance.
+  // The game must not boot (it would take the writer lock the moment the page loads, now that no language screen holds it back):
+  // this test owns the sole production RemoteGame instance.
+  if (!withoutGame.has(page)) { withoutGame.add(page); await page.route('**/src/App.tsx*', route => route.abort()); }
   await page.goto('/');
   await page.evaluate(async () => {
     const path = '/src/remote.ts', { RemoteGame } = await import(path);
