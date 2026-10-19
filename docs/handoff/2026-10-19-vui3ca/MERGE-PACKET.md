@@ -1,0 +1,29 @@
+# MERGE PACKET — autorun "Vui 3 ca" (dừng sau B1 theo lệnh owner 19:37, 19/10/2026)
+
+## Đã xong
+- **Wave 1 (A0–A3)**: 4 slice UI đã được review và **đã merge vào `main` bởi người khác** (không phải run này) — `origin/main` = `2f5e727` gồm PR #17 (Cloudflare prep) và #18–#21. Verdict các slice (theo report của từng slice): #18 **PARTIAL** (chỉ thiếu test 5 người mới của owner; 4 vòng Codex, vòng 4 CLEAN) · #19 PASS (Codex vòng 3 CLEAN) · #20 PASS (Codex r1 1 MAJOR đã sửa → r2 CLEAN) · #21 PASS (4/4 vòng Codex; vòng 4 chỉ là finding về bằng chứng, không phải code — đã chạy lại trên tip và ghi đúng như vậy trong report + PR).
+- **B1 = S1 `eco21-seat-model` (rules 28)**: xong, **verdict PARTIAL**, Codex vòng 1 **CLEAN** (không finding nào, 85 file, +2824 −245).
+  PR **#22** → `feat/economy-2-1`: https://github.com/maingocanh1702/trum-bia-hoi/pull/22 · tip `8f50e5f` (code `9b31c47`, 1 commit docs-only phía trên).
+  Người chơi thấy: quán mới mở với **1 bàn × 1 ghế**; cặp khách không có bàn 2 ghế bỏ đi tại cửa, không phạt/không trừ uy tín; mua bàn 2→4 (1.500 / 4.000 / 8.000 xu), rồi ghế thứ 2 từng bàn (10.000 → 30.000 xu, chỉ sau đủ 4 bàn); mâm theo số ghế; save cũ được migrate 1 lần khi mở ca (3 bàn × 6 chỗ Lv3 → 3 bàn × 2 ghế Lv3, không hoàn xu); bot sim in mốc mua theo ca.
+  Cần xem khi review: `packages/engine/src/{engine,rules,config}.ts` (mọi luật mới sau `rulesVersion >= 28`; GitNexus rất nhiều CRITICAL vì đây là bản bump rules), `packages/engine/test/seat-model.test.ts`, `docs/config/economy.tbh.json` (2.0.20).
+- Số đo S1: `npm test` 601/601 · local e2e 170/170 · a11y 6/6 · remote 98/98 · admin 29/29 · doctor PASS (trên `8f50e5f`).
+
+## Bị hủy (lệnh owner 19:37 — bàn giao senior dev)
+B2 `eco21-instant-pour` · B3 `eco21-capacity-demand` · B4 `eco21-table-chair-upgrades` · B5 `eco21-balance-pass` · B6 `eco21-ui-assets` · B7 `fun-kick-table` — **chưa bắt đầu, không có branch**. Brief sẵn cho người làm tiếp: `.autorun/vui3ca/briefs/COMMON.md` + `B2…B7-*.md` (B5 = lượt cân số duy nhất, S5 làm xanh mọi thứ S1 để đỏ). Worktree `.autopilot/worktrees/eco21` còn nguyên (đang ở `feat/eco21-seat-model`, `npm ci` xong). Helper cục bộ: `.autorun/verify-slice.sh <worktree> <thư-mục-evidence-tuyệt-đối> local improve guest a11y remote admin playable` (chạy ngoài sandbox, port 4178 → chỉ chạy khi checkout chính rảnh).
+
+## Cần owner / người merge quyết (quan trọng nhất trước)
+1. **`feat/economy-2-1` còn ở `a775fc0`, `main` đã tới `2f5e727`.** PR #22 nhắm vào nhánh tích hợp cũ. Trước khi dùng cần `merge main vào feat/economy-2-1`; `git merge-tree` cho thấy S1 xung đột **17 file** với main mới: 3 file feature-map của verify skill, `08-SPEC`, `guest.spec.ts`, `shift.spec.ts`, `App.tsx`, `fixtures/upgrade-hint.ts`, `game.spec.ts`, `economy.tbh.json`, `dashboard.{html,json,md}`, F07, F10, tracker, `packages/engine/src/config.ts`. Hướng giải (chi tiết trong body PR #22): giữ cả hai bên ở docs và `config.ts`; JSON lấy hợp (hạt giống S1 + `nextGoal`/`onboarding` của Wave 1), giữ version **2.0.20**; dựng lại dashboard; chạy lại `verify:all` + các tier Playwright sau merge (merge sạch về văn bản ≠ build xanh). Run này **không merge gì**.
+2. **S1 chưa thể ship một mình**: k = **3.963** (seed 42) / **3.948** (seed 99) so với dải 2.0–3.0 và trần mềm 3.5; `sim:onboarding` ("insufficient serves"), `sim:rush` (thứ tự áp lực seed 99) và `guest.spec.ts` (bước "Mua bàn · 1.500 xu" vẫn mờ ở 360 và 1280) đang đỏ — **DEFERRED cho S5** theo plan §5, không nới assertion, không đổi số. Playable lần đầu 2/3 (biến thể 1280 bị đói CPU: phục vụ 14 khách thay vì 30, tải máy 8–16), chạy lại riêng biến thể đó **PASS**; cả hai log được giữ.
+3. **Quyết định tự động có thể muốn lật** (đầy đủ trong `.autorun/vui3ca/DECISIONS.md`):
+   - S1: config **2.0.20** (Wave 1 đã dùng 2.0.5/2.0.6 với nội dung khác); `tableSlots` = 4 mọi mặt bằng (D13) → LP7 "10 chỗ" chưa với tới được cho tới khi có hẻm ≥ 5 chỗ; migration D2 nằm trong `startShift`; `locations.list` đăng ký Tier A; giữ shape 2.0.4 cho save cũ; bot không mua cấp bàn trên snapshot seat; API quote `buyTableQuote/tableUpgradeQuote/buyChairQuote` trùng tên/shape với Wave 1.
+   - A1: chip mục tiêu lọc theo **trung bình** xu các ca đã đóng (plan ghi "ca gần nhất" nhưng world không giữ số đó giữa ca). A2: toast mất khách thêm 1 lý do (thay luật "chỉ số" 09-08 theo plan P3 mới hơn), lý do thứ tư "Hết mồi", bàn đã tối đa hiện "Đã tối đa", nút "Mua thêm bàn" mờ khi không mua được.
+   - Mọi commit mang trailer `Co-Authored-By: Claude …` theo thông lệ repo.
+4. **Không có `[NEEDS OWNER DECISION]` nào** (S5 chưa chạy). Blocker còn mở: `.autorun/vui3ca/BLOCKERS.md` — server test của remote/admin/a11y hard-code cổng 4179–4183 nên chỉ chạy được từ worktree với `TBH_PORT_BASE=4178` lúc checkout chính rảnh (hoặc một slice tooling nhỏ cho `TBH_PORT/TBH_ORIGIN`).
+
+## Việc chỉ owner làm được (vẫn mở)
+- Cloudflare: domain + `npm run cf -- login` (plan §10, trước Prompt 3). Điều kiện plan nêu cho Prompt 3 ("deploy v-fb1") — Wave 1 + Cloudflare nằm trên `main` — đã thỏa; run này không chạy `verify:all` trên `main` mới và không deploy gì.
+- Test 5 người mới (acceptance `fun-onboarding-visual`) và phiếu chơi 3 ca của owner — chưa chạy, báo là `SKIPPED: owner playtest`, không PASS.
+
+## Chơi thử 5 phút
+- **Wave 1 (đã trên main):** `git checkout main && npm ci && npm run dev` → mở game bằng tiếng Việt (không còn màn chọn ngôn ngữ); ca 1 chỉ có 1 điểm sáng; dưới ví có chip "Mục tiêu kế tiếp" (chạm → sheet Nâng cấp đúng món, 3 làn Sức chứa · Tốc độ · Khách); nút mua nào mờ cũng hiện giá + đúng 1 lý do; để khách bỏ đi thử → toast có 1 lý do (Hết bia · Hết mồi · Chờ lâu quá · Hết chỗ) và sổ ca có mục "Vì sao khách đi".
+- **Tip hiện tại của Wave 2 (= S1, PR #22):** checklist 6 bước nằm cuối body PR #22 (1 bàn 1 ghế → mua bàn 2–4 → ghế thứ 2 chỉ sau 4 bàn → mua khi bàn đang có khách → save cũ). Kỳ vọng thu nhập thấp và k cao cho tới S5.

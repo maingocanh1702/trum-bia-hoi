@@ -1,0 +1,7 @@
+# BLOCKERS (item · what blocks · what was finished · options)
+
+
+## S1 · a11y / remote / admin Playwright tiers cannot run from a worktree
+- What blocks: hard-coded test ports. `apps/web/remote-test/server.ts:76` listens on 4180 with origin `http://127.0.0.1:4179` (used by the remote tier and, via playwright.dev-identity.config.ts, by `npm run test:a11y`); `apps/web/admin-test/server.ts:18,49` on 4183/4182 with origin 4181; `admin.spec.ts`, `moderation.spec.ts`, `account-ui.spec.ts` hard-code 4179/4181. `scripts/verify/port.ts` moves only the Playwright configs, so from `.autopilot/worktrees/eco21` (window base 29360) every webServer wait times out after 60 s (measured 18:01-18:03 on 0d5a311). The brief forbids the main checkout's ports. (Those two timed-out attempts did hold 4180 for up to 60 s each; the admin attempt was stopped before it started.)
+- What was finished: all S1 work; the S1 screen (Upgrades sheet) audited by axe in the local tier, vi+en x 3 viewports, 0 violations; local 167/167 + seat-model 6/6; guest/improve/playable run from the worktree's own ports.
+- Options: (a) orchestrator runs `ROOT=<eco21 worktree> TBH_PORT_BASE=4178 bash .autorun/ui-tiers.sh <ev> a11y remote admin` while Track A is idle; (b) run them from main after integration; (c) a small tooling slice: both test servers read TBH_PORT/TBH_ORIGIN like playable-test/server.ts and the specs use baseURL-relative origins.
