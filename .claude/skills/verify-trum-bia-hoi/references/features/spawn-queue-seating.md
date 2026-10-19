@@ -50,6 +50,8 @@ independent shipper lane — because they share the same autonomous tick machine
   text `t('delivery.serve', {n})` ("Giao cả đơn…"), wired to `run({type:'serveDelivery', deliveryId})`,
   `disabled={!ready || !safe || !remainingMs}`.
 
+- **Rules 28 seat model (S1):** group size is `spawn.pPair` (pair) else one guest, independent of the shop (D17). A pair when no table has two chairs leaves at the door: `queue_overflow{size, reason:'noSeat'}`, counted in `stats.rejected` and `stats.noSeat`, no penalty, no reputation, never `lost`/`lostStreak`, never queued. A full queue on seat-model shifts says `reason:'full'`; rules <= 27 keep `{size}`. Seating stays smallest-fitting-empty-table (singles prefer one-chair tables).
+
 ## How to reach it
 
 - Engine, arrival: fully autonomous — `processDue()` (`engine.ts:345`) calls `spawn()` (`:539`)
@@ -146,6 +148,9 @@ independent shipper lane — because they share the same autonomous tick machine
   [serve-outcomes](serve-outcomes.md) for its `.toast-loss` mechanism — this file's angle is the
   delivery-blocks-`kickAll`/expiry-penalty behaviour itself, not the toast).
 
+- `packages/engine/test/seat-model.test.ts` — `a pair with no two-chair table leaves at the door: no penalty, no reputation change, never lost` (onboarding's forced single still seats; `noSeat` = `rejected`; coins/reputation/lostStreak unchanged; queue empty).
+- `packages/engine/test/arrival-interval.test.ts` — `fast-weather rush groups retain hard floors and round once after the per-customer size factor` now forces pairs (`spawn.pPair` 1): the gap after a turned-away pair still scales by two.
+
 ## Verification procedure
 
 - `node --import tsx --test packages/engine/test/arrival-interval.test.ts
@@ -241,3 +246,8 @@ but are excluded from `k` itself since `k` only counts seated serves).
 | Date | Change |
 |---|---|
 | 2026-09-16 | Wave A3 adds the five-seed headless VIP arrival census, denominator/exclusion rules and explicit pending human observation. No spawn gate, weight or production behaviour changes. |
+
+## Changelog — S1 seat model
+| Date | Change |
+|---|---|
+| 2026-10-19 | S1 rules 28: pair arrivals, `noSeat` door rejection and `reason` on `queue_overflow`; tests cited. |

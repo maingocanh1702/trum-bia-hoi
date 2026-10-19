@@ -52,6 +52,8 @@ same `quests.ts` file — cross-link, not restated here.
   progress bar), `'Xem nâng cấp quán'` → `.business-card` unlock tiles, buy button `` `Mua ·
   ${price} xu` ``, owned state `'Đã có'` (disabled).
 
+- **Rules 28 (S1):** `parseProgressRequirement` adds `N tables` (owned tables); LP1 `requires` is `["4 tables"]` (D18), LP7 keeps `"10 seats"` (chairs) — unreachable while every alley has 4 slots. Pinned snapshots keep `"4 seats"`.
+
 ## How to reach it
 
 - `{type:'claimLifePath', level}` (`engine.ts:921-929`) — `lifePathRewardQuote` gates on level
@@ -141,6 +143,8 @@ same `quests.ts` file — cross-link, not restated here.
 - `apps/web/test/game.spec.ts` — `` `life path rewards and business upgrades remain separate at
   ${viewport.width}×${viewport.height}` `` (line 509): drives a real `progression.ts` fixture, asserts
   the milestone list, progress bar, and that buying `phone` doesn't unlock `qr` early.
+
+- `packages/engine/test/seat-model.test.ts` — `life path 1 counts tables, not seats, so a two-chair table can never block the next table`; `packages/engine/test/progression.test.ts` — `LP1 needs its scaled lifetime threshold and four tables, without deferred dog ownership; old config pins remain strict` (six seats on three tables are not LP1) and `all configured subsidiary gates...` (LP7 needs a fifth table's slot).
 
 ## Verification procedure
 
@@ -254,3 +258,8 @@ freezing of stamina/attendance, not yet written).
 | Date | Change |
 |---|---|
 | 2026-09-16 A5 | Cite UI clarity, first-open asset preload and active-rest ETA regression; no engine/config rule changes. |
+
+## Changelog — S1 seat model
+| Date | Change |
+|---|---|
+| 2026-10-19 | S1 rules 28: LP1 counts tables; tests cited. |

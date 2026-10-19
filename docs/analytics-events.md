@@ -16,6 +16,7 @@ Google tokens, bank details, or other PII to gameplay analytics.
 | Preparation | `beer_pouring`, `beer_poured`, `dish_preparing`, `dish_ready`, `glass_stale` | Item/dish/glass id; station and freshness feedback |
 | Cleanup | `glass_washing`, `glass_washed`, `table_cleaning`, `table_cleaned`, `table_occupied` | Glass/table id; bottleneck and lifecycle diagnostics |
 | Purchases | `restocked`, `upgrade_bought`, `table_bought`, `table_upgraded`, `emergency_pack_claimed`, `coin_gain` | Quantity/cost/level/amount; inventory feedback and sinks |
+| Seat model (rules 28) | `queue_overflow{size, reason}`, `chair_bought{tableId, seats, cost}`, `table_bought{cost, tableId}`, `seat_model_adopted{shiftId, tablesBefore, tablesAfter, seatsBefore, seatsAfter}` | `reason` is `noSeat` (a pair met a shop with no two-chair table: no penalty, no reputation, not `lost`) or `full` (queue full); seat-model shifts count those guests in `stats.rejected` and `stats.noSeat`. `seat_model_adopted` fires once, at the first opening that pins a seat-model snapshot over an old capacity save (plan D2). Rules ≤ 27 histories keep `queue_overflow{size}` / `table_bought{cost}` exactly. |
 
 Customer-level `ServeRecord` carries the exact payment/tip before the daily credit
 cap, dishes, patience ratio and freshness. `credited` is separate. This prevents the
@@ -146,3 +147,5 @@ This is local engine provenance; remote collection/registry publication is pendi
 | 2026-09-09 | Added successful config pin transition event and clarified candidate-versus-active version provenance for refused openings. |
 
 > 2026-09-18 owner (chờ S1/S4/`story-ending`): sự kiện mới `queue_overflow{reason:noSeat|full}` (cặp không có chỗ / hàng đợi đầy — không phạt), `table_upgraded{what: chair|dish|comfort, level}`, `story_ended{lifePath:7, shift}`; sổ ca thêm "cặp không có chỗ" và "từ chối tại cửa". Nguồn: `docs/DESIGN-story-3-tuan-2026-09-18.md` §2c.
+
+| 2026-10-19 | S1 `eco21-seat-model` (rules 28): `queue_overflow` gains `reason` (`noSeat` / `full`, as the 18/09 note planned); chair purchases are `chair_bought` rather than the note's `table_upgraded{what:chair}` (a purchase, like `table_bought`; `table_upgraded` stays the level event for S4); new `seat_model_adopted`; `table_bought` gains `tableId` on seat-model shifts. |

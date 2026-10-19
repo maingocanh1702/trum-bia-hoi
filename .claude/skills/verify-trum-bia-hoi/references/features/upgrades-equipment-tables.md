@@ -47,6 +47,8 @@ finding — cross-linked, not restated), cooler's freshness formula is
   inside `sheet==='upgrades'` at `:454`) is the inline nudge — a separate component from the purchase
   cards themselves.
 
+- **Rules 28 seat model (S1 `eco21-seat-model`, JSON 2.0.20) — supersedes the capacity bullets above for seat-model snapshots:** `buyTableQuote(w, c, outsideShiftOnly?)` (`rules.ts`) prices the n-th table at `upgrades.table.tablePriceBase[n-2]` with no life-path gate, capped by `tableSlots(w, c)` = the current location's `locations.list[].tableSlots` (every alley 4 this wave); new `{type:'buyChair', tableId}` via `buyChairQuote(w, c, table)`: refuses `'chairsLocked'` below `upgrades.table.chairsAfterTables` tables, `'maxChairs'` at two chairs, else prices `chairPriceBase[second chairs owned shop-wide]`; `tableUpgradeQuote(w, c, table, outsideShiftOnly?)` puts `'tableNeedsChairs'` in `gate` (D18) and never requires an empty table; a level no longer changes chairs. Events `chair_bought{tableId, seats, cost}`, `table_bought{cost, tableId}`; missing table `'tableGone'`. DOM: each table card has "Thêm ghế · giá" while it has one chair plus one `role="status"` reason, the level button reads `tableUpgradeQuote`, "Mua bàn · giá" is dimmed with its reason. Capacity snapshots (old saves before D2) keep the `extraSeatPriceBase` path inside the same quotes.
+
 ## How to reach it
 
 - `{type:'upgrade', kind: Equipment}` (`engine.ts:914-919`) is the **one** command for all five
@@ -133,6 +135,10 @@ finding — cross-linked, not restated), cooler's freshness formula is
   test — it's a config-bundle-adoption-on-start regression that happens to share this spec file; see
   [economy-k-ledger](economy-k-ledger.md)'s `config-pinning.spec.ts` citation for the closest sibling
   proof of that mechanic.
+
+- `packages/engine/test/seat-model.test.ts` — `a new game opens one table with one chair; the home alley caps tables at its tableSlots with no life-path gate`, `a second chair opens only after chairsAfterTables tables, a table never holds a third, and price indexes chairs across the shop` (also `tableNeedsChairs` and level without chairs), `seat-model snapshots fail closed on unreachable chairs, short price ladders, unseatable onboarding or bad probabilities`. Run `node --import tsx --test packages/engine/test/seat-model.test.ts`.
+- `apps/web/test/seat-model.spec.ts` — `seat model sells tables 2-4, then a second chair, each with its price and one reason at ${viewport.width}×${viewport.height}` (390×844 / 360×740 / 1280×720): DOM-only purchases, reasons "Mua đủ bàn trước đã." / "Bàn cần 2 ghế." / "Quán đã đủ bàn." / "Chưa đủ xu.", state read back through the engine (`fixtures/seat-model.ts inspect`). Run `npx playwright test apps/web/test/seat-model.spec.ts`.
+- `packages/engine/test/config-pinning.test.ts` — `a seat-model repin keeps every bought table and chair; only the next purchase reads the new prices`.
 
 ## Verification procedure
 
@@ -232,3 +238,8 @@ freshness-formula effect), [table-lifecycle](table-lifecycle.md) (the table stat
 | Date | Change |
 |---|---|
 | 2026-09-16 | Add current order feedback and rules26 loss evidence regression citations; historical replay remains unchanged. |
+
+## Changelog — S1 seat model
+| Date | Change |
+|---|---|
+| 2026-10-19 | S1 rules 28: seat-model quotes/commands/events and the minimal Upgrades UI cited; capacity-model citations above stay valid for pinned old snapshots. |

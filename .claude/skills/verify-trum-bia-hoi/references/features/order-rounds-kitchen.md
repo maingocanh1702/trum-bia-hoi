@@ -43,6 +43,8 @@ station is defined by a batch duration + a batch size; the engine reads
 - Server: no kitchen-specific route — everything rides `POST /player/command`
   (`apps/server/src/http.ts:290`).
 
+- **Rules 28 seat model (S1):** the tray follows the chairs the group sat down with (`upgrades.table.orderShape`): one chair = each guest beer OR one instant dish still in stock (`solo.pBeer`; no instant dish left → beer), two chairs = beer plus one dish with `pair.pMoi` (hot dishes included, same in-stock rule). `demandMix.pMoi` only drives pinned capacity snapshots.
+
 ## How to reach it
 
 - Engine: prep is **entirely autonomous**, driven by `Game.advance(now)` → `processDue()`
@@ -115,6 +117,9 @@ station is defined by a batch duration + a batch size; the engine reads
   end-to-end**, correcting the Uncovered-paths claim below.
 - `apps/web/test/kitchen.spec.ts`: `` `live kitchen shows real timers and routes to the whole table at ${viewport.width}×${viewport.height}` `` (×3 viewports), `'kitchen warning disappears after real expiry and never leaves a stale dish link'`, `'out-of-stock recipe opens the existing restock sheet'`, `'max-level kitchen shows all three configured burners'`, `'an unowned kitchen is purchasable mid-shift without showing a fake owned yard appliance'`.
 - `apps/web/test/production.spec.ts`: `` `stocked beer capacity and upgrade comparison update live, with frozen batch progress in menus at ${width}px` `` (×2 widths), `'legacy washing shows an indeterminate bar in the yard and paused equipment panel'`, `'reload immediately after a completed beer batch warns while its save is pending and preserves the batch'`, `'washer, cooler and counter upgrade cards show their own per-level draft sprites'`.
+
+- `packages/engine/test/seat-model.test.ts` — `a one-chair table never gives one guest beer and a dish together; a two-chair table does (seed 42)` (a whole shift: every solo tray is one item, beer and instant dishes both occur, a pair-table guest gets beer + dish).
+- `packages/engine/test/economy2.test.ts` — `hot preference uses the whole special group and falls back to the available category` now runs on a two-chair table (`orderShape.pair.pMoi` 1); `an expired order waiting for table cleanup no longer reserves the last side dish` on one-chair trays (`solo.pBeer` 0).
 
 ## Verification procedure
 
@@ -224,3 +229,8 @@ independent per-customer samples to `served` — that doesn't systematically mov
 
 ### Wave B — 2026-09-16 proof
 - `packages/engine/test/menu.test.ts` covers six KPI numerators and round denominators; `apps/web/test/menu.spec.ts` checks VI/EN metric labels, current/closed/partial/empty states, pause, export and reload on360×740/390×844/1280×720. Whole-shift metrics are absent for partial legacy provenance.
+
+## Changelog — S1 seat model
+| Date | Change |
+|---|---|
+| 2026-10-19 | S1 rules 28: trays by chairs; tests cited. Six-guest pan/stock tests run on the frozen 2.0.4 capacity model. |

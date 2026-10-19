@@ -37,6 +37,8 @@
   `store:importBusy` (`:46`, the single-flight lock), `store:importInterrupted` (worker
   timeout/crash/exit).
 
+- **Rules 28 / config 2.0.20 (S1):** saves accept rules 1–28. Pre-seat 2.x snapshots validate against the frozen `docs/config/legacy/economy-2.0.4.json`; replay refuses a seat-model snapshot or a `buyChair` entry below rules 28. D2 runs inside the first `startShift` that pins a seat-model snapshot over a capacity one: first `tableSlots` tables kept, each `min(2, seats)`, levels kept, no refund, `seat_model_adopted{shiftId, tablesBefore, tablesAfter, seatsBefore, seatsAfter}` once; the rules-27 prefix (log and events) is never rewritten.
+
 ## How to reach it
 
 - Engine: `encodeSave`/`decodeSave` (`save.ts:13,24`). `Game.checkpoint()`/`Game.restoreTrusted()` —
@@ -108,6 +110,9 @@
 - Corroborating but not dedicated: `apps/server/test/http.test.ts:292`, `competition.test.ts`,
   `leaderboard.test.ts:29`, `admin-auth.test.ts:317` all call `store.claimLocal()` directly as
   fixture/setup, not as save-replay proof themselves.
+
+- `packages/engine/test/seat-model.test.ts` — `D2 migration: a 3-table x6-seat Lv3 save becomes 3 tables x2 chairs at level 3, once and replayably` and `D2 migration keeps only the first tableSlots tables of a larger shop` start from `packages/engine/test/fixtures/capacity-lv3x3-v27.json` / `capacity-lv3x6-v27.json` (recorded by the pre-change engine at a775fc0 via `fixtures/capacity-v27.ts`; their world SHA-256 must still match); `seat-model commands and snapshots refuse pre-28 replay entries`; `every committed replay fixture still decodes to its recorded log` (every save fixture in packages/engine/test/fixtures and apps/web/test/fixtures).
+- `apps/web/test/improve-lp1.spec.ts` — the browser adopts the bundle at the next opening (D2) and buys the fourth table that LP1 now counts.
 
 ## Verification procedure
 
@@ -227,3 +232,8 @@ session resumes through.
 ## Netlify guest build — 2026-09-16
 
 `apps/web/guest-test/guest.spec.ts` → `static guest serves, restocks, upgrades, closes shift and persists across reload/new tab without API`: production guest build on 360×740, 390×844, 1280×720; full service/restock/pause/upgrade/next-day journey, Settings SHA, six close KPIs equal backup, reload/new-tab preservation, admin/online-ranking hidden and zero API/Google requests. Run `npm run build:guest`, copy `apps/web/dist` to `.qa/guest-dist`, then `npx playwright test --config playwright.guest.config.ts`; `TBH_GUEST_URL` targets the verified draft or live URL without a local server. Normal remote/account mechanics are unchanged.
+
+## Changelog — S1 seat model
+| Date | Change |
+|---|---|
+| 2026-10-19 | S1 rules 28: D2 adoption, legacy 2.0.4 shape, pre-28 replay guards and the fixture guard cited. |

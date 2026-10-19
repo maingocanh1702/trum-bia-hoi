@@ -20,6 +20,8 @@
   delivery/bonus/quest credit, no throughput). Returns `kValue: null` when `served === 0`, not
   `NaN`/throw.
 
+- **Career bot v2 (S1):** `packages/engine/sim/policy.ts` saves for the next table, then a second chair, before anything else; never buys the dog; no table levels on seat snapshots. `simulateCareer` logs every coin purchase (restock excluded) with the shift it serves (`report.purchases`, day rows' `purchases`), and `npm run sim:career` prints `PURCHASE shift N (day D): table 2 - 1500 coins` lines for tables, second chairs and device/table levels. S1 alone breaks the advanced k gate (career seed 42 k 3.96 > 3.5) as plan §5 expects — rebalanced in S5.
+
 ## Single-mutator invariant
 
 `credit()` (`packages/engine/src/rules.ts:110-122`, doc comment: *"The only faucet entry point.
@@ -82,6 +84,8 @@ Engine (all in `packages/engine/src/engine.ts`, verified by grep of every call s
 - `packages/engine/test/seasons.test.ts:47` — `'an order served exactly at rollover belongs wholly to
   the new window and idempotent retries do not add another score'` — the most direct idempotent-credit
   regression test in the repo, though it lives in the seasons file, not the two above.
+
+- `packages/engine/test/career.test.ts` — `two real career days conserve the wallet and replay purchases, claims, clocks and earned LP from a fresh save` now also pins the purchase log (one entry per coin purchase, shift order, tables 2–4 before the first second chair, never the dog).
 
 ## Verification procedure
 
@@ -166,3 +170,8 @@ save/replay persistence tests for this same ledger — heavy overlap, not a sepa
 
 ### Wave B — 2026-09-16 proof
 - `packages/engine/test/menu.test.ts` — 'five production seeds export exact six shift KPIs matching service records and deterministic replay'; 'flat beer and snack numerators use served rounds, while empty and partial shifts never invent ratios'. Same canonical serveValueStats basis, no credit/throughput term.
+
+## Changelog — S1 seat model
+| Date | Change |
+|---|---|
+| 2026-10-19 | S1: career purchase log and policy v2 cited; S1 k numbers reported, gate deferred to S5. |

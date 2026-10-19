@@ -177,6 +177,8 @@ Chi tiết:
 
 ## 7. Spawn nhóm & cỡ nhóm 🟡
 
+> 🟢 **Rules 28 (S1 `eco21-seat-model`, JSON 2.0.20) — thay các gạch dưới cho save mới:** cỡ nhóm = cặp với xác suất `spawn.pPair`, còn lại khách lẻ (nhóm ≤ 2, không phụ thuộc quán). Cặp mà quán **không có bàn nào 2 ghế** → bỏ đi tại cửa ngay khi tới: `queue_overflow{size, reason:'noSeat'}`, không phạt xu, không trừ uy tín, không tính `lost`/`lostStreak`, đếm vào `stats.rejected` và `stats.noSeat`; hàng đợi đầy → `queue_overflow{reason:'full'}`. Xếp bàn vẫn "bàn trống nhỏ nhất vừa nhóm" (khách lẻ ưu tiên bàn 1 ghế). Nhóm ghi số ghế lúc ngồi (`Group.seats`) và giữ mâm đó mọi đợt: bàn 1 ghế = mỗi khách bia *hoặc* 1 mồi tức thì còn hàng (`orderShape.solo.pBeer`); bàn 2 ghế = bia + 1 mồi (`orderShape.pair.pMoi`, kể cả mồi bếp). Mua bàn/ghế/cấp bàn không đòi bàn trống; ghế mới áp cho nhóm kế. Save ghim snapshot sức chứa cũ giữ luật cũ tới lần mở ca nhận snapshot bàn ghế (migration D2, §8).
+
 - Hệ spawn **nhóm** vào một bàn **`EMPTY`** (theo quy tắc một-bàn-một-nhóm ở §1 — KHÔNG ghép vào bàn đang có khách): cỡ nhóm random ≤ capacity bàn đó (vd 1–4). Nhóm nhỏ hơn capacity thì ghế thừa **bỏ trống tới khi bàn về EMPTY** (không nhận nhóm khác).
 - Trộn loại khách trong nhóm theo weight gốc (Thường/Vội/VIP/Chí Phèo/Ngồi lỳ). Một nhóm có thể có 1 VIP "bao mâm".
 - Spawn interval & warmup giữ hằng số gốc (×weather ×rush). Rush nặng → nhóm tới dồn → dễ mất cụm.
@@ -197,6 +199,7 @@ Chi tiết:
   - **Mồi đã làm → waste, KHÔNG hoàn nguyên liệu** (micro-sink hợp lý, phạt nhẹ việc làm sớm).
   - 🔵 Post-MVP có thể cho "đẩy cốc/mồi còn tươi sang đơn khác" nếu muốn giảm độ gắt.
 - **Overflow:** khi tổng (ghế + queue) đầy → từ chối nhóm tại cửa (`queueOverflow`, không phạt nặng).
+- **Migration D2 (rules 28):** lần mở ca đầu tiên ghim snapshot bàn ghế lên một save mô hình sức chứa: giữ `tableSlots` bàn đầu (theo thứ tự mua) của mặt bằng, mỗi bàn `min(2, sức chứa cũ)` ghế, giữ cấp bàn (chỉ có tác dụng khi bàn có 2 ghế), không hoàn xu; event `seat_model_adopted{shiftId, tablesBefore, tablesAfter, seatsBefore, seatsAfter}` đúng một lần. Lịch sử rules ≤ 27 replay nguyên hash.
 
 ---
 
@@ -311,3 +314,5 @@ và ngày Việt Nam theo lịch thật. Toast trừ tiền/uy tín vẫn chỉ 
 | Date | Reconciled game update |
 |---|---|
 | 2026-09-09 | Adopted latest handoff numbers as config2.0.1, preserving owner pause/live-upgrade policy and immutable1.x snapshots. Rules21 station/demand/glass/LP-gate implementation is under verification; lease lifecycle and actual career measurements remain pending. Current evidence: docs/build-progress.md. |
+
+| 2026-10-19 rules 28 (S1) | Cài header v1.4 phần bàn/ghế/nhóm: 1 bàn × 1 ghế, `buyTable` theo `tablePriceBase` + trần `tableSlots`, `buyChair` sau `chairsAfterTables` bàn (≤ 2 ghế/bàn), cặp không có bàn 2 ghế bỏ đi tại cửa (`noSeat`, không phạt), mâm theo ghế lúc ngồi, nâng bàn cần 2 ghế (lợi ích cấp ở S4), migration D2 ở lần mở ca ghim snapshot bàn ghế. §7/§8 thêm ghi chú; §5/§6 cũ chỉ còn cho save ghim snapshot sức chứa. Nguồn: `docs/PLAN-vui-3-ca-2026-09-18.md` §5 S1. |

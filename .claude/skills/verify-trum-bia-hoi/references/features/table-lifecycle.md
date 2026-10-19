@@ -34,6 +34,8 @@ the spec's blocks:
   `role=dialog aria-label="Bàn {n}"`; serve button text `"Phục vụ cả mâm"`, wired at `App.tsx:487` to
   `run({type:'serve', tableId, orderId})`, `disabled={!ready}`.
 
+- **Rules 28 seat model (S1):** `Table.capacity` is the chair count (1–2). Buying a table or a chair never needs an empty table; the seated group keeps the chairs it sat down with in `Group.seats` (set in `seatQueue` on seat-model shifts) and orders that tray for every round, so a new chair serves the next group. D2: the first opening that pins a seat-model snapshot over a capacity save keeps the first `tableSlots` tables at `min(2, seats)` and emits `seat_model_adopted` once (see [save-replay-local](save-replay-local.md)).
+
 ## How to reach it
 
 Engine commands (`Command` union, `types.ts:97-121`; handlers in `engine.ts`'s `execute()` switch):
@@ -143,6 +145,8 @@ sequencing/idempotency/session wrapping.
   restart'`), `apps/server/test/presence.test.ts` (`'durable loss precedes catch-up; hidden menu
   recovery freezes wait and exact action retries serve only once'`).
 
+- `packages/engine/test/seat-model.test.ts` — `buying tables and a chair while a table is occupied keeps the seated group` (Chi Pheo `occupied`: same group, state and `until`) and `a chair bought mid-visit changes the tray only for the next group, never for the seated one` (three solo rounds, then the next group's pair tray).
+
 ## Verification procedure
 
 - `node --import tsx --test packages/engine/test/game.test.ts packages/engine/test/kitchen.test.ts
@@ -230,3 +234,8 @@ sequencing/idempotency/session wrapping.
 consumed by `case 'serve':`), [glass-beer-flat](glass-beer-flat.md) (`Glass.state`, freshness clock,
 `releaseGlasses` on table clean), [economy-k-ledger](economy-k-ledger.md) (`credit`/`penalize`/`spend`
 handle all money movement triggered by table transitions).
+
+## Changelog — S1 seat model
+| Date | Change |
+|---|---|
+| 2026-10-19 | S1 rules 28: purchases never need an empty table; `Group.seats` keeps the seated tray; tests cited. |
