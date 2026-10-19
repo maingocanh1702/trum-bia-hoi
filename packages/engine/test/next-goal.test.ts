@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Game, config, loadConfig, isSeatModel, type Command } from '../src';
+import { Game, config, loadConfig, isSeatModel, tableUpgradeQuote, PAIR, type Command } from '../src';
 import { LANES, listGoals, pickNextGoal, reachMult, shiftAverage } from '../../../apps/web/src/goals';
 import capacityModel from '../../../docs/config/legacy/economy-2.0.4.json';
 import { capacityConfig } from './fixtures/capacity-model';
@@ -69,7 +69,18 @@ for (const [label, make] of [['seat model', game], ['capacity snapshot', capacit
   assert.equal(keg().eligible, false); w.lifePath = 2; assert.equal(keg().eligible, true);
   const top = w.tables.length - 1; w.lifePath = 0; w.tables[top].level = g.config.values.upgrades.table.levels.length - 1; // the next table level wants a badge and reputation
   const table = () => listGoals(w, g.config).find(x => x.id === `table:${w.tables[top].id}`)!;
-  assert.equal(table().eligible, false); assert.notEqual(pick(g)!.id, table().id);
+  const v = g.config.values;
+  if (isSeatModel(v)) {
+    // Under the seat model a level carries no seat and no benefit (S4), so the goal is never eligible, whatever its gates say: the gate chain itself
+    // is the quote's and the sheet's dimmed button reads it (two chairs, then the badge, then the reputation, then nothing). The chip's rule is untouched.
+    const quote = () => tableUpgradeQuote(w, g.config, w.tables[top]), next = v.upgrades.table.levels[w.tables[top].level];
+    const before = { chairs: w.tables[top].capacity, reputation: w.reputation, badges: [...w.badges] };
+    assert.equal(quote().gate, 'tableNeedsChairs'); assert.equal(table().eligible, false);
+    w.tables[top].capacity = PAIR; assert.equal(quote().gate, 'badgeRequired'); assert.equal(table().eligible, false);
+    w.badges.push(next.requiredBadge!); assert.equal(quote().gate, 'reputationRequired'); assert.equal(table().eligible, false);
+    w.reputation = next.repBase![0]; assert.equal(quote().gate, null); assert.equal(table().eligible, false, 'with every gate open a level still promises nothing');
+    w.tables[top].capacity = before.chairs; w.reputation = before.reputation; w.badges.splice(0, w.badges.length, ...before.badges); // the other gates below start from the same shop
+  } else { assert.equal(table().eligible, false); assert.notEqual(pick(g)!.id, table().id); }
   const sign = () => listGoals(w, g.config).find(x => x.id === 'signboard')!;
   w.equipment.stall = 1; assert.equal(sign().eligible, false, 'the signboard waits for a level-3 stall'); w.equipment.stall = g.config.values.signboard.gate.stallLevel; assert.equal(sign().eligible, true);
   const phone = () => listGoals(w, g.config).find(x => x.id === 'unlock:phone')!, qr = () => listGoals(w, g.config).find(x => x.id === 'unlock:qr')!;
