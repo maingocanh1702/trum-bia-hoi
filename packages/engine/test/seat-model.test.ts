@@ -250,6 +250,28 @@ test('a pre-seat snapshot from Wave 1 (JSON 2.0.5/2.0.6: the capacity model plus
   for (const [name, patch] of bad) { const raw = wave1(); patch(raw); assert.throws(() => loadConfig(raw), /config:/, name); }
 });
 
+test('a Wave 1 save (rules 27, pinned the way the Wave 1 build wrote it) replays byte for byte and adopts the seat model once at its next opening', () => {
+  // The genuine rules-27 history of the 3-table x6-seat save, with its pinned config rewritten like a v-fb1 pin: the capacity model plus the Tier C
+  // presentation keys JSON 2.0.6 added and nothing else (the version label stays: every logged command names the pin it ran under). This is the
+  // shape of the save the browser holds when the merged build ships.
+  const fixture = JSON.parse(readFileSync(new URL('./fixtures/capacity-lv3x3-v27.json', import.meta.url), 'utf8')), saved = JSON.parse(fixture.save), raw = saved.config;
+  raw.onboarding.idleToGuideMs = seed.onboarding.idleToGuideMs;
+  Object.assign(raw.onboarding.featureReveal, { hudAfterShifts: seed.onboarding.featureReveal.hudAfterShifts, upgradeAllAfterShifts: seed.onboarding.featureReveal.upgradeAllAfterShifts, journeyAfterShifts: seed.onboarding.featureReveal.journeyAfterShifts });
+  raw.nextGoal = structuredClone(seed.nextGoal); raw._meta.governance.tiers.C.sections = [...seed._meta.governance.tiers.C.sections];
+  const g = decodeSave(JSON.stringify(saved)), w = g.world;
+  assert.ok('nextGoal' in g.config.values && 'idleToGuideMs' in g.config.values.onboarding, 'the pin carries the Wave 1 keys'); assert.equal(isSeatModel(g.config.values), false);
+  assert.equal(createHash('sha256').update(JSON.stringify(w)).digest('hex'), fixture.worldSha256, 'the rules-27 history replays byte for byte under the Wave 1 pin');
+  assert.ok(g.log.every(e => e.rulesVersion === 27));
+  const ids = w.tables.map(t => t.id), coins = w.coins;
+  assert.deepEqual(w.tables.map(t => [t.capacity, t.level]), [[6, 3], [6, 3], [6, 3]]);
+  assert.ok(g.command({ command: { type: 'startShift' }, at: w.now, idempotencyKey: 'adopt-seats' }, config).ok);
+  assert.equal(g.config.version, config.version); assert.equal(isSeatModel(g.config.values), true); assert.equal(g.log.at(-1)!.rulesVersion, CURRENT_RULES);
+  assert.deepEqual(w.tables.map(t => [t.id, t.capacity, t.level]), ids.map(id => [id, 2, 3]));
+  assert.equal(w.coins, coins, 'no refund');
+  assert.deepEqual(w.events.filter(e => e.type === 'seat_model_adopted').map(e => e.data), [{ shiftId: w.shift!.id, tablesBefore: 3, tablesAfter: 3, seatsBefore: 18, seatsAfter: 6 }]);
+  assert.deepEqual(decodeSave(encodeSave(g)).world, w, 'the adoption replays byte for byte');
+  assert.equal(JSON.stringify((g.config.raw as typeof seed).nextGoal), JSON.stringify(seed.nextGoal), 'Wave 1 presentation keys come with the bundle');
+});
 test('every committed replay fixture still decodes to its recorded log', () => {
   const dirs = [new URL('./fixtures/', import.meta.url), new URL('../../../apps/web/test/fixtures/', import.meta.url)];
   let checked = 0;
