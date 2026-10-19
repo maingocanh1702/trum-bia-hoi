@@ -63,6 +63,7 @@ for (const viewport of viewports) {
   });
 
   test(`P0 coins fly from the table to the wallet and lost reputation falls from the guest at ${viewport.width}px`, async ({ page }) => {
+    test.setTimeout(90000); // the wait for the first guest who walks out is long on a one-table shop (below)
     await page.setViewportSize(viewport);
     await load(page, null, fresh());
     await page.getByRole('button', { name: 'Mở ca', exact: true }).click();
@@ -75,9 +76,12 @@ for (const viewport of viewports) {
     expect(await coins.first().evaluate(el => getComputedStyle(el).animationName)).toBe('fly-coin');
     await page.clock.runFor(1600); await page.waitForTimeout(20);
     await expect(page.locator('.fly')).toHaveCount(0);
-    // Leave the next guests to expire: the reputation just earned is what falls from them.
+    // Leave the next guests to expire: the reputation just earned is what falls from them. A new shop has one table (seat model) and a random seed: a
+    // pair is turned away at the door without a penalty, so the first guest who really walks out is a single who sat down and waited out their patience
+    // (18 s + 2.5 s grace, after the 10.5 s arrivals): 150 s of game time is about ten arrivals, each a single with probability 0.5 (spawn.pPair), where
+    // the old 3-table shop needed 40 s. The wait ends at the first falling number, so a lucky seed costs nothing.
     let seen = '';
-    await run(page, 40000, 250, async () => { const rep = page.locator('.fly-rep'); if (!await rep.count()) return false; seen = await rep.first().innerText(); return true; });
+    await run(page, 150000, 500, async () => { const rep = page.locator('.fly-rep'); if (!await rep.count()) return false; seen = await rep.first().innerText(); return true; });
     expect(seen).toMatch(/^−\d+$/);
     await expect(page.locator('.toast-loss')).toBeVisible(); // the toast stays the accessible record
   });
@@ -172,6 +176,32 @@ for (const viewport of viewports) {
     await page.keyboard.press('Escape');
     const saved = fixture('inspect', undefined, await page.evaluate(async () => { const m = '/src/browser-save.ts'; return (await import(m)).readBrowserSave(); }));
     expect(saved.tableLevels[0]).toBe(2); expect(saved.coins).toBe(f.coins - 3750);
+    expect(errors).toEqual([]);
+  });
+}
+
+// The test above is the capacity snapshot's (fixture `rest`: a table level is seats); this is the same promise on the bundled seat model (rules 28),
+// where a one-table shop's first goal is its second table: the sheet holds that one card, the pointer is spent by buying it.
+for (const viewport of viewports) {
+  test(`P0 on the seat model after shift 1 the Upgrades sheet holds exactly one card, the second table, at ${viewport.width}px`, async ({ page, tbh }) => {
+    await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+    const f = fixture('seat-rest'); await load(page, f.save, f.now, false);
+    for (const shown of ['.energy', '.weather-row', '.stock-strip', '.equipment-object.cooler', '.equipment-object.washer', '.glass-counter', '.settings-button']) await expect(page.locator(shown)).toBeVisible();
+    await expect(page.locator('.bottom-nav button')).toHaveText([/Mở ca/, /Nhập hàng/, /Nâng cấp/]); // the journey button waits for shift 2
+    await expect(lit(page)).toHaveCount(1); await expect(lit(page)).toContainText('Nâng cấp'); // between shifts the first goal calls
+    await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click();
+    const sheet = page.locator('dialog[open] .sheet-content');
+    await expect(sheet.getByRole('button')).toHaveCount(1); await expect(sheet.locator('[data-goal]')).toHaveCount(1); await expect(sheet.locator('[data-goal]')).toHaveAttribute('data-goal', 'buyTable');
+    await expect(sheet.getByRole('button')).toHaveText('Mua bàn · 1.500 xu'); await expect(sheet.getByRole('button')).toHaveAttribute('data-spotlight', '');
+    expect((await axe(page)).violations).toEqual([]);
+    await tbh.shot(`p0-seat-upgrade-one-card-${viewport.width}.png`);
+    await sheet.getByRole('button').click(); await waitSaved(page);
+    await expect(sheet.getByRole('button')).toHaveCount(1); // still one: the next table
+    await expect(sheet.getByRole('button')).toHaveText('Mua bàn · 4.000 xu');
+    await expect(lit(page)).toHaveCount(0); // bought: the nudge is spent
+    await page.keyboard.press('Escape');
+    const saved = fixture('inspect', undefined, await page.evaluate(async () => { const m = '/src/browser-save.ts'; return (await import(m)).readBrowserSave(); }));
+    expect(saved.tables).toBe(2); expect(saved.coins).toBe(f.coins - 1500);
     expect(errors).toEqual([]);
   });
 }

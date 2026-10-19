@@ -1,11 +1,14 @@
 import { Game, config, loadConfig, encodeSave, decodeSave } from '../../../../packages/engine/src';
+import capacityModel from '../../../../docs/config/legacy/economy-2.0.4.json';
 
 // Deterministic saves for the P0 first-shift visuals (fun-onboarding-visual). Always the real engine, never hand-written JSON.
 //   crowd <size>  one table, a full door queue, a long-patience guest seated; the NEXT arrival is refused with `size` guests
 //   dry           shift 1 open with no beer anywhere
 //   ready         shift 1, ten seconds in: the first guest's order is ready and nobody was served yet (the pointer is on the check)
 //   patient       a brand-new game whose guests never lose patience: only idleness, never losses, can start the fallback guide
-//   rest <n>      n shifts closed (default 1) with enough coins for the first goal and nothing bought
+//   rest <n>      n shifts closed (default 1) with enough coins for the first goal and nothing bought, on a capacity snapshot (the frozen 2.0.4 file:
+//                 a table level is seats, which Wave 1 wrote this for; an old save keeps it until its next opening adopts the seat model)
+//   seat-rest <n> the same on the bundled seat model (rules 28), where the first goal is the second table
 //   inspect       print facts about a save read from stdin
 const mode = process.argv[2] ?? 'rest', want = Number(process.argv[3] ?? 1);
 const start = Date.parse('2026-09-16T03:00:00Z');
@@ -48,10 +51,11 @@ if (mode === 'crowd') {
   raw.patience.thuongMs = 3_600_000;
   const g = new Game(loadConfig(raw), 42, start);
   console.log(JSON.stringify({ save: encodeSave(g), now: g.world.now }));
-} else if (mode === 'rest') {
+} else if (mode === 'rest' || mode === 'seat-rest') {
   const shifts = Number(process.argv[3] ?? 1);
-  const raw = structuredClone(config.raw);
-  raw.shift.startingCoinsBase = 4000; // 10 000 xu: the first goal (3 750) is affordable once shift 1 ends
+  const raw: any = structuredClone(mode === 'rest' ? capacityModel : config.raw);
+  if (mode === 'rest') raw._meta.version = 'capacity-fixture'; // a custom version: the bundled seat model never replaces this snapshot at an opening
+  raw.shift.startingCoinsBase = 4000; // 10 000 xu: the first goal (3 750, or the second table at 1 500) is affordable once shift 1 ends
   const g = new Game(loadConfig(raw), 42, start);
   for (let n = 1; n <= shifts; n++) {
     // Between shifts the stall rests until stamina is full again; every attempt is its own command (idempotency keys cache results).
@@ -63,5 +67,5 @@ if (mode === 'crowd') {
   console.log(JSON.stringify({ save: encodeSave(g), now: g.world.now, coins: g.world.coins }));
 } else {
   const w = decodeSave(await new Promise<string>(resolve => { let text = ''; process.stdin.on('data', c => { text += c; }); process.stdin.on('end', () => resolve(text)); })).world;
-  console.log(JSON.stringify({ coins: w.coins, tableLevels: w.tables.map(t => t.level), completedShifts: w.completedShifts, phase: w.phase }));
+  console.log(JSON.stringify({ coins: w.coins, tableLevels: w.tables.map(t => t.level), tables: w.tables.length, completedShifts: w.completedShifts, phase: w.phase }));
 }
