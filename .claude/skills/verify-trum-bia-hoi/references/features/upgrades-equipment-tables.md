@@ -262,7 +262,8 @@ freshness-formula effect), [table-lifecycle](table-lifecycle.md) (the table stat
   (the Wave 1 quote tests carry the suffix `(capacity snapshot)`); `packages/engine/test/seat-model.test.ts` `a pre-seat snapshot from Wave 1 (JSON 2.0.5/2.0.6: the capacity model plus presentation keys) still loads, bytes kept; a bad key or tier list still fails closed`.
 - `config.ts` `shape()` now accepts a shorter `_meta.governance.tiers.{A,B,C}.sections` list in a pinned snapshot (the registry lists grow with
   every new section); without it every save pinned before JSON 2.0.6 stopped loading. Stage 00 round 1: Wave 1's presentation keys and the tier C
-  `nextGoal` name are accepted only on the frozen capacity shape (`packages/engine/test/seat-model.test.ts` `Wave 1 presentation keys extend the frozen capacity shape alone: the same keys on a 1.x snapshot are refused as on main, each one stays optional on a pre-seat 2.0 pin`)
+  `nextGoal` name extend only the frozen capacity shape: a 1.x snapshot carrying them is refused as on main, and on the seat shape they are ordinary
+  template keys of the seed, each optional in an older pin (`packages/engine/test/seat-model.test.ts` `Wave 1 presentation keys extend the frozen capacity shape alone: the same keys on a 1.x snapshot are refused as on main, each one stays optional on a pre-seat 2.0 pin`)
   and keys compare as own keys (`a snapshot key named like an Object.prototype member is an unknown key at every object node, never a known one`).
 
 ## Changelog
