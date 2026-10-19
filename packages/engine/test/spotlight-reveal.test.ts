@@ -1,12 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { Game, config, decodeSave, loadConfig, type ServeRecord } from '../src';
+import { Game, config, decodeSave, loadConfig, isSeatModel, type ServeRecord } from '../src';
 import { beerOut, firstGoal, pickSpotlight, queuePatience, servedOrders } from '../../../apps/web/src/spotlight';
 import { featureReveal, idleToGuideMs, revealed } from '../../../apps/web/src/reveal';
+import { capacityConfig } from './fixtures/capacity-model';
 
 const free = { sheet: null, dialogOpen: false };
-const open = (g = new Game(undefined, 42, Date.parse('2026-09-16T03:00:00Z'))) => {
+const at = Date.parse('2026-09-16T03:00:00Z');
+const open = (g = new Game(undefined, 42, at)) => {
   assert.ok(g.command({ at: g.world.now, idempotencyKey: 'open', command: { type: 'startShift' } }).ok);
   return g;
 };
@@ -32,6 +34,8 @@ test('first play walks the pointer guest -> check -> wallet and then goes quiet'
 test('a ready order still calls for a tap after first play, without the pointer, and the most urgent table wins', () => {
   const g = untilReady(), w = g.world;
   w.completedShifts = 1;
+  // Seat model: a new game has one table, and urgency needs two; the second is bought like a player would (a purchase needs no empty table).
+  w.coins = 10_000_000; assert.ok(g.command({ at: w.now, idempotencyKey: 'second-table', command: { type: 'buyTable' } }).ok);
   const first = w.tables.find(t => t.order)!, other = w.tables.find(t => t !== first)!;
   assert.deepEqual(pickSpotlight(w, g.config, free), { target: { kind: 'ready', tableId: first.id }, arrow: false });
   // A second ready order that expires sooner takes the single spotlight; the earlier one keeps its plain check.
@@ -54,13 +58,14 @@ test('only a restock calls for a tap once the keg, the raw stock and any batch a
   assert.equal(pickSpotlight(w, g.config, free).target?.kind === 'restock', false, 'nothing to restock for between shifts');
 });
 
-test('between shifts the first goal is spotlighted on the nav, then on its own buy button, and only until the full list opens', () => {
-  const g = open(), w = g.world; w.phase = 'resting'; w.shift = null; w.completedShifts = 1; w.coins = 10_000;
+test('between shifts the first goal is spotlighted on the nav, then on its own buy button, and only until the full list opens (capacity snapshot)', () => {
+  const g = open(new Game(capacityConfig, 42, at)), w = g.world; w.phase = 'resting'; w.shift = null; w.completedShifts = 1; w.coins = 10_000;
   w.tables.forEach(t => { t.state = 'empty'; t.group = null; t.order = null; });
-  const goal = firstGoal(w, g.config)!;
-  assert.equal(goal.table.id, w.tables[0].id); assert.equal(goal.next.priceBase, config.values.upgrades.table.levels[1].priceBase);
+  const goal = firstGoal(w, g.config)!; assert.equal(goal.kind, 'table'); if (goal.kind !== 'table') return;
+  assert.equal(goal.table.id, w.tables[0].id); assert.equal(goal.next.priceBase, g.config.values.upgrades.table.levels[1].priceBase);
   w.tables[0].state = 'cleaning';
-  assert.equal(firstGoal(w, g.config)!.table.id, w.tables[1].id, 'a table mid-clean never becomes the one locked card');
+  const moved = firstGoal(w, g.config)!; assert.equal(moved.kind, 'table');
+  assert.equal(moved.kind === 'table' && moved.table.id, w.tables[1].id, 'a table mid-clean never becomes the one locked card');
   w.tables[0].state = 'empty';
   assert.deepEqual(pickSpotlight(w, g.config, free).target, { kind: 'upgradesNav' });
   assert.deepEqual(pickSpotlight(w, g.config, { sheet: 'upgrades', dialogOpen: true }).target, { kind: 'goal' });
@@ -71,6 +76,25 @@ test('between shifts the first goal is spotlighted on the nav, then on its own b
   assert.equal(pickSpotlight(w, g.config, free).target, null, 'bought: the nudge is spent');
   w.tables[0].level = 1; w.completedShifts = 2;
   assert.equal(pickSpotlight(w, g.config, free).target, null, 'the next-goal chip takes over once the list is open');
+});
+
+test('between shifts the first goal is table 2, spotlighted on the nav, then on its own buy button, and only until the full list opens (seat model)', () => {
+  const g = open(), w = g.world, v = g.config.values; assert.ok(isSeatModel(v));
+  w.phase = 'resting'; w.shift = null; w.completedShifts = 1; w.coins = 10_000;
+  const goal = firstGoal(w, g.config)!;
+  assert.equal(goal.kind, 'buyTable'); assert.equal(goal.affordable, true); assert.equal(goal.bought, false);
+  w.tables[0].state = 'cleaning';
+  assert.equal(firstGoal(w, g.config)!.affordable, true, 'a purchase needs no empty table, so a table mid-clean changes nothing');
+  w.tables[0].state = 'empty';
+  assert.deepEqual(pickSpotlight(w, g.config, free).target, { kind: 'upgradesNav' });
+  assert.deepEqual(pickSpotlight(w, g.config, { sheet: 'upgrades', dialogOpen: true }).target, { kind: 'goal' });
+  assert.equal(pickSpotlight(w, g.config, { sheet: 'stock', dialogOpen: true }).target, null, 'other sheets stay quiet');
+  w.coins = v.upgrades.table.tablePriceBase[0] - 1;
+  assert.equal(firstGoal(w, g.config)!.affordable, false); assert.equal(pickSpotlight(w, g.config, free).target, null, 'not affordable yet');
+  w.coins = 10_000; assert.ok(g.command({ at: w.now, idempotencyKey: 'table-2', command: { type: 'buyTable' } }).ok);
+  assert.equal(firstGoal(w, g.config)!.bought, true); assert.equal(pickSpotlight(w, g.config, free).target, null, 'bought: the nudge is spent');
+  const again = open(), x = again.world; x.phase = 'resting'; x.shift = null; x.completedShifts = 2; x.coins = 10_000;
+  assert.equal(pickSpotlight(x, again.config, free).target, null, 'the next-goal chip takes over once the list is open');
 });
 
 test('feature reveal follows completed shifts, onboarding off shows everything and old pins fall back to the seed', () => {

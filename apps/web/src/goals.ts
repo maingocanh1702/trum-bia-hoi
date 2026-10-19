@@ -29,10 +29,11 @@ const goal = (g: Omit<Goal, 'busy' | 'currency'> & Partial<Pick<Goal, 'busy' | '
 
 const tables: Provider = (w, c) => w.tables.map((table, i) => {
   const q = tableUpgradeQuote(w, c, table);
-  // A capacity snapshot's table level is seats; under the seat model (rules 28) a level adds no seat (chairs do), so there is no number to promise yet.
+  // A capacity snapshot's table level is seats. Under the seat model (rules 28) a level adds no seat (chairs do) and carries no benefit until
+  // the level ladder is rebuilt (S4): there is no number to promise, so the chip never points at it (the sheet still lists it).
   const seats = q.next && 'capacity' in q.next ? q.next.capacity : null;
   return goal({ id: `table:${table.id}`, lane: 'capacity', card: { kind: 'table', tableId: table.id }, name: { key: 'goal.table', params: { n: i + 1 } },
-    effect: seats === null ? null : { key: 'goal.fx.seats', params: { n: seats } }, cost: q.cost, eligible: q.cost !== null && q.gate === null, busy: q.reason === 'tableBusy' });
+    effect: seats === null ? null : { key: 'goal.fx.seats', params: { n: seats } }, cost: q.cost, eligible: q.cost !== null && q.gate === null && seats !== null, busy: q.reason === 'tableBusy' });
 });
 const newTable: Provider = (w, c) => {
   const q = buyTableQuote(w, c);
