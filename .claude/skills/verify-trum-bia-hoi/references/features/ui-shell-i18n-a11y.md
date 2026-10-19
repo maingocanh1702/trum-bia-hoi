@@ -267,3 +267,15 @@ the manifest — don't confuse a missing icon with a missing sprite.
 ## Netlify guest build — 2026-09-16 (updated 2026-10-14: shift 1 is the minimal HUD, so restock/upgrade happen after it closes)
 
 `apps/web/guest-test/guest.spec.ts` → `static guest serves, restocks, upgrades, closes shift and persists across reload/new tab without API`: production guest build on 360×740, 390×844, 1280×720; full service/restock/pause/upgrade/next-day journey, Settings SHA, six close KPIs equal backup, reload/new-tab preservation, admin/online-ranking hidden and zero API/Google requests. Run `npm run build:guest`, copy `apps/web/dist` to `.qa/guest-dist`, then `npx playwright test --config playwright.guest.config.ts`; `TBH_GUEST_URL` targets the verified draft or live URL without a local server. Normal remote/account mechanics are unchanged.
+
+## fun-buy-buttons-reason — 2026-10-19 (loss toast reasons, shift book)
+
+- **One reason per leaving guest** (PLAN P3, supersedes the 2026-09-08 "numeric toast only" override — F27/F07 changelog): `apps/web/src/leave-reasons.ts` maps engine events to `beer` / `food` / `wait` / `seat`
+  (`order_expired.cause` beerStock/beerRefill → beer, foodStock → food, any other cause → wait; `customer_left{reason:'queue'}` → wait; `queue_overflow` → seat). `processEvents` shows one `.toast-loss` per batch with `data-reason`,
+  the numbers (`.loss-value` ×2) and one `.loss-reason`; a group turned away at the door costs nothing, so its toast shows the reason alone and never replaces a reward toast. Shipper misses stay numeric-only (no guest reason).
+- **Shift book "Vì sao khách đi"** (`.leave-reasons`): the same reasons ranked by guests lost (`leaveRows`, most first, zero rows hidden, ties in beer · food · wait · seat order) from `menuReport().losses` + `shift.stats.rejected`.
+- **Proof:** `apps/web/test/leave-reasons.test.ts` (mapping per engine cause, dominant reason of a batch, ranking, and that on a real neglected shift the rows add up to `stats.lost + stats.rejected`);
+  `apps/web/test/buy-reasons.spec.ts` — `when a guest leaves the toast says why in one reason (${label}) at ${w}px` (Hết bia · Chờ lâu quá · Hết chỗ × 3 viewports, live engine event, accessible name, no overflow, axe 0) and
+  `the shift book lists why guests left, most guests first, at ${w}px` (×3; counts restated from the engine, order differs from the default one so the ranking is observable); `apps/web/test/game.spec.ts`
+  `a neglected first shift closes after remaining guests expire and shows the numbers of the loss with exactly one reason` and the expiry assertion in `tapped order stays live, returns keyboard focus, and closes on customer expiry`.
+- **HUD "Nhập bia" does not pause** (PLAN §4 check row): already proven by `apps/web/test/quick-beer-stock.spec.ts` `A2 HUD full beer refill keeps live time and survives reload in ${locale} at ${w}px` (`paused === false`, no dialog, `remaining` keeps counting).

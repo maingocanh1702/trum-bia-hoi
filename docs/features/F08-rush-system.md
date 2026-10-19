@@ -173,3 +173,4 @@ and unrepresentable single/group intervals across all weather/rush modes.
 |---|---|
 | 2026-09-09 | Adopted latest handoff numbers as config2.0.1, preserving owner pause/live-upgrade policy and immutable1.x snapshots. Rules21 station/demand/glass/LP-gate implementation is under verification; lease lifecycle and actual career measurements remain pending. Current evidence: docs/build-progress.md. |
 | 2026-09-18 owner | Nên có: không xếp lịch Giờ Vàng khi quán < 2 bàn (sim V4/W9: mất 4–7 khách/ca, không bắt buộc). Cầu theo sức chứa `spawn.capacityDemand{refTables 6, maxMult 4}` áp cả trong rush. Chờ S3. Nguồn: `docs/DESIGN-story-3-tuan-2026-09-18.md` §2b/§2c, `docs/PLAN-vui-3-ca-2026-09-18.md` §1, `docs/FEEDBACK-2026-09-17.md` §II.2 v3.3 |
+| 2026-10-19 fun-buy-buttons-reason | "Departure feedback remains numeric/icon-only" nay kèm đúng 1 lý do trên toast mất khách (xem F07 cùng ngày); số liệu rush không đổi. |
