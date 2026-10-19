@@ -250,6 +250,23 @@ test('a pre-seat snapshot from Wave 1 (JSON 2.0.5/2.0.6: the capacity model plus
   for (const [name, patch] of bad) { const raw = wave1(); patch(raw); assert.throws(() => loadConfig(raw), /config:/, name); }
 });
 
+test('a snapshot key named like an Object.prototype member is an unknown key at every object node, never a known one', () => {
+  // JSON.parse (admin proposals, preview, uploaded archives) makes such a key an own property. `k in expected` found it on the prototype chain, so it was
+  // neither refused nor shape-checked and a partial or malformed config could go live (same on main).
+  const cases: [string[], string, unknown][] = [
+    [['onboarding', 'featureReveal'], 'constructor', { price: 1 }], [['nextGoal'], 'toString', 1], [[], 'valueOf', 1],
+    [['menu', 'bia'], 'hasOwnProperty', 1], [['lifePath', '0'], 'isPrototypeOf', 1], [['_meta'], 'propertyIsEnumerable', 1],
+  ];
+  const put = (raw: any, path: string[], name: string, value: unknown) => { path.reduce((node: any, key) => node[key], raw)[name] = value; return raw; };
+  for (const [path, name, value] of cases) {
+    assert.throws(() => loadConfig(put(structuredClone(seed), path, name, value)), new RegExp(`config:${path.join('\\.')}:keys`), `seat model: ${[...path, name].join('.')}`);
+    if (path[0] !== 'nextGoal') assert.throws(() => loadConfig(put(structuredClone(capacityModel), path, name, value)), new RegExp(`config:${path.join('\\.')}:keys`), `capacity model: ${[...path, name].join('.')}`);
+  }
+  const proto = structuredClone(seed) as any; Object.defineProperty(proto, '__proto__', { value: { x: 1 }, enumerable: true, configurable: true, writable: true });
+  assert.throws(() => loadConfig(proto), /config::keys/, 'an own __proto__ key');
+  assert.equal(loadConfig(structuredClone(seed)).version, seed._meta.version, 'the bundled seed itself still loads');
+});
+
 test('a Wave 1 save (rules 27, pinned the way the Wave 1 build wrote it) replays byte for byte and adopts the seat model once at its next opening', () => {
   // The genuine rules-27 history of the 3-table x6-seat save, with its pinned config rewritten like a v-fb1 pin: the capacity model plus the Tier C
   // presentation keys JSON 2.0.6 added and nothing else (the version label stays: every logged command names the pin it ran under). This is the

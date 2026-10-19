@@ -102,7 +102,10 @@ const ADDED_LATER = new Set(['nextGoal', 'onboarding.loginPrompt.leaveProgress',
 const TIER_SECTIONS_ADDED_LATER: Record<string, readonly string[]> = { C: ['nextGoal'] };
 const seedAt = (path: string): unknown => path.split('.').reduce<unknown>((node, key) => (node as Record<string, unknown> | undefined)?.[key], seed);
 
-/** Complete snapshots only: a partial or malformed config must never become live. */
+/**
+ * Complete snapshots only: a partial or malformed config must never become live. Keys are compared as OWN keys (`k in e` walks the
+ * prototype chain, so a JSON key named `constructor` or `toString` would count as known and never be checked).
+ */
 function shape(value: unknown, expected: unknown, path: string): void {
   if (expected === null) {
     if (value !== null && (typeof value !== 'number' || !Number.isFinite(value))) throw Error(`config:${path}`);
@@ -127,8 +130,8 @@ function shape(value: unknown, expected: unknown, path: string): void {
   } else if (typeof expected === 'object') {
     if (!value || typeof value !== 'object' || Array.isArray(value)) throw Error(`config:${path}:object`);
     const e = expected as Record<string, unknown>, v = value as Record<string, unknown>, at = (k: string) => path ? `${path}.${k}` : k;
-    const keys = Object.keys(e).filter(k => k in v || !ADDED_LATER.has(at(k))), extra = Object.keys(v).filter(k => !(k in e));
-    if (keys.some(k => !(k in v)) || extra.some(k => !ADDED_LATER.has(at(k)))) throw Error(`config:${path}:keys`);
+    const keys = Object.keys(e).filter(k => Object.hasOwn(v, k) || !ADDED_LATER.has(at(k))), extra = Object.keys(v).filter(k => !Object.hasOwn(e, k));
+    if (keys.some(k => !Object.hasOwn(v, k)) || extra.some(k => !ADDED_LATER.has(at(k)))) throw Error(`config:${path}:keys`);
     for (const k of keys) shape(v[k], e[k], at(k));
     for (const k of extra) shape(v[k], seedAt(at(k)), at(k));
   } else if (typeof value !== typeof expected || (typeof value === 'number' && !Number.isFinite(value))) {
