@@ -14,6 +14,14 @@ test('two real career days conserve the wallet and replay purchases, claims, clo
   assert.ok(game.log.some(e => e.command.type === 'buyGlass'));
   assert.ok(!game.log.some(e => e.command.type === 'upgradeDog'), 'the bot never buys the dog (M6 deferred)');
   assert.ok(game.log.some(e => e.command.type === 'claimLifePath'));
+  // Every coin purchase is logged once, in order, with the shift it serves; tables come before second chairs (D18).
+  const spending = game.log.filter(e => (e.result.amount ?? 0) > 0 && ['buyTable', 'buyChair', 'upgrade', 'upgradeTable', 'buyGlass', 'buyUnlock', 'installSignboard', 'setSignboard', 'rentLocation'].includes(e.command.type));
+  assert.deepEqual(report.purchases.map(p => [p.command, p.cost]), spending.map(e => [e.command.type, e.result.amount]));
+  assert.ok(report.purchases.every((p, i) => p.shift >= 1 && p.shift <= game.world.completedShifts + 1 && (!i || p.shift >= report.purchases[i - 1].shift)));
+  assert.deepEqual(report.purchaseMilestones.filter(p => p.command === 'buyTable').map(p => p.item), ['table 2', 'table 3', 'table 4']);
+  const firstChair = report.purchaseMilestones.find(p => p.command === 'buyChair')!;
+  assert.ok(firstChair.shift >= report.purchaseMilestones.filter(p => p.command === 'buyTable').at(-1)!.shift);
+  assert.deepEqual(report.rows.flatMap(row => row.purchases), report.purchases);
   assert.equal(game.world.events.filter(e => e.type === 'attendance_claimed').length, 2);
   assert.equal(report.rows[1].lifePath, 1);
   assert.ok(report.milestones.some(e => e.type === 'upgrade_bought'));

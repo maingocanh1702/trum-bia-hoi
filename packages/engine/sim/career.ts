@@ -9,7 +9,10 @@ import { createManagementPolicy, serveNext, STEP_MS, MANAGEMENT_MS, MAX_DAY_STEP
 // config-exempt: reproducible diagnostic policy/sampling limits, never live gameplay or economy tuning.
 const MAX_DAYS = 90;
 const DEFAULT_START = Date.parse('2026-09-09T00:00:00+07:00');
-export const CAREER_POLICY = 'v2: fresh game; configured newbie shifts/day; full active stamina rest; 100ms whole-table/deadline service; 1s management; claim earned rewards; bulk restock/one when empty; keep one bulk per unlocked dish as capital reserve; phone/QR when affordable; seat model: save for the next table, then a second chair per table, before any other purchase; then cheapest eligible device/glass/sign/neon (capacity snapshots also table levels); never the dog (M6 deferred); target two glasses per seat; one flyer/shift; next higher location multiplier only after lease expiry. No injected state or fabricated rewards. Diagnostic, not optimal-play or balance certification.';
+export const CAREER_POLICY = 'v2: fresh game; configured newbie shifts/day; full active stamina rest; 100ms whole-table/deadline service; 1s management; claim earned rewards; bulk restock/one when empty; keep one bulk per unlocked dish as capital reserve; phone/QR when affordable; seat model: save for the next table, then a second chair per table, before any other purchase; then cheapest eligible device/glass/sign/neon (capacity snapshots also table levels); never the dog (M6 deferred); target two glasses per seat; one flyer/shift; next higher location multiplier only after lease expiry. Every coin purchase is logged with its shift. No injected state or fabricated rewards. Diagnostic, not optimal-play or balance certification.';
+/** One coin purchase (restock excluded) and the shift it lands in: bought while resting counts toward the next shift. */
+export interface CareerPurchase { shift: number; day: number; command: Command['type']; item: string; cost: number }
+const MILESTONE_COMMANDS: readonly Command['type'][] = ['buyTable', 'buyChair', 'upgrade', 'upgradeTable'];
 
 export function simulateCareer({ days = 30, seed = 42, startAt = DEFAULT_START } = {}, onDay?: (row: CareerDay) => void) {
   assert.ok(Number.isInteger(days) && days >= 1 && days <= MAX_DAYS, 'days must be an integer in 1..90');
@@ -17,17 +20,27 @@ export function simulateCareer({ days = 30, seed = 42, startAt = DEFAULT_START }
   assert.ok(Number.isSafeInteger(startAt) && startAt >= 0 && dayKey(startAt - 1, config) !== dayKey(startAt, config), 'startAt must be a VN midnight');
   const game = new Game(config, seed, startAt), w = game.world, c = config.values;
   const rows: CareerDay[] = [];
-  let spent: Record<string, number> = {}, rewardCredits = 0, lastManagement = -Infinity;
+  let spent: Record<string, number> = {}, rewardCredits = 0, lastManagement = -Infinity, today = 1;
+  const purchases: CareerPurchase[] = [];
+  const item = (command: Command) => command.type === 'buyTable' ? `table ${w.tables.length}`
+    : command.type === 'buyChair' ? `second chair ${w.tables.reduce((n, t) => n + t.capacity, 0) - w.tables.length}`
+    : command.type === 'upgrade' ? `${command.kind} Lv${w.equipment[command.kind]}`
+    : command.type === 'upgradeTable' ? `table level ${w.tables.find(t => t.id === command.tableId)!.level}`
+    : command.type === 'buyGlass' ? `glass ${w.glasses.length}` : command.type === 'buyUnlock' ? `unlock ${command.item}`
+    : command.type === 'setSignboard' ? `sign ${command.style}` : command.type === 'rentLocation' ? `lease ${command.locationId}` : command.type;
   const send = (command: Command) => {
     const coins = w.coins, earned = w.lifetimeEarned;
     const result = game.command({ command, at: w.now, idempotencyKey: `career-${game.log.length}` });
     assert.ok(result.ok, `${command.type}: ${result.reason} at ${w.now}`);
     const other = w.coins - coins - (w.lifetimeEarned - earned);
-    if (other < 0) spent[command.type] = (spent[command.type] ?? 0) - other;
-    else rewardCredits += other;
+    if (other < 0) {
+      spent[command.type] = (spent[command.type] ?? 0) - other;
+      if (command.type !== 'restock') purchases.push({ shift: w.completedShifts + 1, day: today, command: command.type, item: item(command), cost: -other });
+    } else rewardCredits += other;
   };
   const manage=createManagementPolicy(game,send);
   for (let day = 0; day < days; day++) {
+    today = day + 1; const purchaseStart = purchases.length;
     const openingCoins = w.coins, earnedBefore = w.lifetimeEarned, completedBefore = w.completedShifts;
     const serveStart = w.serves.length, eventStart = w.events.length;
     spent = {}; rewardCredits = 0;
@@ -69,17 +82,19 @@ export function simulateCareer({ days = 30, seed = 42, startAt = DEFAULT_START }
       mean: value.mean, k: value.kValue, withinKBand: value.kValue >= c.k.band[0] && value.kValue <= c.k.band[1],
       lifePath: w.lifePath, nextRequirements: lifePathStatus(w, config).rows[w.lifePath + 1]?.requirements ?? [], peak: w.peakLeague,
       equipment: { ...w.equipment }, tables: w.tables.map(t => ({ level: t.level, capacity: t.capacity })), glasses: w.glasses.length, dog: w.dogLevel, unlocks: [...w.unlocks],
+      purchases: purchases.slice(purchaseStart),
       location: w.location, lease: w.lease ? { ...w.lease } : null,
       ranking: { id: w.seasons!.ranking.id, earned: w.seasonEarned, tier: seasonTier(w, config).tier.id, endsAt: w.seasons!.ranking.endsAt },
       contest: { id: w.seasons!.contest.id, earned: w.seasons!.contestEarned, tier: seasonTier(w, config, 'contest').tier.id, endsAt: w.seasons!.contest.endsAt },
     };
     rows.push(row); onDay?.(row);
   }
-  const eventTypes = new Set(['life_path_level_reached', 'life_path_reward_claimed', 'lease_started', 'lease_expired', 'lease_deposit_refunded', 'unlock_bought', 'signboard_installed', 'signboard_bought', 'signboard_equipped', 'upgrade_bought', 'table_upgraded', 'glasses_bought', 'dog_bought', 'dog_upgraded', 'flyer_bought']);
+  const eventTypes = new Set(['life_path_level_reached', 'life_path_reward_claimed', 'lease_started', 'lease_expired', 'lease_deposit_refunded', 'unlock_bought', 'signboard_installed', 'signboard_bought', 'signboard_equipped', 'upgrade_bought', 'table_upgraded', 'table_bought', 'chair_bought', 'seat_model_adopted', 'glasses_bought', 'dog_bought', 'dog_upgraded', 'flyer_bought']);
   const report = { policy: CAREER_POLICY, days, seed, startAt, configVersion: config.version, rulesVersion: game.log.at(-1)!.rulesVersion,
     commandCount: game.log.length, commandHash: createHash('sha256').update(JSON.stringify(game.log)).digest('hex'), eventCount: w.events.length,
     kBand: c.k.band, advancedBandDecision: 'owner-2026-09-10: standard cold/full menus keep k 2..3; advanced career aggregate k <= 3.5; re-evaluate after Alpha playtest with real player data',
-    value: serveValueStats(w.serves, config), rows, milestones: w.events.filter(e => eventTypes.has(e.type)), seasonResults: w.seasons!.results };
+    value: serveValueStats(w.serves, config), rows, milestones: w.events.filter(e => eventTypes.has(e.type)), seasonResults: w.seasons!.results,
+    purchases, purchaseMilestones: purchases.filter(p => MILESTONE_COMMANDS.includes(p.command)) };
   return { game, report };
 }
 
@@ -89,7 +104,7 @@ export interface CareerDay {
   arrived: number; lost: number; rejected: number; deliveryCompleted: number; deliveryMissed: number; mean: number | null; k: number; withinKBand: boolean;
   lifePath: number; nextRequirements: ReturnType<typeof lifePathStatus>['rows'][number]['requirements']; peak: string | null;
   equipment: Game['world']['equipment']; tables: { level: number; capacity: number }[]; glasses: number; dog: number; unlocks: string[];
-  location: string; lease: Game['world']['lease'] | null;
+  purchases: CareerPurchase[]; location: string; lease: Game['world']['lease'] | null;
   ranking: { id: string; earned: number; tier: string; endsAt: number }; contest: { id: string; earned: number; tier: string; endsAt: number };
 }
 
@@ -127,6 +142,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   } else {
     const { report } = simulateCareer({ days: Number(option('days') ?? 30), seed: Number(option('seed') ?? 42) }, row => console.log(JSON.stringify(row)));
     if (option('out')) writeFileSync(option('out')!, JSON.stringify(report, null, 2) + '\n');
+    // Plan S1 / section 3: when each table, chair and device level was bought, by shift.
+    for (const p of report.purchaseMilestones) console.log(`PURCHASE shift ${p.shift} (day ${p.day}): ${p.item} - ${p.cost} coins`);
     console.log(JSON.stringify({ days: report.days, commands: report.commandCount, commandHash: report.commandHash, value: report.value, advancedBandDecision: report.advancedBandDecision }));
   }
 }
