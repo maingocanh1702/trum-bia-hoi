@@ -24,7 +24,8 @@ import { savedLocale } from './locale';
 import { beerOut, firstGoal, pickSpotlight } from './spotlight';
 import { GoalChip } from './GoalChip';
 import { listGoals, pickNextGoal, type Goal } from './goals';
-import { isLossEvent, leaveRows, toastReason, type LeaveReason } from './leave-reasons';
+import { leaveRows } from './leave-reasons';
+import { batchToast, type BatchToast } from './batch-toast';
 
 // Owner 2026-09-11: risk features are deferred; legacy UI remains testable only in an explicit dev preview.
 const guestOnly = import.meta.env.VITE_TBH_GUEST_ONLY === '1';
@@ -106,7 +107,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   const saveSequence = useRef(0);
   const [recoveryError, setRecoveryError] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
-  const [toast, setToast] = useState<{ text: string; kind: string; id?: string; gain?: number; loss?: { coins: number; reputation: number }; reason?: LeaveReason } | null>(null);
+  const [toast, setToast] = useState<BatchToast | null>(null);
   const [floaters, setFloaters] = useState<Floater[]>([]);
   const [turnedAway, setTurnedAway] = useState<TurnedAway[]>([]);
   const floaterId = useRef(0);
@@ -138,7 +139,6 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   const processEvents = (incoming?: DomainEvent[]) => {
     const events = incoming ?? game.world.events.slice(cursor.current); cursor.current = game.world.events.length;
     advanceGuide(prefs.current, game, events);
-    let loss: { coins: number; reputation: number } | undefined;
     for (const e of events) {
       sound.event(e);
       if (e.type === 'order_expired') setSelectedTable(current => current === e.data.tableId ? null : current);
@@ -150,27 +150,12 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
         setTurnedAway(list => [...list, row]);
         setTimeout(() => setTurnedAway(list => list.filter(x => x.id !== row.id)), 2200); // config-exempt: transient door feedback lifetime
       }
-      if (isLossEvent(e)) {
-        loss ??= { coins: 0, reputation: 0 };
-        loss.coins += Number(e.data.penalty); loss.reputation += Number(e.data.reputation);
-      }
-      if (e.type === 'attendance_claimed') setToast({ text: translate(prefs.current.locale, 'attendance.received', { n: Number(e.data.reputation) }), kind: 'early' });
-      if (e.type === 'quest_claimed') setToast({ text: translate(prefs.current.locale, 'quests.received', { coin: Number(e.data.coin), rep: Number(e.data.reputation) }), kind: 'early' });
-      if (e.type === 'daily_bonus_claimed') setToast({ text: translate(prefs.current.locale, 'quests.bonusReceived'), kind: 'early' });
-      if (e.type === 'shipper_arrived') setToast({ text: translate(prefs.current.locale, 'delivery.arrived'), kind: 'early' });
       if (e.type === 'shipper_missed' || e.type === 'shipper_completed') setSheet(current => current === 'delivery' ? null : current);
-      if (e.type === 'shipper_completed') setToast({ id: e.id, text: translate(prefs.current.locale, 'delivery.completed', { n: Number(e.data.credited) }), kind: 'earlyNoTip', gain: Number(e.data.credited) });
-      if (e.type === 'order_served') {
-        const kind = e.data.outcome === 'early' && e.data.tipped === false ? 'earlyNoTip' : String(e.data.outcome);
-        setToast({ id: e.id, text: translate(prefs.current.locale, `outcome.${kind}`, { n: Number(e.data.amount) }), kind, gain: Number(e.data.amount) });
-      }
-      if (e.type === 'shift_closed') { setSelectedTable(null); setSheet('book'); if (!events.some(event => event.type === 'shipper_completed')) setToast({ text: translate(prefs.current.locale, 'book.closed'), kind: 'early' }); }
+      if (e.type === 'shift_closed') { setSelectedTable(null); setSheet('book'); }
     }
-    // F27/P3: a loss toast names exactly one reason (out of beer · waited too long · no seat); a group turned away at the door costs
-    // nothing, so its toast carries the reason alone and never replaces a reward toast of the same batch.
-    const reason = toastReason(events);
-    if (loss) setToast({ text: '', kind: 'loss', loss, reason: reason ?? undefined });
-    else if (reason === 'seat' && !events.some(e => e.type === 'order_served' || e.type === 'shipper_completed' || e.type === 'shift_closed')) setToast({ text: '', kind: 'loss', loss: { coins: 0, reputation: 0 }, reason });
+    // One toast per batch (batch-toast.ts): the last reward wins, a loss names ONE reason and replaces it, a refused group never hides a reward.
+    const batch = batchToast(events, (key, params) => translate(prefs.current.locale, key, params));
+    if (batch) setToast(batch);
     return events.length;
   };
   const run = async (cmd: Command) => {
