@@ -118,9 +118,12 @@ test('tapped order stays live, returns keyboard focus, and closes on customer ex
   await trigger.click();
   const panel = page.getByRole('dialog', { name: 'Bàn 1', exact: true });
   await expect(panel).toBeVisible();
-  await expect(panel.getByRole('button', { name: 'Phục vụ cả mâm', exact: true })).toBeDisabled();
+  // Instant pour (rules 28): the beer is already in the reserve, so the tray is ready the moment the order exists (before, the Serve button stayed
+  // dimmed for the 2 s tap; that wait lives on in instant-pour.spec.ts for a capacity pin). The open panel still runs live: its countdown moves.
+  const serve = panel.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }), countdown = panel.locator('.order-heading b'), left = await countdown.textContent();
+  expect(left).toBeTruthy(); await expect(serve).toBeEnabled();
   await page.clock.runFor(2000);
-  await expect(panel.getByRole('button', { name: 'Phục vụ cả mâm', exact: true })).toBeEnabled();
+  await expect(countdown).not.toHaveText(left!); await expect(serve).toBeEnabled();
   await expect(panel.getByRole('button', { name: 'Đóng', exact: true })).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(panel).toHaveCount(0);
