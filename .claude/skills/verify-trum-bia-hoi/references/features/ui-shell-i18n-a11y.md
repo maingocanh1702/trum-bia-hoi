@@ -272,9 +272,11 @@ the manifest — don't confuse a missing icon with a missing sprite.
 
 - **One reason per leaving guest** (PLAN P3, supersedes the 2026-09-08 "numeric toast only" override — F27/F07 changelog): `apps/web/src/leave-reasons.ts` maps engine events to `beer` / `food` / `wait` / `seat`
   (`order_expired.cause` beerStock/beerRefill → beer, foodStock → food, any other cause → wait; `customer_left{reason:'queue'}` → wait; `queue_overflow` → seat). `processEvents` shows one `.toast-loss` per batch with `data-reason`,
-  the numbers (`.loss-value` ×2) and one `.loss-reason`; a group turned away at the door costs nothing, so its toast shows the reason alone and never replaces a reward toast. Shipper misses stay numeric-only (no guest reason).
+  the numbers (`.loss-value` ×2) and one `.loss-reason`; a group turned away at the door costs nothing, so its toast shows the reason alone and never replaces the toast of ANY other event of the batch
+  (`apps/web/src/batch-toast.ts` is the one projection: the last reward wins, a loss names ONE reason and replaces it). Shipper misses stay numeric-only (no guest reason).
 - **Shift book "Vì sao khách đi"** (`.leave-reasons`): the same reasons ranked by guests lost (`leaveRows`, most first, zero rows hidden, ties in beer · food · wait · seat order) from `menuReport().losses` + `shift.stats.rejected`.
 - **Proof:** `apps/web/test/leave-reasons.test.ts` (mapping per engine cause, dominant reason of a batch, ranking, and that on a real neglected shift the rows add up to `stats.lost + stats.rejected`);
+  `apps/web/test/batch-toast.test.ts` (a refused group never hides the toast of a `quest_claimed` / `attendance_claimed` / `daily_bonus_claimed` / `shipper_*` / `order_served` / `shift_closed` event in either order; loss beats reward; last reward wins);
   `apps/web/test/buy-reasons.spec.ts` — `when a guest leaves the toast says why in one reason (${label}) at ${w}px` (Hết bia · Chờ lâu quá · Hết chỗ × 3 viewports, live engine event, accessible name, no overflow, axe 0) and
   `the shift book lists why guests left, most guests first, at ${w}px` (×3; counts restated from the engine, order differs from the default one so the ranking is observable); `apps/web/test/game.spec.ts`
   `a neglected first shift closes after remaining guests expire and shows the numbers of the loss with exactly one reason` and the expiry assertion in `tapped order stays live, returns keyboard focus, and closes on customer expiry`.
