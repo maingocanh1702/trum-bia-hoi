@@ -135,6 +135,8 @@ Cơ chế:
 
 > Hệ quả: cốc freshness vẫn theo **từng cốc** (mỗi khách bia 1 cốc). Phải rót đủ & còn hơi cho mọi cốc trong Order trước khi giao → đây là điểm căng cốt lõi.
 
+> 🟢 **Rules 28 (S2 `eco21-instant-pour`, FEEDBACK II.1) — rót tức thì, thay "phải rót" ở trên cho game mới:** bia gọi mà bom còn cốc rót sẵn (`beer.ready > 0`) **và** còn cốc sạch → món bia `ready` ngay trong tick đặt đơn, không hàng đợi vòi, không chờ `pourMs`: `beer_pouring` + `beer_poured{fromReserve:true}` + `order_ready` cùng `at` với `order_placed`, cốc bắt đầu mất hơi từ lúc đó. Hết `beer.ready` hoặc hết cốc sạch → món chờ mẻ bom kế / cốc rửa xong (nguyên nhân `beerStock` / `beerRefill` / `glasses`; nguyên nhân `tap` không còn xảy ra). Đơn n bia sẵn sàng ngay khi `beer.ready ≥ n` và cốc sạch ≥ n; số "Rót sẵn n cốc" trên bom = min(`beer.ready`, cốc sạch). `pourMs`/`pourSlots` giữ trong JSON cho save ghim snapshot sức chứa và replay rules ≤ 27 (vòi vẫn chạy ở đó, tới lần mở ca nhận snapshot bàn ghế). Không đổi số nào.
+
 ---
 
 ## 5. QUYẾT ĐỊNH 2 — Phạt cụm tính thế nào? 🟢
@@ -317,3 +319,4 @@ và ngày Việt Nam theo lịch thật. Toast trừ tiền/uy tín vẫn chỉ 
 
 | 2026-10-19 rules 28 (S1) | Cài header v1.4 phần bàn/ghế/nhóm: 1 bàn × 1 ghế, `buyTable` theo `tablePriceBase` + trần `tableSlots`, `buyChair` sau `chairsAfterTables` bàn (≤ 2 ghế/bàn), cặp không có bàn 2 ghế bỏ đi tại cửa (`noSeat`, không phạt), mâm theo ghế lúc ngồi, nâng bàn cần 2 ghế (lợi ích cấp ở S4), migration D2 ở lần mở ca ghim snapshot bàn ghế. §7/§8 thêm ghi chú; §5/§6 cũ chỉ còn cho save ghim snapshot sức chứa. Nguồn: `docs/PLAN-vui-3-ca-2026-09-18.md` §5 S1. |
 | 2026-10-20 config 2.0.21 (stage 00, review vòng 1) | Chỉ đổi nhãn: bản config mang luật bàn ghế rules 28 cùng khóa Tier C của Đợt 1 là JSON **2.0.21** (đầu nhánh S1 trước hợp nhất cũng mang nhãn 2.0.20 nhưng chưa có khóa Đợt 1); dòng "JSON 2.0.20" ở trên chỉ tên đầu nhánh S1 cũ. Không đổi luật hay số nào — xem 08-SPEC §22 changelog. |
+| 2026-10-20 rules 28 (S2) | Cài rót tức thì (ghi chú ở §4): `prepare()` không xếp bia vào vòi trên snapshot bàn ghế; món bia `ready` cùng tick khi `beer.ready > 0` + cốc sạch; vòi (`pourSlots`/`pourMs`) ra khỏi đường phục vụ, key giữ cho snapshot sức chứa và replay rules ≤ 27. Không đổi số, không bump JSON (2.0.21). Nguồn: `docs/PLAN-vui-3-ca-2026-09-18.md` §5 S2, `docs/FEEDBACK-2026-09-17.md` II.1. |
