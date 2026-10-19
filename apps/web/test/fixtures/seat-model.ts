@@ -15,5 +15,6 @@ if (process.argv[2] === 'inspect') {
   const values = g.config.values;
   process.stdout.write(JSON.stringify({ save: encodeSave(g), now: g.world.now, coins: g.world.coins,
     tablePrices: prices.slice(0, 3).map(n => Math.round(n * raw.k.value)), chairPrice: Math.round(prices[3] * raw.k.value),
+    nextChairPrice: Math.round(table.chairPriceBase[1] * raw.k.value),
     levelPrice: values.upgrades.table.levels[1].priceBase }));
 }
