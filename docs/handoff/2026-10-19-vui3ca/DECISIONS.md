@@ -156,3 +156,80 @@
 - Choice: keep the purchase required (red) and defer it to S5 with plan §7 owner line 3; a never-committed diagnostic copy without that one requirement passed 3/3 (close, KPIs, reload, new tab, next day, no API), so nothing else in the journey regressed. No loop bound tuned to S1's untuned numbers.
 - Why: lengthening the loop or making the purchase optional would fit the test to numbers S5 replaces; the plan's target is "table 2 by the end of shift 1".
 - Overturn: S5 makes it green with numbers; if S5 meets "end of shift 1" but not the 600 s loop, extend the loop to the shift length in the same slice.
+
+## 00 · env — toolchain installed per user, nothing on the global PATH
+- Question: the laptop had no Node, no real Python, no gh, no Codex and no git identity; how to run the autopilot with no admin/UAC prompt?
+- Choice: portable Node v22.23.3 (SHA-256 checked against nodejs.org SHASUMS256.txt) in `C:\dev\tools\node-v22.23.3-win-x64`; Python 3.12.10 (the last 3.12 with a Windows installer, PSF Authenticode signature checked, per-user, `C:\dev\tools\python312`) + pillow 13.0.0 + numpy 2.5.4; GitHub CLI v2.102.0 (SHA-256 checked) in `C:\dev\tools\gh`; a `python3` bash shim in `~/.tbh-shims`; every Bash call sources `.autopilot-state/env.sh` (PATH, UTF-8, non-interactive git). Playwright: chromium-1243 + headless shell + ffmpeg (the CDN stalls big downloads from Node: `PLAYWRIGHT_DOWNLOAD_CONNECTION_TIMEOUT=300000`, retried).
+- Why: `package.json` engines `node >=22.12`, the project is on Node 22 (`netlify.toml` 22.22.1); no admin rights; fully reversible.
+- Overturn: delete `C:\dev\tools`, `C:\dev\downloads`, `~/.tbh-shims`; install the tools your usual way.
+
+## 00 · env — clone outside OneDrive, LF, identity
+- Question: where to work, and as whom to commit?
+- Choice: clone at `C:\dev\trum-bia-hoi` (`core.autocrlf=false`, `core.eol=lf`, `core.longpaths=true`); commit identity `Ngoc-Anh Mai <maingocanh1702@gmail.com>` copied from the repo history (the machine and the original folder had none); `.autopilot-state/`, `autopilot-logs/` and the project `.npmrc` (`script-shell` = Git Bash) are untracked through `.git/info/exclude`; a read-only baseline clone of main lives at `C:\dev\trum-bia-hoi-baseline`.
+- Why: OneDrive sync and CRLF would change config hashes and break `*.sh`.
+- Overturn: `git config user.name/user.email` in the clone; delete the two clones.
+
+## 00 · env — Windows gaps worked around outside the repo
+- Question: which repo scripts assume macOS/Linux?
+- Choice: (1) `scripts/check_economy_config.py` spawns `node_modules/.bin/tsx` (a POSIX shell script, WinError 193): a `sitecustomize.py` in the private Python redirects that one path to `tsx.cmd`; (2) Playwright `webServer.command` strings use POSIX `VAR=1 cmd`: Playwright runs through `.autopilot-state/with-comspec.sh` (COMSPEC = Git Bash, per command only); (3) `python3`, `cp`, `$(...)` in `package.json` scripts: npm `script-shell` = Git Bash. No repo file was changed for any of them.
+- Why: a Windows port of the repo's tooling is not part of Vui 3 ca; environment shims keep the PRs about the game.
+- Overturn: port the scripts (`tsx.cmd`, cross-env, `node:path` everywhere) in a tooling slice, then drop the shims.
+
+## 00 · env — Windows baseline reds on main d1a150a are not regressions
+- Question: `npm test` on `main` (no slice work) already fails 47 of 616 cases here; how do slices stay honest?
+- Choice: the names are frozen in `.autopilot-state/baseline/main-npm-test-failing.txt` (apps/server admin-auth 15 · http 6 · store 4 · client-sequence 3 · registry 1; scripts/verify port 7 · map-coverage 5 · doctor 1; apps/web tbh-fixture 5; causes: POSIX credential-file mode check in `admin-auth.ts`, symlink/chmod behaviour, path separators). A slice must add no failing test beyond that set (`test-vs-baseline.mjs`); the baseline reds are listed in a `SKIPPED:` block, the verdict is PARTIAL, never PASS, until `verify:all` is re-run on macOS/Linux/CI. UI/doctor/map reds that look environmental are proven by running the same spec in the baseline clone.
+- Why: honesty over green — nothing is weakened, nothing is rounded up.
+- Overturn: run `npm run verify:all` and the UI tiers on the Mac before merging; if all green there, the verdicts can be raised to PASS.
+
+## 00 · env — independent reviewer is a Claude subagent
+- Question: Codex CLI is absent on this laptop (`codex: command not found`).
+- Choice: `Reviewer: Claude subagent (Codex unavailable: CLI not installed)` for every stage, per §4.5/§9-H (founder accepted on 2026-10-19: no downgrade); no attempt to install or log in to Codex.
+- Why: instructed by the prompt.
+- Overturn: re-run `bash scripts/codex-review-pin.sh` on the Mac for the final tip.
+
+## 00 · env — Playwright under COMSPEC=Git Bash never exits: `.autopilot-state/pw-run.sh`
+- Question: with `with-comspec.sh` the Playwright runner prints its last test result and then waits forever for the web-server shell (vite keeps listening), so no summary line and no END line ever appear (first seen on the next-goal run: all 23 results in, process alive 15 minutes).
+- Choice: `.autopilot-state/pw-run.sh <name> <playwright args>` = run-logged + with-comspec + a watchdog that ends the node listeners on the test ports (kill-test-ports.ps1) once all N results are in and the log has been quiet for 20 s; the runner then prints its own "N passed/failed" line and exits with its own code; every Playwright run of stage 00 went through it.
+- Why: no repo file touched, evidence stays complete (the summary and the exit code are the runner's), no result is edited.
+- Overturn: port the `webServer.command` strings of the eight configs to cross-env and drop the wrapper (tooling slice).
+
+## 00 · one config version 2.0.20 for Wave 1 and S1 after the merge
+- Question: main (Wave 1) pins JSON 2.0.6, S1 2.0.20; which version carries the union?
+- Choice: keep 2.0.20 (date 2026-10-19). `docs/config/economy.tbh.json` = Wave 1's Tier C keys (`onboarding.idleToGuideMs`, `onboarding.featureReveal.{hudAfterShifts,upgradeAllAfterShifts,journeyAfterShifts}`, section `nextGoal` + its tier C registry entry) plus every S1 seat key; no number changed on either side.
+- Why: a browser save only adopts a numerically newer bundle and two contents under one version raise `configVersionConflict`; 2.0.20 is above main's 2.0.6, below S5's 2.1.0 and meets AUTOPILOT §5 stage 00 ("2.0.20 or higher").
+- Overturn: set a higher X.Y.Z in the JSON and its 08-SPEC §22 row (nothing else reads it).
+
+## 00 · Wave 1's spotlight and goal registry learn the seat model (no textual conflict, needed for the two feature sets to meet)
+- Question: `spotlight.ts` `firstGoal()` and the `tables` provider of `goals.ts` (Wave 1) assume a table level is seats; under rules 28 it is not.
+- Choice: on the seat model the first goal (nav spotlight, one-card sheet) is table 2 (`kind: 'buyTable'`, needs no empty table); a capacity snapshot keeps the first table level-up. A seat-model table level gets no effect copy and is not eligible for the chip (the sheet still lists it, dimmed, with "Bàn cần 2 ghế"); the chip's rule (`pickNextGoal`, `nextGoal.reachMult`) is untouched.
+- Why: a level promises no number until S4 (plan §0 P0: one thing, one number); plan §0 P2/P4: the second table is what a one-table shop earns first.
+- Overturn: when S4 gives levels a benefit, add its effect copy and eligibility to the `tables` provider and a table-level branch to `firstGoal()`.
+
+## 00 · a pre-seat snapshot pinned after Wave 1 (JSON 2.0.5 / 2.0.6) must still load
+- Question: on the merged tree main's own 2.0.6 pin threw `config::keys`: the frozen capacity file (2.0.4) that shapes every pre-seat snapshot lacks `nextGoal` and the presentation keys Wave 1 added.
+- Choice: `shape()` (`packages/engine/src/config.ts`) takes the bundled seed as the template for the ADDED_LATER paths the expected shape lacks and tolerates the tier C section name `nextGoal` in that snapshot's tier list; every other extra or missing key and every other tier list still fails closed. Test `seat-model.test.ts` "a pre-seat snapshot from Wave 1 …" (red without the fix); commit 5220b60.
+- Why: otherwise every browser save pinned by the deployed Wave 1 build would stop loading once S1 ships (CRITICAL blast radius, see the report's Risks).
+- Overturn: freeze a 2.0.6 file next to 2.0.4 and shape against it (a bigger legacy surface).
+
+## 00 · dimmed buy buttons show Wave 1's `reason.*` line; S1's seat-model.spec follows
+- Question: S1 printed the `error.*` text of a refusal under a dimmed seat button, Wave 1's `.buy-reason` prints `reason.*` (PLAN P3: price + exactly one short reason).
+- Choice: one mechanism, Wave 1's (`whyNot()` over the engine quotes) with new `reason.tableNeedsChairs` / `reason.chairsLocked` / `reason.maxChairs` (vi+en); `seat-model.spec.ts` now asserts the `reason.*` keys (same words without the full stop; English maxTables "All tables are built") and its fixture keeps the whole HUD (`fullHud`, Wave 1's shift-1 HUD hides the nav).
+- Why: two parallel reason mechanisms under one button would show two sources of truth.
+- Overturn: point `whyNot()` at the `error.*` keys and revert the spec lines.
+
+## 00 · Wave 1's capacity-model tests stay as written, pinned to a capacity snapshot, and gain seat-model counterparts
+- Question: Wave 1's engine tests (goal-quotes, next-goal, spotlight-reveal) and specs (next-goal, buy-reasons, first-shift-visual) describe "a table level is seats" and fail on the bundled seat model.
+- Choice: assertions unchanged on a capacity snapshot (`docs/config/legacy/economy-2.0.4.json` with a custom version label so the seat model never replaces it; engine `capacityConfig`; fixture modes `closed` / `oldpin` / `rest` / `states` / `rich` / `maxed`), plus new `seat-*` fixture modes and "on the seat model …" cases; the `gated` fixture is rebuilt with real seat commands (alley filled to `tableSlots`, a chair on each table, tables to their badge gate, devices to the life-path gate) and keeps its meaning; the first next-goal case loads a capacity fixture instead of a null save (a null save is a seat-model game).
+- Why: S1's own rule for old suites ("S1 · old suites: furnish a seat shop or pin the capacity model"); it keeps coverage of the pin an old browser save keeps until its next opening adopts the seat model; no assertion removed or weakened.
+- Overturn: delete the capacity pins once no save can pin 2.0.x.
+
+## 00 · English "Seats +{n}" for what a new table adds
+- Question: Wave 1's chip effect `goal.fx.seatsAdded` read "+{n} seats", which prints "+1 seats" now that a new table is one chair.
+- Choice: en "Seats +{n}" (vi unchanged "+{n} chỗ"); same remedy as S1's `table.seats` "Seats: {n}", no plural machinery.
+- Overturn: any wording that reads right for 1 and 2.
+
+## 00 · first-shift-visual "coins fly … lost reputation falls" waits 150 s of game time, not 40
+- Question: a new shop has one table and a random seed (`crypto.getRandomValues`); a pair is turned away at the door without a penalty, so the first guest who really walks out is a single who sat down and waited out 18 s + 2.5 s; 40 s of game time passed only about half of the runs (390 and 1280 failed, 360 passed).
+- Choice: same assertion (`/^−\d+$/` from `.fly-rep`, then `.toast-loss` visible), window 150 s in 500 ms steps with `test.setTimeout(90000)`; the wait ends at the first falling number. 12/12 on a repeat.
+- Why: the arrival process changed (S1), the promise did not; an engine-made save would hide the random seed the player really gets.
+- Overturn: load a fixture save with a seed that expires a single early.
