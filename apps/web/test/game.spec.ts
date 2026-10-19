@@ -376,6 +376,7 @@ test('a mixed occupied table renders only the remaining Chi Pheo and closes with
 
 for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 }, { width: 1280, height: 400 }]) {
   test(`rush warning pauses in sheets, resumes on closing, active timer wins, and closing ends it at ${viewport.width}×${viewport.height}`, async ({ page }) => {
+    test.setTimeout(90000); // game time is advanced by hand: 14–16 s with 3 workers, past the 45 s default when 6 workers starve the CPU
     const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/rush.ts'], { encoding: 'utf8' }));
     await page.setViewportSize(viewport);
     await page.clock.pauseAt(new Date(fixture.now));
@@ -659,6 +660,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
 
 for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }, { width: 1280, height: 400 }]) {
  test(`flyer purchase, live timer, actual service report and reload at ${viewport.width}×${viewport.height}`, async ({ page }) => {
+  test.setTimeout(90000); // 17 s alone, about 40 s with 3 workers, past the 45 s default when 6 workers starve the CPU
   const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/flyer.ts'], { encoding: 'utf8' }));
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.setViewportSize(viewport); await page.clock.pauseAt(new Date(fixture.now));
