@@ -10,7 +10,7 @@ import { attendanceDay, attendanceRewardQuote, applyQuestEvent, planDailyQuests,
 import { flyerQuote } from './flyer';
 import { planRushes, summarizeRush } from './rush';
 import { menuReport } from './menu';
-import { beerStatus } from './production';
+import { beerStatus, instantPour } from './production';
 import { orderPreparation, type PreparationCause } from './preparation';
 import type { Command, Customer, Envelope, Group, Item, LoggedCommand, Order, Result, RulesVersion, Stats, SystemCommand, Table, World } from './types';
 
@@ -31,6 +31,7 @@ const BATCH_RULES: RulesVersion = 18; // config-exempt: fixed replay protocol re
 const DISCONNECT_RULES: RulesVersion = 19; // config-exempt: replay protocol for trusted disconnection deadlines
 export const CURRENT_RULES: RulesVersion = 28; // config-exempt: seat model v3.3; historical events remain exact
 const SEAT_RULES: RulesVersion = 28; // config-exempt: fixed replay protocol revision for the seat model (plan S1)
+const INSTANT_POUR_RULES: RulesVersion = 28; // config-exempt: fixed replay protocol revision for instant pour (plan S2)
 const METRICS_RULES: RulesVersion = 27; // config-exempt: fixed replay protocol revision
 const FEEDBACK_RULES: RulesVersion = 26; // config-exempt: fixed replay protocol revision
 const OPENING_PROGRESS_RULES: RulesVersion = 25; // config-exempt: fixed replay protocol revision
@@ -648,6 +649,8 @@ export class Game {
     const w = this.world, c = this.config.values;
     const modern = this.rulesVersion >= ECONOMY_RULES && isEconomy2(c) ? c : null;
     const batches = this.rulesVersion >= BATCH_RULES && c.upgrades.keg.refillEnabled;
+    // A beer leaves the reserve straight into a clean glass, never through the tap queue (rules 18-20 on a 1.x pin; instant pour, plan S2, from rules 28).
+    const direct = batches && (!modern || this.rulesVersion >= INSTANT_POUR_RULES && instantPour(this.config));
     const items = w.tables.filter(t => t.order && ['pending', 'grace'].includes(t.order.state)).flatMap(t => t.order!.items);
     let pouring = items.filter(i => i.state === 'preparing' && i.dish === 'bia').length;
     let cooking = kitchenStatus(w, this.config).busy;
@@ -657,10 +660,10 @@ export class Game {
       const menu = c.menu[item.dish];
       let duration = menu.prepMs;
       if (menu.needsGlass) {
-        if ((!batches || modern) && pouring >= c.upgrades.keg.pourSlots[w.equipment.keg - 1]) continue;
+        if (!direct && pouring >= c.upgrades.keg.pourSlots[w.equipment.keg - 1]) continue;
         const glass = w.glasses.find(g => g.state === 'clean');
         if (!glass) continue;
-        duration = batches && !modern ? 0 : c.upgrades.keg.pourMs[w.equipment.keg - 1];
+        duration = direct ? 0 : c.upgrades.keg.pourMs[w.equipment.keg - 1];
         glass.state = 'in_use'; glass.itemId = item.id; glass.readyAt = w.now + duration; glass.staleEmitted = false;
         item.glassId = glass.id; pouring++;
       } else if (menu.station === 'kitchen') {
@@ -678,7 +681,7 @@ export class Game {
       else w.inventory[item.dish]--;
       item.state = duration > 0 ? 'preparing' : 'ready'; item.readyAt = w.now + duration;
       this.emit(menu.needsGlass ? 'beer_pouring' : 'dish_preparing', { itemId: item.id, dish: item.dish });
-      if (batches && !modern && item.dish === 'bia') this.emit('beer_poured', { itemId: item.id, fromReserve: true });
+      if (direct && item.dish === 'bia') this.emit('beer_poured', { itemId: item.id, fromReserve: true });
       if (this.rulesVersion >= MENU_RULES && menu.station === 'kitchen') {
         this.emit('kitchen_job_started', { shiftId: w.shift!.id, itemId: item.id, dish: item.dish, prepMs: duration, readyAt: item.readyAt });
         if (item.state === 'ready') this.emit('kitchen_job_ready', { shiftId: w.shift!.id, itemId: item.id, dish: item.dish });

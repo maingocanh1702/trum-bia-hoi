@@ -1,5 +1,13 @@
-import type { Config } from './config';
+import { isSeatModel, type Config } from './config';
 import type { WorldView } from './types';
+
+/**
+ * Instant pour (plan S2, FEEDBACK II.1): from rules 28 a ready beer and a clean glass are a ready beer in the same tick, so the tap
+ * queue (`pourSlots`, `pourMs`) is off the serving path; both keys stay in the config for every older pin and replay. Rules 28 only ever
+ * runs with a seat-model snapshot pinned (the engine refuses older entries for one), and a capacity pin keeps its tap until the opening
+ * that adopts the seat model, so the pinned config alone tells a read-only consumer which pour it is looking at.
+ */
+export const instantPour = (c: Config) => c.values.upgrades.keg.refillEnabled && isSeatModel(c.values);
 
 /** Beer already on a tray lives outside the tank, so a large table can assemble across batches. */
 export function beerStatus(w: WorldView, c: Config) {
@@ -8,7 +16,10 @@ export function beerStatus(w: WorldView, c: Config) {
     .flatMap(t => t.order!.items).filter(i => i.dish === 'bia' && i.glassId && ['preparing', 'ready'].includes(i.state)).length;
   const available = w.beer?.ready ?? 0, batch = w.beer?.batch;
   const pouring = w.tables.flatMap(t => t.order?.items ?? []).filter(i => i.dish === 'bia' && i.state === 'preparing').length;
-  return { pouring, tapSlots: keg.pourSlots[level], pourMs: keg.pourMs[level], enabled: keg.refillEnabled, available, reserved, stored: keg.refillEnabled ? available : reserved,
+  const instant = instantPour(c), stored = keg.refillEnabled ? available : reserved;
+  // Instant pour: a guest gets as many beers as there are both ready beers and clean glasses (what "rót sẵn" must say).
+  const serveNow = instant ? Math.min(available, w.glasses.filter(g => g.state === 'clean').length) : stored;
+  return { pouring, tapSlots: keg.pourSlots[level], pourMs: keg.pourMs[level], enabled: keg.refillEnabled, instant, serveNow, available, reserved, stored,
     capacity: keg.refillEnabled ? keg.kegStorage[level] : keg.pourSlots[level],
     batchSize: keg.refillEnabled ? keg.kegBatch[level] : keg.pourSlots[level],
     durationMs: keg.refillEnabled ? keg.refillMs[level] : keg.pourMs[level],
