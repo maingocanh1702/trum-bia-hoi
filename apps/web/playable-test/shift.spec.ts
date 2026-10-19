@@ -51,8 +51,10 @@ test('default guest full shift', async ({ page, context }) => {
       // Reload closes menus and resumes this same guest shift.
     }
     if(!upgraded&&w.shift.stats.served>upgradeAfter){
-      await page.getByRole('button',{name:'Nâng cấp',exact:true}).click();await expect(page.locator('.dog-entry')).toHaveCount(0);const card=page.locator('.upgrade-card').filter({has:page.getByRole('heading',{name:'Quầy hàng',exact:true})});const button=card.getByRole('button',{name:/^Nâng ·/});await expect(button).toBeVisible();await expect(card.locator('img')).toHaveCount(2);
-      if(await button.isEnabled()){const before=await snapshot(page);await purchase(page,button);await expect.poll(async()=>(await snapshot(page)).equipment.stall).toBe(before.equipment.stall+1);upgraded=true;}
+      await page.getByRole('button',{name:'Nâng cấp',exact:true}).click();await expect(page.locator('.dog-entry')).toHaveCount(0);const card=page.locator('.upgrade-card').filter({has:page.getByRole('heading',{name:'Quầy hàng',exact:true})});await expect(card.getByRole('button',{name:/^Nâng ·/})).toBeVisible();await expect(card.locator('img')).toHaveCount(2);
+      // Seat model (rules 28): a one-table shop's first purchase is table 2 (plan §7 owner line 3), bought mid-shift.
+      const button=page.getByRole('dialog').getByRole('button',{name:/^Mua bàn ·/});await expect(button).toBeVisible();
+      if(await button.isEnabled()){const before=await snapshot(page);await purchase(page,button);await expect.poll(async()=>(await snapshot(page)).tables.length).toBe(before.tables.length+1);upgraded=true;}
       upgradeAfter=w.shift.stats.served+5;await page.keyboard.press('Escape');
     }
     if(Object.entries(w.inventory).some(([dish,n])=>config.menu[dish].unlock.kitchenLevel<=w.equipment.kitchen&&typeof n==='number'&&n<=2)&&w.phase==='open'){
@@ -65,10 +67,10 @@ test('default guest full shift', async ({ page, context }) => {
     writeFileSync(`.qa/playable-${viewport.width}-progress.json`,JSON.stringify({at:Date.now(),firstPlayableMs,fps,phase:w.phase,remaining:w.shift.endsAt-w.now,coins:w.coins,served:w.shift.stats.served,restocked,upgraded}));
     await page.waitForTimeout(1000);
   }
-  w=await snapshot(page);expect(w.phase).toBe('resting');expect(w.completedShifts).toBe(1);expect(w.shift.closedAt-w.shift.startedAt-w.shift.pausedMs).toBeGreaterThanOrEqual(config.shift.durationMs);expect(w.shift.stats.served).toBeGreaterThan(0);expect(restored&&restocked&&upgraded&&washing&&readyBuffer).toBe(true);
+  w=await snapshot(page);expect(w.phase).toBe('resting');expect(w.completedShifts).toBe(1);expect(w.shift.closedAt-w.shift.startedAt-w.shift.pausedMs).toBeGreaterThanOrEqual(config.shift.durationMs);expect(w.shift.stats.served).toBeGreaterThan(0);expect({restored,restocked,upgraded,washing,readyBuffer}).toEqual({restored:true,restocked:true,upgraded:true,washing:true,readyBuffer:true});
   await expect(page.getByRole('heading',{name:'Sổ ca hôm nay',exact:true})).toBeVisible();await page.screenshot({path:`.qa/playable-${viewport.width}-summary.png`});
   await page.keyboard.press('Escape');const saved=await snapshot(page);await page.close();page=await context.newPage();watch(page);await page.setViewportSize(viewport);await enter(page);const reopened=await snapshot(page);
-  expect(reopened.playerId).toBe(playerId);expect(reopened.completedShifts).toBe(1);expect(reopened.coins).toBe(saved.coins);expect(reopened.equipment).toEqual(saved.equipment);expect(reopened.shift.id).toBe(firstShift);
+  expect(reopened.playerId).toBe(playerId);expect(reopened.completedShifts).toBe(1);expect(reopened.coins).toBe(saved.coins);expect(reopened.equipment).toEqual(saved.equipment);const shop=(x:typeof saved)=>x.tables.map((t:{id:string,capacity:number,level:number})=>[t.id,t.capacity,t.level]);expect(shop(reopened)).toEqual(shop(saved));expect(reopened.shift.id).toBe(firstShift);
   // Only the overnight rest is accelerated, using the existing isolated test-server clock.
   await page.request.post('/api/__test/overnight',{timeout:5*60*1000});await page.reload();await synced(page);
   await page.getByRole('button',{name:'Mở ca',exact:true}).first().click();await expect.poll(async()=>(await snapshot(page)).phase).toBe('open');expect((await snapshot(page)).shift.id).not.toBe(firstShift);

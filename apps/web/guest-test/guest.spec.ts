@@ -52,14 +52,16 @@ test('static guest serves, restocks, upgrades, closes shift and persists across 
     }
   }
   await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click();
-  const upgrade = page.locator('.upgrade-card button:enabled').first();
-  await expect(upgrade).toBeVisible(); await upgrade.click();
+  // Seat model (rules 28): the first purchase a one-table shop earns is table 2 (plan §7 owner line 3).
+  const upgrade = page.getByRole('dialog').getByRole('button', { name: /^Mua bàn · / });
+  await expect(upgrade).toBeEnabled(); await upgrade.click();
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Cài đặt', exact: true }).click();
   await expect(page.locator('.build-version code')).toHaveAttribute('title', process.env.TBH_GUEST_COMMIT ?? execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim());
   const before = await exported(page);
   expect(before.world.shift!.stats.served).toBeGreaterThan(0);
-  expect(Object.values(before.world.equipment).some(level => level > 1)).toBe(true);
+  const shop = (world: World) => world.tables.map(table => [table.id, table.capacity, table.level]);
+  expect(before.world.tables).toHaveLength(2);
   await page.getByRole('button', { name: /Tài khoản/ }).click();
   await expect(page.locator('.account-panel')).toContainText('Đăng nhập, đồng bộ và bảng xếp hạng online chưa mở');
   await expect(page.locator('.account-benefits, .account-google')).toHaveCount(0);
@@ -99,6 +101,7 @@ test('static guest serves, restocks, upgrades, closes shift and persists across 
   expect(next.world.completedShifts).toBeGreaterThanOrEqual(before.leagueAfterShifts);
   expect(next.world.shift!.id).not.toBe(before.world.shift!.id);
   expect(next.world.equipment).toEqual(before.world.equipment);
+  expect(shop(next.world)).toEqual(shop(before.world));
   const time = await page.evaluate(() => Date.now());
   await page.clock.setFixedTime(time); await page.clock.resume(); await page.reload();
   await page.getByRole('button', { name: 'Cài đặt', exact: true }).click();
@@ -113,6 +116,7 @@ test('static guest serves, restocks, upgrades, closes shift and persists across 
   expect(reopened.world.playerId).toBe(next.world.playerId);
   expect(reopened.world.coins).toBe(next.world.coins);
   expect(reopened.world.equipment).toEqual(next.world.equipment);
+  expect(shop(reopened.world)).toEqual(shop(next.world));
   await fresh.keyboard.press('Escape');
   await fresh.getByRole('button', { name: 'Đường lên Trùm', exact: true }).click();
   await expect(fresh.getByRole('button', { name: 'Giải Nhậu & Vụ Bia', exact: true })).toHaveCount(0);

@@ -226,3 +226,8 @@ their own feature files (see the README index).
 ## Netlify guest build — 2026-09-16
 
 `apps/web/guest-test/guest.spec.ts` → `static guest serves, restocks, upgrades, closes shift and persists across reload/new tab without API`: production guest build on 360×740, 390×844, 1280×720; full service/restock/pause/upgrade/next-day journey, Settings SHA, six close KPIs equal backup, reload/new-tab preservation, admin/online-ranking hidden and zero API/Google requests. Run `npm run build:guest`, copy `apps/web/dist` to `.qa/guest-dist`, then `npx playwright test --config playwright.guest.config.ts`; `TBH_GUEST_URL` targets the verified draft or live URL without a local server. Normal remote/account mechanics are unchanged.
+
+## Changelog — S1 seat model
+| Date | Change |
+|---|---|
+| 2026-10-19 | S1 rules 28: a new shop is 1 table × 1 chair, so `apps/web/guest-test/guest.spec.ts` and `apps/web/playable-test/shift.spec.ts` earn **table 2** ("Mua bàn · …") as the first purchase (plan §7 owner line 3) instead of the first equipment level / stall level, and assert the bought tables survive reload and a new tab; the playable flags assert as one object so a red run names the missing step. Whether shift 1 earns the 1.500 xu is S5's balance target. |
