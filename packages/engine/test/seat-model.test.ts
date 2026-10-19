@@ -250,6 +250,32 @@ test('a pre-seat snapshot from Wave 1 (JSON 2.0.5/2.0.6: the capacity model plus
   for (const [name, patch] of bad) { const raw = wave1(); patch(raw); assert.throws(() => loadConfig(raw), /config:/, name); }
 });
 
+test('Wave 1 presentation keys extend the frozen capacity shape alone: the same keys on a 1.x snapshot are refused as on main, each one stays optional on a pre-seat 2.0 pin', () => {
+  // Main refused every one of these on a 1.7.3 snapshot (`config::keys` and its nested forms); only a pre-seat 2.0 pin, shaped by the frozen 2.0.4 file,
+  // may carry them: a 2.0.5 pin has the reveal keys and no nextGoal, a 2.0.6 pin has them all, and a tier C list may name nextGoal before its section exists.
+  const legacy = JSON.parse(readFileSync(new URL('../../../docs/config/legacy/economy-1.7.3.json', import.meta.url), 'utf8')) as any;
+  const wave1: [string, RegExp, (raw: any) => void][] = [
+    ['the nextGoal section', /config::keys/, raw => { raw.nextGoal = structuredClone(seed.nextGoal); }],
+    ['onboarding.idleToGuideMs', /config:onboarding:keys/, raw => { raw.onboarding.idleToGuideMs = seed.onboarding.idleToGuideMs; }],
+    ['onboarding.featureReveal.hudAfterShifts', /config:onboarding\.featureReveal:keys/, raw => { raw.onboarding.featureReveal.hudAfterShifts = seed.onboarding.featureReveal.hudAfterShifts; }],
+    ['onboarding.featureReveal.upgradeAllAfterShifts', /config:onboarding\.featureReveal:keys/, raw => { raw.onboarding.featureReveal.upgradeAllAfterShifts = seed.onboarding.featureReveal.upgradeAllAfterShifts; }],
+    ['onboarding.featureReveal.journeyAfterShifts', /config:onboarding\.featureReveal:keys/, raw => { raw.onboarding.featureReveal.journeyAfterShifts = seed.onboarding.featureReveal.journeyAfterShifts; }],
+    ['onboarding.loginPrompt.leaveProgress', /config:onboarding\.loginPrompt:keys/, raw => { raw.onboarding.loginPrompt.leaveProgress = structuredClone(seed.onboarding.loginPrompt.leaveProgress); }],
+    ['nextGoal in the tier C list', /config:_meta\.governance\.tiers\.C\.sections:array/, raw => { raw._meta.governance.tiers.C.sections = [...seed._meta.governance.tiers.C.sections]; }],
+  ];
+  assert.equal(loadConfig(structuredClone(legacy)).version, '1.7.3', 'the frozen 1.x file itself loads');
+  for (const [name, refusal, patch] of wave1) {
+    const old = structuredClone(legacy); patch(old);
+    assert.throws(() => loadConfig(old), refusal, `a 1.7.3 snapshot with ${name} is refused`);
+    const preSeat = structuredClone(capacityModel) as any; patch(preSeat);
+    assert.equal(JSON.stringify(loadConfig(preSeat).raw), JSON.stringify(preSeat), `a pre-seat 2.0 snapshot with ${name} loads, bytes kept`);
+  }
+  const everything = structuredClone(legacy); for (const [, , patch] of wave1) patch(everything);
+  assert.throws(() => loadConfig(everything), /config::keys/, 'all of them together do not make a 1.x snapshot a Wave 1 pin');
+  // The bundled shape is exact too: a key that no release ever shipped is refused whichever generation carries it.
+  for (const base of [seed, capacityModel, legacy]) { const raw = structuredClone(base) as any; raw.nextGoalTypo = 1; assert.throws(() => loadConfig(raw), /config::keys/); }
+});
+
 test('a snapshot key named like an Object.prototype member is an unknown key at every object node, never a known one', () => {
   // JSON.parse (admin proposals, preview, uploaded archives) makes such a key an own property. `k in expected` found it on the prototype chain, so it was
   // neither refused nor shape-checked and a partial or malformed config could go live (same on main).
@@ -279,6 +305,7 @@ test('a Wave 1 save (rules 27, pinned the way the Wave 1 build wrote it) replays
   assert.ok('nextGoal' in g.config.values && 'idleToGuideMs' in g.config.values.onboarding, 'the pin carries the Wave 1 keys'); assert.equal(isSeatModel(g.config.values), false);
   assert.equal(createHash('sha256').update(JSON.stringify(w)).digest('hex'), fixture.worldSha256, 'the rules-27 history replays byte for byte under the Wave 1 pin');
   assert.ok(g.log.every(e => e.rulesVersion === 27));
+  assert.equal(encodeSave(g), JSON.stringify(saved), 'the save re-encodes byte for byte before anything is played');
   const ids = w.tables.map(t => t.id), coins = w.coins;
   assert.deepEqual(w.tables.map(t => [t.capacity, t.level]), [[6, 3], [6, 3], [6, 3]]);
   assert.ok(g.command({ command: { type: 'startShift' }, at: w.now, idempotencyKey: 'adopt-seats' }, config).ok);
