@@ -15,7 +15,7 @@ export function seatGrowth(game: Game): { cost: number; command: Command } | nul
   const pending = (q: { cost: number | null; ok: boolean; reason: string | null }) => q.cost !== null && (q.ok || q.reason === 'notEnoughCoins');
   const table = buyTableQuote(w, config);
   if (pending(table)) return { cost: table.cost!, command: { type: 'buyTable' } };
-  for (const t of w.tables) { const q = buyChairQuote(w, config, t.id); if (pending(q)) return { cost: q.cost!, command: { type: 'buyChair', tableId: t.id } }; }
+  for (const t of w.tables) { const q = buyChairQuote(w, config, t); if (pending(q)) return { cost: q.cost!, command: { type: 'buyChair', tableId: t.id } }; }
   return null;
 }
 
@@ -47,7 +47,7 @@ export function createManagementPolicy(game:Game,send:(command:Command)=>void) {
     const candidates: { cost: number; command: Command }[] = [];
     for (const kind of EQUIPMENT) { const q = upgradeQuote(w, config, kind); if (q.ok) candidates.push({ cost: q.cost!, command: { type: 'upgrade', kind } }); }
     // Table levels pay off only on capacity snapshots until the seat-model level benefits land (plan S4).
-    if (!isSeatModel(c)) for (const table of w.tables) { const q = tableUpgradeQuote(w, config, table.id); if (q.ok) candidates.push({ cost: q.cost!, command: { type: 'upgradeTable', tableId: table.id } }); }
+    if (!isSeatModel(c)) for (const table of w.tables) { const q = tableUpgradeQuote(w, config, table); if (q.ok) candidates.push({ cost: q.cost!, command: { type: 'upgradeTable', tableId: table.id } }); }
     const glasses = buyGlassQuote(w, config, 1);
     // config-exempt: bot policy targets two circulating glasses per seat, capped by the real purchase quote.
     if (glasses.ok && w.glasses.length < w.tables.reduce((sum, t) => sum + t.capacity, 0) * 2) candidates.push({ cost: glasses.cost, command: { type: 'buyGlass', count: 1 } });

@@ -7,5 +7,5 @@ import { buyChairQuote, buyTableQuote, type Command, type Game, type Result } fr
  */
 export function furnish(g: Game, send: (command: Command) => Result, chairs = true) {
   while (buyTableQuote(g.world, g.config).ok) assert.ok(send({ type: 'buyTable' }).ok);
-  if (chairs) for (const table of g.world.tables) if (buyChairQuote(g.world, g.config, table.id).ok) assert.ok(send({ type: 'buyChair', tableId: table.id }).ok);
+  if (chairs) for (const table of g.world.tables) if (buyChairQuote(g.world, g.config, table).ok) assert.ok(send({ type: 'buyChair', tableId: table.id }).ok);
 }

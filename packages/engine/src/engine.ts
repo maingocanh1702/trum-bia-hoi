@@ -595,7 +595,7 @@ export class Game {
       s.stats.rejected += size; s.stats.noSeat = (s.stats.noSeat ?? 0) + size;
       this.emit('queue_overflow', { size, reason: 'noSeat' });
     } else if (w.queue.length >= queueSlots(w, this.config) && !w.tables.some(t => t.state === 'empty' && t.capacity >= size)) {
-      s.stats.rejected += size; this.emit('queue_overflow', seatModel ? { size, reason: 'queueFull' } : { size });
+      s.stats.rejected += size; this.emit('queue_overflow', seatModel ? { size, reason: 'full' } : { size });
     } else {
       w.queue.push(group);
       this.emit('customer_spawned', { groupId: group.id, size, weather: s.weather, rush: s.rush });
@@ -1052,11 +1052,13 @@ export class Game {
       }
       case 'upgradeTable': {
         if (this.rulesVersion < LIVE_UPGRADE_RULES && w.phase !== 'resting' && c.upgrades.phase1UpgradesOutsideShiftOnly) return fail('outsideShiftOnly');
-        const q = tableUpgradeQuote(w, this.config, cmd.tableId), t = w.tables.find(t => t.id === cmd.tableId);
-        if (!q.ok || !q.level || !t) return fail(q.reason ?? 'tableBusy');
-        this.spend(q.level.priceBase); t.level = q.level.level;
+        const t = w.tables.find(t => t.id === cmd.tableId);
+        if (!t) return fail(isSeatModel(c) ? 'tableGone' : 'tableBusy');
+        const q = tableUpgradeQuote(w, this.config, t);
+        if (!q.ok || !q.next) return fail(q.reason ?? 'maxLevel');
+        this.spend(q.next.priceBase); t.level = q.next.level;
         if (!isSeatModel(c)) t.capacity = c.upgrades.table.levels[t.level - 1].capacity; // capacity pins: the level sets the seats
-        this.emit('table_upgraded', { tableId: t.id, level: t.level }); return { ok: true, amount: q.level.priceBase };
+        this.emit('table_upgraded', { tableId: t.id, level: t.level }); return { ok: true, amount: q.next.priceBase };
       }
       case 'rentLocation': {
         const q = leaseQuote(w, this.config, cmd.locationId);
@@ -1092,8 +1094,10 @@ export class Game {
         this.emit('table_bought', this.seatModel() ? { cost: q.cost, tableId: table.id } : { cost: q.cost }); return { ok: true, amount: q.cost };
       }
       case 'buyChair': {
-        const q = buyChairQuote(w, this.config, cmd.tableId), t = w.tables.find(t => t.id === cmd.tableId);
-        if (!this.seatModel() || !q.ok || q.cost === null || !t) return fail(q.reason ?? 'chairsLocked');
+        const t = w.tables.find(t => t.id === cmd.tableId);
+        if (!t) return fail('tableGone');
+        const q = buyChairQuote(w, this.config, t);
+        if (!this.seatModel() || !q.ok || q.cost === null) return fail(q.reason ?? 'chairsLocked');
         // The seated group keeps its tray (Group.seats); the new chair serves the next group.
         this.spend(q.cost); t.capacity++;
         this.emit('chair_bought', { tableId: t.id, seats: t.capacity, cost: q.cost }); return { ok: true, amount: q.cost };

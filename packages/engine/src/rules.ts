@@ -70,37 +70,42 @@ export function tableSlots(w: WorldView, c: Config): number {
   const v = c.values;
   return isSeatModel(v) ? v.locations.list.find(row => row.id === w.location)?.tableSlots ?? 0 : v.upgrades.table.maxTables;
 }
-/** Seat model: the n-th table costs tablePriceBase[n-2], no life-path gate. Capacity snapshots keep per-seat pricing. */
-export function buyTableQuote(w: WorldView, c: Config) {
+/**
+ * What `buyTable` will answer, refusals in the command's order. Seat model: the n-th table costs tablePriceBase[n-2] with no
+ * life-path gate, capped by the location's tableSlots; capacity snapshots price the new table's seats from extraSeatPriceBase.
+ */
+export function buyTableQuote(w: WorldView, c: Config, outsideShiftOnly = false) {
   const v = c.values, slots = tableSlots(w, c);
-  let cost: number | null = 0;
+  let cost: number | null = 0, capacity: number = CHAIRS_WITH_TABLE;
   if (isSeatModel(v)) cost = v.upgrades.table.tablePriceBase[w.tables.length - 1] ?? null;
   else {
     const seats = w.tables.reduce((sum, t) => sum + t.capacity, 0), prices = v.upgrades.extraSeatPriceBase as Record<string, number>;
-    for (let i = 1; i <= v.upgrades.table.levels[v.runtime.initialTableLevel - 1].capacity && cost !== null; i++) {
-      const price = prices[String(seats + i)];
-      cost = price === undefined ? null : cost + price;
-    }
+    capacity = v.upgrades.table.levels[v.runtime.initialTableLevel - 1].capacity;
+    for (let i = 1; i <= capacity && cost !== null; i++) { const price = prices[String(seats + i)]; cost = price === undefined ? null : cost + price; }
   }
-  const reason = w.tables.length >= slots ? 'maxTables' : cost === null ? (isSeatModel(v) ? 'maxTables' : 'seatPriceUnconfigured') : w.coins < cost ? 'notEnoughCoins' : null;
-  return { cost, slots, owned: w.tables.length, ok: reason === null, reason };
+  const reason = outsideShiftOnly && w.phase !== 'resting' ? 'outsideShiftOnly' : w.tables.length >= slots ? 'maxTables'
+    : cost === null ? isSeatModel(v) ? 'maxTables' : 'seatPriceUnconfigured' : w.coins < cost ? 'notEnoughCoins' : null;
+  return { cost, capacity, slots, reason, ok: reason === null };
 }
-/** Seat model second chair (D18): only after chairsAfterTables tables, at most a pair per table; priced by second chairs owned shop-wide. */
-export function buyChairQuote(w: WorldView, c: Config, tableId: string) {
-  const v = c.values, table = w.tables.find(t => t.id === tableId);
-  if (!isSeatModel(v)) return { cost: null, ok: false, reason: 'chairsLocked' };
+/** Seat model second chair (D18): only once the shop owns chairsAfterTables tables, at most a pair per table, priced by second chairs owned shop-wide. */
+export function buyChairQuote(w: WorldView, c: Config, table: Table) {
+  const v = c.values;
+  if (!isSeatModel(v)) return { cost: null, reason: 'chairsLocked', ok: false };
   const cost = v.upgrades.table.chairPriceBase[w.tables.reduce((sum, t) => sum + t.capacity - CHAIRS_WITH_TABLE, 0)] ?? null;
-  const reason = !table ? 'tableGone' : w.tables.length < v.upgrades.table.chairsAfterTables ? 'chairsLocked' :
-    table.capacity >= PAIR || cost === null ? 'maxChairs' : w.coins < cost ? 'notEnoughCoins' : null;
-  return { cost, ok: reason === null, reason };
+  const reason = w.tables.length < v.upgrades.table.chairsAfterTables ? 'chairsLocked' : table.capacity >= PAIR || cost === null ? 'maxChairs'
+    : w.coins < cost ? 'notEnoughCoins' : null;
+  return { cost, reason, ok: reason === null };
 }
-/** Table level: seat model needs two chairs and accepts any table state (the next group gets it); capacity snapshots need an empty table. */
-export function tableUpgradeQuote(w: WorldView, c: Config, tableId: string) {
-  const v = c.values, table = w.tables.find(t => t.id === tableId), level = table ? v.upgrades.table.levels[table.level] : undefined;
-  const placement = !table ? isSeatModel(v) ? 'tableGone' : 'tableBusy' : isSeatModel(v) ? table.capacity < PAIR ? 'tableNeedsChairs' : null : table.state !== 'empty' ? 'tableBusy' : null;
-  const reason = placement ?? (!level ? 'maxLevel' : level.requiredBadge && !w.badges.includes(level.requiredBadge) ? 'badgeRequired' :
-    level.repBase && w.reputation < level.repBase[0] ? 'reputationRequired' : w.coins < level.priceBase ? 'notEnoughCoins' : null);
-  return { level: level ?? null, cost: level?.priceBase ?? null, ok: reason === null, reason };
+/**
+ * What `upgradeTable` will answer, refusals in the command's order. `gate` holds whatever the table is doing right now (top level,
+ * badge, reputation; seat model: two chairs, D18); `reason` adds a busy table (capacity snapshots only) and the wallet on top of it.
+ */
+export function tableUpgradeQuote(w: WorldView, c: Config, table: Table, outsideShiftOnly = false) {
+  const v = c.values, seat = isSeatModel(v), level = v.upgrades.table.levels[table.level], cost = level?.priceBase ?? null;
+  const gate = seat && table.capacity < PAIR ? 'tableNeedsChairs' : !level ? 'maxLevel' : level.requiredBadge && !w.badges.includes(level.requiredBadge) ? 'badgeRequired'
+    : level.repBase && w.reputation < level.repBase[0] ? 'reputationRequired' : null;
+  const reason = outsideShiftOnly && w.phase !== 'resting' ? 'outsideShiftOnly' : !seat && table.state !== 'empty' ? 'tableBusy' : gate ?? (w.coins < cost! ? 'notEnoughCoins' : null);
+  return { next: level ?? null, cost, gate, reason, ok: reason === null };
 }
 /** One level owns purchase state; dog stats and requirements remain in the config. */
 export function dogUpgradeQuote(w: WorldView, c: Config) {

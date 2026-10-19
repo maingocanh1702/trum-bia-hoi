@@ -70,7 +70,7 @@ test('a second chair opens only after chairsAfterTables tables, a table never ho
   assert.equal(c.upgrades.table.chairsAfterTables, 4);
   while (w.tables.length < c.upgrades.table.chairsAfterTables - 1) assert.ok(send(g, { type: 'buyTable' }).ok);
   const [first, second] = w.tables;
-  assert.equal(buyChairQuote(w, g.config, first.id).reason, 'chairsLocked');
+  assert.equal(buyChairQuote(w, g.config, first).reason, 'chairsLocked');
   assert.deepEqual(send(g, { type: 'buyChair', tableId: first.id }), { ok: false, reason: 'chairsLocked' });
   assert.equal(first.capacity, 1);
   assert.ok(send(g, { type: 'buyTable' }).ok);
