@@ -231,3 +231,8 @@ their own feature files (see the README index).
 | Date | Change |
 |---|---|
 | 2026-10-19 | S1 rules 28: a new shop is 1 table × 1 chair, so `apps/web/guest-test/guest.spec.ts` and `apps/web/playable-test/shift.spec.ts` earn **table 2** ("Mua bàn · …") as the first purchase (plan §7 owner line 3) instead of the first equipment level / stall level, and assert the bought tables survive reload and a new tab; the playable flags assert as one object so a red run names the missing step. Whether shift 1 earns the 1.500 xu is S5's balance target. |
+
+## Changelog — S2 instant pour
+| Date | Change |
+|---|---|
+| 2026-10-20 | S2 rules 28 (instant pour): the engine↔web path "order → tray → serve" loses the old 2 s tap wait on a seat-model game (the tray is ready in the tick of the order); driven by `apps/web/test/game.spec.ts` (`tapped order stays live, returns keyboard focus, and closes on customer expiry`), `apps/web/test/first-shift-visual.spec.ts` (guest → check → Serve → wallet), `apps/web/test/instant-pour.spec.ts`, the local↔remote paths `apps/web/remote-test/remote.spec.ts` and `account-ui.spec.ts` (98/98 run serially, the remote config's own `workers: 1`), the guest build `apps/web/guest-test/guest.spec.ts` (3/3, "Mua bàn · 1.500 xu" bought at every viewport) and the real-clock `apps/web/playable-test/shift.spec.ts` (3/3). A loaded rules-27 save keeps its tap until its next opening adopts the seat model (`packages/engine/test/instant-pour.test.ts`). |
