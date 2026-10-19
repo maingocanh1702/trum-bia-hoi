@@ -1,10 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { CURRENT_RULES, Game, config, loadConfig, rushStatus, kickAllQuote, encodeSave, decodeSave, type Command, type Economy } from '../src';
+import { CURRENT_RULES, Game, loadConfig, rushStatus, kickAllQuote, encodeSave, decodeSave, type Command, type Economy } from '../src';
+import { capacityRaw } from './fixtures/capacity-model';
 const send = (g: Game, command: Command, at = g.world.now) => g.command({ idempotencyKey: `rush-${g.log.length}`, at, command });
 function create(patch?: (c: Economy) => void) {
-  const raw = structuredClone(config.raw); raw.onboarding.enabled = false; raw.patience.thuongMs = 1000000;
+  // Rules-7 layouts were recorded with capacity-model snapshots; rules >= 28 refuses older entries on a seat-model seed.
+  const raw = capacityRaw(); raw.onboarding.enabled = false; raw.patience.thuongMs = 1000000;
   patch?.(raw);
   const g = new Game(loadConfig(raw), 42, Date.parse('2026-09-08T10:00:00Z'));
   // These clock regressions retain legacy layouts, including historically accepted overlapping slots.

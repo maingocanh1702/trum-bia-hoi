@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { CURRENT_RULES, Game, config, loadConfig, flyerQuote, WEATHER, RUSH_TYPES, arrivalIntervalMs, encodeSave, decodeSave, requirementStatus, type Command, type Economy } from '../src';
+import { furnish } from './fixtures/seat-shop';
 const send = (g: Game, command: Command) => g.command({ command, at: g.world.now, idempotencyKey: `flyer-${g.log.length}` });
 function setup(patch = (_: Economy) => {}) {
   const raw = structuredClone(config.raw); raw.onboarding.enabled = false; raw.rush.schedule.perShift = 0; raw.unlocks.flyer.gate = 'LP0';
@@ -85,6 +86,7 @@ test('hidden time preserves campaign duration; reports end once before boundary 
 
 test('campaign reports measure actual seated service and losses, not capped-away tips or delivery credit', () => {
   const g = setup(r => { r.unlocks.flyer.repBase = 0; r.unlocks.flyer.campaignMs = 60000; r.shift.dailyEarnCapBase = 1; r.shift.startingCoinsBase = 100000; r.unlocks.phone.gate = 'LP0'; r.customerTypes.shipper.spawnIntervalMs = 10000; });
+  furnish(g, command => send(g, command)); // a busy seat-model shop: four two-chair tables
   send(g, { type: 'buyUnlock', item: 'phone' }); send(g, { type: 'buyFlyer' }); send(g, { type: 'startShift' }); activate(g);
   const w = g.world, until = w.shift!.flyer!.end, from = w.events.length;
   while (w.now < until) {

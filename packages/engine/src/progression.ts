@@ -8,7 +8,7 @@ export function requirementStatus(w: WorldView, c: Config, token: string): Requi
   if (r.kind === 'owned') return { kind: r.kind, target: r.target, met: r.target === 'dog' ? w.dogLevel > 0 : w.unlocks.includes(r.target) };
   if (r.kind === 'peak') return { kind: r.kind, target: r.target, met: c.values.league.tiers.findIndex(t => t.id === w.peakLeague) >= c.values.league.tiers.findIndex(t => t.id === r.target) };
   // The four core devices share five levels; kitchen's separate paid ladder ends at four.
-  const have = r.kind === 'level' ? w.lifePath : r.kind === 'seats' ? w.tables.reduce((sum, table) => sum + table.capacity, 0) : r.kind === 'stall' ? w.equipment.stall : Math.min(...EQUIPMENT.filter(kind => kind !== 'kitchen').map(kind => w.equipment[kind]));
+  const have = r.kind === 'level' ? w.lifePath : r.kind === 'seats' ? w.tables.reduce((sum, table) => sum + table.capacity, 0) : r.kind === 'tables' ? w.tables.length : r.kind === 'stall' ? w.equipment.stall : Math.min(...EQUIPMENT.filter(kind => kind !== 'kitchen').map(kind => w.equipment[kind]));
   return { kind: r.kind, have, need: r.need, met: r.exact ? have === r.need : have >= r.need };
 }
 /** Reached milestones stay reached; unclaimed rewards never hold feature access back. */

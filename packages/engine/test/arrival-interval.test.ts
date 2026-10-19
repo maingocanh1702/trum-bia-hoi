@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { CURRENT_RULES, Game, config, loadConfig, WEATHER, RUSH_TYPES, arrivalIntervalMs, encodeSave, decodeSave, type Economy, type Weather, type Command } from '../src';
 
 const send = (g: Game, command: Command) => g.command({ command, at: g.world.now, idempotencyKey: `arrival-${g.log.length}` });
-function snapshot(weather: Weather, patch = (_: Economy) => {}) {
+function snapshot(weather: Weather, patch = (_: typeof config.raw) => {}) {
   const raw = structuredClone(config.raw); raw.onboarding.enabled = false; raw.rush.schedule.perShift = 0;
   for (const name of WEATHER) raw.weather[name].weight = name === weather ? 1 : 0;
   patch(raw); return loadConfig(raw);
@@ -39,7 +39,8 @@ test('ordinary baseline floor and multiplier remain configurable without weakeni
 test('fast-weather rush groups retain hard floors and round once after the per-customer size factor', () => {
   const expected = { none: 105, peak: 6.6, light: 1000, heavy: 700, lunch_light: 1000, football: 700 };
   for (const perCustomer of [true, false]) for (const kind of RUSH_TYPES) {
-    const c = snapshot('hot', raw => { raw.spawn.baseMs = 1000; raw.weather.hot.spawnIntervalMult = 0.01; raw.spawn.perCustomer = perCustomer; });
+    // Every group is a pair (D17): the gap after it, seated or turned away for lack of a two-chair table, scales by two.
+    const c = snapshot('hot', raw => { raw.spawn.baseMs = 1000; raw.weather.hot.spawnIntervalMult = 0.01; raw.spawn.perCustomer = perCustomer; raw.spawn.pPair = 1; });
     const g = new Game(c, 5, 0); assert.ok(send(g, { type: 'startShift' }).ok);
     // Controlled slot: isolates all supported rush modes from random schedule placement.
     if (kind !== 'none') g.world.shift!.rushes = [{ kind, start: 0, end: c.values.shift.durationMs }];

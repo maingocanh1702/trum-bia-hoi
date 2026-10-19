@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import seed from '../../../docs/config/economy.tbh.json';
 import capacityModel from '../../../docs/config/legacy/economy-2.0.4.json';
-import { CURRENT_RULES, Game, config, loadConfig, decodeSave, encodeSave, buyTableQuote, buyChairQuote, requirementStatus, restockQuote, DISHES, WEATHER, type Command, type DomainEvent, type LoggedCommand } from '../src';
+import { CURRENT_RULES, Game, config, loadConfig, decodeSave, encodeSave, buyTableQuote, buyChairQuote, requirementStatus, restockQuote, isSeatModel, DISHES, WEATHER, type Command, type DomainEvent, type LoggedCommand } from '../src';
 import { serveNext } from '../sim/policy';
 
 // Plan "Vui 3 ca" S1 / FEEDBACK II.2 v3.3: rules 28 seat model. Every state change below is a real command or clock advance.
@@ -44,7 +44,7 @@ function trays(events: readonly DomainEvent[], seats: (tableId: string) => numbe
 }
 
 test('a new game opens one table with one chair; the home alley caps tables at its tableSlots with no life-path gate', () => {
-  const g = seatGame(), w = g.world, c = g.config.values;
+  const g = seatGame(), w = g.world, c = g.config.values; assert.ok(isSeatModel(c));
   assert.equal(c.upgrades.table.startingTables, 1);
   assert.deepEqual(w.tables.map(t => [t.capacity, t.level]), [[1, c.runtime.initialTableLevel]]);
   const slots = c.locations.list.find(row => row.id === w.location)!.tableSlots;
@@ -66,7 +66,7 @@ test('a new game opens one table with one chair; the home alley caps tables at i
 });
 
 test('a second chair opens only after chairsAfterTables tables, a table never holds a third, and price indexes chairs across the shop', () => {
-  const g = seatGame(), w = g.world, c = g.config.values;
+  const g = seatGame(), w = g.world, c = g.config.values; assert.ok(isSeatModel(c));
   assert.equal(c.upgrades.table.chairsAfterTables, 4);
   while (w.tables.length < c.upgrades.table.chairsAfterTables - 1) assert.ok(send(g, { type: 'buyTable' }).ok);
   const [first, second] = w.tables;
@@ -98,10 +98,10 @@ test('a one-chair table never gives one guest beer and a dish together; a two-ch
   const pairTable = w.tables[3];
   assert.ok(send(g, { type: 'buyChair', tableId: pairTable.id }).ok);
   assert.ok(send(g, { type: 'startShift' }).ok);
-  play(g, () => w.phase === 'resting' || w.events.filter(e => e.type === 'order_placed' && e.data.tableId === pairTable.id).length >= 12);
+  play(g, () => w.phase === 'resting', 900000); // one whole shift
   const rows = trays(w.events, id => w.tables.find(t => t.id === id)!.capacity);
   const solo = rows.filter(r => r.seats === 1), pair = rows.filter(r => r.seats === 2);
-  assert.ok(solo.length >= 20 && pair.length >= 12, `enough trays: ${solo.length} solo, ${pair.length} pair`);
+  assert.ok(solo.length >= 15 && pair.length >= 30, `enough trays: ${solo.length} solo, ${pair.length} pair`);
   assert.ok(solo.every(r => r.dishes.length === 1), 'solo guests order exactly one item');
   assert.ok(solo.some(r => r.dishes[0] === 'bia') && solo.some(r => r.dishes[0] !== 'bia'), 'solo trays are beer OR one instant dish');
   assert.ok(solo.every(r => g.config.values.menu[r.dishes[0] as typeof DISHES[number]].station !== 'kitchen'), 'a solo dish is instant');
@@ -179,7 +179,7 @@ test('D2 migration: a 3-table x6-seat Lv3 save becomes 3 tables x2 chairs at lev
   assert.deepEqual(w.tables.map(t => [t.id, t.capacity, t.level]), ids.map(id => [id, 2, 3]));
   assert.equal(w.coins, coins, 'no refund');
   const adopted = w.events.filter(e => e.type === 'seat_model_adopted');
-  assert.deepEqual(adopted.map(e => e.data), [{ tablesBefore: 3, tablesAfter: 3, seatsBefore: 18, seatsAfter: 6 }]);
+  assert.deepEqual(adopted.map(e => e.data), [{ shiftId: w.shift!.id, tablesBefore: 3, tablesAfter: 3, seatsBefore: 18, seatsAfter: 6 }]);
   assert.ok(send(g, { type: 'endShift' }).ok); g.advance(w.now + 3600000);
   assert.ok(send(g, { type: 'startShift' }).ok);
   assert.equal(w.events.filter(e => e.type === 'seat_model_adopted').length, 1, 'the migration runs once');
@@ -193,7 +193,7 @@ test('D2 migration keeps only the first tableSlots tables of a larger shop', () 
   const { g } = capacitySave(6), w = g.world, kept = w.tables.slice(0, 4).map(t => t.id);
   assert.ok(g.command({ command: { type: 'startShift' }, at: w.now, idempotencyKey: 'adopt-seats' }, config).ok);
   assert.deepEqual(w.tables.map(t => [t.id, t.capacity]), kept.map(id => [id, 2]));
-  assert.deepEqual(w.events.find(e => e.type === 'seat_model_adopted')!.data, { tablesBefore: 6, tablesAfter: 4, seatsBefore: 36, seatsAfter: 8 });
+  assert.deepEqual(w.events.find(e => e.type === 'seat_model_adopted')!.data, { shiftId: w.shift!.id, tablesBefore: 6, tablesAfter: 4, seatsBefore: 36, seatsAfter: 8 });
   assert.deepEqual(buyTableQuote(w, g.config).reason, 'maxTables');
 });
 

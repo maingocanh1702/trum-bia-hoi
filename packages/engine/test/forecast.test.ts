@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Game, config, loadConfig, encodeSave, decodeSave, isEconomy2, leaseQuote, type Config, type Command } from '../src';
 import { projectEconomy, compareEconomy, DAY_MS } from '../sim/forecast';
+import { capacityRaw } from './fixtures/capacity-model';
 const START=Date.parse('2026-09-09T00:00:00+07:00');
 const changed=(version:string,edit:(raw:Config['raw'])=>void)=>{const raw=structuredClone(config.raw);raw._meta.version=version;edit(raw);return loadConfig(raw);};
 
@@ -62,10 +63,10 @@ test('forecast rejects unsupported horizons and ambiguous timelines before proje
 });
 
 test('an existing signed lease separates returned principal and renews by location identity after multiplier tuning',()=>{
- const fixture=changed('forecast-lease-fixture',raw=>{
-  assert.ok(isEconomy2(raw));raw.shift.startingCoinsBase=1000000;
-  raw.lifePath[1].lifetimeBase=1;raw.lifePath[1].requires=raw.lifePath[1].requires!.map(()=>'LP0');
- });
+ // A pinned capacity-model player: its crowded three two-seat tables keep losing orders, so penalty accounting is exercised.
+ const fixtureRaw=capacityRaw();fixtureRaw._meta.version='forecast-lease-fixture';fixtureRaw.shift.startingCoinsBase=1000000;
+ fixtureRaw.lifePath[1].lifetimeBase=1;fixtureRaw.lifePath[1].requires=fixtureRaw.lifePath[1].requires!.map(()=>'LP0');
+ const fixture=loadConfig(fixtureRaw);
  const source=new Game(fixture,42,START);
  const send=(command:Command)=>assert.ok(source.command({command,at:source.world.now,idempotencyKey:`lease-setup-${source.log.length}`}).ok);
  send({type:'startShift'});source.advance(START+11000);

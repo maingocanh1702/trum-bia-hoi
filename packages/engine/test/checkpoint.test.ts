@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { Game, config, decodeSave, encodeSave, loadConfig, type RulesVersion } from '../src';
 import { mixedPinGame, nextPin, pinConfig } from './fixtures/config-pinning';
+import { capacityConfig } from './fixtures/capacity-model';
 
 function restore(game: Game) {
   return Game.restoreTrusted(game.configs.map(c => loadConfig(JSON.parse(JSON.stringify(c.raw)))),
@@ -37,7 +38,7 @@ test('every archived replay state restores its actual bookkeeping and continues 
 test('rules1 through24 preserve an active rush through closing and retain the original producing batch deadlines', () => {
   const legacy = loadConfig(JSON.parse(readFileSync(new URL('../../../docs/config/legacy/economy-1.7.3.json', import.meta.url), 'utf8')));
   for (let version = 1; version <= 24; version++) {
-    const raw = structuredClone((version < 21 ? legacy : config).raw);
+    const raw = structuredClone((version < 21 ? legacy : capacityConfig).raw); // rules <= 27 only ran pre-seat snapshots
     raw.onboarding.enabled = false; raw.patience.thuongMs = 1000000;
     const c = loadConfig(raw), game = new Game(c, 42, Date.parse('2026-09-10T10:00:00Z'));
     const send = (key: string, command: { type: 'startShift' | 'endShift' }) => game.replay({ at: game.world.now,

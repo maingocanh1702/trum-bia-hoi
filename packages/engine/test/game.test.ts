@@ -1,9 +1,10 @@
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { CURRENT_RULES, Game, kickAllQuote, config, loadConfig, encodeSave, decodeSave, credit, customerValue, dayKey, restockQuote, type Command, type Economy } from '../src/index';
+import { CURRENT_RULES, Game, kickAllQuote, config, loadConfig, encodeSave, decodeSave, credit, customerValue, dayKey, restockQuote, PAIR, type Command, type Economy } from '../src/index';
+import { capacityRaw } from './fixtures/capacity-model';
 
-function create(patch?: (c: Economy) => void) {
+function create(patch?: (c: typeof config.raw) => void) {
   const raw = structuredClone(config.raw);
   for (const k of ['hot', 'humid', 'rain', 'cold'] as const) raw.weather[k].weight = 0;
   patch?.(raw);
@@ -221,9 +222,9 @@ test('custom normal, VIP, hurried and leisurely round ranges reach spawned group
     ['voi', [2, 2], 0, 2], ['ngoily', [4, 4], 0, 4],
   ] as const) {
     const g = create(c => {
-      c.onboarding.enabled = false; c.upgrades.table.levels[0].capacity = 1;
+      c.onboarding.enabled = false; c.spawn.pPair = 0; // one guest per group isolates that type's round range
       Object.entries(c.customerTypes).forEach(([key, profile]) => { profile.weight = key === type ? 1 : 0; });
-      if (type === 'vip') c.customerTypes.vip.maxPerGroupPhase2 = Math.max(...c.upgrades.table.levels.map(t => t.capacity));
+      if (type === 'vip') c.customerTypes.vip.maxPerGroupPhase2 = PAIR; // a VIP-only pool must be able to fill any group
       c.rounds[type] = [...range]; c.demandMix.pSecondRound = probability;
     });
     send(g, { type: 'startShift' }); g.advance(g.world.shift!.nextSpawnAt);
@@ -313,7 +314,8 @@ test('mixed-group round precedence survives hurried nonconstant sampling', () =>
     [['ngoily', 'voi'], 8, 7], [['voi', 'vip'], 8, 5],
     [['voi', 'vip'], 9, 3], [['vip', 'thuong'], 8, 6],
   ] as const) {
-    const raw = structuredClone(config.raw);
+    // Shared round-precedence code; these recorded seeds draw mixed groups on the capacity model's 3 tables x2 seats.
+    const raw = capacityRaw();
     raw.onboarding.enabled = false;
     Object.entries(raw.customerTypes).forEach(([key, profile]) => { profile.weight = types.some(type => type === key) ? 1 : 0; });
     raw.rounds.ngoily = [7, 7]; raw.rounds.voi = [3, 5]; raw.rounds.vip = [6, 6]; raw.rounds.thuong = [2, 2]; raw.demandMix.pSecondRound = 1;

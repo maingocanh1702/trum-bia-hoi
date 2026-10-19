@@ -10,9 +10,9 @@ test('two real career days conserve the wallet and replay purchases, claims, clo
   assert.equal(report.rows[1].openingCoins, report.rows[0].coins);
   assert.notEqual(report.rows[0].date, report.rows[1].date);
   assert.ok(report.rows.every(row => row.shifts === config.values.shift.dailyShiftCap.newbie && row.served > 0 && row.totalSpent > 0));
-  assert.ok(game.log.some(e => e.command.type === 'upgradeTable'));
+  assert.ok(game.log.some(e => e.command.type === 'buyTable')); assert.ok(game.log.some(e => e.command.type === 'buyChair'));
   assert.ok(game.log.some(e => e.command.type === 'buyGlass'));
-  assert.ok(game.log.some(e => e.command.type === 'upgradeDog'));
+  assert.ok(!game.log.some(e => e.command.type === 'upgradeDog'), 'the bot never buys the dog (M6 deferred)');
   assert.ok(game.log.some(e => e.command.type === 'claimLifePath'));
   assert.equal(game.world.events.filter(e => e.type === 'attendance_claimed').length, 2);
   assert.equal(report.rows[1].lifePath, 1);

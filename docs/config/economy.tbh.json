@@ -1,8 +1,8 @@
 {
   "_meta": {
     "name": "Trùm Bia Hơi — economy config",
-    "version": "2.0.4",
-    "date": "2026-09-16",
+    "version": "2.0.5",
+    "date": "2026-10-19",
     "spec": "08-SPEC-economy-constants.md (cùng số, cùng tên trường)",
     "rules": [
       "Trường kết thúc bằng 'Base' = xu/uy tín gốc, NHÂN k lúc load: displayed = round(valueBase * k).",
@@ -56,7 +56,13 @@
             "shopSeason",
             "cosmetics.donationTiersVnd",
             "leaderboard",
-            "donation"
+            "donation",
+            "spawn.pPair",
+            "locations.list",
+            "upgrades.table.orderShape",
+            "upgrades.table.tablePriceBase",
+            "upgrades.table.chairPriceBase",
+            "upgrades.table.chairsAfterTables"
           ],
           "featureFlags": [
             "weather.phase1Enabled",
@@ -263,7 +269,8 @@
     ],
     "groupSizeMaxPhase1": "table.capacity",
     "queueSlotsFormula": "2 + floor(totalCapacity / 3)",
-    "playerServeCeilingPerSec": 0.74
+    "playerServeCeilingPerSec": 0.74,
+    "pPair": 0.5
   },
   "patience": {
     "thuongMs": 18000,
@@ -782,28 +789,24 @@
         {
           "level": 1,
           "name": "Bàn con",
-          "capacity": 2,
           "priceBase": 0,
           "phase": 0
         },
         {
           "level": 2,
           "name": "Bàn vuông",
-          "capacity": 4,
           "priceBase": 1500,
           "phase": 1
         },
         {
           "level": 3,
           "name": "Bàn dài",
-          "capacity": 6,
           "priceBase": 6000,
           "phase": 2
         },
         {
           "level": 4,
           "name": "Bàn VIP / kê dài",
-          "capacity": 8,
           "priceBase": 25000,
           "repBase": [
             3000,
@@ -813,55 +816,36 @@
           "phase": 3
         }
       ],
-      "startingTables": 3,
-      "maxTables": 6
-    },
-    "extraSeatPriceBase": {
-      "4": 200,
-      "5": 500,
-      "6": 1000,
-      "7": 1500,
-      "8": 2500,
-      "9": 5000,
-      "10": 10000,
-      "11": 18000,
-      "12": 22000,
-      "13": 23800,
-      "14": 25700,
-      "15": 27800,
-      "16": 30000,
-      "17": 32400,
-      "18": 35000,
-      "19": 37800,
-      "20": 40800,
-      "21": 44100,
-      "22": 47600,
-      "23": 51400,
-      "24": 55500,
-      "25": 59900,
-      "26": 64700,
-      "27": 69900,
-      "28": 75500,
-      "29": 81500,
-      "30": 88000,
-      "31": 95000,
-      "32": 102600,
-      "33": 110800,
-      "34": 119700,
-      "35": 129300,
-      "36": 139600,
-      "37": 150800,
-      "38": 162900,
-      "39": 175900,
-      "40": 190000,
-      "41": 205200,
-      "42": 221600,
-      "43": 239300,
-      "44": 258400,
-      "45": 279100,
-      "46": 301400,
-      "47": 325500,
-      "48": 351500
+      "startingTables": 1,
+      "tablePriceBase": [
+        600,
+        1600,
+        3200,
+        6000,
+        10000,
+        16000,
+        25000
+      ],
+      "chairPriceBase": [
+        4000,
+        6000,
+        9000,
+        12000,
+        16000,
+        20000,
+        24000,
+        28000
+      ],
+      "chairsAfterTables": 4,
+      "orderShape": {
+        "solo": {
+          "pBeer": 0.7
+        },
+        "pair": {
+          "pMoi": 0.85
+        },
+        "_rule": "Mâm theo số ghế của bàn lúc nhóm ngồi (rules 28, D14): bàn 1 ghế = mỗi khách bia HOẶC 1 mồi tức thì (pBeer = xác suất bia; mồi chỉ chọn trong món tức thì còn hàng, hết thì bia); bàn 2 ghế = mỗi khách bia + 1 mồi với xác suất pMoi (kể cả mồi bếp, chỉ món còn hàng). Nhóm đang ngồi giữ mâm cũ; ghế mua thêm áp cho nhóm kế. demandMix.pMoi chỉ còn cho snapshot cũ (mô hình sức chứa)."
+      }
     },
     "backrest": {
       "label": "postmvp",
@@ -884,7 +868,7 @@
       "effect": "khách ghế đó gọi 2 mồi"
     },
     "phase1UpgradesOutsideShiftOnly": false,
-    "_seatRule": "Mua bàn con thứ N = Σ giá ghế quy đổi (seats+1 .. seats+2). Từ 3 bàn con: bàn 4 = 4.000 · bàn 5 = 15.000 · bàn 6 = 40.000 base. Ghế 13–48 để mua bàn được cả sau khi đã nâng bàn (+8 %/ghế).",
+    "_seatRule": "Mô hình bàn ghế v3.3 (rules 28): bàn mới kèm 1 ghế, giá bàn thứ n = tablePriceBase[n−2]; số bàn tối đa = locations.list[].tableSlots của mặt bằng đang đứng; ghế thứ 2 của mỗi bàn chỉ mở khi đã có chairsAfterTables bàn, giá = chairPriceBase[số ghế 2 đã mua toàn quán]; tối đa 2 ghế/bàn; mua bàn/ghế không đòi bàn trống (áp cho nhóm kế). Nhóm khách 1 hoặc 2 người (spawn.pPair); cặp đến khi quán chưa có bàn 2 ghế → từ chối tại cửa (queue_overflow noSeat), không phạt, không trừ uy tín.",
     "_pipelineRule": "Founder 09/09: MỌI trạm (bom rót, bồn rửa, bếp) là pipeline TỰ ĐỘNG — người chơi không bấm, chỉ Phục vụ. Mỗi trạm định nghĩa bằng 2 tham số: thời gian 1 mẻ (ms) + số lượng mỗi mẻ (batch). Mẻ bắt đầu ngay khi có ≥1 việc chờ và lấy tối đa batch việc; việc đến giữa mẻ chờ mẻ sau. Engine đọc: keg.refillMs/kegBatch, washer.washMs/slots (=batch), kitchen prepMs/slots (=số chảo) × portionsPerPan.",
     "lifePathGate": {
       "keg": [
@@ -1423,7 +1407,7 @@
         "crate.small"
       ],
       "requires": [
-        "4 seats"
+        "4 tables"
       ]
     },
     {
@@ -1524,7 +1508,8 @@
         "e": null,
         "rentPerDayBase": 0,
         "gate": null,
-        "gateLifePath": 0
+        "gateLifePath": 0,
+        "tableSlots": 4
       },
       {
         "id": "ngo_cho",
@@ -1533,7 +1518,8 @@
         "e": 10,
         "rentPerDayBase": 4000,
         "gate": "LP1",
-        "gateLifePath": 1
+        "gateLifePath": 1,
+        "tableSlots": 4
       },
       {
         "id": "ben_xe",
@@ -1542,7 +1528,8 @@
         "e": 15,
         "rentPerDayBase": 6800,
         "gate": "LP1",
-        "gateLifePath": 1
+        "gateLifePath": 1,
+        "tableSlots": 4
       },
       {
         "id": "gan_cong_so",
@@ -1551,7 +1538,8 @@
         "e": 20,
         "rentPerDayBase": 10000,
         "gate": "LP2",
-        "gateLifePath": 2
+        "gateLifePath": 2,
+        "tableSlots": 4
       },
       {
         "id": "gan_svd",
@@ -1560,7 +1548,8 @@
         "e": 25,
         "rentPerDayBase": 14000,
         "gate": "LP3",
-        "gateLifePath": 3
+        "gateLifePath": 3,
+        "tableSlots": 4
       },
       {
         "id": "ho_bia_dem",
@@ -1569,7 +1558,8 @@
         "e": 30,
         "rentPerDayBase": 18000,
         "gate": "LP3",
-        "gateLifePath": 3
+        "gateLifePath": 3,
+        "tableSlots": 4
       },
       {
         "id": "pho_co",
@@ -1578,7 +1568,8 @@
         "e": 35,
         "rentPerDayBase": 24000,
         "gate": "LP4",
-        "gateLifePath": 4
+        "gateLifePath": 4,
+        "tableSlots": 4
       },
       {
         "id": "ga_metro",
@@ -1587,7 +1578,8 @@
         "e": 40,
         "rentPerDayBase": 32000,
         "gate": "LP5",
-        "gateLifePath": 5
+        "gateLifePath": 5,
+        "tableSlots": 4
       },
       {
         "id": "pho_tay",
@@ -1596,7 +1588,8 @@
         "e": 45,
         "rentPerDayBase": 44000,
         "gate": "LP6",
-        "gateLifePath": 6
+        "gateLifePath": 6,
+        "tableSlots": 4
       }
     ],
     "phase": 3,

@@ -2,12 +2,19 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import legacy from '../../../docs/config/legacy/economy-1.7.3.json';
 import { Game, config, loadConfig, isEconomy2, DISHES, WEATHER, EQUIPMENT, beerStatus, kitchenStatus, buyGlassQuote, upgradeQuote, planRushes, encodeSave, decodeSave, type Command } from '../src';
+import { capacityRaw } from './fixtures/capacity-model';
 const send = (g: Game, command: Command, key = `eco2-${g.log.length}`) => g.command({ command, at: g.world.now, idempotencyKey: key });
 function game(patch?: (raw: typeof import('../../../docs/config/economy.tbh.json')) => void) {
   const raw = structuredClone(config.raw); assert.ok(isEconomy2(raw));
   raw.shift.startingCoinsBase = 1000000;
   for (const weather of WEATHER) raw.weather[weather].weight = weather === 'sunny' ? 1 : 0;
   patch?.(raw); return new Game(loadConfig(raw), 42, 0);
+}
+/** Six-guest tables exist only on the 2.0 capacity model; shared kitchen/stock rules are measured there. */
+function capacityGame(patch: (raw: ReturnType<typeof capacityRaw>) => void) {
+  const raw = capacityRaw(); raw.shift.startingCoinsBase = 1000000;
+  for (const weather of WEATHER) raw.weather[weather].weight = weather === 'sunny' ? 1 : 0;
+  patch(raw); return new Game(loadConfig(raw), 42, 0);
 }
 const replay = (g: Game) => assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
 
@@ -29,7 +36,7 @@ test('a new shift fills real reserve, pours through its one tap and starts refil
 });
 
 test('two simultaneous same-dish pans cook four portions, never six, then release capacity at their exact deadline', () => {
-  const g = game(raw => {
+  const g = capacityGame(raw => {
     raw.runtime.initialKitchenLevel = 2; raw.runtime.initialTableLevel = 3;
     raw.onboarding.firstShift.firstGroupSize = 6; raw.onboarding.firstShift.firstOrder = ['dau'];
   }), w = g.world;
@@ -45,7 +52,7 @@ test('two simultaneous same-dish pans cook four portions, never six, then releas
 });
 
 test('the last portions of raw side dishes are reserved once across a group; later guests order only available food', () => {
-  const g = game(raw => {
+  const g = capacityGame(raw => {
     raw.onboarding.enabled = false; raw.demandMix.pMoi = 1; raw.demandMix.pHotGivenMoi = 1;
     raw.runtime.initialKitchenLevel = 1; raw.runtime.initialTableLevel = 3;
     raw.weather.sunny.spawnIntervalMult = 0.1;
@@ -103,10 +110,12 @@ test('hot preference uses the whole special group and falls back to the availabl
   for (const special of [false, true]) for (const hotStock of [false, true]) {
     const g = game(raw => {
       raw.onboarding.enabled = false; raw.runtime.initialKitchenLevel = 1;
-      raw.demandMix.pMoi = 1; raw.demandMix.pHotGivenMoi = 0; raw.demandMix.pHotGivenMoiSpecial = 1;
+      // Hot dishes belong to the two-chair tray (D14): one table with its second chair, every guest takes a dish.
+      raw.upgrades.table.chairsAfterTables = 1; raw.upgrades.table.orderShape.pair.pMoi = 1; raw.demandMix.pHotGivenMoi = 0; raw.demandMix.pHotGivenMoiSpecial = 1;
       for (const customer of Object.values(raw.customerTypes)) if ('weight' in customer) customer.weight = 0;
       raw.customerTypes[special ? 'ngoily' : 'thuong'].weight = 1;
     });
+    assert.ok(send(g, { type: 'buyChair', tableId: g.world.tables[0].id }).ok);
     if (hotStock) send(g, { type: 'restock', dish: 'dau', mode: 'full' });
     send(g, { type: 'startShift' });
     while (!g.world.tables.some(t => t.order) && g.world.now < 20000) g.advance(g.world.now + 100);
@@ -130,7 +139,9 @@ test('both complete config generations load, while partial new snapshots, cyclic
 });
 
 test('an expired order waiting for table cleanup no longer reserves the last side dish', () => {
-  const g = game(raw => { raw.onboarding.enabled = false; raw.demandMix.pMoi = 1; raw.inventory.startingStock.lac[0] = 1; raw.inventory.startingStock.nem[0] = 0; });
+  // One-chair guests always want their instant dish here; singles only, a second table seats them while the first is cleaned.
+  const g = game(raw => { raw.onboarding.enabled = false; raw.spawn.pPair = 0; raw.upgrades.table.orderShape.solo.pBeer = 0; raw.inventory.startingStock.lac[0] = 1; raw.inventory.startingStock.nem[0] = 0; });
+  assert.ok(send(g, { type: 'buyTable' }).ok);
   // Valid transient boundary: expiry has released the food, but cleanup still retains the old order.
   const table = g.world.tables[0]; table.state = 'cleaning'; table.until = 60000;
   table.order = { id: 'expired-order', placedAt: 0, patienceMs: 1, state: 'expired', readyEmitted: false, items: [{ id: 'unused-food', dish: 'lac', state: 'pending', customerId: 'departed', glassId: null, readyAt: null }] };

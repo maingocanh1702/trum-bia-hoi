@@ -1,9 +1,9 @@
 import { SEASON_KINDS, compatibleSeasonTiers, nextSeasonEnd, pinUnusedSeasons, syncSeasons } from './seasons';
 import { leaseQuote, leaveLocationQuote } from './locations';
 import { kitchenStatus } from './kitchen';
-import { isEconomy2, config as defaultConfig, configContent, BUSINESS_UNLOCKS, SIGN_STYLES, signWeightMult, DISHES, EQUIPMENT, WEATHER, deliveryBundles, arrivalIntervalMs, type Config, type SeatedType, type Rush } from './config';
+import { isEconomy2, isSeatModel, PAIR, CHAIRS_WITH_TABLE, config as defaultConfig, configContent, BUSINESS_UNLOCKS, SIGN_STYLES, signWeightMult, DISHES, EQUIPMENT, WEATHER, deliveryBundles, arrivalIntervalMs, type Config, type SeatedType, type Rush } from './config';
 import { integer, random, weighted } from './rng';
-import { buyGlassQuote, addStock, credit, creditBatchSafe, currentGuests, customerValue, dayKey, deliveryInterval, deliveryQuote, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
+import { buyGlassQuote, buyTableQuote, buyChairQuote, tableUpgradeQuote, addStock, credit, creditBatchSafe, currentGuests, customerValue, dayKey, deliveryInterval, deliveryQuote, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
 import { lifePathStatus, lifePathRewardQuote, unlockQuote } from './progression';
 import { signboardQuote, signboardStyle } from './signboard';
 import { attendanceDay, attendanceRewardQuote, applyQuestEvent, planDailyQuests, questRewardQuote, zeroLossWindow } from './quests';
@@ -29,7 +29,8 @@ const MENU_PAUSE_RULES: RulesVersion = 16; // config-exempt: fixed replay protoc
 const LIVE_UPGRADE_RULES: RulesVersion = 17; // config-exempt: fixed replay protocol revision for owner live-upgrade policy
 const BATCH_RULES: RulesVersion = 18; // config-exempt: fixed replay protocol revision for stocked beer and wash batches
 const DISCONNECT_RULES: RulesVersion = 19; // config-exempt: replay protocol for trusted disconnection deadlines
-export const CURRENT_RULES: RulesVersion = 27; // config-exempt: shift KPI snapshots; historical events remain exact
+export const CURRENT_RULES: RulesVersion = 28; // config-exempt: seat model v3.3; historical events remain exact
+const SEAT_RULES: RulesVersion = 28; // config-exempt: fixed replay protocol revision for the seat model (plan S1)
 const METRICS_RULES: RulesVersion = 27; // config-exempt: fixed replay protocol revision
 const FEEDBACK_RULES: RulesVersion = 26; // config-exempt: fixed replay protocol revision
 const OPENING_PROGRESS_RULES: RulesVersion = 25; // config-exempt: fixed replay protocol revision
@@ -110,8 +111,23 @@ export class Game {
   }
   private newGlass(): World['glasses'][number] { return { id: this.id('glass'), state: 'clean', itemId: null, readyAt: null, staleEmitted: false }; }
   private newTable(): Table {
-    const level = this.config.values.runtime.initialTableLevel;
-    return { id: this.id('table'), level, capacity: this.config.values.upgrades.table.levels[level - 1].capacity, state: 'empty', group: null, order: null, until: null, roundsServed: 0 };
+    const c = this.config.values, level = c.runtime.initialTableLevel;
+    // Shape, not rules: a seat-model snapshot only ever runs at rules >= 28 (replay() refuses older entries).
+    return { id: this.id('table'), level, capacity: isSeatModel(c) ? CHAIRS_WITH_TABLE : c.upgrades.table.levels[level - 1].capacity, state: 'empty', group: null, order: null, until: null, roundsServed: 0 };
+  }
+  /** Tables as the opening snapshot runs them: capacity pins re-derive seats from levels; the first seat-model pin migrates (plan D2). */
+  private openingTables(opening: Config, location: string, changed: boolean): Table[] {
+    const c = opening.values, w = this.world;
+    if (!isSeatModel(c)) return w.tables.map(table => ({ ...table, capacity: c.upgrades.table.levels[table.level - 1].capacity }));
+    if (!changed || isSeatModel(this.config.values)) return w.tables;
+    // D2: the first tableSlots tables, at most a pair of chairs each; the bought level stays, nothing is refunded.
+    const slots = c.locations.list.find(row => row.id === location)?.tableSlots ?? 0;
+    return w.tables.slice(0, slots).map(table => ({ ...table, capacity: Math.min(PAIR, table.capacity) }));
+  }
+  /** v3.3 seat model is live only under rules 28 with a seat-model snapshot; capacity pins keep their old rules. */
+  private seatModel() {
+    const c = this.config.values;
+    return this.rulesVersion >= SEAT_RULES && isSeatModel(c) ? c : null;
   }
   private items(): Item[] { return this.world.tables.flatMap(t => t.order?.items ?? []); }
   private queueDeadline(group: Group): number {
@@ -540,15 +556,17 @@ export class Game {
       const table = this.world.tables.filter(t => t.state === 'empty' && t.capacity >= group.customers.length).sort((a, b) => a.capacity - b.capacity)[0];
       if (!table) continue;
       this.world.queue = this.world.queue.filter(x => x.id !== group.id);
+      if (this.seatModel()) group.seats = table.capacity; // a chair bought mid-visit serves the next group
       table.group = group; table.state = 'seating'; table.until = this.world.now + this.config.values.runtime.tableSeatingMs;
       table.roundsServed = 0;
       this.emit('group_seated', { tableId: table.id, groupId: group.id, size: group.customers.length });
     }
   }
   private spawn(): void {
-    const w = this.world, c = this.config.values, s = w.shift!;
+    const w = this.world, c = this.config.values, s = w.shift!, seatModel = this.seatModel();
     const first = s.firstGroup && s.onboarding;
-    const size = first ? c.onboarding.firstShift.firstGroupSize : integer(w, 1, Math.max(...w.tables.map(t => t.capacity)));
+    // Seat model (D17): group size is independent of the shop; capacity pins draw up to the largest table.
+    const size = first ? c.onboarding.firstShift.firstGroupSize : seatModel ? random(w) < seatModel.spawn.pPair ? PAIR : 1 : integer(w, 1, Math.max(...w.tables.map(t => t.capacity)));
     const types = Object.entries(c.customerTypes).filter(([, v]) => v.usesTable && v.weight > 0) as [SeatedType, typeof c.customerTypes.thuong][];
     let vipCount = 0;
     const customers: Customer[] = Array.from({ length: size }, () => {
@@ -572,8 +590,12 @@ export class Game {
     else if (this.rulesVersion !== 1 && !first && hurried && range[0] !== range[1]) rounds = integer(w, ...range as [number, number]);
     const group: Group = { id: this.id('group'), customers, rounds, arrivedAt: w.now };
     s.stats.arrived += size;
-    if (w.queue.length >= queueSlots(w, this.config) && !w.tables.some(t => t.state === 'empty' && t.capacity >= size)) {
-      s.stats.rejected += size; this.emit('queue_overflow', { size });
+    if (seatModel && !w.tables.some(t => t.capacity >= size)) {
+      // D12/D17: no table can ever seat this group -> it leaves at the door; no penalty, reputation or `lost`.
+      s.stats.rejected += size; s.stats.noSeat = (s.stats.noSeat ?? 0) + size;
+      this.emit('queue_overflow', { size, reason: 'noSeat' });
+    } else if (w.queue.length >= queueSlots(w, this.config) && !w.tables.some(t => t.state === 'empty' && t.capacity >= size)) {
+      s.stats.rejected += size; this.emit('queue_overflow', seatModel ? { size, reason: 'queueFull' } : { size });
     } else {
       w.queue.push(group);
       this.emit('customer_spawned', { groupId: group.id, size, weather: s.weather, rush: s.rush });
@@ -592,14 +614,23 @@ export class Game {
     const available = { ...w.inventory };
     if (modern) for (const table of w.tables) if (table.order && ['pending', 'grace'].includes(table.order.state)) for (const item of table.order.items) if (item.state === 'pending') available[item.dish]--;
     const special = group.customers.some(customer => customer.type === 'vip' || customer.type === 'ngoily');
+    // Seat model (D14): the tray follows the chairs the group sat down with -- one chair orders beer OR one instant dish.
+    const seatModel = this.seatModel(), solo = seatModel !== null && (group.seats ?? t.capacity) < PAIR;
+    const instantDish = () => {
+      const cold = (['lac', 'nem'] as const).filter(d => available[d] > 0);
+      return cold.length === 2 ? (random(w) < c.demandMix.pNemGivenMoi ? 'nem' : 'lac') : cold[0];
+    };
     for (const customer of group.customers) {
       const dishes = first ? [...c.onboarding.firstShift.firstOrder] as typeof DISHES : ['bia'] as typeof DISHES;
-      if (!first && random(w) < c.demandMix.pMoi) {
+      if (!first && solo) {
+        const dish = random(w) < seatModel!.upgrades.table.orderShape.solo.pBeer ? undefined : instantDish();
+        if (dish) { dishes[0] = dish; available[dish]--; } // no instant dish left in stock -> beer
+      } else if (!first && random(w) < (seatModel ? seatModel.upgrades.table.orderShape.pair.pMoi : c.demandMix.pMoi)) {
         const hot = DISHES.filter(d => c.menu[d].station === 'kitchen' && dishUnlocked(w, this.config, d) && (!modern || available[d] > 0));
         if (modern) {
           const cold = (['lac', 'nem'] as const).filter(d => available[d] > 0);
           const preferHot = random(w) < (special ? modern.demandMix.pHotGivenMoiSpecial : modern.demandMix.pHotGivenMoi);
-          const dish = hot.length && (preferHot || !cold.length) ? hot[integer(w, 0, hot.length - 1)] : cold.length === 2 ? (random(w) < c.demandMix.pNemGivenMoi ? 'nem' : 'lac') : cold[0];
+          const dish = hot.length && (preferHot || !cold.length) ? hot[integer(w, 0, hot.length - 1)] : instantDish();
           if (dish) { dishes.push(dish); available[dish]--; }
         } else {
           const cold: Item['dish'] = random(w) < c.demandMix.pNemGivenMoi ? 'nem' : 'lac';
@@ -699,6 +730,7 @@ export class Game {
     if (this.world.seasons && entry.rulesVersion < SEASON_RULES) throw Error('replay:rulesVersion');
     if (['rentLocation', 'leaveLocation'].includes(entry.command.type) && entry.rulesVersion < LEASE_RULES) throw Error('replay:rulesVersion');
     if (entry.command.type === 'buyGlass' && entry.rulesVersion < ECONOMY_RULES) throw Error('replay:rulesVersion');
+    if ((entry.command.type === 'buyChair' || isSeatModel(config.values)) && entry.rulesVersion < SEAT_RULES) throw Error('replay:rulesVersion');
     if (entry.command.type === 'adoptCalendarRules' && entry.rulesVersion !== ABSENT_CALENDAR_RULES) throw Error('replay:rulesVersion');
     if ((entry.command.type === 'connectionRestored' || entry.command.type === 'connectionLost' && entry.command.shiftId === null) && entry.rulesVersion < CONNECTION_RULES) throw Error('replay:rulesVersion');
     if (entry.command.type === 'connectionLost' && (entry.rulesVersion < DISCONNECT_RULES || entry.rulesVersion >= ABSENT_CALENDAR_RULES && !entry.command.lossId)) throw Error('replay:rulesVersion');
@@ -776,7 +808,8 @@ export class Game {
         if (this.rulesVersion >= ATTENDANCE_RULES && cmd.active) this.observeAttendance(true);
         return { ok: true };
       case 'startShift': {
-        const c = openingConfig.values, changed = openingConfig.version !== this.config.version, previousVersion = this.config.version;
+        const c = openingConfig.values, changed = openingConfig.version !== this.config.version, previousVersion = this.config.version, previous = this.config.values;
+        let adopted: { tablesBefore: number; tablesAfter: number; seatsBefore: number; seatsAfter: number } | null = null;
         if (w.phase !== 'resting') return fail('shiftRunning');
         if (changed && !compatibleSeasonTiers(w, openingConfig, this.config)) return fail('configSeasonTiers');
         const location = changed && this.rulesVersion >= LEASE_RULES && isEconomy2(c) && !w.lease ? c.locations.fallback : w.location;
@@ -788,9 +821,10 @@ export class Game {
         if ((w.dayShifts[day] ?? 0) >= c.shift.dailyShiftCap.newbie) return fail('dailyShiftCap');
         if (this.rulesVersion === 1 && (w.dayEarned[day] ?? 0) >= c.shift.dailyEarnCapBase) return fail('dailyEarnCap');
         const onboarding = c.onboarding.enabled && w.completedShifts === 0;
-        if (changed && onboarding && !w.tables.some(table => c.upgrades.table.levels[table.level - 1].capacity >= c.onboarding.firstShift.firstGroupSize)) return fail('configOnboardingTables');
+        const tables = this.openingTables(openingConfig, location, changed);
+        if (changed && onboarding && !tables.some(table => table.capacity >= c.onboarding.firstShift.firstGroupSize)) return fail('configOnboardingTables');
         const scheduled = !(onboarding && c.onboarding.firstShift.rushDisabled);
-        const openingLevel = this.rulesVersion >= OPENING_PROGRESS_RULES ? lifePathStatus({ ...w, tables: w.tables.map(table => ({ ...table, capacity: c.upgrades.table.levels[table.level - 1].capacity })) }, openingConfig).level : w.lifePath;
+        const openingLevel = this.rulesVersion >= OPENING_PROGRESS_RULES ? lifePathStatus({ ...w, tables }, openingConfig).level : w.lifePath;
         const plan = this.rulesVersion >= RUSH_SCHEDULE_RULES && scheduled ? planRushes(openingConfig, location, this.id('shift', false), day, w.now, this.rulesVersion >= ECONOMY_RULES ? openingLevel : Infinity) : null;
         if (this.rulesVersion >= RUSH_SCHEDULE_RULES && scheduled && !plan) return fail('rushScheduleUnavailable');
         if (changed) {
@@ -798,7 +832,10 @@ export class Game {
           w.staminaAnchorAt = w.now; w.staminaAnchorMs = w.staminaMs;
           this.currentConfig = openingConfig; w.location = location;
           if (this.rulesVersion >= SEASON_RULES) pinUnusedSeasons(w, openingConfig);
-          for (const table of w.tables) table.capacity = c.upgrades.table.levels[table.level - 1].capacity;
+          const seatsBefore = w.tables.reduce((sum, table) => sum + table.capacity, 0), tablesBefore = w.tables.length;
+          if (isSeatModel(c) && !isSeatModel(previous)) adopted = { tablesBefore, tablesAfter: tables.length, seatsBefore, seatsAfter: tables.reduce((sum, table) => sum + table.capacity, 0) };
+          w.tables.splice(tables.length); // in place: D2 keeps the first tableSlots tables
+          tables.forEach((table, i) => { w.tables[i].capacity = table.capacity; });
         }
         if (this.rulesVersion >= SEASON_RULES) syncSeasons(w, this.config);
         const weather = weighted(w, WEATHER.map(k => [k, c.weather[k].weight]));
@@ -817,6 +854,7 @@ export class Game {
         if (plan) w.shift.rushScheduleSeed = plan.seed;
         w.phase = 'open'; w.lastServedAt = null; w.lostStreak = 0;
         if (changed) this.emit('config_pinned', { shiftId: w.shift.id, previousVersion, configVersion: this.config.version });
+        if (adopted) this.emit('seat_model_adopted', { shiftId: w.shift.id, ...adopted });
         this.startMenu(true);
         if (this.rulesVersion >= QUEST_RULES) this.ensureDailyQuests(true);
         if (this.rulesVersion >= ATTENDANCE_RULES) this.observeAttendance(true);
@@ -1014,15 +1052,11 @@ export class Game {
       }
       case 'upgradeTable': {
         if (this.rulesVersion < LIVE_UPGRADE_RULES && w.phase !== 'resting' && c.upgrades.phase1UpgradesOutsideShiftOnly) return fail('outsideShiftOnly');
-        const t = w.tables.find(t => t.id === cmd.tableId);
-        if (!t || t.state !== 'empty') return fail('tableBusy');
-        const level = c.upgrades.table.levels[t.level];
-        if (!level) return fail('maxLevel');
-        if (level.requiredBadge && !w.badges.includes(level.requiredBadge)) return fail('badgeRequired');
-        if (level.repBase && w.reputation < level.repBase[0]) return fail('reputationRequired');
-        if (w.coins < level.priceBase) return fail('notEnoughCoins');
-        this.spend(level.priceBase); t.level = level.level; t.capacity = level.capacity;
-        this.emit('table_upgraded', { tableId: t.id, level: t.level }); return { ok: true, amount: level.priceBase };
+        const q = tableUpgradeQuote(w, this.config, cmd.tableId), t = w.tables.find(t => t.id === cmd.tableId);
+        if (!q.ok || !q.level || !t) return fail(q.reason ?? 'tableBusy');
+        this.spend(q.level.priceBase); t.level = q.level.level;
+        if (!isSeatModel(c)) t.capacity = c.upgrades.table.levels[t.level - 1].capacity; // capacity pins: the level sets the seats
+        this.emit('table_upgraded', { tableId: t.id, level: t.level }); return { ok: true, amount: q.level.priceBase };
       }
       case 'rentLocation': {
         const q = leaseQuote(w, this.config, cmd.locationId);
@@ -1052,14 +1086,17 @@ export class Game {
       }
       case 'buyTable': {
         if (this.rulesVersion < LIVE_UPGRADE_RULES && w.phase !== 'resting' && c.upgrades.phase1UpgradesOutsideShiftOnly) return fail('outsideShiftOnly');
-        if (w.tables.length >= c.upgrades.table.maxTables) return fail('maxTables');
-        const seats = w.tables.reduce((sum, t) => sum + t.capacity, 0);
-        const capacity = c.upgrades.table.levels[c.runtime.initialTableLevel - 1].capacity;
-        const prices = c.upgrades.extraSeatPriceBase as Record<string, number>;
-        let cost = 0;
-        for (let i = 1; i <= capacity; i++) { const price = prices[String(seats + i)]; if (price === undefined) return fail('seatPriceUnconfigured'); cost += price; }
-        if (w.coins < cost) return fail('notEnoughCoins');
-        this.spend(cost); w.tables.push(this.newTable()); this.emit('table_bought', { cost }); return { ok: true, amount: cost };
+        const q = buyTableQuote(w, this.config);
+        if (!q.ok || q.cost === null) return fail(q.reason ?? 'maxTables');
+        this.spend(q.cost); const table = this.newTable(); w.tables.push(table);
+        this.emit('table_bought', this.seatModel() ? { cost: q.cost, tableId: table.id } : { cost: q.cost }); return { ok: true, amount: q.cost };
+      }
+      case 'buyChair': {
+        const q = buyChairQuote(w, this.config, cmd.tableId), t = w.tables.find(t => t.id === cmd.tableId);
+        if (!this.seatModel() || !q.ok || q.cost === null || !t) return fail(q.reason ?? 'chairsLocked');
+        // The seated group keeps its tray (Group.seats); the new chair serves the next group.
+        this.spend(q.cost); t.capacity++;
+        this.emit('chair_bought', { tableId: t.id, seats: t.capacity, cost: q.cost }); return { ok: true, amount: q.cost };
       }
       case 'emergencyPack':
         if (!DISHES.filter(d => dishUnlocked(w, this.config, d)).every(d => w.inventory[d] === 0)) return fail('stockRemaining');
@@ -1093,7 +1130,7 @@ export function validReplayEnvelope(input: unknown): input is Envelope<Command |
     case 'activity': return typeof c.active === 'boolean' && (c.paused === undefined || typeof c.paused === 'boolean') && (!c.paused || c.active);
     case 'serve': return typeof c.tableId === 'string' && typeof c.orderId === 'string';
     case 'serveDelivery': return typeof c.deliveryId === 'string';
-    case 'upgradeTable': return typeof c.tableId === 'string';
+    case 'upgradeTable': case 'buyChair': return typeof c.tableId === 'string';
     case 'claimLifePath': return Number.isSafeInteger(c.level) && c.level > 0;
     case 'buyUnlock': return BUSINESS_UNLOCKS.includes(c.item);
     case 'setSignboard': return SIGN_STYLES.includes(c.style);

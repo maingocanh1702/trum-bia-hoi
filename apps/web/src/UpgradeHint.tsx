@@ -1,4 +1,4 @@
-import { upgradeQuote, type Config, type WorldView, type menuReport } from '../../../packages/engine/src';
+import { buyTableQuote, upgradeQuote, type Config, type WorldView, type menuReport } from '../../../packages/engine/src';
 
 type Target = 'cooler' | 'tables' | 'stock' | 'keg' | 'washer' | 'kitchen';
 export function UpgradeHint({ world: w, config: c, report, t, open }: { world: WorldView; config: Config; report: ReturnType<typeof menuReport>; t: (key: string, params?: Record<string, string | number>) => string; open: (kind: Target) => void }) {
@@ -8,7 +8,7 @@ export function UpgradeHint({ world: w, config: c, report, t, open }: { world: W
   const losses = report?.losses ?? { unknown: w.shift.stats.lost, queue: 0 };
   const suggestions = [
     ...Object.entries(losses).filter(([kind]) => kind !== 'queue').map(([kind, count]) => ({ kind, count, target: targets[kind] })),
-    { kind: 'tables', count: losses.queue + w.shift.stats.rejected, target: w.tables.length < c.values.upgrades.table.maxTables || w.tables.some(table => c.values.upgrades.table.levels[table.level]) ? 'tables' as Target : undefined },
+    { kind: 'tables', count: losses.queue + w.shift.stats.rejected, target: buyTableQuote(w, c).reason !== 'maxTables' || w.tables.some(table => c.values.upgrades.table.levels[table.level]) ? 'tables' as Target : undefined },
     { kind: 'cooler', count: upgradeQuote(w, c, 'cooler').cost === null ? 0 : stale, target: 'cooler' as Target },
   ].filter(row => row.count > 0).sort((a, b) => b.count - a.count || Number(b.kind === 'unknown') - Number(a.kind === 'unknown'));
   const hint = suggestions[0];

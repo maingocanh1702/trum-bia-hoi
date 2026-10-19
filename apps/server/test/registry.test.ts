@@ -14,7 +14,7 @@ import { ConfigRegistry, registryPolicy, type AdminActor, type ConfigScope, type
 const NOW = Date.parse('2026-09-10T10:00:00Z');
 // Default measurer trusts the candidate's own declared k.value -- identical to the pre-existing self-report
 // check, so every test below that never touches raw.k sees admission behave exactly as before this feature.
-function fixture(t: { after(fn: () => unknown): void }, seed = config, measureK?: MeasureK) {
+function fixture(t: { after(fn: () => unknown): void }, seed: Config = config, measureK?: MeasureK) {
   const dir = mkdtempSync(join(tmpdir(), 'tbh-registry-')), file = join(dir, 'game.db');
   let now = NOW; const stores: GameStore[] = [], connections: DatabaseSync[] = [];
   const open = (c = seed) => { const s = new GameStore(file, c, () => now, measureK); stores.push(s); return s; };

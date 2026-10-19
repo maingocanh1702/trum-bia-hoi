@@ -103,7 +103,8 @@ test('actual capped service, rested bonus and phone delivery keep the seated men
     const raw = structuredClone(config.raw); raw.shift.startingCoinsBase = 100000; raw.lifePath[1].lifetimeBase = 1; raw.lifePath[2].lifetimeBase = 2; raw.spawn.baseMs = raw.shift.durationMs * 2;
     if (capped) raw.shift.dailyEarnCapBase = 10;
     const g = new Game(loadConfig(raw), 42, Date.parse('2026-09-09T10:00:00Z'));
-    for (const command of [{ type: 'upgrade', kind: 'stall' }, { type: 'restock', dish: 'lac', mode: 'full' }, { type: 'upgradeDog', level: 1 }] as const) sendKitchen(g, command);
+    // LP1 (phone gate) needs four tables in the seat model.
+    for (const command of [{ type: 'upgrade', kind: 'stall' }, { type: 'restock', dish: 'lac', mode: 'full' }, { type: 'upgradeDog', level: 1 }, { type: 'buyTable' }, { type: 'buyTable' }, { type: 'buyTable' }] as const) sendKitchen(g, command);
     g.advance(g.world.now + raw.shift.wellRested.requiresRestHours * 3600000 + 1); sendKitchen(g, { type: 'startShift' }); g.advance(g.world.now + 11000);
     const table = g.world.tables.find(t => t.order)!; sendKitchen(g, { type: 'serve', tableId: table.id, orderId: table.order!.id }); sendKitchen(g, { type: 'buyUnlock', item: 'phone' });
     const record = g.world.serves[0], expected = record.payment + record.tip;

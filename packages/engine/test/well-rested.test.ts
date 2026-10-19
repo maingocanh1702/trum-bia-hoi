@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Game, kickAllQuote, config, loadConfig, dayKey, encodeSave, decodeSave, wellRestedRemaining, type Command, type Economy } from '../src';
+import { capacityRaw } from './fixtures/capacity-model';
 
 const origin = Date.parse('2026-09-08T00:00:00Z');
 function create(patch?: (raw: Economy) => void, at = origin, seed = 42, source: Economy = config.raw) {
@@ -37,7 +38,8 @@ test('rest must be strictly longer than six hours and a start retry consumes the
 });
 
 test('each customer receives the rounded combined-service bonus without changing base k records', () => {
-  const g = create(c => { c.onboarding.firstShift.firstGroupSize = 2; }); openRested(g);
+  // A forced two-guest first group needs a two-seat starting table: the capacity model's (the seat model starts at one chair).
+  const g = create(c => { c.onboarding.firstShift.firstGroupSize = 2; }, origin, 42, capacityRaw()); openRested(g);
   const result = serveFirst(g, g.world.now + 14100);
   assert.deepEqual(result, { ok: true, outcome: 'early', amount: 144 });
   assert.equal(g.world.serves.length, 2);

@@ -10,7 +10,8 @@ export interface Order {
   state: 'pending' | 'grace' | 'served' | 'expired' | 'cancelled'; readyEmitted: boolean;
 }
 export interface DeliveryOrder { id: string; placedAt: number; expiresAt: number; lines: { dish: Dish; quantity: number }[] }
-export interface Group { id: string; customers: Customer[]; rounds: number; arrivedAt: number }
+/** `seats`: chairs of the table when the group sat down (rules 28); the group keeps that tray for every round. */
+export interface Group { id: string; customers: Customer[]; rounds: number; arrivedAt: number; seats?: number }
 export interface Table {
   id: string; level: number; capacity: number;
   state: 'empty' | 'seating' | 'waiting' | 'consuming' | 'occupied' | 'cleaning' | 'broken';
@@ -33,6 +34,8 @@ export interface Stats {
   arrived: number; served: number; lost: number; rejected: number; orders: number;
   payment: number; tip: number; credited: number; penalty: number; spent: number; rep: number;
   wellRestedBonus: number;
+  /** Guests of pairs turned away at the door because no table had two chairs (rules 28); also counted in `rejected`. */
+  noSeat?: number;
   deliveryCompleted?: number; deliveryMissed?: number; deliveryNet?: number; deliveryBonus?: number;
 }
 export interface Shift {
@@ -104,6 +107,7 @@ export type Command =
   | { type: 'upgrade'; kind: Equipment }
   | { type: 'upgradeTable'; tableId: string }
   | { type: 'buyTable' }
+  | { type: 'buyChair'; tableId: string }
   | { type: 'buyGlass'; count: number }
   | { type: 'rentLocation'; locationId: string; leaseId: string | null; maxCost: number }
   | { type: 'leaveLocation'; leaseId: string }
@@ -124,5 +128,5 @@ export type SystemCommand = { type: 'connectionLost'; shiftId: string | null; lo
   | { type: 'adoptCalendarRules' };
 export interface Envelope<C = Command> { idempotencyKey: string; at: number; command: C }
 export interface Result { ok: boolean; reason?: string; outcome?: 'early' | 'late' | 'grace' | 'expired' | 'stale'; amount?: number }
-export type RulesVersion = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27; // config-exempt: persisted replay protocol revisions, not economy tuning
+export type RulesVersion = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28; // config-exempt: persisted replay protocol revisions, not economy tuning
 export interface LoggedCommand extends Envelope<Command | SystemCommand> { result: Result; configVersion: string; rulesVersion: RulesVersion }

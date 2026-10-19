@@ -1,18 +1,21 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { CURRENT_RULES, Game, config, loadConfig, planDailyQuests, applyQuestEvent, questRewardQuote, dayKey, encodeSave, decodeSave, WEATHER, type Command, type Config, type Economy, type DailyQuest, type DomainEvent } from '../src';
+import { CURRENT_RULES, Game, config, loadConfig, planDailyQuests, applyQuestEvent, questRewardQuote, dayKey, encodeSave, decodeSave, WEATHER, PAIR, type Command, type Config, type Economy, type DailyQuest, type DomainEvent } from '../src';
+import { furnish } from './fixtures/seat-shop';
 const DAY = 86400000;
 const send = (g: Game, command: Command) => g.command({ command, at: g.world.now, idempotencyKey: `quests-${g.log.length}` });
-function snapshot(patch = (_: Economy) => {}) {
-  const r = structuredClone(config.raw); r.onboarding.enabled = false; r.rush.schedule.perShift = 0;
+// Seat model: every quest scenario plays in a furnished shop (four two-chair tables) whose tray is beer + lac.
+function snapshot(patch = (_: typeof config.raw) => {}) {
+  const r = structuredClone(config.raw); r.onboarding.enabled = false; r.rush.schedule.perShift = 0; r.shift.startingCoinsBase = 100000;
   for (const w of WEATHER) r.weather[w].weight = w === 'sunny' ? 1 : 0;
   for (const [key, type] of Object.entries(r.customerTypes)) if (type.usesTable) type.weight = key === 'thuong' ? 1 : 0;
-  r.demandMix.pMoi = 1; r.demandMix.pNemGivenMoi = 0; r.demandMix.pSecondRound = 0;
+  r.upgrades.table.orderShape.pair.pMoi = 1; r.demandMix.pNemGivenMoi = 0; r.demandMix.pSecondRound = 0;
   patch(r); return loadConfig(r);
 }
+function furnished(c: Config, at: number) { const g = new Game(c, 42, at); furnish(g, command => send(g, command)); return g; }
 function findGame(kind: string, c = snapshot()) {
-  for (let d = 0; d < 90; d++) { const g = new Game(c, 42, d * DAY); if (planDailyQuests(g.world, c).rows.some(r => r.kind === kind)) return g; }
+  for (let d = 0; d < 90; d++) if (planDailyQuests(new Game(c, 42, d * DAY).world, c).rows.some(r => r.kind === kind)) return furnished(c, d * DAY);
   throw Error(`No seeded day for ${kind}`);
 }
 const row = (g: Game, kind: string) => g.world.daily!.rows.find(r => r.kind === kind)!;
@@ -103,7 +106,7 @@ test('surviving rush needs actual service and its whole observed window, not an 
 test('VIP protection requires a full shift with VIP service, and paid dismissal cannot qualify', () => {
   for (const dismiss of [false, true]) {
     const g = findGame('no_lost_vip', snapshot(r => {
-      r.customerTypes.vip.weight = 100; r.customerTypes.thuong.weight = 0; r.customerTypes.vip.maxPerGroupPhase2 = r.upgrades.table.levels.at(-1)!.capacity;
+      r.customerTypes.vip.weight = 100; r.customerTypes.thuong.weight = 0; r.customerTypes.vip.maxPerGroupPhase2 = PAIR;
       r.enjoy.minMs = r.enjoy.maxMs = 1000; r.shift.startingCoinsBase = 100000;
     }));
     send(g, { type: 'startShift' }); serve(g); assert.ok(g.world.serves.some(s => s.customerType === 'vip'));
@@ -116,7 +119,7 @@ test('VIP protection requires a full shift with VIP service, and paid dismissal 
 });
 
 test('VN midnight expires claims exactly, pins the new set and credits bridge finalization to its new day', () => {
-  const c = snapshot(cheap), g = new Game(c, 42, Date.parse('2026-09-09T16:59:30Z'));
+  const c = snapshot(cheap), g = furnished(c, Date.parse('2026-09-09T16:59:30Z'));
   send(g, { type: 'startShift' }); serve(g); const old = structuredClone(g.world.daily!);
   g.advance(old.expiresAt); assert.equal(g.world.daily!.day, '2026-09-10'); assert.equal(g.world.daily!.rows.every(r => r.progress === 0), true);
   assert.equal(send(g, { type: 'claimQuest', day: old.day, questId: old.rows[0].id }).reason, 'questExpired');

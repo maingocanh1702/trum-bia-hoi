@@ -9,7 +9,7 @@ import { createManagementPolicy, serveNext, STEP_MS, MANAGEMENT_MS, MAX_DAY_STEP
 // config-exempt: reproducible diagnostic policy/sampling limits, never live gameplay or economy tuning.
 const MAX_DAYS = 90;
 const DEFAULT_START = Date.parse('2026-09-09T00:00:00+07:00');
-export const CAREER_POLICY = 'v1: fresh game; configured newbie shifts/day; full active stamina rest; 100ms whole-table/deadline service; 1s management; claim earned rewards; bulk restock/one when empty; keep one bulk per unlocked dish as capital reserve; dog1/phone/QR first, then cheapest eligible device/table/glass/dog/sign/neon; target two glasses per seat; upgrade existing tables only; one flyer/shift; next higher location multiplier only after lease expiry. No injected state or fabricated rewards. Diagnostic, not optimal-play or balance certification.';
+export const CAREER_POLICY = 'v2: fresh game; configured newbie shifts/day; full active stamina rest; 100ms whole-table/deadline service; 1s management; claim earned rewards; bulk restock/one when empty; keep one bulk per unlocked dish as capital reserve; phone/QR when affordable; seat model: save for the next table, then a second chair per table, before any other purchase; then cheapest eligible device/glass/sign/neon (capacity snapshots also table levels); never the dog (M6 deferred); target two glasses per seat; one flyer/shift; next higher location multiplier only after lease expiry. No injected state or fabricated rewards. Diagnostic, not optimal-play or balance certification.';
 
 export function simulateCareer({ days = 30, seed = 42, startAt = DEFAULT_START } = {}, onDay?: (row: CareerDay) => void) {
   assert.ok(Number.isInteger(days) && days >= 1 && days <= MAX_DAYS, 'days must be an integer in 1..90');

@@ -1,6 +1,6 @@
 import { creditSeasons, seasonCreditSafe } from './seasons';
 import { signboardStyle } from './signboard';
-import { isEconomy2, DISHES, type Config, type Dish, type Equipment, type Rush } from './config';
+import { isEconomy2, isSeatModel, DISHES, PAIR, CHAIRS_WITH_TABLE, type Config, type Dish, type Equipment, type Rush } from './config';
 import type { WorldView, Customer, Order, Table, World } from './types';
 
 // One formatter per timezone, built on first use. An Intl.DateTimeFormat owns a native ICU formatter
@@ -64,6 +64,43 @@ export function buyGlassQuote(w: WorldView, c: Config, count: number) {
   const cost = count * c.values.glasses.priceBase;
   const reason = !Number.isSafeInteger(count) || count <= 0 ? 'invalidQuantity' : count > capacity - w.glasses.length ? 'glassCapacity' : !Number.isSafeInteger(cost) || cost < 0 ? 'invalidCost' : w.coins < cost ? 'notEnoughCoins' : null;
   return { count, cost, capacity, owned: w.glasses.length, ok: reason === null, reason };
+}
+/** Table ceiling: the current location's tableSlots (seat model) or a capacity snapshot's global maxTables. */
+export function tableSlots(w: WorldView, c: Config): number {
+  const v = c.values;
+  return isSeatModel(v) ? v.locations.list.find(row => row.id === w.location)?.tableSlots ?? 0 : v.upgrades.table.maxTables;
+}
+/** Seat model: the n-th table costs tablePriceBase[n-2], no life-path gate. Capacity snapshots keep per-seat pricing. */
+export function buyTableQuote(w: WorldView, c: Config) {
+  const v = c.values, slots = tableSlots(w, c);
+  let cost: number | null = 0;
+  if (isSeatModel(v)) cost = v.upgrades.table.tablePriceBase[w.tables.length - 1] ?? null;
+  else {
+    const seats = w.tables.reduce((sum, t) => sum + t.capacity, 0), prices = v.upgrades.extraSeatPriceBase as Record<string, number>;
+    for (let i = 1; i <= v.upgrades.table.levels[v.runtime.initialTableLevel - 1].capacity && cost !== null; i++) {
+      const price = prices[String(seats + i)];
+      cost = price === undefined ? null : cost + price;
+    }
+  }
+  const reason = w.tables.length >= slots ? 'maxTables' : cost === null ? (isSeatModel(v) ? 'maxTables' : 'seatPriceUnconfigured') : w.coins < cost ? 'notEnoughCoins' : null;
+  return { cost, slots, owned: w.tables.length, ok: reason === null, reason };
+}
+/** Seat model second chair (D18): only after chairsAfterTables tables, at most a pair per table; priced by second chairs owned shop-wide. */
+export function buyChairQuote(w: WorldView, c: Config, tableId: string) {
+  const v = c.values, table = w.tables.find(t => t.id === tableId);
+  if (!isSeatModel(v)) return { cost: null, ok: false, reason: 'chairsLocked' };
+  const cost = v.upgrades.table.chairPriceBase[w.tables.reduce((sum, t) => sum + t.capacity - CHAIRS_WITH_TABLE, 0)] ?? null;
+  const reason = !table ? 'tableGone' : w.tables.length < v.upgrades.table.chairsAfterTables ? 'chairsLocked' :
+    table.capacity >= PAIR || cost === null ? 'maxChairs' : w.coins < cost ? 'notEnoughCoins' : null;
+  return { cost, ok: reason === null, reason };
+}
+/** Table level: seat model needs two chairs and accepts any table state (the next group gets it); capacity snapshots need an empty table. */
+export function tableUpgradeQuote(w: WorldView, c: Config, tableId: string) {
+  const v = c.values, table = w.tables.find(t => t.id === tableId), level = table ? v.upgrades.table.levels[table.level] : undefined;
+  const placement = !table ? isSeatModel(v) ? 'tableGone' : 'tableBusy' : isSeatModel(v) ? table.capacity < PAIR ? 'tableNeedsChairs' : null : table.state !== 'empty' ? 'tableBusy' : null;
+  const reason = placement ?? (!level ? 'maxLevel' : level.requiredBadge && !w.badges.includes(level.requiredBadge) ? 'badgeRequired' :
+    level.repBase && w.reputation < level.repBase[0] ? 'reputationRequired' : w.coins < level.priceBase ? 'notEnoughCoins' : null);
+  return { level: level ?? null, cost: level?.priceBase ?? null, ok: reason === null, reason };
 }
 /** One level owns purchase state; dog stats and requirements remain in the config. */
 export function dogUpgradeQuote(w: WorldView, c: Config) {

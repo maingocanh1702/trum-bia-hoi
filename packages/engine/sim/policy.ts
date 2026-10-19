@@ -1,5 +1,5 @@
 import {
-  DISHES, EQUIPMENT, restockQuote, upgradeQuote, buyGlassQuote, dogUpgradeQuote,
+  DISHES, EQUIPMENT, isSeatModel, restockQuote, upgradeQuote, buyGlassQuote, buyTableQuote, buyChairQuote, tableUpgradeQuote,
   unlockQuote, lifePathStatus, lifePathRewardQuote, deliveryQuote, dayKey,
   attendanceRewardQuote, questRewardQuote, signboardQuote, flyerQuote, leaseQuote,
   type Game, type Command,
@@ -7,6 +7,17 @@ import {
 
 // config-exempt: deterministic diagnostic policy cadence/budget, never live game tuning.
 export const STEP_MS=100, MANAGEMENT_MS=1000, MAX_DAY_STEPS=864000;
+
+/** The seat-model purchase the bot saves for next (a table, else a second chair), or null once the seats are complete. */
+export function seatGrowth(game: Game): { cost: number; command: Command } | null {
+  const w = game.world, config = game.config;
+  if (!isSeatModel(config.values)) return null;
+  const pending = (q: { cost: number | null; ok: boolean; reason: string | null }) => q.cost !== null && (q.ok || q.reason === 'notEnoughCoins');
+  const table = buyTableQuote(w, config);
+  if (pending(table)) return { cost: table.cost!, command: { type: 'buyTable' } };
+  for (const t of w.tables) { const q = buyChairQuote(w, config, t.id); if (pending(q)) return { cost: q.cost!, command: { type: 'buyChair', tableId: t.id } }; }
+  return null;
+}
 
 export function createManagementPolicy(game:Game,send:(command:Command)=>void) {
   const w=game.world;
@@ -29,25 +40,26 @@ export function createManagementPolicy(game:Game,send:(command:Command)=>void) {
       if (restockQuote(w, config, dish, 'bulk').ok) send({ type: 'restock', dish, mode: 'bulk' });
       else if (!w.inventory[dish] && restockQuote(w, config, dish, 'one').ok) send({ type: 'restock', dish, mode: 'one' });
     }
-    const dog = dogUpgradeQuote(w, config);
-    if (!w.dogLevel && dog.ok && affordable(dog.cost!)) send({ type: 'upgradeDog', level: dog.next!.level });
     for (const item of ['phone', 'qr'] as const) { const q = unlockQuote(w, config, item); if (q.ok && affordable(q.cost)) send({ type: 'buyUnlock', item }); }
+    // Seat model (plan S1, D18): seats first -- the next table, else one second chair -- saving for it before anything else.
+    const growth = seatGrowth(game);
+    if (growth) { if (affordable(growth.cost)) send(growth.command); return attendLocation(); }
     const candidates: { cost: number; command: Command }[] = [];
     for (const kind of EQUIPMENT) { const q = upgradeQuote(w, config, kind); if (q.ok) candidates.push({ cost: q.cost!, command: { type: 'upgrade', kind } }); }
-    for (const table of w.tables) {
-      const next = c.upgrades.table.levels[table.level];
-      if (table.state === 'empty' && next && (!next.requiredBadge || w.badges.includes(next.requiredBadge)) && (!next.repBase || w.reputation >= next.repBase[0])) candidates.push({ cost: next.priceBase, command: { type: 'upgradeTable', tableId: table.id } });
-    }
+    // Table levels pay off only on capacity snapshots until the seat-model level benefits land (plan S4).
+    if (!isSeatModel(c)) for (const table of w.tables) { const q = tableUpgradeQuote(w, config, table.id); if (q.ok) candidates.push({ cost: q.cost!, command: { type: 'upgradeTable', tableId: table.id } }); }
     const glasses = buyGlassQuote(w, config, 1);
     // config-exempt: bot policy targets two circulating glasses per seat, capped by the real purchase quote.
     if (glasses.ok && w.glasses.length < w.tables.reduce((sum, t) => sum + t.capacity, 0) * 2) candidates.push({ cost: glasses.cost, command: { type: 'buyGlass', count: 1 } });
-    const nextDog = dogUpgradeQuote(w, config);
-    if (w.dogLevel && nextDog.ok) candidates.push({ cost: nextDog.cost!, command: { type: 'upgradeDog', level: nextDog.next!.level } });
     const sign = signboardQuote(w, config), neon = signboardQuote(w, config, 'neon');
     if (sign.ok) candidates.push({ cost: sign.cost, command: { type: 'installSignboard' } });
     if (neon.ok) candidates.push({ cost: neon.cost, command: { type: 'setSignboard', style: 'neon' } });
     const purchase = candidates.sort((a, b) => a.cost - b.cost).find(q => affordable(q.cost));
     if (purchase) send(purchase.command);
+    attendLocation();
+  }
+  function attendLocation() {
+    const config=game.config,c=config.values;
     if (w.phase === 'open' && !w.shift!.flyersUsed) {
       const q = flyerQuote(w, config);
       if (!q.stock && !q.buyReason) send({ type: 'buyFlyer' });

@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { CURRENT_RULES, Game, config, loadConfig, SIGN_STYLES, WEATHER, signboardQuote, deliveryInterval, encodeSave, decodeSave, requirementStatus, type Command, type Economy, type SignStyle } from '../src';
+import { CURRENT_RULES, Game, config, loadConfig, SIGN_STYLES, WEATHER, PAIR, signboardQuote, deliveryInterval, encodeSave, decodeSave, requirementStatus, type Command, type Economy, type SignStyle } from '../src';
 const send = (g: Game, command: Command) => g.command({ command, at: g.world.now, idempotencyKey: `sign-${g.log.length}` });
-function setup(patch = (_: Economy) => {}) {
+function setup(patch = (_: typeof config.raw) => {}) {
   const raw = structuredClone(config.raw); raw.shift.startingCoinsBase = 1000000; raw.onboarding.enabled = false; raw.rush.schedule.perShift = 0; raw.unlocks.phone.gate = 'LP0';
   for (const weather of WEATHER) raw.weather[weather].weight = weather === 'sunny' ? 1 : 0;
   patch(raw); return new Game(loadConfig(raw), 42, 0);
@@ -74,12 +74,15 @@ test('real v8 delivery and rush saves retain all recorded fields before and afte
 });
 
 test('actual seeded arrivals follow every sign style and preserve the VIP group cap', () => {
-  const raw = structuredClone(setup().config.raw); raw.runtime.initialEquipmentLevel = raw.signboard.gate.stallLevel; raw.signboard.styles.golden.repBase = 0;
+  const raw = structuredClone(config.raw); raw.shift.startingCoinsBase = 1000000; raw.onboarding.enabled = false; raw.rush.schedule.perShift = 0; raw.unlocks.phone.gate = 'LP0';
+  for (const weather of WEATHER) raw.weather[weather].weight = weather === 'sunny' ? 1 : 0;
+  raw.runtime.initialEquipmentLevel = raw.signboard.gate.stallLevel; raw.signboard.styles.golden.repBase = 0;
+  raw.upgrades.table.chairsAfterTables = 1; // the first table takes its second chair, so pairs sit and the VIP cap binds
   const c = loadConfig(raw), counts: Record<string, Record<string, number>> = {};
   for (const style of [null, ...SIGN_STYLES] as (SignStyle | null)[]) {
     const row = counts[style ?? 'none'] = { vip: 0, voi: 0, ngoily: 0, thuong: 0, chipheo: 0, football_fan: 0 };
     for (let seed = 1; seed <= 1000; seed++) {
-      const g = new Game(c, seed, 0);
+      const g = new Game(c, seed, 0); assert.ok(send(g, { type: 'buyChair', tableId: g.world.tables[0].id }).ok);
       if (style) { assert.ok(send(g, { type: 'installSignboard' }).ok); if (style !== 'wood') assert.ok(send(g, { type: 'setSignboard', style }).ok); }
       assert.ok(send(g, { type: 'startShift' }).ok); g.advance(g.world.shift!.nextSpawnAt);
       const customers = g.world.tables.flatMap(t => t.group?.customers ?? []);
@@ -106,10 +109,13 @@ test('sign configuration rejects unsafe costs, weights and zero-tick delivery fr
 });
 
 test('vintage cannot remove the last eligible customer type after a group reaches its VIP cap', () => {
-  const raw = structuredClone(setup().config.raw);
+  const raw = structuredClone(config.raw); raw.shift.startingCoinsBase = 1000000; raw.onboarding.enabled = false; raw.rush.schedule.perShift = 0;
+  for (const weather of WEATHER) raw.weather[weather].weight = weather === 'sunny' ? 1 : 0;
   raw.runtime.initialEquipmentLevel = raw.signboard.gate.stallLevel;
+  raw.spawn.pPair = 1; raw.upgrades.table.chairsAfterTables = 1; // a pair at a two-chair table outnumbers the VIP cap
   for (const [type, profile] of Object.entries(raw.customerTypes)) if (profile.usesTable) profile.weight = type === 'vip' || type === 'voi' ? 1 : 0;
   const g = new Game(loadConfig(raw), 5, 0);
+  assert.ok(send(g, { type: 'buyChair', tableId: g.world.tables[0].id }).ok);
   assert.ok(send(g, { type: 'installSignboard' }).ok); assert.ok(send(g, { type: 'setSignboard', style: 'vintage' }).ok);
   assert.ok(send(g, { type: 'startShift' }).ok); g.advance(g.world.shift!.nextSpawnAt);
   const guests = g.world.tables.flatMap(t => t.group?.customers ?? []);
@@ -121,7 +127,7 @@ test('vintage cannot remove the last eligible customer type after a group reache
     assert.throws(() => loadConfig(raw), /config:signboardWeights/);
   }
   // A cap covering every possible group never removes VIP from a subsequent draw.
-  raw.customerTypes.vip.maxPerGroupPhase2 = Math.max(...raw.upgrades.table.levels.map(t => t.capacity));
+  raw.customerTypes.vip.maxPerGroupPhase2 = PAIR;
   assert.doesNotThrow(() => loadConfig(raw));
 });
 
@@ -143,7 +149,9 @@ test('a real closed shift does not block an affordable sign purchase near the sa
     raw.shift.startingCoinsBase = 3200000000000000;
     raw.signboard.styles.neon.priceBase = raw.signboard.styles.vintage.priceBase = 2000000000000000;
     raw.lifePath[1].lifetimeBase = 1; raw.lifePath[1].rewardCoinBase = 1000000000000000;
+    raw.spawn.pPair = 0; // the first guest must sit at the first one-chair table
   });
+  while (g.world.tables.length < 4) assert.ok(send(g, { type: 'buyTable' }).ok); // LP1 counts four tables
   upgrade(g); assert.ok(send(g, { type: 'installSignboard' }).ok);
   assert.ok(send(g, { type: 'restock', dish: 'lac', mode: 'full' }).ok); assert.ok(send(g, { type: 'upgradeDog', level: 1 }).ok);
   assert.ok(send(g, { type: 'startShift' }).ok);

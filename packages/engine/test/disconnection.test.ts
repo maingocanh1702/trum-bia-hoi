@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { CURRENT_RULES, Game, config, loadConfig, encodeSave, decodeSave, validEnvelope, dayKey, type Command } from '../src';
+import { capacityConfig } from './fixtures/capacity-model';
 const start = Date.parse('2026-09-09T16:59:30Z');
 const send = (g: Game, command: Command) => g.command({ command, at: g.world.now, idempotencyKey: `disconnect-test-${g.log.length}` });
 function readyOrder() {
@@ -264,7 +265,7 @@ test('an older log key cannot shadow the live calendar adoption receipt', () => 
 
 test('rules19 menu disconnections adopt without changing presence or pause in open and draining shifts', () => {
   for (const paused of [false, true]) for (const closing of [false, true]) {
-    const g = new Game(config, 42, Date.parse('2026-09-09T10:00:00Z'));
+    const g = new Game(capacityConfig, 42, Date.parse('2026-09-09T10:00:00Z')); // rules 19 histories predate the seat model
     const replay = (idempotencyKey: string, command: Command | { type: 'connectionLost'; shiftId: string; lossId: string }) => {
       assert.ok(g.replay({ at: g.world.now, idempotencyKey, command, rulesVersion: 19, configVersion: g.config.version, result: { ok: true } }).ok);
     };

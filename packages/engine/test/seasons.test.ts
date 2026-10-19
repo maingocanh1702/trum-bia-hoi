@@ -1,14 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { CURRENT_RULES, Game, config, loadConfig, encodeSave, decodeSave, seasonWindow, seasonTier, type Command } from '../src';
+import { CURRENT_RULES, Game, config, loadConfig, encodeSave, decodeSave, seasonWindow, seasonTier, type Command, type Config } from '../src';
 import { credit } from '../src/rules';
 import { nextSeasonEnd } from '../src/seasons';
 const DAY = 86400000;
 const epoch = Date.parse(config.values.league.seasons.epochUtc);
 const send = (g: Game, command: Command) => g.command({ at: g.world.now, idempotencyKey: `season-${g.log.length}`, command });
 const replay = (g: Game) => assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
-function served(at = epoch + DAY, c = config) {
+function served(at = epoch + DAY, c: Config = config) {
   const g = new Game(c, 42, at);
   assert.ok(send(g, { type: 'startShift' }).ok); g.advance(at + 11000);
   const table = g.world.tables.find(t => t.order?.items.every(i => i.state === 'ready'))!;
