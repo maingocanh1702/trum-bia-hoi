@@ -24,7 +24,7 @@
 ## 2. Information architecture
 
 ```
-[Landing/ngôn ngữ] → [Cổng ca] → [HUD ca đang chạy] ⇄ sheets: Nhập hàng · Nâng cấp · Sổ ca
+[Cổng ca] → [HUD ca đang chạy] ⇄ sheets: Nhập hàng · Nâng cấp · Sổ ca   (không còn màn Landing/ngôn ngữ từ 15/10)
                                      ↓ hết thể lực / Đóng ca
                               [Đóng cửa + Sổ sách] → [Xả Hơi (nghỉ)] → [Cổng ca]
 meta (modal, mọi lúc trừ khi dialog sự kiện): Nhiệm vụ · Xếp hạng/Dạo Phố · Bàn Thờ Ông Địa · Hồ sơ/Huy hiệu · Cài đặt/Tài khoản · Bia Đấm · Shop Vụ Bia (P4) · Vé số (P4) · Mời Bia Hơi (P4)
@@ -146,7 +146,7 @@ Tabs: **Vận hành** (bom · rửa · hầm · quầy · bếp) · **Bàn** (mu
 
 | Màn | Pattern | Nội dung | Phase |
 |---|---|---|---|
-| **Landing / ngôn ngữ** | full-screen bg + CTA | chọn Tiếng Việt / English (F25) → guest tự động; CTA "VÀO QUÁN" | P1 |
+| ~~**Landing / ngôn ngữ**~~ | — | **Bỏ 15/10 (owner 17/09, FEEDBACK I.1):** vào thẳng sân quán bằng tiếng Việt bất kể ngôn ngữ trình duyệt; đổi ngôn ngữ ở Cài đặt; người đã lưu `en` giữ `en` | — |
 | **Cổng ca** | card giữa | thể lực, ca hôm nay x/cap, thời tiết ca kế, [MỞ CA]; (free hết — không Vé Mở Ca) + nút đăng nhập mềm | P1 → P3 |
 | **Nhiệm vụ** | modal tab | Hôm nay (5: 3 lõi + 3 ca + gửi quà; progress + claim; bonus 5/5) · Điểm danh (ladder 7 ngày ⭐) · Thử thách (referral 3 mốc, link/mã mời) | P2 |
 | **Thông tin nhanh** | dialog tab | Xu: 3 sổ (số dư / thu Vụ / trọn đời) giải thích · Uy tín: kiếm/mất/tiêu | P2 |
@@ -256,3 +256,6 @@ Hit ≥ 44px; bàn ≥ sprite; không hover; màu không là tín hiệu duy nh�
 | v1.0 | Bản đầu 2026-09-08: IA, HUD wireframe + component/state, 4 luồng lõi, màn phụ theo phase, component library, motion/âm, microcopy i18n, onboarding, a11y, checklist. Phản ánh popover Order + cờ mất nhóm đã build (slice p0-ui-serve-popover--r2). |
 | v1.1 | Theo audit 08/09: header thêm layout tham khảo ưu tiên (ảnh HUD gốc, sân quán không gian) và nói rõ §3.1 là card-list prototype; nhãn P1–P4 = thứ tự code; §11 đổi tên. Không đổi nội dung màn/component. |
 | 2026-09-18 owner P0 | Màn sân quán ca 1 tối giản (ví · bom · chip mục tiêu), sheet Nâng cấp mở dần theo mở khoá, bong bóng "2 ghế" cho cặp bị từ chối, vòng kiên nhẫn hàng đợi, màn kết LP7 "Chuyện quán bạn" — PLAN 18/09 §0/§4, DESIGN-story-3-tuan §2b. |
+| 2026-10-15 fun-locale-default-vi | Bỏ màn Landing/ngôn ngữ (owner 17/09, FEEDBACK I.1): màn đầu tiên là sân quán, mặc định `vi`, ngôn ngữ chỉ đổi ở Cài đặt; remote vẫn có màn chọn cách chơi (guest / Google). Gạch bỏ dòng màn trong §IA; không đổi component khác. |
+| 2026-10-15 fun-next-goal | HUD chip "Mục tiêu kế tiếp" (tên · hiệu ứng 1 con số · giá · còn thiếu; chạm → mở sheet Nâng cấp đúng món; tắt ở Cài đặt) dưới ví từ ca 1; sheet Nâng cấp đầy đủ chia 3 làn Sức chứa · Tốc độ · Khách (registry `goals.ts`). Không đổi component khác. |
+| 2026-10-19 fun-buy-buttons-reason | Toast mất khách = số xu/uy tín + đúng 1 lý do (Hết bia · Hết mồi · Chờ lâu quá · Hết chỗ); thẻ bàn và nút "Mua thêm bàn" luôn hiện giá + đúng 1 lý do khi mờ; Sổ ca có mục "Vì sao khách đi" xếp theo số khách. Không đổi component khác. |

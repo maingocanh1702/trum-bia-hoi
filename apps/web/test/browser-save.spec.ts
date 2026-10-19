@@ -87,7 +87,7 @@ test('unavailable storage never boots a fresh playable game over the old save', 
     localStorage.setItem('tbh.save.v1', 'preserve-this-original');
     Object.defineProperty(window, 'indexedDB', { get() { throw new DOMException('Blocked', 'SecurityError'); } });
   });
-  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await page.goto('/');
   await expect(page.getByRole('alert')).toContainText('Chưa mở được dữ liệu');
   await expect(page.locator('.game-shell')).toHaveCount(0);
   await expect(page.locator('input[type=file]')).toHaveCount(0);
@@ -132,7 +132,7 @@ for (const damage of ['missing chunk', 'invalid revision', 'invalid frontier', '
     });
     return legacy;
   }, damage);
-  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await page.goto('/');
   await expect(page.getByRole('alert')).toContainText('Bản lưu chưa đọc được');
   await expect(page.getByRole('button', { name: 'Tải bản lưu localStorage cũ', exact: true })).toBeVisible();
   await page.locator('input[type=file]').setInputFiles({ name: 'legacy.json', mimeType: 'application/json', buffer: Buffer.from(legacy) });

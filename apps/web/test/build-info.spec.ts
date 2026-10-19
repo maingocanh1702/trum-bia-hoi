@@ -1,14 +1,14 @@
 import { test, expect } from './tbh-fixture';
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { bootFresh } from './fresh-game';
 
 const commit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
 for (const locale of ['vi', 'en']) for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }, { width: 1280, height: 720 }]) {
   test(`A6 settings shows the build commit in ${locale} at ${viewport.width}px`, async ({ page, tbh }) => {
     const copy = JSON.parse(readFileSync(`apps/web/src/i18n/${locale}.json`, 'utf8'));
     await page.setViewportSize(viewport);
-    await page.addInitScript(locale => localStorage.setItem('tbh.settings.v1', JSON.stringify({ locale, localeAccepted: true, welcomed: true, guideDone: true, guideIndex: null, muted: true })), locale);
-    await page.goto('/');
+    await bootFresh(page, { locale, muted: true }); // the gear opens with the HUD, which a brand-new game reveals only after shift 1
     await page.getByRole('button', { name: copy['nav.settings'], exact: true }).click();
     const build = page.locator('.build-version');
     await expect(build).toContainText(copy['settings.build']);

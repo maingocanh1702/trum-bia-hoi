@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+import { seedLocale } from './locale-seed';
 const config = JSON.parse(readFileSync('docs/config/economy.tbh.json', 'utf8'));
 const snapshot = async (page: Page) => (await page.request.get('/api/player/state')).json();
 const prefs = (page: Page) => page.evaluate(() => JSON.parse(localStorage.getItem('tbh.settings.v1')!));
@@ -10,9 +11,7 @@ async function enter(page: Page, locale = 'vi', overrides: Record<string, unknow
     Object.assign(raw.onboarding.loginPrompt, overrides);
     await route.fulfill({ response, json: raw });
   });
-  await page.goto('/');
-  await page.getByRole('radio', { name: locale === 'vi' ? 'Tiếng Việt' : 'English', exact: true }).check();
-  await page.getByRole('button', { name: locale === 'vi' ? 'Vào quán' : 'Enter the stall', exact: true }).click();
+  await seedLocale(page, locale); await page.goto('/');
   await page.getByRole('button', { name: locale === 'vi' ? 'Chơi không đăng nhập' : 'Play without signing in', exact: true }).click();
   await expect(page.locator('.network-status')).toContainText(locale === 'vi' ? 'Đã đồng bộ' : 'Synced');
 }

@@ -1,8 +1,8 @@
 {
   "_meta": {
     "name": "Trùm Bia Hơi — economy config",
-    "version": "2.0.4",
-    "date": "2026-09-16",
+    "version": "2.0.6",
+    "date": "2026-10-15",
     "spec": "08-SPEC-economy-constants.md (cùng số, cùng tên trường)",
     "rules": [
       "Trường kết thúc bằng 'Base' = xu/uy tín gốc, NHÂN k lúc load: displayed = round(valueBase * k).",
@@ -113,6 +113,7 @@
           ],
           "sections": [
             "onboarding",
+            "nextGoal",
             "audio"
           ]
         }
@@ -1111,6 +1112,7 @@
       "rushDisabled": true
     },
     "lostStreakToGuide": 3,
+    "idleToGuideMs": 45000,
     "stepGuide": {
       "onFirstPlay": true,
       "skippable": true,
@@ -1164,12 +1166,18 @@
       "upgradeAfterShifts": 1,
       "questsAfterShifts": 2,
       "leagueAfterShifts": 3,
-      "locationsAfterLifePathLevel": 1
+      "locationsAfterLifePathLevel": 1,
+      "hudAfterShifts": 1,
+      "upgradeAllAfterShifts": 2,
+      "journeyAfterShifts": 2
     },
     "targets": {
       "firstServeWithinMs": 30000,
       "firstShiftLostGroupsMax": 1
     }
+  },
+  "nextGoal": {
+    "reachMult": 3
   },
   "quests": {
     "daily": {

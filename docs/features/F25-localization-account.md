@@ -1,12 +1,12 @@
 # F25 — Ngôn Ngữ, Tài Khoản & Đăng Nhập (Localization)
 
-> Phase 1+. First-run language choice and account flow. Players can play as guest, but account login is required for durable cloud save and competitive/social surfaces.
+> Phase 1+. Language (Vietnamese by default, switched in Settings; no first-run language screen since 2026-10-15) and account flow. Players can play as guest, but account login is required for durable cloud save and competitive/social surfaces.
 
 > **Current owner decision — 2026-09-10 15:30, Steer #5:** guest keeps stall, coins, upgrades and current day/shift on this device across browser/new-tab visits. Durable player history, achievements, ranking and cross-device restore require a Google account. New Google attaches current progress once; existing Google restores directly. This supersedes the 08:18 fresh-visit interpretation and conflicting historical checkpoints below. See [account modes](../account-modes.md). No guest data-loss warning on leaving.
 
 ## 1. Scope
 
-- First-launch language selection: Vietnamese (`vi`) or English (`en`).
+- Language: Vietnamese (`vi`) by default whatever the browser says; English (`en`) is a saved choice made in Settings (no first-launch language screen — owner 17/09, FEEDBACK I.1).
 - Guest play without login.
 - Google sign-in / account creation.
 - Prompt guest users to sign in for save, Giải Nhậu, multi-device play, and payments.
@@ -40,8 +40,8 @@ type GuestSave = {
 
 ## 3. First-run flow
 
-1. Show language screen before gameplay: `Tiếng Việt` / `English`.
-2. Persist selected locale locally immediately.
+1. ~~Show language screen before gameplay~~ — **superseded 2026-10-15 (owner 17/09, FEEDBACK I.1): no language screen.** The game opens straight into the yard in Vietnamese, whatever `navigator.language` says.
+2. The language is saved only when the player changes it in Settings (`vi`/`en`); a saved `en` stays `en`, anything else is `vi`.
 3. Offer exactly two play modes: play without signing in, or register/sign in with Google.
 4. Guest progress lasts for this tab visit only. Reload/reconnect keeps the current visit; a new tab visit starts fresh. Only Google accounts have durable player progress/history/achievements.
 5. Show soft sign-in prompt after first session close and when opening Giải Nhậu/cloud/social/payment surfaces.
@@ -73,14 +73,14 @@ Logged-in account can:
 ## 6. Localization rules
 
 - All user-facing strings use translation keys.
-- Default locale: browser language if `vi` or `en`, otherwise `vi`.
+- Default locale: `vi`, whatever the browser language says (owner 17/09, FEEDBACK I.1; was: the browser language when `vi` or `en`). A saved `en` stays `en`; the language changes in Settings only.
 - Locale can be changed in settings any time.
 - Numeric/currency formatting follows locale, but game currency remains `xu`.
 - Content fallback: missing `en` key falls back to `vi` and logs `i18n_missing_key`.
 
 ## 7. UI copy surfaces
 
-- First-run language screen.
+- ~~First-run language screen~~ (removed 2026-10-15); Settings → Ngôn ngữ is the only language control.
 - Guest badge in profile/settings.
 - Sign-in prompt after closing first shift: save progress, đua top, chơi đa thiết bị.
 - Giải Nhậu lock prompt for guests.
@@ -110,7 +110,7 @@ Logged-in account can:
 - Guest play is unrestricted for core gameplay; sign-in prompts state exactly three benefits (save progress · achievements · compete on the leaderboard) and respect `onboarding.loginPrompt.cooldownShifts`.
 
 - User can start first session without login.
-- User must choose or accept a locale before first gameplay screen.
+- ~~User must choose or accept a locale before first gameplay screen.~~ Superseded 2026-10-15: a clean profile opens in Vietnamese even on an English browser (`document.documentElement.lang === 'vi'`, no language screen); switching to English in Settings survives reload; a returning player's saved `en` stays.
 - Locale switch updates UI without corrupting save.
 - The current guest visit attaches exactly once to a new Google account; existing Google accounts restore their own progress without merging.
 - Guest cannot enter Giải Nhậu ranking write path or claim a donation gift.
@@ -234,6 +234,8 @@ No HTTP upload, approval or cloud UI is active. Details: [server guide](../../ap
 
 ## First-run language implementation — 2026-09-10
 
+> **Superseded 2026-10-15** (owner 17/09, FEEDBACK I.1): the language entry described here was removed; the default is Vietnamese, a saved English stays, Settings switches. Kept as history — see §3, §6 and the 2026-10-15 changelog row.
+
 The existing welcome now gates local/remote boot until a vi/en choice is accepted.
 Browser language suggests vi/en (otherwise vi); selecting persists immediately.
 Legacy welcomed settings retain their previous valid locale, with omitted locale
@@ -329,3 +331,5 @@ live Google/minute5 acceptance, historical import and competitive access checks.
 | 2026-09-10 reviewed provenance core |521e901 makes imported-history status server-owned pending/approved/rejected with protected Game/Super decisions; normal server-origin guest attachment needs no imported-history review. No duplicate game credit or original-archive rewrite; dedicated controls and competitive score eligibility remain. |
 
 | 2026-09-10 competitive score verified | E23 at7e7f337:376unit/server,19admin browser,32focused,config/build and final independent review PASS. Exact local baseline/Google/flag eligibility and worker recovery verified; no global ordering/snapshot/admin review UI or full milestone claim. |
+
+| 2026-10-15 fun-locale-default-vi | Owner 17/09 FEEDBACK I.1 built: the language screen and its `localeAccepted`/`welcomed` gate are gone; `readSettings()` defaults to `vi` regardless of the browser and ignores those legacy keys, a saved `en` stays, Settings switches the language. §3 step 1, §7 and §10 are superseded (struck through above); the remote account-mode chooser stays the first remote screen. No engine rule, config key or economy number changed. Proof: `apps/web/test/locale-default.spec.ts`, `apps/web/remote-test/locale.spec.ts`, `packages/engine/test/presentation.test.ts`. See `docs/first-run-locale.md`. |

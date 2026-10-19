@@ -15,7 +15,7 @@ test('both locales have the same nonempty keys and interpolation parameters', ()
 });
 test('the event-driven guide resets after serving and obeys the daily repeat cap', () => {
   const g = new Game();
-  const prefs: Settings = { locale: 'vi', localeAccepted: true, muted: true, welcomed: true, guideDone: true, guideIndex: null, guideRuns: 0, guideDay: '', lostStreak: 0, loginPromptPlayer: '', loginPromptShift: 0 };
+  const prefs: Settings = { locale: 'vi', muted: true, goalChip: true, guideDone: true, guideIndex: null, guideRuns: 0, guideDay: '', lostStreak: 0, loginPromptPlayer: '', loginPromptShift: 0 };
   const e = (type: string): DomainEvent => ({ id: type, type, at: 0, configVersion: config.version, idempotencyKey: `test:${type}`,  data: {} });
   advanceGuide(prefs, g, [e('customer_left'), e('customer_left'), e('customer_served'), e('customer_left')]);
   assert.equal(prefs.guideRuns, 0);
@@ -29,7 +29,7 @@ test('the event-driven guide resets after serving and obeys the daily repeat cap
 
 test('a three-customer queue loss triggers the three-customer guide immediately', () => {
   const g = new Game();
-  const prefs: Settings = { locale: 'vi', localeAccepted: true, muted: true, welcomed: true, guideDone: true, guideIndex: null, guideRuns: 0, guideDay: '', lostStreak: 0, loginPromptPlayer: '', loginPromptShift: 0 };
+  const prefs: Settings = { locale: 'vi', muted: true, goalChip: true, guideDone: true, guideIndex: null, guideRuns: 0, guideDay: '', lostStreak: 0, loginPromptPlayer: '', loginPromptShift: 0 };
   advanceGuide(prefs, g, [{ id: 'queue-loss', type: 'customer_left', at: 0, configVersion: config.version, idempotencyKey: 'queue-loss', data: { count: 3, reason: 'queue' } }]);
   assert.equal(prefs.guideRuns, 1);
 });
@@ -82,4 +82,58 @@ test('departure invitations honor both configurable thresholds and read old raw 
   for (const value of [null, {}, { minCompletedShifts: 1 }, { minCompletedShifts: 0, minLifetimeEarned: 1 }, { minCompletedShifts: 1, minLifetimeEarned: 1.5 }]) {
     (raw.onboarding.loginPrompt as any).leaveProgress = value; assert.throws(() => loadConfig(raw), /config:/);
   }
+});
+
+test('first play shows no step banner; the fallback starts on idleness before the first serve, once, within the daily cap', () => {
+  const g = new Game();
+  const prefs: Settings = { locale: 'vi', muted: true, goalChip: true, guideDone: false, guideIndex: null, guideRuns: 0, guideDay: '', lostStreak: 0, loginPromptPlayer: '', loginPromptShift: 0 };
+  const e = (type: string): DomainEvent => ({ id: type, type, at: 0, configVersion: config.version, idempotencyKey: `test:${type}`, data: {} });
+  const fallback = config.values.onboarding.stepGuide.steps.findIndex(s => s.waitFor === 'order_ready');
+  advanceGuide(prefs, g, [e('shift_opened'), e('customer_spawned')]);
+  assert.equal(prefs.guideIndex, null, 'the screen teaches first play, not a banner');
+  advanceGuide(prefs, g, [], 'ui_idle');
+  assert.equal(prefs.guideIndex, fallback); assert.equal(prefs.guideRuns, 1);
+  advanceGuide(prefs, g, [], 'ui_idle');
+  assert.equal(prefs.guideRuns, 1, 'a guide that is already showing is not restarted');
+  prefs.guideIndex = null;
+  for (let i = 0; i < 5; i++) { advanceGuide(prefs, g, [], 'ui_idle'); prefs.guideIndex = null; }
+  assert.equal(prefs.guideRuns, config.values.onboarding.stepGuide.maxAutoRepeatsPerDay);
+  prefs.guideRuns = 0;
+  g.world.serves.push({ t: 0, customerId: 'c', customerType: 'thuong', orderId: 'o', dishes: ['bia'], payment: 1, tip: 0, credited: 1, hadMoi: false, stale: false, patienceRatio: 1 });
+  advanceGuide(prefs, g, [], 'ui_idle');
+  assert.equal(prefs.guideIndex, null, 'once someone was served the player knows the loop');
+});
+
+test('reveal thresholds and the idle window are optional in old pins, validated when present, and never fractional or negative', () => {
+  const raw = structuredClone(config.raw);
+  const paths: [string[], string][] = [[['onboarding', 'idleToGuideMs'], 'idle'], [['onboarding', 'featureReveal', 'hudAfterShifts'], 'hud'], [['onboarding', 'featureReveal', 'upgradeAllAfterShifts'], 'all'], [['onboarding', 'featureReveal', 'journeyAfterShifts'], 'journey']];
+  for (const [path] of paths) {
+    const old = structuredClone(raw) as any; old._meta.version = `old-${path.at(-1)}`;
+    delete path.slice(0, -1).reduce((node, key) => node[key], old)[path.at(-1)!];
+    assert.equal(JSON.stringify(loadConfig(old).raw), JSON.stringify(old));
+    for (const bad of [-1, 1.5, '1', null, 2 ** 60]) {
+      const broken = structuredClone(raw) as any; path.slice(0, -1).reduce((node, key) => node[key], broken)[path.at(-1)!] = bad;
+      assert.throws(() => loadConfig(broken), /config:/, `${path.join('.')}=${bad}`);
+    }
+  }
+  const zero = structuredClone(raw) as any; zero.onboarding.idleToGuideMs = 0;
+  assert.throws(() => loadConfig(zero), /config:/, 'a zero idle window would show the guide at once');
+  const unknown = structuredClone(raw) as any; unknown.onboarding.featureReveal.notAKey = 1;
+  assert.throws(() => loadConfig(unknown), /config:onboarding.featureReveal:keys/);
+});
+
+test('only a saved choice picks the language: a first run is Vietnamese whatever the browser says', () => {
+  const real = { localStorage: Object.getOwnPropertyDescriptor(globalThis, 'localStorage'), navigator: Object.getOwnPropertyDescriptor(globalThis, 'navigator') };
+  const set = (name: 'localStorage' | 'navigator', value: unknown) => Object.defineProperty(globalThis, name, { value, configurable: true, writable: true });
+  const read = (saved: string | null, language = 'en-US') => { set('navigator', { language, languages: [language] }); set('localStorage', { getItem: () => saved }); return readSettings(); };
+  try {
+    assert.equal(read(null).locale, 'vi', 'a clean profile on an English browser opens in Vietnamese');
+    assert.equal(read('{}').locale, 'vi');
+    assert.equal(read('{"locale":"en"}', 'vi-VN').locale, 'en', 'a saved English choice stays, even on a Vietnamese browser');
+    assert.equal(read('{"locale":"vi"}', 'en-GB').locale, 'vi');
+    const old = read('{"locale":"en","localeAccepted":true,"welcomed":true,"muted":true}');
+    assert.equal(old.locale, 'en', 'settings written by the removed language screen still load'); assert.equal(old.muted, true);
+    assert.equal('localeAccepted' in old || 'welcomed' in old, false, 'the removed fields do not come back');
+    for (const bad of ['{"locale":"fr"}', '{"locale":1}', '{"locale":null}', 'not json', 'null', '[]']) assert.equal(read(bad).locale, 'vi', bad);
+  } finally { for (const name of ['localStorage', 'navigator'] as const) { const d = real[name]; if (d) Object.defineProperty(globalThis, name, d); else delete (globalThis as Record<string, unknown>)[name]; } }
 });

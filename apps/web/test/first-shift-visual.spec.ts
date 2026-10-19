@@ -1,0 +1,187 @@
+import { test, expect } from './tbh-fixture';
+import type { Page } from '@playwright/test';
+import { execFileSync } from 'node:child_process';
+import AxeBuilder from '@axe-core/playwright';
+import { waitSaved } from './storage';
+
+// fun-onboarding-visual (PLAN "Vui 3 ca" P0): the screen teaches itself. Engine-made saves, DOM-only proof.
+const viewports = [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1280, height: 720 }];
+const fixture = (mode: string, arg?: string, save?: string) => JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/first-shift-visual.ts', mode, ...(arg ? [arg] : [])], { encoding: 'utf8', input: save }));
+const settings = { locale: 'vi', localeAccepted: true, welcomed: true, guideDone: false, guideIndex: null, muted: true };
+// axe reads colours at the instant it runs: let finite entrance animations (bubble, customer tag, door) finish first, or it measures them half-faded.
+const settled = (page: Page) => page.waitForFunction(() => document.getAnimations().every(a => a.effect?.getComputedTiming().iterations === Infinity || a.playState !== 'running'));
+const axe = async (page: Page, include?: string) => { await settled(page); const b = new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']); return (include ? b.include(include) : b).analyze(); };
+const lit = (page: Page) => page.locator('[data-spotlight]');
+/**
+ * Boot a guest (a brand-new game when `save` is null). `controlled` freezes the clock one second ahead so page.clock.runFor drives
+ * engine and animation time together; otherwise time is only pinned, because axe-core needs live timers.
+ */
+async function load(page: Page, save: string | null, now: number, controlled = true) {
+  if (controlled) await page.clock.install({ time: now }); else await page.clock.setFixedTime(now);
+  await page.addInitScript(({ save, prefs }) => {
+    if (localStorage.getItem('fsv-seeded')) return;
+    localStorage.setItem('fsv-seeded', '1'); localStorage.setItem('tbh.settings.v1', JSON.stringify(prefs));
+    if (save) localStorage.setItem('tbh.save.v1', save);
+  }, { save, prefs: settings });
+  await page.goto('/'); await expect(page.locator('.game-shell')).toBeVisible();
+  if (controlled) await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 1000));
+}
+/** Advance game time in small steps, letting React flush after each; `check` sees every intermediate frame. */
+async function run(page: Page, ms: number, step: number, check: () => Promise<boolean | void>) {
+  for (let t = 0; t < ms; t += step) { await page.clock.runFor(step); await page.waitForTimeout(20); if (await check()) return; }
+}
+const fresh = () => Date.parse('2026-09-08T10:00:00Z');
+
+for (const viewport of viewports) {
+  test(`P0 first shift shows wallet, keg and one thing to tap at a time at ${viewport.width}px`, async ({ page, tbh }) => {
+    await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+    await load(page, null, fresh());
+    // Minimal HUD (P0 d): everything else stays hidden until it unlocks.
+    await expect(page.locator('.money')).toBeVisible(); await expect(page.locator('.equipment-object.keg')).toBeVisible();
+    for (const hidden of ['.bottom-nav', '.stock-strip', '.energy', '.weather-row', '.equipment-object.cooler', '.equipment-object.washer', '.glass-counter', '.quest-trigger', '.guide', '.settings-button']) await expect(page.locator(hidden)).toHaveCount(0);
+    await expect(page.locator('.hud button')).toHaveCount(0); // the header holds the wallet and nothing else; the goal chip of slice 3 fills the free slot
+    await expect(lit(page)).toHaveCount(0);
+    await page.getByRole('button', { name: 'Mở ca', exact: true }).click();
+    // Guest sits at ~7.2 s, the order is ready at ~10 s. Follow the pointer guest -> check -> Serve -> wallet; never two at once.
+    const stages: string[] = [];
+    const stage = () => lit(page).evaluate(el => el.matches('.table-object') ? 'guest' : el.matches('.table-order-hint') ? 'check' : el.matches('.primary') ? 'serve' : el.matches('.money') ? 'wallet' : 'other');
+    await run(page, 30000, 250, async () => {
+      const n = await lit(page).count(); expect(n).toBeLessThanOrEqual(1);
+      if (n === 0) return false;
+      const now = await stage(); if (stages.at(-1) !== now) stages.push(now);
+      if (now === 'check') { await expect(page.locator('.spotlight-arrow')).toHaveCount(1); await tbh.shot(`p0-check-${viewport.width}.png`); await lit(page).click(); await page.waitForTimeout(20); }
+      if (now === 'serve') { await expect(lit(page)).toHaveCount(1); await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click(); }
+      return now === 'wallet';
+    });
+    expect(stages).toEqual(['guest', 'check', 'serve', 'wallet']);
+    await expect(page.locator('.spotlight-arrow')).toHaveCount(1); await tbh.shot(`p0-wallet-${viewport.width}.png`);
+    await expect(page.locator('.guide')).toHaveCount(0); // first play never shows the step banner
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.clock.runFor(2600); await page.waitForTimeout(20);
+    await expect(page.locator('.spotlight-arrow')).toHaveCount(0); // the pointer retires after the first serve
+    expect(errors).toEqual([]);
+  });
+
+  test(`P0 coins fly from the table to the wallet and lost reputation falls from the guest at ${viewport.width}px`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await load(page, null, fresh());
+    await page.getByRole('button', { name: 'Mở ca', exact: true }).click();
+    await page.clock.runFor(10200); await page.waitForTimeout(20);
+    await page.locator('.table-order-hint').first().click(); await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
+    await page.clock.runFor(200); await page.waitForTimeout(20);
+    const coins = page.locator('.fly-coin'); await expect(coins).toHaveCount(3);
+    const wallet = (await page.locator('.money').boundingBox())!, dy = await coins.first().evaluate(el => parseFloat(getComputedStyle(el).getPropertyValue('--dy')));
+    expect(dy).toBeLessThan(0); expect(wallet.y).toBeLessThan(120); // the wallet sits above the table
+    expect(await coins.first().evaluate(el => getComputedStyle(el).animationName)).toBe('fly-coin');
+    await page.clock.runFor(1600); await page.waitForTimeout(20);
+    await expect(page.locator('.fly')).toHaveCount(0);
+    // Leave the next guests to expire: the reputation just earned is what falls from them.
+    let seen = '';
+    await run(page, 40000, 250, async () => { const rep = page.locator('.fly-rep'); if (!await rep.count()) return false; seen = await rep.first().innerText(); return true; });
+    expect(seen).toMatch(/^−\d+$/);
+    await expect(page.locator('.toast-loss')).toBeVisible(); // the toast stays the accessible record
+  });
+}
+
+test('P0 numbers and spotlights keep their cue without motion when the player asks for reduced motion', async ({ page }) => {
+  await page.setViewportSize(viewports[0]); await page.emulateMedia({ reducedMotion: 'reduce' });
+  await load(page, null, fresh());
+  await page.getByRole('button', { name: 'Mở ca', exact: true }).click();
+  await run(page, 14000, 250, async () => (await page.locator('.table-order-hint.is-ready[data-spotlight]').count()) > 0);
+  const bubble = lit(page); await expect(bubble).toHaveCount(1);
+  expect(await bubble.evaluate(el => getComputedStyle(el).animationName)).toBe('none');
+  expect(await bubble.evaluate(el => getComputedStyle(el).boxShadow)).not.toBe('none'); // the ring stays, only the pulse goes
+  await bubble.click(); await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
+  await page.clock.runFor(200); await page.waitForTimeout(20);
+  const coin = page.locator('.fly-coin').first(), wallet = (await page.locator('.money').boundingBox())!, at = (await coin.boundingBox())!;
+  expect(await coin.evaluate(el => getComputedStyle(el).animationName)).toBe('none');
+  expect(Math.abs(at.x + at.width / 2 - (wallet.x + wallet.width / 2))).toBeLessThan(6); // already at the wallet: no travel
+  expect(Math.abs(at.y + at.height / 2 - (wallet.y + wallet.height / 2))).toBeLessThan(6);
+});
+
+test('P0 the step guide is only a fallback: idleness before the first serve starts it once and a tap resets the wait', async ({ page }) => {
+  await page.setViewportSize(viewports[0]);
+  const f = fixture('patient'); await load(page, f.save, f.now);
+  await page.getByRole('button', { name: 'Mở ca', exact: true }).click();
+  await page.clock.runFor(30000); await page.mouse.click(5, 5); // a tap resets the 45 s window
+  await page.clock.runFor(30000); await page.waitForTimeout(20);
+  await expect(page.locator('.guide')).toHaveCount(0);
+  await page.clock.runFor(16000); await page.waitForTimeout(20);
+  await expect(page.locator('.guide')).toBeVisible();
+  await waitSaved(page);
+  const prefs = JSON.parse(await page.evaluate(() => localStorage.getItem('tbh.settings.v1')!));
+  expect(prefs.guideRuns).toBe(1); expect(prefs.guideIndex).not.toBeNull();
+});
+
+for (const viewport of viewports) test(`P0 the ready check with its pointer passes axe and keeps 44px targets at ${viewport.width}px`, async ({ page }) => {
+  await page.setViewportSize(viewport);
+  const f = fixture('ready'); await load(page, f.save, f.now, false);
+  await expect(page.locator('.table-order-hint.is-ready[data-spotlight]')).toHaveCount(1); await expect(page.locator('.spotlight-arrow')).toHaveCount(1);
+  const hint = page.locator('.table-order-hint.is-ready'); // measured once its 180 ms entrance animation has settled
+  for (const side of ['width', 'height'] as const) await expect.poll(async () => (await hint.boundingBox())![side]).toBeGreaterThanOrEqual(44);
+  expect((await axe(page)).violations).toEqual([]);
+  await page.locator('.table-order-hint.is-ready').click();
+  await expect(page.locator('#active-table-order .primary[data-spotlight]')).toHaveCount(1); await expect(lit(page)).toHaveCount(1);
+  expect((await axe(page)).violations).toEqual([]);
+});
+
+test('P0 an empty keg is greyed and exactly the refill button asks for a tap', async ({ page }) => {
+  await page.setViewportSize(viewports[0]);
+  const f = fixture('dry'); await load(page, f.save, f.now, false);
+  await expect(page.locator('.equipment-object.keg')).toHaveClass(/is-empty/);
+  const refill = page.getByRole('region', { name: 'Nhập bia nhanh', exact: true }).getByRole('button');
+  await expect(lit(page)).toHaveCount(1); await expect(refill).toHaveAttribute('data-spotlight', '');
+  expect((await axe(page)).violations).toEqual([]);
+  await refill.click(); await waitSaved(page);
+  await expect(lit(page)).toHaveCount(0); await expect(page.locator('.equipment-object.keg')).not.toHaveClass(/is-empty/);
+});
+
+for (const [size, label] of [[2, '2 ghế'], [1, 'Hết chỗ']] as const) {
+  for (const viewport of viewports) test(`P0 the door shows patience rings and a refused group of ${size} says "${label}" at ${viewport.width}px`, async ({ page, tbh }) => {
+    await page.setViewportSize(viewport);
+    const f = fixture('crowd', String(size)); await load(page, f.save, f.now);
+    const guests = page.locator('.door-guest:not(.is-leaving)'); await expect(guests).toHaveCount(f.queue);
+    const before = Number(await guests.first().getAttribute('data-patience'));
+    await run(page, 20000, 250, async () => (await page.locator('[data-turned-away]').count()) > 0);
+    await expect(page.locator('[data-turned-away]')).toHaveAttribute('data-turned-away', String(size));
+    await expect(page.locator('.door-bubble')).toHaveText(label);
+    expect(Number(await guests.first().getAttribute('data-patience'))).toBeLessThan(before); // the ring drained while they waited
+    await page.clock.runFor(2400); await page.waitForTimeout(20);
+    await expect(page.locator('[data-turned-away]')).toHaveCount(0); // they walked off
+    await page.clock.resume(); // axe-core needs live timers
+    expect((await axe(page, '.door')).violations).toEqual([]);
+  });
+}
+
+for (const viewport of viewports) {
+  test(`P0 after shift 1 the HUD opens up and the Upgrades sheet holds exactly one card at ${viewport.width}px`, async ({ page, tbh }) => {
+    await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+    const f = fixture('rest'); await load(page, f.save, f.now, false);
+    for (const shown of ['.energy', '.weather-row', '.stock-strip', '.equipment-object.cooler', '.equipment-object.washer', '.glass-counter', '.settings-button']) await expect(page.locator(shown)).toBeVisible();
+    await expect(page.locator('.bottom-nav button')).toHaveText([/Mở ca/, /Nhập hàng/, /Nâng cấp/]); // the journey button waits for shift 2
+    await expect(lit(page)).toHaveCount(1); await expect(lit(page)).toContainText('Nâng cấp'); // between shifts the first goal calls
+    await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click();
+    const sheet = page.locator('dialog[open] .sheet-content');
+    await expect(sheet.getByRole('button')).toHaveCount(1); await expect(sheet.locator('.upgrade-card')).toHaveCount(1);
+    await expect(sheet.getByRole('button')).toHaveText('Nâng · 3.750 xu'); await expect(sheet.getByRole('button')).toHaveAttribute('data-spotlight', '');
+    expect((await axe(page)).violations).toEqual([]);
+    await tbh.shot(`p0-upgrade-one-card-${viewport.width}.png`);
+    await sheet.getByRole('button').click(); await waitSaved(page);
+    await expect(sheet.getByRole('button')).toHaveCount(1); // still one: the same table's next level
+    await expect(lit(page)).toHaveCount(0); // bought: the nudge is spent
+    await page.keyboard.press('Escape');
+    const saved = fixture('inspect', undefined, await page.evaluate(async () => { const m = '/src/browser-save.ts'; return (await import(m)).readBrowserSave(); }));
+    expect(saved.tableLevels[0]).toBe(2); expect(saved.coins).toBe(f.coins - 3750);
+    expect(errors).toEqual([]);
+  });
+}
+
+test('P0 after shift 2 the full Upgrades list and the Journey button open and nothing blinks', async ({ page }) => {
+  await page.setViewportSize(viewports[0]);
+  const f = fixture('rest', '2'); await load(page, f.save, f.now, false);
+  await expect(page.locator('.bottom-nav button')).toHaveCount(4);
+  await expect(lit(page)).toHaveCount(0);
+  await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click();
+  expect(await page.locator('dialog[open] .upgrade-card').count()).toBeGreaterThan(3);
+  await expect(lit(page)).toHaveCount(0);
+});

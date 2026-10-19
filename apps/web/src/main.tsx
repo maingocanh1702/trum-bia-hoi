@@ -1,9 +1,13 @@
 import { createRoot } from 'react-dom/client';
 import { translate } from './i18n';
+import { savedLocale } from './locale';
 import './style.css';
 import './reference-layout.css';
+import './onboarding-visual.css';
+import './goals.css';
+import './reasons.css';
 const root = createRoot(document.getElementById('root')!);
-const t = (key: string) => translate(navigator.language.toLowerCase().split('-')[0] === 'en' ? 'en' : 'vi', key);
+const t = (key: string) => translate(savedLocale(), key);
 root.render(<p role="status">{t('save.loading')}</p>);
 // One page per load: native imports retain code splitting without a Suspense reveal timer.
 const screen = import.meta.env.VITE_TBH_GUEST_ONLY !== '1' && location.pathname.replace(/\/$/, '') === '/admin'

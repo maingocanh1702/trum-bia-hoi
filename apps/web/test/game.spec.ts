@@ -1,4 +1,5 @@
 import { readSave, waitSaved, readBackups } from './storage';
+import { bootFresh } from './fresh-game';
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -17,17 +18,16 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
     await page.setViewportSize(viewport);
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
-    // Lazy screen boot needs the browser scheduler; freeze only once the entry screen is ready.
+    // Lazy screen boot needs the browser scheduler; freeze only once the shell is ready. Full HUD from shift 1: onboarding's own HUD is first-shift-visual.spec.ts.
     await page.clock.install({ time: new Date('2026-09-08T10:00:00Z') });
-    await page.goto('/');
-    await expect(page.getByRole('button', { name: 'Vào quán', exact: true })).toBeVisible();
-    await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 1000));
-    await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+    await bootFresh(page);
+    await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 4000)); // the clock runs until paused: leave room for a loaded machine
     await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
     await page.clock.runFor(11100);
     await page.getByRole('button', { name: 'Xem mâm · bàn 1', exact: true }).first().click();
     await expect(page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true })).toHaveCount(1);
-    await expect(page.locator('.guide')).toContainText('Chạm Phục vụ');
+    await expect(page.locator('.guide')).toHaveCount(0); // first play is taught by the single spotlight, not a banner
+    await expect(page.locator('#active-table-order .primary[data-spotlight]')).toHaveCount(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const tables = await page.locator('.table-object').all();
     for (const button of await page.locator('.stock-strip > button').all()) {
@@ -79,19 +79,20 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
   });
 }
 
-test('a neglected first shift closes after remaining guests expire and shows only numeric loss feedback', async ({ page }) => {
+test('a neglected first shift closes after remaining guests expire and shows the numbers of the loss with exactly one reason', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.clock.install({ time: new Date('2026-09-08T10:00:00Z') });
-  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await page.goto('/');
   await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
   await page.clock.runFor(29000);
   await expect(page.locator('.toast-loss')).toBeVisible();
   await expect(page.locator('.toast-loss')).toHaveAccessibleName(/Trừ \d+ xu và \d+ uy tín/);
-  await expect(page.locator('.toast-loss')).toHaveText(/^[−\d\s.,]+$/);
+  // PLAN P3 (owner 18/09, supersedes the 08/09 numbers-only rule): the numbers stay, and the toast names ONE reason; nobody served the ready order, so the guest waited too long.
+  await expect(page.locator('.toast-loss')).toHaveText(/^Chờ lâu quá[−\d\s.,]+$/);
+  await expect(page.locator('.toast-loss .loss-reason')).toHaveCount(1);
   for (const icon of await page.locator('.toast-loss svg').all()) expect((await icon.boundingBox())!.width).toBeGreaterThan(0);
   await expect(page.locator('.lost-bubble')).toHaveCount(0);
   await expect(page.getByText('Khách chờ lâu quá', { exact: false })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Bỏ qua', exact: true }).click();
   await page.clock.fastForward(720000);
   // A late Chi Pheo may still be waiting after exhaustion; drain the configured deadline.
   const c = JSON.parse(readFileSync('docs/config/economy.tbh.json', 'utf8')) as typeof import('../../../docs/config/economy.tbh.json');
@@ -106,7 +107,7 @@ test('a neglected first shift closes after remaining guests expire and shows onl
 test('tapped order stays live, returns keyboard focus, and closes on customer expiry', async ({ page }) => {
   await page.clock.install({ time: new Date('2026-09-08T10:00:00Z') });
   await page.clock.pauseAt(new Date('2026-09-08T10:00:00Z'));
-  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await bootFresh(page);
   await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
   await page.clock.runFor(8100);
   const originalCustomer = await page.locator('.seat-customer').first().getAttribute('data-customer-id');
@@ -142,7 +143,7 @@ test('tapped order stays live, returns keyboard focus, and closes on customer ex
   await expect(panel).toBeVisible();
   await page.clock.runFor(101);
   await expect(panel).toHaveCount(0);
-  await expect(page.locator('.toast-loss')).toHaveText(/^[−\d\s.,]+$/);
+  await expect(page.locator('.toast-loss')).toHaveText(/^Chờ lâu quá[−\d\s.,]+$/);
   await expect(page.locator('.table-object').first()).toBeFocused();
   await expect(page.locator(`[data-customer-id="${originalCustomer}"]`)).toHaveCount(0);
   await expect(page.locator('.lost-bubble')).toHaveCount(0);
@@ -155,7 +156,7 @@ test('mixed customers retain their urgent identity and a live grace countdown wh
   await page.clock.install({ time: new Date(fixture.now) });
   await page.clock.pauseAt(new Date(fixture.now + 1000));
   await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), fixture.save);
-  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await page.goto('/');
   const hint = page.locator('.table-space').first().locator('.table-order-hint');
   const countdown = await hint.locator('.bubble-time').textContent();
   expect(countdown).toMatch(/^Còn [1-3]s$/);
@@ -173,7 +174,7 @@ for (const [mode, emoji] of [['early', '🤩'], ['late', '😐'], ['grace', '�
     await page.setViewportSize({ width: 390, height: 844 });
     await page.clock.pauseAt(new Date(fixture.now));
     await page.addInitScript(save => { if (!localStorage.getItem('service-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('service-seeded', '1'); } }, fixture.save);
-    await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+    await page.goto('/');
     const table = page.locator('.table-space').first(), hint = table.locator('.table-order-hint');
     await expect(hint.locator('.bubble-dish')).toHaveCount(2);
     const dishBoxes = await Promise.all((await hint.locator('.bubble-dish').all()).map(dish => dish.boundingBox()));
@@ -207,7 +208,7 @@ for (const [mode, emoji] of [['early', '🤩'], ['late', '😐'], ['grace', '�
 
 test('corrupt saves are preserved and the app offers the original for recovery', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('tbh.save.v1', '{broken-save'));
-  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await page.goto('/');
   await expect(page.getByRole('alert')).toContainText('Bản lưu chưa đọc được');
   expect(await page.evaluate(() => localStorage.getItem('tbh.save.v1'))).toBe('{broken-save');
 });
@@ -218,7 +219,7 @@ for (const width of [360, 390]) {
     await page.setViewportSize({ width, height: 844 });
     await page.clock.pauseAt(new Date(fixture.now));
     await page.addInitScript(save => { if (!localStorage.getItem('rested-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('rested-seeded', '1'); } }, fixture.save);
-    await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+    await page.goto('/');
     const badge = page.locator('.well-rested');
     await expect(badge).toHaveAccessibleName(/Tỉnh Táo ×1.1/);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -241,7 +242,7 @@ for (const width of [360, 390]) {
 
 test('muting, guide skipping and reduced-motion preference survive normal play', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await bootFresh(page, { guideDone: false, guideIndex: 1, muted: false }); // the fallback guide is already showing, as after three lost guests
   await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
   await page.getByRole('button', { name: 'Bỏ qua', exact: true }).click();
   await page.getByRole('button', { name: 'Cài đặt', exact: true }).click();
@@ -255,7 +256,7 @@ test('muting, guide skipping and reduced-motion preference survive normal play',
 test('hidden and offline time preserves the current order and remaining shift', async ({ page }) => {
   await page.clock.install({ time: new Date('2026-09-08T10:00:00Z') });
   await page.clock.pauseAt(new Date('2026-09-08T10:00:00Z'));
-  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await bootFresh(page);
   await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
   await page.clock.runFor(11100);
   const timeBefore = await page.locator('.energy strong').textContent();
@@ -280,7 +281,7 @@ test('hidden and offline time preserves the current order and remaining shift', 
 
 test('recovery rejects a bad import, accepts a valid backup and preserves the original', async ({ page }) => {
   await page.addInitScript(() => { if (!localStorage.getItem('recovery-seeded')) { localStorage.setItem('tbh.save.v1', '{bad-original'); localStorage.setItem('recovery-seeded', '1'); } });
-  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await page.goto('/');
   const input = page.getByLabel('Nhập file sao lưu');
   await input.setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from('{}') });
   await expect(page.getByText('Chưa thể phục hồi.', { exact: false })).toBeVisible();
@@ -292,7 +293,7 @@ test('recovery rejects a bad import, accepts a valid backup and preserves the or
 
 test('starting fresh requires an explicit choice and retains the corrupt backup', async ({ page }) => {
   await page.addInitScript(() => { if (!localStorage.getItem('recovery-seeded')) { localStorage.setItem('tbh.save.v1', '{bad-reset'); localStorage.setItem('recovery-seeded', '1'); } });
-  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await page.goto('/');
   await page.getByRole('button', { name: 'Bắt đầu lại', exact: true }).click();
   expect(await page.evaluate(() => localStorage.getItem('tbh.save.v1'))).toBe('{bad-reset');
   await page.getByRole('button', { name: 'Hủy', exact: true }).click();
@@ -308,9 +309,8 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 
   test(`manual close shows its fee, allows cancellation and debits consuming guests once at ${viewport.width}px`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.clock.install({ time: new Date('2026-09-08T10:00:00Z') });
-    await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+    await bootFresh(page);
     await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
-    await page.getByRole('button', { name: 'Bỏ qua', exact: true }).click();
     await page.clock.runFor(11100);
     await page.locator('.table-order-hint').first().click();
     await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
@@ -344,7 +344,7 @@ test('insufficient close funds keep the guest paused until choosing to wait, the
   const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/manual-close.ts', 'poor'], { encoding: 'utf8' }));
   await page.clock.pauseAt(new Date(fixture.now));
   await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), fixture.save);
-  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await page.goto('/');
   await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
   await page.getByRole('button', { name: 'Mời tất cả về · 5 xu', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Trả 5 xu và đóng ca', exact: true })).toBeDisabled();
@@ -362,7 +362,7 @@ test('a mixed occupied table renders only the remaining Chi Pheo and closes with
   const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/manual-close.ts', 'occupied'], { encoding: 'utf8' }));
   await page.clock.pauseAt(new Date(fixture.now));
   await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), fixture.save);
-  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await page.goto('/');
   await expect(page.locator('.state-occupied .seat-customer')).toHaveCount(1);
   await expect(page.locator('.state-occupied .seat-customer')).toHaveAttribute('data-customer-id', fixture.guests[0]);
   await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
@@ -378,7 +378,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 
     await page.setViewportSize(viewport);
     await page.clock.pauseAt(new Date(fixture.now));
     await page.addInitScript(save => { if (!localStorage.getItem('rush-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('rush-seeded', '1'); } }, fixture.save);
-    await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+    await page.goto('/');
     const hud = page.locator('.rush-label');
     await expect(hud).toContainText('Sắp tới · Giờ Vàng'); await expect(hud.locator('time')).toHaveText('00:21');
     await expect(page.locator('.rush-label.is-warning')).toHaveCount(0);
@@ -425,7 +425,7 @@ test('an overlapping upcoming rush cannot interrupt the active-rush HUD with a s
   await page.setViewportSize({ width: 390, height: 844 });
   await page.clock.pauseAt(new Date(fixture.now));
   await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), fixture.save);
-  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await page.goto('/');
   await page.clock.runFor(1000);
   await expect(page.locator('.rush-label.is-active b')).toHaveText('Giờ Vàng');
   await expect(page.locator('.rush-label.is-warning')).toHaveCount(0);
@@ -439,7 +439,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 
     const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/dog.ts'], { encoding: 'utf8' }));
     await page.setViewportSize(viewport); await page.clock.pauseAt(new Date(fixture.now));
     await page.addInitScript(save => { if (!localStorage.getItem('dog-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('dog-seeded', '1'); } }, fixture.save);
-    await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+    await page.goto('/');
     await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click();
     await page.locator('.dog-entry').click();
     await expect(page.getByRole('dialog')).toHaveAccessibleName('Chó giữ quán');
@@ -510,7 +510,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 
     const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/progression.ts'], { encoding: 'utf8' }));
     await page.setViewportSize(viewport); await page.clock.pauseAt(new Date(fixture.now));
     await page.addInitScript(save => { if (!localStorage.getItem('path-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('path-seeded', '1'); } }, fixture.save);
-    await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+    await page.goto('/');
     await page.getByRole('button', { name: 'Đường lên Trùm', exact: true }).click();
     await expect(page.locator('.journey-summary h3')).toHaveText('Phụ Quán');
     const lp1 = page.locator('.milestone-list > li[data-level="1"]'), lp2 = page.locator('.milestone-list > li[data-level="2"]');
@@ -561,7 +561,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 
     const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/shipper.ts'], { encoding: 'utf8' }));
     await page.setViewportSize(viewport); await page.clock.pauseAt(new Date(fixture.now));
     await page.addInitScript(save => { if (!localStorage.getItem('shipper-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('shipper-seeded', '1'); } }, fixture.save);
-    await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+    await page.goto('/');
     const phone = page.getByRole('button', { name: 'Điện thoại · đơn giao hàng', exact: true });
     await expect(phone).toHaveClass(/has-delivery/); await expect(phone).toHaveAccessibleDescription(/Hạn giao còn lại.*00:45/);
     const bounds = (await phone.boundingBox())!; expect(bounds.width).toBeGreaterThanOrEqual(44); expect(bounds.height).toBeGreaterThanOrEqual(44);
@@ -598,7 +598,7 @@ test('a pending shipper blocks paid closure and expires with a numeric-only pena
   const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/shipper.ts', 'ready'], { encoding: 'utf8' }));
   await page.setViewportSize({ width: 390, height: 844 }); await page.clock.pauseAt(new Date(fixture.now));
   await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), fixture.save);
-  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await page.goto('/');
   await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
   await page.getByRole('button', { name: /Mời tất cả về/ }).click();
   await expect(page.getByRole('button', { name: /^Trả .* xu và đóng ca$/ })).toBeDisabled(); await expect(page.getByRole('dialog')).toContainText('Giao đơn shipper đang chờ');
@@ -620,7 +620,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.setViewportSize(viewport); await page.clock.pauseAt(new Date(fixture.now));
   await page.addInitScript(save => { if (!localStorage.getItem('sign-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('sign-seeded', '1'); } }, fixture.save);
-  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await page.goto('/');
   await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click(); await page.getByRole('button', { name: 'Biển hiệu Chưa lắp biển', exact: true }).click();
   const panel = page.getByRole('dialog', { name: 'Biển hiệu', exact: true }), money = (n: number) => new Intl.NumberFormat('vi-VN').format(n);
   await expect(panel.getByRole('article')).toHaveCount(5);
@@ -660,7 +660,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.setViewportSize(viewport); await page.clock.pauseAt(new Date(fixture.now));
   await page.addInitScript(save => { if (!localStorage.getItem('flyer-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('flyer-seeded', '1'); } }, fixture.save);
-  await page.goto('/'); await page.getByRole('button', { name: 'Vào quán', exact: true }).click();
+  await page.goto('/');
   await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click(); await page.getByRole('button', { name: 'Tờ rơi 0 / 5 tờ rơi', exact: true }).click();
   const panel = page.getByRole('dialog', { name: 'Tờ rơi', exact: true });
   await expect(panel).toContainText('Không giảm thời gian chờ'); await expect(panel.getByRole('button', { name: 'Phát tờ rơi', exact: true })).toBeDisabled();

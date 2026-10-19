@@ -84,7 +84,7 @@ dismissal, not a tap-serve outcome).
     reason:'orderExpired', outcome:'expired'}`.
   - **rested** (a modifier, not its own outcome): advance past `wellRested.requiresRestHours` before
     starting the shift, then serve early — exercises `wellRestedBonus()` stacking on any outcome.
-- UI taps by aria name (`game.spec.ts`): `'Vào quán'` → `'Mở ca'` → `'Xem mâm · bàn 1'` →
+- UI taps by aria name (`game.spec.ts`): `'Mở ca'` → `'Xem mâm · bàn 1'` →
   `'Phục vụ cả mâm'` (disabled until `o.items.every(i.state==='ready')`) → `'Đóng'`.
 
 ## Existing proof
@@ -116,8 +116,8 @@ dismissal, not a tap-serve outcome).
   the confirmed maximum'`.
 - `apps/web/test/game.spec.ts`: `` `guest serves, reloads, opens paused sheets and switches locale at
   ${viewport}` `` (toast-gain accessible-name assertion), `'a neglected first shift closes after
-  remaining guests expire and shows only numeric loss feedback'` (`.toast-loss` + accessible name
-  regex), `'tapped order stays live, returns keyboard focus, and closes on customer expiry'`, `'mixed
+  remaining guests expire and shows the numbers of the loss with exactly one reason'` (`.toast-loss` + accessible name
+  regex + its single `.loss-reason` "Chờ lâu quá"; since 2026-10-19 the toast names one reason, PLAN P3), `'tapped order stays live, returns keyboard focus, and closes on customer expiry'`, `'mixed
   customers retain their urgent identity and a live grace countdown when beer is out'`, `` `multi-dish
   service shows the actual ${mode} reward and guest reaction` `` (mode ∈ `early|late|grace|stale` —
   **the direct taxonomy proof**: `toMatchObject({ok:true, outcome:mode})`), `` `well-rested timer

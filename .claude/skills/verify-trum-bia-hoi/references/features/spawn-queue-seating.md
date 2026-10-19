@@ -241,3 +241,4 @@ but are excluded from `k` itself since `k` only counts seated serves).
 | Date | Change |
 |---|---|
 | 2026-09-16 | Wave A3 adds the five-seed headless VIP arrival census, denominator/exclusion rules and explicit pending human observation. No spawn gate, weight or production behaviour changes. |
+| 2026-10-14 fun-onboarding-visual | UI only: queued groups now render at the door with a patience ring (`DoorQueue.tsx`, same arrival + least-patient-guest deadline the engine uses), and a `queue_overflow {size}` shows a bubble `{n} ghế` (pair) / `Hết chỗ` (single) before the group walks off. Proof: `apps/web/test/first-shift-visual.spec.ts` `P0 the door shows patience rings and a refused group of ${size} says "…" at ${w}px` (×6, crowd saves from `apps/web/test/fixtures/first-shift-visual.ts`). No engine rule, spawn number or queue formula changed. |
