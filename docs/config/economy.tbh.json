@@ -1,8 +1,8 @@
 {
   "_meta": {
     "name": "Trùm Bia Hơi — economy config",
-    "version": "2.0.5",
-    "date": "2026-10-14",
+    "version": "2.0.6",
+    "date": "2026-10-15",
     "spec": "08-SPEC-economy-constants.md (cùng số, cùng tên trường)",
     "rules": [
       "Trường kết thúc bằng 'Base' = xu/uy tín gốc, NHÂN k lúc load: displayed = round(valueBase * k).",
@@ -113,6 +113,7 @@
           ],
           "sections": [
             "onboarding",
+            "nextGoal",
             "audio"
           ]
         }
@@ -1174,6 +1175,9 @@
       "firstServeWithinMs": 30000,
       "firstShiftLostGroupsMax": 1
     }
+  },
+  "nextGoal": {
+    "reachMult": 3
   },
   "quests": {
     "daily": {

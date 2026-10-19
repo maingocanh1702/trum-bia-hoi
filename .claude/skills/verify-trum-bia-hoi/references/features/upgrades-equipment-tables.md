@@ -222,6 +222,29 @@ freshness-formula effect), [table-lifecycle](table-lifecycle.md) (the table stat
 `upgradeTable`/`buyTable` all spend via `spend()`, outside `credit()`'s faucet scope, same as
 `restock`).
 
+## fun-next-goal — 2026-10-15
+
+- **Goal registry** `apps/web/src/goals.ts`: every purchasable item of the Upgrades sheet as data (`Goal`: lane · card · name · one-number
+  effect · cost · `eligible` · `busy`), built from the engine's own quotes — `upgradeQuote` (devices), `unlockQuote` (phone/QR),
+  `signboardQuote`, `flyerQuote` (paid in reputation, never the coin chip) and the two quotes added to `rules.ts`:
+  `tableUpgradeQuote(w, c, table)` and `buyTableQuote(w, c)`, which answer exactly what `upgradeTable` / `buyTable` will (same price, same
+  first refusal, in the command's order). Wave 2 adds chairs/dishes as one more provider; neither the chip nor its rule changes.
+- **Chip** `GoalChip.tsx` under the wallet, from shift 1 on a new save: `pickNextGoal()` = cheapest eligible coin-priced item of the first
+  lane with one (Sức chứa → Tốc độ → Khách), among items ≤ `nextGoal.reachMult` (Tier C, 3) × the average takings of a closed shift
+  (`shiftAverage()`: `lifetimeEarned` outside the open shift ÷ `completedShifts`; a new save is not filtered; nothing in reach → the
+  cheapest eligible item stands in). Gates (life path, badge, reputation, stall level, owned/max) make an item ineligible; a busy table
+  only loses ties to an empty one. A tap opens the sheet at that item (`data-goal` / `data-targeted`); in the one-card mode the card IS the
+  chip's goal. Settings → "Gợi ý mục tiêu" switches the chip off (`Settings.goalChip`, saved).
+- **Three lanes** (after `featureReveal.upgradeAllAfterShifts`): `section.goal-lane` Sức chứa (tables, buy table) · Tốc độ (devices, kitchen
+  entry) · Khách (sign, flyer, phone, QR); the `#upgrade-tables` anchor of the upgrade hint lives in the first lane.
+- Proof: `packages/engine/test/goal-quotes.test.ts` (quote parity with the real commands), `packages/engine/test/next-goal.test.ts`
+  (pick rules on real worlds: lane order, price, reach, gates, busy tables, old pins without `nextGoal`, shorter tier lists),
+  `apps/web/test/next-goal.spec.ts` (3 viewports: chip from shift 1, tap → sheet at the item, chip moves on after each purchase and says what is
+  missing, three lanes in order, LP-gated keg skipped, Settings switch + reload, old pin, English copy; axe 0 violations).
+  Run `npx playwright test apps/web/test/next-goal.spec.ts` and `node --import tsx --test packages/engine/test/goal-quotes.test.ts packages/engine/test/next-goal.test.ts`.
+- `config.ts` `shape()` now accepts a shorter `_meta.governance.tiers.{A,B,C}.sections` list in a pinned snapshot (the registry lists grow with
+  every new section); without it every save pinned before JSON 2.0.6 stopped loading.
+
 ## Changelog
 
 | Date | Change |

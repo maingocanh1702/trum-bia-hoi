@@ -4,9 +4,9 @@ import { BrowserSave } from './browser-save';
 import { SETTINGS_KEY, localeOf } from './locale';
 
 const SAVE_KEY = 'tbh.save.v1';
-export interface Settings { locale: Locale; muted: boolean; guideDone: boolean; guideIndex: number | null; guideRuns: number; guideDay: string; lostStreak: number; loginPromptPlayer: string; loginPromptShift: number }
+export interface Settings { locale: Locale; muted: boolean; goalChip: boolean; guideDone: boolean; guideIndex: number | null; guideRuns: number; guideDay: string; lostStreak: number; loginPromptPlayer: string; loginPromptShift: number }
 export function readSettings(): Settings {
-  const fallback: Settings = { locale: 'vi', muted: false, guideDone: false, guideIndex: null, guideRuns: 0, guideDay: '', lostStreak: 0, loginPromptPlayer: '', loginPromptShift: 0 };
+  const fallback: Settings = { locale: 'vi', muted: false, goalChip: true, guideDone: false, guideIndex: null, guideRuns: 0, guideDay: '', lostStreak: 0, loginPromptPlayer: '', loginPromptShift: 0 };
   try {
     const data = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}');
     // Settings written before 2026-10 may carry localeAccepted/welcomed from the removed language screen; they are simply ignored.

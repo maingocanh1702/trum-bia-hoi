@@ -1,0 +1,103 @@
+import { test, expect } from './tbh-fixture';
+import type { Page } from '@playwright/test';
+import { execFileSync } from 'node:child_process';
+import AxeBuilder from '@axe-core/playwright';
+import { waitSaved } from './storage';
+
+// fun-next-goal (PLAN "Vui 3 ca" §4): the "Mục tiêu kế tiếp" chip and the three lanes of the Upgrades sheet. Engine-made saves, DOM-only proof.
+const viewports = [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1280, height: 720 }];
+const fixture = (mode: string, ...args: (string | number)[]) => JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/next-goal.ts', mode, ...args.map(String)], { encoding: 'utf8' }));
+const prefs = { locale: 'vi', guideDone: true, guideIndex: null, muted: true };
+const settled = (page: Page) => page.waitForFunction(() => document.getAnimations().every(a => a.effect?.getComputedTiming().iterations === Infinity || a.playState !== 'running'));
+const axe = async (page: Page) => { await settled(page); return new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze(); };
+const chip = (page: Page) => page.locator('.goal-chip');
+const inLane = (page: Page, lane: string) => page.locator(`.goal-lane[aria-labelledby="lane-${lane}"]`);
+
+/** Boot a guest from an engine-made save (a brand-new game when `save` is null) with the clock pinned at the save's time. */
+async function load(page: Page, save: string | null, now: number) {
+  await page.clock.setFixedTime(now);
+  await page.addInitScript(({ save, prefs }) => {
+    if (localStorage.getItem('goal-seeded')) return;
+    localStorage.setItem('goal-seeded', '1'); localStorage.setItem('tbh.settings.v1', JSON.stringify(prefs));
+    if (save) localStorage.setItem('tbh.save.v1', save);
+  }, { save, prefs });
+  await page.goto('/'); await expect(page.locator('.game-shell')).toBeVisible();
+}
+const fits = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth);
+
+for (const viewport of viewports) test(`a brand-new save shows its first goal from shift 1, and a tap opens the sheet at that item at ${viewport.width}px`, async ({ page, tbh }) => {
+  await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  await load(page, null, Date.parse('2026-09-08T10:00:00Z'));
+  await expect(page.locator('.hud button')).toHaveCount(0); // the minimal shift-1 HUD: the wallet; the chip sits right under it
+  await expect(chip(page)).toBeVisible(); await expect(chip(page)).toContainText('Nâng bàn 1 · 4 chỗ'); await expect(chip(page)).toContainText('3.750 xu · thiếu 3.000');
+  await expect(chip(page)).toHaveAccessibleName(/^Mục tiêu kế tiếp: Nâng bàn 1 · 4 chỗ/);
+  const box = (await chip(page).boundingBox())!; expect(box.height).toBeGreaterThanOrEqual(44); expect(box.x + box.width).toBeLessThanOrEqual(viewport.width); expect(await fits(page)).toBe(true);
+  expect((await axe(page)).violations).toEqual([]); await tbh.shot(`ng-chip-shift1-${viewport.width}.png`);
+  await chip(page).click();
+  const sheet = page.locator('dialog[open]'); await expect(sheet).toBeVisible();
+  await expect(sheet.locator('.upgrade-card')).toHaveCount(1); await expect(sheet.locator('.upgrade-card')).toHaveAttribute('data-goal', 'table:table-1'); // one card: the chip's goal
+  await expect(sheet.getByRole('heading', { name: 'Bàn 1', exact: true })).toBeVisible();
+  expect((await axe(page)).violations).toEqual([]); expect(errors).toEqual([]);
+});
+
+for (const viewport of viewports) test(`the chip moves on after every purchase and says what is still missing at ${viewport.width}px`, async ({ page, tbh }) => {
+  await page.setViewportSize(viewport);
+  const f = fixture('closed', 1, 4000); await load(page, f.save, f.now); expect(f.coins).toBe(9110);
+  await expect(chip(page)).toContainText('Nâng bàn 1 · 4 chỗ'); await expect(chip(page)).toContainText('3.750 xu · đủ rồi'); await tbh.shot(`ng-chip-ready-${viewport.width}.png`);
+  await chip(page).click(); const sheet = page.locator('dialog[open]');
+  await expect(sheet.getByRole('heading', { name: 'Bàn 1', exact: true })).toBeVisible();
+  await sheet.getByRole('button', { name: 'Nâng · 3.750 xu', exact: true }).click(); await waitSaved(page); await page.keyboard.press('Escape');
+  await expect(chip(page)).toContainText('Nâng bàn 2 · 4 chỗ'); await expect(chip(page)).toContainText('3.750 xu · đủ rồi'); // 5 360 left
+  await chip(page).click(); await page.locator('dialog[open]').getByRole('button', { name: 'Nâng · 3.750 xu', exact: true }).click(); await waitSaved(page); await page.keyboard.press('Escape');
+  await expect(chip(page)).toContainText('Nâng bàn 3 · 4 chỗ'); await expect(chip(page)).toContainText('3.750 xu · thiếu 2.140'); // 1 610 left
+});
+
+for (const viewport of viewports) test(`the full Upgrades sheet has three lanes, capacity then speed then guests, and the chip opens it at its item at ${viewport.width}px`, async ({ page, tbh }) => {
+  await page.setViewportSize(viewport);
+  const f = fixture('closed', 2, 4000); await load(page, f.save, f.now);
+  await expect(chip(page)).toContainText('Nâng bàn 1');
+  await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click(); const sheet = page.locator('dialog[open]');
+  await expect(sheet.locator('.goal-lane > h3:first-child')).toHaveText(['Sức chứa', 'Tốc độ', 'Khách']);
+  await expect(inLane(page, 'capacity').locator('[data-goal^="table:"]')).toHaveCount(3); await expect(inLane(page, 'capacity').locator('[data-goal="buyTable"]')).toHaveCount(1);
+  await expect(inLane(page, 'speed').locator('[data-goal^="equipment:"]')).toHaveCount(5);
+  await expect(inLane(page, 'guests').locator('[data-goal="signboard"], [data-goal="flyer"], [data-goal^="unlock:"]')).toHaveCount(4);
+  await expect(inLane(page, 'guests').locator('[data-goal="equipment:keg"]')).toHaveCount(0);
+  expect((await axe(page)).violations).toEqual([]); await tbh.shot(`ng-lanes-${viewport.width}.png`);
+  await page.keyboard.press('Escape'); await expect(page.locator('dialog[open]')).toHaveCount(0);
+  await chip(page).click();
+  const target = page.locator('dialog[open] [data-goal="table:table-1"]'); await expect(target).toBeVisible(); await expect(target).toHaveAttribute('data-targeted', ''); await expect(target).toBeInViewport();
+});
+
+test('a goal behind the life-path gate is never the chip: it skips the keg and points at the sign', async ({ page, tbh }) => {
+  await page.setViewportSize(viewports[0]);
+  const f = fixture('gated'); await load(page, f.save, f.now); expect(f.keg).toBe(false);
+  await expect(chip(page)).toContainText('Lắp biển hiệu'); await expect(chip(page)).not.toContainText('Vòi rót'); await tbh.shot('ng-chip-gated-390.png');
+  await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click();
+  const keg = page.locator('dialog[open] [data-goal="equipment:keg"]'); await expect(keg).toBeVisible(); await expect(keg.getByRole('button').last()).toBeDisabled(); // listed, but not buyable and not suggested
+});
+
+test('Settings can switch the chip off, and it stays off after a reload', async ({ page }) => {
+  await page.setViewportSize(viewports[0]);
+  const f = fixture('closed', 2, 4000); await load(page, f.save, f.now);
+  await expect(chip(page)).toBeVisible();
+  await page.getByRole('button', { name: 'Cài đặt', exact: true }).click();
+  const row = page.getByRole('button', { name: /Gợi ý mục tiêu/ }); await expect(row).toContainText('Đang bật'); await row.click(); await expect(row).toContainText('Đã tắt');
+  await page.keyboard.press('Escape'); await expect(chip(page)).toHaveCount(0); await waitSaved(page);
+  await page.reload(); await expect(page.locator('.game-shell')).toBeVisible(); await expect(chip(page)).toHaveCount(0);
+  await page.getByRole('button', { name: 'Cài đặt', exact: true }).click(); await page.getByRole('button', { name: /Gợi ý mục tiêu/ }).click(); await page.keyboard.press('Escape');
+  await expect(chip(page)).toBeVisible();
+});
+
+test('a game pinned to a snapshot without the nextGoal section still shows its chip (the client reads the seed)', async ({ page }) => {
+  await page.setViewportSize(viewports[0]);
+  const f = fixture('oldpin'); await load(page, f.save, f.now);
+  await expect(chip(page)).toContainText('Nâng bàn 1');
+});
+
+test('the chip is English in English, with the units of the English copy', async ({ page }) => {
+  await page.setViewportSize(viewports[0]);
+  const f = fixture('closed', 1, 4000); await page.clock.setFixedTime(f.now);
+  await page.addInitScript(({ save }) => { if (localStorage.getItem('goal-seeded')) return; localStorage.setItem('goal-seeded', '1'); localStorage.setItem('tbh.save.v1', save); localStorage.setItem('tbh.settings.v1', JSON.stringify({ locale: 'en', guideDone: true, guideIndex: null, muted: true })); }, { save: f.save });
+  await page.goto('/'); await expect(page.locator('.game-shell')).toBeVisible();
+  await expect(chip(page)).toContainText('Upgrade table 1 · 4 seats'); await expect(chip(page)).toContainText('3,750 coins · ready'); await expect(chip(page)).toHaveAccessibleName(/^Next goal: Upgrade table 1/);
+});

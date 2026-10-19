@@ -56,7 +56,9 @@ test('static guest serves, restocks, upgrades, closes shift and persists across 
   await page.keyboard.press('Escape');
   // The HUD opens after shift 1: restock, then the first goal (one card) earned through ordinary service.
   await page.getByRole('button', { name: 'Nhập hàng', exact: true }).click();
-  await page.locator('.stock-row').first().getByRole('button', { name: 'Mua bom +1 · 12 xu', exact: true }).click();
+  // The quick refill of the loop may already have topped the stock up (15/15): then there is nothing to buy, and the pause check below still holds.
+  const bom = page.locator('.stock-row').first().getByRole('button', { name: 'Mua bom +1 · 12 xu', exact: true });
+  if (await bom.isEnabled()) await bom.click();
   const energy = await page.locator('.energy strong').textContent();
   await page.clock.runFor(5000);
   await expect(page.locator('.energy strong')).toHaveText(energy!); // the open sheet keeps the world paused

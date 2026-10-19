@@ -83,8 +83,11 @@ export function parseProgressRequirement(token: string, c: Economy): ProgressReq
 
 // Presentation-only thresholds added after earlier releases. Older pinned snapshots predate them and keep their raw bytes;
 // a snapshot that carries one must still shape-check it, and the web client falls back to the bundled seed for the absent ones.
-const ADDED_LATER = new Set(['onboarding.loginPrompt.leaveProgress', 'onboarding.idleToGuideMs',
+const ADDED_LATER = new Set(['nextGoal', 'onboarding.loginPrompt.leaveProgress', 'onboarding.idleToGuideMs',
   'onboarding.featureReveal.hudAfterShifts', 'onboarding.featureReveal.upgradeAllAfterShifts', 'onboarding.featureReveal.journeyAfterShifts']);
+
+// Sections that joined a governance tier after earlier releases (tier -> names); shape() lets an older pinned snapshot lack exactly these.
+const TIER_SECTIONS_ADDED_LATER: Record<string, readonly string[]> = { C: ['nextGoal'] };
 
 /** Complete snapshots only: a partial or malformed config must never become live. */
 function shape(value: unknown, expected: unknown, path: string): void {
@@ -95,6 +98,15 @@ function shape(value: unknown, expected: unknown, path: string): void {
     if (/^lifePath\.\d+\.requires$/.test(path)) {
       if (!Array.isArray(value) || !value.every(token => typeof token === 'string')) throw Error(`config:${path}:array`);
       return; // validate() still rejects unknown tokens and dependency cycles.
+    }
+    // The tier registry decides who may edit which section, so a list is exact: the seed's membership, minus only the sections that
+    // joined that tier later (a snapshot pinned before then keeps the shorter list). No duplicate, unknown, moved or missing name.
+    const tier = /^_meta\.governance\.tiers\.([A-C])\.sections$/.exec(path);
+    if (tier) {
+      const later = TIER_SECTIONS_ADDED_LATER[tier[1]] ?? [];
+      if (!Array.isArray(value) || !value.every(name => typeof name === 'string') || new Set(value).size !== value.length
+        || value.some(name => !expected.includes(name)) || expected.some(name => !value.includes(name) && !later.includes(name))) throw Error(`config:${path}:array`);
+      return;
     }
     if (!Array.isArray(value) || value.length !== expected.length) throw Error(`config:${path}:array`);
     expected.forEach((v, i) => shape(value[i], v, `${path}.${i}`));
@@ -267,6 +279,7 @@ function validate(c: Economy): void {
     whole(c.onboarding.loginPrompt.leaveProgress.minLifetimeEarned, 'loginPrompt.minLifetimeEarned', 1);
   }
   if ('idleToGuideMs' in c.onboarding) whole(c.onboarding.idleToGuideMs, 'onboarding.idleToGuideMs', 1);
+  if ('nextGoal' in c && !(Number.isFinite(c.nextGoal.reachMult) && c.nextGoal.reachMult > 0)) throw Error('config:nextGoal.reachMult');
   const reveal: Record<string, number> = c.onboarding.featureReveal;
   for (const key of ['hudAfterShifts', 'upgradeAllAfterShifts', 'journeyAfterShifts']) if (key in reveal) whole(reveal[key], `featureReveal.${key}`);
   if (c.onboarding.firstShift.firstGroupSize > initialTable.capacity || c.onboarding.firstShift.guaranteedFirstGroupWithinMs < c.runtime.tableSeatingMs) throw Error('config:firstGroup');

@@ -58,6 +58,29 @@ export function upgradeQuote(w: WorldView, c: Config, kind: Equipment, outsideSh
   const reason = cost == null ? 'maxLevel' : w.lifePath < requiredLifePath ? 'lifePathRequired' : w.coins < cost ? 'notEnoughCoins' : outsideShiftOnly && w.phase !== 'resting' ? 'outsideShiftOnly' : null;
   return { next, cost: cost ?? null, requiredLifePath, ok: reason === null, reason };
 }
+/**
+ * What `upgradeTable` will answer for this table, refusals in the command's own order. `gate` is the part a suggestion must respect
+ * whatever the table is doing right now (top level, badge, reputation); `reason` adds the busy table and the wallet on top of it.
+ */
+export function tableUpgradeQuote(w: WorldView, c: Config, table: Table, outsideShiftOnly = false) {
+  const level = c.values.upgrades.table.levels[table.level];
+  const cost = level?.priceBase ?? null;
+  const gate = !level ? 'maxLevel' as const : level.requiredBadge && !w.badges.includes(level.requiredBadge) ? 'badgeRequired' as const
+    : level.repBase && w.reputation < level.repBase[0] ? 'reputationRequired' as const : null;
+  const reason = outsideShiftOnly && w.phase !== 'resting' ? 'outsideShiftOnly' as const : table.state !== 'empty' ? 'tableBusy' as const
+    : gate ?? (w.coins < cost! ? 'notEnoughCoins' as const : null);
+  return { next: level ?? null, cost, gate, reason, ok: reason === null };
+}
+/** What `buyTable` will answer: the next table's seats are priced one by one from `extraSeatPriceBase`, refusals in the command's order. */
+export function buyTableQuote(w: WorldView, c: Config, outsideShiftOnly = false) {
+  const u = c.values.upgrades, seats = w.tables.reduce((sum, t) => sum + t.capacity, 0);
+  const capacity = u.table.levels[c.values.runtime.initialTableLevel - 1].capacity, prices = u.extraSeatPriceBase as Record<string, number>;
+  let cost: number | null = 0;
+  for (let i = 1; i <= capacity && cost !== null; i++) { const price = prices[String(seats + i)]; cost = price === undefined ? null : cost + price; }
+  const reason = outsideShiftOnly && w.phase !== 'resting' ? 'outsideShiftOnly' as const : w.tables.length >= u.table.maxTables ? 'maxTables' as const
+    : cost === null ? 'seatPriceUnconfigured' as const : w.coins < cost ? 'notEnoughCoins' as const : null;
+  return { cost, capacity, reason, ok: reason === null };
+}
 /** Owned glasses are the purchase ceiling; there is no second lifetime purchase counter. */
 export function buyGlassQuote(w: WorldView, c: Config, count: number) {
   const capacity = Math.min(c.values.glasses.buyCap, c.values.glasses.storageCap);

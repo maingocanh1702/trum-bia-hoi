@@ -19,7 +19,7 @@
   settings button, `:363-367`), weather row (`:368`), `stall-scene` (equipment buttons, business-unlock
   props, `:369-376`), and a `<nav aria-label={t('brand')} className="bottom-nav">` (`:388-393`) with
   up to 4 buttons: shift/book toggle, stock, upgrades, journey (with a numeric `nav-badge`
-  claimable-count badge). **Since 2026-10-14 (fun-onboarding-visual) shift 1 shows only the wallet and the keg:**
+  claimable-count badge). **Since 2026-10-14 (fun-onboarding-visual) shift 1 shows only the wallet and the keg (plus, since 2026-10-15 (fun-next-goal), the "Mục tiêu kế tiếp" chip right under the wallet — see [upgrades-equipment-tables](upgrades-equipment-tables.md)):**
   the settings gear, the shift clock, weather/rush row, stock strip, cooler/washer/kitchen, glass counter and the whole nav stay hidden until
   `onboarding.featureReveal.hudAfterShifts` completed shifts (Upgrades/Journey buttons have their own thresholds, the Upgrades
   sheet shows one card until `upgradeAllAfterShifts`). `reveal.ts` `revealed()` is the single switch; 1.x snapshots and `onboarding.enabled=false`
