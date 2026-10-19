@@ -86,6 +86,7 @@
   "business.success": "Đã có {name}",
   "requirement.lifetime": "Doanh thu trọn đời: {have} / {need} xu",
   "requirement.seats": "Ghế quy đổi: {have} / {need}",
+  "requirement.tables": "Số bàn: {have} / {need}",
   "requirement.equipment": "Thiết bị cơ bản: cấp {have} / {need}",
   "requirement.stall": "Quầy / kho: cấp {have} / {need}",
   "requirement.level": "Đạt mốc {name}",

@@ -86,6 +86,7 @@
   "business.success": "Acquired {name}",
   "requirement.lifetime": "Lifetime earned: {have} / {need} coins",
   "requirement.seats": "Seat capacity: {have} / {need}",
+  "requirement.tables": "Tables: {have} / {need}",
   "requirement.equipment": "Core equipment: level {have} / {need}",
   "requirement.stall": "Counter / storage: level {have} / {need}",
   "requirement.level": "Reach {name}",
