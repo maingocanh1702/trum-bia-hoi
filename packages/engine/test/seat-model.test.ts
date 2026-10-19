@@ -224,6 +224,32 @@ test('seat-model snapshots fail closed on unreachable chairs, short price ladder
   assert.equal(loadConfig(structuredClone(capacityModel)).version, '2.0.4', 'the frozen capacity model still loads for old pins');
 });
 
+test('a pre-seat snapshot from Wave 1 (JSON 2.0.5/2.0.6: the capacity model plus presentation keys) still loads, bytes kept; a bad key or tier list still fails closed', () => {
+  // Wave 1 shipped on the capacity model: its pins carry keys the frozen 2.0.4 file does not know. The seed is their template.
+  const wave1 = () => {
+    const raw = structuredClone(capacityModel) as any; raw._meta.version = '2.0.6';
+    raw.onboarding.idleToGuideMs = seed.onboarding.idleToGuideMs;
+    Object.assign(raw.onboarding.featureReveal, { hudAfterShifts: seed.onboarding.featureReveal.hudAfterShifts, upgradeAllAfterShifts: seed.onboarding.featureReveal.upgradeAllAfterShifts, journeyAfterShifts: seed.onboarding.featureReveal.journeyAfterShifts });
+    raw.nextGoal = structuredClone(seed.nextGoal); raw._meta.governance.tiers.C.sections = [...seed._meta.governance.tiers.C.sections];
+    return raw;
+  };
+  const pinned = loadConfig(wave1());
+  assert.equal(JSON.stringify(pinned.raw), JSON.stringify(wave1()), 'raw bytes preserved');
+  assert.equal(isSeatModel(pinned.values), false, 'still a capacity model: its next opening adopts the seat model');
+  const g = new Game(pinned, 42, T0);
+  assert.equal(decodeSave(encodeSave(g)).config.version, '2.0.6', 'a save pinned at that version decodes');
+  const bad: [string, (raw: any) => void][] = [
+    ['an unknown key inside nextGoal', raw => { raw.nextGoal.other = 1; }],
+    ['a non-positive reach', raw => { raw.nextGoal.reachMult = 0; }],
+    ['an unknown top-level key', raw => { raw.bogus = 1; }],
+    ['a wrongly typed threshold', raw => { raw.onboarding.idleToGuideMs = 'soon'; }],
+    ['an unknown reveal key', raw => { raw.onboarding.featureReveal.bogusAfterShifts = 1; }],
+    ['an unknown tier C section', raw => { raw._meta.governance.tiers.C.sections.push('bogus'); }],
+    ['a later section moved into another tier', raw => { raw._meta.governance.tiers.B.sections.push('nextGoal'); }],
+  ];
+  for (const [name, patch] of bad) { const raw = wave1(); patch(raw); assert.throws(() => loadConfig(raw), /config:/, name); }
+});
+
 test('every committed replay fixture still decodes to its recorded log', () => {
   const dirs = [new URL('./fixtures/', import.meta.url), new URL('../../../apps/web/test/fixtures/', import.meta.url)];
   let checked = 0;

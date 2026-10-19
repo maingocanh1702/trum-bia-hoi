@@ -93,11 +93,14 @@ export function parseProgressRequirement(token: string, c: Economy): ProgressReq
 
 // Presentation-only thresholds added after earlier releases. Older pinned snapshots predate them and keep their raw bytes;
 // a snapshot that carries one must still shape-check it, and the web client falls back to the bundled seed for the absent ones.
+// The reverse also holds: a pre-seat snapshot from after Wave 1 (JSON 2.0.5/2.0.6) carries them although the frozen capacity file
+// (2.0.4) that shapes it does not, so for a key the expected shape lacks the bundled seed is the template.
 const ADDED_LATER = new Set(['nextGoal', 'onboarding.loginPrompt.leaveProgress', 'onboarding.idleToGuideMs',
   'onboarding.featureReveal.hudAfterShifts', 'onboarding.featureReveal.upgradeAllAfterShifts', 'onboarding.featureReveal.journeyAfterShifts']);
 
 // Sections that joined a governance tier after earlier releases (tier -> names); shape() lets an older pinned snapshot lack exactly these.
 const TIER_SECTIONS_ADDED_LATER: Record<string, readonly string[]> = { C: ['nextGoal'] };
+const seedAt = (path: string): unknown => path.split('.').reduce<unknown>((node, key) => (node as Record<string, unknown> | undefined)?.[key], seed);
 
 /** Complete snapshots only: a partial or malformed config must never become live. */
 function shape(value: unknown, expected: unknown, path: string): void {
@@ -109,13 +112,14 @@ function shape(value: unknown, expected: unknown, path: string): void {
       if (!Array.isArray(value) || !value.every(token => typeof token === 'string')) throw Error(`config:${path}:array`);
       return; // validate() still rejects unknown tokens and dependency cycles.
     }
-    // The tier registry decides who may edit which section, so a list is exact: the seed's membership, minus only the sections that
-    // joined that tier later (a snapshot pinned before then keeps the shorter list). No duplicate, unknown, moved or missing name.
+    // The tier registry decides who may edit which section, so a list is exact: the expected membership, minus only the sections that
+    // joined that tier later (a snapshot pinned before then keeps the shorter list) and plus only those same sections (a pre-seat
+    // snapshot from after they joined). No duplicate, unknown, moved or missing name.
     const tier = /^_meta\.governance\.tiers\.([A-C])\.sections$/.exec(path);
     if (tier) {
       const later = TIER_SECTIONS_ADDED_LATER[tier[1]] ?? [];
       if (!Array.isArray(value) || !value.every(name => typeof name === 'string') || new Set(value).size !== value.length
-        || value.some(name => !expected.includes(name)) || expected.some(name => !value.includes(name) && !later.includes(name))) throw Error(`config:${path}:array`);
+        || value.some(name => !expected.includes(name) && !later.includes(name)) || expected.some(name => !value.includes(name) && !later.includes(name))) throw Error(`config:${path}:array`);
       return;
     }
     if (!Array.isArray(value) || value.length !== expected.length) throw Error(`config:${path}:array`);
@@ -123,9 +127,10 @@ function shape(value: unknown, expected: unknown, path: string): void {
   } else if (typeof expected === 'object') {
     if (!value || typeof value !== 'object' || Array.isArray(value)) throw Error(`config:${path}:object`);
     const e = expected as Record<string, unknown>, v = value as Record<string, unknown>, at = (k: string) => path ? `${path}.${k}` : k;
-    const keys = Object.keys(e).filter(k => k in v || !ADDED_LATER.has(at(k)));
-    if (keys.some(k => !(k in v)) || Object.keys(v).some(k => !(k in e))) throw Error(`config:${path}:keys`);
+    const keys = Object.keys(e).filter(k => k in v || !ADDED_LATER.has(at(k))), extra = Object.keys(v).filter(k => !(k in e));
+    if (keys.some(k => !(k in v)) || extra.some(k => !ADDED_LATER.has(at(k)))) throw Error(`config:${path}:keys`);
     for (const k of keys) shape(v[k], e[k], at(k));
+    for (const k of extra) shape(v[k], seedAt(at(k)), at(k));
   } else if (typeof value !== typeof expected || (typeof value === 'number' && !Number.isFinite(value))) {
     throw Error(`config:${path}:type`);
   }
