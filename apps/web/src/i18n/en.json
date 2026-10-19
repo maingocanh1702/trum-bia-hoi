@@ -734,7 +734,7 @@
   "goal.sign": "Install a sign",
   "goal.flyer": "Flyers",
   "goal.fx.seats": "{n} seats",
-  "goal.fx.seatsAdded": "+{n} seats",
+  "goal.fx.seatsAdded": "Seats +{n}",
   "goal.fx.taps": "{n} taps",
   "goal.fx.wash": "washes {n} per batch",
   "goal.fx.stock": "stock {n}",
