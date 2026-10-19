@@ -4,6 +4,7 @@ import { fullHud } from './full-hud';
 // Deterministic saves for fun-buy-buttons-reason (PLAN "Vui 3 ca" §4 + P3). Always the real engine, never hand-written JSON.
 //   states        poor wallet, 3 tables: table 1 has guests, table 2 is affordable, table 3 (already Lv2) is not; buying another table is not affordable either
 //   rich          rich wallet, shift not open: table 1 at Lv3 (its next level wants a badge), tables 2-3 affordable, another table affordable
+//   maxed         both tables of a two-table shop are at their top level (the badge gate of Lv4 is lifted in this config): one has guests, one is empty
 //   beer|wait|seat  a shift open a few seconds before the first guest leaves for that reason: out of beer · waited too long · no seat
 //   book          a shift under way in which guests left for different reasons (the counts differ per reason)
 //   inspect       print the table levels and the leave events of a save read from stdin
@@ -36,6 +37,15 @@ if (mode === 'states') {
 } else if (mode === 'rich') {
   const g = configured(raw => { raw.shift.startingCoinsBase = 400_000; });
   for (const n of [1, 2]) { send(g, { type: 'upgradeTable', tableId: g.world.tables[0].id }, `lv${n}`); step(g, () => g.world.tables[0].state === 'empty'); }
+  console.log(JSON.stringify({ save: encodeSave(g), now: g.world.now, coins: g.world.coins, tables: g.world.tables.map(t => ({ level: t.level, state: t.state })) }));
+} else if (mode === 'maxed') {
+  // The shipped Lv4 asks for the Kết Nối badge (a social feature), so the top level is reached with that one gate lifted: tables can then really be upgraded to the end.
+  const g = configured(raw => {
+    raw.shift.startingCoinsBase = 400_000; raw.upgrades.table.startingTables = 2;
+    const top = raw.upgrades.table.levels[3]; top.requiredBadge = ''; top.repBase = [0, top.repBase![1]];
+  });
+  for (const [t, table] of g.world.tables.entries()) for (const n of [1, 2, 3]) send(g, { type: 'upgradeTable', tableId: table.id }, `t${t}lv${n}`);
+  send(g, { type: 'startShift' }, 'open'); step(g, () => g.world.tables[0].state !== 'empty');
   console.log(JSON.stringify({ save: encodeSave(g), now: g.world.now, coins: g.world.coins, tables: g.world.tables.map(t => ({ level: t.level, state: t.state })) }));
 } else if (mode === 'beer') {
   console.log(JSON.stringify(liveBefore(shiftOne(raw => { raw.onboarding.enabled = false; raw.inventory.startingStock.bia[0] = 0; }), e => e.type === 'order_expired' && ['beerStock', 'beerRefill'].includes(String(e.data.cause)))));

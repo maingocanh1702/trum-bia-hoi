@@ -74,6 +74,16 @@ for (const viewport of viewports) test(`a table at Lv3 says it needs the badge, 
   expect((await axe(page)).violations).toEqual([]); await tbh.shot(`br-rich-${viewport.width}.png`); expect(errors).toEqual([]);
 });
 
+for (const viewport of viewports) test(`a table at its top level says "Đã tối đa" and nothing else, with guests or without, at ${viewport.width}px`, async ({ page, tbh }) => {
+  await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  const f = fixture('maxed'); expect(f.tables).toEqual([{ level: 4, state: 'seating' }, { level: 4, state: 'empty' }]);
+  await load(page, f.save, f.now, false);
+  const sheet = await openUpgrades(page);
+  // The engine would answer tableBusy for table 1 and maxLevel for table 2; nothing is left to buy at either, so the button's own label is the one reason (PLAN §4: "đã tối đa").
+  for (const n of [1, 2]) { const card = tableCard(sheet, n); await expect(card.getByRole('button')).toBeDisabled(); await expect(card.getByRole('button')).toHaveText('Đã tối đa'); await expect(card.locator('.buy-reason')).toHaveCount(0); }
+  expect((await axe(page)).violations).toEqual([]); await tbh.shot(`br-maxed-${viewport.width}.png`); expect(errors).toEqual([]);
+});
+
 const reasons = [
   { mode: 'beer', reason: 'beer', label: 'Hết bia', numbers: true },
   { mode: 'wait', reason: 'wait', label: 'Chờ lâu quá', numbers: true },

@@ -426,7 +426,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
     return <div className="buy-card" key={id} data-goal={id}><button className="secondary full" disabled={!q.ok} aria-describedby={why ? 'buy-table-reason' : undefined} onClick={() => run({ type: 'buyTable' })}>{q.cost === null ? t('upgrade.addTable') : t('upgrade.addTablePrice', { cost: num(q.cost) })}</button>{why && <p id="buy-table-reason" className="buy-reason" role="status">{why}</p>}</div>;
   }
   function tableCard(table: Table, i: number) {
-    const q = tableUpgradeQuote(w, game.config, table), why = q.gate === 'maxLevel' ? '' : whyNot(q.reason, q.next?.repBase?.[0]); // at the top level the button itself says so
+    const q = tableUpgradeQuote(w, game.config, table), why = q.gate === 'maxLevel' ? '' : whyNot(q.reason, q.next?.repBase?.[0]); // top level: nothing is left to buy, so the button's own label "Đã tối đa" is the one reason, even while guests sit there (the command answers the transient tableBusy first, which would only mislead)
     return <div className="upgrade-card" key={table.id} data-goal={`table:${table.id}`}><Sprite id={`table-lv${table.level}-empty`} /><h3>{t('table', { n: i + 1 })}</h3><p>{t('table.seats', { n: table.capacity })}</p><button {...lit(spot.target?.kind === 'goal' && goal?.table.id === table.id)} disabled={!q.ok} aria-describedby={why ? `table-reason-${table.id}` : undefined} onClick={() => run({ type: 'upgradeTable', tableId: table.id })}>{q.next ? t('upgrade.buy', { cost: num(q.cost!) }) : t('upgrade.max')}</button>{why && <p id={`table-reason-${table.id}`} className="buy-reason" role="status">{why}</p>}</div>;
   }
 

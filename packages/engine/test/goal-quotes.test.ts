@@ -43,4 +43,7 @@ test('tableUpgradeQuote matches upgradeTable: busy table, top level, badge, repu
   assert.equal(tableUpgradeQuote(w, g.config, second).reason, 'notEnoughCoins'); assert.equal(send(g, { type: 'upgradeTable', tableId: second.id }).reason, 'notEnoughCoins');
   w.coins = 10_000_000; assert.ok(send(g, { type: 'upgradeTable', tableId: second.id }).ok);
   const top = tableUpgradeQuote(w, g.config, second); assert.equal(top.gate, 'maxLevel'); assert.equal(top.cost, null); assert.equal(send(g, { type: 'upgradeTable', tableId: second.id }).reason, 'maxLevel');
+  // At the top level with guests seated the command answers tableBusy first; the quote keeps `gate: 'maxLevel'` so a button can tell "never" from "not now".
+  second.state = 'seating'; second.group = null;
+  const topBusy = tableUpgradeQuote(w, g.config, second); assert.equal(topBusy.reason, 'tableBusy'); assert.equal(topBusy.gate, 'maxLevel'); assert.equal(send(g, { type: 'upgradeTable', tableId: second.id }).reason, 'tableBusy');
 });
