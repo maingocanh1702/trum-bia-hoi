@@ -66,14 +66,18 @@ test('static guest serves, restocks, upgrades, closes shift and persists across 
   await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click();
   // Seat model (rules 28): the first purchase a one-table shop earns is table 2 (plan §7 owner line 3).
   const upgrade = page.getByRole('dialog').getByRole('button', { name: /^Mua bàn · / });
-  await expect(upgrade).toBeEnabled(); await upgrade.click();
+  // P0 owner decision (BLOCKERS "04 · P0", gate row shift1.wallet): with the plan's 750 xu wallet the end of shift 1 reaches the 1 500 xu of table 2 on part of the saves only. The check stays, soft, so a run
+  // on which it is red still runs the rest of the journey (persistence, reload, new tab) and shows that this is the only red line.
+  await expect(upgrade).toBeVisible();
+  await expect.soft(upgrade, 'P0: table 2 (1.500 xu) must be affordable at the end of shift 1 (plan section 7 owner line 3)').toBeEnabled();
+  if (await upgrade.isEnabled()) await upgrade.click();
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Cài đặt', exact: true }).click();
   await expect(page.locator('.build-version code')).toHaveAttribute('title', process.env.TBH_GUEST_COMMIT ?? execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim());
   const before = await exported(page);
   expect(before.world.shift!.stats.served).toBeGreaterThan(0);
   const shop = (world: World) => world.tables.map(table => [table.id, table.capacity, table.level]);
-  expect(before.world.tables).toHaveLength(2);
+  expect.soft(before.world.tables, 'table 2 is bought').toHaveLength(2);
   await page.getByRole('button', { name: /Tài khoản/ }).click();
   await expect(page.locator('.account-panel')).toContainText(/Bản chơi trên trình duyệt.*Đăng nhập, đồng bộ và bảng xếp hạng online chưa mở/);
   await expect(page.locator('.account-benefits, .account-google')).toHaveCount(0);
