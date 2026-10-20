@@ -3,9 +3,10 @@ import type { WorldView } from './types';
 
 /**
  * Instant pour (plan S2, FEEDBACK II.1): from rules 28 a ready beer and a clean glass are a ready beer in the same tick, so the tap
- * queue (`pourSlots`, `pourMs`) is off the serving path; both keys stay in the config for every older pin and replay. Rules 28 only ever
- * runs with a seat-model snapshot pinned (the engine refuses older entries for one), and a capacity pin keeps its tap until the opening
- * that adopts the seat model, so the pinned config alone tells a read-only consumer which pour it is looking at.
+ * queue (`pourSlots`, `pourMs`) is off the serving path; both keys stay in the config for every older pin and replay. The gate is the
+ * pinned config, so a read-only consumer (the UI) can tell which pour it is looking at: a seat-model snapshot only ever runs at rules >= 28
+ * (`replay()` refuses older entries for one); a capacity pin may run at rules 28 and keeps its tap until the opening that adopts the seat
+ * model; a seat snapshot with the keg refill switched off (`refillEnabled`, Tier B) has no reserve to pour from and keeps the tap too.
  */
 export const instantPour = (c: Config) => c.values.upgrades.keg.refillEnabled && isSeatModel(c.values);
 
