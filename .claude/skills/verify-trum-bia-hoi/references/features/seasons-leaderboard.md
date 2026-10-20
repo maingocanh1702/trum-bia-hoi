@@ -248,3 +248,8 @@ increments `seasonEarned`/`contestEarned`/`peakLeague` — the money mechanics l
 registry publish/rollback mechanism (`admin-test/admin.spec.ts`'s rollback test — unrelated to season
 data despite living in the same spec file family, grep-confirmed no season/leaderboard reference
 there).
+
+## Changelog — S5 balance pass
+| Date | Change |
+|---|---|
+| 2026-10-20 | S5 `eco21-balance-pass` (JSON 2.1.0): `league.seasons.ranking.days` 7 → 21 and `contest.days` 14 → 21 (one window, one reset for both), `league.tiers[].minSeasonEarnedBase` = the life-path ladder 0 / 8 k / 20 k / 80 k / 280 k / 680 k / 1.2 tr / 2 tr. Suites whose subject is "the ranking resets and the contest continues" now build the 7 / 14-day calendar themselves, so the mechanism stays proven: `packages/engine/test/seasons.test.ts` (`split()` helper; the cases about the bundled window read `ranking.days`), `apps/server/test/competition.test.ts` (`weeklyConfig()`), `apps/server/test/store.test.ts` (`season rollover and old service retries …` on the weekly pin), `apps/web/test/seasons.spec.ts` (fixture `seasons.ts` with the custom version `seasons-fixture`). The career sims start at the first Vietnam midnight of a season because the `peak:` tiers read the income of the current window (a start 3 days in reaches LP7 at shift 188 instead of 144: 08-SPEC changelog 2026-10-20 / JSON 2.1.0, DECISIONS). |

@@ -50,14 +50,14 @@ Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **2 việc nh�
 12. **k gate D4(a)**: đo trên đơn chuẩn; k quan sát được vượt 3,5.
 13. **Full story = 168 ca** (3 tuần × 8 ca), LP nén (LP7 = 2 tr base = màn kết), **M6 mở lại** vào hồi 3, trần ngày 400 k base, hợp đồng mặt bằng 3 ngày, `tableSlots`. Cooldown 30 phút và trần ca 8/6/5 giữ.
 14. **Mùa 21 ngày**, bảng xếp hạng theo mùa; mỗi mùa mới thêm một lớp gameplay.
-15. Số kinh tế đi kèm = ứng viên đã sim (W9), **S5 chốt** vào JSON 2.1.0 / rules 28 — chưa sửa JSON.
+15. Số kinh tế đi kèm đã **chốt trong JSON 2.1.0 / rules 28** (S5 `eco21-balance-pass`, 20/10/2026): bộ ứng viên W9 được sim cân bằng lại — mọi cổng của plan §5 S5 đạt trên seed 42 và 99; số và bảng cổng ở 08-SPEC changelog 2026-10-20 / JSON 2.1.0. Chưa có playtest người thật.
 16. **Thứ tự ưu tiên trải nghiệm:** (1) onboarding nhìn-là-hiểu (F27 luật #5 đè: step guide chỉ là dự phòng) → (2) mua sắm lần lượt → (3) economy. Slice `fun-onboarding-visual` đứng đầu Đợt 1.
 
 ## 4. Còn chờ chủ dự án (đều đã có default, không chặn dev)
 
 | # | Việc | Default đang dùng | Cần khi |
 |---|---|---|---|
-| 0 | **D24 trần ngày 400 k base, D25 hàng đợi 1 + ghế/8** — owner chưa bác | dùng default (đã sim W9) | S5 |
+| 0 | **D24 trần ngày 400 k base, D25 hàng đợi 1 + ghế/8** — owner chưa bác | dùng default; đã chốt trong JSON 2.1.0 (S5) | playtest người thật |
 | 1 | **Content bank** (câu hỏi kiểm tra · quest pool · lời thoại khách) + **tính năng kiểm tra** | ⏸ pending theo bạn; `docs/content/` là đề xuất; `risk.inspection.enabled=false` | M5–M6 |
 | 2 | **Cổng nhận donate tự động (nếu muốn) · mức age gate** | QR chuyển khoản + admin xác nhận tay; age gate là config | M7 |
 | 3 | **Nguồn lịch/tỉ số Cúp Bóng Đá** | Admin nhập tay (tier C); API thật = adapter + flag | M8 |
@@ -101,3 +101,4 @@ Ba mục item-list (hành phi, đá lạnh, giá cosmetic) đã **chốt theo đ
 
 | 2026-09-09 rules10 | Local config seed1.7.1 records ordinary-vs-active spawn-floor semantics; numeric values unchanged. See F08/F09 and build-progress for implementation/review evidence. |
 | 2026-09-18 | Thêm quyết định 17–18/09 (mục 3 #10–15) + hàng chờ D24/D25; trỏ tới PLAN-vui-3-ca, FEEDBACK v3.3, DESIGN-story-3-tuan; GDD v1.13, 03-SPEC v1.4, HANDOFF v1.42 |
+| 2026-10-20 | S5 `eco21-balance-pass`: mục 3 #15 và hàng chờ D24/D25 đổi từ "ứng viên W9, chưa sửa JSON" thành "đã chốt trong JSON 2.1.0" (số cân bằng lại bằng sim, bảng cổng ở 08-SPEC changelog); chưa có playtest người thật. |

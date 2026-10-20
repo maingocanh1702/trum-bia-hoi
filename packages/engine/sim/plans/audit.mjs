@@ -10,6 +10,9 @@ const floored = patch => ({ ...patch, 'upgrades.stall.priceBase.1': Math.max(TAB
 export default {
   base: {},
   coordinates: [
+    { name: 'stall stock Lv1 (A2 keg stock)', values: values('cap', [25, 45], v => ({ 'upgrades.stall.stockCap.0': v })) },
+    { name: 'keg storage and batch (A2)', values: [[1.5, 1.5], [2, 1.5], [2, 2]].map(([s, b]) => ({ label: `keg x${s}/${b}`, patch: kegs(s, b) })) },
+    { name: 'rush warning', values: values('ms', [30000, 45000], v => ({ 'rush.schedule.warningMs': v })) },
     { name: 'tip.rate', values: values('tip', [0.10, 0.15, 0.25, 0.30], v => ({ 'tip.rate': v })) },
     { name: 'capacity demand maxMult', values: values('max', [3, 5, 6], v => ({ 'spawn.capacityDemand.maxMult': v })) },
     { name: 'capacity demand refTables', values: values('ref', [5, 7, 8], v => ({ 'spawn.capacityDemand.refTables': v })) },
@@ -29,9 +32,6 @@ export default {
       { label: 'slots one less from Ben Xe (4/4/4/5/5/6/7/7/7)', patch: Object.fromEntries([4, 4, 4, 5, 5, 6, 7, 7, 7].map((n, i) => [`locations.list.${i}.tableSlots`, n])) },
       { label: 'slots all 8 from Ben Xe', patch: Object.fromEntries([4, 4, 8, 8, 8, 8, 8, 8, 8].map((n, i) => [`locations.list.${i}.tableSlots`, n])) },
     ] },
-    { name: 'stall stock Lv1 (A2 keg stock)', values: values('cap', [25, 45], v => ({ 'upgrades.stall.stockCap.0': v })) },
-    { name: 'keg storage and batch (A2)', values: [[1.5, 1.5], [2, 1.5], [2, 2]].map(([s, b]) => ({ label: `keg x${s}/${b}`, patch: kegs(s, b) })) },
-    { name: 'rush warning', values: values('ms', [30000, 45000], v => ({ 'rush.schedule.warningMs': v })) },
     { name: 'solo pBeer', values: values('pBeer', [0.5, 0.9], v => ({ 'upgrades.table.orderShape.solo.pBeer': v })) },
     { name: 'pair pMoi', values: values('pMoi', [0.6, 1.0], v => ({ 'upgrades.table.orderShape.pair.pMoi': v })) },
     { name: 'group size pPair', values: values('pPair', [0.4, 0.6], v => ({ 'spawn.pPair': v })) },
