@@ -772,5 +772,6 @@
   "loss.ariaReason": "{reason}. Trừ {coins} xu và {reputation} uy tín",
   "loss.ariaFree": "{reason}. Khách ra về, không mất xu hay uy tín",
   "book.reasons": "Vì sao khách đi",
-  "book.reasonsNone": "Chưa có khách nào bỏ đi."
+  "book.reasonsNone": "Chưa có khách nào bỏ đi.",
+  "book.pairsNoSeat": "Cặp không có chỗ: {n}"
 }

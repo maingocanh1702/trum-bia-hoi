@@ -1,6 +1,7 @@
 import { Game, config, loadConfig, encodeSave, decodeSave, menuReport, type Command, type DomainEvent } from '../../../../packages/engine/src';
 import capacityModel from '../../../../docs/config/legacy/economy-2.0.4.json';
 import { fullHud } from './full-hud';
+import { steadyDemand } from '../../../../packages/engine/test/fixtures/steady-demand';
 
 // Deterministic saves for fun-buy-buttons-reason (PLAN "Vui 3 ca" §4 + P3). Always the real engine, never hand-written JSON.
 // The first three run on a capacity snapshot (the frozen 2.0.4 file: an old save pinned before the seat model keeps table levels = seats until its
@@ -87,15 +88,15 @@ if (mode === 'states') {
 } else if (mode === 'book') {
   // Mid-shift (the shift book opens from the nav only while a shift runs). Waiting is the common reason, beer rarer, groups are also turned
   // away: the counts differ, so the book's order is not the fixed default order.
-  const g = configured(raw => { raw.onboarding.enabled = false; raw.upgrades.table.startingTables = 1; raw.spawn.baseMs = 3000; raw.patience.thuongMs = 30000; raw.inventory.startingStock.bia[0] = 0; });
+  const g = configured(raw => { steadyDemand(raw); raw.onboarding.enabled = false; raw.upgrades.table.startingTables = 1; raw.spawn.baseMs = 3000; raw.patience.thuongMs = 30000; raw.inventory.startingStock.bia[0] = 0; }); // steady demand: the subject is the book, not the door cadence
   send(g, { type: 'startShift' }, 'open');
   // The first guests found no beer (seat model: a pair or a queued group may time out first, so wait for a loss that is really about beer); then the stall restocked and nobody served.
   const beerLost = () => { const l = menuReport(g.world, g.config)!.losses; return l.beerStock + l.beerRefill; };
   step(g, () => beerLost() >= 1, 1000); send(g, { type: 'restock', dish: 'bia', mode: 'full' }, 'beer');
-  step(g, () => g.world.shift!.stats.lost >= 24 && g.world.shift!.stats.rejected >= 5, 1000);
+  step(g, () => g.world.shift!.stats.lost >= 24 && g.world.shift!.stats.rejected >= 5 && (g.world.shift!.stats.noSeat ?? 0) >= 2, 1000); // and pairs turned away for lack of a two-chair table (S3: the book counts them)
   if (g.world.phase === 'resting') throw Error('fixture:shift-already-closed');
   const report = menuReport(g.world, g.config)!, stats = g.world.shift!.stats;
-  console.log(JSON.stringify({ save: encodeSave(g), now: g.world.now, losses: report.losses, rejected: stats.rejected, lost: stats.lost }));
+  console.log(JSON.stringify({ save: encodeSave(g), now: g.world.now, losses: report.losses, rejected: stats.rejected, noSeat: stats.noSeat ?? 0, lost: stats.lost }));
 } else {
   const g = decodeSave(await new Promise<string>(resolve => { let text = ''; process.stdin.on('data', c => { text += c; }); process.stdin.on('end', () => resolve(text)); }));
   console.log(JSON.stringify({ coins: g.world.coins, tables: g.world.tables.map(t => ({ level: t.level, state: t.state })), phase: g.world.phase, leaves: g.world.events.filter(leaving).map(e => ({ type: e.type, cause: e.data.cause ?? null })) }));
