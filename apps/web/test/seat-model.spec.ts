@@ -7,6 +7,7 @@ import { readSave, waitSaved } from './storage';
 
 // Seat model (rules 28, plan S1): through the DOM only -- tables 2-4, then a second chair once four tables stand,
 // every button with its price and exactly one reason while dimmed, in vi and en. State is read back through the real engine.
+// S4: a paired table also offers its chair upgrade; Duong Len Trum LP1 gates both levels, so a new shop sees that reason under them (reason.lifePathRequired).
 // The reason under a dimmed button is the `reason.*` line Wave 1's buy buttons read from the engine quotes (merge, stage 00); S1 first showed the
 // `error.*` text of the same refusal (the same words with a full stop; English "All tables are built" instead of "Your stall has all its tables.").
 const fixture = () => JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/seat-model.ts'], { encoding: 'utf8' }));
@@ -58,7 +59,11 @@ for (const locale of ['vi', 'en'] as const) for (const viewport of [{ width: 390
     await expect(second.getByRole('button', { name: t('upgrade.buyChair', { cost: xu(f.nextChairPrice) }), exact: true })).toBeDisabled();
     await expect(second.getByText(t('reason.notEnoughCoins'), { exact: true })).toBeVisible();
     await expect(second.getByText(t('reason.tableNeedsChairs'), { exact: true })).toBeVisible();
-    await expect(level).toBeDisabled(); await expect(first.getByText(t('reason.notEnoughCoins'), { exact: true })).toBeVisible();
+    // Both levels of the paired table sit behind Duong Len Trum LP1: one reason each, in words, ahead of the wallet.
+    const phuQuan = t('reason.lifePathRequired', { name: t('lifePath.LP1') });
+    await expect(level).toBeDisabled(); await expect(level).toHaveAccessibleDescription(phuQuan);
+    const comfort = first.getByRole('button', { name: t('upgrade.chairUp', { cost: xu(f.chairUpPrice) }), exact: true });
+    await expect(comfort).toBeDisabled(); await expect(comfort).toHaveAccessibleDescription(phuQuan);
     expect(await axe(page)).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await tbh.shot(`seat-model-${locale}-${viewport.width}.png`);

@@ -1,4 +1,4 @@
-import { Game, config, loadConfig, encodeSave, decodeSave, upgradeQuote, buyTableQuote, buyChairQuote } from '../../../../packages/engine/src';
+import { Game, config, loadConfig, encodeSave, decodeSave, upgradeQuote, buyTableQuote, buyChairQuote, tableUpgradeQuote } from '../../../../packages/engine/src';
 import capacityModel from '../../../../docs/config/legacy/economy-2.0.4.json';
 import { listGoals, pickNextGoal } from '../../src/goals';
 
@@ -8,8 +8,8 @@ import { listGoals, pickNextGoal } from '../../src/goals';
 //   closed <n> <base>    n shifts closed, nothing bought, starting wallet `base` (x k); after shift 2 the sheet shows its three lanes
 //   seat-closed <n> <base>  the same on the seat model: one table, one chair, the second table is the first purchase
 //   seat-buy <n> <base>  like `seat-closed`, but the wallet already bought table 2 (the chip moves on to table 3)
-//   gated                two shifts closed, every table slot bought with both chairs, every table at the top level its badge gate allows and every
-//                        device at the life-path gate: only guest goals are left to suggest
+//   gated                two shifts closed, every table slot bought with both chairs, every table at the level its gate allows (none on the S4 ladder: Lv2
+//                        waits for life path 1) and every device at the life-path gate: only guest goals are left to suggest
 //   oldpin               like `closed 1 4000`, but the game is pinned to a config snapshot older than JSON 2.0.6 (no `nextGoal` section)
 //   inspect              facts about a save read from stdin: coins, table levels, equipment, the chip's pick
 const mode = process.argv[2] ?? 'closed';
@@ -48,11 +48,11 @@ if (mode === 'closed') {
   console.log(JSON.stringify(facts(played(1, 4000, capacityRaw(false)))));
 } else if (mode === 'gated') {
   // Everything below is a real command: decodeSave replays the log and refuses a save whose world was edited by hand.
-  const g = played(2, 600_000), w = g.world, u = g.config.values.upgrades;
+  const g = played(2, 600_000), w = g.world;
   let n = 0; const buy = (command: Parameters<Game['command']>[0]['command']) => { if (!g.command({ at: w.now, idempotencyKey: `buy-${n++}`, command }).ok) throw Error(`fixture:${JSON.stringify(command)}`); };
   while (buyTableQuote(w, g.config).reason !== 'maxTables') buy({ type: 'buyTable' }); // the alley's table slots (locations.list[].tableSlots)
   for (const table of w.tables) if (buyChairQuote(w, g.config, table).ok) buy({ type: 'buyChair', tableId: table.id }); // a table levels up only as a pair
-  for (const table of w.tables) while (u.table.levels[table.level] && !u.table.levels[table.level].requiredBadge) buy({ type: 'upgradeTable', tableId: table.id }); // Lv3: the next table level asks a badge
+  for (const table of w.tables) while (tableUpgradeQuote(w, g.config, table).ok) buy({ type: 'upgradeTable', tableId: table.id }); // as far as its gate lets it: S4's Lv2 asks life path 1 (not yet reached after two shifts)
   for (const kind of ['keg', 'washer', 'cooler', 'stall', 'kitchen'] as const) while (upgradeQuote(w, g.config, kind).ok) buy({ type: 'upgrade', kind }); // stops where the life-path gate begins
   const goals = listGoals(w, g.config);
   console.log(JSON.stringify({ save: encodeSave(g), now: w.now, goal: pickNextGoal(w, g.config)?.id ?? null, keg: goals.find(x => x.id === 'equipment:keg')!.eligible, equipment: w.equipment,

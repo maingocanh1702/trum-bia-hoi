@@ -17,5 +17,5 @@ if (process.argv[2] === 'inspect') {
   process.stdout.write(JSON.stringify({ save: encodeSave(g), now: g.world.now, coins: g.world.coins,
     tablePrices: prices.slice(0, 3).map(n => Math.round(n * raw.k.value)), chairPrice: Math.round(prices[3] * raw.k.value),
     nextChairPrice: Math.round(table.chairPriceBase[1] * raw.k.value),
-    levelPrice: values.upgrades.table.levels[1].priceBase }));
+    levelPrice: values.upgrades.table.tableUpgrade.levels[0].priceBase, chairUpPrice: values.upgrades.table.chairUpgrade.priceBase })); // S4: the first level of the first table, and the first chair upgrade of the shop
 }
