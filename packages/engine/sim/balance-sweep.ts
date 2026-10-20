@@ -81,15 +81,26 @@ export function claimProtocol(out: string, options: JobOptions, start: string | 
   const protocolFile = join(out, 'protocol.json');
   if (existsSync(protocolFile)) assert.equal(readFileSync(protocolFile, 'utf8'), protocol, `${out} holds runs of another protocol`); else writeFileSync(protocolFile, protocol);
 }
-/** A sweep stage may judge only some gates (`--gates=table4,chair1,door` : an id or a prefix of one); the whole table is still saved with every run. */
-const scoped = (e: Evaluated, only: string[] | null) => e.failing[0] === 'invalid' ? e.score : only ? score(e.rows.filter(r => only.some(id => r.id === id || r.id.startsWith(`${id}.`)))) : e.score;
-const better = (a: Evaluated, b: Evaluated, only: string[] | null) => { const x = scoped(a, only), y = scoped(b, only); return x.fails < y.fails || x.fails === y.fails && x.violation < y.violation - 1e-9; };
+/**
+ * A sweep stage may judge only some gates (`--gates=table4,chair1,door` : an id or a prefix of one) and may leave out rows that are red for EVERY candidate (`--known-red=shift1.wallet`: a row
+ * the levers of the plan cannot reach is reported, never searched, and never keeps `--stop-at-clean` from stopping); the whole table is still saved with every run.
+ */
+export interface Judge { only: string[] | null; knownRed: string[]; p0Floor: number | null }
+const matches = (r: { id: string }, ids: string[]) => ids.some(id => r.id === id || r.id.startsWith(`${id}.`));
+const scoped = (e: Evaluated, j: Judge) => e.failing[0] === 'invalid' ? e.score : score(e.rows.filter(r => (!j.only || matches(r, j.only)) && !matches(r, j.knownRed)));
+/** The share of the shift-1 probes that end below table 2's price (the worse of the two service models): what `--p0-floor` must not make worse than the base. */
+const p0Share = (e: Evaluated) => e.shift1 ? Math.max(e.shift1.below, e.shift1.belowSlow) / e.shift1.seeds : 0;
+const better = (a: Evaluated, b: Evaluated, j: Judge) => {
+  if (a.failing[0] !== 'invalid' && j.p0Floor !== null && p0Share(a) > j.p0Floor + 1e-9) return false; // never buy a row with P0: shift 1 may not get worse than the base
+  const x = scoped(a, j), y = scoped(b, j); return x.fails < y.fails || x.fails === y.fails && x.violation < y.violation - 1e-9;
+};
 
 if (process.argv[1] && resolve(process.argv[1]) === here) {
   const argv = process.argv.slice(2), option = (name: string) => argv.find(a => a.startsWith(`--${name}=`))?.slice(name.length + 3);
   const planFile = option('plan'), out = option('out');
-  assert.ok(planFile && out, 'Usage: balance-sweep --plan=<plan.mjs> --out=<dir> [--pool=5] [--passes=3] [--days=30] [--shift1=60] [--bot=price] [--start=YYYY-MM-DD] [--stop-at-clean]');
-  const pool = Number(option('pool') ?? 5), passes = Number(option('passes') ?? 3), only = option('gates')?.split(',') ?? null;
+  assert.ok(planFile && out, 'Usage: balance-sweep --plan=<plan.mjs> --out=<dir> [--pool=5] [--passes=3] [--days=30] [--shift1=60] [--bot=price] [--start=YYYY-MM-DD] [--stop-at-clean] [--known-red=shift1.wallet] [--p0-floor]');
+  const pool = Number(option('pool') ?? 5), passes = Number(option('passes') ?? 3);
+  const judge: Judge = { only: option('gates')?.split(',') ?? null, knownRed: option('known-red')?.split(',') ?? [], p0Floor: null };
   const options: JobOptions = { days: Number(option('days') ?? 30), onboardingPair: false, shift1Seeds: Number(option('shift1') ?? TARGETS.shift1Seeds), standardSeeds: (option('seeds') ?? '42,99').split(',').map(Number),
     seatsFirst: option('bot') === 'price' ? false : undefined, startAt: option('start') ? Date.parse(`${option('start')}T00:00:00+07:00`) : undefined };
   const plan = (await import(pathToFileURL(resolve(planFile)).href)).default as Plan;
@@ -98,7 +109,8 @@ if (process.argv[1] && resolve(process.argv[1]) === here) {
   claimProtocol(out, options, option('start'));
   const log = (line: string) => { console.log(line); writeFileSync(join(out, 'sweep.log'), line + '\n', { flag: 'a' }); };
   let current = (await evaluateAll([plan.base], out, options, pool, 'base'))[0];
-  log(`# base ${current.hash}: fails ${scoped(current, only).fails}, violation ${scoped(current, only).violation.toFixed(3)} (all gates ${current.score.fails}): ${current.failing.join(', ') || 'none'}${only ? ` | judged on ${only.join(',')}` : ''}`);
+  if (argv.includes('--p0-floor')) judge.p0Floor = p0Share(current);
+  log(`# base ${current.hash}: fails ${scoped(current, judge).fails}, violation ${scoped(current, judge).violation.toFixed(3)} (all gates ${current.score.fails}): ${current.failing.join(', ') || 'none'}${judge.only ? ` | judged on ${judge.only.join(',')}` : ''}${judge.knownRed.length ? ` | known red, not judged: ${judge.knownRed.join(',')}` : ''}${judge.p0Floor !== null ? ` | shift-1 share below table 2 may not exceed ${judge.p0Floor.toFixed(3)}` : ''}`);
   const stopAtClean = argv.includes('--stop-at-clean'); // end the sweep at the first set that passes every gate on every seed
   let clean = false;
   for (let pass = 1; pass <= passes && !clean; pass++) {
@@ -110,14 +122,14 @@ if (process.argv[1] && resolve(process.argv[1]) === here) {
       let best = current;
       for (const [i, v] of coordinate.values.entries()) {
         const e = byHash.get(hashOf(candidates[i]))!;
-        log(`  pass ${pass} ${coordinate.name} = ${v.label}: fails ${scoped(e, only).fails}, violation ${scoped(e, only).violation.toFixed(3)} [${e.failing.join(', ')}]`);
-        if (better(e, best, only)) best = e;
+        log(`  pass ${pass} ${coordinate.name} = ${v.label}: fails ${scoped(e, judge).fails}, violation ${scoped(e, judge).violation.toFixed(3)} [${e.failing.join(', ')}]${judge.p0Floor !== null && p0Share(e) > judge.p0Floor + 1e-9 ? ' (shift 1 worse: rejected)' : ''}`);
+        if (better(e, best, judge)) best = e;
       }
-      if (best.hash !== current.hash) { current = best; improved = true; log(`> pass ${pass} ${coordinate.name}: NEW BEST ${current.hash} fails ${scoped(current, only).fails}, violation ${scoped(current, only).violation.toFixed(3)}`); }
-      if (stopAtClean && current.score.fails === 0) { clean = true; log(`# clean: every gate passes on every seed (${current.hash})`); break; }
+      if (best.hash !== current.hash) { current = best; improved = true; log(`> pass ${pass} ${coordinate.name}: NEW BEST ${current.hash} fails ${scoped(current, judge).fails}, violation ${scoped(current, judge).violation.toFixed(3)}`); }
+      if (stopAtClean && scoped(current, judge).fails === 0) { clean = true; log(`# clean: every judged gate passes on every seed (${current.hash})`); break; }
     }
     writeFileSync(join(out, `best-pass${pass}.json`), JSON.stringify({ pass, hash: current.hash, patch: current.patch, score: current.score, failing: current.failing }, null, 1));
-    log(`# end of pass ${pass}: best ${current.hash} fails ${scoped(current, only).fails}, violation ${scoped(current, only).violation.toFixed(3)}, improved: ${improved}`);
+    log(`# end of pass ${pass}: best ${current.hash} fails ${scoped(current, judge).fails}, violation ${scoped(current, judge).violation.toFixed(3)}, improved: ${improved}`);
     if (!improved) break;
   }
   for (const line of formatGateTable(current.rows, options.standardSeeds)) log(line);

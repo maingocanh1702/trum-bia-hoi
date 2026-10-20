@@ -26,6 +26,7 @@
     "dev:server": "TBH_PORT=$(node --import tsx scripts/verify/port.ts --role=dev-api) tsx apps/server/src/main.ts",
     "sim:career": "tsx packages/engine/sim/career.ts",
     "sim:career:gate": "tsx packages/engine/sim/career.ts --check-advanced",
+    "sim:balance": "tsx packages/engine/sim/balance-gates.ts --onboarding-pair",
     "test:one": "node --import tsx --test",
     "verify:port": "node --import tsx scripts/verify/port.ts",
     "verify:map": "node --import tsx scripts/verify/map-coverage.ts",

@@ -22,6 +22,8 @@ const LP_IDS = [1, 2, 3, 4, 5, 6, 7];
 const lpOne = (i, f) => { const v = [8000, 20000, 80000, 280000, 680000, 1200000, 2000000][i - 1]; return { [`lifePath.${i}.lifetimeBase`]: round(v * f, 1000), [`league.tiers.${i}.minSeasonEarnedBase`]: round(v * f, 1000) }; };
 
 const coordinates = [
+  { name: 'LP7 threshold', values: values('lp7 x', [0.75, 1, 1.2, 1.4, 1.6, 1.8, 2, 2.5], f => lpOne(7, f)) },
+  { name: 'lease days', values: values('days', [1, 2, 3, 4, 5, 7], v => ({ 'locations.leaseDays': v })) },
   { name: 'table slots', values: [
     ['4/4/5/6/6/7/8/8/8 (W9)', [4, 4]], ['5/5/5/6/6/7/8/8/8', [5, 5]], ['6/6/6/6/6/7/8/8/8', [6, 6]], ['7/7/7/7/7/7/8/8/8', [7, 7]], ['8 everywhere', [8, 8]],
     ['4/5/6/6/7/7/8/8/8', [4, 5, 6, 6, 7, 7]], ['5/6/6/7/7/8/8/8/8', [5, 6, 6, 7, 7, 8]], ['4/4/6/6/8/8/8/8/8', [4, 4, 6, 6, 8]],
@@ -42,14 +44,12 @@ const coordinates = [
   { name: 'device prices', values: values('devices x', [0.4, 0.6, 0.8, 1, 1.25, 1.6, 2, 3], f => floored(devices(f, 1))) },
   { name: 'device tail (levels 4-5)', values: values('tail x', [0.5, 0.75, 1, 1.5, 2], f => { const out = {}; for (const kind of ['keg', 'washer', 'cooler', 'stall', 'kitchen']) bundled.upgrades[kind].priceBase.forEach((p, i) => { if (i >= 3 && p) out[`upgrades.${kind}.priceBase.${i}`] = round(p * f, 250); }); return out; }) },
   { name: 'life path thresholds (all)', values: values('lp x', [0.6, 0.8, 1, 1.25, 1.5, 2], lifePath) },
-  { name: 'LP7 threshold', values: values('lp7 x', [0.75, 1, 1.2, 1.4, 1.6, 1.8, 2, 2.5], f => lpOne(7, f)) },
   { name: 'LP6 threshold', values: values('lp6 x', [0.5, 0.75, 1, 1.5, 2, 3], f => lpOne(6, f)) },
   { name: 'LP5 threshold', values: values('lp5 x', [0.5, 0.75, 1, 1.5, 2, 3], f => lpOne(5, f)) },
   { name: 'LP4 threshold', values: values('lp4 x', [0.5, 0.75, 1, 1.5, 2, 3], f => lpOne(4, f)) },
   { name: 'LP3 threshold', values: values('lp3 x', [0.5, 0.75, 1, 1.5, 2, 3], f => lpOne(3, f)) },
   { name: 'tip.rate', values: values('tip', [0.12, 0.14, 0.16, 0.17, 0.18, 0.19, 0.2, 0.22, 0.25], v => ({ 'tip.rate': v })) },
   { name: 'daily earn cap', values: values('cap', [250000, 300000, 350000, 400000, 450000, 500000, 600000], v => ({ 'shift.dailyEarnCapBase': v })) },
-  { name: 'lease days', values: values('days', [1, 2, 3, 4, 5, 7], v => ({ 'locations.leaseDays': v })) },
   { name: 'location multiplier top', values: values('top', [1, 1.05, 1.1, 1.15, 1.2, 1.3, 1.5], mult) },
   { name: 'rent', values: values('rent x', [0.25, 0.5, 1, 2, 4, 8], rent) },
   { name: 'capacity demand maxMult', values: values('max', [2, 3, 4, 5, 6, 8], v => ({ 'spawn.capacityDemand.maxMult': v })) },
