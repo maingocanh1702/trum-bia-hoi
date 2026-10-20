@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-10-20 12:57 · **Branch hiện tại:** `feat/eco21-table-chair-upgrades`
+> **Cập nhật:** 2026-10-20 15:02 · **Branch hiện tại:** `feat/eco21-table-chair-upgrades`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 

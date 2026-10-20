@@ -63,7 +63,7 @@ dismissal, not a tap-serve outcome).
   `outcome.expired` key**, expired uses `loss.aria` instead. Reaction emoji
   (`apps/web/src/assets.tsx:18`): `{early:'🤩', earlyNoTip:'🙂', late:'😐', grace:'😥', stale:'😖'}`.
   Table visuals: `.is-urgent` (order in `'grace'`), `.patience-track.is-low` (below
-  `tip.patienceThreshold`).
+  `tip.patienceThreshold` of the guest's OWN patience, `guestPatienceLeft` in `rules.ts`; the bar's width follows the order's own deadline, which a chair level of S4 stretches).
 
 ## How to reach it
 
