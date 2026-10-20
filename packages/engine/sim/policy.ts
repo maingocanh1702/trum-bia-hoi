@@ -1,5 +1,5 @@
 import {
-  DISHES, EQUIPMENT, isSeatModel, restockQuote, upgradeQuote, buyGlassQuote, buyTableQuote, buyChairQuote, tableUpgradeQuote,
+  DISHES, EQUIPMENT, isSeatModel, tableUpgrade, chairUpgrade, restockQuote, upgradeQuote, buyGlassQuote, buyTableQuote, buyChairQuote, tableUpgradeQuote, chairUpgradeQuote,
   unlockQuote, lifePathStatus, lifePathRewardQuote, deliveryQuote, dayKey,
   attendanceRewardQuote, questRewardQuote, signboardQuote, flyerQuote, leaseQuote,
   type Game, type Command,
@@ -46,8 +46,11 @@ export function createManagementPolicy(game:Game,send:(command:Command)=>void) {
     if (growth) { if (affordable(growth.cost)) send(growth.command); return attendLocation(); }
     const candidates: { cost: number; command: Command }[] = [];
     for (const kind of EQUIPMENT) { const q = upgradeQuote(w, config, kind); if (q.ok) candidates.push({ cost: q.cost!, command: { type: 'upgrade', kind } }); }
-    // Table levels pay off only on capacity snapshots until the seat-model level benefits land (plan S4).
-    if (!isSeatModel(c)) for (const table of w.tables) { const q = tableUpgradeQuote(w, config, table); if (q.ok) candidates.push({ cost: q.cost!, command: { type: 'upgradeTable', tableId: table.id } }); }
+    // Table levels pay off on a capacity snapshot, and on a seat snapshot once it carries the S4 ladders (extra round, second snack, tip); chair levels
+    // (patience) only with them. A seat snapshot from before the ladders keeps buying neither, as it always did.
+    const ladders = !isSeatModel(c) || !!tableUpgrade(c);
+    if (ladders) for (const table of w.tables) { const q = tableUpgradeQuote(w, config, table); if (q.ok) candidates.push({ cost: q.cost!, command: { type: 'upgradeTable', tableId: table.id } }); }
+    if (chairUpgrade(c)) for (const table of w.tables) { const q = chairUpgradeQuote(w, config, table); if (q.ok) candidates.push({ cost: q.cost!, command: { type: 'upgradeChair', tableId: table.id } }); }
     const glasses = buyGlassQuote(w, config, 1);
     // config-exempt: bot policy targets two circulating glasses per seat, capped by the real purchase quote.
     if (glasses.ok && w.glasses.length < w.tables.reduce((sum, t) => sum + t.capacity, 0) * 2) candidates.push({ cost: glasses.cost, command: { type: 'buyGlass', count: 1 } });

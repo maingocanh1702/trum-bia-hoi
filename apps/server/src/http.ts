@@ -20,7 +20,7 @@ const commandFields = {
   startShift: [], endShift: [], kickAll: ['shiftId', 'maxCost'], serve: ['tableId', 'orderId'],
   serveDelivery: ['deliveryId'], restock: ['dish', 'mode'], upgrade: ['kind'], upgradeTable: ['tableId'],
   rentLocation: ['locationId', 'leaseId', 'maxCost'], leaveLocation: ['leaseId'],
-  buyTable: [], buyChair: ['tableId'], buyGlass: ['count'], upgradeDog: ['level'], claimLifePath: ['level'], buyUnlock: ['item'],
+  buyTable: [], buyChair: ['tableId'], upgradeChair: ['tableId'], buyGlass: ['count'], upgradeDog: ['level'], claimLifePath: ['level'], buyUnlock: ['item'],
   claimAttendance: ['day'], claimQuest: ['day', 'questId'], claimDailyBonus: ['day'], buyFlyer: [],
   activateFlyer: ['shiftId'], installSignboard: [], setSignboard: ['style'], activity: ['active', 'paused'], emergencyPack: [],
 } satisfies { [T in Command['type']]: readonly (keyof Extract<Command, { type: T }>)[] };

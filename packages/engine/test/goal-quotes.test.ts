@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Game, buyChairQuote, buyTableQuote, tableUpgradeQuote, isSeatModel, type Command } from '../src';
 import { capacityConfig } from './fixtures/capacity-model';
+import { seat2022Config } from './fixtures/seat-pin';
 
 // The goal chip and the buy buttons read these three quotes; they must say exactly what the commands will say (same price, same first refusal).
 // Wave 1 wrote the first two on the 3-table capacity model: they run unchanged on a pinned capacity snapshot (an old save still plays on it
@@ -9,6 +10,7 @@ import { capacityConfig } from './fixtures/capacity-model';
 const at = Date.parse('2026-09-16T03:00:00Z');
 const game = () => new Game(undefined, 42, at); // the bundled seed: seat model
 const capacityGame = () => new Game(capacityConfig, 42, at); // pinned before the seat model: the table level sets the seats
+const pinGame = () => new Game(seat2022Config(), 42, at); // a seat snapshot from before the S4 ladders (JSON 2.0.22): the S1 level ladder with its badge and reputation gates
 const send = (g: Game, command: Command) => g.command({ command, at: g.world.now, idempotencyKey: `quote-${g.log.length}` });
 
 test('buyTableQuote prices the next table like the command and refuses in the same order (capacity snapshot)', () => {
@@ -91,8 +93,8 @@ test('buyChairQuote matches buyChair: locked until the shop owns chairsAfterTabl
   assert.equal(next.cost, table.chairPriceBase[1], 'the price follows the second chairs owned across the shop'); assert.ok(next.ok);
 });
 
-test('tableUpgradeQuote (seat model) matches upgradeTable: two chairs first, then badge, reputation, wallet and top level; guests never block it', () => {
-  const g = game(), w = g.world, v = g.config.values; assert.ok(isSeatModel(v));
+test('tableUpgradeQuote (seat model, a pin from before the S4 ladders) matches upgradeTable: two chairs first, then badge, reputation, wallet and top level; guests never block it', () => {
+  const g = pinGame(), w = g.world, v = g.config.values; assert.ok(isSeatModel(v));
   const levels = v.upgrades.table.levels, chairs = v.upgrades.table.chairsAfterTables; w.coins = 10_000_000;
   const first = w.tables[0];
   const needs = tableUpgradeQuote(w, g.config, first);
