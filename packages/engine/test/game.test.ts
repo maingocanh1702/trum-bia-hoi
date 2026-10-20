@@ -60,12 +60,13 @@ test('late service keeps payment, loses tip, and does not fine the group', () =>
   assert.equal(g.world.shift!.stats.penalty, 0);
 });
 test('grace rescues the whole table; exact grace end expires and charges only once', () => {
-  const g = create(c => { c.shift.startingCoinsBase = 10000; });
+  // Grace is the subject, not patience against freshness: the bundled 24 s outlasts the Lv2 cooler's glass, so this test pins the 18 s it was written for.
+  const g = create(c => { c.shift.startingCoinsBase = 10000; c.patience.thuongMs = 18000; });
   assert.ok(send(g, { type: 'upgrade', kind: 'cooler' }).ok);
   const { command, table } = firstOrder(g);
   const deadline = table.order!.placedAt + table.order!.patienceMs;
   assert.deepEqual(send(g, command, deadline), { ok: true, outcome: 'grace', amount: 50 });
-  const h = create(); const f = firstOrder(h);
+  const h = create(c => { c.patience.thuongMs = 18000; }); const f = firstOrder(h);
   const expires = f.table.order!.placedAt + f.table.order!.patienceMs + h.config.values.patience.graceMs;
   h.advance(expires);
   const coins = h.world.coins;

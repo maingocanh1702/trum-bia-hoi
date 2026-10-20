@@ -1,7 +1,7 @@
 import { SEASON_KINDS, compatibleSeasonTiers, nextSeasonEnd, pinUnusedSeasons, syncSeasons } from './seasons';
 import { leaseQuote, leaveLocationQuote } from './locations';
 import { kitchenStatus } from './kitchen';
-import { isEconomy2, isSeatModel, PAIR, CHAIRS_WITH_TABLE, config as defaultConfig, configContent, BUSINESS_UNLOCKS, SIGN_STYLES, signWeightMult, DISHES, EQUIPMENT, WEATHER, deliveryBundles, arrivalIntervalMs, type Config, type SeatedType, type Rush } from './config';
+import { isEconomy2, isSeatModel, PAIR, CHAIRS_WITH_TABLE, config as defaultConfig, configContent, BUSINESS_UNLOCKS, SIGN_STYLES, signWeightMult, DISHES, EQUIPMENT, WEATHER, deliveryBundles, arrivalIntervalMs, capacityDemandMult, type Config, type SeatedType, type Rush } from './config';
 import { integer, random, weighted } from './rng';
 import { buyGlassQuote, buyTableQuote, buyChairQuote, tableUpgradeQuote, addStock, credit, creditBatchSafe, currentGuests, customerValue, dayKey, deliveryInterval, deliveryQuote, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
 import { lifePathStatus, lifePathRewardQuote, unlockQuote } from './progression';
@@ -604,7 +604,9 @@ export class Game {
     }
     const rush = rushConfig(this.config, s.rush);
     const interval = this.rulesVersion >= ARRIVAL_INTERVAL_RULES ? arrivalIntervalMs(c, s.weather, s.rush, this.rulesVersion >= FLYER_RULES && !!s.flyer) : Math.max(c.spawn.baseMs * c.weather[s.weather].spawnIntervalMult * rush.spawnIntervalMult, rush.floorMs);
-    s.nextSpawnAt = w.now + Math.round(interval * (c.spawn.perCustomer ? size : 1));
+    // D19: a small shop is offered fewer guests (x1 on every snapshot without capacityDemand; the first guest of a shift is never delayed by it).
+    const demand = seatModel ? capacityDemandMult(seatModel, w.tables.length) : 1;
+    s.nextSpawnAt = w.now + Math.round(interval * (c.spawn.perCustomer ? size : 1) * demand);
     s.firstGroup = false;
   }
   private order(t: Table): void {

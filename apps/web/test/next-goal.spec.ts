@@ -125,14 +125,14 @@ for (const viewport of viewports) test(`on the seat model a brand-new save's fir
 
 for (const viewport of viewports) test(`on the seat model the chip moves on after every table bought and says what is still missing at ${viewport.width}px`, async ({ page, tbh }) => {
   await page.setViewportSize(viewport);
-  const f = fixture('seat-closed', 1, 4000); await load(page, f.save, f.now); expect(f.coins).toBe(9842);
+  const f = fixture('seat-closed', 1, 4000); await load(page, f.save, f.now); expect(f.coins).toBe(9945);
   await expect(chip(page)).toContainText('Mua bàn mới · +1 chỗ'); await expect(chip(page)).toContainText('1.500 xu · đủ rồi'); await tbh.shot(`ng-seat-chip-ready-${viewport.width}.png`);
   await chip(page).click(); const sheet = page.locator('dialog[open]');
   await expect(sheet.locator('[data-goal="buyTable"]')).toBeVisible();
-  await sheet.getByRole('button', { name: 'Mua bàn · 1.500 xu', exact: true }).click(); await waitSaved(page); await page.keyboard.press('Escape'); // 8 342 left
+  await sheet.getByRole('button', { name: 'Mua bàn · 1.500 xu', exact: true }).click(); await waitSaved(page); await page.keyboard.press('Escape'); // 8 445 left
   await expect(chip(page)).toContainText('Mua bàn mới · +1 chỗ'); await expect(chip(page)).toContainText('4.000 xu · đủ rồi');
-  await chip(page).click(); await page.locator('dialog[open]').getByRole('button', { name: 'Mua bàn · 4.000 xu', exact: true }).click(); await waitSaved(page); await page.keyboard.press('Escape'); // 4 342 left
-  await expect(chip(page)).toContainText('Mua bàn mới · +1 chỗ'); await expect(chip(page)).toContainText('8.000 xu · thiếu 3.658');
+  await chip(page).click(); await page.locator('dialog[open]').getByRole('button', { name: 'Mua bàn · 4.000 xu', exact: true }).click(); await waitSaved(page); await page.keyboard.press('Escape'); // 4 445 left
+  await expect(chip(page)).toContainText('Mua bàn mới · +1 chỗ'); await expect(chip(page)).toContainText('8.000 xu · thiếu 3.555');
 });
 
 for (const viewport of viewports) test(`on the seat model the full Upgrades sheet keeps its three lanes and a table level is listed but never the chip at ${viewport.width}px`, async ({ page, tbh }) => {

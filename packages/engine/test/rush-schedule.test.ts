@@ -4,10 +4,11 @@ import { readFileSync } from 'node:fs';
 import { CURRENT_RULES, Game, config, loadConfig, isSeatModel, planRushes, summarizeRush, rushStatus, kickAllQuote, encodeSave, decodeSave, type Command, type Economy, type DomainEvent } from '../src';
 import { capacityRaw } from './fixtures/capacity-model';
 import { furnish } from './fixtures/seat-shop';
+import { steadyDemand } from './fixtures/steady-demand';
 const origin = Date.parse('2026-09-08T10:00:00Z');
 const send = (g: Game, command: Command, at = g.world.now) => g.command({ idempotencyKey: `schedule-${g.log.length}`, at, command });
 function create(patch = (_: Economy) => {}, base: Economy = structuredClone(config.raw)) {
-  const raw = structuredClone(base); raw.onboarding.enabled = false; if ('heavyFromLifePath' in raw.rush.schedule) raw.rush.schedule.heavyFromLifePath = 0; raw.shift.startingCoinsBase = 100000; raw.patience.thuongMs = 1000000;
+  const raw = steadyDemand(structuredClone(base)); raw.onboarding.enabled = false; if ('heavyFromLifePath' in raw.rush.schedule) raw.rush.schedule.heavyFromLifePath = 0; raw.shift.startingCoinsBase = 100000; raw.patience.thuongMs = 1000000;
   patch(raw); const g = new Game(loadConfig(raw), 42, origin);
   if (isSeatModel(raw)) furnish(g, command => send(g, command)); // four tables with two chairs keep the busy shop these schedules assume
   return g;

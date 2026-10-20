@@ -772,5 +772,6 @@
   "loss.ariaReason": "{reason}. Lost {coins} coins and {reputation} reputation",
   "loss.ariaFree": "{reason}. The guests left; no coins or reputation lost",
   "book.reasons": "Why guests left",
-  "book.reasonsNone": "No guest has left yet."
+  "book.reasonsNone": "No guest has left yet.",
+  "book.pairsNoSeat": "Pairs without a seat: {n}"
 }

@@ -138,3 +138,9 @@ ghi hash lệnh mới cùng rulesVersion; không dùng hash rules23 làm chứng
 không có lỗi actionable. Receipt `.qa/advanced-k-verification.json`.
 
 | 2026-09-10 gate verified | Fresh two-seed gate13367c1 PASS, preserving prior k/serves with current rules24; full verification and independent review PASS. M3 progressed-k criterion closed, full M3 and LP0–LP7 acceptance remain open. |
+
+## Bảng cửa — 2026-10-20 (S3 `eco21-capacity-demand`, JSON 2.0.22)
+
+`npm run sim:career -- --days=30 --seed=42 --door` (và `--seed=99`) in thêm, sau các dòng `PURCHASE`, bảng "ai bỏ đi CÓ phạt" của acceptance S3 (plan §5): `DOOR shifts 1-24`, `DOOR days 8-14`, `DOOR days 15-21`, `DOOR shift 1` và một dòng `DOOR {json}`. Mỗi băng hiện số khách tới (kể cả cặp bị từ chối tại cửa), số bị từ chối (không phạt), số bỏ đi có phạt (hết kiên nhẫn ở bàn hoặc ở hàng đợi) và hai tỉ lệ: trên **mọi khách tới** và trên **khách được nhận** (có bàn hoặc có chỗ đợi; cách đọc chặt hơn, quyết định `PASS/FAIL`). Mục tiêu (hằng số nghiệm thu trong `packages/engine/sim/door.ts`, không phải số chơi): ca 1–24 ≤ 10 %, ngày 8–14 ≤ 20 %, ngày 15–21 ≤ 15 %; ca 1 ≥ 15 khách tới và ≥ 5 cặp bị từ chối (`floor(noSeat / 2)`). Đây là **báo cáo, không phải gate**: không đổi cách đo k hay `commandHash`. Report JSON (`--out`) có thêm `shiftStats` (từng ca đã đóng: `arrived`, `served`, `lost`, `rejected`, `noSeat`, `penalty`). `simulateCareer({ config })` nhận snapshot khác bản bundle (mặc định là bản bundle) để test cô lập chủ đề khỏi nhịp đầu game. Số đo S3 ở 08-SPEC changelog 2026-10-20.
+
+| 2026-10-20 S3 | Thêm `--door`, `shiftStats` và tuỳ chọn `config` của `simulateCareer`; k và bảng cửa của hai seed ở 08-SPEC changelog (gate k hoãn cho S5). |

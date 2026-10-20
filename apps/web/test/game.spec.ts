@@ -85,7 +85,9 @@ test('a neglected first shift closes after remaining guests expire and shows the
   await page.clock.install({ time: new Date('2026-09-08T10:00:00Z') });
   await page.goto('/');
   await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
-  await page.clock.runFor(29000);
+  // The forced first guest orders at about 8 s and nobody serves it: it walks out after its patience (24 s x the weather's multiplier, then 2.5 s of grace).
+  // Step the fake clock until that toast shows instead of assuming one weather's number; the toast stays up for seconds, far longer than a step.
+  for (let waited = 0; waited < 60000 && !await page.locator('.toast-loss').isVisible(); waited += 500) await page.clock.runFor(500);
   await expect(page.locator('.toast-loss')).toBeVisible();
   await expect(page.locator('.toast-loss')).toHaveAccessibleName(/Trừ \d+ xu và \d+ uy tín/);
   // PLAN P3 (owner 18/09, supersedes the 08/09 numbers-only rule): the numbers stay, and the toast names ONE reason; nobody served the ready order, so the guest waited too long.

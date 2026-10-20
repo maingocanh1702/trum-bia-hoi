@@ -1,10 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { config, decodeSave, encodeSave } from '../src';
+import { config, decodeSave, encodeSave, loadConfig, type SeedConfig } from '../src';
 import { simulateCareer, assertAdvancedCareerK } from '../sim/career';
+import { steadyDemand } from './fixtures/steady-demand';
 
 test('two real career days conserve the wallet and replay purchases, claims, clocks and earned LP from a fresh save', () => {
-  const { game, report } = simulateCareer({ days: 2, seed: 42 });
+  // The harness is the subject: it needs a bot that reaches tables, chairs, a life-path claim and devices within two days. Capacity demand (S3) slows that
+  // pace on purpose, so this run switches it off; `sim:career` and its gate keep measuring the bundled numbers.
+  const { game, report } = simulateCareer({ days: 2, seed: 42, config: loadConfig(steadyDemand(structuredClone(config.raw))) as SeedConfig });
   assert.equal(game.world.completedShifts, config.values.shift.dailyShiftCap.newbie * 2);
   assert.equal(report.rows[0].openingCoins, config.values.shift.startingCoinsBase);
   assert.equal(report.rows[1].openingCoins, report.rows[0].coins);

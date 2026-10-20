@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-10-20 06:48 · **Branch hiện tại:** `feat/eco21-instant-pour`
+> **Cập nhật:** 2026-10-20 10:15 · **Branch hiện tại:** `feat/eco21-capacity-demand`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -164,7 +164,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S 🔒B
 - **Phase:** Phase 1
-- **Notes:** A3 engine VIP census: `npm run sim:onboarding` đếm khách đến duy nhất qua 5 seed, tách overflow/onboarding và nhóm hệ số; không có gate LP/phase cho VIP. Hand-play ca 2 vẫn PENDING (xem `docs/improve-vip-proof.md`). 5 kiểu khách ngồi; shipper local v7 có timer riêng, giao cả đơn, cap/timeout/closing/replay và UI điện thoại. Review shipper CLEAN tại307a3b0; football và acceptance đầy đủ còn thiếu.
+- **Notes:** A3 engine VIP census: `npm run sim:onboarding` đếm khách đến duy nhất qua 5 seed, tách overflow/onboarding và nhóm hệ số; không có gate LP/phase cho VIP. Hand-play ca 2 vẫn PENDING (xem `docs/improve-vip-proof.md`). 5 kiểu khách ngồi; shipper local v7 có timer riêng, giao cả đơn, cap/timeout/closing/replay và UI điện thoại. Review shipper CLEAN tại307a3b0; football và acceptance đầy đủ còn thiếu. Rules 28 (S3 `eco21-capacity-demand`): nhịp khách theo sức chứa (`spawn.capacityDemand` ×4/×3/×2/×1,5), hàng đợi `1 + ⌊ghế/8⌋`, kiên nhẫn 24 s, sổ ca "Cặp không có chỗ"; từ chối tại cửa không phạt (D12); k/bảng cửa đo, gate hoãn cho S5.
 
 ### F09 — Thời Tiết Quán — tối giản (hệ số độ hơi/tip/spawn)
 

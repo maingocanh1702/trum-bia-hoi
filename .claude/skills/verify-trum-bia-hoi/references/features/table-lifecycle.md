@@ -239,3 +239,4 @@ handle all money movement triggered by table transitions).
 | Date | Change |
 |---|---|
 | 2026-10-19 | S1 rules 28: purchases never need an empty table; `Group.seats` keeps the seated tray; tests cited. |
+| 2026-10-20 | S3: `queueSlots` = `queueBaseSlots + ⌊seats / queueSeatsPerSlot⌋` reads the pinned snapshot: 1 and 8 on JSON 2.0.22 (one chair queues one group, eight chairs two), 2 and 3 on capacity pins and pins ≤ 2.0.21. A full queue turns the arrival away (`queue_overflow{reason:'full'}`) with no coins, reputation or `lost`: `packages/engine/test/capacity-demand.test.ts` `D12: a group turned away because the door queue is full …` and `queue slots are queueBaseSlots + floor(seats / queueSeatsPerSlot) …`. The old "`queue_overflow` is never asserted in any test" gap closed with S1's `seat-model.test.ts` (noSeat) and S3's (full). |

@@ -3,9 +3,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { CURRENT_RULES, Game, config, loadConfig, flyerQuote, WEATHER, RUSH_TYPES, arrivalIntervalMs, encodeSave, decodeSave, requirementStatus, type Command, type Economy } from '../src';
 import { furnish } from './fixtures/seat-shop';
+import { steadyDemand } from './fixtures/steady-demand';
 const send = (g: Game, command: Command) => g.command({ command, at: g.world.now, idempotencyKey: `flyer-${g.log.length}` });
 function setup(patch = (_: Economy) => {}) {
-  const raw = structuredClone(config.raw); raw.onboarding.enabled = false; raw.rush.schedule.perShift = 0; raw.unlocks.flyer.gate = 'LP0';
+  const raw = steadyDemand(structuredClone(config.raw)); raw.onboarding.enabled = false; raw.rush.schedule.perShift = 0; raw.unlocks.flyer.gate = 'LP0'; // flyer demand is the subject; the shop-size demand has capacity-demand.test.ts
   for (const weather of WEATHER) raw.weather[weather].weight = weather === 'sunny' ? 1 : 0;
   patch(raw); return new Game(loadConfig(raw), 5, 0);
 }
