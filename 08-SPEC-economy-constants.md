@@ -164,7 +164,7 @@ Runtime rules v8: lịch thường light/heavy cân bằng và xáo bằng seed 
 
 Giá hiển thị = `round(priceBase × k)`. Mua bằng `coins`, không giảm `seasonEarned`. **Owner 2026-09-09: được nâng cấp ngay trong ca**, menu giữ tạm dừng đến khi đóng (F10 §12). Mỗi cấp đổi sprite (Phase 2).
 
-> 🟢 **S5 `eco21-balance-pass` (JSON 2.1.0) — các bảng giá §8.1–§8.5 là số chốt từ sim cân bằng** (tập `priceBase` Lv2–5 của bom, bồn rửa, hầm lạnh, quầy, bếp; Lv1 = 0, bếp Lv0 chưa có). Cột `priceBase`/×k thay các giá cũ (bom 5.000/20.000/80.000/300.000, rửa 4.000/16.000/60.000/200.000, hầm 3.000/12.000/45.000/150.000, quầy 1.500/8.000/30.000/120.000, bếp 12.000/50.000/160.000/400.000); các cột thời gian/sức chứa giữ nguyên. Bom Lv2–5 giờ chỉ mua dự trữ rót sẵn + mẻ nạp (vòi `pourSlots`/`pourMs` ra khỏi đường phục vụ từ rules 28) nên giá theo thứ đó, không theo tốc độ vòi. Snapshot ghim cũ giữ giá đã ghim. Số liệu chốt và cổng: changelog "2026-10-20 / JSON 2.1.0 (S5)".
+> 🟢 **S5 `eco21-balance-pass` (JSON 2.1.0) — các bảng giá §8.1–§8.5 là số chốt từ sim cân bằng** (tập `priceBase` Lv2–5 của bom, bồn rửa, hầm lạnh, quầy, bếp; Lv1 = 0, bếp Lv0 chưa có). **Sàn giá:** không bậc thiết bị nào rẻ hơn bàn 2 (600 base = 1.500 xu): Lv2 của quầy = 600 base. Lý do: chip "mục tiêu kế tiếp" gợi ý món trong tầm `reachMult` × thu nhập ca trung bình, làn Sức chứa trước, nên một bậc thiết bị rẻ hơn bàn 2 chen vào trước bàn 2 ở ~13 % ca đầu (thu nhập 417–500 xu) — sheet Nâng cấp chỉ còn thẻ thiết bị và hành trình guest/playable "mua bàn 2 sau ca 1" không còn nút (cổng `shift1.firstGoal` của bộ đánh giá và test `sealed-economy.test.ts`). Cột `priceBase`/×k thay các giá cũ (bom 5.000/20.000/80.000/300.000, rửa 4.000/16.000/60.000/200.000, hầm 3.000/12.000/45.000/150.000, quầy 1.500/8.000/30.000/120.000, bếp 12.000/50.000/160.000/400.000); các cột thời gian/sức chứa giữ nguyên. Bom Lv2–5 giờ chỉ mua dự trữ rót sẵn + mẻ nạp (vòi `pourSlots`/`pourMs` ra khỏi đường phục vụ từ rules 28) nên giá theo thứ đó, không theo tốc độ vòi. Snapshot ghim cũ giữ giá đã ghim. Số liệu chốt và cổng: changelog "2026-10-20 / JSON 2.1.0 (S5)".
 
 **Gate Đường Lên Trùm cho thiết bị (founder 09/09, `upgrades.lifePathGate`):** Lv4 mọi thiết bị cần **LP2**, Lv5 cần **LP3**; bếp Lv3/Lv4 cần LP3/LP4 (`upgrade` trả `lifePathRequired`). Engine tự đánh giá LP theo `lifetimeEarned` sau mỗi lượt phục vụ (§15).
 
@@ -175,10 +175,10 @@ Giá hiển thị = `round(priceBase × k)`. Mua bằng `coins`, không giảm `
 | Lv | Tên | priceBase | ×k | Vòi (`pourSlots`) | `pourMs` | Cốc rót sẵn: `kegStorage` / `kegBatch` / `refillMs` (**bật**, `refillEnabled=true`) |
 |:--:|---|--:|--:|:--:|--:|---|
 | 1 | Bom nhựa + vòi tay | 0 | 0 | 1 | 2.000 | **4 / 2 / 12.000** (10 cốc/phút) |
-| 2 | Bom inox nhỏ | **2.000** | **5.000** | 2 | 1.800 | **7 / 3 / 8.000** (22) |
-| 3 | Bom inox lớn | **8.000** | **20.000** | 3 | 1.600 | **12 / 5 / 6.000** (50) |
-| 4 | Hệ thống áp suất | **16.000** | **40.000** | 4 | 1.400 | **20 / 8 / 5.000** (96) |
-| 5 | Trạm rót công nghiệp | **60.000** | **150.000** | 6 | 1.200 | **40 / 14 / 4.000** (210) |
+| 2 | Bom inox nhỏ | **1.750** | **4.375** | 2 | 1.800 | **7 / 3 / 8.000** (22) |
+| 3 | Bom inox lớn | **6.750** | **16.875** | 3 | 1.600 | **12 / 5 / 6.000** (50) |
+| 4 | Hệ thống áp suất | **13.500** | **33.750** | 4 | 1.400 | **20 / 8 / 5.000** (96) |
+| 5 | Trạm rót công nghiệp | **51.000** | **127.500** | 6 | 1.200 | **40 / 14 / 4.000** (210) |
 
 - **Hai lớp hoạt động cùng lúc:** đầu ca châm lượng còn thiếu tới `kegStorage` từ kho bia thật, trừ cả lượng đã giữ trong mẻ đang chạy khi tính chỗ trống. Giữ bia dư và mẻ đang chạy qua ca/nâng cấp.
 - Vòi cần bia trong bom và ly sạch; tối đa `pourSlots` ly rót đồng thời, mỗi ly mất `pourMs`. Trừ bia trong bom một lần khi bắt đầu rót; freshness của ly bắt đầu khi rót xong.
@@ -196,10 +196,10 @@ Tự động: cốc bẩn vào mẻ ngay; **1 mẻ = tối đa `slots` cốc, m�
 | Lv | Tên | priceBase | ×k | `washMs` | `slots` |
 |:--:|---|--:|--:|--:|:--:|
 | 1 | Chậu nhôm | 0 | 0 | 7.000 | 1 |
-| 2 | Chậu đôi | **1.500** | **3.750** | 5.000 | 1 |
-| 3 | Bồn rửa inox | **6.500** | **16.250** | 4.000 | 2 |
-| 4 | Máy rửa bán tự động | **12.000** | **30.000** | 2.500 | 3 |
-| 5 | Máy rửa công nghiệp | **40.000** | **100.000** | 1.500 | 5 |
+| 2 | Chậu đôi | **1.250** | **3.125** | 5.000 | 1 |
+| 3 | Bồn rửa inox | **5.500** | **13.750** | 4.000 | 2 |
+| 4 | Máy rửa bán tự động | **10.250** | **25.625** | 2.500 | 3 |
+| 5 | Máy rửa công nghiệp | **34.000** | **85.000** | 1.500 | 5 |
 
 Rules18: rửa theo một mẻ dùng `slots/washMs`; lấy ngay các ly bẩn hiện có tới giới hạn, không chờ đủ mẻ. Ly bẩn tới thêm xếp hàng đến mẻ kế tiếp. Ly sạch giữ trong pool sẵn dùng. HUD hiển thị sạch/tổng ly và thanh tiến độ; panel ghi số đang chờ + sức rửa mỗi mẻ.
 
@@ -210,30 +210,30 @@ Prototype: `WASH_BASE = {1, 7000}`, `WASH_UPGRADED = {3, 2500}` (= Lv4, toggle �
 | Lv | Tên | priceBase | ×k | Freshness cốc | Freshness bom (🔵) |
 |:--:|---|--:|--:|--:|--:|
 | 1 | Thùng xốp + đá | 0 | 0 | 12s | 4' |
-| 2 | Thùng inox + đá | **1.250** | **3.125** | 20s | 6' |
-| 3 | Tủ mát mini | **4.750** | **11.875** | 35s | 9' |
-| 4 | Tủ lạnh bàn | **9.000** | **22.500** | 60s | 15' |
-| 5 | Hầm lạnh | **30.000** | **75.000** | ∞ | ∞ |
+| 2 | Thùng inox + đá | **1.000** | **2.500** | 20s | 6' |
+| 3 | Tủ mát mini | **4.000** | **10.000** | 35s | 9' |
+| 4 | Tủ lạnh bàn | **7.750** | **19.375** | 60s | 15' |
+| 5 | Hầm lạnh | **25.500** | **63.750** | ∞ | ∞ |
 
 ### 8.4 Quầy / kho (`stall`) — sức chứa nguyên liệu
 
 | Lv | Tên | priceBase | ×k | Cap mỗi nguyên liệu | Gate mở |
 |:--:|---|--:|--:|--:|---|
 | 1 | Bàn bày | 0 | 0 | 15 | — |
-| 2 | Kệ nhôm | **500** | **1.250** | 25 | — |
-| 3 | Tủ kệ inox | **3.250** | **8.125** | 45 | **mở Biển hiệu** (§10) |
-| 4 | Quầy bar mini | **6.000** | **15.000** | 80 | — |
-| 5 | Quầy bar cao cấp | **24.000** | **60.000** | 150 | — |
+| 2 | Kệ nhôm | **600** | **1.500** | 25 | — |
+| 3 | Tủ kệ inox | **2.750** | **6.875** | 45 | **mở Biển hiệu** (§10) |
+| 4 | Quầy bar mini | **5.000** | **12.500** | 80 | — |
+| 5 | Quầy bar cao cấp | **20.500** | **51.250** | 150 | — |
 
 ### 8.5 Bếp (`kitchen`) — MỚI, mở mồi nóng 🟡
 
 | Lv | Tên | priceBase | ×k | Chảo (`slots`) | Khẩu phần/chảo (`portionsPerPan`) | Prep× | Mở món |
 |:--:|---|--:|--:|:--:|:--:|--:|---|
 | 0 | (chưa có bếp) | — | — | 0 | 0 | — | — |
-| 1 | Bếp than tổ ong | **4.750** | **11.875** | 1 | **2** | 1.00 | `dau`, `topmo` |
-| 2 | Bếp gas nhỏ | **20.000** | **50.000** | 2 | **2** | **0.90** | `long` |
-| 3 | Bếp gas đôi | **32.000** | **80.000** | 2 | **3** | **0.80** | — |
-| 4 | Bếp công nghiệp | **80.000** | **200.000** | 3 | **3** | **0.70** | — |
+| 1 | Bếp than tổ ong | **4.000** | **10.000** | 1 | **2** | 1.00 | `dau`, `topmo` |
+| 2 | Bếp gas nhỏ | **17.000** | **42.500** | 2 | **2** | **0.90** | `long` |
+| 3 | Bếp gas đôi | **27.250** | **68.125** | 2 | **3** | **0.80** | — |
+| 4 | Bếp công nghiệp | **68.000** | **170.000** | 3 | **3** | **0.70** | — |
 
 Tự động nấu theo chảo (founder 09/09): 1 chảo = 1 mẻ tối đa `portionsPerPan` khẩu phần **cùng món** (gom món của cùng Order trước, Order khác nếu còn chỗ), mất `prepMs × prepMult`. Sim tiến trình (bot 1 s): bếp theo chảo cho 26–40 k xu/ca, mất khách 13–29 % — bếp thành bậc tăng thu nhập thay vì bẫy.
 
@@ -274,7 +274,7 @@ Audit 09/09: với 10 cốc cố định, nâng 5 bàn lên 6 chỗ làm thu nh�
 ```text
 // per customer, tại thời điểm Order được giao
 patienceRatio = clamp((order.placedAt + order.patienceMs − now) / order.patienceMs, 0, 1)
-tip = patienceRatio < 0.6 ? 0 : round(payment × 0.20)
+tip = patienceRatio < 0.6 ? 0 : round(payment × 0.19)
 tip ×= rush.tipMult × weather.tipMult × type.tipMult      // VIP 10, chipheo 0
 tip = freshnessOk ? tip : 0                                // cốc bia của KHÁCH ĐÓ hết hơi → 0 (MVP mềm)
 if (hasQR && tip > 0) tip = ceil(tip × 1.2)
@@ -286,7 +286,7 @@ credited = min(credited, DAILY_EARN_CAP − dayEarned)      // trần ngày; log
 | Hằng số | Giá trị | Ghi chú |
 |---|--:|---|
 | `TIP_PATIENCE_THRESHOLD` | 0.6 | "vách đá 60%" — VIP sớm/trễ chênh ~5,5× |
-| `TIP_RATE` | 0.20 | JSON 2.1.0 (S5 sim cân bằng; trước đó 0.30, bản W9 ghi 0.22) |
+| `TIP_RATE` | 0.19 | JSON 2.1.0 (S5 sim cân bằng; trước đó 0.30, bản W9 ghi 0.22) |
 | `TIP_VIP_MULT` | 10 | |
 | QR | ceil ×1.2 | cần Điện thoại + LP2 (§11) |
 | Tỉnh Táo (well-rested) | ×1.1 lên (payment+tip), 10 phút, 1 lần/ngày, keyed theo **open-day** (`tip.wellRestedKeyedBy`); số ca tính finalize-day, tiền tính per-earn | |
