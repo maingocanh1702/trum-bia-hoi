@@ -238,3 +238,8 @@ session resumes through.
 |---|---|
 | 2026-10-19 | S1 rules 28: D2 adoption, legacy 2.0.4 shape, pre-28 replay guards and the fixture guard cited. |
 | 2026-10-20 | S2 rules 28: a rules-27 history recorded by the pre-S2 engine (`capacity-lv3x{3,6}-v27.json`) replays to the same world hash and keeps its 2 s tap (`instant-pour.test.ts` `a recorded rules-27 shift on ${3|6} capacity tables replays byte for byte and shows the tap it was recorded with`); a loaded rules-27 save keeps the tap through its live rules-28 commands and pours instantly only at the opening that adopts the seat model (`a rules-27 save keeps the tap through its live rules-28 commands and pours instantly only at the opening that adopts the seat model`). The existing `legacy-*` fixtures of `npm test` replay unchanged. |
+
+## Changelog — S3 capacity demand
+| Date | Change |
+|---|---|
+| 2026-10-20 | S3 (JSON 2.0.22): `loadConfig` shapes a seat-model snapshot labelled before 2.0.22 that lacks `spawn.capacityDemand` with the seed minus the S3 keys (`seatShape()`: exact, version-gated, nothing loosened); a rules-28 history recorded on 2.0.21 by the S2 engine (`packages/engine/test/fixtures/seat-2.0.21-v28.json`) still decodes, re-encodes byte for byte and repins to the bundle at its next opening (`capacity-demand.test.ts`: first and last tests); in the real app the same save opens without the recovery screen and its next "Mở ca" pins the bundled seed once (`apps/web/test/config-pinning.spec.ts` `a browser save pinned to JSON 2.0.21 opens without recovery, then adopts the bundled seed once when its next shift opens`; it fails when `seatShape` is removed, `02-pw-pin-mutation.log`). Rules-28 saves recorded by S1's tip still fail since S2 (instant pour changed their events). |

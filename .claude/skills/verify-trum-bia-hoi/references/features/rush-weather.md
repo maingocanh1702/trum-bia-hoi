@@ -200,3 +200,8 @@ multiplier sources, not their application), [glass-beer-flat](glass-beer-flat.md
 neon signboard also reads the shipper interval this file's `shipperMult` weather field influences),
 [economy-k-ledger](economy-k-ledger.md) (`sim:rush` measures pressure, not `k`; `sim:onboarding`/
 `sim:career:gate` are the actual k-band proofs).
+
+## Changelog — S3 capacity demand
+| Date | Change |
+|---|---|
+| 2026-10-20 | S3: `spawn.capacityDemand` multiplies the gap during a rush too (after the rush floor: gap = max(interval, floor) × group size × demand), so one table in a light rush is offered a guest every ≈ 14.7 s (was 3.7 s). "No rush below two tables" (F08 "nên có, không bắt buộc") is **not** implemented: it needs a new key and a `startShift` change; see DECISIONS `02 · rush below two tables`. Cadence tests keep their numbers by calling `steadyDemand` (`arrival-interval.test.ts`, `flyer.test.ts`, `rush-schedule.test.ts`). |
