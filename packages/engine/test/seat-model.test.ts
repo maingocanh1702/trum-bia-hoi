@@ -6,6 +6,7 @@ import seed from '../../../docs/config/economy.tbh.json';
 import capacityModel from '../../../docs/config/legacy/economy-2.0.4.json';
 import { CURRENT_RULES, Game, config, loadConfig, decodeSave, encodeSave, buyTableQuote, buyChairQuote, requirementStatus, restockQuote, isSeatModel, DISHES, WEATHER, type Command, type DomainEvent, type LoggedCommand } from '../src';
 import { serveNext } from '../sim/policy';
+import { steadyDemand } from './fixtures/steady-demand';
 
 // Plan "Vui 3 ca" S1 / FEEDBACK II.2 v3.3: rules 28 seat model. Every state change below is a real command or clock advance.
 type Seed = typeof seed;
@@ -93,7 +94,7 @@ test('a second chair opens only after chairsAfterTables tables, a table never ho
 });
 
 test('a one-chair table never gives one guest beer and a dish together; a two-chair table does (seed 42)', () => {
-  const g = seatGame(raw => { raw.onboarding.enabled = false; raw.patience.thuongMs = 120000; }), w = g.world;
+  const g = seatGame(raw => { steadyDemand(raw); raw.onboarding.enabled = false; raw.patience.thuongMs = 120000; }), w = g.world; // the tray mix is the subject: enough guests per shift to sample it
   while (w.tables.length < 4) assert.ok(send(g, { type: 'buyTable' }).ok);
   const pairTable = w.tables[3];
   assert.ok(send(g, { type: 'buyChair', tableId: pairTable.id }).ok);

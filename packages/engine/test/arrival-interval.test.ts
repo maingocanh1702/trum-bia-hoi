@@ -2,10 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { CURRENT_RULES, Game, config, loadConfig, WEATHER, RUSH_TYPES, arrivalIntervalMs, encodeSave, decodeSave, type Economy, type Weather, type Command } from '../src';
+import { steadyDemand } from './fixtures/steady-demand';
 
 const send = (g: Game, command: Command) => g.command({ command, at: g.world.now, idempotencyKey: `arrival-${g.log.length}` });
 function snapshot(weather: Weather, patch = (_: typeof config.raw) => {}) {
-  const raw = structuredClone(config.raw); raw.onboarding.enabled = false; raw.rush.schedule.perShift = 0;
+  const raw = steadyDemand(structuredClone(config.raw)); raw.onboarding.enabled = false; raw.rush.schedule.perShift = 0; // the subject is the weather/rush cadence; capacity demand has capacity-demand.test.ts
   for (const name of WEATHER) raw.weather[name].weight = name === weather ? 1 : 0;
   patch(raw); return loadConfig(raw);
 }

@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Game, config, nextDayAt, dayKey, lifePathStatus, serveValueStats, seasonTier, type Command } from '../src/index';
+import { Game, config as bundledConfig, nextDayAt, dayKey, lifePathStatus, serveValueStats, seasonTier, type Command } from '../src/index';
 import { createManagementPolicy, serveNext, STEP_MS, MANAGEMENT_MS, MAX_DAY_STEPS } from './policy';
 
 // config-exempt: reproducible diagnostic policy/sampling limits, never live gameplay or economy tuning.
@@ -14,14 +14,18 @@ export const CAREER_POLICY = 'v2: fresh game; configured newbie shifts/day; full
 export interface CareerPurchase { shift: number; day: number; command: Command['type']; item: string; cost: number }
 const MILESTONE_COMMANDS: readonly Command['type'][] = ['buyTable', 'buyChair', 'upgrade', 'upgradeTable'];
 
-export function simulateCareer({ days = 30, seed = 42, startAt = DEFAULT_START } = {}, onDay?: (row: CareerDay) => void) {
+/** What one closed shift did at the door and in the room (the shift's own `stats`): the input of the door table (door.ts). */
+export interface CareerShift { shift: number; day: number; arrived: number; served: number; lost: number; rejected: number; noSeat: number; penalty: number }
+
+/** `config` defaults to the bundled seed; a test may hand a patched snapshot to isolate one subject from the early-game pace. */
+export function simulateCareer({ days = 30, seed = 42, startAt = DEFAULT_START, config = bundledConfig }: { days?: number; seed?: number; startAt?: number; config?: typeof bundledConfig } = {}, onDay?: (row: CareerDay) => void) {
   assert.ok(Number.isInteger(days) && days >= 1 && days <= MAX_DAYS, 'days must be an integer in 1..90');
   assert.ok(Number.isSafeInteger(seed), 'seed must be a safe integer');
   assert.ok(Number.isSafeInteger(startAt) && startAt >= 0 && dayKey(startAt - 1, config) !== dayKey(startAt, config), 'startAt must be a VN midnight');
   const game = new Game(config, seed, startAt), w = game.world, c = config.values;
   const rows: CareerDay[] = [];
   let spent: Record<string, number> = {}, rewardCredits = 0, lastManagement = -Infinity, today = 1;
-  const purchases: CareerPurchase[] = [];
+  const purchases: CareerPurchase[] = [], shiftStats: CareerShift[] = [];
   const item = (command: Command) => command.type === 'buyTable' ? `table ${w.tables.length}`
     : command.type === 'buyChair' ? `second chair ${w.tables.reduce((n, t) => n + t.capacity, 0) - w.tables.length}`
     : command.type === 'upgrade' ? `${command.kind} Lv${w.equipment[command.kind]}`
@@ -60,6 +64,7 @@ export function simulateCareer({ days = 30, seed = 42, startAt = DEFAULT_START }
         assert.equal(w.completedShifts, observed + 1);
         const s = w.shift!.stats;
         penalty += s.penalty; arrived += s.arrived; lost += s.lost; rejected += s.rejected;
+        shiftStats.push({ shift: w.completedShifts, day: today, arrived: s.arrived, served: s.served, lost: s.lost, rejected: s.rejected, noSeat: s.noSeat ?? 0, penalty: s.penalty });
         deliveryCompleted += s.deliveryCompleted ?? 0; deliveryMissed += s.deliveryMissed ?? 0;
         observed = w.completedShifts;
       }
@@ -94,7 +99,7 @@ export function simulateCareer({ days = 30, seed = 42, startAt = DEFAULT_START }
     commandCount: game.log.length, commandHash: createHash('sha256').update(JSON.stringify(game.log)).digest('hex'), eventCount: w.events.length,
     kBand: c.k.band, advancedBandDecision: 'owner-2026-09-10: standard cold/full menus keep k 2..3; advanced career aggregate k <= 3.5; re-evaluate after Alpha playtest with real player data',
     value: serveValueStats(w.serves, config), rows, milestones: w.events.filter(e => eventTypes.has(e.type)), seasonResults: w.seasons!.results,
-    purchases, purchaseMilestones: purchases.filter(p => MILESTONE_COMMANDS.includes(p.command)) };
+    purchases, purchaseMilestones: purchases.filter(p => MILESTONE_COMMANDS.includes(p.command)), shiftStats };
   return { game, report };
 }
 
