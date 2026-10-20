@@ -144,6 +144,18 @@ Sau N lượt (mục tiêu ≥ 500 lượt mô phỏng hoặc gộp nhiều ca):
 - Hai phép đo đã xác minh: seed42 **3.483282**, seed99 **3.318249** → PASS theo quy tắc mới. **Không chỉnh bất kỳ số kinh tế nào**; anchor82.5 và band chuẩn trong JSON giữ nguyên.
 - **Re-evaluate after Alpha playtest with real player data.** Theo dõi lạm phát endgame bằng **báo cáo faucet/sink 7 ngày** (nguồn xu vào/ra và thay đổi số dư), không dùng k làm chỉ báo lạm phát. Gate này không chứng nhận toàn bộ LP0–LP7 hay cảm nhận của người chơi.
 
+### Gate career từ config 2.1.0 — đơn chuẩn (D4a, S5 `eco21-balance-pass`, 2026-10-20)
+
+Từ config **2.1.0** `npm run sim:career:gate` không đọc k quan sát của cả career mà đọc k của **đơn chuẩn** (bia + mồi đầu tiên); config ≤ 2.0.x giữ định nghĩa cũ ở trên (k quan sát ≤ 3,5). **Phương pháp k không đổi** — `k = mean(payment + tip) / 82,5` trên các lượt phục vụ của toàn career, không trung bình k theo ngày, không bỏ seed, không trộn throughput; chỉ đổi *lượt nào* và *giá trị nào* của lượt đó vào phép đo:
+
+- Mỗi lệnh `serve` được đo **ngay trước khi gửi**, trong đúng trạng thái engine sẽ trả tiền (thời tiết, rush, QR, hệ số mặt bằng, độ tươi của cốc lúc đó): mỗi khách của bàn được tính lại bằng chính `customerValue` của engine trên một bản sao của đơn chỉ giữ **hai món đầu của khách đó** (bia + mồi đầu; khách bàn 1 ghế chỉ có 1 món, giữ nguyên) và **hệ số tip bàn = 1** (không ×1,25 của Lv4). Không code lại giá hay tỉ lệ nào (`packages/engine/sim/normalised.ts`).
+- Lượt thuộc **đợt gọi thêm** của bàn Lv2+ (`extraRounds`; số đợt cơ bản của nhóm = `group.rounds − extraRounds`) **không được tính**.
+- Ba đòn bẩy thưởng — mồi thứ hai (Lv3 `pExtraMoi`), đợt thêm (Lv2), tip bàn VIP (Lv4) — cùng loại "lai rai" (GDD §3): vẫn vào thu nhập thật và vào k quan sát in trong báo cáo (`value`), chỉ không vào gate.
+- **Gate thứ hai:** tổng giá trị 30 ngày của các đơn chuẩn ≤ **+10 % của 8,35 tr** (baseline 2.0.x) = 9 185 000 xu, mỗi seed. Giá trị thô (kèm đòn bẩy thưởng) được in cạnh. Đo trên đơn chuẩn vì ở dạng thô gate không thể đồng thời đạt với acceptance của chính S5: LP7 đòi lifetime 5 tr (2 tr base × k), thiết bị max + 8 bàn Lv4 ≈ 5,5 tr tiền mua và trần ngày 1 tr/ngày — một career 21 ngày kiếm >15 tr thô là bắt buộc, không phải lạm phát của đòn bẩy thưởng.
+- Mỗi seed (42, 99) tự đạt: ≥ 30 ngày, LP4 trở lên, ≥ 500 lượt chuẩn, k chuẩn ≤ 3,5 và tổng ≤ 9 185 000; không lấy trung bình hai seed.
+- Hồ sơ chuẩn `npm run sim` / `sim:onboarding` / `sim:rush` chạy trên **quán đầu đã đủ đồ** (4 bàn × 2 ghế, ví khởi đầu): quán mới 1 bàn 1 ghế (S1) và nhịp khách ×4 (S3) không đủ 1000 lượt trong ngân sách mẫu. Đổi kịch bản, không đổi cách đo.
+- Bot career v4 (chính sách đo, không phải luật chơi): **mua rẻ nhất trước** (PLAN §9), thuê thẳng mặt bằng tốt nhất mà Đường Lên Trùm cho phép và ví trả nổi, ca 2–3 không chờ thể lực (D8), bắt đầu ở nửa đêm VN đầu tiên của một mùa 21 ngày (yêu cầu `peak:` đọc thu nhập của cửa sổ mùa hiện tại nên career bắt đầu giữa mùa sẽ đo lịch chứ không đo economy).
+
 In ra cuối mỗi ca: số lượt, DT_bia_mỗi_lượt, k suy ra, % lượt có mồi, % cốc hết hơi, số khách bỏ đi.
 
 ---
