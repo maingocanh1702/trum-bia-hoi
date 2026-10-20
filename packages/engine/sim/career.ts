@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Game, config as bundledConfig, nextDayAt, dayKey, lifePathStatus, serveValueStats, seasonTier, type Command } from '../src/index';
 import { createManagementPolicy, serveNext, STEP_MS, MANAGEMENT_MS, MAX_DAY_STEPS } from './policy';
+import { doorTable, doorLines } from './door';
 
 // config-exempt: reproducible diagnostic policy/sampling limits, never live gameplay or economy tuning.
 const MAX_DAYS = 90;
@@ -128,9 +129,9 @@ export function assertAdvancedCareerK(samples: { seed: number; days: number; lif
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const args = process.argv.slice(2), advanced = args.includes('--check-advanced');
-  assert.ok(args.every(a => a === '--check-advanced' || /^--(days|seed|out)=.+$/.test(a)),
-    'Usage: sim:career [--days=30 --seed=42 | --check-advanced] [--out=report.json]');
+  const args = process.argv.slice(2), advanced = args.includes('--check-advanced'), door = args.includes('--door');
+  assert.ok(args.every(a => a === '--check-advanced' || a === '--door' || /^--(days|seed|out)=.+$/.test(a)) && !(advanced && door),
+    'Usage: sim:career [--days=30 --seed=42 [--door] | --check-advanced] [--out=report.json]');
   const option = (name: string) => args.find(a => a.startsWith(`--${name}=`))?.slice(name.length + 3);
   assert.ok(!advanced || (!option('days') && !option('seed')), 'advanced gate uses fixed 30-day seeds 42 and 99');
   if (advanced) {
@@ -149,6 +150,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     if (option('out')) writeFileSync(option('out')!, JSON.stringify(report, null, 2) + '\n');
     // Plan S1 / section 3: when each table, chair and device level was bought, by shift.
     for (const p of report.purchaseMilestones) console.log(`PURCHASE shift ${p.shift} (day ${p.day}): ${p.item} - ${p.cost} coins`);
+    // Plan S3: who leaves WITH a penalty, by band, and what shift 1 shows at the door (a report, never a gate: the numbers are tuned in S5).
+    if (door) { const table = doorTable(report); for (const line of doorLines(table)) console.log(line); console.log(`DOOR ${JSON.stringify(table)}`); }
     console.log(JSON.stringify({ days: report.days, commands: report.commandCount, commandHash: report.commandHash, value: report.value, advancedBandDecision: report.advancedBandDecision }));
   }
 }
