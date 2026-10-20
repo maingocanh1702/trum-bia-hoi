@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { Game, nextDayAt, dayKey, type Config, type Command, type DomainEvent } from '../src/index';
+import { Game, nextDayAt, dayKey, restRequired, type Config, type Command, type DomainEvent } from '../src/index';
 import { createManagementPolicy, serveNext, STEP_MS, MANAGEMENT_MS, MAX_DAY_STEPS } from './policy';
 
 // config-exempt: BRD5.2 report horizon and calendar units; diagnostic, not gameplay tuning.
@@ -62,7 +62,9 @@ export function projectEconomy(source:Game,timeline:readonly ConfigPeriod[],days
       assert.ok(++steps<=MAX_DAY_STEPS,'forecast:stepBudget');
       if(w.phase==='resting') {
         const c=game.config.values;
-        if(w.staminaMs<c.shift.durationMs) {
+        // D8 (rules 28): `restRequired` is the engine's own answer to "must the stamina be full before this opening", read from the snapshot that opens the shift
+        // (the first shifts of a save open without the cooldown); an older snapshot answers exactly what `staminaMs < durationMs` did.
+        if(restRequired(w,period().config)) {
           const at=w.now+Math.ceil((c.shift.durationMs-w.staminaMs)/c.shift.regenRate);
           assert.ok(Number.isSafeInteger(at)&&at>w.now,'forecast:restClock');advance(Math.min(to-1,at));
           if(w.now>=to-1)break;
