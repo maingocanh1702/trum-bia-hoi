@@ -37,6 +37,9 @@ if (process.argv[2] === 'inspect') {
   const build = (startingCoinsBase: number) => {
     const raw = structuredClone(config.raw); raw._meta.version = 'table-upgrade-fixture'; fullHud(raw);
     raw.lifePath[1].lifetimeBase = 1; raw.shift.startingCoinsBase = startingCoinsBase;
+    // The chip suggests what is within reach of an average shift first (nextGoal.reachMult); in the 2.1.0 prices the stall's second level (1 250) is, a table level (27 500) is not.
+    // The subject is the table and chair card, so everything counts as within reach and the chip follows its lane order (capacity first).
+    raw.nextGoal.reachMult = 1000;
     const g = new Game(loadConfig(raw), 42, start), w = g.world;
     const send = (command: Parameters<Game['command']>[0]['command']) => { const r = g.command({ at: w.now, idempotencyKey: `tu-${g.log.length}`, command }); if (!r.ok) throw Error(`fixture:${command.type}:${r.reason}`); };
     while (w.tables.length < 4) send({ type: 'buyTable' });

@@ -16,6 +16,7 @@ for (let shift = 0; shift < (process.argv[2] === 'cooldown' || process.argv[2] =
   game.command({ at: game.world.now, idempotencyKey: `open-${shift}`, command: { type: 'startShift' } });
   while (game.world.phase !== 'resting') game.advance(game.world.now + 100);
 }
-if (game.world.staminaMs !== 0) throw Error('fixture:expected-exhaustion');
+// The shift can close inside a 100 ms step, and the rest of that step already recovers: at most one step of regeneration is left.
+if (game.world.staminaMs > 100 * raw.shift.regenRate) throw Error('fixture:expected-exhaustion');
 console.log(JSON.stringify({ save: encodeSave(game), now: game.world.now, recoveryMs: config.values.shift.durationMs / config.values.shift.regenRate }));
 }

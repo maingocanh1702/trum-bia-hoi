@@ -66,7 +66,7 @@ if (mode === 'states') {
   send(g, { type: 'startShift' }, 'open'); step(g, () => g.world.tables[0].state !== 'empty');
   console.log(JSON.stringify({ save: encodeSave(g), now: g.world.now, coins: g.world.coins, tables: g.world.tables.map(t => ({ level: t.level, state: t.state })) }));
 } else if (mode === 'seat-states') {
-  // One table bought with the wallet the shop started with, so the next table (4 000) and every chair are out of reach: 750 xu are left.
+  // One table bought with the wallet the shop started with, so the next table (5 000) and every chair (25 000 and up) are out of reach: the 1 750 xu of the 2.1.0 wallet are left.
   const g = configured(raw => { raw.shift.startingCoinsBase += raw.upgrades.table.tablePriceBase[0]; });
   send(g, { type: 'buyTable' }, 'table-2');
   console.log(JSON.stringify(facts(g)));

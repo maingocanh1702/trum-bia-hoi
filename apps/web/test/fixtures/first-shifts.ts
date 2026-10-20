@@ -14,5 +14,6 @@ for (let i = 0; i < closed; i++) {
   if (!opened.ok) throw Error(`fixture:open ${i} ${opened.reason}`);
   while (game.world.phase !== 'resting') game.advance(game.world.now + 100);
 }
-if (game.world.completedShifts !== closed || game.world.staminaMs !== 0) throw Error('fixture:expected-exhaustion');
+// A shift can close inside a 100 ms step and the rest of that step already recovers: at most one step of regeneration is left.
+if (game.world.completedShifts !== closed || game.world.staminaMs > 100 * raw.shift.regenRate) throw Error('fixture:expected-exhaustion');
 console.log(JSON.stringify({ save: encodeSave(game), now: game.world.now, recoveryMs: config.values.shift.durationMs / config.values.shift.regenRate, noCooldownFirstShifts: config.values.shift.noCooldownFirstShifts }));

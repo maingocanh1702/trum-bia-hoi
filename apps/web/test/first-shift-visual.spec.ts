@@ -197,7 +197,7 @@ for (const viewport of viewports) {
     await tbh.shot(`p0-seat-upgrade-one-card-${viewport.width}.png`);
     await sheet.getByRole('button').click(); await waitSaved(page);
     await expect(sheet.getByRole('button')).toHaveCount(1); // still one: the next table
-    await expect(sheet.getByRole('button')).toHaveText('Mua bàn · 4.000 xu');
+    await expect(sheet.getByRole('button')).toHaveText('Mua bàn · 5.000 xu'); // table 3 of the sealed 2.1.0 ladder
     await expect(lit(page)).toHaveCount(0); // bought: the nudge is spent
     await page.keyboard.press('Escape');
     const saved = fixture('inspect', undefined, await page.evaluate(async () => { const m = '/src/browser-save.ts'; return (await import(m)).readBrowserSave(); }));

@@ -10,13 +10,13 @@ for (const [locale, width] of [['vi', 360], ['en', 390]] as const) test(`rental 
   const snapshot = async () => fixture('inspect', await readSave(page));
   const open = async () => { await page.getByRole('button', { name: vi ? 'Nâng cấp' : 'Upgrades', exact: true }).click(); await page.getByRole('button', { name: vi ? /Mặt bằng/ : /Locations/ }).click(); };
   await open(); const dialog = page.getByRole('dialog', { name: vi ? 'Mặt bằng' : 'Locations', exact: true });
-  const market = dialog.locator('[data-location="ngo_cho"]'); await expect(market.getByRole('button')).toContainText(vi ? '87.500' : '87,500');
+  const market = dialog.locator('[data-location="ngo_cho"]'); await expect(market.getByRole('button')).toContainText(vi ? '37.500' : '37,500'); // JSON 2.1.0: 3 days x 10 000 + the 7 500 deposit
   await expect(dialog.locator('[data-location="pho_co"] button')).toBeDisabled(); const before = await snapshot();
-  await market.getByRole('button').click(); const rented = await snapshot(); expect(rented.coins).toBe(before.coins - 87500); expect(rented.lease.locationId).toBe('ngo_cho');
+  await market.getByRole('button').click(); const rented = await snapshot(); expect(rented.coins).toBe(before.coins - 37500); expect(rented.lease.locationId).toBe('ngo_cho');
   await expect(dialog).toBeVisible(); expect(rented.paused).toBe(true); await page.clock.runFor(10000);
   expect((await snapshot()).lease.expiresAt).toBe(rented.lease.expiresAt);
-  await expect(dialog.getByText(vi ? /Chuyển chỗ bây giờ mất 17.500/ : /Moving now forfeits 17,500/)).toBeVisible();
-  await dialog.locator('[data-location="ben_xe"] button').click(); const moved = await snapshot(); expect(moved.coins).toBe(rented.coins - 148750); expect(moved.location).toBe('ben_xe');
+  await expect(dialog.getByText(vi ? /Chuyển chỗ bây giờ mất 7.500/ : /Moving now forfeits 7,500/)).toBeVisible();
+  await dialog.locator('[data-location="ben_xe"] button').click(); const moved = await snapshot(); expect(moved.coins).toBe(rented.coins - 63750); // Ben Xe: 3 days x 17 000 + the 12 750 deposit expect(moved.location).toBe('ben_xe');
   await dialog.evaluate(el => { el.scrollTop = 0; }); await page.screenshot({ path: `.qa/lease-${locale}-${width}.png` });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.keyboard.press('Escape'); await expect(dialog).not.toBeVisible(); await waitSaved(page); await page.reload(); expect((await snapshot()).lease.id).toBe(moved.lease.id);
@@ -39,7 +39,7 @@ for (const [locale, width] of [['vi', 360], ['en', 390], ['vi', 1280]] as const)
     await page.getByRole('button', { name: vi ? 'Sổ ca' : 'Shift book', exact: true }).click();
     const panel = page.getByRole('region', { name: vi ? 'Địa điểm trong ca' : 'Locations this shift', exact: true });
     await expect(panel.locator('[data-shift-location]')).toHaveCount(1);
-    await expect(panel.locator('[data-shift-location="ngo_cho"]')).toHaveText(vi ? 'Ngõ Chợ ×1,1' : 'Market Lane ×1.1');
+    await expect(panel.locator('[data-shift-location="ngo_cho"]')).toHaveText(vi ? 'Ngõ Chợ ×1,019' : 'Market Lane ×1.019'); // the sealed 2.1.0 ramp prints its three decimals
     expect(fixture('inspect', await readSave(page)).location).toBe('ben_xe');
     await panel.scrollIntoViewIfNeeded(); expect(await panel.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
     if (!reload) await panel.screenshot({ path: `.qa/v03-f14-${locale}-${width}.png` });

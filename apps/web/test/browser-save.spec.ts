@@ -94,7 +94,7 @@ test('unavailable storage never boots a fresh playable game over the old save', 
   expect(await page.evaluate(() => localStorage.getItem('tbh.save.v1'))).toBe('preserve-this-original');
 });
 
-test('a real three-day career larger than localStorage survives IndexedDB close and reopen exactly', async ({ page }) => {
+test('a real five-day career larger than localStorage survives IndexedDB close and reopen exactly', async ({ page }) => {
   test.setTimeout(120000);
   const save = execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/browser-career-save.ts'], { encoding: 'utf8', maxBuffer: 20 * 1024 * 1024 });
   expect(Buffer.byteLength(save)).toBeGreaterThan(5 * 1024 * 1024);
@@ -109,7 +109,7 @@ test('a real three-day career larger than localStorage survives IndexedDB close 
     await fresh.save(game); const continued = await readBrowserSave(); fresh.close();
     return { exact: persisted === source, continued: continued === encodeSave(game), commands: game.log.length, events: game.world.events.length, shifts: game.world.completedShifts };
   });
-  expect(result).toMatchObject({ exact: true, continued: true, shifts: 24 });
+  expect(result).toMatchObject({ exact: true, continued: true, shifts: 40 });
 });
 
 for (const damage of ['missing chunk', 'invalid revision', 'invalid frontier', 'invalid command', 'invalid event', 'invalid metadata']) test(`${damage} exposes recovery and preserves raw rows before importing the legacy archive`, async ({ page }) => {

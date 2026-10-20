@@ -308,7 +308,7 @@ test('starting fresh requires an explicit choice and retains the corrupt backup'
   await page.getByRole('button', { name: 'Bắt đầu lại', exact: true }).click();
   await page.getByRole('button', { name: 'Giữ bản dự phòng và tạo quán mới' }).click();
   await expect(page.locator('.game-shell')).toBeVisible();
-  await expect(page.locator('.money strong')).toHaveText('750');
+  await expect(page.locator('.money strong')).toHaveText('1.750'); // the 2.1.0 wallet (700 base)
   expect(await readBackups(page)).toContain('{bad-reset');
 });
 

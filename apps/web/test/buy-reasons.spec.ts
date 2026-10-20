@@ -90,7 +90,7 @@ for (const viewport of viewports) test(`a table at its top level says "Bàn đã
 
 for (const viewport of viewports) test(`a dimmed seat button keeps its price and names exactly one reason: coins, then four tables, then two chairs, at ${viewport.width}px`, async ({ page, tbh }) => {
   await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  const f = fixture('seat-states'); expect(f.coins).toBe(750); expect(f.tables.map((t: { seats: number }) => t.seats)).toEqual([1, 1]);
+  const f = fixture('seat-states'); expect(f.coins).toBe(1750); // the 2.1.0 wallet (700 base) expect(f.tables.map((t: { seats: number }) => t.seats)).toEqual([1, 1]);
   await load(page, f.save, f.now, false);
   const sheet = await openUpgrades(page);
   // Table 3 costs far more than the wallet holds: dimmed, the price is still there, and the reason is the wallet.
