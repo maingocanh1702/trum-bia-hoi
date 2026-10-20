@@ -113,7 +113,7 @@ Vòng đời cốc: `clean → in_use(reservedGlassId) → dirty → queue → w
 ## 5. Hệ Bàn (đơn vị chính, Lớp 2 mở rộng)
 
 > 🟢 **Owner 17–18/09/2026 — thay hẳn bảng "cấp bàn = sức chứa 2/4/6/8" dưới đây** (số chờ S5, luật đã chốt; chi tiết `docs/FEEDBACK-2026-09-17.md` §II.2 v3.3):
-> - Khởi đầu **1 bàn × 1 ghế**; thứ tự mở khoá tuyến tính **bàn 2 → 3 → 4 (kèm 1 ghế) → ghế thứ 2 từng bàn (chỉ sau đủ 4 bàn) → nâng cấp bàn (bàn phải có 2 ghế)**. Tối đa **2 ghế/bàn**; số chỗ đặt bàn theo mặt bằng (`tableSlots`: Hẻm 4 … Phố Cổ/Ga Metro/Phố Tây 8).
+> - Khởi đầu **1 bàn × 1 ghế**; thứ tự mở khoá tuyến tính **bàn 2 → 3 → 4 (kèm 1 ghế) → ghế thứ 2 từng bàn (chỉ sau đủ 4 bàn) → nâng cấp bàn (bàn phải có 2 ghế)**. Tối đa **2 ghế/bàn**; số chỗ đặt bàn theo mặt bằng (`tableSlots`: Hẻm 4 … Phố Cổ/Ga Metro/Phố Tây 8; **JSON 2.1.0 chốt 8 ở mọi mặt bằng**, 08-SPEC §12 và changelog 2026-10-21).
 > - **Ghế** quyết định mâm: bàn 1 ghế đón khách lẻ gọi *bia hoặc 1 mồi tức thì*; bàn 2 ghế đón **cặp** và mỗi khách gọi *bia + 1 mồi*. Cỡ nhóm **độc lập với quán** (`spawn.pPair` 0,5): cặp gặp quán chưa có bàn 2 ghế → bỏ đi tại cửa, không phạt.
 > - **Cấp bàn = một lợi ích khác mỗi cấp, cộng dồn**: Lv2 khách gọi thêm 1 đợt · Lv3 mồi thứ 2 · Lv4 tip ×1,25. Bỏ gate huy hiệu Kết Nối của bàn VIP. Nâng ghế Lv1–3 (kiên nhẫn ×1/1,15/1,30) là làn riêng.
 > - Bàn/ghế mua được cả khi bàn đang có khách (áp cho nhóm kế). Hàng đợi **1 + ghế/8** (cầu thừa từ chối tại cửa, không trừ uy tín). Giá theo giá trị biên đo trên engine: bàn 1,5 k/4 k/8 k xu, ghế 10 k/15 k/22,5 k/30 k xu (bộ W9, chờ S5).
@@ -195,7 +195,7 @@ Mỗi loại ép một quyết định: VIP/vội = tốc độ, bàn lai rai = 
 
 ## 8. Tip · Uy tín · Phạt (công thức — giữ nguyên 100%, chỉ thêm freshness)
 
-**Tip** (`ub`): nếu `patience/maxPatience < 0.6` → **0**; ngược lại `round(payment × tip.rate)` (JSON 2.1.0: **0,19**; trước đó 0,3 — sim cân bằng S5, 08-SPEC §9). Rồi ×rush ×weather ×type(VIP 10) ×QR(ceil 1.2). Tỉnh Táo cộng riêng lên tổng tiền món + tip theo 08-SPEC §9 và JSON; không nhân lại tip. **Thêm:** ×freshness (mục §6).
+**Tip** (`ub`): nếu `patience/maxPatience < 0.6` → **0**; ngược lại `round(payment × tip.rate)` (JSON 2.1.0: **0,17**; trước đó 0,3 — sim cân bằng S5, 08-SPEC §9). Rồi ×rush ×weather ×type(VIP 10) ×QR(ceil 1.2). Tỉnh Táo cộng riêng lên tổng tiền món + tip theo 08-SPEC §9 và JSON; không nhân lại tip. **Thêm:** ×freshness (mục §6).
 → Vách đá 60%: VIP sớm vs trễ chênh ~5.5×. Một khách sộp đáng từ ~60 đến ~400+ xu (×k).
 
 **Uy tín ca** = Σ(+3 có tip / +1 không tip) − ~5 × (số bỏ đi). Thước đo chất lượng phục vụ.
@@ -231,7 +231,7 @@ Mỗi loại ép một quyết định: VIP/vội = tốc độ, bàn lai rai = 
 
 - Thể lực **12 phút/ca**; hồi 0.4×realtime (~30 phút, **chỉ đếm khi active**); phải đầy 100% mới mở ca.
 - Cooldown tính **từ khi khách về hết**. Anti-idle: pause khi không theo dõi tab.
-- Trần **8/6/5 ca/ngày** (newbie/regular/veteran); **hard cap doanh thu = 1.000.000 xu/ngày** (= 400k ×k, JSON 2.1.0; trước đó 500.000 = 200k ×k). Sau cap: vẫn phục vụ nhưng `appliedCoin=0`. ✅ **Đo live (gốc): với veteran, SỐ CA (5) thường ràng buộc TRƯỚC trần tiền** (5 ca ≈ 145k < 200k) → trần tiền chỉ chặn top-throughput.
+- Trần **8/6/5 ca/ngày** (newbie/regular/veteran); **hard cap doanh thu = 875.000 xu/ngày** (= 350k ×k, JSON 2.1.0; trước đó 500.000 = 200k ×k). Sau cap: vẫn phục vụ nhưng `appliedCoin=0`. ✅ **Đo live (gốc): với veteran, SỐ CA (5) thường ràng buộc TRƯỚC trần tiền** (5 ca ≈ 145k < 200k) → trần tiền chỉ chặn top-throughput.
 - ✅ **Rollover ngày (server-side, giờ VN) — phải xử rõ:** trần (ca + tiền) + nhiệm vụ + điểm danh reset theo **ngày lịch VN tại nửa đêm thực** (KHÔNG theo lúc mở ca; client chỉ mirror, chống chỉnh đồng hồ). **Ca vắt qua 00:00:** tiền tính per-earn theo bucket ngày tại lúc earn (chia tại 00:00); **cap 200k per-day độc lập** → 1 ca liên tục có thể góp cả 2 cap; **số ca credit lúc finalize → vào ngày đóng ca** (ca đóng sau 00:00 = ca #1 ngày mới) → "refund" 1 suất ca + cap mới quanh nửa đêm. → **Bài học: chốt rõ đơn vị attribution (per-earn vs per-shift) + xử edge nửa đêm, kẻo lỗ hổng double-cap.**
 - **Tỉnh Táo ×1.1** (10 phút sau nghỉ >6h). *(gốc: well-rested)*
 - Đóng ca = "closing" grace (khách đang uống ở lại; bàn lai rai kéo dài; `kick-all` đóng ngay). ✅ **Credit "hoàn thành ca" (nhiệm vụ 3 ca + mở ca kế) chỉ tick khi ĐÓNG HẲN** (closing→closed, màn tổng kết hiện), KHÔNG phải lúc hết giờ → khách ngồi lỳ (enjoy ×10) trì hoãn cả credit → "Mời về" để đóng ngay.
@@ -240,7 +240,7 @@ Mỗi loại ép một quyết định: VIP/vội = tốc độ, bàn lai rai = 
 
 ## 11. Hai hệ tiến trình + Vụ Bia (meta, Lớp 5)
 
-> 🟢 **Owner 18/09 — nén cho game 3 tuần:** Đường Lên Trùm LP1–7 `lifetimeBase` 8 k · 20 k · 80 k · 280 k · 680 k · 1,2 tr · 2 tr (thay 50 k … 50 tr); LP7 = **màn kết** ("Chuyện quán bạn" + huy hiệu Trùm); LP1 `requires` "4 seats" ↔ 4 bàn 1 ghế, không gate bàn 2–4 bằng LP. Giải Nhậu 8 bậc = cùng thang. **Vụ Bia = mùa 21 ngày**, bảng xếp hạng theo mùa; mùa 1 = story, mỗi mùa sau thêm một lớp gameplay (M6 → M8 → …). Chi tiết `docs/DESIGN-story-3-tuan-2026-09-18.md`.
+> 🟢 **Owner 18/09 — nén cho game 3 tuần:** Đường Lên Trùm LP1–7 `lifetimeBase` 8 k · 20 k · 80 k · 280 k · 680 k · 1,2 tr · 2 tr (thay 50 k … 50 tr; JSON 2.1.0 chốt LP7 = 2,24 tr, 08-SPEC changelog 2026-10-21); LP7 = **màn kết** ("Chuyện quán bạn" + huy hiệu Trùm); LP1 `requires` "4 seats" ↔ 4 bàn 1 ghế, không gate bàn 2–4 bằng LP. Giải Nhậu 8 bậc = cùng thang. **Vụ Bia = mùa 21 ngày**, bảng xếp hạng theo mùa; mùa 1 = story, mỗi mùa sau thêm một lớp gameplay (M6 → M8 → …). Chi tiết `docs/DESIGN-story-3-tuan-2026-09-18.md`.
 
 > **Bảng đổi tên (cascade từ `item-list-upgrade-levels.md` v1.4):** League → **Giải Nhậu**, Season → **Vụ Bia**, Life Path → **Đường Lên Trùm**, Đền Thiêng → **Bàn Thờ Ông Địa**. Chi tiết bảng tên bậc/mốc: xem `docs/item-list-upgrade-levels.md` §15.
 
@@ -269,9 +269,9 @@ Mỗi loại ép một quyết định: VIP/vội = tốc độ, bàn lai rai = 
 
 ## 12. Mặt bằng (multiplier + rent + cọc)
 
-> 🟢 **Owner 18/09:** mỗi mặt bằng có **số chỗ đặt bàn** `tableSlots` (4 · 4 · 5 · 6 · 6 · 7 · 8 · 8 · 8) — đổi mặt bằng là bước tiến thật, không chỉ hệ số nhân; hợp đồng `leaseDays` 7 → **3**; được thuê thẳng mặt bằng cao hơn khi đủ LP; bàn vượt chỗ ở mặt bằng nhỏ hơn tạm gấp lại.
+> 🟢 **Owner 18/09:** mỗi mặt bằng có **số chỗ đặt bàn** `tableSlots` (4 · 4 · 5 · 6 · 6 · 7 · 8 · 8 · 8) — đổi mặt bằng là bước tiến thật, không chỉ hệ số nhân; hợp đồng `leaseDays` 7 → **3**; được thuê thẳng mặt bằng cao hơn khi đủ LP; bàn vượt chỗ ở mặt bằng nhỏ hơn tạm gấp lại. *(JSON 2.1.0, số chốt của sim cân bằng: `tableSlots` 8 ở mọi mặt bằng, `leaseDays` **2**, mult 1,0 → 1,1 — 08-SPEC §12 và changelog 2026-10-21; câu hỏi cho owner về `mult` ở DECISIONS.)*
 
-9 vị trí vỉa hè, multiplier ×1.0→×1.8, rent/ngày `Dn(e)=round(700·(e/5)·(1+e/50)) ×k`. Trả trước cả kỳ (**7 ngày**) + **cọc 25% (hoàn lại)**; rời sớm mất cọc + về Hẻm Nhỏ. Gate theo Đường Lên Trùm.
+9 vị trí vỉa hè, multiplier ×1.0→×1.8, rent/ngày `Dn(e)=round(700·(e/5)·(1+e/50)) ×k` *(JSON 2.1.0: multiplier ×1.0→×1.1 và rent/ngày theo bảng 08-SPEC §12, 0,3 × công thức này)*. Trả trước cả kỳ (**7 ngày**; JSON 2.1.0: **2 ngày**) + **cọc 25% (hoàn lại)**; rời sớm mất cọc + về Hẻm Nhỏ. Gate theo Đường Lên Trùm.
 - Hẻm Nhỏ (start) → … → **Gần Sân Vận Động** (vị trí hot mới, ăn theo World Cup) → Phố Cổ (LP4) → Ga Metro (LP5) → Khu Phố Tây (LP6).
 
 ---
@@ -482,3 +482,4 @@ Mục tiêu: chứng minh **vòng lặp vận hành ca vui & economy cân**. KH�
 | 2026-10-20 / S3 | §5 hàng đợi: từ rules 28 (game bàn ghế, JSON 2.0.22) hàng đợi là `1 + ⌊tổngGhế/8⌋` (không còn `2 + ⌊tổngGhế/3⌋`, chỉ còn đúng với save ghim snapshot sức chứa), kiên nhẫn khách thường 24 s, và nhịp khách theo sức chứa `spawn.capacityDemand` (khoảng cách tới nhóm khách kế ×4 · ×3 · ×2 · ×1,5 với 1 · 2 · 3 · 4 bàn). Từ chối tại cửa không phạt xu/uy tín (D12); sổ ca đếm "Cặp không có chỗ". Chi tiết và số đo: 08-SPEC changelog 2026-10-20 S3, 03-SPEC §7. |
 | 2026-10-20 / S4 | §5 cấp bàn và cấp ghế: từ rules 28 (JSON 2.0.23) bàn nâng Lv1→4 theo cấp đích (giá `priceBase + stepBase × n`, n = số bàn đã đạt cấp; Lv2 LP1 · Lv3 LP2 · Lv4 LP4, không còn gate Kết Nối): Lv2 +1 đợt gọi, Lv3 mồi thứ 2 (`pExtraMoi` 0,35, chỉ món còn hàng, mâm giao khi đủ món), Lv4 tip ×1,25 ở bàn đó; ghế nâng Lv1→3 (kiên nhẫn chờ món ×1 / 1,15 / 1,30; `4 000 + 2 000·t`, LP1 / LP2). Lợi ích áp cho nhóm ngồi sau lần nâng. Quy tắc và số: 03-SPEC §6 ghi chú, 08-SPEC §22 + changelog 2026-10-20 S4. |
 | 2026-10-20 / S5 | §8 tip: `tip.rate` 0,3 → **0,19** và §10 trần doanh thu ngày 500.000 → **1.000.000 xu** (400k ×k) theo JSON 2.1.0 (sim cân bằng S5, 08-SPEC §9/§13 và changelog 2026-10-20 / JSON 2.1.0); §10 "3 ca đầu không cooldown" đã cài (rules 28, `shift.noCooldownFirstShifts` = 3). Công thức tip (ngưỡng 60 %, ×rush ×weather ×type ×QR) không đổi. |
+| 2026-10-21 / S5 review vòng 1 | Số chốt mới của JSON 2.1.0 (08-SPEC changelog 2026-10-21, thay dòng 2026-10-20 / S5 ở trên): §8 tip `tip.rate` **0,17** (0,19 ở lần chốt đầu) và §10 trần doanh thu ngày **875.000 xu** (350k ×k, 1.000.000 ở lần chốt đầu); LP7 `lifetimeBase` 2,24 tr; ví khởi đầu về **750 xu** (người chơi kiếm bàn 2 ở ca 1); §12 `tableSlots` **8 ở mọi mặt bằng** (lời owner 18/09: 4 · 4 · 5 · 6 · 6 · 7 · 8 · 8 · 8 — bot của plan mua bàn 2…8 trước ghế 2 đầu tiên), `leaseDays` **2** (owner: 3), mult mặt bằng 1,0 → 1,1 (câu hỏi cho owner, DECISIONS). Công thức tip và ngưỡng 60 % không đổi. |
