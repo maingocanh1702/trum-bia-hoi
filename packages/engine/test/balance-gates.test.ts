@@ -23,13 +23,15 @@ function career(seed: number, over: Partial<CareerMetrics> = {}): CareerMetrics 
 const standardRows = (seed: number, k = [2.4, 2.7, 2.4, 2.8]): StandardMetrics['rows'] => k.map((value, i) => ({ onboardingEnabled: i < 2, flyerStart: false, campaigns: 0, profile: i % 2 ? 'full-menu' : 'cold-menu', seed, restedStart: false,
   qrStart: false, shipperStart: false, deliveries: 0, bonus: 0, serves: 600, mean: 1, k: value, stale: 0, days: 1, configVersion: '2.1.0', day: '2026-09-09' }));
 const shift1 = (over: Partial<Shift1Metrics> = {}): Shift1Metrics => ({ seeds: 60, price: 1500, startCoins: 750, cheapestDevice: 1500, closing: { min: 1800, p05: 1900, median: 2300, max: 3000 },
-  afterRestock: { min: 1734, p05: 1800, median: 2306, max: 3000 }, below: 0, belowSlow: 0, served: { min: 10, median: 14 }, slowCoarse: { min: 1734, median: 2200 }, ...over });
+  afterRestock: { min: 1734, p05: 1800, median: 2306, max: 3000 }, below: 0, belowSlow: 0, served: { min: 10, median: 14 }, slowCoarse: { min: 1734, median: 2200 },
+  plan: { shareFast: 1, shareSlow: 1, takingsMedian: 1000, takingsMedianSlow: 900, refusedPairsMedian: 10, refusedPairsMedianSlow: 9 }, ...over });
 const inputs = (over: { [seed: number]: Partial<CareerMetrics> } = {}, standard = { 42: standardRows(42), 99: standardRows(99) } as Record<number, StandardMetrics['rows']>, s1 = shift1()): GateInputs => ({
   careers: { 42: career(42, over[42]), 99: career(99, over[99]) }, standard: { rows: [...standard[42], ...standard[99]] }, shift1: s1, config });
 
-test('a career inside every target passes every one of the 22 rows on both seeds', () => {
+test('a career inside every target passes every one of the 23 rows on both seeds', () => {
   const rows = gateTable(inputs());
-  assert.equal(rows.length, 22, '21 plan / brief B5 rows plus the first-goal row');
+  assert.equal(rows.length, 23, '20 plan / brief B5 rows, the STRICT shift-1 row, the PLAN-LITERAL shift-1 row and the first-goal row');
+  assert.deepEqual(rows.map(r => r.id).filter(id => id.startsWith('shift1.')), ['shift1.wallet', 'shift1.plan', 'shift1.firstGoal']);
   assert.deepEqual(failing(rows), []);
   assert.ok(rows.every(r => r.ok && r.pass[42] === true && r.pass[99] === true && r.violation[42] === 0 && r.violation[99] === 0));
   assert.deepEqual(score(rows), { fails: 0, violation: 0 });
@@ -95,9 +97,33 @@ test('the standard k row fails below 2.0 and above 3.0 on any of its four measur
 
 test('the shift-1 rows: the start wallet must not buy table 2, every run must earn it, and no device may be cheaper', () => {
   const only = (id: string, s1: Shift1Metrics) => { const rows = gateTable(inputs({}, undefined, s1)); assert.deepEqual(failing(rows), [id]); return rows.find(r => r.id === id)!; };
-  const bought = only('shift1.wallet', shift1({ startCoins: 1500 })); assert.equal(bought.pass[42], false, 'a start wallet of 1 500 xu pays table 2 before shift 1: P0');
+  const paid = gateTable(inputs({}, undefined, shift1({ startCoins: 1500 })));
+  assert.deepEqual(failing(paid), ['shift1.wallet', 'shift1.plan'], 'a start wallet of 1 500 xu pays table 2 before shift 1: P0, in the strict row and in the plan-literal one');
+  assert.equal(paid.find(r => r.id === 'shift1.wallet')!.pass[42], false);
   assert.equal(only('shift1.wallet', shift1({ afterRestock: { min: 1499, p05: 1800, median: 2306, max: 3000 }, below: 1 })).pass[42], false, 'one run in 60 ends 1 xu short');
   const slow = only('shift1.wallet', shift1({ slowCoarse: { min: 1000, median: 2000 }, belowSlow: 7 })); assert.equal(slow.pass[99], false, 'the 4 s service model counts as much as the fast one');
   assert.ok(slow.violation[42] > 0 && slow.violation[42] <= 1, 'the violation is the share of runs that end short (7 of 60), so a sweep can climb it');
   assert.equal(only('shift1.firstGoal', shift1({ cheapestDevice: 1499 })).pass[42], false, 'a device level cheaper than table 2 pre-empts the first goal');
+});
+
+test("the plan-literal shift-1 row (PLAN section 0 and 7, the playtest sheet's 4 of 5): share of runs, takings and pairs, beside the strict row and never instead of it", () => {
+  const T = TARGETS.shift1Plan;
+  assert.equal(T.share, 0.8); assert.deepEqual(T.takings, [850, 1160]); assert.deepEqual(T.refusedPairs, [8, 12]);
+  const only = (id: string, plan: Partial<Shift1Metrics['plan']>, rest: Partial<Shift1Metrics> = {}) => {
+    const base = shift1().plan, rows = gateTable(inputs({}, undefined, shift1({ plan: { ...base, ...plan }, ...rest })));
+    return { rows, row: rows.find(r => r.id === id)!, failing: failing(rows) };
+  };
+  // the share: 48 of 60 runs is exactly 4 in 5, 47 is not; the worse of the two service models decides
+  assert.deepEqual(only('shift1.plan', { shareFast: 48 / 60, shareSlow: 48 / 60 }).failing, [], '48 of 60 runs close with table 2 in hand: 4 in 5 exactly');
+  const short = only('shift1.plan', { shareFast: 47 / 60 }); assert.deepEqual(short.failing, ['shift1.plan']); assert.equal(short.row.pass[42], false); assert.equal(short.row.pass[99], false);
+  assert.ok(short.row.violation[42] > 0 && short.row.violation[42] < 0.05, 'the violation is the share missing, so a sweep can climb it');
+  assert.deepEqual(only('shift1.plan', { shareSlow: 40 / 60 }).failing, ['shift1.plan'], 'the 4 s service model counts as much as the fast one');
+  // the median takings: the plan's 850-1 160 xu, both ends inclusive, the fast model
+  for (const [takings, ok] of [[850, true], [1160, true], [849, false], [1161, false], [588, false], [1292, false]] as const) assert.equal(only('shift1.plan', { takingsMedian: takings }).row.ok, ok, `median takings ${takings}`);
+  // about ten refused pairs: 8 to 12 inclusive
+  for (const [pairs, ok] of [[8, true], [12, true], [7, false], [13, false], [6, false], [16, false]] as const) assert.equal(only('shift1.plan', { refusedPairsMedian: pairs }).row.ok, ok, `median refused pairs ${pairs}`);
+  // the strict row is not softened by the new one: 10 of 60 runs short fails the strict row and leaves the plan-literal one green
+  const strict = gateTable(inputs({}, undefined, shift1({ below: 10, afterRestock: { min: 1200, p05: 1300, median: 2306, max: 3000 } })));
+  assert.deepEqual(failing(strict), ['shift1.wallet'], 'the strict row asks every run');
+  assert.equal(strict.find(r => r.id === 'shift1.plan')!.ok, true);
 });
