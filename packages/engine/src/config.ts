@@ -31,6 +31,15 @@ export function arrivalIntervalMs(c: Economy, weather: Weather, kind: Rush, camp
   return kind === 'none' ? interval : Math.max(interval, rush.floorMs);
 }
 
+/**
+ * Capacity demand (plan D19, rules 28): while the shop owns fewer than `refTables` tables the gap to the next group grows by
+ * min(maxMult, max(1, refTables / tables)). A snapshot pinned before the key (JSON <= 2.0.21), a capacity pin and a 1.x pin have none: x1.
+ */
+export function capacityDemandMult(c: Economy, tables: number): number {
+  const demand = (c.spawn as { capacityDemand?: { refTables: number; maxMult: number } }).capacityDemand;
+  return demand ? Math.min(demand.maxMult, Math.max(1, demand.refTables / Math.max(1, tables))) : 1;
+}
+
 /** Decode the single supported config curve grammar; never execute formula text. */
 export function dailyTargetCurve(c: Economy) {
   const match = /^base \+ \(max-base\) \* \(\(clamp\(tier,(\d+),(\d+)\)-\1\)\/(\d+)\)\^(\d+(?:\.\d+)?)$/.exec(c.quests.daily.targetCurve);
@@ -102,6 +111,33 @@ const ADDED_LATER = new Set(['nextGoal', 'onboarding.loginPrompt.leaveProgress',
 // Sections that joined a governance tier after earlier releases (tier -> names); shape() lets an older pinned snapshot lack exactly these.
 const TIER_SECTIONS_ADDED_LATER: Record<string, readonly string[]> = { C: ['nextGoal'] };
 const seedAt = (path: string): unknown => path.split('.').reduce<unknown>((node, key) => (node as Record<string, unknown> | undefined)?.[key], seed);
+
+// Seat-model keys added after JSON 2.0.20/2.0.21. A pin is immutable, so a seat snapshot labelled before the version that introduced a group has the
+// shape of the seed without it (exact: no key of the group, no tier entry), and one labelled with or after that version needs the whole group.
+// `since` = the first version carrying the group, `paths` = the object keys it added, `tiers` = the names it added to the governance tier lists.
+const SEAT_KEYS_ADDED_LATER: readonly { since: string; paths: readonly string[]; tiers: Record<string, readonly string[]> }[] = [
+  { since: '2.0.22', paths: ['spawn.capacityDemand'], tiers: { A: ['spawn.capacityDemand'] } }, // plan S3, D19
+];
+const versionOf = (label: unknown): number[] | null => { const m = typeof label === 'string' ? /^(\d+)\.(\d+)\.(\d+)$/.exec(label) : null; return m ? m.slice(1).map(Number) : null; };
+const olderThan = (label: unknown, since: string): boolean => { const a = versionOf(label), b = versionOf(since)!; return !!a && (a[0] - b[0] || a[1] - b[1] || a[2] - b[2]) < 0; };
+const ownPath = (root: unknown, path: string): boolean => path.split('.').every(key => { const has = !!root && typeof root === 'object' && Object.hasOwn(root, key); root = has ? (root as Record<string, unknown>)[key] : undefined; return has; });
+const seatShapes = new Map<string, unknown>();
+/** The template of a seat-model snapshot: the seed, or the seed minus the key groups that snapshot predates (cached per combination). */
+function seatShape(input: unknown): unknown {
+  const version = (input as { _meta?: { version?: unknown } } | null)?._meta?.version;
+  const absent = SEAT_KEYS_ADDED_LATER.filter(group => olderThan(version, group.since) && group.paths.every(path => !ownPath(input, path)));
+  if (!absent.length) return seed;
+  const key = absent.map(group => group.since).join();
+  if (!seatShapes.has(key)) {
+    const older = structuredClone(seed) as Record<string, any>;
+    for (const group of absent) {
+      for (const path of group.paths) { const keys = path.split('.'), last = keys.pop()!; delete keys.reduce((node, k) => node[k], older)[last]; }
+      for (const [tier, names] of Object.entries(group.tiers)) older._meta.governance.tiers[tier].sections = older._meta.governance.tiers[tier].sections.filter((name: string) => !names.includes(name));
+    }
+    seatShapes.set(key, older);
+  }
+  return seatShapes.get(key);
+}
 
 /**
  * Complete snapshots only: a partial or malformed config must never become live. Keys are compared as OWN keys (`k in e` walks the
@@ -191,6 +227,11 @@ function validate(c: Economy): void {
     whole(table.chairsAfterTables, 'table.chairsAfterTables', 1);
     if (table.chairsAfterTables > Math.min(...slots)) throw Error('config:chairsAfterTables');
     for (const p of [c.spawn.pPair, table.orderShape.solo.pBeer, table.orderShape.pair.pMoi]) if (p < 0 || p > 1) throw Error('config:seatProbability');
+    // Capacity demand (S3): a whole reference shop of at least one table; a multiplier below one would speed arrivals up, never slow them.
+    if (Object.hasOwn(c.spawn, 'capacityDemand')) {
+      whole(c.spawn.capacityDemand.refTables, 'spawn.capacityDemand.refTables', 1);
+      if (!Number.isFinite(c.spawn.capacityDemand.maxMult) || c.spawn.capacityDemand.maxMult < 1) throw Error('config:spawn.capacityDemand.maxMult');
+    }
   }
   if (!c._meta.version.trim() || c.k.value < c.k.band[0] || c.k.value > c.k.band[1]) throw Error('config:k');
   positive(c.k.anchorValuePerServe, 'anchor');
@@ -299,6 +340,7 @@ function validate(c: Economy): void {
     const interval = arrivalIntervalMs(c, weather, kind, campaign);
     whole(Math.round(interval), 'spawn.interval', 1);
     whole(Math.round(interval * (c.spawn.perCustomer ? groupLimit(c) : 1)), 'spawn.groupInterval', 1);
+    if (isSeatModel(c) && Object.hasOwn(c.spawn, 'capacityDemand')) whole(Math.round(interval * (c.spawn.perCustomer ? groupLimit(c) : 1) * c.spawn.capacityDemand.maxMult), 'spawn.demandInterval', 1);
   }
   for (const [dish, stock] of Object.entries(c.inventory.startingStock)) {
     stock.forEach(n => whole(n, `startingStock.${dish}`));
@@ -429,7 +471,7 @@ function freeze<T>(value: T): T {
 export function loadConfig(input: unknown = seed) {
   // Generation by marker: 1.x has no life-path gates, the 2.0 capacity model has no chair prices.
   const upgrades = (input as Economy)?.upgrades ?? {}, table = (upgrades as { table?: object }).table ?? {};
-  const template = !Object.hasOwn(upgrades, 'lifePathGate') ? legacy : Object.hasOwn(table, 'chairPriceBase') ? seed : capacityModel;
+  const template = !Object.hasOwn(upgrades, 'lifePathGate') ? legacy : Object.hasOwn(table, 'chairPriceBase') ? seatShape(input) : capacityModel;
   shape(input, template, '', template === capacityModel);
   const raw = structuredClone(input) as Economy;
   validate(raw);

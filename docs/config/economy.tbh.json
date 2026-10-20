@@ -1,8 +1,8 @@
 {
   "_meta": {
     "name": "Trùm Bia Hơi — economy config",
-    "version": "2.0.21",
-    "date": "2026-10-19",
+    "version": "2.0.22",
+    "date": "2026-10-20",
     "spec": "08-SPEC-economy-constants.md (cùng số, cùng tên trường)",
     "rules": [
       "Trường kết thúc bằng 'Base' = xu/uy tín gốc, NHÂN k lúc load: displayed = round(valueBase * k).",
@@ -58,6 +58,7 @@
             "leaderboard",
             "donation",
             "spawn.pPair",
+            "spawn.capacityDemand",
             "locations.list",
             "upgrades.table.orderShape",
             "upgrades.table.tablePriceBase",
@@ -269,12 +270,17 @@
       2
     ],
     "groupSizeMaxPhase1": "table.capacity",
-    "queueSlotsFormula": "2 + floor(totalCapacity / 3)",
+    "queueSlotsFormula": "queueBaseSlots + floor(totalCapacity / queueSeatsPerSlot) — seed rules 28: 1 + floor(totalCapacity / 8); snapshot sức chứa và pin trước 2.0.22: 2 + floor(totalCapacity / 3)",
     "playerServeCeilingPerSec": 0.74,
-    "pPair": 0.5
+    "pPair": 0.5,
+    "capacityDemand": {
+      "refTables": 6,
+      "maxMult": 4,
+      "_rule": "Cầu theo sức chứa (rules 28, D19): khoảng cách tới nhóm khách kế × min(maxMult, max(1, refTables / số bàn đang có)) — 1 bàn ×4 · 2 bàn ×3 · 3 bàn ×2 · 4 bàn ×1,5 · từ refTables bàn trở lên ×1. Nhân sau hệ số cỡ nhóm (perCustomer), làm tròn một lần; không đụng khách đầu ca (warmup). Cầu thừa bị từ chối tại cửa, không phạt (penalty.queueOverflow 0). Snapshot ghim trước 2.0.22 không có key này nên giữ nhịp cũ (×1); maxMult = 1 tắt hẳn."
+    }
   },
   "patience": {
-    "thuongMs": 18000,
+    "thuongMs": 24000,
     "rushTypeMult": 0.611,
     "orderRule": "min(patience of group at order time)",
     "graceMs": 2500,
@@ -674,7 +680,7 @@
       ],
       "refillEnabled": true,
       "phase": 1,
-      "_rule": "Đầu ca châm phần còn thiếu tới kegStorage từ kho thật, giữ nguyên bia và mẻ đang chạy. Vòi rót tối đa pourSlots cốc trong pourMs, mỗi cốc trừ 1 khỏi bom. Khi có chỗ và kho bia, mẻ mới bắt đầu ngay, lấy min(kegBatch, chỗ trống, kho), hoàn tất sau refillMs; việc mới chờ mẻ sau. Tắt refillEnabled thì rót trực tiếp từ kho theo vòi."
+      "_rule": "Đầu ca châm phần còn thiếu tới kegStorage từ kho thật, giữ nguyên bia và mẻ đang chạy. Khi có chỗ và kho bia, mẻ mới bắt đầu ngay, lấy min(kegBatch, chỗ trống, kho), hoàn tất sau refillMs; việc mới chờ mẻ sau. Rules 28 trên snapshot bàn ghế khi refillEnabled bật: khách gọi bia thì cốc bia sẵn sàng ngay trong tick gọi nếu bom còn cốc rót sẵn và có cốc sạch (trừ 1 khỏi bom, không qua vòi) — pourSlots/pourMs không còn nằm trên đường phục vụ, chỉ còn cho snapshot sức chứa cũ và replay rules ≤ 27. Tắt refillEnabled thì rót trực tiếp từ kho theo vòi: tối đa pourSlots cốc trong pourMs, mỗi cốc trừ 1 khỏi kho."
     },
     "washer": {
       "label": "Bồn rửa cốc",
@@ -1763,8 +1769,8 @@
   "runtime": {
     "tableSeatingMs": 800,
     "tableCleaningMs": 1000,
-    "queueBaseSlots": 2,
-    "queueSeatsPerSlot": 3,
+    "queueBaseSlots": 1,
+    "queueSeatsPerSlot": 8,
     "initialEquipmentLevel": 1,
     "initialKitchenLevel": 0,
     "initialTableLevel": 1
