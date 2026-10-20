@@ -37,7 +37,7 @@ implemented**: `freshness.kegFreshnessEnabled`/`kegFreshnessMs`/`warnMs`/`staleC
   still be served deliberately. Glass sprite class `glass-stale` vs `glass-full`
   (`App.tsx:304`). `.customer-reaction` shows `😖` for a stale outcome.
 
-- **Rules 28 (S2 `eco21-instant-pour`):** on a seat-model snapshot the glass of a beer is `in_use` with `readyAt` = the tick the order is placed, so freshness starts on the tray at once; `beer_pouring` and `beer_poured{fromReserve:true}` carry that tick. A beer waits only for `beer.ready` (cause `beerStock` / `beerRefill`) or for a clean glass (cause `glasses`); the `tap` wait is gone. Capacity pins and rules ≤ 27 keep `readyAt = now + pourMs`.
+- **Rules 28 (S2 `eco21-instant-pour`):** on a seat-model snapshot with the keg refill on the glass of a beer is `in_use` with `readyAt` = the tick the order is placed, so freshness starts on the tray at once; `beer_pouring` and `beer_poured{fromReserve:true}` carry that tick. A beer waits only for `beer.ready` (cause `beerStock` / `beerRefill`) or for a clean glass (cause `glasses`); the `tap` wait is gone. Capacity pins, rules ≤ 27 and a seat snapshot with `refillEnabled=false` keep `readyAt = now + pourMs`.
 
 ## How to reach it
 
