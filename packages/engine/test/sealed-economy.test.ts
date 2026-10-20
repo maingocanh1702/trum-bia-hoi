@@ -18,9 +18,9 @@ test('2.1.0 is the sealed version and the first-shifts allowance is three shifts
 
 test('the sealed economy numbers of the balance pass', () => {
   assert.equal(raw.tip.rate, 0.17);
-  assert.equal(raw.shift.dailyEarnCapBase, 350000);
+  assert.equal(raw.shift.dailyEarnCapBase, 400000); // D24, the owner's number: no gate row needs another
   assert.equal(raw.shift.startingCoinsBase, 300); // 750 coins, the wallet of S4: see the shift-1 test below
-  assert.equal(raw.locations.leaseDays, 2);
+  assert.equal(raw.locations.leaseDays, 3); // the brief's lease (B5, DESIGN-story section 3)
   assert.deepEqual(raw.locations.list.map(l => l.tableSlots), [8, 8, 8, 8, 8, 8, 8, 8, 8]);
   assert.deepEqual(raw.locations.list.map(l => l.rentPerDayBase), [0, 1200, 2000, 3000, 4200, 5400, 7200, 9600, 13200]);
   assert.deepEqual(raw.locations.list.map(l => l.mult), [1, 1.012, 1.025, 1.038, 1.05, 1.063, 1.075, 1.088, 1.1]);
@@ -47,8 +47,8 @@ test('what the balance pass left as the earlier waves set it: door, patience, de
   assert.deepEqual(t.tableUpgrade.levels.map(l => [l.extraRounds, l.pExtraMoi, l.tipMult, l.lifePathGate]), [[1, 0, 1, 1], [1, 0.35, 1, 2], [1, 0.35, 1.25, 4]]);
 });
 
-test('the life path ladder and the league ladder are one ladder, over one 21-day season; only the last rung moved from the plan (2.24 tr)', () => {
-  assert.deepEqual(raw.lifePath.map(l => l.lifetimeBase), [0, 8000, 20000, 80000, 280000, 680000, 1200000, 2240000]);
+test('the life path ladder and the league ladder are one ladder, the owner\'s 8 k ... 2 tr, over one 21-day season', () => {
+  assert.deepEqual(raw.lifePath.map(l => l.lifetimeBase), [0, 8000, 20000, 80000, 280000, 680000, 1200000, 2000000]);
   assert.deepEqual(raw.league.tiers.map(x => x.minSeasonEarnedBase), raw.lifePath.map(l => l.lifetimeBase));
   // The career gate starts on 2026-09-09, inside a 21-day ranking season that ends with career day 18: a season is exactly one window long for both periods.
   assert.deepEqual([raw.league.seasons.ranking.days, raw.league.seasons.contest.days], [21, 21]);

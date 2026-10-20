@@ -23,9 +23,9 @@ const leaseEvents = (g: Game) => g.world.events.filter(e => e.type.startsWith('l
 
 test('rent prepays the configured lease days of scaled daily rents plus deposit once; a failed or stale move preserves the old contract', () => {
   const g = game(), w = g.world, before = w.coins;
-  // JSON 2.1.0: leaseDays 2 x 1 200 base x 2.5 = 6 000, deposit depositRate 0.25 of it
-  assert.equal(g.config.values.locations.leaseDays, 2);
-  const q = leaseQuote(w, g.config, 'ngo_cho'); assert.equal(q.rent, 6000); assert.equal(q.deposit, 1500); assert.equal(q.cost, 7500);
+  // JSON 2.1.0: leaseDays 3 x 1 200 base x 2.5 = 9 000, deposit depositRate 0.25 of it
+  assert.equal(g.config.values.locations.leaseDays, 3);
+  const q = leaseQuote(w, g.config, 'ngo_cho'); assert.equal(q.rent, 9000); assert.equal(q.deposit, 2250); assert.equal(q.cost, 11250);
   assert.ok(rent(g, 'ngo_cho', 'first-lease').ok); assert.equal(w.coins, before - q.cost); assert.equal(w.location, 'ngo_cho');
   const signed = structuredClone(w), original = g.log.at(-1)!;
   assert.ok(g.command({ ...original, command: original.command as Command }).ok); assert.deepEqual(w, signed);

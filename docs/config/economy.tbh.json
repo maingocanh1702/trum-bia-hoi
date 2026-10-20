@@ -1074,7 +1074,7 @@
       "veteran": 5
     },
     "entitlementsRef": "xem section entitlements (free/ngày là CONFIG, không hardcode)",
-    "dailyEarnCapBase": 350000,
+    "dailyEarnCapBase": 400000,
     "capBucket": "per-earn, VN day",
     "shiftCreditAt": "finalize",
     "wellRested": {
@@ -1405,7 +1405,7 @@
       {
         "id": "huyen_thoai",
         "name": "Trùm Bia Hơi",
-        "minSeasonEarnedBase": 2240000
+        "minSeasonEarnedBase": 2000000
       }
     ],
     "seasons": {
@@ -1529,7 +1529,7 @@
     {
       "id": "LP7",
       "name": "Trùm Bia Hơi",
-      "lifetimeBase": 2240000,
+      "lifetimeBase": 2000000,
       "rewardCoinBase": 500000,
       "extra": [
         "crate.large"
@@ -1541,8 +1541,8 @@
     }
   ],
   "locations": {
-    "rentFormula": "rentPerDayBase × k (chốt bảng 09/09, neo 15–25 % thu nhập tier; không còn dùng công thức e)",
-    "leaseDays": 2,
+    "rentFormula": "rentPerDayBase × k (bảng 09/09 nhân 0,3 từ JSON 2.1.0, S5: một hợp đồng không được ăn mất một nấc của thang bàn; không còn dùng công thức e)",
+    "leaseDays": 3,
     "depositRate": 0.25,
     "earlyLeaveLosesDeposit": true,
     "fallback": "hem_nho",
