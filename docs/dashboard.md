@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-10-20 15:02 · **Branch hiện tại:** `feat/eco21-table-chair-upgrades`
+> **Cập nhật:** 2026-10-20 20:50 · **Branch hiện tại:** `feat/eco21-balance-pass`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -31,7 +31,7 @@
 | PR | Feature | Status | Computed | Branch |
 |----|---------|:------:|:--------:|--------|
 | `F04` | Vòng Đời Cốc — bottleneck cốc clean→in_use→dirty→washing→clean | 🟡 In progress | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
-| `F01` | Vòng Lặp Mở Ca — ca 12 phút, thể lực, trần ngày 500k | 🟡 In progress | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
+| `F01` | Vòng Lặp Mở Ca — ca 12 phút, thể lực, trần ngày 1 tr (JSON 2.1.0) | 🟡 In progress | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
 | `F02` | Menu & Kinh Tế Quán — 3 món P0 (bia+2 mồi), đo k | 🟡 In progress | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
 | `F03` | Hệ Bàn — 3 bàn, serve theo Order | 🟡 In progress | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
 | `F05` | Độ Hơi Bia — mất hơi 12s, cờ vàng, MVP mềm | 🟡 In progress | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
@@ -92,16 +92,16 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 0
-- **Notes:** Rules21: mua ly theo tổng sở hữu40, quote/debit/retry và menu pause đã kiểm tra; giữ replay1.x. Engine mới: cốc định danh, auto-rót/rửa, huỷ đơn trả cốc bẩn; regression + replay pass. Đang tích hợp UI/art. Rules 28 (S2 `eco21-instant-pour`): rót tức thì — cốc `in_use` ngay tick đặt đơn khi `beer.ready > 0`, freshness bắt đầu lúc đó, UI bom một bộ số ("Rót sẵn n cốc" = min(bia sẵn, cốc sạch)).
+- **Notes:** Rules21: mua ly theo tổng sở hữu40, quote/debit/retry và menu pause đã kiểm tra; giữ replay1.x. Engine mới: cốc định danh, auto-rót/rửa, huỷ đơn trả cốc bẩn; regression + replay pass. Đang tích hợp UI/art. Rules 28 (S2 `eco21-instant-pour`): rót tức thì — cốc `in_use` ngay tick đặt đơn khi `beer.ready > 0`, freshness bắt đầu lúc đó, UI bom một bộ số ("Rót sẵn n cốc" = min(bia sẵn, cốc sạch)). S5 (JSON 2.1.0): giá bom Lv2–5 định lại theo dự trữ rót sẵn + mẻ nạp (không theo tốc độ vòi); kho bia và số cốc không đổi (mất khách vì hết bia 0,0 %).
 
-### F01 — Vòng Lặp Mở Ca — ca 12 phút, thể lực, trần ngày 500k
+### F01 — Vòng Lặp Mở Ca — ca 12 phút, thể lực, trần ngày 1 tr (JSON 2.1.0)
 
 - **Status:** 🟡 In progress
 - **Branch:** `codex/game-build-isolated`
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 0
-- **Notes:** Ca 12 phút + closing, hidden/offline và menu pause, cap qua nửa đêm VN; save v2 đọc v1. Tỉnh Táo đã verify/review ở rules v3; segment và server time chưa hoàn tất.
+- **Notes:** Ca 12 phút + closing, hidden/offline và menu pause, cap qua nửa đêm VN; save v2 đọc v1. Tỉnh Táo đã verify/review ở rules v3; segment và server time chưa hoàn tất. Rules 28 (S5): 3 ca đầu của đời save mở không cần cooldown (`shift.noCooldownFirstShifts`), dòng nghỉ và thanh thể lực đọc `restRequired`.
 
 ### F02 — Menu & Kinh Tế Quán — 3 món P0 (bia+2 mồi), đo k
 

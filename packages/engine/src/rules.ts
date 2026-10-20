@@ -8,9 +8,9 @@ import type { WorldView, Customer, Order, Table, World } from './types';
 // call in this hot path (every step, plus nextDayAt's binary search) it grew a 3-day headless career
 // to 1.4GB RSS on a 38MB JS heap. Same formatter, same output -- day keys and rollovers are unchanged.
 const dayKeyFormatters = new Map<string, Intl.DateTimeFormat>();
-// A day only ever changes at a whole minute of the clock (every offset of the tz database since 1970 is a whole number of minutes) and the simulations ask for
-// the same minute thousands of times per simulated minute, so the last answer per timezone is kept for its minute. daykey-formatter.test.ts compares it with a
-// fresh formatter at every local midnight of a year in five timezones.
+// A day only ever changes at a whole minute of the clock for the zone the config allows (the validator pins `shift.dayRollover.tz` to the seed's Asia/Ho_Chi_Minh,
+// whose offset has been a whole number of minutes since 1970) and the simulations ask for the same minute thousands of times per simulated minute, so the last
+// answer per timezone is kept for its minute. daykey-formatter.test.ts compares it with a fresh formatter at every local midnight of a year in five timezones.
 const dayKeyMemo = new Map<string, { minute: number; key: string }>();
 export function dayKey(now: number, c: Config): string {
   const tz = c.values.shift.dayRollover.tz, minute = Math.floor(now / 60000); // config-exempt: milliseconds per minute
