@@ -48,6 +48,8 @@ for (const locale of ['vi', 'en'] as const) for (const viewport of viewports) {
     await keg.click(); const sheet = page.getByRole('dialog', { name: t('equipment.keg'), exact: true });
     await expect(sheet).toContainText(t('beer.poured', { ready: f.serveNow, max: f.capacity, batch: f.batch, s: f.refillS }));
     await expect(sheet).toContainText(t('production.instantHint'));
+    // The two waits the engine knows (beer cause beerStock/beerRefill -> the next batch, cause glasses -> the washer), worded in the sheet and pinned here.
+    await expect(sheet).toContainText(locale === 'vi' ? 'Hết cốc rót sẵn thì đợi mẻ kế, hết cốc sạch thì đợi rửa.' : 'No poured glass: next batch. No clean glass: next wash.');
     // The upgrade card compares two levels by the bom alone: reserve and refill batch, no tap count and no seconds per glass.
     await expect(sheet).toContainText(t('production.tank', { max: f.capacity })); await expect(sheet).toContainText(t('production.tank', { max: f.next.capacity }));
     await expect(sheet).toContainText(t('production.refill', { n: f.batch, seconds: f.refillS })); await expect(sheet).toContainText(t('production.refill', { n: f.next.batch, seconds: f.next.refillS }));

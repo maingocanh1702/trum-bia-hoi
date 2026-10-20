@@ -681,7 +681,7 @@
   "rest.regenPaused": "Resting at the stall · Stamina recovery is paused.",
   "production.directPour": "Direct pour · taps: {n} · {seconds}s/glass",
   "production.tank": "Poured reserve: {max} glasses",
-  "production.instantHint": "A guest's beer is ready at once while poured and clean glasses last. Otherwise it waits for the next batch.",
+  "production.instantHint": "A guest's beer is ready at once while poured and clean glasses last. No poured glass: next batch. No clean glass: next wash.",
   "settings.build": "Build",
   "stock.quickBeerTitle": "Quick beer refill",
   "stock.beerEmpty": "Beer stock empty. Refill to keep replenishing.",

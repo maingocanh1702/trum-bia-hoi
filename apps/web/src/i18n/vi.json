@@ -681,7 +681,7 @@
   "rest.regenPaused": "Đang nghỉ tại quán · Chưa hồi thể lực.",
   "production.directPour": "Rót trực tiếp: {n} vòi · {seconds} s/cốc",
   "production.tank": "Dự trữ rót sẵn: {max} cốc",
-  "production.instantHint": "Còn cốc rót sẵn và cốc sạch thì khách gọi bia là có ngay. Hết thì đợi mẻ kế.",
+  "production.instantHint": "Còn cốc rót sẵn và cốc sạch thì khách gọi bia là có ngay. Hết cốc rót sẵn thì đợi mẻ kế, hết cốc sạch thì đợi rửa.",
   "settings.build": "Bản dựng",
   "stock.quickBeerTitle": "Nhập bia nhanh",
   "stock.beerEmpty": "Kho bia đã hết. Nhập thêm để nạp tiếp.",
