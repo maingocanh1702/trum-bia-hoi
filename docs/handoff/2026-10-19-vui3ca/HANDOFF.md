@@ -86,3 +86,8 @@ Brief từng slice nằm trong `briefs/` — viết cho agent chạy không ngư
 ## 10. Còn lại ở máy founder, không có trong git
 
 Thư mục `.autorun/vui3ca/` (STATE, log phiên) và worktree `.autopilot/worktrees/eco21` (đang ở `feat/eco21-seat-model`, `npm ci` xong). Mọi thứ cần thiết cho việc tiếp tục đã được sao vào thư mục này (`briefs/`, `DECISIONS.md`, `BLOCKERS.md`, `MERGE-PACKET.md`).
+
+## 11. Ghi chú S5 (21/10/2026, review vòng 2) — hai điều S6 và owner cần biết
+
+- JSON 2.1.0 vẽ **tám chỗ đặt bàn ở mọi mặt bằng** (`locations.list[].tableSlots` = 8, kể cả hẻm đầu; D13 vẽ 4 bàn ở hẻm đầu, brief 4·4·5·6·6·7·8·8·8). Sân của S6 ("số chỗ theo `locations.list[].tableSlots`") phải vẽ **tám chỗ ở hẻm đầu**, 16 ghế khi đủ ghế 2. Đây là quyết định owner thứ hai của S5 (BLOCKERS `04 · tableSlots`: bảng so với 4·4·5·6·6·7·8·8·8 và toàn 4, các lựa chọn); nếu owner đổi, số chỗ đổi trong JSON mà không đổi code, nhưng bảng cổng phải chạy lại (`npm run sim:balance`).
+- Hàng P0 "kết ca 1 mua bàn 2" đỏ (quyết định owner thứ nhất, BLOCKERS `04 · P0`): ca 1 chỉ mua nổi bàn 2 (1.500 xu) ở khoảng một lượt chơi trong ba; chip mục tiêu vẫn là bàn 2 và nút khoá có lý do "thiếu N xu"; spec guest và playable giữ khẳng định "mua được bàn 2 sau ca 1" ở dạng soft (đỏ trên cơ may cho tới khi owner chốt, phần còn lại của hành trình vẫn chạy).
