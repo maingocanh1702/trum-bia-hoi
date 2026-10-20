@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Game, kickAllQuote, config, loadConfig, dayKey, encodeSave, decodeSave, wellRestedRemaining, type Command, type Economy } from '../src';
 import { capacityRaw } from './fixtures/capacity-model';
+import { fullCooldown } from './fixtures/full-cooldown';
 
 const origin = Date.parse('2026-09-08T00:00:00Z');
 function create(patch?: (raw: Economy) => void, at = origin, seed = 42, source: Economy = config.raw) {
@@ -101,7 +102,7 @@ test('same-day repeat rests do not grant twice; the next opening day and configu
 });
 
 test('offline rest qualifies by wall time but cannot bypass full-stamina opening or consume a failed grant', () => {
-  const g = create(); send(g, { type: 'startShift' });
+  const g = create(fullCooldown); send(g, { type: 'startShift' }); // the full-stamina opening is the subject: the first-shifts allowance is off
   send(g, { type: 'endShift' }, g.world.now + 1000);
   const anchor = g.world.restStartedAt;
   send(g, { type: 'activity', active: false });

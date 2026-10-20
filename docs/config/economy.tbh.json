@@ -1,7 +1,7 @@
 {
   "_meta": {
     "name": "Trùm Bia Hơi — economy config",
-    "version": "2.0.23",
+    "version": "2.1.0",
     "date": "2026-10-20",
     "spec": "08-SPEC-economy-constants.md (cùng số, cùng tên trường)",
     "rules": [
@@ -1067,6 +1067,7 @@
       1.5
     ],
     "openRequiresFullStamina": true,
+    "noCooldownFirstShifts": 3,
     "dailyShiftCap": {
       "newbie": 8,
       "regular": 6,

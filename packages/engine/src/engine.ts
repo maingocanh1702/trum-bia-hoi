@@ -3,7 +3,7 @@ import { leaseQuote, leaveLocationQuote } from './locations';
 import { kitchenStatus } from './kitchen';
 import { isEconomy2, isSeatModel, PAIR, CHAIRS_WITH_TABLE, config as defaultConfig, configContent, BUSINESS_UNLOCKS, SIGN_STYLES, signWeightMult, DISHES, EQUIPMENT, WEATHER, deliveryBundles, arrivalIntervalMs, capacityDemandMult, tableUpgrade, tableBenefit, tableBenefitGained, effectiveTableLevel, chairPatienceMult, type Config, type SeatedType, type Rush } from './config';
 import { integer, random, weighted } from './rng';
-import { buyGlassQuote, buyTableQuote, buyChairQuote, chairUpgradeQuote, tableUpgradeQuote, addStock, credit, creditBatchSafe, currentGuests, customerValue, dayKey, deliveryInterval, deliveryQuote, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
+import { buyGlassQuote, buyTableQuote, buyChairQuote, chairUpgradeQuote, tableUpgradeQuote, addStock, credit, creditBatchSafe, currentGuests, customerValue, dayKey, deliveryInterval, deliveryQuote, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, noCooldownOpening, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
 import { lifePathStatus, lifePathRewardQuote, unlockQuote } from './progression';
 import { signboardQuote, signboardStyle } from './signboard';
 import { attendanceDay, attendanceRewardQuote, applyQuestEvent, planDailyQuests, questRewardQuote, zeroLossWindow } from './quests';
@@ -32,6 +32,7 @@ const DISCONNECT_RULES: RulesVersion = 19; // config-exempt: replay protocol for
 export const CURRENT_RULES: RulesVersion = 28; // config-exempt: seat model v3.3; historical events remain exact
 const SEAT_RULES: RulesVersion = 28; // config-exempt: fixed replay protocol revision for the seat model (plan S1)
 const INSTANT_POUR_RULES: RulesVersion = 28; // config-exempt: fixed replay protocol revision for instant pour (plan S2)
+const NO_COOLDOWN_RULES: RulesVersion = 28; // config-exempt: fixed replay protocol revision for the no-cooldown first shifts (plan S5, D8)
 const METRICS_RULES: RulesVersion = 27; // config-exempt: fixed replay protocol revision
 const FEEDBACK_RULES: RulesVersion = 26; // config-exempt: fixed replay protocol revision
 const OPENING_PROGRESS_RULES: RulesVersion = 25; // config-exempt: fixed replay protocol revision
@@ -842,7 +843,9 @@ export class Game {
         const location = changed && this.rulesVersion >= LEASE_RULES && isEconomy2(c) && !w.lease ? c.locations.fallback : w.location;
         if (changed && w.lease && (!isEconomy2(c) || c.locations.fallback !== w.lease.fallback)) return fail('configLocationMissing');
         if (changed && !c.locations.list.some(row => row.id === location)) return fail('configLocationMissing');
-        if (c.shift.openRequiresFullStamina && w.staminaMs < this.config.values.shift.durationMs) return fail('restFirst');
+        // S5 (D8, rules 28): the first `shift.noCooldownFirstShifts` shifts of a save's whole life open without full stamina; the opening snapshot decides.
+        const noCooldown = this.rulesVersion >= NO_COOLDOWN_RULES && noCooldownOpening(w, openingConfig);
+        if (c.shift.openRequiresFullStamina && w.staminaMs < this.config.values.shift.durationMs && !noCooldown) return fail('restFirst');
         if (this.rulesVersion >= CONFIG_PIN_RULES && !Number.isSafeInteger(w.now + c.shift.durationMs)) return fail('configClock');
         const day = dayKey(w.now, openingConfig);
         if ((w.dayShifts[day] ?? 0) >= c.shift.dailyShiftCap.newbie) return fail('dailyShiftCap');
@@ -864,6 +867,7 @@ export class Game {
           w.tables.splice(tables.length); // in place: D2 keeps the first tableSlots tables
           tables.forEach((table, i) => { w.tables[i].capacity = table.capacity; });
         }
+        if (noCooldown && w.staminaMs < c.shift.durationMs) { w.staminaMs = c.shift.durationMs; w.staminaAnchorMs = w.staminaMs; w.staminaAnchorAt = w.now; } // set to 100 % when such a shift opens
         if (this.rulesVersion >= SEASON_RULES) syncSeasons(w, this.config);
         const weather = weighted(w, WEATHER.map(k => [k, c.weather[k].weight]));
         const rushes: NonNullable<World['shift']>['rushes'] = plan?.rushes ?? [];

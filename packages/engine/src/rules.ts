@@ -36,6 +36,18 @@ export function wellRestedBonus(w: WorldView, c: Config, payment: number, tip: n
   if (!Number.isSafeInteger(bonus) || bonus < 0) throw Error('ledger:invalid-bonus');
   return bonus;
 }
+/**
+ * D8 (rules 28, plan S5): the first `shift.noCooldownFirstShifts` shifts of a save's whole life open without full stamina, whatever the day. `c` is the
+ * snapshot that opens the shift; a snapshot without the key (JSON <= 2.0.23, a capacity pin, a 1.x pin) gives no allowance.
+ */
+export function noCooldownOpening(w: Pick<WorldView, 'completedShifts'>, c: Config): boolean {
+  const count = (c.values.shift as { noCooldownFirstShifts?: number }).noCooldownFirstShifts;
+  return count !== undefined && w.completedShifts < count;
+}
+/** What `startShift` asks of the stamina: full stamina is required (GDD 10), unless the first-shifts allowance applies. The one answer for the engine and the rest line of the screen. */
+export function restRequired(w: WorldView, c: Config): boolean {
+  return c.values.shift.openRequiresFullStamina && w.staminaMs < c.values.shift.durationMs && !noCooldownOpening(w, c);
+}
 export function stockCap(w: WorldView, c: Config): number { return c.values.upgrades.stall.stockCap[w.equipment.stall - 1]; }
 export function queueSlots(w: WorldView, c: Config): number {
   return c.values.runtime.queueBaseSlots + Math.floor(w.tables.reduce((s, t) => s + t.capacity, 0) / c.values.runtime.queueSeatsPerSlot);

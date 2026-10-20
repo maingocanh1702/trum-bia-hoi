@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { CURRENT_RULES, Game, config, loadConfig, isEconomy2, leaseQuote, leaveLocationQuote, encodeSave, decodeSave, type Command } from '../src';
+import { fullCooldown } from './fixtures/full-cooldown';
 const send = (g: Game, command: Command, key = `lease-${g.log.length}`) => g.command({ command, at: g.world.now, idempotencyKey: key });
 function game(patch?: (raw: typeof import('../../../docs/config/economy.tbh.json')) => void) {
   const raw = structuredClone(config.raw); assert.ok(isEconomy2(raw)); raw.shift.startingCoinsBase = 1000000;
@@ -135,12 +136,12 @@ test('the captured actual rules21 save replays unchanged and adopts leasing only
 
 
 test('a successful new pin moves an unleased player to its free fallback; failed opening never moves them', () => {
-  const raw = structuredClone(config.raw); assert.ok(isEconomy2(raw)); raw._meta.version = 'fallback-move';
+  const raw = structuredClone(config.raw); assert.ok(isEconomy2(raw)); raw._meta.version = 'fallback-move'; fullCooldown(raw);
   raw.locations.fallback = raw.locations.list[0].id = 'other'; raw.locations.list[1].id = 'hem_nho';
   const pin = loadConfig(raw), g = new Game(config, 42, Date.parse('2026-09-09T04:00:00Z'));
   assert.ok(g.command({ at: g.world.now, idempotencyKey: 'pin', command: { type: 'startShift' } }, pin).ok);
   assert.equal(g.world.location, 'other'); assert.equal(g.world.lease, undefined); assert.equal(g.world.lifePath, 0); replay(g);
-  const h = game(), before = structuredClone(h.world); h.world.staminaMs = 0;
+  const h = game(fullCooldown), before = structuredClone(h.world); h.world.staminaMs = 0; // the stamina gate is the subject: the first-shifts allowance is off
   assert.equal(h.command({ at: h.world.now, idempotencyKey: 'failed-pin', command: { type: 'startShift' } }, pin).reason, 'restFirst');
   assert.equal(h.world.location, before.location); assert.notEqual(h.config.version, pin.version);
 });
