@@ -55,6 +55,8 @@ export function tableBenefit(c: Economy, level: number): TableBenefit {
   const row = tableUpgrade(c)?.levels.find(l => l.level === level);
   return row ? { extraRounds: row.extraRounds, pExtraMoi: row.pExtraMoi, tipMult: row.tipMult } : NO_BENEFIT;
 }
+/** The level of a table that counts for the group sitting at it: a level only works with two chairs, so a one-chair table is Lv1 whatever it kept (a migrated save). The engine records it on the group, the card lists its perks. */
+export function effectiveTableLevel(table: { level: number; capacity: number }): number { return table.capacity >= PAIR ? table.level : 1; }
 /** The benefit a level adds to the one below it, named by its key (analytics `table_upgraded.what`). */
 export function tableBenefitGained(c: Economy, level: number): keyof TableBenefit | 'none' {
   const now = tableBenefit(c, level), before = tableBenefit(c, level - 1);

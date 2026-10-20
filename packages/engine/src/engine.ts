@@ -1,7 +1,7 @@
 import { SEASON_KINDS, compatibleSeasonTiers, nextSeasonEnd, pinUnusedSeasons, syncSeasons } from './seasons';
 import { leaseQuote, leaveLocationQuote } from './locations';
 import { kitchenStatus } from './kitchen';
-import { isEconomy2, isSeatModel, PAIR, CHAIRS_WITH_TABLE, config as defaultConfig, configContent, BUSINESS_UNLOCKS, SIGN_STYLES, signWeightMult, DISHES, EQUIPMENT, WEATHER, deliveryBundles, arrivalIntervalMs, capacityDemandMult, tableUpgrade, tableBenefit, tableBenefitGained, chairPatienceMult, type Config, type SeatedType, type Rush } from './config';
+import { isEconomy2, isSeatModel, PAIR, CHAIRS_WITH_TABLE, config as defaultConfig, configContent, BUSINESS_UNLOCKS, SIGN_STYLES, signWeightMult, DISHES, EQUIPMENT, WEATHER, deliveryBundles, arrivalIntervalMs, capacityDemandMult, tableUpgrade, tableBenefit, tableBenefitGained, effectiveTableLevel, chairPatienceMult, type Config, type SeatedType, type Rush } from './config';
 import { integer, random, weighted } from './rng';
 import { buyGlassQuote, buyTableQuote, buyChairQuote, chairUpgradeQuote, tableUpgradeQuote, addStock, credit, creditBatchSafe, currentGuests, customerValue, dayKey, deliveryInterval, deliveryQuote, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
 import { lifePathStatus, lifePathRewardQuote, unlockQuote } from './progression';
@@ -562,7 +562,7 @@ export class Game {
         // S4 (D19): a snapshot with the level ladders records what the group sits down with: a table level counts only at two chairs, the extra round of
         // Lv2 is added once, here, and a later upgrade serves the next group. Snapshots without the ladders add nothing to the group.
         if (tableUpgrade(this.config.values)) {
-          group.level = table.capacity >= PAIR ? table.level : 1; group.chairLevel = table.chairLevel ?? 1;
+          group.level = effectiveTableLevel(table); group.chairLevel = table.chairLevel ?? 1;
           group.rounds += tableBenefit(this.config.values, group.level).extraRounds;
         }
       }

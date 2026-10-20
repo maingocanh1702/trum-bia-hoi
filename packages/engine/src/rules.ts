@@ -143,6 +143,13 @@ export function freshnessMs(w: WorldView, c: Config): number {
   return base === null ? Infinity : base * c.values.weather[w.shift?.weather ?? 'sunny'].freshnessMult;
 }
 export function rushConfig(c: Config, rush: Rush) { return c.values.rush[rush]; }
+/**
+ * The share of a guest's OWN patience still left while the order is waited on: what the tip is judged on (`tip.patienceThreshold`). A chair level (S4)
+ * stretches the order's deadline (`order.patienceMs`), never this, so a screen that shows when the tip is lost reads it from here.
+ */
+export function guestPatienceLeft(w: WorldView, order: Order, customer: Customer): number {
+  return Math.max(0, (order.placedAt + customer.patienceMs - w.now) / customer.patienceMs);
+}
 /** `tableTipMult` is the Lv4 table's tip factor of the group being served (S4, D19); 1 everywhere else, so the old arithmetic is untouched. */
 export function customerValue(w: WorldView, c: Config, order: Order, customer: Customer, tableTipMult = 1) {
   const items = order.items.filter(i => i.customerId === customer.id);
@@ -152,7 +159,7 @@ export function customerValue(w: WorldView, c: Config, order: Order, customer: C
   if (!location) throw Error('state:location');
   const gross = items.reduce((s, i) => s + c.values.menu[i.dish].price, 0);
   const payment = Math.round(gross * type.paymentMult * location.mult * rush.paymentMult);
-  const ratio = order.state === 'grace' ? c.values.tip.graceForcedPatienceRatio : Math.max(0, (order.placedAt + customer.patienceMs - w.now) / customer.patienceMs);
+  const ratio = order.state === 'grace' ? c.values.tip.graceForcedPatienceRatio : guestPatienceLeft(w, order, customer);
   const stale = items.some(i => i.glassId !== null && w.now >= (w.glasses.find(g => g.id === i.glassId)?.readyAt ?? Infinity) + freshnessMs(w, c));
   let tip = ratio >= c.values.tip.patienceThreshold && !stale ? Math.round(payment * c.values.tip.rate) * rush.tipMult * c.values.weather[w.shift?.weather ?? 'sunny'].tipMult * type.tipMult * tableTipMult : 0;
   if (w.unlocks.includes('qr')) tip = Math.ceil(tip * c.values.tip.qrMult);

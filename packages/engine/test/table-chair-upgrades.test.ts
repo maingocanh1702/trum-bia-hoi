@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import seed from '../../../docs/config/economy.tbh.json';
 import capacityModel from '../../../docs/config/legacy/economy-2.0.4.json';
 import legacy from '../../../docs/config/legacy/economy-1.7.3.json';
-import { Game, config, loadConfig, decodeSave, encodeSave, isSeatModel, tableUpgradeQuote, chairUpgradeQuote, tableBenefit, chairPatienceMult, restockQuote, upgradeQuote, buyGlassQuote, DISHES, EQUIPMENT, WEATHER, type Command } from '../src';
+import { Game, config, loadConfig, decodeSave, encodeSave, isSeatModel, tableUpgradeQuote, chairUpgradeQuote, tableBenefit, effectiveTableLevel, chairPatienceMult, customerValue, guestPatienceLeft, restockQuote, upgradeQuote, buyGlassQuote, DISHES, EQUIPMENT, WEATHER, type Command, type ServeRecord } from '../src';
 import { createManagementPolicy, serveNext } from '../sim/policy';
 import { seat2022Raw } from './fixtures/seat-pin';
 import { steadyDemand } from './fixtures/steady-demand';
@@ -133,6 +133,8 @@ test('tableBenefit and chairPatienceMult read the ladder: level 1 and a snapshot
     assert.deepEqual([1, 2, 3, 4].map(level => tableBenefit(old.values, level)), Array(4).fill({ extraRounds: 0, pExtraMoi: 0, tipMult: 1 }), `${old.version}: no benefit`);
     assert.deepEqual([1, 2, 3].map(level => chairPatienceMult(old.values, level)), [1, 1, 1], `${old.version}: no chair level`);
   }
+  // A level counts only at two chairs: the one rule the engine (the level a group sits down with) and the card (the perks it lists) both read.
+  assert.deepEqual([[1, 1], [4, 1], [1, 2], [3, 2], [4, 2]].map(([level, capacity]) => effectiveTableLevel({ level, capacity })), [1, 1, 1, 3, 4]);
 });
 
 test('a table level is priced by its TARGET level and by how many tables have already reached it: the same total whatever the order of the purchases', () => {
@@ -202,10 +204,13 @@ test('chairUpgradeQuote answers what upgradeChair will: Lv2 at LP1, Lv3 at LP2, 
   w.coins = quote(0).cost! - 1; assert.equal(quote(0).reason, 'notEnoughCoins'); assert.deepEqual(send(g, { type: 'upgradeChair', tableId: w.tables[0].id }), { ok: false, reason: 'notEnoughCoins' });
   w.coins = 10_000_000;
   assert.deepEqual(send(g, { type: 'upgradeChair', tableId: w.tables[0].id }), { ok: true, amount: 10000 }); assert.equal(w.tables[0].chairLevel, 2);
+  assert.equal(w.coins, 10_000_000 - 10000, 'the chair level is paid from the wallet: what the command answers is what leaves it');
   assert.equal(quote(1).cost, chairPrice(1)); assert.equal(quote(1).cost, 15000, 'the shop has bought one: t = 1 whichever table is next');
   assert.equal(quote(0).gate, 'lifePathRequired'); assert.equal(quote(0).requiredLifePath, 2); assert.equal(quote(0).cost, chairPrice(1), 'Lv3 of the same table is the second upgrade of the shop');
+  const refused = w.coins; send(g, { type: 'upgradeChair', tableId: w.tables[0].id }); assert.equal(w.coins, refused, 'a refusal (the gate) costs nothing');
   w.lifePath = 2;
   assert.deepEqual(send(g, { type: 'upgradeChair', tableId: w.tables[0].id }), { ok: true, amount: 15000 }); assert.equal(w.tables[0].chairLevel, 3);
+  assert.equal(w.coins, 10_000_000 - 10000 - 15000, 'and the second one too');
   assert.equal(quote(2).cost, chairPrice(2)); assert.equal(quote(2).cost, 20000);
   assert.equal(quote(0).gate, 'maxLevel'); assert.equal(quote(0).cost, null); assert.deepEqual(send(g, { type: 'upgradeChair', tableId: w.tables[0].id }), { ok: false, reason: 'maxLevel' });
   for (const i of [1, 2, 3]) for (const level of [2, 3]) { assert.equal(quote(i).cost, chairPrice(w.tables.reduce((n, t) => n + (t.chairLevel ?? 1) - 1, 0))); chairUp(g, i, level); }
@@ -336,6 +341,12 @@ test('Lv4: the tip is x1.25 at that table only, from the group that sits down af
   for (const s of top) assert.equal(s.tip, expected(s.payment, 1.25), 'Lv4 table: x1.25');
   for (const s of rest) assert.equal(s.tip, expected(s.payment, 1), 'every other table, Lv3 included: unchanged');
   assert.ok(top.some(s => s.tip !== expected(s.payment, 1)), 'the multiplier is visible in the coins, not only in the formula');
+  // "Tip x1.25 and nothing else": the PAYMENT of every guest, the Lv4 table's included, is the Lv1 formula of the dishes the guest was served.
+  const location = c.locations.list.find(l => l.id === w.location)!;
+  const paymentOf = (s: ServeRecord) => Math.round(s.dishes.reduce((sum, dish) => sum + c.menu[dish].price, 0) * c.customerTypes[s.customerType].paymentMult * location.mult * c.rush.none.paymentMult);
+  const atTop = w.serves.filter(s => tableOf.get(s.orderId) === w.tables[0].id);
+  assert.ok(atTop.length >= 5, `${atTop.length} guests served at the Lv4 table`);
+  for (const s of w.serves) assert.equal(s.payment, paymentOf(s), `payment of ${s.customerType} at ${tableOf.get(s.orderId) === w.tables[0].id ? 'the Lv4 table' : 'another table'}: the Lv1 formula`);
 });
 
 test('chair patienceMult applies to the ORDER patience of the table\'s next group, 1 / 1.15 / 1.30, and never accumulates across the rounds of one visit', () => {
@@ -356,18 +367,39 @@ test('chair patienceMult applies to the ORDER patience of the table\'s next grou
   assert.ok(w.tables.every(t => t.group === null || t.group.chairLevel === (t.chairLevel ?? 1)));
 });
 
+test('the tip window follows the guest\'s OWN patience, not the chair-stretched deadline of the order: guestPatienceLeft is the ratio the tip is judged on, at every chair level', () => {
+  for (const [chairLevel, mult] of [[1, 1], [2, 1.15], [3, 1.3]] as const) {
+    const g = shop(raw => { busy(raw); raw.demandMix.pSecondRound = 0; raw.upgrades.table.orderShape.pair.pMoi = 0; }, { lifePath: 2 }), w = g.world, c = g.config.values;
+    chairUp(g, 0, chairLevel); must(g, { type: 'startShift' });
+    const { order } = firstOrder(g, 0), customers = w.tables[0].group!.customers, own = Math.min(...customers.map(x => x.patienceMs)), guest = customers.find(x => x.patienceMs === own)!;
+    const threshold = c.tip.patienceThreshold, closes = order.placedAt + own * (1 - threshold);
+    assert.equal(order.patienceMs, Math.round(own * mult), `chairs ${chairLevel}: the order's own deadline is stretched by x${mult}`);
+    const stretched = () => Math.max(0, (order.placedAt + order.patienceMs - w.now) / order.patienceMs); // what the bar used to be judged on
+    g.advance(Math.floor(closes) - 2);
+    assert.equal(order.state, 'pending');
+    assert.ok(guestPatienceLeft(w, order, guest) >= threshold, `chairs ${chairLevel}: just before the window closes the guest still has the share the tip needs`);
+    assert.equal(guestPatienceLeft(w, order, guest), customerValue(w, g.config, order, guest).ratio, 'the helper is the ratio customerValue judges the tip on');
+    g.advance(Math.ceil(closes) + 2);
+    assert.equal(order.state, 'pending', 'the order itself is still waited on: only the tip is gone');
+    assert.ok(guestPatienceLeft(w, order, guest) < threshold, `chairs ${chairLevel}: just after, the tip window is closed`);
+    assert.equal(guestPatienceLeft(w, order, guest), customerValue(w, g.config, order, guest).ratio);
+    assert.equal(stretched() < threshold, chairLevel === 1, `chairs ${chairLevel}: the stretched deadline would still call the tip open (only an unstretched order agrees with the guest)`);
+  }
+});
+
 test('upgrades emit one event each with what they cost and what they bring: table_upgraded{tableId, level, cost, what}, chair_upgraded{tableId, level, cost, patienceMult}', () => {
-  const g = shop(), w = g.world, [a, b] = w.tables, from = w.events.length;
+  const g = shop(), w = g.world, [a, b] = w.tables, from = w.events.length, coins = w.coins;
   must(g, { type: 'upgradeTable', tableId: a.id }); must(g, { type: 'upgradeTable', tableId: a.id }); must(g, { type: 'upgradeTable', tableId: a.id });
   must(g, { type: 'upgradeChair', tableId: b.id }); must(g, { type: 'upgradeChair', tableId: b.id });
+  assert.equal(coins - w.coins, 20000 + 50000 + 87500 + 10000 + 15000, 'every event is a payment: the wallet lost exactly the costs the events name');
   const events = w.events.slice(from).filter(e => ['table_upgraded', 'chair_upgraded'].includes(e.type));
   assert.deepEqual(events.map(e => [e.type, e.data]), [
     ['table_upgraded', { tableId: a.id, level: 2, cost: 20000, what: 'extraRounds' }], ['table_upgraded', { tableId: a.id, level: 3, cost: 50000, what: 'pExtraMoi' }],
     ['table_upgraded', { tableId: a.id, level: 4, cost: 87500, what: 'tipMult' }],
     ['chair_upgraded', { tableId: b.id, level: 2, cost: 10000, patienceMult: 1.15 }], ['chair_upgraded', { tableId: b.id, level: 3, cost: 15000, patienceMult: 1.3 }]]);
   assert.ok(events.every(e => e.configVersion === config.version));
-  const refused = w.events.length; send(g, { type: 'upgradeChair', tableId: b.id });
-  assert.equal(w.events.length, refused, 'a refused upgrade emits nothing');
+  const refused = w.events.length, kept = w.coins; send(g, { type: 'upgradeChair', tableId: b.id });
+  assert.equal(w.events.length, refused, 'a refused upgrade emits nothing'); assert.equal(w.coins, kept, 'and costs nothing');
 });
 
 test('a snapshot from before the keys keeps its own ladder: no chair upgrade, no life-path gate on the table level, the Ket Noi gate for Lv4, no benefit to the group', () => {
