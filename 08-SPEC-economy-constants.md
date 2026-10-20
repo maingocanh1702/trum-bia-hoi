@@ -69,17 +69,17 @@ Giá **xu bia hơi đã chốt** (neo 1 xu ≈ 300 VND; bia cốc 50 xu ≈ 15k)
 | `SPAWN_BASE_MS` | **10.500** | 10.500 | 04 §4 | nhịp **mỗi khách**; nhóm N người tiêu N nhịp (fix 2026-07-15) |
 | `SPAWN_WARMUP_MULT` | 1.6 | 1.6 | 04 §4 | lượt đầu ca = 16.800ms |
 | `spawnEffective` | `none: max(base, floor) × weather × rush × marketing; active: max(base × weather × rush × marketing, floor)` | — | F08 §5 | Nhịp thường áp hệ số sau baseline; sàn Giờ Vàng là giới hạn tuyệt đối. |
-| `PATIENCE_THUONG_MS` | **18.000** | 18.000 | 04 §4 | × weather.patienceMult × type.patienceMult |
+| `PATIENCE_THUONG_MS` | **24.000** | 18.000 | 04 §4 | × weather.patienceMult × type.patienceMult (JSON 2.0.22, D25; game bàn ghế — pin cũ giữ 18.000) |
 | `PATIENCE_RUSH_MULT` (vội/VIP) | 0.611 | 0.611 | F07 | ≈ 11.000ms |
 | `ENJOY_MIN/MAX_MS` | 5.000–10.000 | 5–10s | 04 §4 | × type.enjoyMult (ngồi lỳ ×10 → 50–100s) |
 | Cỡ nhóm | P0: 1–2 · P1+: 1..capacity(bàn) | 1 (ghế đơn) | 03 §7 | random đều 🟡 |
 | Một-bàn-một-nhóm | bàn chỉ nhận nhóm khi `EMPTY` | — | 03 §1 | 🟢 |
 | Order.patienceMs | `min(patience các khách trong nhóm)` lúc gọi | — | 03 §4 | 🟢 |
-| `QUEUE_SLOTS` | `2 + ⌊Σcapacity / 3⌋` | 2+⌊ghế/3⌋ | 03 §1 | P0: 3 bàn × 2 = 6 → **4** slot |
+| `QUEUE_SLOTS` | `queueBaseSlots + ⌊Σghế / queueSeatsPerSlot⌋` = `1 + ⌊Σghế / 8⌋` | 2+⌊ghế/3⌋ | 03 §1 | JSON 2.0.22 (D25), game bàn ghế; pin cũ giữ `2 + ⌊ghế/3⌋` |
 | Queue patience | `min(patience nhóm)` từ lúc xếp hàng | — | engine.ts | quá → cả nhóm bỏ (đếm `lostCustomers`) |
 | Overflow | hết bàn + hết queue → từ chối tại cửa (`rejectedAtDoor`), **không phạt** | ✓ | 03 §8 | 🟢 |
 | Grace window `graceMs` | 2.000–3.000 🟡 (**P0/P1 chưa bật** = 0) | — | 03 §9 | Phase 1 bật; serve nhận cả `pending` lẫn `grace_leaving` |
-| Bàn cấp/capacity | Lv1 2 · Lv2 4 · Lv3 6 · Lv4 8–10 | ghế 4→10 | 03 §6 | giá §8.6 |
+| Bàn / ghế | game bàn ghế (rules 28): bàn 1–2 ghế (`capacity`), cấp bàn Lv1–4 = lợi ích, không còn sức chứa; pin cũ: Lv1 2 · Lv2 4 · Lv3 6 · Lv4 8–10 | ghế 4→10 | 03 §6 | giá §8.6 |
 
 **Sàn spawn khi Giờ Vàng** (`rush.floorMs`): xem §6. **Trần tay người chơi gốc ≈ 0,73–0,74 lượt/giây** (đo live) — mốc để cân throughput.
 
@@ -164,6 +164,8 @@ Runtime rules v8: lịch thường light/heavy cân bằng và xáo bằng seed 
 
 Giá hiển thị = `round(priceBase × k)`. Mua bằng `coins`, không giảm `seasonEarned`. **Owner 2026-09-09: được nâng cấp ngay trong ca**, menu giữ tạm dừng đến khi đóng (F10 §12). Mỗi cấp đổi sprite (Phase 2).
 
+> 🟢 **S5 `eco21-balance-pass` (JSON 2.1.0) — các bảng giá §8.1–§8.5 là số chốt từ sim cân bằng** (tập `priceBase` Lv2–5 của bom, bồn rửa, hầm lạnh, quầy, bếp; Lv1 = 0, bếp Lv0 chưa có). Cột `priceBase`/×k thay các giá cũ (bom 5.000/20.000/80.000/300.000, rửa 4.000/16.000/60.000/200.000, hầm 3.000/12.000/45.000/150.000, quầy 1.500/8.000/30.000/120.000, bếp 12.000/50.000/160.000/400.000); các cột thời gian/sức chứa giữ nguyên. Bom Lv2–5 giờ chỉ mua dự trữ rót sẵn + mẻ nạp (vòi `pourSlots`/`pourMs` ra khỏi đường phục vụ từ rules 28) nên giá theo thứ đó, không theo tốc độ vòi. Snapshot ghim cũ giữ giá đã ghim. Số liệu chốt và cổng: changelog "2026-10-20 / JSON 2.1.0 (S5)".
+
 **Gate Đường Lên Trùm cho thiết bị (founder 09/09, `upgrades.lifePathGate`):** Lv4 mọi thiết bị cần **LP2**, Lv5 cần **LP3**; bếp Lv3/Lv4 cần LP3/LP4 (`upgrade` trả `lifePathRequired`). Engine tự đánh giá LP theo `lifetimeEarned` sau mỗi lượt phục vụ (§15).
 
 **Nguyên tắc trạm (founder 09/09) 🟢:** mọi trạm — bom rót, bồn rửa, bếp — là **pipeline tự động**; người chơi không bấm trạm, chỉ bấm Phục vụ. Mỗi trạm chỉ có **2 tham số: thời gian 1 mẻ (ms) + số lượng mỗi mẻ (batch)**. Mẻ bắt đầu ngay khi có ≥ 1 việc chờ, lấy tối đa `batch` việc; việc đến giữa mẻ chờ mẻ sau. Nâng cấp = đổi 2 tham số đó (và với bom: thêm sức chứa). Ánh xạ key JSON: bom `refillMs`/`kegBatch` (+ `pourMs`/`pourSlots` cho độ trễ rót); rửa `washMs`/`slots` (= batch); bếp `prepMs × prepMult`/`slots` (= số chảo) × `portionsPerPan`. Đây là cơ chế "ấm tích" của gốc áp cho mọi trạm — thay cho E2 "bếp chảo" đã đề xuất trong audit.
@@ -173,10 +175,10 @@ Giá hiển thị = `round(priceBase × k)`. Mua bằng `coins`, không giảm `
 | Lv | Tên | priceBase | ×k | Vòi (`pourSlots`) | `pourMs` | Cốc rót sẵn: `kegStorage` / `kegBatch` / `refillMs` (**bật**, `refillEnabled=true`) |
 |:--:|---|--:|--:|:--:|--:|---|
 | 1 | Bom nhựa + vòi tay | 0 | 0 | 1 | 2.000 | **4 / 2 / 12.000** (10 cốc/phút) |
-| 2 | Bom inox nhỏ | **5.000** | **12.500** | 2 | 1.800 | **7 / 3 / 8.000** (22) |
-| 3 | Bom inox lớn | **20.000** | **50.000** | 3 | 1.600 | **12 / 5 / 6.000** (50) |
-| 4 | Hệ thống áp suất | **80.000** | **200.000** | 4 | 1.400 | **20 / 8 / 5.000** (96) |
-| 5 | Trạm rót công nghiệp | **300.000** | **750.000** | 6 | 1.200 | **40 / 14 / 4.000** (210) |
+| 2 | Bom inox nhỏ | **2.000** | **5.000** | 2 | 1.800 | **7 / 3 / 8.000** (22) |
+| 3 | Bom inox lớn | **8.000** | **20.000** | 3 | 1.600 | **12 / 5 / 6.000** (50) |
+| 4 | Hệ thống áp suất | **16.000** | **40.000** | 4 | 1.400 | **20 / 8 / 5.000** (96) |
+| 5 | Trạm rót công nghiệp | **60.000** | **150.000** | 6 | 1.200 | **40 / 14 / 4.000** (210) |
 
 - **Hai lớp hoạt động cùng lúc:** đầu ca châm lượng còn thiếu tới `kegStorage` từ kho bia thật, trừ cả lượng đã giữ trong mẻ đang chạy khi tính chỗ trống. Giữ bia dư và mẻ đang chạy qua ca/nâng cấp.
 - Vòi cần bia trong bom và ly sạch; tối đa `pourSlots` ly rót đồng thời, mỗi ly mất `pourMs`. Trừ bia trong bom một lần khi bắt đầu rót; freshness của ly bắt đầu khi rót xong.
@@ -194,10 +196,10 @@ Tự động: cốc bẩn vào mẻ ngay; **1 mẻ = tối đa `slots` cốc, m�
 | Lv | Tên | priceBase | ×k | `washMs` | `slots` |
 |:--:|---|--:|--:|--:|:--:|
 | 1 | Chậu nhôm | 0 | 0 | 7.000 | 1 |
-| 2 | Chậu đôi | **4.000** | **10.000** | 5.000 | 1 |
-| 3 | Bồn rửa inox | **16.000** | **40.000** | 4.000 | 2 |
-| 4 | Máy rửa bán tự động | **60.000** | **150.000** | 2.500 | 3 |
-| 5 | Máy rửa công nghiệp | **200.000** | **500.000** | 1.500 | 5 |
+| 2 | Chậu đôi | **1.500** | **3.750** | 5.000 | 1 |
+| 3 | Bồn rửa inox | **6.500** | **16.250** | 4.000 | 2 |
+| 4 | Máy rửa bán tự động | **12.000** | **30.000** | 2.500 | 3 |
+| 5 | Máy rửa công nghiệp | **40.000** | **100.000** | 1.500 | 5 |
 
 Rules18: rửa theo một mẻ dùng `slots/washMs`; lấy ngay các ly bẩn hiện có tới giới hạn, không chờ đủ mẻ. Ly bẩn tới thêm xếp hàng đến mẻ kế tiếp. Ly sạch giữ trong pool sẵn dùng. HUD hiển thị sạch/tổng ly và thanh tiến độ; panel ghi số đang chờ + sức rửa mỗi mẻ.
 
@@ -208,30 +210,30 @@ Prototype: `WASH_BASE = {1, 7000}`, `WASH_UPGRADED = {3, 2500}` (= Lv4, toggle �
 | Lv | Tên | priceBase | ×k | Freshness cốc | Freshness bom (🔵) |
 |:--:|---|--:|--:|--:|--:|
 | 1 | Thùng xốp + đá | 0 | 0 | 12s | 4' |
-| 2 | Thùng inox + đá | **3.000** | **7.500** | 20s | 6' |
-| 3 | Tủ mát mini | **12.000** | **30.000** | 35s | 9' |
-| 4 | Tủ lạnh bàn | **45.000** | **112.500** | 60s | 15' |
-| 5 | Hầm lạnh | **150.000** | **375.000** | ∞ | ∞ |
+| 2 | Thùng inox + đá | **1.250** | **3.125** | 20s | 6' |
+| 3 | Tủ mát mini | **4.750** | **11.875** | 35s | 9' |
+| 4 | Tủ lạnh bàn | **9.000** | **22.500** | 60s | 15' |
+| 5 | Hầm lạnh | **30.000** | **75.000** | ∞ | ∞ |
 
 ### 8.4 Quầy / kho (`stall`) — sức chứa nguyên liệu
 
 | Lv | Tên | priceBase | ×k | Cap mỗi nguyên liệu | Gate mở |
 |:--:|---|--:|--:|--:|---|
 | 1 | Bàn bày | 0 | 0 | 15 | — |
-| 2 | Kệ nhôm | **1.500** | **3.750** | 25 | — |
-| 3 | Tủ kệ inox | **8.000** | **20.000** | 45 | **mở Biển hiệu** (§10) |
-| 4 | Quầy bar mini | **30.000** | **75.000** | 80 | — |
-| 5 | Quầy bar cao cấp | **120.000** | **300.000** | 150 | — |
+| 2 | Kệ nhôm | **500** | **1.250** | 25 | — |
+| 3 | Tủ kệ inox | **3.250** | **8.125** | 45 | **mở Biển hiệu** (§10) |
+| 4 | Quầy bar mini | **6.000** | **15.000** | 80 | — |
+| 5 | Quầy bar cao cấp | **24.000** | **60.000** | 150 | — |
 
 ### 8.5 Bếp (`kitchen`) — MỚI, mở mồi nóng 🟡
 
 | Lv | Tên | priceBase | ×k | Chảo (`slots`) | Khẩu phần/chảo (`portionsPerPan`) | Prep× | Mở món |
 |:--:|---|--:|--:|:--:|:--:|--:|---|
 | 0 | (chưa có bếp) | — | — | 0 | 0 | — | — |
-| 1 | Bếp than tổ ong | **12.000** | **30.000** | 1 | **2** | 1.00 | `dau`, `topmo` |
-| 2 | Bếp gas nhỏ | **50.000** | **125.000** | 2 | **2** | **0.90** | `long` |
-| 3 | Bếp gas đôi | **160.000** | **400.000** | 2 | **3** | **0.80** | — |
-| 4 | Bếp công nghiệp | **400.000** | **1.000.000** | 3 | **3** | **0.70** | — |
+| 1 | Bếp than tổ ong | **4.750** | **11.875** | 1 | **2** | 1.00 | `dau`, `topmo` |
+| 2 | Bếp gas nhỏ | **20.000** | **50.000** | 2 | **2** | **0.90** | `long` |
+| 3 | Bếp gas đôi | **32.000** | **80.000** | 2 | **3** | **0.80** | — |
+| 4 | Bếp công nghiệp | **80.000** | **200.000** | 3 | **3** | **0.70** | — |
 
 Tự động nấu theo chảo (founder 09/09): 1 chảo = 1 mẻ tối đa `portionsPerPan` khẩu phần **cùng món** (gom món của cùng Order trước, Order khác nếu còn chỗ), mất `prepMs × prepMult`. Sim tiến trình (bot 1 s): bếp theo chảo cho 26–40 k xu/ca, mất khách 13–29 % — bếp thành bậc tăng thu nhập thay vì bẫy.
 
@@ -240,6 +242,8 @@ Tự động nấu theo chảo (founder 09/09): 1 chảo = 1 mẻ tối đa `por
 - ⚠️ **Mâu thuẫn đã chốt:** `item-list-upgrade-levels.md` §6 ghi 5 cấp giá ×k 5k/15k/40k/100k/250k và đặt Lòng ở Lv3; `F10`/`F11`/GDD §2 ghi Lòng mở **Bếp Lv2** và giá base 8k/35k/120k/300k. **Chốt theo GDD + F10/F11** (4 cấp trả tiền, Lòng ở Lv2). Cần sửa item-list §6 (sprite Lv5 "Bếp master" giữ làm cosmetic/visual của Lv4 hoặc bỏ).
 
 ### 8.6 Bàn (`table`) — 03 §6, item-list §1
+
+> 🟢 **Rules 28 — số chốt của game bàn ghế (S1/S4/S5, JSON 2.1.0) thay bảng cũ bên dưới (bảng cũ chỉ còn cho snapshot ghim ≤ 2.0.x):** game mới 1 bàn × 1 ghế. Bàn thứ n (n = 2…8) = `tablePriceBase[n−2]` = **600 · 2.000 · 4.000 · 7.500 · 12.500 · 20.000 · 31.300** base (hiển thị ×2,5: 1.500 · 5.000 · 10.000 · 18.750 · 31.250 · 50.000 · 78.250); trần số bàn theo mặt bằng `tableSlots` **4 · 4 · 5 · 6 · 6 · 7 · 8 · 8 · 8** (§16). Ghế 2 chỉ mở sau `chairsAfterTables` = 4 bàn, giá theo số ghế 2 đã mua toàn quán `chairPriceBase` = **10.000 · 15.000 · 22.500 · 30.000 · 40.000 · 50.000 · 60.000 · 70.000** base (hiển thị ×2,5: 25.000 · 37.500 · 56.250 · 75.000 · 100.000 · 125.000 · 150.000 · 175.000), tối đa 2 ghế/bàn. Nâng bàn →Lv2 `8.000 + 3.000·n` · →Lv3 `20.000 + 8.000·n` · →Lv4 `35.000 + 12.000·n` base (n = số bàn đã đạt cấp ≥ cấp đích; gate LP1/LP2/LP4); nâng ghế `4.000 + 2.000·t` base (t = số lần nâng ghế đã mua toàn quán; gate LP1/LP2) — thang S4 giữ nguyên. Lợi ích: Lv2 `extraRounds` 1 · Lv3 `pExtraMoi` 0,35 · Lv4 `tipMult` 1,25; ghế `patienceMult` 1,15/1,30 (03-SPEC §6). Đã bỏ `extraSeatPriceBase`, `table.levels[].capacity/priceBase/repBase/requiredBadge`, `table.maxTables`, `backrest`.
 
 | Lv | Tên | Capacity | priceBase (mua/nâng) | ×k | Gate |
 |:--:|---|:--:|--:|--:|---|
@@ -270,7 +274,7 @@ Audit 09/09: với 10 cốc cố định, nâng 5 bàn lên 6 chỗ làm thu nh�
 ```text
 // per customer, tại thời điểm Order được giao
 patienceRatio = clamp((order.placedAt + order.patienceMs − now) / order.patienceMs, 0, 1)
-tip = patienceRatio < 0.6 ? 0 : round(payment × 0.30)
+tip = patienceRatio < 0.6 ? 0 : round(payment × 0.20)
 tip ×= rush.tipMult × weather.tipMult × type.tipMult      // VIP 10, chipheo 0
 tip = freshnessOk ? tip : 0                                // cốc bia của KHÁCH ĐÓ hết hơi → 0 (MVP mềm)
 if (hasQR && tip > 0) tip = ceil(tip × 1.2)
@@ -282,7 +286,7 @@ credited = min(credited, DAILY_EARN_CAP − dayEarned)      // trần ngày; log
 | Hằng số | Giá trị | Ghi chú |
 |---|--:|---|
 | `TIP_PATIENCE_THRESHOLD` | 0.6 | "vách đá 60%" — VIP sớm/trễ chênh ~5,5× |
-| `TIP_RATE` | 0.30 | |
+| `TIP_RATE` | 0.20 | JSON 2.1.0 (S5 sim cân bằng; trước đó 0.30, bản W9 ghi 0.22) |
 | `TIP_VIP_MULT` | 10 | |
 | QR | ceil ×1.2 | cần Điện thoại + LP2 (§11) |
 | Tỉnh Táo (well-rested) | ×1.1 lên (payment+tip), 10 phút, 1 lần/ngày, keyed theo **open-day** (`tip.wellRestedKeyedBy`); số ca tính finalize-day, tiền tính per-earn | |
@@ -347,15 +351,16 @@ Gốc dùng "20 đá / 20 kẹo / 40 kẹo" — bia hơi không có đá/kẹo �
 | `SHIFT_DURATION_MS` (thể lực) | **720.000** (12') | 🟢 |
 | Hồi thể lực | 0.4 × realtime (~30' active), chỉ đếm khi tab active; cooldown tính từ lúc **khách về hết** | 🟢 |
 | Hồi giảm theo phiên | phiên 1 denom 0.5 · phiên 2 1.0 · phiên 3 1.5 | 🟡 |
-| Mở ca | cần thể lực 100% | 🟢 |
+| Mở ca | cần thể lực 100% (trừ **3 ca đầu**, hàng kế) | 🟢 |
+| 3 ca đầu của đời save (`shift.noCooldownFirstShifts` = 3) | mở ca **không đòi thể lực đầy** (không phải chờ cooldown); mở xong thể lực = 100 %; từ ca 4 cooldown ~30' như trên; trần ca/ngày 8/6/5 giữ nguyên. Chỉ game rules 28; save cũ giữ luật cũ | 🟢 owner 18/09 (D8) |
 | Trần số ca/ngày (normal cap) | newbie **8** · regular **6** · veteran **5** | 🟢 |
 | Quyền chơi | **FREE toàn bộ** = normal cap 8/6/5 (chốt 08/09). `entitlements.freeSessionsPerDay` = `dailyShiftCap[segment]`; `sessionPass.enabled=false`. Section chỉ còn dùng cho campaign/override (giảm cap tạm), không có tier trả tiền | 🟢 |
-| `DAILY_EARN_CAP` | **500.000 ×k** (200.000 base) — chạm: vẫn phục vụ, `credited = 0`; per-day-bucket theo giờ VN tại **thời điểm earn** | 🟢 |
+| `DAILY_EARN_CAP` | **1.000.000 ×k** (400.000 base; JSON 2.1.0, trước đó 500.000) — chạm: vẫn phục vụ, `credited = 0`; per-day-bucket theo giờ VN tại **thời điểm earn** | 🟢 |
 | Số ca credit | lúc **finalize** (đóng hẳn) → ngày đóng ca | 🟢 |
 | Tỉnh Táo | ×1.1, 600.000ms, 1 lần/ngày sau nghỉ >6h | 🟢 |
 | Đóng ca | `closing` grace: khách đang uống ở lại, không spawn; `kick-all` đóng ngay (phí §9) | 🟢 |
 | Rollover ngày | nửa đêm `Asia/Ho_Chi_Minh`, **server-side**, client mirror | 🟢 |
-| State khởi đầu | coins **750 ×k** (300 base) 🟡 · kho: bia 10/15, lac 5/15, nem 5/15 🟡 · cốc 10 · 3 bàn con | 🟡 |
+| State khởi đầu | coins **1.750 ×k** (700 base; JSON 2.1.0, trước đó 750) 🟡 · kho: bia 10/15, lac 5/15, nem 5/15 🟡 · cốc 10 · 1 bàn 1 ghế (rules 28) | 🟡 |
 | Prototype | `coins = 0`, không kho, `dayEarned` = vòng đời world | — |
 
 ---
@@ -387,20 +392,20 @@ Gốc dùng "20 đá / 20 kẹo / 40 kẹo" — bia hơi không có đá/kẹo �
 
 ## 15. Giải Nhậu, Vụ Bia, Đường Lên Trùm — F12, F13 (ngưỡng ×k)
 
-**Giải Nhậu (8 bậc, `minSeasonEarned`):**
+**Giải Nhậu (8 bậc, `minSeasonEarned`; JSON 2.1.0: cùng một thang với Đường Lên Trùm bên dưới, S5):**
 
 | # | id | Tên | Base | ×k |
 |:--:|---|---|--:|--:|
 | 1 | `dong` | 🥤 Cốc Nhựa | 0 | 0 |
-| 2 | `bac` | 🍺 Cốc Thủy Tinh | 20.000 | 50.000 |
-| 3 | `vang` | 🏺 Vại Sành | 60.000 | 150.000 |
-| 4 | `titan` | ⚔️ Vại Đồng | 120.000 | 300.000 |
-| 5 | `bach_kim` | 💎 Bom Bạc | 180.000 | 450.000 |
-| 6 | `hong_ngoc` | 🍻 Bom Vàng | 300.000 | 750.000 |
-| 7 | `kim_cuong` | 👑 Vua Bia | 500.000 | 1.250.000 |
-| 8 | `huyen_thoai` | 🏆 Trùm Bia Hơi | 1.000.000 | 2.500.000 |
+| 2 | `bac` | 🍺 Cốc Thủy Tinh | 8.000 | 20.000 |
+| 3 | `vang` | 🏺 Vại Sành | 20.000 | 50.000 |
+| 4 | `titan` | ⚔️ Vại Đồng | 80.000 | 200.000 |
+| 5 | `bach_kim` | 💎 Bom Bạc | 280.000 | 700.000 |
+| 6 | `hong_ngoc` | 🍻 Bom Vàng | 680.000 | 1.700.000 |
+| 7 | `kim_cuong` | 👑 Vua Bia | 1.200.000 | 3.000.000 |
+| 8 | `huyen_thoai` | 🏆 Trùm Bia Hơi | 2.000.000 | 5.000.000 |
 
-- 2 Vụ Bia song song: **Phân Hạng 7 ngày** (thưởng đậm + top10 huy chương + Bàn Thờ Ông Địa) · **Tranh Bá 14 ngày** (nhẹ). Epoch neo `2026-04-11T10:00Z` 🟡, tz VN. Tie-break: `firstReachedCurrentSeasonEarnedAt`.
+- 2 Vụ Bia song song: **Phân Hạng 21 ngày** (JSON 2.1.0, trước đó 7; thưởng đậm + top10 huy chương + Bàn Thờ Ông Địa) · **Tranh Bá 21 ngày** (trước đó 14; nhẹ — một cửa sổ chung với Phân Hạng, nên một mùa là một lần đặt lại). Epoch neo `2026-04-11T10:00Z` 🟡, tz VN. Tie-break: `firstReachedCurrentSeasonEarnedAt`.
 - Thưởng cuối Vụ = **bó nguyên liệu theo hạng** (không xu) qua hòm thư; top 10 → huy chương + khắc tên. 🟡 bảng lượng theo hạng: Cốc Nhựa {bia 20, lac 10, nem 5} … Trùm {bia 300, lac 150, nem 100, long 20} (server config).
 - 2 bảng: **Xếp hạng** theo bậc xuyên mặt bằng · **Dạo Phố** theo `location × bậc`.
 
@@ -409,32 +414,33 @@ Gốc dùng "20 đá / 20 kẹo / 40 kẹo" — bia hơi không có đá/kẹo �
 | Mốc | Tên | lifetime base | ×k | Điều kiện phụ | Thưởng base | ×k | Gate mở |
 |:--:|---|--:|--:|---|---|---|---|
 | LP0 | Bưng Bê | 0 | 0 | — | — | — | start |
-| LP1 | Phụ Quán | 50.000 | 125.000 | 4 ghế quy đổi | 5.000 + thùng nhỏ | 12.500 | Điện thoại, mặt bằng LP1 |
-| LP2 | Tay Ngang | 150.000 | 375.000 | Quầy Lv3 + Điện thoại | 10.000 + mảnh HH | 25.000 | QR, Tờ rơi, mặt bằng LP2 |
-| LP3 | Chủ Sạp | 500.000 | 1.250.000 | thiết bị Lv3 + QR | 20.000 + thùng vừa | 50.000 | mặt bằng LP3 |
-| LP4 | Chủ Quán | 1.500.000 | 3.750.000 | tờ rơi + peak Bom Bạc | 50.000 + mảnh + tem | 125.000 | Phố Cổ |
-| LP5 | Ông Chủ | 5.000.000 | 12.500.000 | biển hiệu + peak Bom Vàng | 100.000 + thùng vừa + tem | 250.000 | Ga Metro |
-| LP6 | Đại Gia Bia | 15.000.000 | 37.500.000 | đồ & quầy Lv5 + peak Vua Bia | 250.000 + thùng lớn + 2 mảnh | 625.000 | Khu Phố Tây |
-| LP7 | Trùm Bia Hơi | 50.000.000 | 125.000.000 | 10 ghế quy đổi + peak Trùm | 500.000 + thùng | 1.250.000 | prestige |
+| LP1 | Phụ Quán | 8.000 | 20.000 | 4 bàn | 5.000 + thùng nhỏ | 12.500 | Điện thoại, mặt bằng LP1 |
+| LP2 | Tay Ngang | 20.000 | 50.000 | Quầy Lv3 + Điện thoại | 10.000 + mảnh HH | 25.000 | QR, Tờ rơi, mặt bằng LP2 |
+| LP3 | Chủ Sạp | 80.000 | 200.000 | thiết bị Lv3 + QR | 20.000 + thùng vừa | 50.000 | mặt bằng LP3 |
+| LP4 | Chủ Quán | 280.000 | 700.000 | tờ rơi + peak Bom Bạc | 50.000 + mảnh + tem | 125.000 | Phố Cổ |
+| LP5 | Ông Chủ | 680.000 | 1.700.000 | biển hiệu + peak Bom Vàng | 100.000 + thùng vừa + tem | 250.000 | Ga Metro |
+| LP6 | Đại Gia Bia | 1.200.000 | 3.000.000 | đồ & quầy Lv5 + peak Vua Bia | 250.000 + thùng lớn + 2 mảnh | 625.000 | Khu Phố Tây |
+| LP7 | Trùm Bia Hơi | 2.000.000 | 5.000.000 | 10 ghế + peak Trùm | 500.000 + thùng | 1.250.000 | prestige |
 
 ---
 
 ## 16. Mặt bằng — F14 (chốt bảng F14; item-list §14 đã đồng bộ 08/09)
 
-Rent/ngày = `round(700 × (e/5) × (1 + e/50)) × k`; kỳ thuê **7 ngày** trả trước; **cọc 25%** (hoàn khi hết kỳ bình thường); rời sớm mất cọc + về Hẻm Nhỏ. Multiplier áp lên payment **trước** cap. Server lưu `rentPerDay` lúc ký.
+Rent/ngày = `round(700 × (e/5) × (1 + e/50)) × k`; kỳ thuê **3 ngày** (`leaseDays`; JSON 2.1.0, trước đó 7) trả trước; **cọc 25%** (hoàn khi hết kỳ bình thường); rời sớm mất cọc + về Hẻm Nhỏ. Multiplier áp lên payment **trước** cap. Server lưu `rentPerDay` lúc ký.
 
-| # | id | Tên | Mult | `e` | Rent/ngày base | ×k | Tiền kỳ 7d ×k | Cọc ×k | Gate |
-|:--:|---|---|--:|--:|--:|--:|--:|--:|---|
-| 1 | `hem_nho` | Hẻm Nhỏ | 1.0 | — | **0** | 0 | 0 | 0 | start (miễn phí, về đây khi bỏ thuê) |
-| 2 | `ngo_cho` | Ngõ Chợ | 1.1 | ~~10~~ | **4.000** | 10.000 | 70.000 | 17.500 | LP1 |
-| 3 | `ben_xe` | Bến Xe | 1.2 | ~~15~~ | **6.800** | 17.000 | 119.000 | 29.750 | LP1 |
-| 4 | `gan_cong_so` | Gần Công Sở | 1.3 | ~~20~~ | **10.000** | 25.000 | 175.000 | 43.750 | LP2 |
-| 5 | `gan_svd` | Gần Sân Vận Động | 1.4 | ~~25~~ | **14.000** | 35.000 | 245.000 | 61.250 | LP3 |
-| 6 | `ho_bia_dem` | Hồ Bia Đêm | 1.5 | ~~30~~ | **18.000** | 45.000 | 315.000 | 78.750 | LP3 |
-| 7 | `pho_co` | Phố Cổ | 1.6 | ~~35~~ | **24.000** | 60.000 | 420.000 | 105.000 | LP4 |
-| 8 | `ga_metro` | Ga Metro | 1.7 | ~~40~~ | **32.000** | 80.000 | 560.000 | 140.000 | LP5 |
-| 9 | `pho_tay` | Khu Phố Tây | 1.8 | ~~45~~ | **44.000** | 110.000 | 770.000 | 192.500 | LP6 |
+| # | id | Tên | Mult | `e` | Rent/ngày base | ×k | Tiền kỳ 3d ×k | Cọc ×k | Bàn tối đa (`tableSlots`) | Gate |
+|:--:|---|---|--:|--:|--:|--:|--:|--:|--:|---|
+| 1 | `hem_nho` | Hẻm Nhỏ | 1.0 | — | **0** | 0 | 0 | 0 | 4 | start (miễn phí, về đây khi bỏ thuê) |
+| 2 | `ngo_cho` | Ngõ Chợ | 1.019 | ~~10~~ | **4.000** | 10.000 | 30.000 | 7.500 | 4 | LP1 |
+| 3 | `ben_xe` | Bến Xe | 1.038 | ~~15~~ | **6.800** | 17.000 | 51.000 | 12.750 | 5 | LP1 |
+| 4 | `gan_cong_so` | Gần Công Sở | 1.056 | ~~20~~ | **10.000** | 25.000 | 75.000 | 18.750 | 6 | LP2 |
+| 5 | `gan_svd` | Gần Sân Vận Động | 1.075 | ~~25~~ | **14.000** | 35.000 | 105.000 | 26.250 | 6 | LP3 |
+| 6 | `ho_bia_dem` | Hồ Bia Đêm | 1.094 | ~~30~~ | **18.000** | 45.000 | 135.000 | 33.750 | 7 | LP3 |
+| 7 | `pho_co` | Phố Cổ | 1.112 | ~~35~~ | **24.000** | 60.000 | 180.000 | 45.000 | 8 | LP4 |
+| 8 | `ga_metro` | Ga Metro | 1.131 | ~~40~~ | **32.000** | 80.000 | 240.000 | 60.000 | 8 | LP5 |
+| 9 | `pho_tay` | Khu Phố Tây | 1.15 | ~~45~~ | **44.000** | 110.000 | 330.000 | 82.500 | 8 | LP6 |
 
+- 🟢 **S5 (JSON 2.1.0):** cột Mult là dốc 1.0 → 1.15 (bước 0,019 rồi 0,018…; trước đó bậc đều 0,1 từ 1.1 đến 1.8) và cột `tableSlots` là trần số bàn theo mặt bằng (trước đó mọi mặt bằng = 4, D13); kỳ thuê 3 ngày thay 7 nên tiền kỳ = 3 × rent/ngày, cọc 25 % của tiền kỳ. Rent/ngày giữ nguyên. Vì dốc Mult thấp, mặt bằng là đòn **sức chứa** (thêm bàn) hơn là đòn **giá**. Số lẻ 3 chữ số là do sweep chọn (một dốc tròn 2 chữ số làm mất hai ô của seed 99 — quỹ đạo nhạy theo một xu); đổi chúng = chạy lại bảng cổng (04-SPEC §5).
 - ⚠️ **Mâu thuẫn đã chốt:** F14 (feature spec) đặt lại tên/multiplier thành bậc đều 0.1 và index `e` 5..45; item-list §14 giữ 10 vị trí + rent gốc (770→29.120). **Chốt theo F14** (dev spec, có Gần SVĐ như GDD §12), **Hẻm Nhỏ rent 0** (F14 ghi e=5 là sai — mặt bằng gốc phải miễn phí để "về Hẻm Nhỏ" không phí). Gate LP1 cho 2 vị trí đầu lấy từ GDD/gốc (F14 để "-"). Cần sửa item-list §14 → 9 vị trí + background theo bảng này.
 - **Cân lại 09/09 (audit):** rent gốc ×k chỉ bằng ~1/10 gốc tính theo % thu nhập (e-index bị cắt nửa trong khi thu nhập cao gấp đôi ánh xạ). Bảng mới neo **rent/tuần ≈ 15–25 % thu nhập tuần của tier** (sim tiến trình: ~160 k/ngày ngày 1–2 → 300–450 k/ngày từ tuần 2); bỏ công thức e. Hoà rent gross/ngày = `rent/(mult−1)`: Ngõ Chợ 100 k · Bến Xe 85 k · Công Sở 83 k · SVĐ 88 k · Hồ Bia 90 k · Phố Cổ 100 k · Metro 114 k · Phố Tây 138 k ×k — thấp hơn thu nhập tier tương ứng nhưng cao hơn tier dưới. **Engine đã cài 09/09**: `rentLocation(id)` (resting, gate `gateLifePath`, trả trước 7 ngày + cọc 25 %), `leaveLocation` (mất cọc), hết kỳ tự về Hẻm Nhỏ + hoàn cọc (`lease_ended`), mult áp trong `customerValue`. Sim: người chơi thuê Ngõ Chợ ngày 7, Bến Xe ngày 14, Hồ Bia Đêm ngày 29 → chạm trần ngày 500 k lần đầu ngày 30 (đúng vai trò "trần chỉ chặn top").
 
@@ -525,7 +531,7 @@ Mọi section của `docs/config/economy.tbh.json` đều nằm trong registry. 
 | Section JSON | Keys (tóm tắt) | Tier | Role sửa | Hiệu lực | Ghi chú |
 |---|---|:--:|---|---|---|
 | `k` | `value`, `band`, `anchorValuePerServe` | **A** | Economy Admin → Super Admin | `next_day` | `anchorValuePerServe` 🟢 thiết kế không đổi nhưng vẫn là config (đổi = quyết định founder) |
-| `shift` | `durationMs`, `regenRate`, `regenOnlyActive`, `dailyShiftCap`, `dailyEarnCapBase`, `capBucket`, `wellRested`, `closingGrace`, `kickAllAllowed`, `openRequiresFullStamina` | **A** | Economy Admin → Super Admin | `next_day` | ca đang chạy giữ `configVersion` cũ |
+| `shift` | `durationMs`, `regenRate`, `regenOnlyActive`, `dailyShiftCap`, `dailyEarnCapBase`, `capBucket`, `wellRested`, `closingGrace`, `kickAllAllowed`, `openRequiresFullStamina`, `noCooldownFirstShifts` | **A** | Economy Admin → Super Admin | `next_day` | ca đang chạy giữ `configVersion` cũ. `noCooldownFirstShifts` (S5 `eco21-balance-pass`, JSON 2.1.0, rules 28; D8): số ca đầu của đời save mở không cần thể lực đầy (mở xong thể lực = 100 %); đổi nó đổi nhịp ngày 1 của mọi người chơi nên cùng cấp duyệt kép với `dailyShiftCap`; validator: số nguyên ≥ 0; pin < 2.1.0 không có key (`SEAT_KEYS_ADDED_LATER`, luật cũ: mở ca đòi thể lực đầy) |
 | `entitlements` (chơi free — chỉ campaign/override) | `mode`, `freeSessionsPerDay.{default, bySegment.*, campaignOverride, min, max}`, `sessionPass.enabled=false` | **A** | Economy Admin (default/segment) · Game Admin (campaign) → Super Admin | `next_day`; campaign `immediate` cho ca mở sau publish | ví dụ luồng: BRD §5.2.4; giá Session Pass ở catalog server (tiền thật) |
 | `ledgers` | `countedSources`, `excluded` | **A** | Economy Admin → Super Admin | `next_season` | đổi = đổi luật Giải Nhậu |
 | `tip` · `reputation` · `penalty` | rate, mult, threshold, `wellRested*`, `graceForcedPatienceRatio`, +3/+1/−5, `leaveRate`, `kickToCloseFormula` | **A** | Economy Admin → Super Admin | `next_day` | `reputation.notScaledByK` là luật, đổi cần GDD |
@@ -541,9 +547,9 @@ Mọi section của `docs/config/economy.tbh.json` đều nằm trong registry. 
 | `upgrades` · `glasses` · `signboard` · `unlocks` · `dog` | level tables (`keg`, `washer`, `cooler`, `stall`, `kitchen`, `table` — từ JSON 2.0.20 không còn `capacity`), `backrest` (bỏ từ JSON 2.0.23: thay bằng `upgrades.table.chairUpgrade`, dòng "Cấp bàn và cấp ghế" bên dưới), `upgrades.table.startingTables`, `glasses.{start,buyCap,storageCap,priceBase}`, `signboard.{installFeeBase,gate,styles}`, `unlocks.{phone,qr,flyer,emergencyPack}`, `dog.{levels,capturedMs,theftReductionByLevel}` | **B** | Economy Admin | `next_shift` | validator: level tăng dần, giá không âm |
 | `quests` · `crates` · `chairmanBox` | `daily` target/reward, `loginTrackRepBase`, `loginMissResets`, `referral`, `gift`, `badgeShardsPerBadge`, crate tables, `chairmanBox.*` | **B** | Economy Admin | `next_shift` | pool nhiệm vụ (nội dung) là Tier C |
 | `risk` · `locations` | `gangster`/`inspection`/`urbanPatrol`/`drunkFight`/`offlineTheft` (chance, fee, cooldown), `locations.list[]` (rent, mult, gate), `leaseDays`, `depositRate`, `earlyLeaveLosesDeposit` | **B** | Economy Admin | `next_day` | mặt bằng đổi giữa ngày gây lệch cọc → `next_day` |
-| Mô hình bàn ghế (rules 28) | `locations.list` (cả danh sách vì `tableSlots` nằm trong từng dòng — registry so mảng theo cả path), `spawn.pPair`, `upgrades.table.tablePriceBase` (bàn thứ n = phần tử n−2), `upgrades.table.chairPriceBase` (chỉ số = số ghế 2 đã mua toàn quán), `upgrades.table.chairsAfterTables`, `upgrades.table.orderShape.{solo.pBeer, pair.pMoi}` | **A** | Economy Admin → Super Admin | `next_day` | S1 `eco21-seat-model`, JSON 2.0.21 (nhãn 2.0.20 ở đầu nhánh S1 trước hợp nhất Đợt 1); rent/mult/gate của `locations.list` theo vào Tier A (chặt hơn, đảo được khi registry so từng dòng). `extraSeatPriceBase`, `table.levels[].capacity`, `table.maxTables` đã bỏ — snapshot cũ đọc qua `docs/config/legacy/economy-2.0.4.json` |
+| Mô hình bàn ghế (rules 28) | `locations.list` (cả danh sách vì `tableSlots` nằm trong từng dòng — registry so mảng theo cả path), `spawn.pPair`, `upgrades.table.tablePriceBase` (bàn thứ n = phần tử n−2), `upgrades.table.chairPriceBase` (chỉ số = số ghế 2 đã mua toàn quán), `upgrades.table.chairsAfterTables`, `upgrades.table.orderShape.{solo.pBeer, pair.pMoi}` | **A** | Economy Admin → Super Admin | `next_day` | S1 `eco21-seat-model`, JSON 2.0.21 (nhãn 2.0.20 ở đầu nhánh S1 trước hợp nhất Đợt 1); rent/mult/gate của `locations.list` theo vào Tier A (chặt hơn, đảo được khi registry so từng dòng). `extraSeatPriceBase`, `table.levels[].capacity`, `table.maxTables` đã bỏ — snapshot cũ đọc qua `docs/config/legacy/economy-2.0.4.json`. **S5 (JSON 2.1.0):** `tableSlots` 4·4·5·6·6·7·8·8·8 thay "mọi mặt bằng = 4", giá bàn/ghế và dốc `mult` là số chốt (§8.6, §16) |
 | Cầu theo sức chứa (rules 28) | `spawn.capacityDemand.{refTables, maxMult}` | **A** | Economy Admin → Super Admin | `next_day` | S3 `eco21-capacity-demand`, JSON 2.0.22: khoảng cách giữa hai nhóm khách × `min(maxMult, max(1, refTables / số bàn))` — 1 bàn ×4 · 2 ×3 · 3 ×2 · 4 ×1,5; đổi hai số này đổi tổng khách mỗi ca của cả game nên cùng cấp duyệt kép với `spawn.pPair`; `maxMult` = 1 tắt hẳn; validator: `refTables` nguyên ≥ 1, `maxMult` ≥ 1 hữu hạn; pin ≤ 2.0.21 không có key (×1). Hàng đợi `runtime.queueBaseSlots`/`queueSeatsPerSlot` (1 / 8) và `patience.thuongMs` (24 000) vẫn **Tier B** (section `runtime`, `patience`) — chỉ đổi giá trị seed |
-| Cấp bàn và cấp ghế (rules 28) | `upgrades.table.tableUpgrade.levels[]` (`level` 2–4, `priceBase`, `stepBase`, `lifePathGate`, `extraRounds`, `pExtraMoi`, `tipMult`), `upgrades.table.chairUpgrade.{priceBase, stepBase, levels[].{level, lifePathGate, patienceMult}}` | **A** | Economy Admin → Super Admin | `next_day` | S4 `eco21-table-chair-upgrades`, JSON 2.0.23: giá nâng bàn theo **cấp đích** = `priceBase + stepBase × n` (n = số bàn đã đạt cấp ≥ cấp đích; Base nhân k: →Lv2 8 000 + 3 000·n, →Lv3 20 000 + 8 000·n, →Lv4 35 000 + 12 000·n), nâng ghế = `priceBase + stepBase × t` (t = số lần nâng ghế đã mua toàn quán: 4 000 + 2 000·t); mỗi dòng bàn ghi **tổng** lợi ích của cấp (cộng dồn; validator: chỉ tăng theo cấp, `extraRounds` nguyên, `pExtraMoi` ∈ [0, 1], `tipMult` ≥ 1, `patienceMult` ≥ 1); gate Đời Quán `lifePathGate` (Lv2 LP1 · Lv3 LP2 · Lv4 LP4; ghế LP1 · LP2; chỉ số mốc LP, phải nằm trong đường). Đổi giá hay lợi ích đổi tốc độ lên đời của cả game nên cùng cấp duyệt kép với giá bàn/ghế. **Thay** key postmvp `upgrades.backrest` (bỏ khỏi seed; snapshot ≤ 2.0.22 vẫn mang nó). `upgrades.table.levels[].priceBase/repBase/requiredBadge` là thang cũ, chỉ đọc khi snapshot không có `tableUpgrade` (pin ≤ 2.0.22: giá cũ, gate Kết Nối, không lợi ích). Số là ứng viên W9; S5 chốt |
+| Cấp bàn và cấp ghế (rules 28) | `upgrades.table.tableUpgrade.levels[]` (`level` 2–4, `priceBase`, `stepBase`, `lifePathGate`, `extraRounds`, `pExtraMoi`, `tipMult`), `upgrades.table.chairUpgrade.{priceBase, stepBase, levels[].{level, lifePathGate, patienceMult}}` | **A** | Economy Admin → Super Admin | `next_day` | S4 `eco21-table-chair-upgrades`, JSON 2.0.23: giá nâng bàn theo **cấp đích** = `priceBase + stepBase × n` (n = số bàn đã đạt cấp ≥ cấp đích; Base nhân k: →Lv2 8 000 + 3 000·n, →Lv3 20 000 + 8 000·n, →Lv4 35 000 + 12 000·n), nâng ghế = `priceBase + stepBase × t` (t = số lần nâng ghế đã mua toàn quán: 4 000 + 2 000·t); mỗi dòng bàn ghi **tổng** lợi ích của cấp (cộng dồn; validator: chỉ tăng theo cấp, `extraRounds` nguyên, `pExtraMoi` ∈ [0, 1], `tipMult` ≥ 1, `patienceMult` ≥ 1); gate Đời Quán `lifePathGate` (Lv2 LP1 · Lv3 LP2 · Lv4 LP4; ghế LP1 · LP2; chỉ số mốc LP, phải nằm trong đường). Đổi giá hay lợi ích đổi tốc độ lên đời của cả game nên cùng cấp duyệt kép với giá bàn/ghế. **Thay** key postmvp `upgrades.backrest` (bỏ khỏi seed; snapshot ≤ 2.0.22 vẫn mang nó). `upgrades.table.levels[].priceBase/repBase/requiredBadge` là thang cũ, chỉ đọc khi snapshot không có `tableUpgrade` (pin ≤ 2.0.22: giá cũ, gate Kết Nối, không lợi ích). Số là ứng viên W9; S5 chốt: thang S4 giữ nguyên trong JSON 2.1.0 (không đổi giá nâng bàn/ghế, gate, lợi ích) |
 | `cosmetics` (trừ donation) | `lantern`, `plant`, `pricesAreDisplayed` | **B** | Economy Admin | `next_shift` | |
 | `leaderboard` | `topN`, `neighborsWindow`, `refreshMs`, `minShiftsToRank`, `shrineTop`, `wallSize`, `historySeasonsKept`, `hideFlagged` | **A** | Economy Admin → Super Admin | `next_season` (hiển thị `topN`/`refreshMs`: `next_day`) | F28 — thứ hạng, snapshot bất biến |
 | `donation` | `enabled`, `tiersVnd`, `guestAllowed`, `provider`, `manualConfirm`, `giftCatalogRef`, `refundPolicy` | **A** | Super Admin | `immediate` | F20 — monetization duy nhất; tiền thật |

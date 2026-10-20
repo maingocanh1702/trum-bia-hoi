@@ -57,8 +57,8 @@ revert to) has no spec counterpart at all. `'broken'` never existed in code.
 
 ## Existing proof
 
-- `packages/engine/test/locations.test.ts` — all 12 cases: `'rent prepays seven scaled daily rents
-  plus deposit once; a failed or stale move preserves the old contract'`, `'early switch and
+- `packages/engine/test/locations.test.ts` — all 12 cases: `'rent prepays the configured lease days of scaled daily rents
+  plus deposit once; a failed or stale move preserves the old contract'` (S5: `leaseDays` is 3, so Ngo Cho is 30 000 rent + 7 500 deposit = 37 500; it was `'… seven scaled daily rents …'`), `'early switch and
   departure forfeit old deposit and rent; expiry at the exact boundary refunds instead'` (the
   early-leave vs. natural-expiry refund-rule contrast — asserts the `lease_left` event's
   `depositForfeited` field), `'calendar expiry is identical under fine/coarse ticks while a
@@ -207,3 +207,8 @@ excluded from earning ledgers, not income), [upgrades-equipment-tables](upgrades
 gates `leaseQuote`'s `'lifePathRequired'`; `startShift`'s unrelated `'restFirst'` stamina gate is
 incidentally co-tested with the config-pin case above), [multi-system-journeys](multi-system-journeys.md)
 (the lease-vs-presence-lease disambiguation; the reload-persistence UI journey).
+
+## Changelog — S5 balance pass
+| Date | Change |
+|---|---|
+| 2026-10-20 | S5 `eco21-balance-pass` (JSON 2.1.0): `locations.leaseDays` 7 → 3 (rent = 3 × the daily rent, deposit 25 % of it: Ngo Cho 37 500 coins, Ben Xe 63 750), `mult` becomes a ramp 1.0 → 1.15 (Ngo Cho ×1.019 … Pho Tay ×1.15; the Locations sheet prints `×1.019`, the shift book `×1,019` in vi and `×1.019` in en), `tableSlots` 4/4/5/6/6/7/8/8/8. Proof updated: `packages/engine/test/locations.test.ts` (`'rent prepays the configured lease days …'`; `'early switch and departure forfeit old deposit and rent; expiry at the exact boundary refunds instead'` now adds `seasonEarned` and the rolled results, because three short leases stay inside the 21-day ranking window), `apps/server/test/store.test.ts` (`'a paid lease survives SQLite restart; offline expiry refunds the stored deposit once without earning credit'`), `apps/server/test/shift-location.test.ts` (`ngo_cho` ×1.019), `apps/web/test/locations.spec.ts` (37 500 / 7 500 / 63 750 and `×1,019` / `×1.019`). |

@@ -311,3 +311,8 @@ freshness-formula effect), [table-lifecycle](table-lifecycle.md) (the table stat
 | Date | Change |
 |---|---|
 | 2026-10-20 | S4 `eco21-table-chair-upgrades`: ladder prices (n = tables that reached the level), life-path gates instead of the Ket Noi badge, `upgradeChair`, the two events, the table-card UI and the tests above cited. |
+
+## S5 balance pass (JSON 2.1.0) — 2026-10-20
+| Date | Change |
+|---|---|
+| 2026-10-20 | S5 `eco21-balance-pass`: the sealed prices of the whole package — table 2…8 `tablePriceBase` 600 · 2 000 · 4 000 · 7 500 · 12 500 · 20 000 · 31 300, chair 2 `chairPriceBase` 10 000 … 70 000, devices Lv2–5 (keg 2 000 · 8 000 · 16 000 · 60 000, washer 1 500 · 6 500 · 12 000 · 40 000, cooler 1 250 · 4 750 · 9 000 · 30 000, stall 500 · 3 250 · 6 000 · 24 000, kitchen Lv1–4 4 750 · 20 000 · 32 000 · 80 000; base, ×2.5 on screen), the S4 ladders unchanged. Pinned by `packages/engine/test/sealed-economy.test.ts` (engine tier; `npm run sim:career:gate` / `node --import tsx packages/engine/sim/balance-gates.ts` are the proof that the set works). UI tier: `apps/web/test/next-goal.spec.ts` (table 3 is `Mua bàn · 5.000 xu`, table 4 `10.000`), `apps/web/test/first-shift-visual.spec.ts`, `apps/web/test/buy-reasons.spec.ts` (wallet 1 750), `apps/web/test/table-upgrades.spec.ts` (its fixture sets `nextGoal.reachMult` so the chip follows the lane order, because the stall's second level is now within an average shift). |

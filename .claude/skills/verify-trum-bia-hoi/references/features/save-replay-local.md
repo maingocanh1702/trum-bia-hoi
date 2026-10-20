@@ -94,8 +94,8 @@
   append only new history and publish the latest committed frontier'`, `'an aborted write or
   replacement keeps the old archive and retry preserves every command'`, `'two loaded revisions
   cannot overwrite each other and damaged chunks fail closed'`, `'unavailable storage never boots a
-  fresh playable game over the old save'`, `'a real three-day career larger than localStorage
-  survives IndexedDB close and reopen exactly'`, plus a templated test (line 115) looping over
+  fresh playable game over the old save'`, `'a real five-day career larger than localStorage
+  survives IndexedDB close and reopen exactly'` (S5: it was three days; with the JSON 2.1.0 economy three days make 3.2 MiB, so `fixtures/browser-career-save.ts` runs five days, 6.6 MiB and 40 shifts), plus a templated test (line 115) looping over
   `['missing chunk','invalid revision','invalid frontier','invalid command','invalid event','invalid
   metadata']`, each expanding to `` `<damage> exposes recovery and preserves raw rows before
   importing the legacy archive` ``.
@@ -248,3 +248,8 @@ session resumes through.
 | Date | Change |
 |---|---|
 | 2026-10-20 | S4 (JSON 2.0.23): `SEAT_KEYS_ADDED_LATER` gains a `since: 2.0.23` row with a `restore` list; `seatShape()` shapes a seat snapshot labelled before 2.0.23 that carries neither `upgrades.table.tableUpgrade` nor `chairUpgrade` with the seed minus those keys and their Tier A entries PLUS `upgrades.backrest` (copied from the frozen 2.0.4 file: the key the ladders replaced); half-way shapes are refused (`packages/engine/test/table-chair-upgrades.test.ts` `snapshots from before the keys load, bytes kept, and refuse every half-way shape; the new keys never loosen an older shape`, 10 refused shapes). A rules-28 history recorded on 2.0.22 by the S3 engine (`packages/engine/test/fixtures/seat-2.0.22-v28.json`, generator `fixtures/seat-v28-2022.ts`: four pairs, three table levels, 50 orders, 70 serves) replays to the recorded world hash and re-encodes byte for byte (`a rules-28 history recorded on JSON 2.0.22 replays byte for byte and re-encodes unchanged: ...`); a pinned 2.0.22 save adopts the bundle at its next opening and its tables keep their levels (`a pinned 2.0.22 save adopts the new bundle at its next opening: ...`); `replay()` refuses an `upgradeChair` entry below rules 28 (`upgradeChair is a rules-28 command: ...`); the browser case is `apps/web/test/config-pinning.spec.ts` `a browser save pinned to JSON 2.0.22 keeps its old table cards, then adopts the bundled seed once when its next shift opens and its levels give their perks`. |
+
+## Changelog — S5 balance pass
+| Date | Change |
+|---|---|
+| 2026-10-20 | S5 `eco21-balance-pass` (JSON 2.1.0): `SEAT_KEYS_ADDED_LATER` gains a `since: 2.1.0` row for `shift.noCooldownFirstShifts` (no `restore` list: a pin before 2.1.0 simply has no key, so the first-shifts allowance is off for it and its history replays byte for byte); the rules-28 history recorded on 2.0.23 by the S4 engine is a fixture (`packages/engine/test/fixtures/seat-2.0.23-v28.json`) replayed by `no-cooldown.test.ts`. `apps/web/test/browser-save.spec.ts` runs a five-day career (title changed). |
