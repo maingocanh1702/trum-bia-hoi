@@ -48,7 +48,7 @@ Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **2 việc nh�
 10. Mục đích v1.0 = **vui khi tự chơi 3 ca**; ca = bận đầu (giữ 1 chạm giao mâm); 3 ca đầu không cooldown; HUD "mục tiêu kế tiếp" + sheet 3 làn; nút nhanh không pause.
 11. **Mô hình bàn ghế v3.3**: 1 bàn 1 ghế → bàn 2–4 (kèm ghế) → ghế 2 từng bàn (chỉ sau đủ 4 bàn; ghế 2 = đón cặp + mâm bia và mồi) → cấp bàn (Lv2 đợt thêm · Lv3 mồi 2 · Lv4 tip ×1,25). Cặp độc lập với quán; từ chối tại cửa không phạt; hàng đợi 1 + ghế/8. Số chỗ bàn theo mặt bằng.
 12. **k gate D4(a)**: đo trên đơn chuẩn; k quan sát được vượt 3,5.
-13. **Full story = 168 ca** (3 tuần × 8 ca), LP nén (LP7 = màn kết: 2 tr base theo lời owner, **2,24 tr** trong JSON 2.1.0), **M6 mở lại** vào hồi 3, trần ngày 400 k base (JSON 2.1.0 chốt 350 k), hợp đồng mặt bằng 3 ngày (JSON 2.1.0 chốt 2 ngày), `tableSlots` (JSON 2.1.0: 8 từ quán đầu). Cooldown 30 phút và trần ca 8/6/5 giữ.
+13. **Full story = 168 ca** (3 tuần × 8 ca), LP nén (LP7 = màn kết: 2 tr base), **M6 mở lại** vào hồi 3, trần ngày 400 k base, hợp đồng mặt bằng 3 ngày, `tableSlots` (JSON 2.1.0 giữ đúng các số owner này; riêng `tableSlots` 8 từ quán đầu là quyết định owner thứ hai của S5, BLOCKERS `04 · tableSlots`). Cooldown 30 phút và trần ca 8/6/5 giữ.
 14. **Mùa 21 ngày**, bảng xếp hạng theo mùa; mỗi mùa mới thêm một lớp gameplay.
 15. Số kinh tế đi kèm đã **chốt trong JSON 2.1.0 / rules 28** (S5 `eco21-balance-pass`, 20/10/2026): bộ ứng viên W9 được sim cân bằng lại — đo bằng bot của plan (bàn/ghế trước, thuê thẳng, không chó, bắt đầu 09/09), 21/22 hàng cổng đạt trên seed 42 và 99; hàng "kết ca 1 mua nổi bàn 2 ở mọi lượt" (P0) đỏ với mọi đòn bẩy plan nêu tên nên PR ghi `[NEEDS OWNER DECISION]`; số và bảng cổng ở 08-SPEC changelog 2026-10-21 / JSON 2.1.0. Chưa có playtest người thật.
 16. **Thứ tự ưu tiên trải nghiệm:** (1) onboarding nhìn-là-hiểu (F27 luật #5 đè: step guide chỉ là dự phòng) → (2) mua sắm lần lượt → (3) economy. Slice `fun-onboarding-visual` đứng đầu Đợt 1.
@@ -57,7 +57,8 @@ Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **2 việc nh�
 
 | # | Việc | Default đang dùng | Cần khi |
 |---|---|---|---|
-| 0 | **D24 trần ngày 400 k base, D25 hàng đợi 1 + ghế/8** — owner chưa bác | dùng default; đã chốt trong JSON 2.1.0 (S5): hàng đợi 1 + ghế/8 giữ, trần ngày hạ xuống **350 k base** bởi sim cân bằng (08-SPEC changelog 2026-10-21) | playtest người thật |
+| 0 | **D24 trần ngày 400 k base, D25 hàng đợi 1 + ghế/8** — owner chưa bác | dùng default; đã chốt trong JSON 2.1.0 (S5): trần ngày **400 k base** như owner (review vòng 1 từng hạ xuống 350 k mà không cổng nào cần, vòng 2 trả lại), hàng đợi 1 + ghế/8 giữ | playtest người thật |
+| 0b | **Hai quyết định owner của S5:** (1) P0 — kết ca 1 mua nổi bàn 2 (hàng ví ca 1 đỏ; đòn rẻ nhất là D19 `maxMult` ≈ 2 hoặc giá bàn 2 ≈ 1.100 xu), (2) `tableSlots` 8 ở mọi mặt bằng (đảo D13 "hẻm đầu = 4 bàn") | dùng bộ đã commit (hàng P0 đỏ, 8 chỗ); mọi lựa chọn và bảng ở BLOCKERS `04 · P0` và `04 · tableSlots` | trước khi S6 vẽ sân (số chỗ) và trước playtest 3 ca |
 | 1 | **Content bank** (câu hỏi kiểm tra · quest pool · lời thoại khách) + **tính năng kiểm tra** | ⏸ pending theo bạn; `docs/content/` là đề xuất; `risk.inspection.enabled=false` | M5–M6 |
 | 2 | **Cổng nhận donate tự động (nếu muốn) · mức age gate** | QR chuyển khoản + admin xác nhận tay; age gate là config | M7 |
 | 3 | **Nguồn lịch/tỉ số Cúp Bóng Đá** | Admin nhập tay (tier C); API thật = adapter + flag | M8 |

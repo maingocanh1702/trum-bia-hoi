@@ -231,7 +231,7 @@ Mỗi loại ép một quyết định: VIP/vội = tốc độ, bàn lai rai = 
 
 - Thể lực **12 phút/ca**; hồi 0.4×realtime (~30 phút, **chỉ đếm khi active**); phải đầy 100% mới mở ca.
 - Cooldown tính **từ khi khách về hết**. Anti-idle: pause khi không theo dõi tab.
-- Trần **8/6/5 ca/ngày** (newbie/regular/veteran); **hard cap doanh thu = 875.000 xu/ngày** (= 350k ×k, JSON 2.1.0; trước đó 500.000 = 200k ×k). Sau cap: vẫn phục vụ nhưng `appliedCoin=0`. ✅ **Đo live (gốc): với veteran, SỐ CA (5) thường ràng buộc TRƯỚC trần tiền** (5 ca ≈ 145k < 200k) → trần tiền chỉ chặn top-throughput.
+- Trần **8/6/5 ca/ngày** (newbie/regular/veteran); **hard cap doanh thu = 1.000.000 xu/ngày** (= 400k ×k, D24, JSON 2.1.0; trước đó 500.000 = 200k ×k). Sau cap: vẫn phục vụ nhưng `appliedCoin=0`. ✅ **Đo live (gốc): với veteran, SỐ CA (5) thường ràng buộc TRƯỚC trần tiền** (5 ca ≈ 145k < 200k) → trần tiền chỉ chặn top-throughput.
 - ✅ **Rollover ngày (server-side, giờ VN) — phải xử rõ:** trần (ca + tiền) + nhiệm vụ + điểm danh reset theo **ngày lịch VN tại nửa đêm thực** (KHÔNG theo lúc mở ca; client chỉ mirror, chống chỉnh đồng hồ). **Ca vắt qua 00:00:** tiền tính per-earn theo bucket ngày tại lúc earn (chia tại 00:00); **cap 200k per-day độc lập** → 1 ca liên tục có thể góp cả 2 cap; **số ca credit lúc finalize → vào ngày đóng ca** (ca đóng sau 00:00 = ca #1 ngày mới) → "refund" 1 suất ca + cap mới quanh nửa đêm. → **Bài học: chốt rõ đơn vị attribution (per-earn vs per-shift) + xử edge nửa đêm, kẻo lỗ hổng double-cap.**
 - **Tỉnh Táo ×1.1** (10 phút sau nghỉ >6h). *(gốc: well-rested)*
 - Đóng ca = "closing" grace (khách đang uống ở lại; bàn lai rai kéo dài; `kick-all` đóng ngay). ✅ **Credit "hoàn thành ca" (nhiệm vụ 3 ca + mở ca kế) chỉ tick khi ĐÓNG HẲN** (closing→closed, màn tổng kết hiện), KHÔNG phải lúc hết giờ → khách ngồi lỳ (enjoy ×10) trì hoãn cả credit → "Mời về" để đóng ngay.
@@ -240,7 +240,7 @@ Mỗi loại ép một quyết định: VIP/vội = tốc độ, bàn lai rai = 
 
 ## 11. Hai hệ tiến trình + Vụ Bia (meta, Lớp 5)
 
-> 🟢 **Owner 18/09 — nén cho game 3 tuần:** Đường Lên Trùm LP1–7 `lifetimeBase` 8 k · 20 k · 80 k · 280 k · 680 k · 1,2 tr · 2 tr (thay 50 k … 50 tr; JSON 2.1.0 chốt LP7 = 2,24 tr, 08-SPEC changelog 2026-10-21); LP7 = **màn kết** ("Chuyện quán bạn" + huy hiệu Trùm); LP1 `requires` "4 seats" ↔ 4 bàn 1 ghế, không gate bàn 2–4 bằng LP. Giải Nhậu 8 bậc = cùng thang. **Vụ Bia = mùa 21 ngày**, bảng xếp hạng theo mùa; mùa 1 = story, mỗi mùa sau thêm một lớp gameplay (M6 → M8 → …). Chi tiết `docs/DESIGN-story-3-tuan-2026-09-18.md`.
+> 🟢 **Owner 18/09 — nén cho game 3 tuần:** Đường Lên Trùm LP1–7 `lifetimeBase` 8 k · 20 k · 80 k · 280 k · 680 k · 1,2 tr · 2 tr (thay 50 k … 50 tr; JSON 2.1.0 giữ đúng thang này); LP7 = **màn kết** ("Chuyện quán bạn" + huy hiệu Trùm); LP1 `requires` "4 seats" ↔ 4 bàn 1 ghế, không gate bàn 2–4 bằng LP. Giải Nhậu 8 bậc = cùng thang. **Vụ Bia = mùa 21 ngày**, bảng xếp hạng theo mùa; mùa 1 = story, mỗi mùa sau thêm một lớp gameplay (M6 → M8 → …). Chi tiết `docs/DESIGN-story-3-tuan-2026-09-18.md`.
 
 > **Bảng đổi tên (cascade từ `item-list-upgrade-levels.md` v1.4):** League → **Giải Nhậu**, Season → **Vụ Bia**, Life Path → **Đường Lên Trùm**, Đền Thiêng → **Bàn Thờ Ông Địa**. Chi tiết bảng tên bậc/mốc: xem `docs/item-list-upgrade-levels.md` §15.
 
@@ -269,9 +269,9 @@ Mỗi loại ép một quyết định: VIP/vội = tốc độ, bàn lai rai = 
 
 ## 12. Mặt bằng (multiplier + rent + cọc)
 
-> 🟢 **Owner 18/09:** mỗi mặt bằng có **số chỗ đặt bàn** `tableSlots` (4 · 4 · 5 · 6 · 6 · 7 · 8 · 8 · 8) — đổi mặt bằng là bước tiến thật, không chỉ hệ số nhân; hợp đồng `leaseDays` 7 → **3**; được thuê thẳng mặt bằng cao hơn khi đủ LP; bàn vượt chỗ ở mặt bằng nhỏ hơn tạm gấp lại. *(JSON 2.1.0, số chốt của sim cân bằng: `tableSlots` 8 ở mọi mặt bằng, `leaseDays` **2**, mult 1,0 → 1,1 — 08-SPEC §12 và changelog 2026-10-21; câu hỏi cho owner về `mult` ở DECISIONS.)*
+> 🟢 **Owner 18/09:** mỗi mặt bằng có **số chỗ đặt bàn** `tableSlots` (4 · 4 · 5 · 6 · 6 · 7 · 8 · 8 · 8) — đổi mặt bằng là bước tiến thật, không chỉ hệ số nhân; hợp đồng `leaseDays` 7 → **3**; được thuê thẳng mặt bằng cao hơn khi đủ LP; bàn vượt chỗ ở mặt bằng nhỏ hơn tạm gấp lại. *(JSON 2.1.0: `leaseDays` 3 như owner; **`tableSlots` 8 ở mọi mặt bằng là quyết định owner thứ hai của S5** (đảo D13; BLOCKERS `04 · tableSlots`); mult 1,0 → 1,1 — 08-SPEC §12 và changelog 2026-10-21; câu hỏi cho owner về `mult` ở DECISIONS.)*
 
-9 vị trí vỉa hè, multiplier ×1.0→×1.8, rent/ngày `Dn(e)=round(700·(e/5)·(1+e/50)) ×k` *(JSON 2.1.0: multiplier ×1.0→×1.1 và rent/ngày theo bảng 08-SPEC §12, 0,3 × công thức này)*. Trả trước cả kỳ (**7 ngày**; JSON 2.1.0: **2 ngày**) + **cọc 25% (hoàn lại)**; rời sớm mất cọc + về Hẻm Nhỏ. Gate theo Đường Lên Trùm.
+9 vị trí vỉa hè, multiplier ×1.0→×1.8, rent/ngày `Dn(e)=round(700·(e/5)·(1+e/50)) ×k` *(JSON 2.1.0: multiplier ×1.0→×1.1 và rent/ngày theo bảng 08-SPEC §12, 0,3 × công thức này)*. Trả trước cả kỳ (**7 ngày**; JSON 2.1.0: **3 ngày**) + **cọc 25% (hoàn lại)**; rời sớm mất cọc + về Hẻm Nhỏ. Gate theo Đường Lên Trùm.
 - Hẻm Nhỏ (start) → … → **Gần Sân Vận Động** (vị trí hot mới, ăn theo World Cup) → Phố Cổ (LP4) → Ga Metro (LP5) → Khu Phố Tây (LP6).
 
 ---
