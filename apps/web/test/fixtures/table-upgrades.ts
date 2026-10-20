@@ -11,6 +11,27 @@ if (process.argv[2] === 'inspect') {
   const g = decodeSave(JSON.parse(readFileSync(0, 'utf8')).save);
   process.stdout.write(JSON.stringify({ coins: g.world.coins, lifePath: g.world.lifePath, tables: g.world.tables.map(t => ({ seats: t.capacity, level: t.level, chairLevel: t.chairLevel ?? 1 })),
     events: g.world.events.filter(e => e.type === 'table_upgraded' || e.type === 'chair_upgraded').map(e => ({ type: e.type, ...e.data })) }));
+} else if (process.argv[2] === 'bar') {
+  // The patience bar of a table with level-3 chairs (order patience x1.30): the order's own deadline is 30 % longer than the guest's patience, the tip window is not.
+  // Two saves of the same shift, with table 1's first order at 30 % and at 46 % of the guest's own patience: the tip window (the first 40 %) closes in between, while
+  // the share of the STRETCHED deadline left is still 1 - 0.46 / 1.3 = 65 % at the second one. Real commands and clock steps, never hand-written JSON.
+  const start = Date.parse('2026-10-20T10:00:00+07:00'), raw = structuredClone(config.raw);
+  raw._meta.version = 'table-upgrade-fixture'; fullHud(raw); raw.onboarding.enabled = false; raw.shift.startingCoinsBase = 100_000;
+  for (const row of raw.upgrades.table.chairUpgrade.levels) row.lifePathGate = 0; // the shipped gates (LP1 / LP2) are earned over days; the bar is the subject here
+  const g = new Game(loadConfig(raw), 42, start), w = g.world;
+  const send = (command: Parameters<Game['command']>[0]['command']) => { const r = g.command({ at: w.now, idempotencyKey: `bar-${g.log.length}`, command }); if (!r.ok) throw Error(`fixture:${command.type}:${r.reason}`); };
+  while (w.tables.length < 4) send({ type: 'buyTable' });
+  for (const table of w.tables) send({ type: 'buyChair', tableId: table.id });
+  send({ type: 'upgradeChair', tableId: w.tables[0].id }); send({ type: 'upgradeChair', tableId: w.tables[0].id });
+  send({ type: 'startShift' });
+  for (let i = 0; i < 4000 && !w.tables[0].order; i++) g.advance(w.now + 100);
+  const table = w.tables[0], order = table.order;
+  if (!order || !table.group || table.chairLevel !== 3 || table.group.chairLevel !== 3) throw Error('fixture:no-order-at-the-chair-lv3-table');
+  const own = Math.min(...table.group.customers.map(x => x.patienceMs));
+  if (order.patienceMs !== Math.round(own * 1.3)) throw Error(`fixture:order-patience ${order.patienceMs} of ${own}`);
+  const at = (share: number) => { g.advance(order.placedAt + Math.round(own * share)); if (order.state !== 'pending') throw Error('fixture:order-not-pending'); return { save: encodeSave(g), now: w.now, elapsedMs: w.now - order.placedAt }; };
+  const early = at(0.3), late = at(0.46);
+  process.stdout.write(JSON.stringify({ early, late, ownMs: own, orderMs: order.patienceMs, threshold: config.values.tip.patienceThreshold }));
 } else {
   const start = Date.parse('2026-10-20T10:00:00+07:00'), TARGET = 55_000; // coins left once the shift is over: Lv2 + two chair levels fit (45 000), the next level (27 500) does not
   const build = (startingCoinsBase: number) => {

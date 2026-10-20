@@ -78,13 +78,13 @@ for (const viewport of viewports) test(`a table at Lv3 says it needs the badge, 
   expect((await axe(page)).violations).toEqual([]); await tbh.shot(`br-rich-${viewport.width}.png`); expect(errors).toEqual([]);
 });
 
-for (const viewport of viewports) test(`a table at its top level says "Đã tối đa" and nothing else, with guests or without, at ${viewport.width}px`, async ({ page, tbh }) => {
+for (const viewport of viewports) test(`a table at its top level says "Bàn đã tối đa" and nothing else, with guests or without, at ${viewport.width}px`, async ({ page, tbh }) => {
   await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   const f = fixture('maxed'); expect(f.tables).toEqual([{ level: 4, state: 'seating' }, { level: 4, state: 'empty' }]);
   await load(page, f.save, f.now, false);
   const sheet = await openUpgrades(page);
   // The engine would answer tableBusy for table 1 and maxLevel for table 2; nothing is left to buy at either, so the button's own label is the one reason (PLAN §4: "đã tối đa").
-  for (const n of [1, 2]) { const card = tableCard(sheet, n); await expect(card.getByRole('button')).toBeDisabled(); await expect(card.getByRole('button')).toHaveText('Đã tối đa'); await expect(card.locator('.buy-reason')).toHaveCount(0); }
+  for (const n of [1, 2]) { const card = tableCard(sheet, n); await expect(card.getByRole('button')).toBeDisabled(); await expect(card.getByRole('button')).toHaveText('Bàn đã tối đa'); await expect(card.locator('.buy-reason')).toHaveCount(0); }
   expect((await axe(page)).violations).toEqual([]); await tbh.shot(`br-maxed-${viewport.width}.png`); expect(errors).toEqual([]);
 });
 
@@ -134,7 +134,7 @@ for (const viewport of viewports) test(`with four tables a chair is for sale and
   expect((await axe(page)).violations).toEqual([]); await tbh.shot(`br-seat-rich-${viewport.width}.png`); expect(errors).toEqual([]);
 });
 
-for (const viewport of viewports) test(`a pair at its top level says "Đã tối đa" and nothing else, with guests or without, at ${viewport.width}px`, async ({ page, tbh }) => {
+for (const viewport of viewports) test(`a pair at its top level says "Bàn đã tối đa" and nothing else, with guests or without, at ${viewport.width}px`, async ({ page, tbh }) => {
   await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   const f = fixture('seat-maxed'); expect(f.tables.slice(0, 2)).toEqual([{ level: 4, state: 'seating', seats: 2 }, { level: 4, state: 'empty', seats: 2 }]);
   await load(page, f.save, f.now, false);
@@ -142,11 +142,29 @@ for (const viewport of viewports) test(`a pair at its top level says "Đã tối
   // A pair has no chair to sell and nothing left to level: the level button's own label is the one reason, whether guests sit there or not. The chairs
   // (S4) are a purchase of their own and keep their price and their one reason (Duong Len Trum LP1 is not reached in this fixture).
   for (const n of [1, 2]) {
-    const card = tableCard(sheet, n), top = card.getByRole('button', { name: 'Đã tối đa', exact: true }), comfort = card.getByRole('button', { name: /^Nâng ghế · [\d.]+ xu$/ });
+    const card = tableCard(sheet, n), top = card.getByRole('button', { name: 'Bàn đã tối đa', exact: true }), comfort = card.getByRole('button', { name: /^Nâng ghế · [\d.]+ xu$/ });
     await expect(card.getByRole('button')).toHaveCount(2); await expect(top).toHaveCount(1); await expect(top).toBeDisabled(); await expect(top).not.toHaveAttribute('aria-describedby');
     await expect(comfort).toBeDisabled(); await expect(comfort).toHaveAccessibleDescription('Cần đạt Phụ Quán'); await expect(card.locator('.buy-reason')).toHaveCount(1);
   }
   expect((await axe(page)).violations).toEqual([]); await tbh.shot(`br-seat-maxed-${viewport.width}.png`); expect(errors).toEqual([]);
+});
+
+// A table maxed on both ladders has two "max" buttons: each names its own ladder, and the perks of a Lv4 table are short chips, not one 12-word line.
+const words = (text: string) => text.replace(/·/g, ' ').trim().split(/\s+/).filter(Boolean).length;
+for (const viewport of viewports) test(`a pair maxed on both ladders names which ladder each "max" button is and keeps every label within six words, at ${viewport.width}px`, async ({ page, tbh }) => {
+  await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  const f = fixture('seat-maxed-both'); expect(f.tables.slice(0, 2)).toEqual([{ level: 4, state: 'empty', seats: 2 }, { level: 4, state: 'empty', seats: 2 }]);
+  await load(page, f.save, f.now, false);
+  const sheet = await openUpgrades(page);
+  for (const n of [1, 2]) {
+    const card = tableCard(sheet, n), table = card.getByRole('button', { name: 'Bàn đã tối đa', exact: true }), chairs = card.getByRole('button', { name: 'Ghế đã tối đa', exact: true });
+    await expect(card.getByRole('button')).toHaveCount(2); await expect(table).toHaveCount(1); await expect(chairs).toHaveCount(1); await expect(table).toBeDisabled(); await expect(chairs).toBeDisabled();
+    await expect(card.locator('.buy-reason')).toHaveCount(0); // nothing is left to buy: the label is the one reason
+    await expect(card.locator('.table-perk p')).toHaveText('Cấp 4'); await expect(card.locator('.table-perk li')).toHaveText(['Thêm 1 đợt gọi', 'Mồi thứ 2: 35%', 'Tip ×1,25']);
+    await expect(card.locator('.chair-perk')).toHaveText('Ghế cấp 3 · kiên nhẫn ×1,3');
+    for (const text of await card.locator('h3, p, li, button').allTextContents()) expect(words(text), `"${text}"`).toBeLessThanOrEqual(6);
+  }
+  expect((await axe(page)).violations).toEqual([]); await tbh.shot(`br-seat-maxed-both-${viewport.width}.png`); expect(errors).toEqual([]);
 });
 
 const reasons = [

@@ -87,7 +87,7 @@ test('a browser save pinned to JSON 2.0.22 keeps its old table cards, then adopt
   expect(after.log.slice(0, saved.log.length)).toEqual(saved.log); // the recorded history is kept as it was
   sheet = await openSheet();
   const first = cards(sheet).first(); // the table the old build took to Lv3: it now says what that level gives
-  await expect(first.locator('.table-perk')).toContainText('Cấp 3'); await expect(first.locator('.table-perk')).toContainText('Mồi thứ 2: 35%');
+  await expect(first.locator('.table-perk p')).toHaveText('Cấp 3'); await expect(first.locator('.table-perk li')).toHaveText(['Thêm 1 đợt gọi', 'Mồi thứ 2: 35%']);
   await expect(first.locator('[data-action="chairUpgrade"]')).toHaveCount(1);
   expect(errors).toEqual([]);
 });
