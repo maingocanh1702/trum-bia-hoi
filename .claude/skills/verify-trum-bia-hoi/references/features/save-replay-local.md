@@ -95,7 +95,7 @@
   replacement keeps the old archive and retry preserves every command'`, `'two loaded revisions
   cannot overwrite each other and damaged chunks fail closed'`, `'unavailable storage never boots a
   fresh playable game over the old save'`, `'a real five-day career larger than localStorage
-  survives IndexedDB close and reopen exactly'` (S5: it was three days; with the JSON 2.1.0 economy three days make 3.2 MiB, so `fixtures/browser-career-save.ts` runs five days, 6.6 MiB and 40 shifts), plus a templated test (line 115) looping over
+  survives IndexedDB close and reopen exactly'` (S5: it was three days; with the JSON 2.1.0 economy the plan's bot buys tables 2-8 first and three days make 3.7 MiB, four 5.07, so `fixtures/browser-career-save.ts` runs five days, 8.3 MiB and 40 shifts), plus a templated test (line 115) looping over
   `['missing chunk','invalid revision','invalid frontier','invalid command','invalid event','invalid
   metadata']`, each expanding to `` `<damage> exposes recovery and preserves raw rows before
   importing the legacy archive` ``.
