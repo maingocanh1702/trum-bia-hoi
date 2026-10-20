@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import type { Page } from '@playwright/test';
 import { readSave, waitSaved } from './storage';
 
-// Seat model (rules 28, plan S1): through the DOM only -- tables 2-4, then a second chair once four tables stand,
+// Seat model (rules 28, plan S1): through the DOM only -- tables 2-8 (the first alley holds eight in JSON 2.1.0), a second chair once four tables stand,
 // every button with its price and exactly one reason while dimmed, in vi and en. State is read back through the real engine.
 // S4: a paired table also offers its chair upgrade; Duong Len Trum LP1 gates both levels, so a new shop sees that reason under them (reason.lifePathRequired).
 // The reason under a dimmed button is the `reason.*` line Wave 1's buy buttons read from the engine quotes (merge, stage 00); S1 first showed the
@@ -23,7 +23,7 @@ async function axe(page: Page) {
 }
 
 for (const locale of ['vi', 'en'] as const) for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1280, height: 720 }]) {
-  test(`seat model sells tables 2-4, then a second chair, each with its price and one reason (${locale}) at ${viewport.width}×${viewport.height}`, async ({ page, tbh }) => {
+  test(`seat model sells tables 2-8, a second chair once four tables stand, each with its price and one reason (${locale}) at ${viewport.width}×${viewport.height}`, async ({ page, tbh }) => {
     const copy = JSON.parse(readFileSync(`apps/web/src/i18n/${locale}.json`, 'utf8')) as Record<string, string>;
     const t = (key: string, params: Record<string, string | number> = {}) => copy[key].replace(/\{(\w+)\}/g, (_, name: string) => String(params[name]));
     const xu = (n: number) => new Intl.NumberFormat(locale === 'vi' ? 'vi-VN' : 'en-US').format(n);
@@ -48,6 +48,7 @@ for (const locale of ['vi', 'en'] as const) for (const viewport of [{ width: 390
     for (const [i, price] of (f.tablePrices as number[]).entries()) {
       const buy = sheet.getByRole('button', { name: t('upgrade.buyTable', { cost: xu(price) }), exact: true });
       await expect(buy).toBeEnabled(); await buy.click(); await expect(cards).toHaveCount(i + 2);
+      if (i < 2) await expect(chair).toBeDisabled(); else if (i === 2) await expect(chair).toBeEnabled(); // the chair opens with the fourth table, not with a full alley
     }
     await expect(sheet.getByRole('button', { name: t('upgrade.addTable'), exact: true })).toBeDisabled();
     await expect(sheet.getByText(t('reason.maxTables'), { exact: true })).toBeVisible();
@@ -69,10 +70,10 @@ for (const locale of ['vi', 'en'] as const) for (const viewport of [{ width: 390
     await tbh.shot(`seat-model-${locale}-${viewport.width}.png`);
     await page.keyboard.press('Escape'); await waitSaved(page);
     const state = inspect(await readSave(page));
-    expect(state.tables).toEqual([{ seats: 2, level: 1 }, { seats: 1, level: 1 }, { seats: 1, level: 1 }, { seats: 1, level: 1 }]);
+    expect(state.tables).toEqual([{ seats: 2, level: 1 }, ...Array(f.tablePrices.length).fill({ seats: 1, level: 1 })]);
     expect(state.events).toEqual([...f.tablePrices.map((cost: number) => ({ type: 'table_bought', cost })), { type: 'chair_bought', cost: f.chairPrice }]);
     expect(state.coins).toBe(f.coins - f.tablePrices.reduce((a: number, b: number) => a + b, 0) - f.chairPrice);
-    await page.reload(); await expect(page.locator('.seat')).toHaveCount(5);
+    await page.reload(); await expect(page.locator('.seat')).toHaveCount(f.tablePrices.length + 2); // a chair per table and the second chair of table 1
     expect(tbh.consoleErrors()).toEqual([]);
   });
 }
