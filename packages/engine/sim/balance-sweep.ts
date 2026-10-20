@@ -42,11 +42,31 @@ function pooled<T>(tasks: (() => Promise<T>)[], pool: number): Promise<T[]> {
   const worker = async () => { while (next < tasks.length) { const i = next++; results[i] = await tasks[i](); } };
   return Promise.all(Array.from({ length: Math.min(pool, tasks.length) }, worker)).then(() => results);
 }
+/**
+ * A sanity rule for the ladders a sweep may produce: a rung is never cheaper than the rung before it (tables 2-8, second chairs 1-8, each device's levels, the three table levels,
+ * the rent and the multiplier along the list of places). A coordinate descent that is allowed to move one rung at a time finds non-monotone ladders (the first extra chair dearer than
+ * the second) that score well against a bot and read as a bug to a human; such a candidate is recorded as invalid and never run. Returns what is wrong, or null.
+ */
+export function ladderProblem(raw: typeof bundled.raw): string | null {
+  const rising = (name: string, xs: (number | null)[]) => { const v = xs.filter((x): x is number => typeof x === 'number'); for (let i = 1; i < v.length; i++) if (v[i] < v[i - 1]) return `${name}: rung ${i + 1} (${v[i]}) is cheaper than rung ${i} (${v[i - 1]})`; return null; };
+  const t = raw.upgrades.table;
+  const problems = [rising('tablePriceBase', t.tablePriceBase), rising('chairPriceBase', t.chairPriceBase), rising('tableUpgrade levels', t.tableUpgrade.levels.map(l => l.priceBase)),
+    ...(['keg', 'washer', 'cooler', 'stall', 'kitchen'] as const).map(kind => rising(`${kind}.priceBase`, raw.upgrades[kind].priceBase)),
+    rising('rentPerDayBase', raw.locations.list.map(l => l.rentPerDayBase)), rising('location mult', raw.locations.list.map(l => l.mult))];
+  return problems.find(x => x !== null) ?? null;
+}
 export interface Evaluated { hash: string; patch: Patch; failing: string[]; score: { fails: number; violation: number }; rows: ReturnType<typeof mergeJobs>['rows']; careers: ReturnType<typeof mergeJobs>['careers']; standard: ReturnType<typeof mergeJobs>['standard']; shift1: ReturnType<typeof mergeJobs>['shift1'] }
 
 export async function evaluateAll(patches: Patch[], dir: string, options: JobOptions, pool: number, label = ''): Promise<Evaluated[]> {
   mkdirSync(join(dir, 'runs'), { recursive: true }); mkdirSync(join(dir, 'patches'), { recursive: true }); mkdirSync(join(dir, 'jobcache'), { recursive: true });
   const unique = new Map<string, Patch>(); for (const p of patches) unique.set(hashOf(p), p);
+  // A ladder that is not monotone is an invalid candidate, written down and never run.
+  for (const [hash, patch] of unique) {
+    if (existsSync(join(dir, 'runs', `${hash}.json`))) continue;
+    let problem: string | null = null;
+    try { problem = ladderProblem(applyPatch(bundled.raw, patch)); } catch { problem = null; } // a patch the config refuses is reported by the job itself
+    if (problem) writeFileSync(join(dir, 'runs', `${hash}.json`), JSON.stringify({ hash, patch, failing: ['invalid'], score: { fails: 9999, violation: 9999 }, rows: [], careers: {}, error: `ladder: ${problem}`, label, days: options.days, seeds: options.standardSeeds, ms: 0 }, null, 1));
+  }
   const todo = [...unique].filter(([hash]) => !existsSync(join(dir, 'runs', `${hash}.json`)));
   const seedJobs = options.standardSeeds.map(s => `career:${s}`);
   const names = [...seedJobs, 'standard', ...(options.shift1Seeds > 0 ? ['shift1'] : [])];
@@ -90,7 +110,10 @@ const matches = (r: { id: string }, ids: string[]) => ids.some(id => r.id === id
 const scoped = (e: Evaluated, j: Judge) => e.failing[0] === 'invalid' ? e.score : score(e.rows.filter(r => (!j.only || matches(r, j.only)) && !matches(r, j.knownRed)));
 /** The share of the shift-1 probes that end below table 2's price (the worse of the two service models): what `--p0-floor` must not make worse than the base. */
 const p0Share = (e: Evaluated) => e.shift1 ? Math.max(e.shift1.below, e.shift1.belowSlow) / e.shift1.seeds : 0;
+/** A candidate whose ladders are not monotone is never a best, whether it was run before (a cached run of an earlier sweep) or not. */
+const sane = (e: Evaluated) => { try { return ladderProblem(applyPatch(bundled.raw, e.patch)) === null; } catch { return false; } };
 const better = (a: Evaluated, b: Evaluated, j: Judge) => {
+  if (a.failing[0] !== 'invalid' && !sane(a)) return false;
   if (a.failing[0] !== 'invalid' && j.p0Floor !== null && p0Share(a) > j.p0Floor + 1e-9) return false; // never buy a row with P0: shift 1 may not get worse than the base
   const x = scoped(a, j), y = scoped(b, j); return x.fails < y.fails || x.fails === y.fails && x.violation < y.violation - 1e-9;
 };
@@ -122,7 +145,7 @@ if (process.argv[1] && resolve(process.argv[1]) === here) {
       let best = current;
       for (const [i, v] of coordinate.values.entries()) {
         const e = byHash.get(hashOf(candidates[i]))!;
-        log(`  pass ${pass} ${coordinate.name} = ${v.label}: fails ${scoped(e, judge).fails}, violation ${scoped(e, judge).violation.toFixed(3)} [${e.failing.join(', ')}]${judge.p0Floor !== null && p0Share(e) > judge.p0Floor + 1e-9 ? ' (shift 1 worse: rejected)' : ''}`);
+        log(`  pass ${pass} ${coordinate.name} = ${v.label}: fails ${scoped(e, judge).fails}, violation ${scoped(e, judge).violation.toFixed(3)} [${e.failing.join(', ')}]${judge.p0Floor !== null && p0Share(e) > judge.p0Floor + 1e-9 ? ' (shift 1 worse: rejected)' : ''}${e.failing[0] !== 'invalid' && !sane(e) ? ' (ladder not monotone: rejected)' : ''}`);
         if (better(e, best, judge)) best = e;
       }
       if (best.hash !== current.hash) { current = best; improved = true; log(`> pass ${pass} ${coordinate.name}: NEW BEST ${current.hash} fails ${scoped(current, judge).fails}, violation ${scoped(current, judge).violation.toFixed(3)}`); }
