@@ -20,7 +20,8 @@ async function gis(page:Page,subject='economy') {
 }
 async function login(page:Page,subject='economy',navigate=true){
  await gis(page,subject);if(navigate)await page.goto('/admin');await page.getByRole('button',{name:'Tiếp tục với Google'}).click();await page.getByRole('button',{name:'Test Google'}).click();
- if(subject.startsWith('super')){await expect(page.getByLabel('Mã xác thực 6 số')).toBeVisible();const code=(await (await page.request.get('/api/__test/otp?subject='+subject)).json()).code;await page.getByLabel('Mã xác thực 6 số').fill(code);await page.getByRole('button',{name:'Xác thực',exact:true}).click();}
+ // A `super*` subject is checked with a TOTP step that must be newer than its last one (admin-auth.ts factor(): step <= last_step is a replay) and /__test/otp answers the step of the isolated clock: a second login of the same subject inside one 30 s step is refused. Move the isolated clock one step first; the production check is not touched.
+ if(subject.startsWith('super')){await expect(page.getByLabel('Mã xác thực 6 số')).toBeVisible();await page.request.get('/api/__test/advance?ms=30000');const code=(await (await page.request.get('/api/__test/otp?subject='+subject)).json()).code;await page.getByLabel('Mã xác thực 6 số').fill(code);await page.getByRole('button',{name:'Xác thực',exact:true}).click();}
  await expect(page.getByRole('button',{name:'Đăng xuất'})).toBeVisible();await expect(page.getByRole('button',{name:'Làm mới',exact:true})).toBeEnabled();
 }
 async function edit(page:Page,path='menu.bia.price',reason='Browser measured adjustment'){
