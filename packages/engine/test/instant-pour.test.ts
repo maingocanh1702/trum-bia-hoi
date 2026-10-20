@@ -126,7 +126,7 @@ function play(g: Game, ms: number, { restockFrom = 0, seen }: { restockFrom?: nu
   return JSON.stringify(w);
 }
 
-test('pourMs and pourSlots are never read on the serving path of a seat-model game, and still drive a capacity pin', () => {
+test('pourMs and pourSlots are never read on the serving path of a seat-model game while the keg refill is on, and still drive a capacity pin', () => {
   const absurd = (raw: Seed | Capacity) => { raw.upgrades.keg.pourSlots = [1, 1, 1, 1, 1]; raw.upgrades.keg.pourMs = [90000, 90000, 90000, 90000, 90000]; };
   const swift = (raw: Seed | Capacity) => { raw.upgrades.keg.pourSlots = [6, 6, 6, 6, 6]; raw.upgrades.keg.pourMs = [1, 1, 1, 1, 1]; };
   const shop = (patch: (raw: Seed) => void) => { const raw = structuredClone(seed); raw.shift.startingCoinsBase = 1000000; sunny(raw); patch(raw); const g = new Game(loadConfig(raw), 42, T0); furnish(g, command => send(g, command)); return g; };
@@ -139,7 +139,23 @@ test('pourMs and pourSlots are never read on the serving path of a seat-model ga
   assert.notEqual(play(pin(absurd), 240000), play(pin(swift), 240000));
 });
 
-test('rules 28 never puts a beer in a pour: no beer item is ever preparing and no tap cause is ever reported, with beer running short', () => {
+test('a seat-model snapshot with the keg refill switched off keeps the tap: the gate needs refillEnabled as well as the seat shape', () => {
+  const raw = structuredClone(seed); sunny(raw); raw.upgrades.keg.refillEnabled = false; // Tier B: an admin proposal may switch the keg's reserve off
+  const g = new Game(loadConfig(raw), 42, T0), w = g.world, keg = g.config.values.upgrades.keg;
+  assert.ok(isSeatModel(g.config.values)); assert.ok(send(g, { type: 'startShift' }).ok);
+  const before = beerStatus(w, g.config);
+  assert.equal(before.instant, false, 'the UI must not promise an instant pour over a tap that still queues'); assert.equal(before.serveNow, before.stored);
+  const { order, event } = untilOrder(g, 1), item = order.items[0];
+  assert.equal(w.beer, undefined, 'no reserve exists without the refill');
+  assert.deepEqual([item.dish, item.state, item.readyAt], ['bia', 'preparing', event.at + keg.pourMs[0]], 'the beer waits for the tap exactly as before rules 28');
+  assert.equal(eventsOf(g, 'beer_poured', 'itemId', item.id).length, 0);
+  g.advance(item.readyAt!);
+  const poured = eventsOf(g, 'beer_poured', 'itemId', item.id);
+  assert.equal(item.state, 'ready'); assert.deepEqual([poured.length, 'fromReserve' in poured[0].data], [1, false], 'a tap pour, not a reserve pour');
+  assert.equal(beerStatus(w, g.config).instant, false); roundTrip(g);
+});
+
+test('rules 28 never puts a beer in a pour while the keg refill is on: no beer item is ever preparing and no tap cause is ever reported, with beer running short', () => {
   const g = pairShop(raw => { raw.patience.thuongMs = 18000; raw.inventory.startingStock.bia = [4, 15]; raw.upgrades.keg.pourMs = [90000, 90000, 90000, 90000, 90000]; }), w = g.world;
   const causes = new Set<PreparationCause>(); let pouring = 0;
   play(g, 300000, { restockFrom: 120000, seen: () => { // no restock for the first two minutes: orders wait for beer and expire, then batches land again
