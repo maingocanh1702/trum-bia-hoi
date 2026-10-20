@@ -175,3 +175,4 @@ save/replay persistence tests for this same ledger — heavy overlap, not a sepa
 | Date | Change |
 |---|---|
 | 2026-10-19 | S1: career purchase log and policy v2 cited; S1 k numbers reported, gate deferred to S5. |
+| 2026-10-20 | S2 `eco21-instant-pour`: the career bot (`npm run sim:career -- --seed=42` / `--seed=99`, 30 days, same tree except S2) serves 26 949 → 27 775 (+3.1 %) / 27 430 → 27 207 (−0.8 %) guests, books +2.4 % / −1.6 % income and ends at k 3.9625 → 3.9413 / 3.9482 → 3.9107; `sim:career:gate`, `sim:onboarding` and `sim:rush` stay red exactly as on S1 (k above the 3.5 soft cap, "insufficient serves" on seed 20260611, "heavy pressure exceeds light and normal"): DEFERRED to S5 (plan §5), nothing was tuned. |

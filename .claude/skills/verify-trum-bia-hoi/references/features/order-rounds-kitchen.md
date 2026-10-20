@@ -43,6 +43,7 @@ station is defined by a batch duration + a batch size; the engine reads
 - Server: no kitchen-specific route — everything rides `POST /player/command`
   (`apps/server/src/http.ts:290`).
 
+- **Rules 28 instant pour (S2):** the beer of a tray is `ready` in the tick the order is placed while `w.beer.ready > 0` and a glass is clean (`beer_pouring` + `beer_poured{fromReserve:true}` + `order_ready` in that tick); the `tap` cause of `orderPreparation` can no longer occur on a seat-model game while the keg refill is on (no beer item is ever `preparing`; with `refillEnabled=false` the tap path and its cause stay), the remaining beer causes are `beerStock`, `beerRefill`, `glasses`. `beerStatus` gains `instant` and `serveNow`. See [keg-refill](keg-refill.md).
 - **Rules 28 seat model (S1):** the tray follows the chairs the group sat down with (`upgrades.table.orderShape`): one chair = each guest beer OR one instant dish still in stock (`solo.pBeer`; no instant dish left → beer), two chairs = beer plus one dish with `pair.pMoi` (hot dishes included, same in-stock rule). `demandMix.pMoi` only drives pinned capacity snapshots.
 
 ## How to reach it
@@ -120,6 +121,8 @@ station is defined by a batch duration + a batch size; the engine reads
 
 - `packages/engine/test/seat-model.test.ts` — `a one-chair table never gives one guest beer and a dish together; a two-chair table does (seed 42)` (a whole shift: every solo tray is one item, beer and instant dishes both occur, a pair-table guest gets beer + dish).
 - `packages/engine/test/economy2.test.ts` — `hot preference uses the whole special group and falls back to the available category` now runs on a two-chair table (`orderShape.pair.pMoi` 1); `an expired order waiting for table cleanup no longer reserves the last side dish` on one-chair trays (`solo.pBeer` 0).
+
+- `packages/engine/test/instant-pour.test.ts` (rules 28 instant pour, S2): `rules 28 never puts a beer in a pour while the keg refill is on: no beer item is ever preparing and no tap cause is ever reported, with beer running short` (a 300 s bot-driven shift with the raw stock held back for two minutes: only `beerStock` and `beerRefill` are seen, `order_expired.cause` is never `tap`), plus the cases cited in [keg-refill](keg-refill.md). `packages/engine/test/feedback.test.ts` keeps proving the `tap` cause on a capacity pin (`a busy tap is distinct`).
 
 ## Verification procedure
 
@@ -234,3 +237,8 @@ independent per-customer samples to `served` — that doesn't systematically mov
 | Date | Change |
 |---|---|
 | 2026-10-19 | S1 rules 28: trays by chairs; tests cited. Six-guest pan/stock tests run on the frozen 2.0.4 capacity model. |
+
+## Changelog — S2 instant pour
+| Date | Change |
+|---|---|
+| 2026-10-20 | S2 rules 28: a seat-model tray's beer is ready in the order's tick; `tap` cause unreachable there; tests cited. Capacity pins and rules ≤ 27 keep the tap pipeline described above. |

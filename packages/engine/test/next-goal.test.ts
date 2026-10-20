@@ -145,3 +145,10 @@ test('a game on a pre-seat snapshot with the Wave 1 keys still gets a chip, and 
   const g = new Game(loadConfig(raw), 42, at), goal = pick(g)!;
   assert.equal(goal.id, `table:${g.world.tables[0].id}`); assert.equal(reachMult(g.config), (config.raw as any).nextGoal.reachMult);
 });
+
+test('the keg goal promises its reserve on the seat model (the taps are off the serving path from rules 28) and its taps on a capacity pin', () => {
+  const effect = (g: Game) => listGoals(g.world, g.config).find(x => x.id === 'equipment:keg')!.effect;
+  const seat = game(), tank = seat.config.values.upgrades.keg.kegStorage, pin = capacityGame(), taps = pin.config.values.upgrades.keg.pourSlots;
+  assert.deepEqual(effect(seat), { key: 'goal.fx.keg', params: { n: tank[1] } });
+  assert.deepEqual(effect(pin), { key: 'goal.fx.taps', params: { n: taps[1] } });
+});

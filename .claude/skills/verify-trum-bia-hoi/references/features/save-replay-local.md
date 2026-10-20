@@ -237,3 +237,4 @@ session resumes through.
 | Date | Change |
 |---|---|
 | 2026-10-19 | S1 rules 28: D2 adoption, legacy 2.0.4 shape, pre-28 replay guards and the fixture guard cited. |
+| 2026-10-20 | S2 rules 28: a rules-27 history recorded by the pre-S2 engine (`capacity-lv3x{3,6}-v27.json`) replays to the same world hash and keeps its 2 s tap (`instant-pour.test.ts` `a recorded rules-27 shift on ${3|6} capacity tables replays byte for byte and shows the tap it was recorded with`); a loaded rules-27 save keeps the tap through its live rules-28 commands and pours instantly only at the opening that adopts the seat model (`a rules-27 save keeps the tap through its live rules-28 commands and pours instantly only at the opening that adopts the seat model`). The existing `legacy-*` fixtures of `npm test` replay unchanged. |

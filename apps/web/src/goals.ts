@@ -1,4 +1,4 @@
-import { BUSINESS_UNLOCKS, EQUIPMENT, buyTableQuote, config as seed, flyerQuote, signboardQuote, tableUpgradeQuote, unlockQuote, upgradeQuote, type BusinessUnlock, type Config, type Equipment, type WorldView } from '../../../packages/engine/src';
+import { BUSINESS_UNLOCKS, EQUIPMENT, buyTableQuote, config as seed, flyerQuote, instantPour, signboardQuote, tableUpgradeQuote, unlockQuote, upgradeQuote, type BusinessUnlock, type Config, type Equipment, type WorldView } from '../../../packages/engine/src';
 
 /**
  * F27/P0 "Mục tiêu kế tiếp": every purchasable thing of the Upgrades sheet as data. The goal chip picks from this list and the sheet
@@ -42,7 +42,8 @@ const newTable: Provider = (w, c) => {
 };
 function equipmentEffect(c: Config, kind: Equipment, at: number): Copy | null {
   const u = c.values.upgrades;
-  if (kind === 'keg') return { key: 'goal.fx.taps', params: { n: u.keg.pourSlots[at] } };
+  // Instant pour (rules 28): the taps are off the serving path, so a keg level is worth its reserve, not its tap count.
+  if (kind === 'keg') return instantPour(c) ? { key: 'goal.fx.keg', params: { n: u.keg.kegStorage[at] } } : { key: 'goal.fx.taps', params: { n: u.keg.pourSlots[at] } };
   if (kind === 'washer') return { key: 'goal.fx.wash', params: { n: u.washer.slots[at] } };
   if (kind === 'stall') return { key: 'goal.fx.stock', params: { n: u.stall.stockCap[at] } };
   if (kind === 'kitchen') return { key: 'goal.fx.pans', params: { n: u.kitchen.slots[at] } };

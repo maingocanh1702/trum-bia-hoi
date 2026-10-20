@@ -20,8 +20,10 @@ for (const locale of ['vi', 'en']) for (const viewport of [{ width: 360, height:
     }
     await page.getByRole('button', { name: copy['equipment.keg'], exact: true }).click();
     const panel = page.getByRole('dialog');
-    await expect(panel).toContainText(locale === 'vi' ? 'Rót ra cốc: 1 vòi · 2 s/cốc · dự trữ 4 cốc' : 'Pour to tray · taps: 1 · 2s/glass · reserve capacity: 4');
+    // Instant pour (rules 28): the keg is one stage, its reserve and its refill; the tap stage (`Rót ra cốc: 1 vòi · 2 s/cốc …`) is gone from a seat-model game.
+    await expect(panel).toContainText(locale === 'vi' ? 'Dự trữ rót sẵn: 4 cốc' : 'Poured reserve: 4 glasses');
     await expect(panel).toContainText(locale === 'vi' ? 'Nạp từ bom vào dự trữ: 2 cốc/mẻ · 12 s' : 'Refill reserve from keg · glasses/batch: 2 · 12s');
+    await expect(panel).not.toContainText(locale === 'vi' ? 'Rót ra cốc' : 'Pour to tray');
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: copy['nav.stock'], exact: true }).click();
     const tofu = page.getByRole('dialog').locator('img[src*="menu-friedbean"]');

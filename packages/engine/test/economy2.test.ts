@@ -18,8 +18,9 @@ function capacityGame(patch: (raw: ReturnType<typeof capacityRaw>) => void) {
 }
 const replay = (g: Game) => assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
 
+// The tap queue is what rules <= 27 and every capacity pin run on (plan S2: a seat-model game pours instantly, see instant-pour.test.ts).
 test('a new shift fills real reserve, pours through its one tap and starts refilling the vacancy immediately', () => {
-  const g = game(), w = g.world, total = w.inventory.bia, keg = g.config.values.upgrades.keg;
+  const g = capacityGame(() => {}), w = g.world, total = w.inventory.bia, keg = g.config.values.upgrades.keg;
   assert.ok(send(g, { type: 'startShift' }).ok);
   assert.equal(beerStatus(w, g.config).stored, keg.kegStorage[0]); assert.equal(w.beer!.batch, null);
   assert.equal(w.inventory.bia, total - keg.kegStorage[0]);
