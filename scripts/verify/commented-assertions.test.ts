@@ -8,6 +8,8 @@ test('a line comment in the middle of a line swallows the assertions after it, a
   assert.deepEqual(commentedAssertions(`a();\n${bad}\nb();`).map(h => h.line), [2]);
   assert.equal(commentedAssertions("await x.click(); // then assert.equal(a, b)").length, 1);
   assert.equal(commentedAssertions("await x.click(); // then assert(a)").length, 1);
+  assert.equal(commentedAssertions("await upgrade.click(); // P0 owner decision expect.soft(upgraded, 'table 2').toBe(true);").length, 1, 'expect.soft is an assertion too (review round 2)');
+  assert.equal(commentedAssertions("await upgrade.click(); // P0 owner decision, a soft assertion of table 2").length, 0, 'a comment that only talks about it is not a hit');
 });
 
 test('comments that only talk about an assertion, own-line comments and literals that contain // are not hits', () => {
@@ -24,4 +26,11 @@ test('no test or verification source of the repo hides an assertion behind a lin
   const { files, lines, hits } = scanRepo();
   assert.ok(files > 100 && lines > 10000, `the scan reads the test roots (${files} files, ${lines} lines)`);
   assert.deepEqual(hits.map(h => `${h.file}:${h.line}`), []);
+});
+
+test('the scan reads the sim directory (the evaluator and the career gates assert) and every root it names exists', async () => {
+  const { TEST_ROOTS } = await import('./commented-assertions');
+  assert.ok(TEST_ROOTS.includes('packages/engine/sim'), 'packages/engine/sim is a scanned root');
+  const { existsSync } = await import('node:fs');
+  assert.deepEqual(TEST_ROOTS.filter(root => !existsSync(root)), [], 'a root that does not exist would be scanned as nothing');
 });

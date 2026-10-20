@@ -5,10 +5,10 @@ import { join, relative, resolve } from 'node:path';
  * A line comment put in the MIDDLE of a test line (`foo(); expect(a).toBe(1); // why  expect(b).toBe(2);`) turns every later statement of that line into
  * comment text: the assertion stays in the file, reads like a check and never runs. Review round 1 of plan S5 found two of them behind a green local tier.
  * `commentedAssertions` returns every line of a source text whose `//` comment (outside string, template and regular-expression literals) contains a call
- * that looks like an assertion; a comment that only talks about one does it without the call syntax `expect(` / `assert(` / `assert.x(`.
+ * that looks like an assertion; a comment that only talks about one does it without the call syntax `expect(` / `expect.soft(` / `assert(` / `assert.x(`.
  */
 export interface Hit { line: number; text: string }
-const ASSERTION = /\b(?:expect\s*\(|assert(?:\.\w+)?\s*\()/;
+const ASSERTION = /\b(?:expect(?:\.soft)?\s*\(|assert(?:\.\w+)?\s*\()/;
 
 /** The text of the `//` comment of one line, or null when the line has none outside a literal. */
 export function lineComment(line: string): string | null {
@@ -42,7 +42,7 @@ const walk = (dir: string): string[] => !existsSync(dir) ? [] : readdirSync(dir)
 });
 
 /** Every test and verification source of the repo (the places an assertion lives). */
-export const TEST_ROOTS = ['apps/web/test', 'apps/web/guest-test', 'apps/web/remote-test', 'apps/web/playable-test', 'apps/web/admin-test', 'apps/web/src/verify', 'apps/server/test', 'packages/engine/test', 'scripts'];
+export const TEST_ROOTS = ['apps/web/test', 'apps/web/guest-test', 'apps/web/remote-test', 'apps/web/playable-test', 'apps/web/admin-test', 'apps/web/src/verify', 'apps/server/test', 'packages/engine/test', 'packages/engine/sim', 'scripts'];
 
 export function scanRepo(cwd = process.cwd()): { files: number; lines: number; hits: (Hit & { file: string })[] } {
   let files = 0, lines = 0;
