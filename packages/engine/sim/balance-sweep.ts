@@ -137,7 +137,8 @@ if (process.argv[1] && resolve(process.argv[1]) === here) {
   claimProtocol(out, options, option('start'));
   const log = (line: string) => { console.log(line); writeFileSync(join(out, 'sweep.log'), line + '\n', { flag: 'a' }); };
   let current = (await evaluateAll([plan.base], out, options, pool, 'base'))[0];
-  if (argv.includes('--p0-floor')) judge.p0Floor = p0Share(current);
+  const floorArg = argv.find(a => a === '--p0-floor' || a.startsWith('--p0-floor='));
+  if (floorArg) judge.p0Floor = floorArg.includes('=') ? Number(floorArg.split('=')[1]) : p0Share(current); // `--p0-floor` = the base's own share, `--p0-floor=0.733` = an explicit one (a base may start worse than the floor)
   log(`# base ${current.hash}: fails ${scoped(current, judge).fails}, violation ${scoped(current, judge).violation.toFixed(3)} (all gates ${current.score.fails}): ${current.failing.join(', ') || 'none'}${judge.only ? ` | judged on ${judge.only.join(',')}` : ''}${judge.knownRed.length ? ` | known red, not judged: ${judge.knownRed.join(',')}` : ''}${judge.p0Floor !== null ? ` | shift-1 share below table 2 may not exceed ${judge.p0Floor.toFixed(3)}` : ''}`);
   const stopAtClean = argv.includes('--stop-at-clean'); // end the sweep at the first set that passes every gate on every seed
   let clean = false;
