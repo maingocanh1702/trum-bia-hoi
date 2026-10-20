@@ -165,7 +165,7 @@ test('a paid lease survives SQLite restart; offline expiry refunds the stored de
   send(a, 'tenant', 'open', { type: 'startShift' }); f.now += 11000; send(a, 'tenant', 'serve', ready(a, 'tenant'));
   send(a, 'tenant', 'close', { type: 'endShift' }); f.now += 3600000;
   assert.equal(a.read('tenant').world.lifePath, 1);
-  const action = { type: 'rentLocation', locationId: 'ngo_cho', leaseId: null, maxCost: 37500 } as const; // 3 days x 10 000 + the 25 % deposit (JSON 2.1.0)
+  const action = { type: 'rentLocation', locationId: 'ngo_cho', leaseId: null, maxCost: 7500 } as const; // 2 days x 3 000 + the 25 % deposit (JSON 2.1.0)
   const rented = send(a, 'tenant', 'rent', action); assert.ok(rented.result.ok); assert.ok(rented.world.lease);
   send(a, 'tenant', 'away', { type: 'activity', active: false }); a.close();
   const b = f.open(pin), before = b.read('tenant'); assert.deepEqual(before.world.lease, rented.world.lease);

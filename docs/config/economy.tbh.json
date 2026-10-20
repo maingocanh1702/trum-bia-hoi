@@ -579,7 +579,7 @@
   },
   "tip": {
     "patienceThreshold": 0.6,
-    "rate": 0.19,
+    "rate": 0.17,
     "vipMult": 10,
     "qrMult": 1.2,
     "qrRounding": "ceil",
@@ -640,10 +640,10 @@
       "label": "Bom bia + vòi rót",
       "priceBase": [
         0,
-        1750,
-        6750,
-        13500,
-        51000
+        2000,
+        7750,
+        38750,
+        146750
       ],
       "pourSlots": [
         1,
@@ -688,10 +688,10 @@
       "label": "Bồn rửa cốc",
       "priceBase": [
         0,
-        1250,
-        5500,
-        10250,
-        34000
+        1500,
+        6250,
+        29500,
+        97750
       ],
       "washMs": [
         7000,
@@ -714,10 +714,10 @@
       "label": "Hầm / tủ giữ lạnh",
       "priceBase": [
         0,
-        1000,
-        4000,
-        7750,
-        25500
+        1250,
+        4500,
+        22500,
+        73250
       ],
       "freshnessMs": [
         12000,
@@ -732,10 +732,10 @@
       "label": "Quầy / kho",
       "priceBase": [
         0,
-        600,
-        2750,
-        5000,
-        20500
+        750,
+        3250,
+        14250,
+        59000
       ],
       "stockCap": [
         15,
@@ -751,10 +751,10 @@
       "label": "Bếp",
       "priceBase": [
         null,
-        4000,
-        17000,
-        27250,
-        68000
+        4500,
+        19500,
+        78500,
+        195500
       ],
       "slots": [
         0,
@@ -828,22 +828,22 @@
       "startingTables": 1,
       "tablePriceBase": [
         600,
-        2000,
-        4000,
-        7500,
-        12500,
-        20000,
-        31300
+        3700,
+        5700,
+        9600,
+        12900,
+        15900,
+        16000
       ],
       "chairPriceBase": [
-        10000,
-        15000,
-        22500,
-        30000,
-        40000,
-        50000,
-        60000,
-        70000
+        400,
+        600,
+        900,
+        1200,
+        1600,
+        2000,
+        2400,
+        2800
       ],
       "chairsAfterTables": 4,
       "orderShape": {
@@ -859,8 +859,8 @@
         "levels": [
           {
             "level": 2,
-            "priceBase": 8000,
-            "stepBase": 3000,
+            "priceBase": 7000,
+            "stepBase": 2500,
             "lifePathGate": 1,
             "extraRounds": 1,
             "pExtraMoi": 0,
@@ -868,8 +868,8 @@
           },
           {
             "level": 3,
-            "priceBase": 20000,
-            "stepBase": 8000,
+            "priceBase": 34000,
+            "stepBase": 13500,
             "lifePathGate": 2,
             "extraRounds": 1,
             "pExtraMoi": 0.35,
@@ -877,8 +877,8 @@
           },
           {
             "level": 4,
-            "priceBase": 35000,
-            "stepBase": 12000,
+            "priceBase": 59500,
+            "stepBase": 20500,
             "lifePathGate": 4,
             "extraRounds": 1,
             "pExtraMoi": 0.35,
@@ -888,8 +888,8 @@
         "_rule": "Cấp bàn (rules 28, D14 D18 D19): nâng từng cấp 1→4 qua upgradeTable; bàn phải có 2 ghế (tableNeedsChairs), mua bất kể bàn đang có khách. Giá theo CẤP ĐÍCH: priceBase + stepBase × n, n = số bàn đã đạt cấp đó (cấp ≥ cấp đích — bàn đã lên cao hơn vẫn tính, nên tổng tiền không phụ thuộc thứ tự mua). Gate Đời Quán lifePathGate (Lv2 LP1, Lv3 LP2, Lv4 LP4); không còn gate huy hiệu Kết Nối / uy tín. Mỗi dòng ghi TỔNG lợi ích của bàn ở cấp đó (cộng dồn, không giảm theo cấp): extraRounds = số đợt gọi thêm của mỗi nhóm; pExtraMoi = xác suất mỗi khách gọi mồi thứ 2 sau mồi đầu (chỉ món còn hàng; mâm vẫn chỉ giao khi đủ món); tipMult = hệ số tip tại bàn đó. Lợi ích được chốt cho nhóm lúc ngồi (nhóm đang ngồi không đổi) và chỉ có hiệu lực khi bàn có 2 ghế. upgrades.table.levels[].priceBase/repBase/requiredBadge là thang cũ: chỉ snapshot không có tableUpgrade (pin ≤ 2.0.22) còn đọc."
       },
       "chairUpgrade": {
-        "priceBase": 4000,
-        "stepBase": 2000,
+        "priceBase": 12000,
+        "stepBase": 6000,
         "levels": [
           {
             "level": 2,
@@ -1074,7 +1074,7 @@
       "veteran": 5
     },
     "entitlementsRef": "xem section entitlements (free/ngày là CONFIG, không hardcode)",
-    "dailyEarnCapBase": 400000,
+    "dailyEarnCapBase": 350000,
     "capBucket": "per-earn, VN day",
     "shiftCreditAt": "finalize",
     "wellRested": {
@@ -1090,7 +1090,7 @@
       "at": "00:00",
       "serverSide": true
     },
-    "startingCoinsBase": 700
+    "startingCoinsBase": 300
   },
   "network": {
     "_rule": "F23 §8 · 10-SPEC §10. Mất mạng giữa ca: client buffer command, reconnect resync từ event log; quá reconnectGraceMs thì server đóng ca theo luật closing.",
@@ -1405,7 +1405,7 @@
       {
         "id": "huyen_thoai",
         "name": "Trùm Bia Hơi",
-        "minSeasonEarnedBase": 2000000
+        "minSeasonEarnedBase": 2240000
       }
     ],
     "seasons": {
@@ -1529,7 +1529,7 @@
     {
       "id": "LP7",
       "name": "Trùm Bia Hơi",
-      "lifetimeBase": 2000000,
+      "lifetimeBase": 2240000,
       "rewardCoinBase": 500000,
       "extra": [
         "crate.large"
@@ -1542,7 +1542,7 @@
   ],
   "locations": {
     "rentFormula": "rentPerDayBase × k (chốt bảng 09/09, neo 15–25 % thu nhập tier; không còn dùng công thức e)",
-    "leaseDays": 3,
+    "leaseDays": 2,
     "depositRate": 0.25,
     "earlyLeaveLosesDeposit": true,
     "fallback": "hem_nho",
@@ -1555,64 +1555,64 @@
         "rentPerDayBase": 0,
         "gate": null,
         "gateLifePath": 0,
-        "tableSlots": 4
+        "tableSlots": 8
       },
       {
         "id": "ngo_cho",
         "name": "Ngõ Chợ",
-        "mult": 1.019,
+        "mult": 1.012,
         "e": 10,
-        "rentPerDayBase": 4000,
+        "rentPerDayBase": 1200,
         "gate": "LP1",
         "gateLifePath": 1,
-        "tableSlots": 4
+        "tableSlots": 8
       },
       {
         "id": "ben_xe",
         "name": "Bến Xe",
-        "mult": 1.038,
+        "mult": 1.025,
         "e": 15,
-        "rentPerDayBase": 6800,
+        "rentPerDayBase": 2000,
         "gate": "LP1",
         "gateLifePath": 1,
-        "tableSlots": 5
+        "tableSlots": 8
       },
       {
         "id": "gan_cong_so",
         "name": "Gần Công Sở",
-        "mult": 1.056,
+        "mult": 1.038,
         "e": 20,
-        "rentPerDayBase": 10000,
+        "rentPerDayBase": 3000,
         "gate": "LP2",
         "gateLifePath": 2,
-        "tableSlots": 6
+        "tableSlots": 8
       },
       {
         "id": "gan_svd",
         "name": "Gần Sân Vận Động",
-        "mult": 1.075,
+        "mult": 1.05,
         "e": 25,
-        "rentPerDayBase": 14000,
+        "rentPerDayBase": 4200,
         "gate": "LP3",
         "gateLifePath": 3,
-        "tableSlots": 6
+        "tableSlots": 8
       },
       {
         "id": "ho_bia_dem",
         "name": "Hồ Bia Đêm",
-        "mult": 1.094,
+        "mult": 1.063,
         "e": 30,
-        "rentPerDayBase": 18000,
+        "rentPerDayBase": 5400,
         "gate": "LP3",
         "gateLifePath": 3,
-        "tableSlots": 7
+        "tableSlots": 8
       },
       {
         "id": "pho_co",
         "name": "Phố Cổ",
-        "mult": 1.112,
+        "mult": 1.075,
         "e": 35,
-        "rentPerDayBase": 24000,
+        "rentPerDayBase": 7200,
         "gate": "LP4",
         "gateLifePath": 4,
         "tableSlots": 8
@@ -1620,9 +1620,9 @@
       {
         "id": "ga_metro",
         "name": "Ga Metro",
-        "mult": 1.131,
+        "mult": 1.088,
         "e": 40,
-        "rentPerDayBase": 32000,
+        "rentPerDayBase": 9600,
         "gate": "LP5",
         "gateLifePath": 5,
         "tableSlots": 8
@@ -1630,9 +1630,9 @@
       {
         "id": "pho_tay",
         "name": "Khu Phố Tây",
-        "mult": 1.15,
+        "mult": 1.1,
         "e": 45,
-        "rentPerDayBase": 44000,
+        "rentPerDayBase": 13200,
         "gate": "LP6",
         "gateLifePath": 6,
         "tableSlots": 8

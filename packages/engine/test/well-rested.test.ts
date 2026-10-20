@@ -54,13 +54,13 @@ test('the exact bonus deadline ends the multiplier while a served order is still
   for (const delta of [-1, 0]) {
     const g = create(c => { c.shift.wellRested.durationMs = 12000; c.tip.wellRestedDurationMs = 12000; });
     const shift = openRested(g);
-    assert.equal(serveFirst(g, shift.wellRestedUntil! + delta).amount, delta < 0 ? 66 : 60); // 50 + the 2.1.0 tip 10, then the rounded 10 % bonus
+    assert.equal(serveFirst(g, shift.wellRestedUntil! + delta).amount, delta < 0 ? 65 : 59); // 50 + the 2.1.0 tip 9, then the rounded 10 % bonus (5.9 rounds to 6)
     assert.equal(g.world.serves[0].wellRestedBonus, delta < 0 ? 6 : 0);
   }
 });
 
 test('partial and exhausted daily caps clamp the actual bonus and all three earning ledgers', () => {
-  for (const [capBase, amount, bonus] of [[25, 63, 3], [20, 50, 0], [0, 0, 0]]) {
+  for (const [capBase, amount, bonus] of [[25, 63, 4], [20, 50, 0], [0, 0, 0]]) {
     const g = create(c => { c.shift.dailyEarnCapBase = capBase; }); openRested(g);
     assert.equal(serveFirst(g).amount, amount);
     assert.equal(g.world.coins, g.config.values.shift.startingCoinsBase + amount);
@@ -77,8 +77,8 @@ test('the first grant stays on its opening day while earnings and the finished s
   const g = create(undefined, startAt - restMs(create()) - 1);
   openRested(g);
   assert.deepEqual(g.world.wellRestedDays, { '2026-09-08': true });
-  assert.equal(serveFirst(g).amount, 66);
-  assert.deepEqual(g.world.dayEarned, { '2026-09-09': 66 });
+  assert.equal(serveFirst(g).amount, 65);
+  assert.deepEqual(g.world.dayEarned, { '2026-09-09': 65 });
   send(g, { type: 'endShift' });
   g.advance(g.world.tables[0].until!);
   assert.deepEqual(g.world.dayShifts, { '2026-09-09': 1 });
@@ -124,7 +124,7 @@ test('hidden time preserves the remaining bonus through replay and never resurre
   assert.deepEqual(restored.world, g.world);
   send(restored, { type: 'activity', active: true });
   const table = restored.world.tables[0];
-  assert.equal(send(restored, { type: 'serve', tableId: table.id, orderId: table.order!.id }).amount, 66);
+  assert.equal(send(restored, { type: 'serve', tableId: table.id, orderId: table.order!.id }).amount, 65);
   restored.advance(restored.world.shift!.wellRestedUntil!);
   assert.equal(wellRestedRemaining(restored.world), 0);
   send(restored, { type: 'activity', active: false }); restored.advance(restored.world.now + 86400000);

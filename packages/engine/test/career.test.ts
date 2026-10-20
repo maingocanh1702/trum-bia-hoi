@@ -4,11 +4,11 @@ import { config, decodeSave, encodeSave, loadConfig, type SeedConfig } from '../
 import { simulateCareer, assertAdvancedCareerK } from '../sim/career';
 import { steadyDemand } from './fixtures/steady-demand';
 
-test('four real career days conserve the wallet and replay purchases, claims, clocks and earned LP from a fresh save', () => {
+test('six real career days conserve the wallet and replay purchases, claims, clocks and earned LP from a fresh save', () => {
   // The harness is the subject: it needs a bot that reaches tables, chairs, a life-path claim and devices. Capacity demand (S3) slows the early game on purpose, so this
-  // run switches it off; `sim:career` and its gate keep measuring the bundled numbers. The protocol bot (seats first) buys its first second chair at shift 9 and its first
-  // extra glass (more than two per seat) at shift 25 of such a run, so four days hold every command the assertions below look for.
-  const days = 4;
+  // run switches it off; `sim:career` and its gate keep measuring the bundled numbers. The protocol bot (seats first) buys tables 2-8 before anything else, then its first second
+  // chair at shift 32 and its first extra glass (more than two per seat) at shift 36 of such a run (JSON 2.1.0), and reaches LP4 on day 6, so six days hold every command the assertions below look for.
+  const days = 6;
   const { game, report } = simulateCareer({ days, seed: 42, config: loadConfig(steadyDemand(structuredClone(config.raw))) as SeedConfig });
   assert.equal(game.world.completedShifts, config.values.shift.dailyShiftCap.newbie * days);
   assert.equal(report.rows[0].openingCoins, config.values.shift.startingCoinsBase);
@@ -22,7 +22,7 @@ test('four real career days conserve the wallet and replay purchases, claims, cl
   const spending = game.log.filter(e => (e.result.amount ?? 0) > 0 && ['buyTable', 'buyChair', 'upgrade', 'upgradeTable', 'upgradeChair', 'buyGlass', 'buyUnlock', 'installSignboard', 'setSignboard', 'rentLocation'].includes(e.command.type));
   assert.deepEqual(report.purchases.map(p => [p.command, p.cost]), spending.map(e => [e.command.type, e.result.amount]));
   assert.ok(report.purchases.every((p, i) => p.shift >= 1 && p.shift <= game.world.completedShifts + 1 && (!i || p.shift >= report.purchases[i - 1].shift)));
-  assert.deepEqual(report.purchaseMilestones.filter(p => p.command === 'buyTable').map(p => p.item), ['table 2', 'table 3', 'table 4']);
+  assert.deepEqual(report.purchaseMilestones.filter(p => p.command === 'buyTable').map(p => p.item), ['table 2', 'table 3', 'table 4', 'table 5', 'table 6', 'table 7', 'table 8'], 'the bot fills the alley (eight places in 2.1.0) before its first second chair');
   const firstChair = report.purchaseMilestones.find(p => p.command === 'buyChair')!;
   assert.ok(firstChair.shift >= report.purchaseMilestones.filter(p => p.command === 'buyTable').at(-1)!.shift);
   assert.deepEqual(report.rows.flatMap(row => row.purchases), report.purchases);

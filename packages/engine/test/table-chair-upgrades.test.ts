@@ -107,20 +107,20 @@ test('a rules-28 history recorded on JSON 2.0.22 replays byte for byte and re-en
   assert.ok(g.world.tables.every(t => t.chairLevel === undefined) && g.world.tables.some(t => t.level === 3), 'a pin leaves no new field on its tables');
 });
 
-test('the bundled numbers are the plan\'s W9 set: table levels 8k+3k·n / 20k+8k·n / 35k+12k·n at LP1 / LP2 / LP4, chairs 4k+2k·t at LP1 / LP2, Tier A keys, a version above 2.0.22, no postmvp backrest', () => {
+test('the bundled numbers are the sealed set of S5: table levels 7k+2.5k·n / 34k+13.5k·n / 59.5k+20.5k·n at LP1 / LP2 / LP4, chairs 12k+6k·t at LP1 / LP2, Tier A keys, a version above 2.0.22, no postmvp backrest', () => {
   // S5 owns every number: when it retunes these, this is the one test that names them.
   const t = seed.upgrades.table;
-  assert.deepEqual(t.tableUpgrade.levels.map(l => [l.level, l.priceBase, l.stepBase, l.lifePathGate]), [[2, 8000, 3000, 1], [3, 20000, 8000, 2], [4, 35000, 12000, 4]]);
+  assert.deepEqual(t.tableUpgrade.levels.map(l => [l.level, l.priceBase, l.stepBase, l.lifePathGate]), [[2, 7000, 2500, 1], [3, 34000, 13500, 2], [4, 59500, 20500, 4]]);
   assert.deepEqual(t.tableUpgrade.levels.map(l => [l.extraRounds, l.pExtraMoi, l.tipMult]), [[1, 0, 1], [1, 0.35, 1], [1, 0.35, 1.25]], 'a level lists what the table gives in total: the benefits stack');
-  assert.deepEqual([t.chairUpgrade.priceBase, t.chairUpgrade.stepBase], [4000, 2000]);
+  assert.deepEqual([t.chairUpgrade.priceBase, t.chairUpgrade.stepBase], [12000, 6000]);
   assert.deepEqual(t.chairUpgrade.levels.map(l => [l.level, l.lifePathGate, l.patienceMult]), [[2, 1, 1.15], [3, 2, 1.3]]);
   for (const entry of ['upgrades.table.tableUpgrade', 'upgrades.table.chairUpgrade']) assert.ok(seed._meta.governance.tiers.A.sections.includes(entry), `${entry} moves the whole economy: Tier A`);
   assert.equal('backrest' in seed.upgrades, false, 'the postmvp placeholder is replaced by chairUpgrade');
   assert.ok(newer(seed._meta.version, '2.0.22'), `${seed._meta.version} is above 2.0.22`);
   // Base keys are scaled by k once, at load: the engine reads whole coin prices.
   const v = config.values.upgrades.table;
-  assert.deepEqual(v.tableUpgrade.levels.map(l => [l.priceBase, l.stepBase]), [[20000, 7500], [50000, 20000], [87500, 30000]]);
-  assert.deepEqual([v.chairUpgrade.priceBase, v.chairUpgrade.stepBase], [10000, 5000]);
+  assert.deepEqual(v.tableUpgrade.levels.map(l => [l.priceBase, l.stepBase]), [[17500, 6250], [85000, 33750], [148750, 51250]]);
+  assert.deepEqual([v.chairUpgrade.priceBase, v.chairUpgrade.stepBase], [30000, 15000]);
   assert.equal(K, 2.5);
 });
 
@@ -147,22 +147,22 @@ test('a table level is priced by its TARGET level and by how many tables have al
     return before - w.coins;
   };
   const g = shop(), w = g.world, quote = (i: number) => tableUpgradeQuote(w, g.config, w.tables[i]).cost;
-  assert.equal(quote(0), priceBase(2, 0)); assert.equal(quote(0), 20000, '8 000 x 2.5 for the first table at Lv2');
+  assert.equal(quote(0), priceBase(2, 0)); assert.equal(quote(0), 17500, '7 000 x 2.5 for the first table at Lv2');
   levelUp(g, 0, 2);
-  assert.equal(quote(1), priceBase(2, 1)); assert.equal(quote(1), 27500, 'one table has reached Lv2: 8 000 + 3 000 x 1, shown x 2.5');
-  assert.equal(quote(0), priceBase(3, 0)); assert.equal(quote(0), 50000, 'Lv3 has its own ladder: 20 000 + 8 000 x 0');
+  assert.equal(quote(1), priceBase(2, 1)); assert.equal(quote(1), 23750, 'one table has reached Lv2: 7 000 + 2 500 x 1, shown x 2.5');
+  assert.equal(quote(0), priceBase(3, 0)); assert.equal(quote(0), 85000, 'Lv3 has its own ladder: 34 000 + 13 500 x 0');
   levelUp(g, 0, 3);
   assert.equal(quote(1), priceBase(2, 1), 'a table that moved on to Lv3 still counts as having reached Lv2: the price does not fall back');
-  assert.equal(quote(1), 27500);
+  assert.equal(quote(1), 23750);
   levelUp(g, 1, 2); levelUp(g, 2, 2);
-  assert.equal(quote(3), priceBase(2, 3)); assert.equal(quote(3), 42500);
-  assert.equal(quote(1), priceBase(3, 1), 'the second table to reach Lv3 pays 20 000 + 8 000 x 1'); assert.equal(quote(1), 70000);
+  assert.equal(quote(3), priceBase(2, 3)); assert.equal(quote(3), 36250);
+  assert.equal(quote(1), priceBase(3, 1), 'the second table to reach Lv3 pays 34 000 + 13 500 x 1'); assert.equal(quote(1), 118750);
   levelUp(g, 0, 4); assert.equal(tableUpgradeQuote(w, g.config, w.tables[0]).gate, 'maxLevel');
   assert.equal(quote(1), priceBase(3, 1)); levelUp(g, 1, 3);
-  assert.equal(quote(1), priceBase(4, 1), 'Lv4: 35 000 + 12 000 x 1 once one table is there'); assert.equal(quote(1), 117500);
+  assert.equal(quote(1), priceBase(4, 1), 'Lv4: 59 500 + 20 500 x 1 once one table is there'); assert.equal(quote(1), 200000);
   const forward = total([[0, 2], [1, 2], [0, 3], [1, 3], [2, 2]]), interleaved = total([[1, 2], [0, 2], [1, 3], [0, 3], [2, 2]]), staged = total([[0, 2], [0, 3], [1, 2], [1, 3], [2, 2]]);
   assert.equal(forward, interleaved); assert.equal(forward, staged);
-  assert.equal(forward, 20000 + 27500 + 50000 + 70000 + 35000, 'path independent: n counts tables at or above the target level');
+  assert.equal(forward, 17500 + 23750 + 85000 + 118750 + 30000, 'path independent: n counts tables at or above the target level');
 });
 
 test('tableUpgradeQuote answers what upgradeTable will: two chairs, the top level, the life-path gate (Lv2 LP1, Lv3 LP2, Lv4 LP4; no badge, no reputation), then the wallet', () => {
@@ -195,23 +195,23 @@ test('tableUpgradeQuote answers what upgradeTable will: two chairs, the top leve
   assert.deepEqual(send(g, { type: 'upgradeTable', tableId: 'nowhere' }), { ok: false, reason: 'tableGone' });
 });
 
-test('chairUpgradeQuote answers what upgradeChair will: Lv2 at LP1, Lv3 at LP2, 4k + 2k · t with t the upgrades bought shop-wide, then the wallet and the top level', () => {
+test('chairUpgradeQuote answers what upgradeChair will: Lv2 at LP1, Lv3 at LP2, 12k + 6k · t with t the upgrades bought shop-wide, then the wallet and the top level', () => {
   const g = shop(undefined, { lifePath: 0 }), w = g.world, quote = (i: number) => chairUpgradeQuote(w, g.config, w.tables[i]);
   w.coins = 10_000_000;
   assert.equal(quote(0).gate, 'lifePathRequired'); assert.equal(quote(0).requiredLifePath, 1); assert.deepEqual(send(g, { type: 'upgradeChair', tableId: w.tables[0].id }), { ok: false, reason: 'lifePathRequired' });
   w.lifePath = 1;
-  assert.equal(quote(0).cost, chairPrice(0)); assert.equal(quote(0).cost, 10000, '4 000 x 2.5');
+  assert.equal(quote(0).cost, chairPrice(0)); assert.equal(quote(0).cost, 30000, '12 000 x 2.5');
   w.coins = quote(0).cost! - 1; assert.equal(quote(0).reason, 'notEnoughCoins'); assert.deepEqual(send(g, { type: 'upgradeChair', tableId: w.tables[0].id }), { ok: false, reason: 'notEnoughCoins' });
   w.coins = 10_000_000;
-  assert.deepEqual(send(g, { type: 'upgradeChair', tableId: w.tables[0].id }), { ok: true, amount: 10000 }); assert.equal(w.tables[0].chairLevel, 2);
-  assert.equal(w.coins, 10_000_000 - 10000, 'the chair level is paid from the wallet: what the command answers is what leaves it');
-  assert.equal(quote(1).cost, chairPrice(1)); assert.equal(quote(1).cost, 15000, 'the shop has bought one: t = 1 whichever table is next');
+  assert.deepEqual(send(g, { type: 'upgradeChair', tableId: w.tables[0].id }), { ok: true, amount: 30000 }); assert.equal(w.tables[0].chairLevel, 2);
+  assert.equal(w.coins, 10_000_000 - 30000, 'the chair level is paid from the wallet: what the command answers is what leaves it');
+  assert.equal(quote(1).cost, chairPrice(1)); assert.equal(quote(1).cost, 45000, 'the shop has bought one: t = 1 whichever table is next');
   assert.equal(quote(0).gate, 'lifePathRequired'); assert.equal(quote(0).requiredLifePath, 2); assert.equal(quote(0).cost, chairPrice(1), 'Lv3 of the same table is the second upgrade of the shop');
   const refused = w.coins; send(g, { type: 'upgradeChair', tableId: w.tables[0].id }); assert.equal(w.coins, refused, 'a refusal (the gate) costs nothing');
   w.lifePath = 2;
-  assert.deepEqual(send(g, { type: 'upgradeChair', tableId: w.tables[0].id }), { ok: true, amount: 15000 }); assert.equal(w.tables[0].chairLevel, 3);
-  assert.equal(w.coins, 10_000_000 - 10000 - 15000, 'and the second one too');
-  assert.equal(quote(2).cost, chairPrice(2)); assert.equal(quote(2).cost, 20000);
+  assert.deepEqual(send(g, { type: 'upgradeChair', tableId: w.tables[0].id }), { ok: true, amount: 45000 }); assert.equal(w.tables[0].chairLevel, 3);
+  assert.equal(w.coins, 10_000_000 - 30000 - 45000, 'and the second one too');
+  assert.equal(quote(2).cost, chairPrice(2)); assert.equal(quote(2).cost, 60000);
   assert.equal(quote(0).gate, 'maxLevel'); assert.equal(quote(0).cost, null); assert.deepEqual(send(g, { type: 'upgradeChair', tableId: w.tables[0].id }), { ok: false, reason: 'maxLevel' });
   for (const i of [1, 2, 3]) for (const level of [2, 3]) { assert.equal(quote(i).cost, chairPrice(w.tables.reduce((n, t) => n + (t.chairLevel ?? 1) - 1, 0))); chairUp(g, i, level); }
   assert.deepEqual(w.tables.map(t => t.chairLevel), [3, 3, 3, 3]);
@@ -391,12 +391,12 @@ test('upgrades emit one event each with what they cost and what they bring: tabl
   const g = shop(), w = g.world, [a, b] = w.tables, from = w.events.length, coins = w.coins;
   must(g, { type: 'upgradeTable', tableId: a.id }); must(g, { type: 'upgradeTable', tableId: a.id }); must(g, { type: 'upgradeTable', tableId: a.id });
   must(g, { type: 'upgradeChair', tableId: b.id }); must(g, { type: 'upgradeChair', tableId: b.id });
-  assert.equal(coins - w.coins, 20000 + 50000 + 87500 + 10000 + 15000, 'every event is a payment: the wallet lost exactly the costs the events name');
+  assert.equal(coins - w.coins, 17500 + 85000 + 148750 + 30000 + 45000, 'every event is a payment: the wallet lost exactly the costs the events name');
   const events = w.events.slice(from).filter(e => ['table_upgraded', 'chair_upgraded'].includes(e.type));
   assert.deepEqual(events.map(e => [e.type, e.data]), [
-    ['table_upgraded', { tableId: a.id, level: 2, cost: 20000, what: 'extraRounds' }], ['table_upgraded', { tableId: a.id, level: 3, cost: 50000, what: 'pExtraMoi' }],
-    ['table_upgraded', { tableId: a.id, level: 4, cost: 87500, what: 'tipMult' }],
-    ['chair_upgraded', { tableId: b.id, level: 2, cost: 10000, patienceMult: 1.15 }], ['chair_upgraded', { tableId: b.id, level: 3, cost: 15000, patienceMult: 1.3 }]]);
+    ['table_upgraded', { tableId: a.id, level: 2, cost: 17500, what: 'extraRounds' }], ['table_upgraded', { tableId: a.id, level: 3, cost: 85000, what: 'pExtraMoi' }],
+    ['table_upgraded', { tableId: a.id, level: 4, cost: 148750, what: 'tipMult' }],
+    ['chair_upgraded', { tableId: b.id, level: 2, cost: 30000, patienceMult: 1.15 }], ['chair_upgraded', { tableId: b.id, level: 3, cost: 45000, patienceMult: 1.3 }]]);
   assert.ok(events.every(e => e.configVersion === config.version));
   const refused = w.events.length, kept = w.coins; send(g, { type: 'upgradeChair', tableId: b.id });
   assert.equal(w.events.length, refused, 'a refused upgrade emits nothing'); assert.equal(w.coins, kept, 'and costs nothing');

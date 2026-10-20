@@ -153,7 +153,8 @@ test('the chip walks the table ladder and moves on to the speed lane once the al
 test('S4: with two chairs and its life-path gate open a table level is a chip goal: capacity lane, cheapest first, the price follows the ladder, the effect is its benefit', () => {
   const g = game(), w = g.world, v = g.config.values; assert.ok(isSeatModel(v)); w.coins = 100_000_000;
   const ladder = tableUpgrade(v)!.levels; assert.ok(ladder);
-  while (w.tables.length < 4) assert.ok(send(g, { type: 'buyTable' }).ok);
+  const slots = v.locations.list.find(row => row.id === w.location)!.tableSlots; // a full alley: while a table can still be bought the capacity lane wins
+  while (w.tables.length < slots) assert.ok(send(g, { type: 'buyTable' }).ok);
   for (const table of w.tables) assert.ok(send(g, { type: 'buyChair', tableId: table.id }).ok);
   assert.equal(pick(g)!.lane, 'speed', 'Lv2 waits for life path 1: the chip points at a device');
   w.lifePath = ladder[0].lifePathGate;
@@ -162,7 +163,7 @@ test('S4: with two chairs and its life-path gate open a table level is a chip go
   assert.ok(send(g, { type: 'upgradeTable', tableId: w.tables[0].id }).ok);
   const second = pick(g)!; // Lv3 of table 1 waits for LP2; Lv2 of table 2 now costs one step more
   assert.deepEqual([second.id, second.cost], [`table:${w.tables[1].id}`, ladder[0].priceBase + ladder[0].stepBase]);
-  for (let i = 1; i < 4; i++) assert.ok(send(g, { type: 'upgradeTable', tableId: w.tables[i].id }).ok);
+  for (let i = 1; i < w.tables.length; i++) assert.ok(send(g, { type: 'upgradeTable', tableId: w.tables[i].id }).ok);
   assert.equal(pick(g)!.lane, 'speed', 'every table is Lv2 and Lv3 waits for LP2');
   w.lifePath = ladder[1].lifePathGate;
   const third = pick(g)!;

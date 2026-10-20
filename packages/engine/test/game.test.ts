@@ -22,8 +22,8 @@ function firstOrder(g: Game) {
 }
 
 test('all money Base values scale once; menu, times and probabilities retain their units', () => {
-  assert.equal(config.values.shift.startingCoinsBase, 1750); // JSON 2.1.0: 700 base (S5 wallet: the first shift must end with table 2 affordable)
-  assert.equal(config.values.upgrades.keg.priceBase[1], 4375); // 1 750 base: Lv2 of the 2.1.0 re-priced keg ladder
+  assert.equal(config.values.shift.startingCoinsBase, 750); // 300 base, the wallet of S4: a new save must EARN table 2 (1 500 xu) in shift 1, the start wallet does not buy it
+  assert.equal(config.values.upgrades.keg.priceBase[1], 5000); // 2 000 base: Lv2 of the 2.1.0 re-priced keg ladder
   assert.equal(config.values.quests.loginTrackRepBase[0], 5);
   assert.equal(config.values.menu.bia.price, 50);
   assert.equal(config.values.freshness.baseMs, 12000);
@@ -45,8 +45,8 @@ test('first guest gets one customer and one beer, with auto pour, a single serve
   assert.equal(table.group!.customers.length, 1);
   assert.deepEqual(table.order!.items.map(i => i.dish), ['bia']);
   assert.equal(table.order!.items[0].state, 'ready');
-  assert.deepEqual(send(g, command), { ok: true, outcome: 'early', amount: 60 }); // 50 beer + the 2.1.0 tip 0.19 (9.5 rounds to 10)
-  assert.equal(g.world.coins, 1810);
+  assert.deepEqual(send(g, command), { ok: true, outcome: 'early', amount: 59 }); // 50 beer + the 2.1.0 tip 0.17 (8.5 rounds to 9)
+  assert.equal(g.world.coins, 809);
   assert.equal(g.world.reputation, 3);
   assert.equal(g.world.glasses.filter(x => x.state === 'in_use').length, 1);
   send(g, { type: 'endShift' }); g.advance(35000);
@@ -98,7 +98,7 @@ test('daily cap counts only actual gameplay credit, and spending/reward cannot i
   const g = create(c => { c.shift.dailyEarnCapBase = 20; });
   const { command } = firstOrder(g);
   assert.equal(send(g, command).amount, 50);
-  assert.equal(g.world.serves[0].payment + g.world.serves[0].tip, 60);
+  assert.equal(g.world.serves[0].payment + g.world.serves[0].tip, 59);
   assert.equal(g.world.seasonEarned, 50);
   credit(g.world, g.config, 1000, 'quest');
   assert.equal(g.world.seasonEarned, 50);
@@ -282,7 +282,7 @@ test('hidden time freezes pending orders and freshness while preserving real cal
   assert.ok(calendarEvents.every(e => e.data.day === '1970-01-02'));
   for (const g of [a, b]) {
     const table = g.world.tables.find(t => t.order)!;
-    assert.deepEqual(send(g, { type: 'serve', tableId: table.id, orderId: table.order!.id }), { ok: true, outcome: 'early', amount: 60 });
+    assert.deepEqual(send(g, { type: 'serve', tableId: table.id, orderId: table.order!.id }), { ok: true, outcome: 'early', amount: 59 });
   }
   assert.equal(a.world.coins, b.world.coins);
   assert.equal(b.world.shift!.endsAt - b.world.now, a.world.shift!.endsAt - a.world.now);
