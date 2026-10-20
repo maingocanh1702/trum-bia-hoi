@@ -112,27 +112,27 @@ for (const viewport of viewports) test(`on the seat model a brand-new save's fir
   await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await load(page, null, Date.parse('2026-09-08T10:00:00Z'));
   await expect(page.locator('.hud button')).toHaveCount(0);
-  await expect(chip(page)).toBeVisible(); await expect(chip(page)).toContainText('Mua bàn mới · +1 chỗ'); await expect(chip(page)).toContainText('1.500 xu · đủ rồi'); // the 2.1.0 wallet (1 750) already pays table 2 (1 500)
+  await expect(chip(page)).toBeVisible(); await expect(chip(page)).toContainText('Mua bàn mới · +1 chỗ'); await expect(chip(page)).toContainText('1.500 xu · thiếu 750');
   await expect(chip(page)).toHaveAccessibleName(/^Mục tiêu kế tiếp: Mua bàn mới · \+1 chỗ/);
   const box = (await chip(page).boundingBox())!; expect(box.height).toBeGreaterThanOrEqual(44); expect(box.x + box.width).toBeLessThanOrEqual(viewport.width); expect(await fits(page)).toBe(true);
   expect((await axe(page)).violations).toEqual([]); await tbh.shot(`ng-seat-chip-shift1-${viewport.width}.png`);
   await chip(page).click();
   const sheet = page.locator('dialog[open]'); await expect(sheet).toBeVisible();
   await expect(sheet.locator('[data-goal]')).toHaveCount(1); await expect(sheet.locator('[data-goal]')).toHaveAttribute('data-goal', 'buyTable'); // one card: the chip's goal
-  await expect(sheet.getByRole('button', { name: /^Mua bàn · 1\.500 xu$/ })).toBeEnabled(); await expect(sheet.locator('.buy-reason')).toHaveCount(0); // the dimmed state of a seat button is buy-reasons.spec.ts
+  await expect(sheet.getByRole('button', { name: /^Mua bàn · 1\.500 xu$/ })).toBeDisabled(); await expect(sheet.locator('.buy-reason')).toHaveText('Chưa đủ xu');
   expect((await axe(page)).violations).toEqual([]); expect(errors).toEqual([]);
 });
 
 for (const viewport of viewports) test(`on the seat model the chip moves on after every table bought and says what is still missing at ${viewport.width}px`, async ({ page, tbh }) => {
   await page.setViewportSize(viewport);
-  const f = fixture('seat-closed', 1, 4000); await load(page, f.save, f.now); expect(f.coins).toBe(9945);
+  const f = fixture('seat-closed', 1, 10000); await load(page, f.save, f.now); expect(f.coins).toBe(24945);
   await expect(chip(page)).toContainText('Mua bàn mới · +1 chỗ'); await expect(chip(page)).toContainText('1.500 xu · đủ rồi'); await tbh.shot(`ng-seat-chip-ready-${viewport.width}.png`);
   await chip(page).click(); const sheet = page.locator('dialog[open]');
   await expect(sheet.locator('[data-goal="buyTable"]')).toBeVisible();
-  await sheet.getByRole('button', { name: 'Mua bàn · 1.500 xu', exact: true }).click(); await waitSaved(page); await page.keyboard.press('Escape'); // 8 445 left
-  await expect(chip(page)).toContainText('Mua bàn mới · +1 chỗ'); await expect(chip(page)).toContainText('5.000 xu · đủ rồi');
-  await chip(page).click(); await page.locator('dialog[open]').getByRole('button', { name: 'Mua bàn · 5.000 xu', exact: true }).click(); await waitSaved(page); await page.keyboard.press('Escape'); // 3 445 left
-  await expect(chip(page)).toContainText('Mua bàn mới · +1 chỗ'); await expect(chip(page)).toContainText('10.000 xu · thiếu 6.555');
+  await sheet.getByRole('button', { name: 'Mua bàn · 1.500 xu', exact: true }).click(); await waitSaved(page); await page.keyboard.press('Escape'); // 23 445 left
+  await expect(chip(page)).toContainText('Mua bàn mới · +1 chỗ'); await expect(chip(page)).toContainText('9.250 xu · đủ rồi');
+  await chip(page).click(); await page.locator('dialog[open]').getByRole('button', { name: 'Mua bàn · 9.250 xu', exact: true }).click(); await waitSaved(page); await page.keyboard.press('Escape'); // 14 195 left
+  await expect(chip(page)).toContainText('Mua bàn mới · +1 chỗ'); await expect(chip(page)).toContainText('14.250 xu · thiếu 55');
 });
 
 for (const viewport of viewports) test(`on the seat model the full Upgrades sheet keeps its three lanes and a table level is listed but never the chip at ${viewport.width}px`, async ({ page, tbh }) => {

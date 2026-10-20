@@ -33,11 +33,11 @@ if (process.argv[2] === 'inspect') {
   const early = at(0.3), late = at(0.46);
   process.stdout.write(JSON.stringify({ early, late, ownMs: own, orderMs: order.patienceMs, threshold: config.values.tip.patienceThreshold }));
 } else {
-  const start = Date.parse('2026-10-20T10:00:00+07:00'), TARGET = 55_000; // coins left once the shift is over: Lv2 + two chair levels fit (45 000), the next level (27 500) does not
+  const start = Date.parse('2026-10-20T10:00:00+07:00'), TARGET = 102_500; // coins left once the shift is over: Lv2 (17 500) + two chair levels (30 000, 45 000) fit, with 10 000 to spare: neither the next table level (23 750) nor the third table's chairs do
   const build = (startingCoinsBase: number) => {
     const raw = structuredClone(config.raw); raw._meta.version = 'table-upgrade-fixture'; fullHud(raw);
     raw.lifePath[1].lifetimeBase = 1; raw.shift.startingCoinsBase = startingCoinsBase;
-    // The chip suggests what is within reach of an average shift first (nextGoal.reachMult); in the 2.1.0 prices the stall's second level (1 500) is, a table level (27 500) is not.
+    // The chip suggests what is within reach of an average shift first (nextGoal.reachMult); in the 2.1.0 prices the stall's second level (1 875) is, a table level (17 500) is not.
     // The subject is the table and chair card, so everything counts as within reach and the chip follows its lane order (capacity first).
     raw.nextGoal.reachMult = 1000;
     const g = new Game(loadConfig(raw), 42, start), w = g.world;

@@ -90,7 +90,7 @@ for (const viewport of viewports) test(`a table at its top level says "Bàn đã
 
 for (const viewport of viewports) test(`a dimmed seat button keeps its price and names exactly one reason: coins, then four tables, then two chairs, at ${viewport.width}px`, async ({ page, tbh }) => {
   await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  const f = fixture('seat-states'); expect(f.coins).toBe(1750); expect(f.tables.map((t: { seats: number }) => t.seats)).toEqual([1, 1]); // 1 750: the wallet of the 2.1.0 seed
+  const f = fixture('seat-states'); expect(f.coins).toBe(750); expect(f.tables.map((t: { seats: number }) => t.seats)).toEqual([1, 1]); // 750: the wallet of a new shop, table 2 bought with it
   await load(page, f.save, f.now, false);
   const sheet = await openUpgrades(page);
   // Table 3 costs far more than the wallet holds: dimmed, the price is still there, and the reason is the wallet.
@@ -111,16 +111,16 @@ for (const viewport of viewports) test(`a dimmed seat button keeps its price and
   expect(errors).toEqual([]);
 });
 
-for (const viewport of viewports) test(`with four tables a chair is for sale and lets its table level up, the next chair costs more, and the full alley says "all tables built" at ${viewport.width}px`, async ({ page, tbh }) => {
+for (const viewport of viewports) test(`with a full alley a chair is for sale and lets its table level up, the next chair costs more, and the full alley says "all tables built" at ${viewport.width}px`, async ({ page, tbh }) => {
   await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  const f = fixture('seat-rich'); expect(f.tables.map((t: { seats: number }) => t.seats)).toEqual([1, 1, 1, 1]);
+  const f = fixture('seat-rich'); expect(f.tables.map((t: { seats: number }) => t.seats)).toEqual(Array(8).fill(1)); // JSON 2.1.0: eight places in the first alley
   await load(page, f.save, f.now, false);
   const sheet = await openUpgrades(page);
   const buy = sheet.locator('[data-goal="buyTable"]');
   await expect(buy.getByRole('button')).toBeDisabled(); await expect(buy.locator('.buy-reason')).toHaveText('Quán đã đủ bàn'); await expect(buy.locator('.buy-reason')).toHaveCount(1);
   const chairOf = (n: number) => tableCard(sheet, n).getByRole('button', { name: /^Thêm ghế · [\d.]+ xu$/ }), levelOf = (n: number) => tableCard(sheet, n).getByRole('button', { name: /^Nâng · [\d.]+ xu$/ });
   // Every chair is for sale with no reason; its level wants two chairs and, with the chair level, Duong Len Trum LP1 (S4): one reason for each of those two.
-  for (const n of [1, 2, 3, 4]) {
+  for (const n of [1, 2, 3, 4, 5, 6, 7, 8]) {
     await expect(chairOf(n)).toBeEnabled(); await expect(levelOf(n)).toBeDisabled();
     await expect(tableCard(sheet, n).locator('.buy-reason')).toHaveText(['Bàn cần 2 ghế', 'Cần đạt Phụ Quán']);
   }
