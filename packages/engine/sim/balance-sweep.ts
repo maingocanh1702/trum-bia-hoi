@@ -15,7 +15,10 @@ import { mergeJobs, formatGateTable, applyPatch, score, TARGETS, type JobResult,
  * A plan module exports `base` (a patch) and `coordinates`: [{ name, values: [{ label, patch }] }]. One pass tries every value of every coordinate in turn
  * around the CURRENT best patch and keeps the best (fewest failing seed-cells, then smallest summed violation); a pass that improves nothing ends the sweep.
  */
-export interface Coordinate { name: string; values: { label: string; patch: Patch }[] }
+export interface CoordinateValue { label: string; patch: Patch }
+/** `values` may be a function of the CURRENT best patch: a coordinate that moves a rung by a share of what it is now (a fine step around wherever the descent has got to). */
+export interface Coordinate { name: string; values: CoordinateValue[] | ((current: Patch) => CoordinateValue[]) }
+export const valuesOf = (c: Coordinate, current: Patch): CoordinateValue[] => typeof c.values === 'function' ? c.values(current) : c.values;
 export interface Plan { base: Patch; coordinates: Coordinate[] }
 export const hashOf = (patch: Patch) => createHash('sha256').update(JSON.stringify(Object.entries(patch).sort(([a], [b]) => a.localeCompare(b)))).digest('hex').slice(0, 12);
 
@@ -69,7 +72,7 @@ export async function evaluateAll(patches: Patch[], dir: string, options: JobOpt
   }
   const todo = [...unique].filter(([hash]) => !existsSync(join(dir, 'runs', `${hash}.json`)));
   const seedJobs = options.standardSeeds.map(s => `career:${s}`);
-  const names = [...seedJobs, 'standard', ...(options.shift1Seeds > 0 ? ['shift1'] : [])];
+  const names = [...seedJobs, ...(options.skipStandard ? [] : ['standard']), ...(options.shift1Seeds > 0 ? ['shift1'] : [])]; // a screening run (balance-grid --days=12) skips the standard k
   const tasks: (() => Promise<{ hash: string; result?: JobResult; error?: string }>)[] = [];
   for (const [hash, patch] of todo) {
     const file = join(dir, 'patches', `${hash}.json`); writeFileSync(file, JSON.stringify(patch, null, 1));
@@ -97,7 +100,7 @@ export async function evaluateAll(patches: Patch[], dir: string, options: JobOpt
 }
 /** A run is only comparable with runs of the same protocol: an output directory belongs to one bot, one first day, one set of seeds and one career length. */
 export function claimProtocol(out: string, options: JobOptions, start: string | undefined) {
-  const protocol = JSON.stringify({ bot: options.seatsFirst === false ? 'price' : 'plan', start: start ?? 'default', seeds: options.standardSeeds, days: options.days, shift1: options.shift1Seeds });
+  const protocol = JSON.stringify({ bot: options.seatsFirst === false ? 'price' : 'plan', start: start ?? 'default', seeds: options.standardSeeds, days: options.days, shift1: options.shift1Seeds, ...(options.skipStandard ? { skipStandard: true } : {}) });
   const protocolFile = join(out, 'protocol.json');
   if (existsSync(protocolFile)) assert.equal(readFileSync(protocolFile, 'utf8'), protocol, `${out} holds runs of another protocol`); else writeFileSync(protocolFile, protocol);
 }
@@ -107,7 +110,9 @@ export function claimProtocol(out: string, options: JobOptions, start: string | 
  */
 export interface Judge { only: string[] | null; knownRed: string[]; p0Floor: number | null }
 const matches = (r: { id: string }, ids: string[]) => ids.some(id => r.id === id || r.id.startsWith(`${id}.`));
-const scoped = (e: Evaluated, j: Judge) => e.failing[0] === 'invalid' ? e.score : score(e.rows.filter(r => (!j.only || matches(r, j.only)) && !matches(r, j.knownRed)));
+export const scoped = (e: Evaluated, j: Judge) => e.failing[0] === 'invalid' ? e.score : score(e.rows.filter(r => (!j.only || matches(r, j.only)) && !matches(r, j.knownRed)));
+/** The ids of the judged rows that fail (an invalid candidate says so). */
+export const judgedFailing = (e: Evaluated, j: Judge) => e.failing[0] === 'invalid' ? e.failing : e.rows.filter(r => !r.ok && (!j.only || matches(r, j.only)) && !matches(r, j.knownRed)).map(r => r.id);
 /** The share of the shift-1 probes that end below table 2's price (the worse of the two service models): what `--p0-floor` must not make worse than the base. */
 const p0Share = (e: Evaluated) => e.shift1 ? Math.max(e.shift1.below, e.shift1.belowSlow) / e.shift1.seeds : 0;
 /** A candidate whose ladders are not monotone is never a best, whether it was run before (a cached run of an earlier sweep) or not. */
@@ -121,13 +126,13 @@ const better = (a: Evaluated, b: Evaluated, j: Judge) => {
 if (process.argv[1] && resolve(process.argv[1]) === here) {
   const argv = process.argv.slice(2), option = (name: string) => argv.find(a => a.startsWith(`--${name}=`))?.slice(name.length + 3);
   const planFile = option('plan'), out = option('out');
-  assert.ok(planFile && out, 'Usage: balance-sweep --plan=<plan.mjs> --out=<dir> [--pool=5] [--passes=3] [--days=30] [--shift1=60] [--bot=price] [--start=YYYY-MM-DD] [--stop-at-clean] [--known-red=shift1.wallet] [--p0-floor]');
+  assert.ok(planFile && out, 'Usage: balance-sweep --plan=<plan.mjs> --out=<dir> [--pool=5] [--passes=3] [--days=30] [--shift1=60] [--bot=price] [--start=YYYY-MM-DD] [--stop-at-clean] [--known-red=shift1.wallet] [--p0-floor] [--skip-standard]');
   const pool = Number(option('pool') ?? 5), passes = Number(option('passes') ?? 3);
   const judge: Judge = { only: option('gates')?.split(',') ?? null, knownRed: option('known-red')?.split(',') ?? [], p0Floor: null };
   const options: JobOptions = { days: Number(option('days') ?? 30), onboardingPair: false, shift1Seeds: Number(option('shift1') ?? TARGETS.shift1Seeds), standardSeeds: (option('seeds') ?? '42,99').split(',').map(Number),
-    seatsFirst: option('bot') === 'price' ? false : undefined, startAt: option('start') ? Date.parse(`${option('start')}T00:00:00+07:00`) : undefined };
+    seatsFirst: option('bot') === 'price' ? false : undefined, startAt: option('start') ? Date.parse(`${option('start')}T00:00:00+07:00`) : undefined, skipStandard: argv.includes('--skip-standard') };
   const plan = (await import(pathToFileURL(resolve(planFile)).href)).default as Plan;
-  applyPatch(bundled.raw, plan.base); for (const c of plan.coordinates) for (const v of c.values) applyPatch(bundled.raw, v.patch); // a path that does not exist fails now, not after an hour
+  applyPatch(bundled.raw, plan.base); for (const c of plan.coordinates) for (const v of valuesOf(c, plan.base)) applyPatch(bundled.raw, v.patch); // a path that does not exist fails now, not after an hour
   mkdirSync(out, { recursive: true });
   claimProtocol(out, options, option('start'));
   const log = (line: string) => { console.log(line); writeFileSync(join(out, 'sweep.log'), line + '\n', { flag: 'a' }); };
@@ -139,11 +144,12 @@ if (process.argv[1] && resolve(process.argv[1]) === here) {
   for (let pass = 1; pass <= passes && !clean; pass++) {
     let improved = false;
     for (const coordinate of plan.coordinates) {
-      const candidates = coordinate.values.map(v => ({ ...current.patch, ...v.patch }));
+      const choices = valuesOf(coordinate, current.patch);
+      const candidates = choices.map(v => ({ ...current.patch, ...v.patch }));
       const evaluated = await evaluateAll(candidates, out, options, pool, `${pass}:${coordinate.name}`);
       const byHash = new Map(evaluated.map(e => [e.hash, e]));
       let best = current;
-      for (const [i, v] of coordinate.values.entries()) {
+      for (const [i, v] of choices.entries()) {
         const e = byHash.get(hashOf(candidates[i]))!;
         log(`  pass ${pass} ${coordinate.name} = ${v.label}: fails ${scoped(e, judge).fails}, violation ${scoped(e, judge).violation.toFixed(3)} [${e.failing.join(', ')}]${judge.p0Floor !== null && p0Share(e) > judge.p0Floor + 1e-9 ? ' (shift 1 worse: rejected)' : ''}${e.failing[0] !== 'invalid' && !sane(e) ? ' (ladder not monotone: rejected)' : ''}`);
         if (better(e, best, judge)) best = e;

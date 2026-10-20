@@ -250,7 +250,7 @@ export const score = (rows: Gate[]) => ({ fails: rows.reduce((n, r) => n + Objec
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------
 export interface JobResult { job: string; ms: number; career?: CareerMetrics; standard?: StandardMetrics; shift1?: Shift1Metrics }
-export interface JobOptions { days: number; onboardingPair: boolean; shift1Seeds: number; standardSeeds: number[]; startAt?: number; seatsFirst?: boolean }
+export interface JobOptions { days: number; onboardingPair: boolean; shift1Seeds: number; standardSeeds: number[]; startAt?: number; seatsFirst?: boolean; skipStandard?: boolean }
 export function runJob(job: string, patch: Patch, options: JobOptions): JobResult {
   const started = Date.now(), config = patchedConfig(patch);
   const [kind, arg] = job.split(':');

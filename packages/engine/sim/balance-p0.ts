@@ -4,7 +4,7 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { config as bundled, loadConfig, type SeedConfig } from '../src/index';
 import { applyPatch, runShift1, type Patch, type Shift1Metrics } from './balance-gates';
-import { hashOf, type Plan } from './balance-sweep';
+import { hashOf, valuesOf, type Plan } from './balance-sweep';
 
 /**
  * The P0 descent (plan section 0 P0, review round 1 of S5): shift 1 must EARN table 2 - a start wallet of 750 xu that does not pay it and a wallet that has grown to its price by
@@ -37,7 +37,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     let improved = false;
     for (const coordinate of plan.coordinates) {
       let best = current;
-      for (const v of coordinate.values) {
+      for (const v of valuesOf(coordinate, current.patch)) {
         const r = run({ ...current.patch, ...v.patch });
         say(`  pass ${pass} ${coordinate.name} = ${v.label}: worst ${r.worst} median ${r.median} below ${r.below}/${r.belowSlow} served min ${r.servedMin}`);
         if (better(r, best)) best = r;
