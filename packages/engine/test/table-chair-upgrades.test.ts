@@ -235,23 +235,40 @@ test('Lv2 adds exactly one round and it stays at Lv3 and Lv4: tables of Lv1 to L
   }
 });
 
-test('a benefit serves the NEXT group: the group already seated keeps its level, its rounds and its chair level', () => {
-  const g = shop(raw => { busy(raw); raw.upgrades.table.orderShape.pair.pMoi = 0; }, { lifePath: 2 }), w = g.world, first = w.tables[0];
+test('a benefit serves the NEXT group: the group already seated keeps its level, its rounds, its chair level and the patience of every later round', () => {
+  const g = shop(raw => { busy(raw); raw.demandMix.pSecondRound = 1; raw.upgrades.table.orderShape.pair.pMoi = 0; }, { lifePath: 2 }), w = g.world, first = w.tables[0];
   must(g, { type: 'startShift' });
-  const watch = watcher(g); let guard = 0;
-  while (!(first.group && ['waiting', 'consuming'].includes(first.state)) && guard++ < 2000) { run(g, 100, { ...watch }); }
-  const seated = first.group!; assert.ok(seated, 'a pair sat at the first table'); assert.deepEqual([seated.level, seated.chairLevel, seated.rounds], [1, 1, 1]);
-  const patience = first.order!.patienceMs;
+  const watch = watcher(g);
+  const until = (done: () => boolean) => { for (let i = 0; i < 6000 && !done(); i++) run(g, 100, watch); assert.ok(done(), 'the scenario reached its next step'); };
+  until(() => !!first.group && first.state === 'waiting');
+  const seated = first.group!, firstOrder = first.order!, patience = firstOrder.patienceMs;
+  assert.deepEqual([seated.level, seated.chairLevel, seated.rounds], [1, 1, 2], 'a Lv1 table with Lv1 chairs: the two rounds this pair rolled');
   must(g, { type: 'upgradeTable', tableId: first.id }); must(g, { type: 'upgradeChair', tableId: first.id });
-  assert.deepEqual([seated.level, seated.chairLevel, seated.rounds], [1, 1, 1], 'the purchase does not touch the group at the table');
-  assert.equal(first.order!.patienceMs, patience, 'nor the order it is waiting on');
-  let next = null as null | typeof seated;
-  for (let i = 0; i < 4000 && !next; i++) { run(g, 100, watch); if (first.group && first.group.id !== seated.id) next = first.group; }
-  assert.ok(next, 'a later pair sat at the same table'); assert.deepEqual([next.level, next.chairLevel, next.rounds], [2, 2, 2], 'the next group gets Lv2 and the better chairs');
-  run(g, 60000, watch); must(g, { type: 'endShift' });
+  assert.deepEqual([seated.level, seated.chairLevel, seated.rounds], [1, 1, 2], 'the purchase does not touch the group at the table');
+  assert.equal(firstOrder.patienceMs, patience, 'nor the order it is waiting on');
+  until(() => first.order !== null && first.order.id !== firstOrder.id && first.group === seated);
+  assert.equal(first.order!.patienceMs, patience, 'its second round waits as long as its first: the new chairs are for the next group');
+  assert.deepEqual([seated.level, seated.chairLevel, seated.rounds], [1, 1, 2]);
+  until(() => !!first.group && first.group.id !== seated.id && first.state === 'waiting');
+  const next = first.group!;
+  assert.deepEqual([next.level, next.chairLevel, next.rounds], [2, 2, 3], 'the next group gets Lv2 (one round more than the two it rolled) and the better chairs');
+  assert.equal(first.order!.patienceMs, Math.round(Math.min(...next.customers.map(x => x.patienceMs)) * 1.15), 'and waits 1.15 times as long');
+  run(g, 90000, watch); must(g, { type: 'endShift' });
   const mine = visits(g).filter(v => v.tableId === first.id && !v.expired);
-  assert.equal(mine.find(v => v.groupId === seated.id)!.orders, 1, 'the seated group ordered once, as the group it sat down as');
-  assert.equal(mine.find(v => v.groupId === next!.id)?.orders, 2, 'the next group ordered twice');
+  assert.equal(mine.find(v => v.groupId === seated.id)!.orders, 2, 'the seated group ordered twice, as the group it sat down as');
+  assert.equal(mine.find(v => v.groupId === next.id)?.orders, 3, 'the next group ordered three times');
+});
+
+test('a table level only works with two chairs: a one-chair table that kept a level (a migrated save) gives its group nothing', () => {
+  const g = shop(raw => { busy(raw); raw.spawn.pPair = 0; raw.upgrades.table.orderShape.solo.pBeer = 1; }, { chairs: false, lifePath: 4 }), w = g.world;
+  w.tables[0].level = 4; // the D2 migration keeps a level bought under the capacity ladder; no purchase can reach one at a single chair (levels need two)
+  must(g, { type: 'startShift' });
+  const watch = watcher(g); run(g, 90000, watch);
+  const mine = [...watch.seen.values()].filter(s => s.table === w.tables[0].id); assert.ok(mine.length >= 3, `${mine.length} groups at the one-chair Lv4 table`);
+  for (const s of mine) assert.deepEqual([s.level, s.rounds], [1, 1], 'no round, no second snack, no tip multiplier: the group counts as Lv1');
+  const tips = w.serves.filter(s => s.tip > 0 && w.events.some(e => e.type === 'order_served' && e.data.orderId === s.orderId && e.data.tableId === w.tables[0].id));
+  const c = g.config.values; assert.ok(tips.length >= 3);
+  for (const s of tips) assert.equal(s.tip, Math.round(Math.round(s.payment * c.tip.rate) * c.rush.none.tipMult * c.weather.sunny.tipMult * c.customerTypes.thuong.tipMult), 'the tip of a Lv1 table');
 });
 
 test('Lv3: a second snack with probability pExtraMoi, only for a snack that is in stock, and the tray is delivered only when every dish is ready', () => {
@@ -376,6 +393,11 @@ test('upgradeChair is a rules-28 command: a log entry recorded below rules 28 is
   assert.ok(back.world.tables.some(t => t.chairLevel === 2) && back.world.events.some(e => e.type === 'chair_upgraded'));
   const old = JSON.parse(text); old.log.find((e: { command: { type: string } }) => e.command.type === 'upgradeChair').rulesVersion = 27;
   assert.throws(() => decodeSave(JSON.stringify(old)), /replay:rulesVersion/);
+  // A capacity pin may run at rules 28: the command is refused and logged there, and the guard keeps it out of any history recorded below rules 28.
+  const pin = new Game(loadConfig(structuredClone(capacityModel)), 42, T0);
+  assert.deepEqual(send(pin, { type: 'upgradeChair', tableId: pin.world.tables[0].id }), { ok: false, reason: 'chairUpgradeUnavailable' });
+  const capacitySave = JSON.parse(encodeSave(pin)); assert.equal(capacitySave.log.at(-1).command.type, 'upgradeChair'); assert.doesNotThrow(() => decodeSave(JSON.stringify(capacitySave)));
+  capacitySave.log.at(-1).rulesVersion = 27; assert.throws(() => decodeSave(JSON.stringify(capacitySave)), /replay:rulesVersion/);
 });
 
 test('a pinned 2.0.22 save adopts the new bundle at its next opening: the tables it bought keep their levels and give their benefits from that opening on', () => {
