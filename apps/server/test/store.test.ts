@@ -165,7 +165,7 @@ test('a paid lease survives SQLite restart; offline expiry refunds the stored de
   send(a, 'tenant', 'open', { type: 'startShift' }); f.now += 11000; send(a, 'tenant', 'serve', ready(a, 'tenant'));
   send(a, 'tenant', 'close', { type: 'endShift' }); f.now += 3600000;
   assert.equal(a.read('tenant').world.lifePath, 1);
-  const action = { type: 'rentLocation', locationId: 'ngo_cho', leaseId: null, maxCost: 87500 } as const;
+  const action = { type: 'rentLocation', locationId: 'ngo_cho', leaseId: null, maxCost: 37500 } as const; // 3 days x 10 000 + the 25 % deposit (JSON 2.1.0)
   const rented = send(a, 'tenant', 'rent', action); assert.ok(rented.result.ok); assert.ok(rented.world.lease);
   send(a, 'tenant', 'away', { type: 'activity', active: false }); a.close();
   const b = f.open(pin), before = b.read('tenant'); assert.deepEqual(before.world.lease, rented.world.lease);
@@ -173,7 +173,10 @@ test('a paid lease survives SQLite restart; offline expiry refunds the stored de
   f.now = rented.world.lease.expiresAt + 1000; const expired = b.read('tenant');
   assert.equal(expired.world.location, 'hem_nho'); assert.equal(expired.world.lease, undefined);
   assert.equal(expired.world.coins, before.world.coins + rented.world.lease.deposit);
-  assert.equal(expired.world.lifetimeEarned, before.world.lifetimeEarned); assert.equal(expired.world.seasonEarned, 0); assert.equal(expired.world.seasons!.results.find(r => r.kind === 'ranking')!.earned, before.world.seasonEarned);
+  assert.equal(expired.world.lifetimeEarned, before.world.lifetimeEarned);
+  // The refund earns nothing in the season either: a short lease ends inside the 21-day ranking window, so the earned amount is whole in seasonEarned (or in a result, if a window rolled).
+  const rolledEarned = expired.world.seasons!.results.filter(r => r.kind === 'ranking').reduce((n, r) => n + r.earned, 0);
+  assert.equal(expired.world.seasonEarned + rolledEarned, before.world.seasonEarned);
   assert.deepEqual(expired.world.dayEarned, before.world.dayEarned);
   b.close(); const c = f.open(pin); assert.deepEqual(c.read('tenant'), expired);
   assert.equal(send(c, 'tenant', 'rent', action).world.coins, expired.world.coins);
@@ -181,16 +184,18 @@ test('a paid lease survives SQLite restart; offline expiry refunds the stored de
 });
 
 test('season rollover and old service retries survive SQLite restart without moving revenue into the next season', t => {
+  // The calendar this was written for: a weekly ranking inside a two-week contest (JSON 2.1.0 seals one 21-day window for both, so the contest could not continue past the ranking reset).
+  const raw = structuredClone(config.raw); raw.league.seasons.ranking.days = 7; raw.league.seasons.contest.days = 14; const weekly = loadConfig(raw);
   const f = fixture(t); f.now = Date.parse(config.values.league.seasons.epochUtc) + 86400000;
-  const a = f.open(); a.createPlayer('season-player', 42);
+  const a = f.open(weekly); a.createPlayer('season-player', 42);
   send(a, 'season-player', 'open', { type: 'startShift' }); f.now += 11000;
   const action = ready(a, 'season-player'), first = send(a, 'season-player', 'serve', action);
   const end = first.world.seasons!.ranking.endsAt, amount = first.world.seasonEarned;
   send(a, 'season-player', 'pause', { type: 'activity', active: true, paused: true }); a.close();
-  f.now = end; const b = f.open(), rolled = b.read('season-player');
+  f.now = end; const b = f.open(weekly), rolled = b.read('season-player');
   assert.equal(rolled.world.seasonEarned, 0); assert.equal(rolled.world.seasons!.ranking.startsAt, end);
   assert.equal(rolled.world.seasons!.results.find(r => r.kind === 'ranking')!.earned, amount);
   const retry = send(b, 'season-player', 'serve', action); assert.deepEqual(retry.result, first.result);
   assert.deepEqual(retry.world, rolled.world); assert.equal(retry.world.seasons!.contestEarned, amount);
-  b.close(); const c = f.open(); assert.deepEqual(c.read('season-player'), rolled);
+  b.close(); const c = f.open(weekly); assert.deepEqual(c.read('season-player'), rolled);
 });

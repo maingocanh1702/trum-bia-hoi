@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import seed from '../../../docs/config/economy.tbh.json';
-import { Game, config, loadConfig, type Command, type SeedConfig } from '../src';
+import { Game, config, loadConfig, upgradeQuote, buyTableQuote, type Command, type SeedConfig } from '../src';
 import { createManagementPolicy } from '../sim/policy';
 import { simulateCareer, CAREER_POLICY } from '../sim/career';
 import { steadyDemand } from './fixtures/steady-demand';
@@ -43,12 +43,18 @@ test('the price decides: with a table that costs more than a device the bot buys
   assert.ok(bought(cheapest).includes('upgrade'), 'a device is the cheapest thing it can pay for'); assert.equal(cheapest.world.tables.length, 1);
   assert.deepEqual(bought(seatsFirst), [], 'saving for the table: nothing else is bought');
   assert.equal(seatsFirst.world.tables.length, 1);
-  // With the ordinary prices the first purchase of a rich new shop is table 2 under both bots (it is also the cheapest).
-  for (const first of [false, true]) {
+  // With the ordinary prices a rich new shop buys different first things: the bot that decides by price takes the cheapest (in the 2.1.0 numbers the stall's second level,
+  // 1 250, is below table 2, 1 500) and the seats-first bot takes table 2.
+  const ordinary = (seatsFirst: boolean) => {
     const raw = structuredClone(seed); raw.shift.startingCoinsBase = 4000;
-    const g = new Game(loadConfig(raw), 42, T0); createManagementPolicy(g, send(g), { seatsFirst: first })();
-    assert.equal(g.world.tables.length, 2, `seatsFirst ${first}`);
-  }
+    const g = new Game(loadConfig(raw), 42, T0); createManagementPolicy(g, send(g), { seatsFirst })();
+    return g;
+  };
+  const byPrice = ordinary(false), bySeats = ordinary(true);
+  const stall = upgradeQuote(bySeats.world, bySeats.config, 'stall'), table = buyTableQuote(bySeats.world, bySeats.config);
+  assert.ok(stall.ok && table.ok && stall.cost! < table.cost!, 'the stall costs less than table 2 in the sealed numbers');
+  assert.deepEqual(bought(byPrice), ['upgrade']); assert.equal(byPrice.world.tables.length, 1);
+  assert.deepEqual(bought(bySeats), ['buyTable']); assert.equal(bySeats.world.tables.length, 2);
 });
 
 test('the career reports its policy and starts at the first Vietnam midnight of a 21-day season, with the shifts it plays in the order the clock gives them', () => {

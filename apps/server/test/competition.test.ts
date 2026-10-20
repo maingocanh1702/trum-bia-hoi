@@ -6,22 +6,24 @@ import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import zlib from 'node:zlib';
 import { syncBuiltinESMExports } from 'node:module';
-import { Game, config, encodeSave, loadConfig, type Command, type World } from '@tbh/engine';
+import { Game, config, encodeSave, loadConfig, type Command, type Config, type World } from '@tbh/engine';
 import { importBaseline, competitivePeriods } from '../src/competitive-score';
 import { GameStore } from '../src/store';
 import { Competition, type CompetitionRequest } from '../src/competition';
 import type { AdminActor } from '../src/registry';
 const NOW = Date.parse('2026-09-10T10:00:00Z');
-function fixture(t: { after(fn: () => void): void }, at = NOW) {
+/** The calendar the window test below was written for: a weekly ranking inside a two-week contest. JSON 2.1.0 seals ONE 21-day window for both, which cannot show "the ranking resets, the contest continues". */
+function weeklyConfig() { const raw = structuredClone(config.raw); raw.league.seasons.ranking.days = 7; raw.league.seasons.contest.days = 14; return loadConfig(raw); }
+function fixture(t: { after(fn: () => void): void }, at = NOW, cfg: Config = config) {
   const dir = mkdtempSync(join(tmpdir(), 'tbh-competition-')), file = join(dir, 'game.db');
   let now = at; const stores: GameStore[] = [];
-  const open = () => { const s = new GameStore(file, config, () => now); stores.push(s); return s; };
+  const open = () => { const s = new GameStore(file, cfg, () => now); stores.push(s); return s; };
   const store = open(), db = new DatabaseSync(file);
   t.after(() => { stores.forEach(s => s.close()); db.close(); rmSync(dir, { recursive: true, force: true }); });
   const actor = (role: AdminActor['role'] = 'game', subject: string = role): AdminActor => ({ subject, role, mfa: true, issuedAt: now, expiresAt: now + 3600000 });
   const login = () => { const g = store.createGuestSession(86400000); return store.signInGoogle(g.token, store.issueGoogleChallenge(g.token).nonce, { subject: 'player-one' }, 86400000); };
   const imported = async (closed = false, extraCommands = 0) => {
-    const account = login(), game = new Game(config, 42, now - 11100, 'local-reviewed');
+    const account = login(), game = new Game(cfg, 42, now - 11100, 'local-reviewed');
     game.command({ at: game.world.now, idempotencyKey: 'open', command: { type: 'startShift' } }); game.advance(now);
     const table = game.world.tables.find(t => t.order?.items.every(i => i.state === 'ready'))!;
     assert.ok(game.command({ at: now, idempotencyKey: 'serve', command: { type: 'serve', tableId: table.id, orderId: table.order!.id } }).ok);
@@ -171,7 +173,7 @@ test('server-origin guest scores survive Google attachment and current flag deci
 });
 
 test('an exact new ranking window stops old local subtraction while the continuing contest keeps its own baseline', async t => {
-  const f = fixture(t, NOW - 7 * 86400000), { receipt, before } = await f.imported(), id = receipt.playerId;
+  const f = fixture(t, NOW - 7 * 86400000, weeklyConfig()), { receipt, before } = await f.imported(), id = receipt.playerId;
   const end = before.world.seasons!.ranking.endsAt;
   assert.ok(end < before.world.seasons!.contest.endsAt);
   f.now = end;

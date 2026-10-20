@@ -579,7 +579,7 @@
   },
   "tip": {
     "patienceThreshold": 0.6,
-    "rate": 0.3,
+    "rate": 0.2,
     "vipMult": 10,
     "qrMult": 1.2,
     "qrRounding": "ceil",
@@ -640,10 +640,10 @@
       "label": "Bom bia + vòi rót",
       "priceBase": [
         0,
-        5000,
-        20000,
-        80000,
-        300000
+        2000,
+        8000,
+        16000,
+        60000
       ],
       "pourSlots": [
         1,
@@ -682,16 +682,16 @@
       ],
       "refillEnabled": true,
       "phase": 1,
-      "_rule": "Đầu ca châm phần còn thiếu tới kegStorage từ kho thật, giữ nguyên bia và mẻ đang chạy. Khi có chỗ và kho bia, mẻ mới bắt đầu ngay, lấy min(kegBatch, chỗ trống, kho), hoàn tất sau refillMs; việc mới chờ mẻ sau. Rules 28 trên snapshot bàn ghế khi refillEnabled bật: khách gọi bia thì cốc bia sẵn sàng ngay trong tick gọi nếu bom còn cốc rót sẵn và có cốc sạch (trừ 1 khỏi bom, không qua vòi) — pourSlots/pourMs không còn nằm trên đường phục vụ, chỉ còn cho snapshot sức chứa cũ và replay rules ≤ 27. Tắt refillEnabled thì rót trực tiếp từ kho theo vòi: tối đa pourSlots cốc trong pourMs, mỗi cốc trừ 1 khỏi kho."
+      "_rule": "Đầu ca châm phần còn thiếu tới kegStorage từ kho thật, giữ nguyên bia và mẻ đang chạy. Khi có chỗ và kho bia, mẻ mới bắt đầu ngay, lấy min(kegBatch, chỗ trống, kho), hoàn tất sau refillMs; việc mới chờ mẻ sau. Rules 28 trên snapshot bàn ghế khi refillEnabled bật: khách gọi bia thì cốc bia sẵn sàng ngay trong tick gọi nếu bom còn cốc rót sẵn và có cốc sạch (trừ 1 khỏi bom, không qua vòi) — pourSlots/pourMs không còn nằm trên đường phục vụ, chỉ còn cho snapshot sức chứa cũ và replay rules ≤ 27. Tắt refillEnabled thì rót trực tiếp từ kho theo vòi: tối đa pourSlots cốc trong pourMs, mỗi cốc trừ 1 khỏi kho. Giá Lv2–5 (JSON 2.1.0, S5) định theo thứ chúng mua — dự trữ rót sẵn `kegStorage` 4/7/12/20/40 và mẻ nạp `kegBatch`/`refillMs` — không còn theo tốc độ vòi (`pourSlots`/`pourMs`), vì từ rules 28 vòi không nằm trên đường phục vụ."
     },
     "washer": {
       "label": "Bồn rửa cốc",
       "priceBase": [
         0,
-        4000,
-        16000,
-        60000,
-        200000
+        1500,
+        6500,
+        12000,
+        40000
       ],
       "washMs": [
         7000,
@@ -714,10 +714,10 @@
       "label": "Hầm / tủ giữ lạnh",
       "priceBase": [
         0,
-        3000,
-        12000,
-        45000,
-        150000
+        1250,
+        4750,
+        9000,
+        30000
       ],
       "freshnessMs": [
         12000,
@@ -732,10 +732,10 @@
       "label": "Quầy / kho",
       "priceBase": [
         0,
-        1500,
-        8000,
-        30000,
-        120000
+        500,
+        3250,
+        6000,
+        24000
       ],
       "stockCap": [
         15,
@@ -751,10 +751,10 @@
       "label": "Bếp",
       "priceBase": [
         null,
-        12000,
-        50000,
-        160000,
-        400000
+        4750,
+        20000,
+        32000,
+        80000
       ],
       "slots": [
         0,
@@ -828,22 +828,22 @@
       "startingTables": 1,
       "tablePriceBase": [
         600,
-        1600,
-        3200,
-        6000,
-        10000,
-        16000,
-        25000
+        2000,
+        4000,
+        7500,
+        12500,
+        20000,
+        31300
       ],
       "chairPriceBase": [
-        4000,
-        6000,
-        9000,
-        12000,
-        16000,
-        20000,
-        24000,
-        28000
+        10000,
+        15000,
+        22500,
+        30000,
+        40000,
+        50000,
+        60000,
+        70000
       ],
       "chairsAfterTables": 4,
       "orderShape": {
@@ -1074,7 +1074,7 @@
       "veteran": 5
     },
     "entitlementsRef": "xem section entitlements (free/ngày là CONFIG, không hardcode)",
-    "dailyEarnCapBase": 200000,
+    "dailyEarnCapBase": 400000,
     "capBucket": "per-earn, VN day",
     "shiftCreditAt": "finalize",
     "wellRested": {
@@ -1090,7 +1090,7 @@
       "at": "00:00",
       "serverSide": true
     },
-    "startingCoinsBase": 300
+    "startingCoinsBase": 700
   },
   "network": {
     "_rule": "F23 §8 · 10-SPEC §10. Mất mạng giữa ca: client buffer command, reconnect resync từ event log; quá reconnectGraceMs thì server đóng ca theo luật closing.",
@@ -1375,46 +1375,46 @@
       {
         "id": "bac",
         "name": "Cốc Thủy Tinh",
-        "minSeasonEarnedBase": 20000
+        "minSeasonEarnedBase": 8000
       },
       {
         "id": "vang",
         "name": "Vại Sành",
-        "minSeasonEarnedBase": 60000
+        "minSeasonEarnedBase": 20000
       },
       {
         "id": "titan",
         "name": "Vại Đồng",
-        "minSeasonEarnedBase": 120000
+        "minSeasonEarnedBase": 80000
       },
       {
         "id": "bach_kim",
         "name": "Bom Bạc",
-        "minSeasonEarnedBase": 180000
+        "minSeasonEarnedBase": 280000
       },
       {
         "id": "hong_ngoc",
         "name": "Bom Vàng",
-        "minSeasonEarnedBase": 300000
+        "minSeasonEarnedBase": 680000
       },
       {
         "id": "kim_cuong",
         "name": "Vua Bia",
-        "minSeasonEarnedBase": 500000
+        "minSeasonEarnedBase": 1200000
       },
       {
         "id": "huyen_thoai",
         "name": "Trùm Bia Hơi",
-        "minSeasonEarnedBase": 1000000
+        "minSeasonEarnedBase": 2000000
       }
     ],
     "seasons": {
       "ranking": {
-        "days": 7,
+        "days": 21,
         "reward": "heavy + top10 medal + shrine"
       },
       "contest": {
-        "days": 14,
+        "days": 21,
         "reward": "light"
       },
       "epochUtc": "2026-04-11T10:00:00Z",
@@ -1447,7 +1447,7 @@
     {
       "id": "LP1",
       "name": "Phụ Quán",
-      "lifetimeBase": 50000,
+      "lifetimeBase": 8000,
       "rewardCoinBase": 5000,
       "extra": [
         "crate.small"
@@ -1459,7 +1459,7 @@
     {
       "id": "LP2",
       "name": "Tay Ngang",
-      "lifetimeBase": 150000,
+      "lifetimeBase": 20000,
       "rewardCoinBase": 10000,
       "extra": [
         "badgeShard"
@@ -1472,7 +1472,7 @@
     {
       "id": "LP3",
       "name": "Chủ Sạp",
-      "lifetimeBase": 500000,
+      "lifetimeBase": 80000,
       "rewardCoinBase": 20000,
       "extra": [
         "crate.medium"
@@ -1485,7 +1485,7 @@
     {
       "id": "LP4",
       "name": "Chủ Quán",
-      "lifetimeBase": 1500000,
+      "lifetimeBase": 280000,
       "rewardCoinBase": 50000,
       "extra": [
         "badgeShard",
@@ -1499,7 +1499,7 @@
     {
       "id": "LP5",
       "name": "Ông Chủ",
-      "lifetimeBase": 5000000,
+      "lifetimeBase": 680000,
       "rewardCoinBase": 100000,
       "extra": [
         "crate.medium",
@@ -1513,7 +1513,7 @@
     {
       "id": "LP6",
       "name": "Đại Gia Bia",
-      "lifetimeBase": 15000000,
+      "lifetimeBase": 1200000,
       "rewardCoinBase": 250000,
       "extra": [
         "crate.large",
@@ -1529,7 +1529,7 @@
     {
       "id": "LP7",
       "name": "Trùm Bia Hơi",
-      "lifetimeBase": 50000000,
+      "lifetimeBase": 2000000,
       "rewardCoinBase": 500000,
       "extra": [
         "crate.large"
@@ -1542,7 +1542,7 @@
   ],
   "locations": {
     "rentFormula": "rentPerDayBase × k (chốt bảng 09/09, neo 15–25 % thu nhập tier; không còn dùng công thức e)",
-    "leaseDays": 7,
+    "leaseDays": 3,
     "depositRate": 0.25,
     "earlyLeaveLosesDeposit": true,
     "fallback": "hem_nho",
@@ -1550,7 +1550,7 @@
       {
         "id": "hem_nho",
         "name": "Hẻm Nhỏ",
-        "mult": 1.0,
+        "mult": 1,
         "e": null,
         "rentPerDayBase": 0,
         "gate": null,
@@ -1560,7 +1560,7 @@
       {
         "id": "ngo_cho",
         "name": "Ngõ Chợ",
-        "mult": 1.1,
+        "mult": 1.019,
         "e": 10,
         "rentPerDayBase": 4000,
         "gate": "LP1",
@@ -1570,72 +1570,72 @@
       {
         "id": "ben_xe",
         "name": "Bến Xe",
-        "mult": 1.2,
+        "mult": 1.038,
         "e": 15,
         "rentPerDayBase": 6800,
         "gate": "LP1",
         "gateLifePath": 1,
-        "tableSlots": 4
+        "tableSlots": 5
       },
       {
         "id": "gan_cong_so",
         "name": "Gần Công Sở",
-        "mult": 1.3,
+        "mult": 1.056,
         "e": 20,
         "rentPerDayBase": 10000,
         "gate": "LP2",
         "gateLifePath": 2,
-        "tableSlots": 4
+        "tableSlots": 6
       },
       {
         "id": "gan_svd",
         "name": "Gần Sân Vận Động",
-        "mult": 1.4,
+        "mult": 1.075,
         "e": 25,
         "rentPerDayBase": 14000,
         "gate": "LP3",
         "gateLifePath": 3,
-        "tableSlots": 4
+        "tableSlots": 6
       },
       {
         "id": "ho_bia_dem",
         "name": "Hồ Bia Đêm",
-        "mult": 1.5,
+        "mult": 1.094,
         "e": 30,
         "rentPerDayBase": 18000,
         "gate": "LP3",
         "gateLifePath": 3,
-        "tableSlots": 4
+        "tableSlots": 7
       },
       {
         "id": "pho_co",
         "name": "Phố Cổ",
-        "mult": 1.6,
+        "mult": 1.112,
         "e": 35,
         "rentPerDayBase": 24000,
         "gate": "LP4",
         "gateLifePath": 4,
-        "tableSlots": 4
+        "tableSlots": 8
       },
       {
         "id": "ga_metro",
         "name": "Ga Metro",
-        "mult": 1.7,
+        "mult": 1.131,
         "e": 40,
         "rentPerDayBase": 32000,
         "gate": "LP5",
         "gateLifePath": 5,
-        "tableSlots": 4
+        "tableSlots": 8
       },
       {
         "id": "pho_tay",
         "name": "Khu Phố Tây",
-        "mult": 1.8,
+        "mult": 1.15,
         "e": 45,
         "rentPerDayBase": 44000,
         "gate": "LP6",
         "gateLifePath": 6,
-        "tableSlots": 4
+        "tableSlots": 8
       }
     ],
     "phase": 3,

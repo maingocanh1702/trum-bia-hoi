@@ -21,9 +21,11 @@ function rent(g: Game, locationId = 'ngo_cho', key?: string) {
 const replay = (g: Game) => assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
 const leaseEvents = (g: Game) => g.world.events.filter(e => e.type.startsWith('lease_'));
 
-test('rent prepays seven scaled daily rents plus deposit once; a failed or stale move preserves the old contract', () => {
+test('rent prepays the configured lease days of scaled daily rents plus deposit once; a failed or stale move preserves the old contract', () => {
   const g = game(), w = g.world, before = w.coins;
-  const q = leaseQuote(w, g.config, 'ngo_cho'); assert.equal(q.rent, 70000); assert.equal(q.deposit, 17500); assert.equal(q.cost, 87500);
+  // JSON 2.1.0: leaseDays 3 x 4 000 base x 2.5 = 30 000, deposit depositRate 0.25 of it
+  assert.equal(g.config.values.locations.leaseDays, 3);
+  const q = leaseQuote(w, g.config, 'ngo_cho'); assert.equal(q.rent, 30000); assert.equal(q.deposit, 7500); assert.equal(q.cost, 37500);
   assert.ok(rent(g, 'ngo_cho', 'first-lease').ok); assert.equal(w.coins, before - q.cost); assert.equal(w.location, 'ngo_cho');
   const signed = structuredClone(w), original = g.log.at(-1)!;
   assert.ok(g.command({ ...original, command: original.command as Command }).ok); assert.deepEqual(w, signed);
@@ -48,7 +50,9 @@ test('early switch and departure forfeit old deposit and rent; expiry at the exa
   const result = g.command({ command: { type: 'leaveLocation', leaseId: lease.id }, at: lease.expiresAt, idempotencyKey: 'at-expiry' });
   assert.equal(result.reason, 'leaseChanged'); assert.equal(w.coins, coins + lease.deposit);
   assert.equal(leaseEvents(g).filter(e => e.type === 'lease_deposit_refunded').length, 1);
-  assert.equal(w.seasonEarned, 0); assert.equal(w.seasons!.results.find(r => r.kind === 'ranking')!.earned, w.serves[0].credited); assert.equal(w.lifetimeEarned, w.serves[0].credited); assert.equal(Object.values(w.dayEarned).reduce((a, b) => a + b, 0), w.serves[0].credited); replay(g);
+  // Three short leases do not reach the 21-day ranking rollover of 2.1.0: whatever has not rolled into a result is still in seasonEarned, and together they are exactly the one served order.
+  const rolled = w.seasons!.results.filter(r => r.kind === 'ranking').reduce((a, r) => a + r.earned, 0);
+  assert.equal(w.seasonEarned + rolled, w.serves[0].credited); assert.equal(w.lifetimeEarned, w.serves[0].credited); assert.equal(Object.values(w.dayEarned).reduce((a, b) => a + b, 0), w.serves[0].credited); replay(g);
 });
 
 test('calendar expiry is identical under fine/coarse ticks while a customer menu or offline save pauses the shift', () => {

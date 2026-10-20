@@ -142,9 +142,10 @@ test('LP1 needs its scaled lifetime threshold and four tables, without deferred 
   assert.equal(w.tables.reduce((n, t) => n + t.capacity, 0), 6);
   assert.equal(lifePathStatus(w, config).level, 0, 'six seats on three tables are not four tables (D18)');
   const old = capacityRaw(); old.lifePath[1].requires!.push('dog'); // the 2.0.3 pin: "4 seats" plus the deferred dog
-  w.tables = tables;
-  assert.equal(lifePathStatus(w, loadConfig(old)).level, 0);
-  w.dogLevel = 1; assert.equal(lifePathStatus(w, loadConfig(old)).level, 1);
+  const pinned = loadConfig(old);
+  w.tables = tables; w.lifetimeEarned = pinned.values.lifePath[1].lifetimeBase; // the pin keeps its own threshold, older than the 2.1.0 ladder
+  assert.equal(lifePathStatus(w, pinned).level, 0);
+  w.dogLevel = 1; assert.equal(lifePathStatus(w, pinned).level, 1);
   for (const token of ['unknown', 'LP1', 'phone']) {
     const bad = structuredClone(config.raw); bad.lifePath[1].requires!.push(token);
     assert.throws(() => loadConfig(bad), /config:/);

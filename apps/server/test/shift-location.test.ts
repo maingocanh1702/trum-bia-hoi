@@ -24,7 +24,7 @@ const rows = (g: Game) => shiftLocationReport(g.world, g.config)!.locations;
 test('shift book retains the paid location after moving at rest, expiry and replay without changing state', () => {
   const g = tenant(), baseline = rows(g); rent(g);
   assert.deepEqual(rows(g), baseline, 'a new lease must not relabel the previous closed shift');
-  send(g, { type: 'startShift' }); const expected = [{ id: 'ngo_cho', mult: 1.1 }];
+  send(g, { type: 'startShift' }); const expected = [{ id: 'ngo_cho', mult: 1.019 }]; // the sealed 2.1.0 ramp: Ngo Cho is the first step above the free alley (1.0), not the old 1.1
   assert.deepEqual(rows(g), expected); send(g, { type: 'endShift' });
   rent(g, 'ben_xe'); const before = encodeSave(g);
   assert.deepEqual(rows(g), expected); assert.equal(encodeSave(g), before);
