@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { config } from '../src';
-import { gateTable, failing, score, TARGETS, type CareerMetrics, type GateInputs, type Shift1Metrics, type StandardMetrics } from '../sim/balance-gates';
+import { gateTable, failing, score, runShift1, TARGETS, type CareerMetrics, type GateInputs, type Shift1Metrics, type StandardMetrics } from '../sim/balance-gates';
 import { DOOR_TARGETS, type DoorBand } from '../sim/door';
 
 /**
@@ -126,4 +126,13 @@ test("the plan-literal shift-1 row (PLAN section 0 and 7, the playtest sheet's 4
   const strict = gateTable(inputs({}, undefined, shift1({ below: 10, afterRestock: { min: 1200, p05: 1300, median: 2306, max: 3000 } })));
   assert.deepEqual(failing(strict), ['shift1.wallet'], 'the strict row asks every run');
   assert.equal(strict.find(r => r.id === 'shift1.plan')!.ok, true);
+});
+
+test('the shift-1 probe reads the numbers of the plan from the same runs as the strict row: shares of the closing wallet, the takings median and the refused pairs', () => {
+  const m = runShift1(config, 6), p = m.plan;
+  assert.equal(m.seeds, 6); assert.equal(m.startCoins, 750);
+  for (const share of [p.shareFast, p.shareSlow]) assert.ok(Number.isInteger(Math.round(share * 6)) && Math.abs(share * 6 - Math.round(share * 6)) < 1e-9 && share >= 0 && share <= 1, 'a share of 6 runs is a multiple of 1/6');
+  assert.equal(p.takingsMedian, m.closing.median - m.startCoins, 'the takings are the closing wallet of the fast model minus the start wallet');
+  assert.ok(p.shareFast >= 1 - m.below / 6 - 1e-9, 'a run that closes below the price also ends below it after the restock, so the strict count can only be the larger one');
+  assert.ok(Number.isInteger(p.refusedPairsMedian) && p.refusedPairsMedian >= 0 && Number.isInteger(p.refusedPairsMedianSlow) && p.refusedPairsMedianSlow >= 0);
 });
