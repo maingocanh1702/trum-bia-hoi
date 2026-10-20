@@ -192,7 +192,7 @@ test('snapshots from before the key load, bytes kept, and refuse every half-way 
   const bad: [string, RegExp, (r: any) => void][] = [
     ['the key without its Tier A entry', /config:_meta\.governance\.tiers\.A\.sections:array/, r => { r.spawn.capacityDemand = demand(); }],
     ['the Tier A entry without the key', /config:_meta\.governance\.tiers\.A\.sections:array/, r => { r._meta.governance.tiers.A.sections.push('spawn.capacityDemand'); }],
-    ['a snapshot labelled with the new version that lacks the key', /config:spawn:keys/, r => { r._meta.version = seed._meta.version; r._meta.governance.tiers.A.sections.push('spawn.capacityDemand'); }],
+    ['a snapshot labelled with the version that added the key (2.0.22) that lacks it', /config:spawn:keys/, r => { r._meta.version = '2.0.22'; r._meta.governance.tiers.A.sections.push('spawn.capacityDemand'); }],
     ['an unknown key inside capacityDemand', /config:spawn\.capacityDemand:keys/, r => { r.spawn.capacityDemand = { ...demand(), bogus: 1 }; r._meta.governance.tiers.A.sections.push('spawn.capacityDemand'); }],
     ['a wrongly typed refTables', /config:spawn\.capacityDemand\.refTables:type/, r => { r.spawn.capacityDemand = { ...demand(), refTables: '6' }; r._meta.governance.tiers.A.sections.push('spawn.capacityDemand'); }],
   ];

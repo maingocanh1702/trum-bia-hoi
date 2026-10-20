@@ -1,4 +1,4 @@
-import { BUSINESS_UNLOCKS, EQUIPMENT, buyTableQuote, config as seed, flyerQuote, instantPour, signboardQuote, tableUpgradeQuote, unlockQuote, upgradeQuote, type BusinessUnlock, type Config, type Equipment, type WorldView } from '../../../packages/engine/src';
+import { BUSINESS_UNLOCKS, EQUIPMENT, buyTableQuote, config as seed, flyerQuote, instantPour, signboardQuote, tableBenefit, tableBenefitGained, tableUpgrade, tableUpgradeQuote, unlockQuote, upgradeQuote, type BusinessUnlock, type Config, type Equipment, type WorldView } from '../../../packages/engine/src';
 
 /**
  * F27/P0 "Mục tiêu kế tiếp": every purchasable thing of the Upgrades sheet as data. The goal chip picks from this list and the sheet
@@ -27,13 +27,23 @@ export interface Goal {
 type Provider = (w: WorldView, c: Config) => Goal[];
 const goal = (g: Omit<Goal, 'busy' | 'currency'> & Partial<Pick<Goal, 'busy' | 'currency'>>): Goal => ({ busy: false, currency: 'coins', ...g });
 
+/** What a table level brings, as ONE number (S4, D19): the benefit that level adds to the one below it. */
+function levelEffect(c: Config, level: number): Copy | null {
+  const gained = tableBenefitGained(c.values, level), benefit = tableBenefit(c.values, level);
+  if (gained === 'extraRounds') return { key: 'goal.fx.rounds', params: { n: benefit.extraRounds } };
+  if (gained === 'pExtraMoi') return { key: 'goal.fx.snack', params: { n: Math.round(benefit.pExtraMoi * 100) } };
+  if (gained === 'tipMult') return { key: 'goal.fx.tip', params: { n: benefit.tipMult } };
+  return null;
+}
 const tables: Provider = (w, c) => w.tables.map((table, i) => {
   const q = tableUpgradeQuote(w, c, table);
-  // A capacity snapshot's table level is seats. Under the seat model (rules 28) a level adds no seat (chairs do) and carries no benefit until
-  // the level ladder is rebuilt (S4): there is no number to promise, so the chip never points at it (the sheet still lists it).
+  // A capacity snapshot's table level is seats. Under the seat model (rules 28) a level adds no seat (chairs do): from the S4 ladder on it promises its
+  // benefit (one number: a round, a second snack, the tip); on a seat snapshot from before it there is nothing to promise, so the chip never points at
+  // it (the sheet still lists it). Every gate (two chairs, life path) must be open before the chip may suggest it.
   const seats = q.next && 'capacity' in q.next ? q.next.capacity : null;
+  const benefit = tableUpgrade(c.values) && q.next ? levelEffect(c, q.next.level) : null;
   return goal({ id: `table:${table.id}`, lane: 'capacity', card: { kind: 'table', tableId: table.id }, name: { key: 'goal.table', params: { n: i + 1 } },
-    effect: seats === null ? null : { key: 'goal.fx.seats', params: { n: seats } }, cost: q.cost, eligible: q.cost !== null && q.gate === null && seats !== null, busy: q.reason === 'tableBusy' });
+    effect: benefit ?? (seats === null ? null : { key: 'goal.fx.seats', params: { n: seats } }), cost: q.cost, eligible: q.cost !== null && q.gate === null && (seats !== null || benefit !== null), busy: q.reason === 'tableBusy' });
 });
 const newTable: Provider = (w, c) => {
   const q = buyTableQuote(w, c);

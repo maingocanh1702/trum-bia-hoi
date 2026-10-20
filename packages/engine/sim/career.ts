@@ -10,10 +10,10 @@ import { doorTable, doorLines } from './door';
 // config-exempt: reproducible diagnostic policy/sampling limits, never live gameplay or economy tuning.
 const MAX_DAYS = 90;
 const DEFAULT_START = Date.parse('2026-09-09T00:00:00+07:00');
-export const CAREER_POLICY = 'v2: fresh game; configured newbie shifts/day; full active stamina rest; 100ms whole-table/deadline service; 1s management; claim earned rewards; bulk restock/one when empty; keep one bulk per unlocked dish as capital reserve; phone/QR when affordable; seat model: save for the next table, then a second chair per table, before any other purchase; then cheapest eligible device/glass/sign/neon (capacity snapshots also table levels); never the dog (M6 deferred); target two glasses per seat; one flyer/shift; next higher location multiplier only after lease expiry. Every coin purchase is logged with its shift. No injected state or fabricated rewards. Diagnostic, not optimal-play or balance certification.';
+export const CAREER_POLICY = 'v3: fresh game; configured newbie shifts/day; full active stamina rest; 100ms whole-table/deadline service; 1s management; claim earned rewards; bulk restock/one when empty; keep one bulk per unlocked dish as capital reserve; phone/QR when affordable; seat model: save for the next table, then a second chair per table, before any other purchase; then cheapest eligible device/glass/sign/neon (capacity snapshots also table levels; seat snapshots with the S4 ladders also table and chair levels, once their life-path gate is open); never the dog (M6 deferred); target two glasses per seat; one flyer/shift; next higher location multiplier only after lease expiry. Every coin purchase is logged with its shift. No injected state or fabricated rewards. Diagnostic, not optimal-play or balance certification.';
 /** One coin purchase (restock excluded) and the shift it lands in: bought while resting counts toward the next shift. */
 export interface CareerPurchase { shift: number; day: number; command: Command['type']; item: string; cost: number }
-const MILESTONE_COMMANDS: readonly Command['type'][] = ['buyTable', 'buyChair', 'upgrade', 'upgradeTable'];
+const MILESTONE_COMMANDS: readonly Command['type'][] = ['buyTable', 'buyChair', 'upgrade', 'upgradeTable', 'upgradeChair'];
 
 /** What one closed shift did at the door and in the room (the shift's own `stats`): the input of the door table (door.ts). */
 export interface CareerShift { shift: number; day: number; arrived: number; served: number; lost: number; rejected: number; noSeat: number; penalty: number }
@@ -31,6 +31,7 @@ export function simulateCareer({ days = 30, seed = 42, startAt = DEFAULT_START, 
     : command.type === 'buyChair' ? `second chair ${w.tables.reduce((n, t) => n + t.capacity, 0) - w.tables.length}`
     : command.type === 'upgrade' ? `${command.kind} Lv${w.equipment[command.kind]}`
     : command.type === 'upgradeTable' ? `table level ${w.tables.find(t => t.id === command.tableId)!.level}`
+    : command.type === 'upgradeChair' ? `chair level ${w.tables.find(t => t.id === command.tableId)!.chairLevel ?? 1}`
     : command.type === 'buyGlass' ? `glass ${w.glasses.length}` : command.type === 'buyUnlock' ? `unlock ${command.item}`
     : command.type === 'setSignboard' ? `sign ${command.style}` : command.type === 'rentLocation' ? `lease ${command.locationId}` : command.type;
   const send = (command: Command) => {
@@ -87,7 +88,7 @@ export function simulateCareer({ days = 30, seed = 42, startAt = DEFAULT_START, 
       lifetimeEarned: w.lifetimeEarned, reputation: w.reputation, shifts: w.completedShifts - completedBefore, served: value.served, arrived, lost, rejected, deliveryCompleted, deliveryMissed,
       mean: value.mean, k: value.kValue, withinKBand: value.kValue >= c.k.band[0] && value.kValue <= c.k.band[1],
       lifePath: w.lifePath, nextRequirements: lifePathStatus(w, config).rows[w.lifePath + 1]?.requirements ?? [], peak: w.peakLeague,
-      equipment: { ...w.equipment }, tables: w.tables.map(t => ({ level: t.level, capacity: t.capacity })), glasses: w.glasses.length, dog: w.dogLevel, unlocks: [...w.unlocks],
+      equipment: { ...w.equipment }, tables: w.tables.map(t => ({ level: t.level, capacity: t.capacity, chairLevel: t.chairLevel ?? 1 })), glasses: w.glasses.length, dog: w.dogLevel, unlocks: [...w.unlocks],
       purchases: purchases.slice(purchaseStart),
       location: w.location, lease: w.lease ? { ...w.lease } : null,
       ranking: { id: w.seasons!.ranking.id, earned: w.seasonEarned, tier: seasonTier(w, config).tier.id, endsAt: w.seasons!.ranking.endsAt },
@@ -95,7 +96,7 @@ export function simulateCareer({ days = 30, seed = 42, startAt = DEFAULT_START, 
     };
     rows.push(row); onDay?.(row);
   }
-  const eventTypes = new Set(['life_path_level_reached', 'life_path_reward_claimed', 'lease_started', 'lease_expired', 'lease_deposit_refunded', 'unlock_bought', 'signboard_installed', 'signboard_bought', 'signboard_equipped', 'upgrade_bought', 'table_upgraded', 'table_bought', 'chair_bought', 'seat_model_adopted', 'glasses_bought', 'dog_bought', 'dog_upgraded', 'flyer_bought']);
+  const eventTypes = new Set(['life_path_level_reached', 'life_path_reward_claimed', 'lease_started', 'lease_expired', 'lease_deposit_refunded', 'unlock_bought', 'signboard_installed', 'signboard_bought', 'signboard_equipped', 'upgrade_bought', 'table_upgraded', 'chair_upgraded', 'table_bought', 'chair_bought', 'seat_model_adopted', 'glasses_bought', 'dog_bought', 'dog_upgraded', 'flyer_bought']);
   const report = { policy: CAREER_POLICY, days, seed, startAt, configVersion: config.version, rulesVersion: game.log.at(-1)!.rulesVersion,
     commandCount: game.log.length, commandHash: createHash('sha256').update(JSON.stringify(game.log)).digest('hex'), eventCount: w.events.length,
     kBand: c.k.band, advancedBandDecision: 'owner-2026-09-10: standard cold/full menus keep k 2..3; advanced career aggregate k <= 3.5; re-evaluate after Alpha playtest with real player data',
@@ -109,7 +110,7 @@ export interface CareerDay {
   spent: Record<string, number>; totalSpent: number; penalty: number; lifetimeEarned: number; reputation: number; shifts: number; served: number;
   arrived: number; lost: number; rejected: number; deliveryCompleted: number; deliveryMissed: number; mean: number | null; k: number; withinKBand: boolean;
   lifePath: number; nextRequirements: ReturnType<typeof lifePathStatus>['rows'][number]['requirements']; peak: string | null;
-  equipment: Game['world']['equipment']; tables: { level: number; capacity: number }[]; glasses: number; dog: number; unlocks: string[];
+  equipment: Game['world']['equipment']; tables: { level: number; capacity: number; chairLevel: number }[]; glasses: number; dog: number; unlocks: string[];
   purchases: CareerPurchase[]; location: string; lease: Game['world']['lease'] | null;
   ranking: { id: string; earned: number; tier: string; endsAt: number }; contest: { id: string; earned: number; tier: string; endsAt: number };
 }

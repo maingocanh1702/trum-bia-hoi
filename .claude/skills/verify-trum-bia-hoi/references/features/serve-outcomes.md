@@ -63,7 +63,7 @@ dismissal, not a tap-serve outcome).
   `outcome.expired` key**, expired uses `loss.aria` instead. Reaction emoji
   (`apps/web/src/assets.tsx:18`): `{early:'🤩', earlyNoTip:'🙂', late:'😐', grace:'😥', stale:'😖'}`.
   Table visuals: `.is-urgent` (order in `'grace'`), `.patience-track.is-low` (below
-  `tip.patienceThreshold`).
+  `tip.patienceThreshold` of the guest's OWN patience, `guestPatienceLeft` in `rules.ts`; the bar's width follows the order's own deadline, which a chair level of S4 stretches).
 
 ## How to reach it
 
@@ -206,3 +206,8 @@ lifecycle, `waste()`), [glass-beer-flat](glass-beer-flat.md) (the literal source
 computation this file's precedence rule consumes), [economy-k-ledger](economy-k-ledger.md) (every
 outcome's `amount` flows through `credit()`/`creditBatchSafe()`; `rewardOverflow` is a
 `serve`-specific failure gated on it).
+
+## Changelog — S4 table levels
+| Date | Change |
+|---|---|
+| 2026-10-20 | S4 `eco21-table-chair-upgrades` (JSON 2.0.23): `customerValue(..., tableTipMult = 1)` multiplies the tip of the group served at a Lv4 table by `tipMult` 1.25 (last factor; `x * 1` is exact so every other table and every older snapshot is unchanged): `packages/engine/test/table-chair-upgrades.test.ts` `Lv4: the tip is x1.25 at that table only, from the group that sits down after the purchase` (expected tips recomputed from the config formula for every tipped guest). The chair's patience multiplier stretches the order's expiry/grace window, not the tip window (`tip.patienceThreshold` of the guest's own patience): `chair patienceMult applies to the ORDER patience ...` and DECISIONS `03 · Lv4 tip x1.25 is read from the group at serve time; ...`. |

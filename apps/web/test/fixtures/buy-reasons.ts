@@ -11,7 +11,8 @@ import { steadyDemand } from '../../../../packages/engine/test/fixtures/steady-d
 //   maxed         both tables of a two-table shop are at their top level (the badge gate of Lv4 is lifted in this config): one has guests, one is empty
 //   seat-states   seat model, poor wallet, 2 tables of one chair: table 3 is out of reach, a chair waits for four tables, a level wants two chairs
 //   seat-rich     seat model, rich wallet, four tables of one chair, shift not open: every chair for sale, no level yet, the alley is full
-//   seat-maxed    seat model, rich wallet, four tables: tables 1-2 are pairs at their top level (badge gate lifted), table 1 has guests, table 2 is empty
+//   seat-maxed    seat model, rich wallet, four tables: tables 1-2 are pairs at their top level (life-path gates lifted), table 1 has guests, table 2 is empty
+//   seat-maxed-both  the same two pairs with their chairs at the top too (Lv4 tables, Lv3 chairs): each card shows two "max" buttons, resting
 //   beer|wait|seat  a shift open a few seconds before the first guest leaves for that reason: out of beer · waited too long · no seat
 //   book          a shift under way in which guests left for different reasons (the counts differ per reason)
 //   inspect       print the table levels and the leave events of a save read from stdin
@@ -72,10 +73,18 @@ if (mode === 'states') {
 } else if (mode === 'seat-rich') {
   console.log(JSON.stringify(facts(seatShop(4, 0))));
 } else if (mode === 'seat-maxed') {
-  // The shipped Lv4 asks for the Kết Nối badge (a social feature): lifted here so two pairs can really be upgraded to the end.
-  const g = seatShop(4, 2, raw => { const top = raw.upgrades.table.levels[3]; top.requiredBadge = ''; top.repBase = [0, top.repBase![1]]; });
+  // The shipped levels sit behind Duong Len Trum (LP1 / LP2 / LP4, S4), earned over days: those gates are lifted here so two pairs can really be upgraded to the end.
+  const g = seatShop(4, 2, raw => { for (const row of raw.upgrades.table.tableUpgrade.levels) row.lifePathGate = 0; });
   for (const table of g.world.tables.slice(0, 2)) for (const n of [1, 2, 3]) send(g, { type: 'upgradeTable', tableId: table.id }, `${table.id}-lv${n}`);
   send(g, { type: 'startShift' }, 'open'); step(g, () => g.world.tables[0].state !== 'empty');
+  console.log(JSON.stringify(facts(g)));
+} else if (mode === 'seat-maxed-both') {
+  // Both ladders at the top (every life-path gate lifted): tables 1-2 are pairs at Lv4 with Lv3 chairs, resting, so each card shows two "max" buttons.
+  const g = seatShop(4, 2, raw => { for (const row of [...raw.upgrades.table.tableUpgrade.levels, ...raw.upgrades.table.chairUpgrade.levels]) row.lifePathGate = 0; });
+  for (const table of g.world.tables.slice(0, 2)) {
+    for (const n of [1, 2, 3]) send(g, { type: 'upgradeTable', tableId: table.id }, `${table.id}-lv${n}`);
+    for (const n of [1, 2]) send(g, { type: 'upgradeChair', tableId: table.id }, `${table.id}-chair${n}`);
+  }
   console.log(JSON.stringify(facts(g)));
 } else if (mode === 'beer') {
   console.log(JSON.stringify(liveBefore(shiftOne(raw => { raw.onboarding.enabled = false; raw.inventory.startingStock.bia[0] = 0; }), e => e.type === 'order_expired' && ['beerStock', 'beerRefill'].includes(String(e.data.cause)))));

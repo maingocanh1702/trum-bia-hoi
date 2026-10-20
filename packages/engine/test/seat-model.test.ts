@@ -67,7 +67,8 @@ test('a new game opens one table with one chair; the home alley caps tables at i
 });
 
 test('a second chair opens only after chairsAfterTables tables, a table never holds a third, and price indexes chairs across the shop', () => {
-  const g = seatGame(), w = g.world, c = g.config.values; assert.ok(isSeatModel(c));
+  // The level at the end is about chairs (two first), not about Duong Len Trum: S4's gate is switched off here so the replay needs no hand-set life path.
+  const g = seatGame(raw => { for (const row of raw.upgrades.table.tableUpgrade.levels) row.lifePathGate = 0; }), w = g.world, c = g.config.values; assert.ok(isSeatModel(c));
   assert.equal(c.upgrades.table.chairsAfterTables, 4);
   while (w.tables.length < c.upgrades.table.chairsAfterTables - 1) assert.ok(send(g, { type: 'buyTable' }).ok);
   const [first, second] = w.tables;

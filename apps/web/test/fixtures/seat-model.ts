@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { Game, config, loadConfig, encodeSave, decodeSave } from '../../../../packages/engine/src';
+import { Game, config, loadConfig, encodeSave, decodeSave, tableUpgrade, chairUpgrade } from '../../../../packages/engine/src';
 import { fullHud } from './full-hud';
 
 // Seat model (rules 28): a resting new game whose wallet buys tables 2-4 and one second chair, leaving the usual
@@ -17,5 +17,5 @@ if (process.argv[2] === 'inspect') {
   process.stdout.write(JSON.stringify({ save: encodeSave(g), now: g.world.now, coins: g.world.coins,
     tablePrices: prices.slice(0, 3).map(n => Math.round(n * raw.k.value)), chairPrice: Math.round(prices[3] * raw.k.value),
     nextChairPrice: Math.round(table.chairPriceBase[1] * raw.k.value),
-    levelPrice: values.upgrades.table.levels[1].priceBase }));
+    levelPrice: tableUpgrade(values)!.levels[0].priceBase, chairUpPrice: chairUpgrade(values)!.priceBase })); // S4: the first level of the first table, and the first chair upgrade of the shop
 }

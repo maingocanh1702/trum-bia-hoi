@@ -53,3 +53,41 @@ test('a browser save pinned to JSON 2.0.21 opens without recovery, then adopts t
   expect(after.log.slice(0, saved.log.length)).toEqual(saved.log); // the recorded history is kept as it was
   expect(errors).toEqual([]);
 });
+
+// S4 (JSON 2.0.23): a browser save recorded by the S3 build (JSON 2.0.22, rules 28: four pairs of chairs, two table levels bought at the old prices, recorded by
+// the real engine of tip 004e6ad) opens without the recovery screen and keeps its old cards (no level perks, no chair upgrade: its snapshot has no ladders)
+// until its next opening, which pins the bundled seed once; from then on the levels it bought give their benefits.
+test('a browser save pinned to JSON 2.0.22 keeps its old table cards, then adopts the bundled seed once when its next shift opens and its levels give their perks', async ({ page }) => {
+  const fixture = JSON.parse(readFileSync('packages/engine/test/fixtures/seat-2.0.22-v28.json', 'utf8')) as { save: string }, saved = JSON.parse(fixture.save);
+  const bundled = (JSON.parse(readFileSync('docs/config/economy.tbh.json', 'utf8')) as { _meta: { version: string } })._meta.version; // the seed this build ships
+  expect(saved.config._meta.version).toBe('2.0.22'); expect(saved.configs).toBeUndefined(); expect(bundled).not.toBe('2.0.22');
+  const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.clock.pauseAt(new Date(saved.now));
+  await page.addInitScript(({ save, prefs }) => {
+    if (localStorage.getItem('pin-seeded')) return;
+    localStorage.setItem('tbh.save.v1', save); localStorage.setItem('tbh.settings.v1', JSON.stringify(prefs)); localStorage.setItem('pin-seeded', '1');
+  }, { save: fixture.save, prefs: { locale: 'vi', guideDone: true, guideIndex: null, muted: true } });
+  await page.goto('/'); await expect(page.locator('.game-shell')).toBeVisible(); await expect(page.locator('.recovery')).toHaveCount(0);
+  const openSheet = async () => { await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click(); return page.getByRole('dialog'); };
+  const cards = (sheet: ReturnType<typeof page.getByRole>) => sheet.locator('#upgrade-tables ~ .upgrade-grid .upgrade-card');
+  let sheet = await openSheet();
+  await expect(cards(sheet)).toHaveCount(4); await expect(sheet.locator('.table-perk')).toHaveCount(0); await expect(sheet.locator('[data-action="chairUpgrade"]')).toHaveCount(0); // its snapshot has no ladders
+  await page.keyboard.press('Escape');
+  const before = JSON.parse(await readSave(page));
+  expect(before.config._meta.version).toBe('2.0.22'); expect(before.configs).toBeUndefined(); // still its own numbers while the shop is closed
+  await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
+  await expect(page.locator('.money')).toBeVisible();
+  await page.clock.runFor(1100);
+  const after = JSON.parse(await readSave(page));
+  expect(after.configs).toHaveLength(1); expect(after.configs[0]._meta.version).toBe(bundled);
+  const pins = after.events.filter((e: { type: string }) => e.type === 'config_pinned');
+  expect(pins).toHaveLength(1); expect(pins[0].data).toMatchObject({ previousVersion: '2.0.22', configVersion: bundled });
+  expect(after.events.filter((e: { type: string }) => e.type === 'seat_model_adopted')).toHaveLength(0); // a seat pin never re-derives its seats
+  expect(after.log.slice(0, saved.log.length)).toEqual(saved.log); // the recorded history is kept as it was
+  sheet = await openSheet();
+  const first = cards(sheet).first(); // the table the old build took to Lv3: it now says what that level gives
+  await expect(first.locator('.table-perk p')).toHaveText('Cấp 3'); await expect(first.locator('.table-perk li')).toHaveText(['Thêm 1 đợt gọi', 'Mồi thứ 2: 35%']);
+  await expect(first.locator('[data-action="chairUpgrade"]')).toHaveCount(1);
+  expect(errors).toEqual([]);
+});

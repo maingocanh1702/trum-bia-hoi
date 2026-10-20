@@ -274,3 +274,8 @@ but are excluded from `k` itself since `k` only counts seated serves).
 | Date | Change |
 |---|---|
 | 2026-10-20 | S3 `eco21-capacity-demand` (JSON 2.0.22): `spawn.capacityDemand {refTables 6, maxMult 4}` multiplies the gap to the next group (x4 · x3 · x2 · x1.5 for 1 · 2 · 3 · 4 tables, also in a rush; not the first guest of a shift), the door queue is `1 + ⌊seats / 8⌋`, `patience.thuongMs` 24 s; a pin from before the key keeps x1, 2 + seats/3 and 18 s. D12 (door refusals free of coins, reputation and `lost`) already held since S1 and is now pinned for the `full` reason too. Tests above; the shift book counts "Cặp không có chỗ". |
+
+## Changelog — S4 table and chair levels
+| Date | Change |
+|---|---|
+| 2026-10-20 | S4 `eco21-table-chair-upgrades`: `seatQueue` (the moment a queued group takes a table) records `Group.level` / `Group.chairLevel` and adds the Lv2 round to `Group.rounds`; arrival, queue, door refusal and patience are untouched (S3). Proof: `packages/engine/test/table-chair-upgrades.test.ts` `Lv2 adds exactly one round and it stays at Lv3 and Lv4: ...` and `a benefit serves the NEXT group: ...`. |

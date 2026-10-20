@@ -10,10 +10,15 @@ export interface Order {
   state: 'pending' | 'grace' | 'served' | 'expired' | 'cancelled'; readyEmitted: boolean;
 }
 export interface DeliveryOrder { id: string; placedAt: number; expiresAt: number; lines: { dish: Dish; quantity: number }[] }
-/** `seats`: chairs of the table when the group sat down (rules 28); the group keeps that tray for every round. */
-export interface Group { id: string; customers: Customer[]; rounds: number; arrivedAt: number; seats?: number }
+/**
+ * `seats`: chairs of the table when the group sat down (rules 28); the group keeps that tray for every round.
+ * `level` / `chairLevel`: the table level that counted for the group (1 when the table has one chair: a level only works at two) and the chair level it
+ * sat down with, recorded only on a snapshot with the S4 level ladders; a later upgrade serves the next group, never the one at the table.
+ */
+export interface Group { id: string; customers: Customer[]; rounds: number; arrivedAt: number; seats?: number; level?: number; chairLevel?: number }
+/** `chairLevel` (1 when absent, written by the first `upgradeChair`): the chairs' comfort level, a seat-model snapshot with `chairUpgrade` only. */
 export interface Table {
-  id: string; level: number; capacity: number;
+  id: string; level: number; capacity: number; chairLevel?: number;
   state: 'empty' | 'seating' | 'waiting' | 'consuming' | 'occupied' | 'cleaning' | 'broken';
   group: Group | null; order: Order | null; until: number | null; roundsServed: number;
 }
@@ -108,6 +113,7 @@ export type Command =
   | { type: 'upgradeTable'; tableId: string }
   | { type: 'buyTable' }
   | { type: 'buyChair'; tableId: string }
+  | { type: 'upgradeChair'; tableId: string }
   | { type: 'buyGlass'; count: number }
   | { type: 'rentLocation'; locationId: string; leaseId: string | null; maxCost: number }
   | { type: 'leaveLocation'; leaseId: string }

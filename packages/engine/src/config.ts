@@ -40,6 +40,31 @@ export function capacityDemandMult(c: Economy, tables: number): number {
   return demand ? Math.min(demand.maxMult, Math.max(1, demand.refTables / Math.max(1, tables))) : 1;
 }
 
+type SeatTable = typeof seed.upgrades.table;
+export type TableUpgrade = SeatTable['tableUpgrade'];
+export type ChairUpgrade = SeatTable['chairUpgrade'];
+/** What a table of some level gives the group that sits down at it (plan D14/D19). */
+export interface TableBenefit { extraRounds: number; pExtraMoi: number; tipMult: number }
+const NO_BENEFIT: Readonly<TableBenefit> = Object.freeze({ extraRounds: 0, pExtraMoi: 0, tipMult: 1 }); // config-exempt: the neutral benefit of level 1 and of a snapshot without the ladder
+/** The S4 table-level ladder (rules 28); null on a snapshot from before it (JSON <= 2.0.22), on a capacity pin and on a 1.x pin. */
+export function tableUpgrade(c: Economy): TableUpgrade | null { return Object.hasOwn(c.upgrades.table, 'tableUpgrade') ? (c.upgrades.table as SeatTable).tableUpgrade : null; }
+/** The S4 chair-level ladder (rules 28); null wherever `tableUpgrade` is. */
+export function chairUpgrade(c: Economy): ChairUpgrade | null { return Object.hasOwn(c.upgrades.table, 'chairUpgrade') ? (c.upgrades.table as SeatTable).chairUpgrade : null; }
+/** Total benefit of a table level (benefits stack: each ladder row lists the sum). Level 1, a level without a row and every older snapshot: none. */
+export function tableBenefit(c: Economy, level: number): TableBenefit {
+  const row = tableUpgrade(c)?.levels.find(l => l.level === level);
+  return row ? { extraRounds: row.extraRounds, pExtraMoi: row.pExtraMoi, tipMult: row.tipMult } : NO_BENEFIT;
+}
+/** The level of a table that counts for the group sitting at it: a level only works with two chairs, so a one-chair table is Lv1 whatever it kept (a migrated save). The engine records it on the group, the card lists its perks. */
+export function effectiveTableLevel(table: { level: number; capacity: number }): number { return table.capacity >= PAIR ? table.level : 1; }
+/** The benefit a level adds to the one below it, named by its key (analytics `table_upgraded.what`). */
+export function tableBenefitGained(c: Economy, level: number): keyof TableBenefit | 'none' {
+  const now = tableBenefit(c, level), before = tableBenefit(c, level - 1);
+  return (['extraRounds', 'pExtraMoi', 'tipMult'] as const).find(key => now[key] !== before[key]) ?? 'none';
+}
+/** Order-patience multiplier of a chair level (D15): 1 at level 1 and on every snapshot without the chair ladder. */
+export function chairPatienceMult(c: Economy, level: number): number { return chairUpgrade(c)?.levels.find(l => l.level === level)?.patienceMult ?? 1; }
+
 /** Decode the single supported config curve grammar; never execute formula text. */
 export function dailyTargetCurve(c: Economy) {
   const match = /^base \+ \(max-base\) \* \(\(clamp\(tier,(\d+),(\d+)\)-\1\)\/(\d+)\)\^(\d+(?:\.\d+)?)$/.exec(c.quests.daily.targetCurve);
@@ -110,13 +135,17 @@ const ADDED_LATER = new Set(['nextGoal', 'onboarding.loginPrompt.leaveProgress',
 
 // Sections that joined a governance tier after earlier releases (tier -> names); shape() lets an older pinned snapshot lack exactly these.
 const TIER_SECTIONS_ADDED_LATER: Record<string, readonly string[]> = { C: ['nextGoal'] };
-const seedAt = (path: string): unknown => path.split('.').reduce<unknown>((node, key) => (node as Record<string, unknown> | undefined)?.[key], seed);
+const valueAt = (root: unknown, path: string): unknown => path.split('.').reduce<unknown>((node, key) => (node as Record<string, unknown> | undefined)?.[key], root);
+const seedAt = (path: string): unknown => valueAt(seed, path);
 
 // Seat-model keys added after JSON 2.0.20/2.0.21. A pin is immutable, so a seat snapshot labelled before the version that introduced a group has the
 // shape of the seed without it (exact: no key of the group, no tier entry), and one labelled with or after that version needs the whole group.
-// `since` = the first version carrying the group, `paths` = the object keys it added, `tiers` = the names it added to the governance tier lists.
-const SEAT_KEYS_ADDED_LATER: readonly { since: string; paths: readonly string[]; tiers: Record<string, readonly string[]> }[] = [
+// `since` = the first version carrying the group, `paths` = the object keys it added, `tiers` = the names it added to the governance tier lists,
+// `restore` = keys the group REPLACED: the older pin still carries them, so the older shape gets them back from the frozen capacity file (2.0.4).
+const SEAT_KEYS_ADDED_LATER: readonly { since: string; paths: readonly string[]; tiers: Record<string, readonly string[]>; restore?: readonly string[] }[] = [
   { since: '2.0.22', paths: ['spawn.capacityDemand'], tiers: { A: ['spawn.capacityDemand'] } }, // plan S3, D19
+  // plan S4, D14 D15 D18 D19: the table and chair ladders replace the postmvp `upgrades.backrest` placeholder (the same object in every older pin)
+  { since: '2.0.23', paths: ['upgrades.table.tableUpgrade', 'upgrades.table.chairUpgrade'], tiers: { A: ['upgrades.table.tableUpgrade', 'upgrades.table.chairUpgrade'] }, restore: ['upgrades.backrest'] },
 ];
 const versionOf = (label: unknown): number[] | null => { const m = typeof label === 'string' ? /^(\d+)\.(\d+)\.(\d+)$/.exec(label) : null; return m ? m.slice(1).map(Number) : null; };
 const olderThan = (label: unknown, since: string): boolean => { const a = versionOf(label), b = versionOf(since)!; return !!a && (a[0] - b[0] || a[1] - b[1] || a[2] - b[2]) < 0; };
@@ -132,6 +161,7 @@ function seatShape(input: unknown): unknown {
     const older = structuredClone(seed) as Record<string, any>;
     for (const group of absent) {
       for (const path of group.paths) { const keys = path.split('.'), last = keys.pop()!; delete keys.reduce((node, k) => node[k], older)[last]; }
+      for (const path of group.restore ?? []) { const keys = path.split('.'), last = keys.pop()!; keys.reduce((node, k) => node[k], older)[last] = structuredClone(valueAt(capacityModel, path)); }
       for (const [tier, names] of Object.entries(group.tiers)) older._meta.governance.tiers[tier].sections = older._meta.governance.tiers[tier].sections.filter((name: string) => !names.includes(name));
     }
     seatShapes.set(key, older);
@@ -231,6 +261,33 @@ function validate(c: Economy): void {
     if (Object.hasOwn(c.spawn, 'capacityDemand')) {
       whole(c.spawn.capacityDemand.refTables, 'spawn.capacityDemand.refTables', 1);
       if (!Number.isFinite(c.spawn.capacityDemand.maxMult) || c.spawn.capacityDemand.maxMult < 1) throw Error('config:spawn.capacityDemand.maxMult');
+    }
+    // Table and chair levels (S4): levels in order from 2, whole prices that stay whole once scaled, a gate inside the life path, benefits that only grow.
+    const gate = (n: number) => { whole(n, 'lifePathGate'); if (n >= c.lifePath.length) throw Error('config:lifePathGate'); };
+    const prices = (row: { priceBase: number; stepBase: number }, at: string) => {
+      for (const key of ['priceBase', 'stepBase'] as const) { whole(row[key], `${at}.${key}`); whole(Math.round(row[key] * c.k.value), `${at}.scaled${key}`); }
+    };
+    if (Object.hasOwn(table, 'tableUpgrade')) {
+      let before: { extraRounds: number; pExtraMoi: number; tipMult: number } = { extraRounds: 0, pExtraMoi: 0, tipMult: 1 };
+      table.tableUpgrade.levels.forEach((row, i) => {
+        const at = `tableUpgrade.levels.${i}`;
+        if (row.level !== i + 2) throw Error('config:upgrades.table.tableUpgrade:levelOrder');
+        prices(row, at); gate(row.lifePathGate); whole(row.extraRounds, `${at}.extraRounds`);
+        if (!(row.pExtraMoi >= 0 && row.pExtraMoi <= 1)) throw Error('config:upgrades.table.tableUpgrade:pExtraMoi');
+        if (!(Number.isFinite(row.tipMult) && row.tipMult >= 1)) throw Error('config:upgrades.table.tableUpgrade:tipMult');
+        if (row.extraRounds < before.extraRounds || row.pExtraMoi < before.pExtraMoi || row.tipMult < before.tipMult) throw Error('config:upgrades.table.tableUpgrade:benefitOrder');
+        before = row;
+      });
+    }
+    if (Object.hasOwn(table, 'chairUpgrade')) {
+      prices(table.chairUpgrade, 'chairUpgrade');
+      let before = 1; // level 1: the chairs every table starts with
+      table.chairUpgrade.levels.forEach((row, i) => {
+        if (row.level !== i + 2) throw Error('config:upgrades.table.chairUpgrade:levelOrder');
+        gate(row.lifePathGate);
+        if (!(Number.isFinite(row.patienceMult) && row.patienceMult >= before)) throw Error('config:upgrades.table.chairUpgrade:patienceMult');
+        before = row.patienceMult;
+      });
     }
   }
   if (!c._meta.version.trim() || c.k.value < c.k.band[0] || c.k.value > c.k.band[1]) throw Error('config:k');

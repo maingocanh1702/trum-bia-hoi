@@ -773,5 +773,17 @@
   "loss.ariaFree": "{reason}. The guests left; no coins or reputation lost",
   "book.reasons": "Why guests left",
   "book.reasonsNone": "No guest has left yet.",
-  "book.pairsNoSeat": "Pairs without a seat: {n}"
+  "book.pairsNoSeat": "Pairs without a seat: {n}",
+  "reason.lifePathRequired": "Reach {name} first",
+  "upgrade.chairUp": "Upgrade chairs · {cost} coins",
+  "table.chairLevel": "Chairs level {n} · patience ×{mult}",
+  "table.benefit.none": "No perk yet",
+  "table.benefit.rounds": "Extra rounds: {n}",
+  "table.benefit.snack": "2nd snack: {n}%",
+  "table.benefit.tip": "Tips ×{n}",
+  "upgrade.tableMax": "Table at max level",
+  "upgrade.chairMax": "Chairs at max level",
+  "error.chairUpgradeUnavailable": "This shop has no chair upgrades yet.",
+  "goal.fx.rounds": "Rounds +{n}",
+  "goal.fx.snack": "2nd snack {n}%"
 }

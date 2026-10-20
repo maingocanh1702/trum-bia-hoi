@@ -451,3 +451,8 @@ mapping (`:299-329`) in depth, which this file's `/admin/*` routes do not share.
 `AdminCompetition.tsx`'s import-review actions approve or reject; that file's owner-deferred
 no-HTTP-upload-route gap is exercised here only through the `/__test/moderation` seam, never through a
 real upload.
+
+## Changelog — S4 table and chair levels
+| Date | Change |
+|---|---|
+| 2026-10-20 | S4 (JSON 2.0.23): two Tier A dotted entries `upgrades.table.tableUpgrade` and `upgrades.table.chairUpgrade` (prices, gates, benefits: dual approval, `next_day`) join `_meta.governance.tiers.A.sections`; `registry.test.ts` `tier classifier covers every section, flags beat broad balance groups, and mixed changes require all roles` walks them and `npm run check:config` (coverage) resolves them. The admin editor tier on Windows stays the baseline's `SKIPPED:`; editing each key one by one and the k-admission check is S6's. |
