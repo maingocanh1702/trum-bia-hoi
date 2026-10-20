@@ -65,7 +65,7 @@ for (const viewport of viewports) {
   test(`P0 coins fly from the table to the wallet and lost reputation falls from the guest at ${viewport.width}px`, async ({ page }) => {
     test.setTimeout(90000); // the wait for the first guest who walks out is long on a one-table shop (below)
     await page.setViewportSize(viewport);
-    await load(page, null, fresh());
+    const steady = fixture('steady'); await load(page, steady.save, steady.now); // a brand-new game with capacity demand off (fixture comment): this spec is about the visuals, not the pace
     await page.getByRole('button', { name: 'Mở ca', exact: true }).click();
     await page.clock.runFor(10200); await page.waitForTimeout(20);
     await page.locator('.table-order-hint').first().click(); await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
@@ -76,9 +76,9 @@ for (const viewport of viewports) {
     expect(await coins.first().evaluate(el => getComputedStyle(el).animationName)).toBe('fly-coin');
     await page.clock.runFor(1600); await page.waitForTimeout(20);
     await expect(page.locator('.fly')).toHaveCount(0);
-    // Leave the next guests to expire: the reputation just earned is what falls from them. A new shop has one table (seat model) and a random seed: a
-    // pair is turned away at the door without a penalty, so the first guest who really walks out is a single who sat down and waited out their patience
-    // (18 s + 2.5 s grace, after the 10.5 s arrivals): 150 s of game time is about ten arrivals, each a single with probability 0.5 (spawn.pPair), where
+    // Leave the next guests to expire: the reputation just earned is what falls from them. A new shop has one table (seat model): a pair is turned away
+    // at the door without a penalty, so the first guest who really walks out is a single who sat down and waited out their patience (24 s + 2.5 s grace,
+    // after the 10.5 s arrivals of the steady save): 150 s of game time is about ten arrivals, each a single with probability 0.5 (spawn.pPair), where
     // the old 3-table shop needed 40 s. The wait ends at the first falling number, so a lucky seed costs nothing.
     let seen = '';
     await run(page, 150000, 500, async () => { const rep = page.locator('.fly-rep'); if (!await rep.count()) return false; seen = await rep.first().innerText(); return true; });
