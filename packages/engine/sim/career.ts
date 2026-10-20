@@ -10,11 +10,15 @@ import { normalisedServes, normalisedStats, type NormalisedServe } from './norma
 
 // config-exempt: reproducible diagnostic policy/sampling limits, never live gameplay or economy tuning.
 const MAX_DAYS = 90;
-// The career starts on the first Vietnam midnight after a 21-day ranking season began (epoch 2026-04-11T10:00Z + 7 x 21 days = 2026-09-05 17:00 VN), the way
-// the story is designed (D20-D22: season 1 IS the first 21 days): the `peak:` requirements of Duong Len Trum read the earnings of the CURRENT season window, so a
-// career that starts in the middle of one would see them reset at the boundary and its LP7 time would measure the calendar, not the economy.
-const DEFAULT_START = Date.parse('2026-09-06T00:00:00+07:00');
-export const CAREER_POLICY = 'v4: fresh game; configured newbie shifts/day; full active stamina rest; 100ms whole-table/deadline service; 1s management; claim earned rewards; bulk restock/one when empty; keep one bulk per unlocked dish as capital reserve; phone/QR when affordable; the price decides (plan section 9: "bot mua rẻ nhất trước"): the cheapest affordable purchase first among tables, second chairs, devices, glasses, signs/neon and, once their life-path gate is open, table and chair levels (capacity snapshots buy table levels, seat snapshots with the S4 ladders table and chair levels); never the dog (M6 deferred); target two glasses per seat; one flyer/shift; a free shop leases the best location the life path allows and the wallet pays for, straight away (direct leasing), again at every lease expiry. Every coin purchase is logged with its shift. No injected state or fabricated rewards. Diagnostic, not optimal-play or balance certification.';
+// THE ACCEPTANCE PROTOCOL (plan section 5 S5 row, brief B5): "seed 42 và 99, career 28 ngày (bot ưu tiên bàn/ghế, thuê thẳng mặt bằng, không mua chó)" = the S1-S4
+// career bot (seats and chairs first, then the cheapest) that leases the best location straight away, never the dog, started on the day every S1-S4 career started
+// (the plan names no other start day). It is the default of `simulateCareer`, of `npm run sim:career:gate` and of the balance evaluator; the price-decides bot
+// (`policy: { seatsFirst: false }`, v4) and the first Vietnam midnight of a 21-day season (`SEASON_START`) are information runs only.
+const DEFAULT_START = Date.parse('2026-09-09T00:00:00+07:00');
+/** The first Vietnam midnight after a 21-day ranking season began (epoch 2026-04-11T10:00Z + 7 x 21 days = 2026-09-05 17:00 VN): the `peak:` requirements of Duong Len Trum read the earnings of the CURRENT season window, so a career that starts later in a window sees them reset at its boundary. An information option, not the protocol. */
+export const SEASON_START = Date.parse('2026-09-06T00:00:00+07:00');
+export const CAREER_POLICY = 'v3 + direct leasing (plan section 5 S5: "bot ưu tiên bàn/ghế, thuê thẳng mặt bằng, không mua chó"): fresh game; configured newbie shifts/day; stamina rest only where the engine asks for it (restRequired: shifts 2 and 3 open at once, D8); 100ms whole-table/deadline service; 1s management; claim earned rewards; bulk restock/one when empty; keep one bulk per unlocked dish as capital reserve; phone/QR when affordable; seat model: save for the next table, then a second chair per table, before any other purchase; then cheapest eligible device/glass/sign/neon (capacity snapshots also table levels; seat snapshots with the S4 ladders also table and chair levels, once their life-path gate is open); never the dog (M6 deferred); target two glasses per seat; one flyer/shift; a free shop leases the best location the life path allows and the wallet pays for, straight away (direct leasing), again at every lease expiry. Every coin purchase is logged with its shift. No injected state or fabricated rewards. Diagnostic, not optimal-play or balance certification.';
+export const CAREER_POLICY_PRICE = 'v4 (information only, not the acceptance protocol): as the protocol bot except that the price decides (plan section 9: "bot mua rẻ nhất trước"): the cheapest affordable purchase first among tables, second chairs, devices, glasses, signs/neon and, once their life-path gate is open, table and chair levels, instead of seats first.';
 /** One coin purchase (restock excluded) and the shift it lands in: bought while resting counts toward the next shift. */
 export interface CareerPurchase { shift: number; day: number; command: Command['type']; item: string; cost: number }
 const MILESTONE_COMMANDS: readonly Command['type'][] = ['buyTable', 'buyChair', 'upgrade', 'upgradeTable', 'upgradeChair'];
@@ -51,7 +55,7 @@ export function simulateCareer({ days = 30, seed = 42, startAt = DEFAULT_START, 
       if (command.type !== 'restock') purchases.push({ shift: w.completedShifts + 1, day: today, command: command.type, item: item(command), cost: -other });
     } else rewardCredits += other;
   };
-  const manage=createManagementPolicy(game,send,{directLease:true,seatsFirst:policy.seatsFirst??false}); // v4: the price decides; `seatsFirst: true` is the v2/v3 bot of S1-S4
+  const seatsFirst=policy.seatsFirst??true, manage=createManagementPolicy(game,send,{directLease:true,seatsFirst}); // the protocol bot: seats first + direct leasing; `seatsFirst: false` is the information bot v4
   for (let day = 0; day < days; day++) {
     today = day + 1; const purchaseStart = purchases.length;
     const openingCoins = w.coins, earnedBefore = w.lifetimeEarned, completedBefore = w.completedShifts;
@@ -104,7 +108,7 @@ export function simulateCareer({ days = 30, seed = 42, startAt = DEFAULT_START, 
     rows.push(row); onDay?.(row);
   }
   const eventTypes = new Set(['life_path_level_reached', 'life_path_reward_claimed', 'lease_started', 'lease_expired', 'lease_deposit_refunded', 'unlock_bought', 'signboard_installed', 'signboard_bought', 'signboard_equipped', 'upgrade_bought', 'table_upgraded', 'chair_upgraded', 'table_bought', 'chair_bought', 'seat_model_adopted', 'glasses_bought', 'dog_bought', 'dog_upgraded', 'flyer_bought']);
-  const report = { policy: CAREER_POLICY, days, seed, startAt, configVersion: config.version, rulesVersion: game.log.at(-1)!.rulesVersion,
+  const report = { policy: seatsFirst ? CAREER_POLICY : CAREER_POLICY_PRICE, days, seed, startAt, configVersion: config.version, rulesVersion: game.log.at(-1)!.rulesVersion,
     commandCount: game.log.length, commandHash: createHash('sha256').update(JSON.stringify(game.log)).digest('hex'), eventCount: w.events.length,
     kBand: c.k.band, advancedBandDecision: 'owner-2026-09-10: standard cold/full menus keep k 2..3; advanced career aggregate k <= 3.5; re-evaluate after Alpha playtest with real player data',
     value: serveValueStats(w.serves, config), normalised: normalisedStats(standardServes, c.k.anchorValuePerServe), rows, milestones: w.events.filter(e => eventTypes.has(e.type)), seasonResults: w.seasons!.results,

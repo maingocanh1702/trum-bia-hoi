@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import seed from '../../../docs/config/economy.tbh.json';
 import { Game, config, loadConfig, upgradeQuote, buyTableQuote, type Command, type SeedConfig } from '../src';
 import { createManagementPolicy } from '../sim/policy';
-import { simulateCareer, CAREER_POLICY } from '../sim/career';
+import { simulateCareer, CAREER_POLICY, CAREER_POLICY_PRICE, SEASON_START } from '../sim/career';
 import { steadyDemand } from './fixtures/steady-demand';
 
 // Plan "Vui 3 ca" S5, career policy v4: a free shop leases the best location directly (D13, DESIGN-story "thuê thẳng mặt bằng"), and the price decides what the bot
@@ -57,13 +57,18 @@ test('the price decides: with a table that costs more than a device the bot buys
   for (const g of [byPrice, bySeats]) { assert.deepEqual(bought(g), ['buyTable']); assert.equal(g.world.tables.length, 2); }
 });
 
-test('the career reports its policy and starts at the first Vietnam midnight of a 21-day season, with the shifts it plays in the order the clock gives them', () => {
-  assert.match(CAREER_POLICY, /^v4:/); assert.match(CAREER_POLICY, /direct leasing/); assert.match(CAREER_POLICY, /the price decides/);
-  const { game, report } = simulateCareer({ days: 1, seed: 42, config: loadConfig(steadyDemand(structuredClone(config.raw))) as SeedConfig });
-  assert.equal(report.rows[0].date, '2026-09-06');
+test('the career runs the protocol of plan S5 by default (seats first, direct leasing, the day every S1-S4 career started); the price-decides bot and the first midnight of a season are options', () => {
+  assert.match(CAREER_POLICY, /^v3 \+ direct leasing/); assert.match(CAREER_POLICY, /seat model: save for the next table, then a second chair per table, before any other purchase/); assert.match(CAREER_POLICY, /never the dog/);
+  assert.match(CAREER_POLICY_PRICE, /^v4 \(information only/);
+  const cfg = loadConfig(steadyDemand(structuredClone(config.raw))) as SeedConfig;
+  const { game, report } = simulateCareer({ days: 1, seed: 42, config: cfg });
+  assert.equal(report.policy, CAREER_POLICY); assert.equal(report.rows[0].date, '2026-09-09');
   assert.equal(game.world.completedShifts, config.values.shift.dailyShiftCap.newbie);
   const w = game.world, openings = w.events.filter(e => e.type === 'shift_opened').map(e => e.at), closings = w.events.filter(e => e.type === 'shift_closed').map(e => e.at);
   // Shifts 2 and 3 open the moment the previous one closes (D8: no cooldown); shift 4 waits for the stamina.
   assert.ok(openings[1] - closings[0] < 60000 && openings[2] - closings[1] < 60000, 'shifts 2 and 3 do not wait');
   assert.ok(openings[3] - closings[2] >= config.values.shift.durationMs / config.values.shift.regenRate - 1000, 'shift 4 waits the 30 minutes');
+  // The information runs: the price decides, and the career starts at the first Vietnam midnight of a 21-day season.
+  const price = simulateCareer({ days: 1, seed: 42, config: cfg, startAt: SEASON_START, policy: { seatsFirst: false } }).report;
+  assert.equal(price.policy, CAREER_POLICY_PRICE); assert.equal(price.rows[0].date, '2026-09-06');
 });

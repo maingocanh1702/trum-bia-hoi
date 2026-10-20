@@ -4,11 +4,11 @@ import { config, decodeSave, encodeSave, loadConfig, type SeedConfig } from '../
 import { simulateCareer, assertAdvancedCareerK } from '../sim/career';
 import { steadyDemand } from './fixtures/steady-demand';
 
-test('seven real career days conserve the wallet and replay purchases, claims, clocks and earned LP from a fresh save', () => {
+test('four real career days conserve the wallet and replay purchases, claims, clocks and earned LP from a fresh save', () => {
   // The harness is the subject: it needs a bot that reaches tables, chairs, a life-path claim and devices. Capacity demand (S3) slows the early game on purpose, so this
-  // run switches it off; `sim:career` and its gate keep measuring the bundled numbers. With the JSON 2.1.0 prices (a second chair is 25 000 and the bot buys the cheapest
-  // thing first) the first chair falls on day 5 of such a run and the first extra glass (more than two per seat) on day 7, so that is how long the harness runs.
-  const days = 7;
+  // run switches it off; `sim:career` and its gate keep measuring the bundled numbers. The protocol bot (seats first) buys its first second chair at shift 9 and its first
+  // extra glass (more than two per seat) at shift 25 of such a run, so four days hold every command the assertions below look for.
+  const days = 4;
   const { game, report } = simulateCareer({ days, seed: 42, config: loadConfig(steadyDemand(structuredClone(config.raw))) as SeedConfig });
   assert.equal(game.world.completedShifts, config.values.shift.dailyShiftCap.newbie * days);
   assert.equal(report.rows[0].openingCoins, config.values.shift.startingCoinsBase);

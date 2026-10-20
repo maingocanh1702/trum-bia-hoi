@@ -28,7 +28,8 @@ const relevant = (patch: Patch) => Object.fromEntries(Object.entries(patch).filt
 const here = fileURLToPath(import.meta.url), gates = join(resolve(here, '..'), 'balance-gates.ts');
 function runChild(job: string, patchFile: string, options: JobOptions): Promise<JobResult> {
   return new Promise((done, fail) => {
-    const args = ['--import', 'tsx', gates, `--job=${job}`, `--patch=${patchFile}`, `--days=${options.days}`, `--shift1=${options.shift1Seeds}`, `--seeds=${options.standardSeeds.join(',')}`, ...(options.onboardingPair ? ['--onboarding-pair'] : [])];
+    const args = ['--import', 'tsx', gates, `--job=${job}`, `--patch=${patchFile}`, `--days=${options.days}`, `--shift1=${options.shift1Seeds}`, `--seeds=${options.standardSeeds.join(',')}`, ...(options.onboardingPair ? ['--onboarding-pair'] : []),
+      ...(options.seatsFirst === false ? ['--bot=price'] : []), ...(options.startAt !== undefined ? [`--start=${new Date(options.startAt + 7 * 3600000).toISOString().slice(0, 10)}`] : [])];
     const child = spawn(process.execPath, args, { cwd: process.cwd(), stdio: ['ignore', 'pipe', 'pipe'] });
     let out = '', err = '';
     child.stdout.on('data', d => { out += d; }); child.stderr.on('data', d => { err += d; });
@@ -81,12 +82,17 @@ const better = (a: Evaluated, b: Evaluated, only: string[] | null) => { const x 
 if (process.argv[1] && resolve(process.argv[1]) === here) {
   const argv = process.argv.slice(2), option = (name: string) => argv.find(a => a.startsWith(`--${name}=`))?.slice(name.length + 3);
   const planFile = option('plan'), out = option('out');
-  assert.ok(planFile && out, 'Usage: balance-sweep --plan=<plan.mjs> --out=<dir> [--pool=5] [--passes=3] [--days=30] [--shift1=60] [--stop-at-clean]');
+  assert.ok(planFile && out, 'Usage: balance-sweep --plan=<plan.mjs> --out=<dir> [--pool=5] [--passes=3] [--days=30] [--shift1=60] [--bot=price] [--start=YYYY-MM-DD] [--stop-at-clean]');
   const pool = Number(option('pool') ?? 5), passes = Number(option('passes') ?? 3), only = option('gates')?.split(',') ?? null;
-  const options: JobOptions = { days: Number(option('days') ?? 30), onboardingPair: false, shift1Seeds: Number(option('shift1') ?? TARGETS.shift1Seeds), standardSeeds: (option('seeds') ?? '42,99').split(',').map(Number) };
+  const options: JobOptions = { days: Number(option('days') ?? 30), onboardingPair: false, shift1Seeds: Number(option('shift1') ?? TARGETS.shift1Seeds), standardSeeds: (option('seeds') ?? '42,99').split(',').map(Number),
+    seatsFirst: option('bot') === 'price' ? false : undefined, startAt: option('start') ? Date.parse(`${option('start')}T00:00:00+07:00`) : undefined };
   const plan = (await import(pathToFileURL(resolve(planFile)).href)).default as Plan;
   applyPatch(bundled.raw, plan.base); for (const c of plan.coordinates) for (const v of c.values) applyPatch(bundled.raw, v.patch); // a path that does not exist fails now, not after an hour
   mkdirSync(out, { recursive: true });
+  // A run is only comparable with runs of the same protocol: an output directory belongs to one bot, one first day, one set of seeds and one career length.
+  const protocol = JSON.stringify({ bot: options.seatsFirst === false ? 'price' : 'plan', start: option('start') ?? 'default', seeds: options.standardSeeds, days: options.days, shift1: options.shift1Seeds });
+  const protocolFile = join(out, 'protocol.json');
+  if (existsSync(protocolFile)) assert.equal(readFileSync(protocolFile, 'utf8'), protocol, `${out} holds runs of another protocol`); else writeFileSync(protocolFile, protocol);
   const log = (line: string) => { console.log(line); writeFileSync(join(out, 'sweep.log'), line + '\n', { flag: 'a' }); };
   let current = (await evaluateAll([plan.base], out, options, pool, 'base'))[0];
   log(`# base ${current.hash}: fails ${scoped(current, only).fails}, violation ${scoped(current, only).violation.toFixed(3)} (all gates ${current.score.fails}): ${current.failing.join(', ') || 'none'}${only ? ` | judged on ${only.join(',')}` : ''}`);

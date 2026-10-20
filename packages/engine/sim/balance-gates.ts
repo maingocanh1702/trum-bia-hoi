@@ -13,9 +13,10 @@ import { serveNext } from './policy';
  * of dotted paths, runs the career bot on each seed, the standard-k sim and the shift-1 wallet probe, and prints the table `gate | target | seed 42 | seed 99 |
  * PASS/FAIL`. Every run is deterministic. A sweep is a loop over patches (balance-sweep.ts) and keeps every run: patch + metrics + table.
  *   node --import tsx packages/engine/sim/balance-gates.ts [--patch=file.json] [--set=path=json ...] [--seeds=42,99] [--days=30] [--label=name] [--out=dir]
- *        [--job=career:42|standard|shift1] [--onboarding-pair] [--shift1=60] [--no-standard] [--start=YYYY-MM-DD] [--bot=seats]
- * `--start` is the career's first day (a Vietnam midnight; default 2026-09-06, the first day of a 21-day season) and `--bot=seats` the seats-first bot of S1-S4: sensitivity
- * runs that say how much of the gate table belongs to the protocol (the first-day and bot choices of DECISIONS 04), never an input of the sealed numbers.
+ *        [--job=career:42|standard|shift1] [--onboarding-pair] [--shift1=60] [--no-standard] [--start=YYYY-MM-DD] [--bot=price]
+ * THE PROTOCOL (plan section 5 S5 row, brief B5) is the default: seeds 42 and 99, the S1-S4 career bot (seats and chairs first, then the cheapest) with direct leasing and no dog,
+ * started on 2026-09-09. `--start` moves the first day (a Vietnam midnight; 2026-09-06 is the first day of a 21-day season) and `--bot=price` runs the price-decides bot v4:
+ * information runs that say how much of a table belongs to the protocol, never the acceptance table.
  * The numbers below are the OWNER'S ACCEPTANCE PROTOCOL, never a tuning input and never a live gameplay limit.
  */
 // config-exempt: owner acceptance protocol of plan S5 (targets of the gate table), not gameplay tuning.
@@ -122,7 +123,7 @@ export function careerMetrics(game: Game, report: ReturnType<typeof simulateCare
 }
 
 export function runCareer(config: SeedConfig, seed: number, days: number, extra: { startAt?: number; seatsFirst?: boolean } = {}): CareerMetrics {
-  const { game, report } = simulateCareer({ days, seed, config, startAt: extra.startAt, policy: { seatsFirst: extra.seatsFirst } }); // career policy v4: direct leasing, the price decides
+  const { game, report } = simulateCareer({ days, seed, config, startAt: extra.startAt, policy: { seatsFirst: extra.seatsFirst } }); // the protocol of plan S5 unless asked otherwise: seats first, direct leasing, 2026-09-09
   return careerMetrics(game, report, config);
 }
 
@@ -140,13 +141,14 @@ export function runStandard(patch: Patch, seeds: number[], onboardingPair: boole
  * and the wallet after the full beer restock the playable journey buys before it opens the Upgrades sheet. Plan section 7 line 3 ("kết ca 1 mua được bàn 2")
  * must hold on EVERY run, not on average: the minimum decides.
  */
-export interface Shift1Metrics { seeds: number; price: number; cheapestDevice: number; closing: { min: number; p05: number; median: number; max: number }; afterRestock: { min: number; p05: number; median: number; max: number }; below: number; belowSlow: number; served: { min: number; median: number }; slowCoarse: { min: number; median: number } }
+export interface Shift1Metrics { seeds: number; price: number; startCoins: number; cheapestDevice: number; closing: { min: number; p05: number; median: number; max: number }; afterRestock: { min: number; p05: number; median: number; max: number }; below: number; belowSlow: number; served: { min: number; median: number }; slowCoarse: { min: number; median: number } }
 export function runShift1(config: SeedConfig, seeds: number): Shift1Metrics {
   // The player of those journeys: shift 1 has no stock sheet, so only the beer is refilled (the keg's own button, when the stock falls below one batch),
   // snacks are never bought; every ready table is served, either at once or on a 4 s beat (the guest journey polls every 4 s, the playable one every 1 s).
   const play = (seed: number, coarseMs: number) => {
     const game = new Game(config, seed, Date.parse('2026-09-09T00:00:00+07:00')), w = game.world;
     const send = (command: Command) => game.command({ command, at: w.now, idempotencyKey: `s1-${game.log.length}` });
+    const startCoins = w.coins; // the wallet of a brand-new save, before any guest
     send({ type: 'startShift' });
     let nextServe = w.now;
     for (let steps = 0; w.phase !== 'resting' && steps < 40000; steps++) {
@@ -157,12 +159,12 @@ export function runShift1(config: SeedConfig, seeds: number): Shift1Metrics {
     assert.equal(w.phase, 'resting', `shift 1 of seed ${seed} did not close`);
     const full = restockQuote(w, config, 'bia', 'full'); // what the playable journey buys on the stock sheet before it opens the Upgrades sheet
     const devices = EQUIPMENT.map(kind => upgradeQuote(w, config, kind).cost).filter((cost): cost is number => cost !== null && cost > 0);
-    return { closing: w.coins, afterRestock: w.coins - (full.quantity > 0 && full.cost <= w.coins ? full.cost : 0), served: w.shift!.stats.served, price: buyTableQuote(w, config).cost!, cheapestDevice: Math.min(...devices) };
+    return { startCoins, closing: w.coins, afterRestock: w.coins - (full.quantity > 0 && full.cost <= w.coins ? full.cost : 0), served: w.shift!.stats.served, price: buyTableQuote(w, config).cost!, cheapestDevice: Math.min(...devices) };
   };
   const stats = (xs: number[]) => { const s = [...xs].sort((a, b) => a - b); return { min: s[0], p05: s[Math.floor(s.length * 0.05)], median: s[Math.floor(s.length / 2)], max: s.at(-1)! }; };
   const fast = Array.from({ length: seeds }, (_, i) => play(i + 1, 0)), slow = Array.from({ length: seeds }, (_, i) => play(i + 1, 4000));
   const price = fast[0].price;
-  return { seeds, price, cheapestDevice: fast[0].cheapestDevice, closing: stats(fast.map(r => r.closing)), afterRestock: stats(fast.map(r => r.afterRestock)), below: fast.filter(r => r.afterRestock < price).length, belowSlow: slow.filter(r => r.afterRestock < price).length,
+  return { seeds, price, startCoins: fast[0].startCoins, cheapestDevice: fast[0].cheapestDevice, closing: stats(fast.map(r => r.closing)), afterRestock: stats(fast.map(r => r.afterRestock)), below: fast.filter(r => r.afterRestock < price).length, belowSlow: slow.filter(r => r.afterRestock < price).length,
     served: { min: Math.min(...fast.map(r => r.served)), median: stats(fast.map(r => r.served)).median }, slowCoarse: { min: Math.min(...slow.map(r => r.afterRestock)), median: stats(slow.map(r => r.afterRestock)).median } };
 }
 
@@ -220,10 +222,16 @@ export function gateTable({ careers, standard, shift1, config }: GateInputs): Ga
   add('cap', 'daily earn cap first reached at shift', `>= ${TARGETS.dailyCapNotBefore} (or never)`, m => ({ cell: m.capShift === null ? 'not reached' : fmt(m.capShift), v: m.capShift === null ? 0 : miss(m.capShift, TARGETS.dailyCapNotBefore, Infinity) }));
   add('beer', 'guests lost to beer running out (no rush), of leavers', `< ${pct(TARGETS.beerOutMax)}`, m => ({ cell: `${pct(m.beer.ofLost)} (${m.beer.guests} guests; of arrivals ${pct(m.beer.ofArrived)})`, v: m.beer.ofLost < TARGETS.beerOutMax ? 0 : Math.max(over(m.beer.ofLost, TARGETS.beerOutMax), 1e-6) }));
   if (shift1) {
+    // P0 (plan section 0, section 4 row 1: "kết ca: mua bàn 2 (850-1.160 xu + 750 khởi đầu)"): the player EARNS table 2 in shift 1. The start wallet must not pay it, and the
+    // wallet of every run - the worst of the fast and the 4 s service models - must have grown to its price by the time the shift is over and the beer stock is bought.
     const cells: Record<string, string> = {}, pass: Record<string, boolean | null> = {}, violation: Record<string, number> = {};
-    const v = Math.max(shift1.below, shift1.belowSlow) / shift1.seeds;
-    for (const seed of seeds) { cells[seed] = `min ${shift1.afterRestock.min} · median ${shift1.afterRestock.median} (${shift1.below}/${shift1.seeds} below ${shift1.price}; 4 s service ${shift1.belowSlow}/${shift1.seeds})`; pass[seed] = v === 0; violation[seed] = v; }
-    rows.push({ id: 'shift1.wallet', name: 'end of shift 1 can buy table 2 (every run)', target: `every seed >= ${shift1.price}`, cells, pass, violation, ok: v === 0 });
+    const worst = Math.min(shift1.afterRestock.min, shift1.slowCoarse.min), shortfall = Math.max(0, shift1.price - worst) / shift1.price, paysAtStart = shift1.startCoins >= shift1.price;
+    const v = shortfall + (paysAtStart ? 1 : 0);
+    for (const seed of seeds) {
+      cells[seed] = `start ${shift1.startCoins} ${paysAtStart ? '>=' : '<'} ${shift1.price} · end min ${worst} (fast ${shift1.afterRestock.min}, 4 s ${shift1.slowCoarse.min}) · median ${shift1.afterRestock.median} (${shift1.below}/${shift1.seeds} and ${shift1.belowSlow}/${shift1.seeds} below ${shift1.price}; takings min ${worst - shift1.startCoins})`;
+      pass[seed] = v === 0; violation[seed] = v;
+    }
+    rows.push({ id: 'shift1.wallet', name: 'shift 1 earns table 2 (start wallet < its price, every run ends with enough)', target: `start < ${shift1.price} and every end >= ${shift1.price}`, cells, pass, violation, ok: v === 0 });
     // The goal chip suggests what an average shift reaches, capacity lane first: table 2 is the first goal of every shop whose cheapest device level costs at least as much
     // (when a device is within reach so is the table, and the capacity lane wins). A cheaper device pre-empts it on the runs whose first shift took ~1/3 of its price.
     const first: Record<string, string> = {}, firstPass: Record<string, boolean | null> = {}, firstViolation: Record<string, number> = {}, short = Math.max(0, shift1.price - shift1.cheapestDevice) / shift1.price;
@@ -269,7 +277,7 @@ function parseArgs(argv: string[]) {
   for (const a of argv.filter(x => x.startsWith('--set='))) { const [path, ...rest] = a.slice(6).split('='); patch[path] = JSON.parse(rest.join('=')); }
   const seeds = (option('seeds') ?? '42,99').split(',').map(Number);
   return { patch, seeds, days: Number(option('days') ?? 30), label: option('label') ?? 'run', out: option('out'), job: option('job'),
-    startAt: option('start') ? Date.parse(`${option('start')}T00:00:00+07:00`) : undefined, seatsFirst: option('bot') === 'seats' ? true : undefined,
+    startAt: option('start') ? Date.parse(`${option('start')}T00:00:00+07:00`) : undefined, seatsFirst: option('bot') === 'price' ? false : undefined,
     onboardingPair: argv.includes('--onboarding-pair'), shift1: Number(option('shift1') ?? TARGETS.shift1Seeds), standard: !argv.includes('--no-standard') };
 }
 
