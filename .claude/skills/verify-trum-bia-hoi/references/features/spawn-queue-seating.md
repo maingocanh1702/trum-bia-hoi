@@ -151,12 +151,13 @@ independent shipper lane — because they share the same autonomous tick machine
 - `packages/engine/test/seat-model.test.ts` — `a pair with no two-chair table leaves at the door: no penalty, no reputation change, never lost` (onboarding's forced single still seats; `noSeat` = `rejected`; coins/reputation/lostStreak unchanged; queue empty).
 - `packages/engine/test/arrival-interval.test.ts` — `fast-weather rush groups retain hard floors and round once after the per-customer size factor` now forces pairs (`spawn.pPair` 1): the gap after a turned-away pair still scales by two.
 
-- **S3 capacity demand, door queue, patience (rules 28, JSON 2.0.22; D12 D19 D25):** `packages/engine/test/capacity-demand.test.ts` (11) —
+- **S3 capacity demand, door queue, patience (rules 28, JSON 2.0.22; D12 D19 D25):** `packages/engine/test/capacity-demand.test.ts` (12) —
   `a rules-28 history recorded on JSON 2.0.21 replays byte for byte and re-encodes unchanged` (fixture `packages/engine/test/fixtures/seat-2.0.21-v28.json`, recorded by the S2 engine, generator `fixtures/seat-v28.ts`) ·
   `the bundled numbers are the plan's W9 set: capacity demand 6 / 4 (D19), queue 1 + seats/8 and patience 24 s (D25), a Tier A key, a version above 2.0.21` (the one test that names the numbers; S5 retunes it) ·
   `capacityDemandMult is min(maxMult, max(1, refTables / tables)); a snapshot from before the key has none` (1 → 8 tables: x4 x3 x2 x1.5 x1.2 x1 x1 x1; clamps; pins x1) ·
   `the gap to the next group is multiplied by the demand factor of the tables owned: x4, x3, x2, x1.5 (singles and pairs, seed 42)` (real `buyTable`, three consecutive gaps per case; the first guest of the shift keeps `baseMs × warmupMult`) ·
   `the gap rounds once, after the group-size and demand factors, and follows the table count live` (hot weather, 4 tables: 14 962.5 → 14 963) ·
+  `capacity demand scales the gap of every rush kind too, after the rush floor and the group-size factor, rounded once (6 kinds x 1-4 tables x single and pair)` (a controlled rush per kind, two regimes: the bundled numbers and one where every floor binds; also cited in rush-weather.md) ·
   `queue slots are queueBaseSlots + floor(seats / queueSeatsPerSlot): one seat queues one group, eight seats two; a capacity pin keeps 2 + seats/3` ·
   `D12: a group turned away because the door queue is full costs no coins and no reputation and is never lost; only waiting too long does` (after one real serve gives reputation to lose: ≥ 5 `queue_overflow{reason:'full'}`, coins/reputation/`lostStreak` unchanged, `stats.lost` 0, then the first guest who gives up costs reputation and counts as lost) ·
   `patience.thuongMs is 24 s on the bundled seat seed and stays 18 s on a capacity pin and on a 2.0.21 pin` ·

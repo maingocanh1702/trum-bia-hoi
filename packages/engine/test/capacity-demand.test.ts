@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import seed from '../../../docs/config/economy.tbh.json';
 import capacityModel from '../../../docs/config/legacy/economy-2.0.4.json';
 import legacy from '../../../docs/config/legacy/economy-1.7.3.json';
-import { Game, config, loadConfig, decodeSave, encodeSave, isSeatModel, queueSlots, capacityDemandMult, WEATHER, type Command } from '../src';
+import { Game, config, loadConfig, decodeSave, encodeSave, isSeatModel, queueSlots, capacityDemandMult, WEATHER, RUSH_TYPES, type Command } from '../src';
 import { serveNext } from '../sim/policy';
 
 // Plan "Vui 3 ca" S3 / FEEDBACK II.2 v3.3 / D12 D17 D19 D25: capacity demand, the short door queue, longer patience. Every state change below is
@@ -90,6 +90,38 @@ test('the gap rounds once, after the group-size and demand factors, and follows 
   g.advance(s.nextSpawnAt); assert.equal(s.nextSpawnAt - w.now, Math.round(hot * 4), 'one table: 9 975 ms x 4');
   while (w.tables.length < 4) assert.ok(send(g, { type: 'buyTable' }).ok); // bought mid-shift: the next gap uses the shop as it is then
   g.advance(s.nextSpawnAt); assert.equal(s.nextSpawnAt - w.now, 14963, 'four tables: 9 975 x 1.5 = 14 962.5 rounds once');
+});
+
+test('capacity demand scales the gap of every rush kind too, after the rush floor and the group-size factor, rounded once (6 kinds x 1-4 tables x single and pair)', () => {
+  // F08 owner line (18/09): "áp cả trong rush". The per-guest cadence is restated by hand from the config, exactly as arrivalIntervalMs documents it:
+  // the ordinary cadence keeps max(baseMs, floor) before the weather, an active rush keeps its hard floor AFTER its multiplier; only then the group-size
+  // and shop-size factors apply and the product is rounded once. The second regime makes every rush floor bind, so a factor applied before the floor,
+  // or only while no rush runs, cannot pass.
+  type Kind = typeof RUSH_TYPES[number];
+  const perGuest = (raw: Seed, kind: Kind) => kind === 'none'
+    ? Math.max(raw.spawn.baseMs, raw.rush.none.floorMs) * raw.weather.sunny.spawnIntervalMult * raw.rush.none.spawnIntervalMult
+    : Math.max(raw.spawn.baseMs * raw.weather.sunny.spawnIntervalMult * raw.rush[kind].spawnIntervalMult, raw.rush[kind].floorMs);
+  const regimes: [string, (raw: Seed) => void, number[]][] = [
+    ['bundled numbers, sunny', () => {}, [10500, 6930, 3675, 2100, 4725, 2625]],
+    ['every floor binds: baseMs 1000, weather x0.01', raw => { raw.spawn.baseMs = 1000; raw.weather.sunny.spawnIntervalMult = 0.01; }, [105, 6.6, 1000, 700, 1000, 700]],
+  ];
+  assert.deepEqual([...RUSH_TYPES], ['none', 'peak', 'light', 'heavy', 'lunch_light', 'football']);
+  const d = seed.spawn.capacityDemand;
+  for (const [name, patch, anchors] of regimes) {
+    const raw = structuredClone(seed); patch(raw);
+    assert.deepEqual(RUSH_TYPES.map(kind => +perGuest(raw, kind).toFixed(3)), anchors, `${name}: the per-guest cadence the expectation starts from`);
+    for (const kind of RUSH_TYPES) for (const [pPair, size] of [[0, 1], [1, 2]] as const) for (const tables of [1, 2, 3, 4]) {
+      const g = seatGame(r => { r.onboarding.enabled = false; r.spawn.pPair = pPair; patch(r); }), w = g.world;
+      while (w.tables.length < tables) assert.ok(send(g, { type: 'buyTable' }).ok);
+      assert.ok(send(g, { type: 'startShift' }).ok);
+      const s = w.shift!;
+      if (kind !== 'none') s.rushes = [{ kind, start: w.now, end: w.now + 1e9 }]; // one controlled rush for the whole shift (the trick of arrival-interval.test.ts)
+      g.advance(s.nextSpawnAt);
+      assert.equal(s.rush, kind, 'the controlled rush is the one running at the arrival'); assert.equal(arrivals(g).at(-1)!.data.size, size);
+      const mult = Math.min(d.maxMult, Math.max(1, d.refTables / tables));
+      assert.equal(s.nextSpawnAt - w.now, Math.round(perGuest(raw, kind) * size * mult), `${name}: ${kind}, ${tables} table(s), groups of ${size}: x${mult}`);
+    }
+  }
 });
 
 test('queue slots are queueBaseSlots + floor(seats / queueSeatsPerSlot): one seat queues one group, eight seats two; a capacity pin keeps 2 + seats/3', () => {
