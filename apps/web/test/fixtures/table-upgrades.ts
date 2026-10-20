@@ -4,7 +4,7 @@ import { serveNext } from '../../../../packages/engine/sim/policy';
 import { fullHud } from './full-hud';
 
 // Table and chair levels (S4, rules 28): a resting shop on the bundled seat seed with four tables of two chairs, Duong Len Trum LP1 reached (its
-// threshold lowered to one coin earned: the real 125 000 coins are days of play, the gate arithmetic is what the spec drives) and a wallet that
+// threshold lowered to one coin earned: the real 20 000 coins are days of play, the gate arithmetic is what the spec drives) and a wallet that
 // pays two table levels' worth of ladder: the first table's Lv2, one chair level for each of the first two tables, and no more. Always the real
 // engine (tables, chairs and the shift that earns LP1 are real commands), never hand-written JSON. `inspect` reads a browser save back.
 if (process.argv[2] === 'inspect') {
@@ -37,7 +37,7 @@ if (process.argv[2] === 'inspect') {
   const build = (startingCoinsBase: number) => {
     const raw = structuredClone(config.raw); raw._meta.version = 'table-upgrade-fixture'; fullHud(raw);
     raw.lifePath[1].lifetimeBase = 1; raw.shift.startingCoinsBase = startingCoinsBase;
-    // The chip suggests what is within reach of an average shift first (nextGoal.reachMult); in the 2.1.0 prices the stall's second level (1 250) is, a table level (27 500) is not.
+    // The chip suggests what is within reach of an average shift first (nextGoal.reachMult); in the 2.1.0 prices the stall's second level (1 500) is, a table level (27 500) is not.
     // The subject is the table and chair card, so everything counts as within reach and the chip follows its lane order (capacity first).
     raw.nextGoal.reachMult = 1000;
     const g = new Game(loadConfig(raw), 42, start), w = g.world;
