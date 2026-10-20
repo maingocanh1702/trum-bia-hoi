@@ -77,7 +77,7 @@ unrelated one:
   (`installVerifyBridge()`, the `DEV`/`VITE_TBH_VERIFY` install guard) — proven by
   `apps/web/src/verify/bridge.test.ts` and `apps/web/src/verify/install.test.ts` against fake
   `window`/`localStorage` stand-ins (no real browser needed).
-- `scripts/verify/commented-assertions.ts` (S5 review round 1, 2026-10-21: a `//` put in the middle of a line had swallowed two assertions of `buy-reasons.spec.ts` and `locations.spec.ts` for one commit) — proven by `scripts/verify/commented-assertions.test.ts`: it finds any line of a test or verification source whose `//` comment (outside string, template and URL text) holds a call that looks like an assertion, and runs over every test and verification source of the repo inside `npm test` (181 files, 22 044 lines, 0 hits when added).
+- `scripts/verify/commented-assertions.ts` (S5 review round 1, 2026-10-21: a `//` put in the middle of a line had swallowed two assertions of `buy-reasons.spec.ts` and `locations.spec.ts` for one commit) — proven by `scripts/verify/commented-assertions.test.ts`: it finds any line of a test or verification source whose `//` comment (outside string, template and URL text) holds a call that looks like an assertion (`expect(`, `expect.soft(`, `assert(`, `assert.x(`; review round 2 added `expect.soft` and the `packages/engine/sim` root), and runs over every test and verification source of the repo inside `npm test` (223 files, 24 630 lines, 0 hits).
 - The bridge driven end to end through a real page, not just unit-tested:
   `apps/web/test/bridge.spec.ts` — cited under [serve-outcomes](serve-outcomes.md), since that test's
   actual subject is a serve outcome, not the bridge's own mechanics.
