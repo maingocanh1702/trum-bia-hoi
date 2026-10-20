@@ -5,7 +5,7 @@
   "nav.shift": "Mở ca", "nav.book": "Sổ ca", "nav.stock": "Nhập hàng", "nav.upgrades": "Nâng cấp", "nav.journey": "Đường lên Trùm", "nav.settings": "Cài đặt",
   "weather.sunny": "Nắng đẹp", "weather.hot": "Nóng", "weather.humid": "Oi bức", "weather.rain": "Mưa phùn", "weather.cold": "Gió lạnh",
   "rush.none": "Nhịp quán bình thường", "rush.light": "Giờ Vàng", "rush.heavy": "Giờ Vàng đông khách", "rush.lunch_light": "Giờ trưa", "rush.football": "Giờ bóng lăn", "rush.peak": "Đông khách", "rush.next": "Giờ Vàng sau {time}",
-  "rest.title": "Quán nhỏ đã sẵn sàng.", "rest.copy": "Mở một ca, đón khách và bưng những mâm đầu tiên.", "rest.regen": "Hồi đầy sau {time} khi đang ở quán.", "rest.free": "Chơi miễn phí · Không cần đăng ký", "closing": "Đang đợi khách dùng xong…",
+  "rest.title": "Quán nhỏ đã sẵn sàng.", "rest.copy": "Mở một ca, đón khách và bưng những mâm đầu tiên.", "rest.regen": "Hồi đầy sau {time} khi đang ở quán.", "rest.free": "Chơi miễn phí · Không cần đăng ký", "rest.ready": "Ca kế mở ngay, không cần chờ.", "closing": "Đang đợi khách dùng xong…",
   "equipment.keg": "Vòi rót", "equipment.washer": "Bồn rửa", "equipment.cooler": "Hầm lạnh", "equipment.stall": "Quầy hàng", "equipment.kitchen": "Bếp", "level": "Cấp {n}",
   "dish.bia": "Bia hơi", "dish.lac": "Lạc rang", "dish.nem": "Nem chua", "dish.dau": "Đậu tẩm hành", "dish.topmo": "Tóp mỡ Triều Khúc", "dish.long": "Lòng xào dưa",
   "table": "Bàn {n}", "table.empty": "Đợi khách", "table.seating": "Khách vào bàn", "table.waiting": "Đang gọi món", "table.consuming": "Đang nhâm nhi", "table.occupied": "Lai rai chưa về", "table.cleaning": "Đang dọn bàn", "table.broken": "Cần sửa bàn", "table.seats": "{n} chỗ",

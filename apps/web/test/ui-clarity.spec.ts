@@ -44,7 +44,7 @@ for (const locale of ['vi', 'en']) for (const viewport of [{ width: 360, height:
 }
 
 test('A5 recovery ETA follows active rest, survives reload and disappears when stamina is full', async ({ page, tbh }) => {
-  const f = fixture(); await page.clock.pauseAt(f.now);
+  const f = fixture('cooldown'); await page.clock.pauseAt(f.now); // three shifts played: the first shifts open without the cooldown (D8), the fourth waits
   await page.addInitScript(save => {
     if (!localStorage.getItem('clarity-seeded')) {
       localStorage.setItem('tbh.save.v1', save); localStorage.setItem('clarity-seeded', '1');
