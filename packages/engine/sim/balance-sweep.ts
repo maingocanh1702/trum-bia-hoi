@@ -54,7 +54,7 @@ export async function evaluateAll(patches: Patch[], dir: string, options: JobOpt
     const file = join(dir, 'patches', `${hash}.json`); writeFileSync(file, JSON.stringify(patch, null, 1));
     // A patch the engine refuses (config validation) or a job that dies is an INVALID candidate, kept on disk with its error, never a crash of the sweep.
     for (const job of names) tasks.push(async () => {
-      const cache = job.startsWith('career') ? null : join(dir, 'jobcache', `${job}-${options.shift1Seeds}-${hashOf(relevant(patch))}.json`);
+      const cache = job.startsWith('career') ? null : join(dir, 'jobcache', `${job}-${options.shift1Seeds}-${options.standardSeeds.join('+')}-${hashOf(relevant(patch))}.json`);
       if (cache && existsSync(cache)) return { hash, result: JSON.parse(readFileSync(cache, 'utf8')) as JobResult };
       return runChild(job, file, options).then(result => { if (cache) writeFileSync(cache, JSON.stringify(result)); return { hash, result }; }, (e: Error) => ({ hash, error: e.message }));
     });
