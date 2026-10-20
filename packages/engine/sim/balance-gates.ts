@@ -225,8 +225,8 @@ export function gateTable({ careers, standard, shift1, config }: GateInputs): Ga
     // P0 (plan section 0, section 4 row 1: "kết ca: mua bàn 2 (850-1.160 xu + 750 khởi đầu)"): the player EARNS table 2 in shift 1. The start wallet must not pay it, and the
     // wallet of every run - the worst of the fast and the 4 s service models - must have grown to its price by the time the shift is over and the beer stock is bought.
     const cells: Record<string, string> = {}, pass: Record<string, boolean | null> = {}, violation: Record<string, number> = {};
-    const worst = Math.min(shift1.afterRestock.min, shift1.slowCoarse.min), shortfall = Math.max(0, shift1.price - worst) / shift1.price, paysAtStart = shift1.startCoins >= shift1.price;
-    const v = shortfall + (paysAtStart ? 1 : 0);
+    const worst = Math.min(shift1.afterRestock.min, shift1.slowCoarse.min), paysAtStart = shift1.startCoins >= shift1.price;
+    const v = Math.max(shift1.below, shift1.belowSlow) / shift1.seeds + (paysAtStart ? 1 : 0); // the share of the runs that end short: a fraction a sweep can climb, 0 only when every run earns the table
     for (const seed of seeds) {
       cells[seed] = `start ${shift1.startCoins} ${paysAtStart ? '>=' : '<'} ${shift1.price} · end min ${worst} (fast ${shift1.afterRestock.min}, 4 s ${shift1.slowCoarse.min}) · median ${shift1.afterRestock.median} (${shift1.below}/${shift1.seeds} and ${shift1.belowSlow}/${shift1.seeds} below ${shift1.price}; takings min ${worst - shift1.startCoins})`;
       pass[seed] = v === 0; violation[seed] = v;

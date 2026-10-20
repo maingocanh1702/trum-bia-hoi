@@ -75,6 +75,12 @@ export async function evaluateAll(patches: Patch[], dir: string, options: JobOpt
   }
   return [...unique.keys()].map(hash => JSON.parse(readFileSync(join(dir, 'runs', `${hash}.json`), 'utf8')) as Evaluated);
 }
+/** A run is only comparable with runs of the same protocol: an output directory belongs to one bot, one first day, one set of seeds and one career length. */
+export function claimProtocol(out: string, options: JobOptions, start: string | undefined) {
+  const protocol = JSON.stringify({ bot: options.seatsFirst === false ? 'price' : 'plan', start: start ?? 'default', seeds: options.standardSeeds, days: options.days, shift1: options.shift1Seeds });
+  const protocolFile = join(out, 'protocol.json');
+  if (existsSync(protocolFile)) assert.equal(readFileSync(protocolFile, 'utf8'), protocol, `${out} holds runs of another protocol`); else writeFileSync(protocolFile, protocol);
+}
 /** A sweep stage may judge only some gates (`--gates=table4,chair1,door` : an id or a prefix of one); the whole table is still saved with every run. */
 const scoped = (e: Evaluated, only: string[] | null) => e.failing[0] === 'invalid' ? e.score : only ? score(e.rows.filter(r => only.some(id => r.id === id || r.id.startsWith(`${id}.`)))) : e.score;
 const better = (a: Evaluated, b: Evaluated, only: string[] | null) => { const x = scoped(a, only), y = scoped(b, only); return x.fails < y.fails || x.fails === y.fails && x.violation < y.violation - 1e-9; };
@@ -89,10 +95,7 @@ if (process.argv[1] && resolve(process.argv[1]) === here) {
   const plan = (await import(pathToFileURL(resolve(planFile)).href)).default as Plan;
   applyPatch(bundled.raw, plan.base); for (const c of plan.coordinates) for (const v of c.values) applyPatch(bundled.raw, v.patch); // a path that does not exist fails now, not after an hour
   mkdirSync(out, { recursive: true });
-  // A run is only comparable with runs of the same protocol: an output directory belongs to one bot, one first day, one set of seeds and one career length.
-  const protocol = JSON.stringify({ bot: options.seatsFirst === false ? 'price' : 'plan', start: option('start') ?? 'default', seeds: options.standardSeeds, days: options.days, shift1: options.shift1Seeds });
-  const protocolFile = join(out, 'protocol.json');
-  if (existsSync(protocolFile)) assert.equal(readFileSync(protocolFile, 'utf8'), protocol, `${out} holds runs of another protocol`); else writeFileSync(protocolFile, protocol);
+  claimProtocol(out, options, option('start'));
   const log = (line: string) => { console.log(line); writeFileSync(join(out, 'sweep.log'), line + '\n', { flag: 'a' }); };
   let current = (await evaluateAll([plan.base], out, options, pool, 'base'))[0];
   log(`# base ${current.hash}: fails ${scoped(current, only).fails}, violation ${scoped(current, only).violation.toFixed(3)} (all gates ${current.score.fails}): ${current.failing.join(', ') || 'none'}${only ? ` | judged on ${only.join(',')}` : ''}`);
