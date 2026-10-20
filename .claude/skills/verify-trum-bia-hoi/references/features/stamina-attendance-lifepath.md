@@ -263,3 +263,8 @@ freezing of stamina/attendance, not yet written).
 | Date | Change |
 |---|---|
 | 2026-10-19 | S1 rules 28: LP1 counts tables; tests cited. |
+
+## Changelog — S4 table and chair levels
+| Date | Change |
+|---|---|
+| 2026-10-20 | S4 `eco21-table-chair-upgrades` (JSON 2.0.23): Duong Len Trum gates the table levels (Lv2 LP1, Lv3 LP2, Lv4 LP4, replacing the badge and reputation of the S1 ladder) and the chair levels (Lv2 LP1, Lv3 LP2) through `lifePathGate` of the ladder rows, compared with `w.lifePath` (a reached mốc opens the gate without being claimed); refusal `lifePathRequired` carries `requiredLifePath`, the UI names the mốc (`reason.lifePathRequired`). Proof: `packages/engine/test/table-chair-upgrades.test.ts` `tableUpgradeQuote answers what upgradeTable will: ...` and `chairUpgradeQuote answers what upgradeChair will: ...`. |
