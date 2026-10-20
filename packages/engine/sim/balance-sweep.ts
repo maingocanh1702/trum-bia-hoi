@@ -81,7 +81,7 @@ const better = (a: Evaluated, b: Evaluated, only: string[] | null) => { const x 
 if (process.argv[1] && resolve(process.argv[1]) === here) {
   const argv = process.argv.slice(2), option = (name: string) => argv.find(a => a.startsWith(`--${name}=`))?.slice(name.length + 3);
   const planFile = option('plan'), out = option('out');
-  assert.ok(planFile && out, 'Usage: balance-sweep --plan=<plan.mjs> --out=<dir> [--pool=5] [--passes=3] [--days=30] [--shift1=60]');
+  assert.ok(planFile && out, 'Usage: balance-sweep --plan=<plan.mjs> --out=<dir> [--pool=5] [--passes=3] [--days=30] [--shift1=60] [--stop-at-clean]');
   const pool = Number(option('pool') ?? 5), passes = Number(option('passes') ?? 3), only = option('gates')?.split(',') ?? null;
   const options: JobOptions = { days: Number(option('days') ?? 30), onboardingPair: false, shift1Seeds: Number(option('shift1') ?? TARGETS.shift1Seeds), standardSeeds: (option('seeds') ?? '42,99').split(',').map(Number) };
   const plan = (await import(pathToFileURL(resolve(planFile)).href)).default as Plan;
@@ -90,7 +90,9 @@ if (process.argv[1] && resolve(process.argv[1]) === here) {
   const log = (line: string) => { console.log(line); writeFileSync(join(out, 'sweep.log'), line + '\n', { flag: 'a' }); };
   let current = (await evaluateAll([plan.base], out, options, pool, 'base'))[0];
   log(`# base ${current.hash}: fails ${scoped(current, only).fails}, violation ${scoped(current, only).violation.toFixed(3)} (all gates ${current.score.fails}): ${current.failing.join(', ') || 'none'}${only ? ` | judged on ${only.join(',')}` : ''}`);
-  for (let pass = 1; pass <= passes; pass++) {
+  const stopAtClean = argv.includes('--stop-at-clean'); // end the sweep at the first set that passes every gate on every seed
+  let clean = false;
+  for (let pass = 1; pass <= passes && !clean; pass++) {
     let improved = false;
     for (const coordinate of plan.coordinates) {
       const candidates = coordinate.values.map(v => ({ ...current.patch, ...v.patch }));
@@ -103,6 +105,7 @@ if (process.argv[1] && resolve(process.argv[1]) === here) {
         if (better(e, best, only)) best = e;
       }
       if (best.hash !== current.hash) { current = best; improved = true; log(`> pass ${pass} ${coordinate.name}: NEW BEST ${current.hash} fails ${scoped(current, only).fails}, violation ${scoped(current, only).violation.toFixed(3)}`); }
+      if (stopAtClean && current.score.fails === 0) { clean = true; log(`# clean: every gate passes on every seed (${current.hash})`); break; }
     }
     writeFileSync(join(out, `best-pass${pass}.json`), JSON.stringify({ pass, hash: current.hash, patch: current.patch, score: current.score, failing: current.failing }, null, 1));
     log(`# end of pass ${pass}: best ${current.hash} fails ${scoped(current, only).fails}, violation ${scoped(current, only).violation.toFixed(3)}, improved: ${improved}`);

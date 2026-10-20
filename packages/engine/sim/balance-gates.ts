@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Game, config as seedConfig, loadConfig, buyTableQuote, restockQuote, beerStatus, tableUpgrade, type Command, type Config, type DomainEvent, type SeedConfig } from '../src/index';
+import { Game, config as seedConfig, loadConfig, buyTableQuote, upgradeQuote, EQUIPMENT, restockQuote, beerStatus, tableUpgrade, type Command, type Config, type DomainEvent, type SeedConfig } from '../src/index';
 import { simulateCareer, ADVANCED_CAREER_K_MAX, ADVANCED_TOTAL_VALUE_BASELINE, ADVANCED_TOTAL_VALUE_MAX_OVER_BASELINE } from './career';
 import { doorTable, DOOR_TARGETS, type DoorTable } from './door';
 import { measureStandard, type StandardRow } from './headless';
@@ -138,7 +138,7 @@ export function runStandard(patch: Patch, seeds: number[], onboardingPair: boole
  * and the wallet after the full beer restock the playable journey buys before it opens the Upgrades sheet. Plan section 7 line 3 ("kết ca 1 mua được bàn 2")
  * must hold on EVERY run, not on average: the minimum decides.
  */
-export interface Shift1Metrics { seeds: number; price: number; closing: { min: number; p05: number; median: number; max: number }; afterRestock: { min: number; p05: number; median: number; max: number }; below: number; belowSlow: number; served: { min: number; median: number }; slowCoarse: { min: number; median: number } }
+export interface Shift1Metrics { seeds: number; price: number; cheapestDevice: number; closing: { min: number; p05: number; median: number; max: number }; afterRestock: { min: number; p05: number; median: number; max: number }; below: number; belowSlow: number; served: { min: number; median: number }; slowCoarse: { min: number; median: number } }
 export function runShift1(config: SeedConfig, seeds: number): Shift1Metrics {
   // The player of those journeys: shift 1 has no stock sheet, so only the beer is refilled (the keg's own button, when the stock falls below one batch),
   // snacks are never bought; every ready table is served, either at once or on a 4 s beat (the guest journey polls every 4 s, the playable one every 1 s).
@@ -154,12 +154,13 @@ export function runShift1(config: SeedConfig, seeds: number): Shift1Metrics {
     }
     assert.equal(w.phase, 'resting', `shift 1 of seed ${seed} did not close`);
     const full = restockQuote(w, config, 'bia', 'full'); // what the playable journey buys on the stock sheet before it opens the Upgrades sheet
-    return { closing: w.coins, afterRestock: w.coins - (full.quantity > 0 && full.cost <= w.coins ? full.cost : 0), served: w.shift!.stats.served, price: buyTableQuote(w, config).cost! };
+    const devices = EQUIPMENT.map(kind => upgradeQuote(w, config, kind).cost).filter((cost): cost is number => cost !== null && cost > 0);
+    return { closing: w.coins, afterRestock: w.coins - (full.quantity > 0 && full.cost <= w.coins ? full.cost : 0), served: w.shift!.stats.served, price: buyTableQuote(w, config).cost!, cheapestDevice: Math.min(...devices) };
   };
   const stats = (xs: number[]) => { const s = [...xs].sort((a, b) => a - b); return { min: s[0], p05: s[Math.floor(s.length * 0.05)], median: s[Math.floor(s.length / 2)], max: s.at(-1)! }; };
   const fast = Array.from({ length: seeds }, (_, i) => play(i + 1, 0)), slow = Array.from({ length: seeds }, (_, i) => play(i + 1, 4000));
   const price = fast[0].price;
-  return { seeds, price, closing: stats(fast.map(r => r.closing)), afterRestock: stats(fast.map(r => r.afterRestock)), below: fast.filter(r => r.afterRestock < price).length, belowSlow: slow.filter(r => r.afterRestock < price).length,
+  return { seeds, price, cheapestDevice: fast[0].cheapestDevice, closing: stats(fast.map(r => r.closing)), afterRestock: stats(fast.map(r => r.afterRestock)), below: fast.filter(r => r.afterRestock < price).length, belowSlow: slow.filter(r => r.afterRestock < price).length,
     served: { min: Math.min(...fast.map(r => r.served)), median: stats(fast.map(r => r.served)).median }, slowCoarse: { min: Math.min(...slow.map(r => r.afterRestock)), median: stats(slow.map(r => r.afterRestock)).median } };
 }
 
@@ -221,6 +222,11 @@ export function gateTable({ careers, standard, shift1, config }: GateInputs): Ga
     const v = Math.max(shift1.below, shift1.belowSlow) / shift1.seeds;
     for (const seed of seeds) { cells[seed] = `min ${shift1.afterRestock.min} · median ${shift1.afterRestock.median} (${shift1.below}/${shift1.seeds} below ${shift1.price}; 4 s service ${shift1.belowSlow}/${shift1.seeds})`; pass[seed] = v === 0; violation[seed] = v; }
     rows.push({ id: 'shift1.wallet', name: 'end of shift 1 can buy table 2 (every run)', target: `every seed >= ${shift1.price}`, cells, pass, violation, ok: v === 0 });
+    // The goal chip suggests what an average shift reaches, capacity lane first: table 2 is the first goal of every shop whose cheapest device level costs at least as much
+    // (when a device is within reach so is the table, and the capacity lane wins). A cheaper device pre-empts it on the runs whose first shift took ~1/3 of its price.
+    const first: Record<string, string> = {}, firstPass: Record<string, boolean | null> = {}, firstViolation: Record<string, number> = {}, short = Math.max(0, shift1.price - shift1.cheapestDevice) / shift1.price;
+    for (const seed of seeds) { first[seed] = `cheapest device level ${shift1.cheapestDevice}`; firstPass[seed] = short === 0; firstViolation[seed] = short; }
+    rows.push({ id: 'shift1.firstGoal', name: 'first goal after shift 1 is table 2 (no device level cheaper)', target: `every device level >= ${shift1.price}`, cells: first, pass: firstPass, violation: firstViolation, ok: short === 0 });
   }
   return rows;
 }
