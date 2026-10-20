@@ -1,0 +1,23 @@
+{
+ "upgrades.stall.priceBase.1": 600,
+ "upgrades.keg.priceBase.1": 1750,
+ "upgrades.keg.priceBase.2": 6750,
+ "upgrades.keg.priceBase.3": 13500,
+ "upgrades.keg.priceBase.4": 51000,
+ "upgrades.washer.priceBase.1": 1250,
+ "upgrades.washer.priceBase.2": 5500,
+ "upgrades.washer.priceBase.3": 10250,
+ "upgrades.washer.priceBase.4": 34000,
+ "upgrades.cooler.priceBase.1": 1000,
+ "upgrades.cooler.priceBase.2": 4000,
+ "upgrades.cooler.priceBase.3": 7750,
+ "upgrades.cooler.priceBase.4": 25500,
+ "upgrades.stall.priceBase.2": 2750,
+ "upgrades.stall.priceBase.3": 5000,
+ "upgrades.stall.priceBase.4": 20500,
+ "upgrades.kitchen.priceBase.1": 4000,
+ "upgrades.kitchen.priceBase.2": 17000,
+ "upgrades.kitchen.priceBase.3": 27250,
+ "upgrades.kitchen.priceBase.4": 68000,
+ "tip.rate": 0.19
+}

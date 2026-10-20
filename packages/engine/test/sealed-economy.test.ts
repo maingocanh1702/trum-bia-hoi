@@ -15,7 +15,7 @@ test('2.1.0 is the sealed version and the first-shifts allowance is three shifts
 });
 
 test('the sealed economy numbers of the balance pass', () => {
-  assert.equal(raw.tip.rate, 0.2);
+  assert.equal(raw.tip.rate, 0.19);
   assert.equal(raw.shift.dailyEarnCapBase, 400000);
   assert.equal(raw.shift.startingCoinsBase, 700); // 1 750 coins: the end of shift 1 can always pay table 2 (min 1 734 over 60 runs)
   assert.equal(raw.locations.leaseDays, 3);
@@ -25,11 +25,11 @@ test('the sealed economy numbers of the balance pass', () => {
   assert.deepEqual(t.chairPriceBase, [10000, 15000, 22500, 30000, 40000, 50000, 60000, 70000]);
   assert.deepEqual(t.tableUpgrade.levels.map(l => [l.priceBase, l.stepBase]), [[8000, 3000], [20000, 8000], [35000, 12000]]);
   assert.deepEqual([t.chairUpgrade.priceBase, t.chairUpgrade.stepBase], [4000, 2000]);
-  assert.deepEqual(raw.upgrades.keg.priceBase, [0, 2000, 8000, 16000, 60000]);
-  assert.deepEqual(raw.upgrades.washer.priceBase, [0, 1500, 6500, 12000, 40000]);
-  assert.deepEqual(raw.upgrades.cooler.priceBase, [0, 1250, 4750, 9000, 30000]);
-  assert.deepEqual(raw.upgrades.stall.priceBase, [0, 500, 3250, 6000, 24000]);
-  assert.deepEqual(raw.upgrades.kitchen.priceBase, [null, 4750, 20000, 32000, 80000]);
+  assert.deepEqual(raw.upgrades.keg.priceBase, [0, 1750, 6750, 13500, 51000]);
+  assert.deepEqual(raw.upgrades.washer.priceBase, [0, 1250, 5500, 10250, 34000]);
+  assert.deepEqual(raw.upgrades.cooler.priceBase, [0, 1000, 4000, 7750, 25500]);
+  assert.deepEqual(raw.upgrades.stall.priceBase, [0, 600, 2750, 5000, 20500]); // Lv2 at table 2's price: see the first-purchase test below
+  assert.deepEqual(raw.upgrades.kitchen.priceBase, [null, 4000, 17000, 27250, 68000]);
 });
 
 test('what the balance pass left as the earlier waves set it: door, patience, demand, group size, keg stock, rush warning', () => {
@@ -57,4 +57,15 @@ test('shape of the sealed numbers the gates lean on: ladders only go up, the fal
   assert.ok(list.every((l, i) => !i || (l.mult > list[i - 1].mult && l.tableSlots >= list[i - 1].tableSlots)), 'the multiplier and the room only grow with the location');
   // LP1 "4 tables" fits the first alley; LP7 "10 seats" and the 8 tables of the table goal need an alley with at least 5 and 8 slots.
   assert.ok(list[0].tableSlots >= 4); assert.ok(Math.max(...list.map(l => l.tableSlots)) >= 8);
+});
+
+test('the first purchase of a new shop stays table 2: no device level costs less than it, so the goal chip never prefers a device', () => {
+  // The chip suggests what an average shift reaches, capacity lane first (apps/web/src/goals.ts), so a device level that costs less than table 2 pre-empts it on the first
+  // shifts whose takings are between a third of the two prices: the Upgrades sheet then holds the device's card and the guest and playable journeys find no "Mua bàn" button.
+  // The gate shift1.firstGoal of the balance evaluator asks the same thing of any candidate set.
+  const table2 = t.tablePriceBase[0];
+  for (const kind of ['keg', 'washer', 'cooler', 'stall', 'kitchen'] as const) {
+    const cheapest = Math.min(...(raw.upgrades[kind].priceBase as readonly (number | null)[]).filter((p): p is number => p !== null && p > 0));
+    assert.ok(cheapest >= table2, `${kind}: its cheapest level (${cheapest} base) costs less than table 2 (${table2} base)`);
+  }
 });
