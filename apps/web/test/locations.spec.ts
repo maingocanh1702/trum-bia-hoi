@@ -16,7 +16,7 @@ for (const [locale, width] of [['vi', 360], ['en', 390]] as const) test(`rental 
   await expect(dialog).toBeVisible(); expect(rented.paused).toBe(true); await page.clock.runFor(10000);
   expect((await snapshot()).lease.expiresAt).toBe(rented.lease.expiresAt);
   await expect(dialog.getByText(vi ? /Chuyển chỗ bây giờ mất 7.500/ : /Moving now forfeits 7,500/)).toBeVisible();
-  await dialog.locator('[data-location="ben_xe"] button').click(); const moved = await snapshot(); expect(moved.coins).toBe(rented.coins - 63750); // Ben Xe: 3 days x 17 000 + the 12 750 deposit expect(moved.location).toBe('ben_xe');
+  await dialog.locator('[data-location="ben_xe"] button').click(); const moved = await snapshot(); expect(moved.coins).toBe(rented.coins - 63750); expect(moved.location).toBe('ben_xe'); // Ben Xe: 3 days x 17 000 + the 12 750 deposit
   await dialog.evaluate(el => { el.scrollTop = 0; }); await page.screenshot({ path: `.qa/lease-${locale}-${width}.png` });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.keyboard.press('Escape'); await expect(dialog).not.toBeVisible(); await waitSaved(page); await page.reload(); expect((await snapshot()).lease.id).toBe(moved.lease.id);
