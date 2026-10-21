@@ -114,6 +114,7 @@ export type Command =
   | { type: 'buyTable' }
   | { type: 'buyChair'; tableId: string }
   | { type: 'upgradeChair'; tableId: string }
+  | { type: 'kickTable'; tableId: string; maxCost: number }
   | { type: 'buyGlass'; count: number }
   | { type: 'rentLocation'; locationId: string; leaseId: string | null; maxCost: number }
   | { type: 'leaveLocation'; leaseId: string }

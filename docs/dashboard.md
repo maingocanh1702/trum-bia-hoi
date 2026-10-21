@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-10-21 19:30 · **Branch hiện tại:** `feat/eco21-ui-assets`
+> **Cập nhật:** 2026-10-22 04:07 · **Branch hiện tại:** `feat/fun-kick-table`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -164,7 +164,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S 🔒B
 - **Phase:** Phase 1
-- **Notes:** A3 engine VIP census: `npm run sim:onboarding` đếm khách đến duy nhất qua 5 seed, tách overflow/onboarding và nhóm hệ số; không có gate LP/phase cho VIP. Hand-play ca 2 vẫn PENDING (xem `docs/improve-vip-proof.md`). 5 kiểu khách ngồi; shipper local v7 có timer riêng, giao cả đơn, cap/timeout/closing/replay và UI điện thoại. Review shipper CLEAN tại307a3b0; football và acceptance đầy đủ còn thiếu. Rules 28 (S3 `eco21-capacity-demand`): nhịp khách theo sức chứa (`spawn.capacityDemand` ×4/×3/×2/×1,5), hàng đợi `1 + ⌊ghế/8⌋`, kiên nhẫn 24 s, sổ ca "Cặp không có chỗ"; từ chối tại cửa không phạt (D12); k/bảng cửa đo, gate hoãn cho S5.
+- **Notes:** A3 engine VIP census: `npm run sim:onboarding` đếm khách đến duy nhất qua 5 seed, tách overflow/onboarding và nhóm hệ số; không có gate LP/phase cho VIP. Hand-play ca 2 vẫn PENDING (xem `docs/improve-vip-proof.md`). 5 kiểu khách ngồi; shipper local v7 có timer riêng, giao cả đơn, cap/timeout/closing/replay và UI điện thoại. Review shipper CLEAN tại307a3b0; football và acceptance đầy đủ còn thiếu. Rules 28 (S3 `eco21-capacity-demand`): nhịp khách theo sức chứa (`spawn.capacityDemand` ×4/×3/×2/×1,5), hàng đợi `1 + ⌊ghế/8⌋`, kiên nhẫn 24 s, sổ ca "Cặp không có chỗ"; từ chối tại cửa không phạt (D12); k/bảng cửa đo, gate hoãn cho S5. Đợt 3 `fun-kick-table` (2026-10-22, rules 28, JSON 2.1.0 + section Tier A `kickTable`): "Mời về" — bàn khách đang nhâm nhi (`consuming`, hoặc Chí Phèo `occupied`) mời về bằng xu (Σ gross đơn gần nhất × `feeRate` 1,5 × `leavePenaltyMult`: VIP ×10, Chí Phèo 0) + uy tín (−2/khách, không ×k), không `lost`/không −5; popover bàn có giá + 1 chạm + 1 lý do khi mờ; bot mời vs không mời: thu nhập 30 ngày +8,76 % \
 
 ### F09 — Thời Tiết Quán — tối giản (hệ số độ hơi/tip/spawn)
 

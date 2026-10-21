@@ -6,7 +6,7 @@ import { Seasons } from './Seasons';
 import { Leaderboard } from './Leaderboard';
 import { Locations } from './Locations';
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { buyGlassQuote, buyTableQuote, buyChairQuote, tableUpgradeQuote, chairUpgradeQuote, tableUpgrade, tableBenefit, effectiveTableLevel, chairPatienceMult, trayDishes, tableSlots, guestPatienceLeft, isEconomy2, isSeatModel, PAIR, BUSINESS_UNLOCKS, menuReport, orderPreparation, beerStatus, washerStatus, kitchenStatus, flyerQuote, SIGN_STYLES, signboardQuote, DISHES, EQUIPMENT, currentGuests, deliveryQuote, dogUpgradeQuote, encodeSave, freshnessMs, kickAllQuote, lifePathStatus, restockQuote, restRequired, rushStatus, stockCap, unlockQuote, upgradeQuote, wellRestedRemaining, type BusinessUnlock, type Command, type Equipment, type Order, type RequirementStatus, type Table, type DomainEvent, type Game } from '../../../packages/engine/src';
+import { buyGlassQuote, buyTableQuote, buyChairQuote, tableUpgradeQuote, chairUpgradeQuote, tableUpgrade, tableBenefit, effectiveTableLevel, chairPatienceMult, trayDishes, tableSlots, guestPatienceLeft, isEconomy2, isSeatModel, PAIR, BUSINESS_UNLOCKS, menuReport, orderPreparation, beerStatus, washerStatus, kitchenStatus, flyerQuote, SIGN_STYLES, signboardQuote, DISHES, EQUIPMENT, currentGuests, deliveryQuote, dogUpgradeQuote, encodeSave, freshnessMs, kickAllQuote, kickTableQuote, kickTableRule, lifePathStatus, restockQuote, restRequired, rushStatus, stockCap, unlockQuote, upgradeQuote, wellRestedRemaining, type BusinessUnlock, type Command, type Equipment, type Order, type RequirementStatus, type Table, type DomainEvent, type Game } from '../../../packages/engine/src';
 import { Sprite, TableSeats, chairAsset, menuAsset, reactions, hasSpriteArt, trayAsset } from './assets';
 import { translate } from './i18n';
 import { advanceGuide, dispatch, download, readSettings, writeSettings, replaceSave, type BootSession } from './local';
@@ -146,6 +146,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
       if (e.type === 'order_served') launch('coin', tableEl(e.data.tableId));
       if (e.type === 'order_expired' && Number(e.data.reputation)) launch('rep', tableEl(e.data.tableId), `−${num(Number(e.data.reputation))}`);
       if (e.type === 'customer_left' && e.data.reason === 'queue' && Number(e.data.reputation)) launch('rep', document.querySelector('.door'), `−${num(Number(e.data.reputation))}`);
+      if (e.type === 'table_kicked' && Number(e.data.reputation)) launch('rep', tableEl(e.data.tableId), `−${num(Number(e.data.reputation))}`); // Wave 3: the reputation a send-home took falls from that table
       if (e.type === 'queue_overflow') {
         const row = { id: e.id, size: Number(e.data.size) };
         setTurnedAway(list => [...list, row]);
@@ -598,6 +599,11 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
       const type = guests.find(x => x.type === 'vip')?.type ?? guests.find(x => x.type !== 'thuong')?.type ?? 'thuong';
       const dishes = active ? orderDishes(o) : [];
       const preparation = orderPreparation(w, game.config, o);
+      // Wave 3 "Mời về" (D3): a table with guests offers to send them home once they linger after their tray (kickTableQuote reads the command): its price in
+      // coins and reputation, one tap; dimmed with the one reason while they have not finished their order or the wallet is short. Revealed with the HUD (after
+      // shift 1) and offered only while the shift is open: once it closes no guest arrives and the shift book's "Mời tất cả về" is the cheaper way out.
+      const kick = kickTableRule(c) && show.hud && w.phase === 'open' && guests.length ? kickTableQuote(w, game.config, table) : null;
+      const kickWhy = kick && !kick.ok ? whyNot(kick.reason) : '', kickPrice = kick?.cost != null ? `kick-price-${table.id}` : '';
       return <section ref={orderPanelRef} id="active-table-order" className={`order-panel ${o?.state === 'grace' ? 'is-urgent' : ''}`} role="dialog" aria-label={t('table', { n: w.tables.indexOf(table) + 1 })}>
         <header><span className={`customer-tag type-${type}`}>{guests.length ? t(`customer.${type}`) : t('table.empty')}</span><span>{t('table', { n: w.tables.indexOf(table) + 1 })}</span><button className="icon-button" aria-label={t('close')} onClick={() => setSelectedTable(null)}><Icon name="close" /></button></header>
         {active ? <><div className="order-heading"><strong>{dishes.length === 1 ? t(`dish.${dishes[0].dish}`) : t('order.dishCount', { n: dishes.length })}</strong><b>{orderTime(o)}</b></div>
@@ -608,6 +614,12 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
           {(stale || o.state === 'grace') && <p className="order-warning">{t(stale ? 'order.stale' : 'order.grace')}</p>}
           <button {...lit(spot.target?.kind === 'ready' && spot.target.tableId === table.id)} className="primary full" disabled={!ready} onClick={async () => { if ((await run({ type: 'serve', tableId: table.id, orderId: o.id })).ok) setSelectedTable(current => current === table.id ? null : current); }}><Icon name="check" />{t('order.serve')}</button>
         </> : <p className="idle-table-info">{t(`table.${table.state}`)} · {t('table.seats', { n: table.capacity })}</p>}
+        {kick && <div className="kick-table" data-kick={kick.ok ? 'ready' : kick.reason ?? undefined}>
+          {kickPrice && <p className="kick-price" id={kickPrice}>{t('kick.price', { cost: num(kick.cost!), rep: num(kick.reputation) })}</p>}
+          <button className="secondary full" disabled={!kick.ok} aria-describedby={[kickPrice, kickWhy ? `kick-reason-${table.id}` : ''].filter(Boolean).join(' ') || undefined}
+            onClick={async () => { if ((await run({ type: 'kickTable', tableId: table.id, maxCost: kick.cost! })).ok) setSelectedTable(current => current === table.id ? null : current); }}>{t('kick.button')}</button>
+          {kickWhy && <p id={`kick-reason-${table.id}`} className="buy-reason" role="status">{kickWhy}</p>}
+        </div>}
       </section>;
     })()}
 
