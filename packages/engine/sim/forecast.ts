@@ -5,7 +5,7 @@ import { createManagementPolicy, serveNext, STEP_MS, MANAGEMENT_MS, MAX_DAY_STEP
 
 // config-exempt: BRD5.2 report horizon and calendar units; diagnostic, not gameplay tuning.
 export const FORECAST_DAYS=7, DAY_MS=86400000;
-export const FORECAST_POLICY='v1: continuously active career policy; 100ms deadline service, 1s management; quote-governed purchases and earned claims; full configured stamina rest; engine-enforced daily caps; no future arrivals of new players or donation assumptions. Existing shifts retain their pin. This is a deterministic scenario, not a prediction of human activity.';
+export const FORECAST_POLICY='v2: continuously active career policy; 100ms deadline service, 1s management; on the seat model tables and second chairs first (it saves for the next table, then one second chair per table), then the cheapest quote-governed purchase (devices, table and chair levels, glasses, sign), phone and QR when affordable, a flyer each shift it can; no dog, never sends a table home; stepwise leasing, one location per lease; earned claims; stamina rest only where the engine asks for it (rules 28: the first shifts of a save open without the cooldown, D8); engine-enforced daily caps; no future arrivals of new players or donation assumptions. Existing shifts retain their pin. This is a deterministic scenario, not a prediction of human activity.';
 export type ConfigPeriod={from:number;config:Config};
 export type ForecastDay={date:string;from:number;to:number;openingCoins:number;closingCoins:number;
   faucets:Record<string,number>;sinks:Record<string,number>;faucet:number;sink:number;penalties:number;depositRefunds:number;
