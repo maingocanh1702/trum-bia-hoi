@@ -7,6 +7,14 @@
 
 ---
 
+## Đợt 4 "Vui 3 ca" — Đợt 2–3 đóng gói, PR `feat/economy-2-1` → `main` chờ owner — 2026-10-22 (autopilot stage 07)
+
+Snapshot: `feat/economy-2-1` = cả chuỗi S1 → S6 → Đợt 3 (fast-forward `d1a150a..8eced8b`; GitHub tự hiện PR #22 là merged vì nhánh tích hợp nay chứa đầu S1, PR #24–#29 vẫn mở trên nhánh cha xếp chồng làm hồ sơ review) + các commit chỉ đổi tài liệu của Đợt 4. Rules **28**, JSON **2.1.0** (nhãn mang 8 nội dung trong lịch sử git, chưa deploy ở đâu). Người chơi: quán mới 1 bàn × 1 ghế, ví 750 xu, cặp không có bàn 2 ghế bỏ đi tại cửa (không phạt), rót tức thì, bàn 2 = 1.070 xu mua nổi khi đóng ca 1 ở ~4/5 save, ca 2–3 mở ngay, ghế 2 sau đủ 4 bàn, cấp bàn/ghế, sân 8 chỗ, nút nhanh "Mua ghế", "Mời về" bàn đang nhâm nhi từ ca 2.
+Kiểm chứng trên code `8eced8b` (Windows): static + build + assets xanh; `npm test` 794/747/47 = baseline (0 mới); `sim:balance` 22 ĐẠT + 1 INFO giống từng ô S5; `sim:career:gate` (hash S6), `sim:kick` (+8,76 % \| +5,64 %), `sim:onboarding`, `sim:rush`, `npm run sim` ĐẠT; local 332/332, a11y 6/6, improve 1/1, remote 98/98, guest 14/18 lượt viewport (đỏ chỉ ở bước soft "mua bàn 2"), playable 3/3; doctor/admin đỏ môi trường, xanh trên Linux (39668816008, 39668824078).
+Tài liệu bản mới nhất: 08-SPEC §22/§3, 03-SPEC thân §6, F10/F13/F25/F27, tracker + dashboard (20 feature đang làm), TRANG-THAI, 00-HANDOFF v1.43, handoff vui3ca HANDOFF §14 + DECISIONS `## 07`, phiếu 10 dòng owner `docs/phase0-alpha-playtest.md` §7 (chưa tick).
+Còn mở: ba OWNER CALL (chip ghế-trước-bàn-5; `feeRate` 1,5 gộp / 0,5 ròng; "đang nhâm nhi" = `consuming` + `occupied`), lượt Linux đầy đủ thứ tư trên tip cuối (orchestrator), owner playtest.
+**Việc kế:** owner review + merge PR vào `main` → deploy `v-fb2` lên hai host theo `docs/cloudflare-guest.md` "Phát hành lên hai host" (owner cho phép từng bước) → owner + 2–4 người chơi 3 ca, tick phiếu §7; lệch số → quay lại S5, chỉ sửa JSON; Đợt 5 (story + mùa) sau phiếu 3 ca.
+
 ## Wave 1 "Vui 3 ca" — 4 slice UI xong, chờ owner review — 2026-10-19 (autorun)
 
 Plan `docs/PLAN-vui-3-ca-2026-09-18.md` v1.9 (viết lại 14/10: 7 prompt supervised, mọi slice là supervised theo CLAUDE.md). Quyết định owner 14/10: bản guest lên **cả Netlify (`trumbiahoi.netlify.app`) và Cloudflare Workers (`trumbiahoi.com`) song song**, cùng một bản build; Netlify không bị thay/redirect, hai origin = hai save riêng. Phần chuẩn bị Cloudflare nằm ở PR #17 (`deploy/cloudflare-guest-dual-host`, phiên riêng, chưa merge); owner còn việc một lần trước Prompt 3 (đưa domain vào Cloudflare + `npm run cf -- login`).
