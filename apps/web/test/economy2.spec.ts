@@ -55,7 +55,9 @@ for (const lang of ['vi', 'en']) test(`upgrade and stock labels distinguish ingr
   await expect(phone.locator('.requirement-list')).toContainText(labels[`lifePath.${seed.unlocks.phone.gate}`]);
   const qr = page.locator('.business-card').filter({ hasText: labels['business.qr'] });
   await expect(qr.locator('.requirement-list li').first()).toContainText(labels['requirement.phone']);
-  await expect(qr).toContainText(copy('business.qrEffect', { mult: seed.tip.qrMult }));
+  // Review 07 r1 (W3): the card writes the multiplier the way the goal chip does (`say(..., decimal)`): "×1,2" in Vietnamese, "×1.2" in English.
+  const qrMult = new Intl.NumberFormat(lang === 'vi' ? 'vi-VN' : 'en-US', { maximumFractionDigits: 2 }).format(seed.tip.qrMult);
+  await expect(qr).toContainText(copy('business.qrEffect', { mult: qrMult })); await expect(qr).toContainText(lang === 'vi' ? '×1,2' : '×1.2');
   await expect(page.locator('.kitchen-entry')).toContainText(labels['kitchen.locked']);
   await expect(page.locator('.kitchen-entry')).not.toContainText('0/0');
   await page.locator('.kitchen-entry').click();
