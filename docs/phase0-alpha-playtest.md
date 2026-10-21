@@ -120,6 +120,8 @@ Nâng cấp sau ca 1 là **nâng một bàn đang trống (3.750 xu)**, không p
 "2 ghế" chỉ hiện khi hàng chờ đầy và một nhóm bị từ chối ở cửa — hiếm ở Đợt 1; nếu không ai thấy,
 ghi `KHÔNG QUAN SÁT ĐƯỢC` thay vì chấm đạt/không đạt.
 
+**Trên build Đợt 2–3 (`v-fb2`, rules 28, JSON 2.1.0):** quán mở với **1 bàn × 1 ghế**; món duy nhất trong sheet Nâng cấp sau ca 1 là **"Mua bàn · 1.070 xu"** (bàn 2), mua nổi khi ca 1 đóng ở khoảng 4 save trong 5; bong bóng "2 ghế" hiện ngay từ ca 1 (khoảng 5 cặp bị từ chối ở cửa vì quán chưa có bàn 2 ghế), nên cột 4 thường quan sát được. Ghi rõ tester chơi build nào (SHA ở Cài đặt).
+
 | Tester | Phục vụ khách đầu (giây từ **Mở ca**) | Mua món đầu sau ca 1 **không** mở Help? Có/Không | Nói đúng vì sao cặp bỏ đi? Có/Không/Không thấy | Số câu "cái này để làm gì" trong 3 ca | Ghi chú · ảnh |
 |---|---:|---|---|---:|---|
 | T01 |  |  |  |  |  |
@@ -134,6 +136,38 @@ ghi `KHÔNG QUAN SÁT ĐƯỢC` thay vì chấm đạt/không đạt.
 | ≥ 4/5 mua món đầu kết ca 1 không mở Help | Đếm "Có" cột 3 |  |
 | ≥ 4/5 nói đúng vì sao cặp bỏ đi | Đếm "Có" cột 4; "Không thấy" không tính vào mẫu số, ghi riêng |  |
 | ≤ 1 câu "cái này để làm gì" trong 3 ca | Mỗi tester ≤ 1 ở cột 5 |  |
+
+## 7. "Vui 3 ca" — 10 dòng owner tick sau 3 ca liên tiếp (owner chạy, CHƯA CHẠY)
+
+> **Việc của owner, không phải của agent.** Không dòng nào được tick; báo cáo ghi các dòng này là `SKIPPED: owner playtest`, không bao giờ là PASS.
+> Nguồn: `docs/PLAN-vui-3-ca-2026-09-18.md` §7 "10 dòng owner tick (acceptance cảm giác)" — chép nguyên văn lời của owner; dưới dòng có con số đã thành sai (hoặc dễ đọc nhầm) là một ghi chú *Số liệu hiện hành*, lời gốc giữ nguyên. Lệch số → quay lại S5, chỉ sửa JSON (plan §7).
+
+- **Bản phát hành:** nhánh `feat/economy-2-1` → PR vào `main` ("Vui 3 ca" Đợt 2–3: rules 28, JSON 2.1.0). Code đã kiểm chứng trong stage 07: `8eced8b` (tip Đợt 3; các commit sau nó chỉ đổi tài liệu). Commit phát hành = commit merge vào `main` khi owner merge, deploy `v-fb2` lên hai host. SHA ghi ở Cài đặt khi chơi: `__________`.
+- **Link:** https://trumbiahoi.netlify.app/ · https://trumbiahoi.com/ (cùng một bản build; hai origin = hai save riêng).
+- **Cách chơi:** owner + 2–4 người, mỗi người 3 ca liên tiếp, bắt đầu từ bộ nhớ trình duyệt trống (nhãn 2.1.0 mang 8 nội dung trong lịch sử git; chưa deploy bản nào).
+
+- [ ] **1.** Mở link lần đầu → vào thẳng game, tiếng Việt; **không đọc gì vẫn phục vụ được khách đầu** (bàn sáng, ✅ nhấp nháy, xu bay lên ví) — *Từ: I.1, P0*
+- [ ] **2.** Ca 1: 1 bàn 1 ghế; khách đầu ≤ 8 s; tap ✅ là xong; thấy cặp nhìn quán rồi đi + người chờ ngoài cửa; sổ ca đếm "cặp không có chỗ" — *Từ: S1 S2 S3*
+- [ ] **3.** HUD hiện mục tiêu kế tiếp từ ca 1; kết ca 1 mua được bàn 2 (1.500 xu) — *Từ: P2, S5*
+  - *Số liệu hiện hành (JSON 2.1.0):* bàn 2 giá **1.070 xu** (428 base — quyết định owner 1 của S5, 21/10/2026; trước đó 1.500 xu). Ví đầu 750 xu; khoảng **4 save trong 5** mua nổi bàn 2 khi ca 1 đóng (83 % của 300 lượt probe, 81 % của 600 — tiêu chí 4/5 của owner), khoảng 3 trong 4 nếu nhập đầy bia trước khi mở Nâng cấp. Chip ca 1: "Mua bàn mới · +1 chỗ · 1.070 xu · thiếu 320".
+- [ ] **4.** Ca 2 và ca 3 mở ngay sau tổng kết; ca 4 báo chờ thể lực — *Từ: D8*
+- [ ] **5.** Bom báo "rót sẵn n" → gọi ≤ n bia mâm sẵn sàng ngay — *Từ: S2*
+- [ ] **6.** Mỗi khách đi có 1 lý do; sổ ca xếp lý do; ca 1–3 bỏ đi ≤ 30 % — *Từ: P3, S3*
+  - *Số liệu hiện hành (để đọc dòng này):* cặp bị từ chối tại cửa vì quán chưa có bàn 2 ghế (khoảng 5 cặp ở ca 1 — chủ đích của S3, không phạt, không trừ uy tín) không phải "bỏ đi"; bot đo bỏ đi có phạt ca 1–24 = 3,2 % \| 0,4 % khách được nhận (seed 42 \| 99, cổng ≤ 10 %).
+- [ ] **7.** Nhập bia / mua ghế 1 chạm, game không dừng — *Từ: D10*
+- [ ] **8.** Chạm bàn lai rai → "Mời về" hiện xu + uy tín → bàn trống — *Từ: Đợt 3*
+  - *Số liệu hiện hành:* "Mời về" hiện từ ca 2 (cùng HUD) và chỉ khi ca đang mở; giá = `feeRate` 1,5 × gross đơn gần nhất của mỗi khách (VIP ×10 nữa, tức 15× gross mâm của VIP; Chí Phèo 0 xu), −2 uy tín mỗi khách. Mức 1,5 là OWNER CALL (đọc luật +10 % theo thu nhập gộp; đọc theo thu nhập ròng thì 0,5 — `docs/handoff/2026-10-19-vui3ca/HANDOFF.md` §13): ghi lại cảm giác về giá.
+- [ ] **9.** Sheet 3 làn, món nào cũng giá + hiệu ứng + 1 lý do (kể cả "Mở sau khi đủ 4 bàn" / "Bàn cần 2 ghế"); ghế 2 → cặp vào, mâm bia + mồi; sprite bàn/ghế đổi theo cấp — *Từ: S4 S6*
+- [ ] **10.** Nhịp: bàn 2 kết ca 1, bàn 3 ca 4–5, bàn 4 ca 8–9, ghế 2 đầu tiên ca ~12–14 (thu nhập ×3); không cảm giác "quá vắng" hay "quá dồn" — *Từ: S5*
+  - *Số liệu hiện hành (bot giao thức của S5 — mua bàn trước, không phải người chơi; `npm run sim:career`, seed 42 \| 99):* bàn 2 ngay sau ca 1, bàn 3 ca 7 \| 7, bàn 4 ca 13 \| 13, bàn 8 ca 39 \| 40, **ghế 2 đầu tiên ca 40 \| 40** (bot mua đủ 8 bàn rồi mới mua ghế; cửa sổ cổng S5 ca 40–56). Người chơi theo chip "Mục tiêu kế tiếp" được dẫn mua bốn ghế 2 ngay sau bàn 4 (7.750 xu, trước bàn 5 giá 24.000 xu), tức sớm hơn bot khoảng 27 ca — gần "ca ~12–14" của dòng này nhưng ngoài cửa sổ cổng S5: **OWNER CALL** (`docs/handoff/2026-10-19-vui3ca/HANDOFF.md` §12). "Thu nhập ×3" sau ghế 2 chưa được đo trong gói này.
+
+| Tester | Ca 1–3 chơi lúc (ngày, giờ) | SHA ở Cài đặt | Dòng không đạt (#) | Ghi chú · ảnh |
+|---|---|---|---|---|
+| Owner |  |  |  |  |
+| T1 |  |  |  |  |
+| T2 |  |  |  |  |
+| T3 |  |  |  |  |
+| T4 |  |  |  |  |
 
 ## Lưu trữ prototype — không phải hướng dẫn cho bản thử hiện tại
 
@@ -264,3 +298,4 @@ Final decision is `PASS` only when every row above has human evidence and no rep
 | 2026-09-16 / Wave B | Số đo ca đã qua kiểm thử UI, server và export trên nhánh A/B; cập nhật trạng thái hướng dẫn, giữ trống toàn bộ kết quả người chơi và không tuyên bố đã deploy. |
 
 | 2026-10-14 / fun-onboarding-visual | Thêm §6: phiếu trống cho bài test 5 người mới (tắt mọi hướng dẫn) của PLAN 18/09 §4. Owner chạy; không có kết quả người chơi nào được ghi, không đổi waiver lịch sử. |
+| 2026-10-22 / Vui 3 ca Đợt 4 (stage 07) | Thêm §7: phiếu trống 10 dòng owner tick của PLAN 18/09 §7 (chép nguyên văn, không dòng nào được tick) kèm bản phát hành (nhánh `feat/economy-2-1` → PR vào `main`, code đã kiểm chứng `8eced8b`, SHA phát hành ghi khi chơi) và hai link https://trumbiahoi.netlify.app/ · https://trumbiahoi.com/; dưới dòng 3 (bàn 2 nay 1.070 xu), 6 (từ chối tại cửa không phải bỏ đi), 8 (giá "Mời về" ở `feeRate` 1,5, OWNER CALL) và 10 (nhịp của bot S5: ghế 2 đầu tiên ca 40 \| 40 so với "ca ~12–14", OWNER CALL ghế-trước-bàn-5) có ghi chú *Số liệu hiện hành*, lời gốc giữ nguyên. §6 thêm một ghi chú cho build Đợt 2–3. Không ghi kết quả người chơi nào, không đổi waiver lịch sử. |
