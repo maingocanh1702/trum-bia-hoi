@@ -26,12 +26,12 @@ export const TARGETS = {
   lp2: 48, lp4: 96, lp5: 120, maxGap: 8, dailyCapNotBefore: 150, beerOutMax: 0.10,
   // The shift-1 probe counts 300 runs: a share of 60 runs has a 95 % interval of about +-10 points (48 of 60 reads 68-88 %), a share of 300 about +-5 (review round 3 of S5); about 25 s.
   shift1Seeds: 300,
-  // The plan's words about shift 1 (the PLAN-NARRATIVE P0 row `shift1.plan`, called plan-literal in review round 2; the STRICT row asks every probe): section 0 table, shift 1: "~10 cặp nhìn quán rồi đi" and "Kết ca: mua bàn 2 (850-1.160 xu + 750 khởi đầu)"
-  // (the takings of shift 1 are 850-1 160 xu on a 750 xu start), section 7 owner line 3 "kết ca 1 mua được bàn 2 (1.500 xu)". Plan section 4 (row fun-onboarding-visual; the playtest sheet
-  // docs/phase0-alpha-playtest.md:134 repeats it as "Ngưỡng PLAN §4") asks for FIVE HUMAN newcomers: at least 4/5 buy table 2 at the end of shift 1 without opening help. The plan has NO criterion on a
-  // share of bot probes: the row TRANSPOSES that 4/5 to the share of the probes (served at once or on a 4 s beat; a first-time human is slower), and the 8-12 band for "~10 cặp" and the 850-1 160 band
-  // (DESIGN-story 2b says 850-1 150) are the narrative of section 0 read as bands. The transposition and the bands are the worker's reading, not plan acceptance.
-  shift1Plan: { share: 0.8, takings: [850, 1160] as const, refusedPairs: [8, 12] as const },
+  // P0, the owner's yardstick (owner decision 1 of S5, the founder, 2026-10-21: "shift 1 must earn enough to buy table 2", mechanism = the price of table 2): the gate row `shift1.plan` asks that the start
+  // wallet does not pay table 2 and that at least 4 runs in 5 can buy it when the shift closes (the worse of the fast and the 4 s service models). Plan section 4 (row fun-onboarding-visual; the playtest sheet
+  // docs/phase0-alpha-playtest.md:134 repeats it as "Ngưỡng PLAN §4") asks the same 4/5 of FIVE HUMAN newcomers; transposing it to the share of the probes is the owner's call now. The two bands are the plan's
+  // section 0 narrative ("Kết ca: mua bàn 2 (850-1.160 xu + 750 khởi đầu)", "~10 cặp nhìn quán rồi đi", DESIGN-story 2b says 850-1 150) read as bands by the worker: INFORMATION flags in the cell, never a gate.
+  // The strict reading (every probe ends with the price, row `shift1.wallet`) is information too: it needs a price at or below the worst end, which is below the start wallet.
+  shift1Plan: { share: 0.8, takings: [850, 1160] as const, refusedPairs: [8, 12] as const }, // share = the gate; takings and refusedPairs = information bands
 };
 export type Patch = Record<string, unknown>;
 export type Raw = typeof seedConfig.raw;
@@ -146,8 +146,8 @@ export function runStandard(patch: Patch, seeds: number[], onboardingPair: boole
 
 /**
  * Shift 1 of a brand-new save, played the way the guest and playable journeys play it, over many random seeds: the coins in hand when the shift has closed
- * and the wallet after the full beer restock the playable journey buys before it opens the Upgrades sheet. Plan section 7 line 3 ("kết ca 1 mua được bàn 2")
- * must hold on EVERY run, not on average: the minimum decides.
+ * and the wallet after the full beer restock the playable journey buys before it opens the Upgrades sheet. Plan section 7 line 3 ("kết ca 1 mua được bàn 2"): the owner's
+ * criterion is at least 4 runs in 5 (`shift1.plan`); the minimum (every run) is printed as information (`shift1.wallet`).
  */
 /** The Wilson score interval of a share (k of n), 95 % by default: what a share of probes can be said to be (a point estimate over 60 probes is good for about +-10 points). */
 export function wilson(k: number, n: number, z = 1.96): { lo: number; hi: number } {
@@ -188,7 +188,8 @@ export function runShift1(config: SeedConfig, seeds: number): Shift1Metrics {
 }
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------
-export interface Gate { id: string; name: string; target: string; cells: Record<string, string>; pass: Record<string, boolean | null>; violation: Record<string, number>; ok: boolean }
+/** `info` rows are printed and never judged: ok is true, pass is null, violation is 0, so they count in neither `failing` nor `score` and the table prints INFO in the last column. */
+export interface Gate { id: string; name: string; target: string; cells: Record<string, string>; pass: Record<string, boolean | null>; violation: Record<string, number>; ok: boolean; info?: boolean }
 export interface GateInputs { careers: Record<number, CareerMetrics>; standard?: StandardMetrics; shift1?: Shift1Metrics; config: SeedConfig }
 const fmt = (n: number | null, digits = 0) => n === null ? 'never' : Number.isFinite(n) ? n.toFixed(digits) : 'n/a';
 const pct = (n: number) => `${(n * 100).toFixed(1)} %`;
@@ -241,28 +242,27 @@ export function gateTable({ careers, standard, shift1, config }: GateInputs): Ga
   add('cap', 'daily earn cap first reached at shift', `>= ${TARGETS.dailyCapNotBefore} (or never)`, m => ({ cell: m.capShift === null ? 'not reached' : fmt(m.capShift), v: m.capShift === null ? 0 : miss(m.capShift, TARGETS.dailyCapNotBefore, Infinity) }));
   add('beer', 'guests lost to beer running out (no rush), of leavers', `< ${pct(TARGETS.beerOutMax)}`, m => ({ cell: `${pct(m.beer.ofLost)} (${m.beer.guests} guests; of arrivals ${pct(m.beer.ofArrived)})`, v: m.beer.ofLost < TARGETS.beerOutMax ? 0 : Math.max(over(m.beer.ofLost, TARGETS.beerOutMax), 1e-6) }));
   if (shift1) {
-    // P0 (plan section 0, section 4 row 1: "kết ca: mua bàn 2 (850-1.160 xu + 750 khởi đầu)"): the player EARNS table 2 in shift 1. The start wallet must not pay it, and the
-    // wallet of every run - the worst of the fast and the 4 s service models - must have grown to its price by the time the shift is over and the beer stock is bought.
+    // P0 (plan section 0, section 4 row 1: "kết ca: mua bàn 2 (850-1.160 xu + 750 khởi đầu)"). THE OWNER'S YARDSTICK (owner decision 1 of plan S5, the founder, 2026-10-21): shift 1 must EARN enough to buy table 2, and
+    // "enough" is at least 4 runs in 5. The gate row `shift1.plan`: the start wallet must not pay table 2 and at least 80 % of the runs - the worse of the fast and the 4 s service models - hold its price the moment
+    // the shift closes (the point estimate decides, the 95 % interval is printed). INFORMATION, never a gate: `shift1.wallet`, the strict reading (EVERY run ends with the price after the beer restock), which no price
+    // can meet (the worst run ends below the start wallet), and the two bands of the plan's narrative (median takings 850-1 160 xu, median refused pairs 8-12), which a price cannot move either.
     const cells: Record<string, string> = {}, pass: Record<string, boolean | null> = {}, violation: Record<string, number> = {};
     const worst = Math.min(shift1.afterRestock.min, shift1.slowCoarse.min), paysAtStart = shift1.startCoins >= shift1.price;
-    const v = Math.max(shift1.below, shift1.belowSlow) / shift1.seeds + (paysAtStart ? 1 : 0); // the share of the runs that end short: a fraction a sweep can climb, 0 only when every run earns the table
+    const strictMet = !paysAtStart && Math.max(shift1.below, shift1.belowSlow) === 0, unreachable = worst < shift1.startCoins;
     for (const seed of seeds) {
-      cells[seed] = `start ${shift1.startCoins} ${paysAtStart ? '>=' : '<'} ${shift1.price} · end min ${worst} (fast ${shift1.afterRestock.min}, 4 s ${shift1.slowCoarse.min}) · median ${shift1.afterRestock.median} (${shift1.below}/${shift1.seeds} and ${shift1.belowSlow}/${shift1.seeds} below ${shift1.price}; takings min ${worst - shift1.startCoins})`;
-      pass[seed] = v === 0; violation[seed] = v;
+      cells[seed] = `start ${shift1.startCoins} ${paysAtStart ? '>=' : '<'} ${shift1.price} · end min ${worst} (fast ${shift1.afterRestock.min}, 4 s ${shift1.slowCoarse.min}) · median ${shift1.afterRestock.median} (${shift1.below}/${shift1.seeds} and ${shift1.belowSlow}/${shift1.seeds} below ${shift1.price}; takings min ${worst - shift1.startCoins}) · information, not a gate: ${strictMet ? 'met' : 'not met'}${strictMet || !unreachable ? '' : ` (no price above the start wallet can be met: the worst run ends at ${worst}, below ${shift1.startCoins})`}`;
+      pass[seed] = null; violation[seed] = 0;
     }
-    rows.push({ id: 'shift1.wallet', name: 'shift 1 earns table 2 (start wallet < its price, every run ends with enough)', target: `start < ${shift1.price} and every end >= ${shift1.price}`, cells, pass, violation, ok: v === 0 });
-    // The same P0, read through the plan's narrative (TARGETS.shift1Plan), beside the strict row and never instead of it: the start wallet must not pay table 2, at least four runs in five (the plan's
-    // 4/5 is for five HUMAN newcomers; this is its transposition to the share of the probes) must be able to buy it the moment the shift closes (the worse of the two service models), the median takings
-    // must sit in 850-1 160 xu and the median shop must send about ten pairs away. The 95 % interval of the share is printed with it: the pass test stays the point estimate.
+    rows.push({ id: 'shift1.wallet', name: "shift 1: every run ends with table 2's price (information: the strict reading of P0, not a gate)", target: `information: start < ${shift1.price} and every end >= ${shift1.price}`, cells, pass, violation, ok: true, info: true });
     const planCells: Record<string, string> = {}, planPass: Record<string, boolean | null> = {}, planViolation: Record<string, number> = {}, T = TARGETS.shift1Plan, p = shift1.plan;
-    const share = Math.min(p.shareFast, p.shareSlow), shortfall = share >= T.share - 1e-9 ? 0 : (T.share - share) / T.share;
-    const vPlan = (paysAtStart ? 1 : 0) + Math.max(shortfall, miss(p.takingsMedian, ...T.takings), miss(p.refusedPairsMedian, ...T.refusedPairs));
+    const share = Math.min(p.shareFast, p.shareSlow), shortfall = share >= T.share - 1e-9 ? 0 : (T.share - share) / T.share, vPlan = (paysAtStart ? 1 : 0) + shortfall;
     const nFast = Math.round(p.shareFast * shift1.seeds), nSlow = Math.round(p.shareSlow * shift1.seeds), ci = wilson(Math.min(nFast, nSlow), shift1.seeds);
+    const band = (x: number, [lo, hi]: readonly [number, number]) => x >= lo && x <= hi ? 'in band' : 'out of band';
     for (const seed of seeds) {
-      planCells[seed] = `start ${shift1.startCoins} ${paysAtStart ? '>=' : '<'} ${shift1.price} · ${(share * 100).toFixed(0)} % of ${shift1.seeds} runs close with >= ${shift1.price} (95 % CI ${(ci.lo * 100).toFixed(0)}-${(ci.hi * 100).toFixed(0)} %; fast ${nFast}/${shift1.seeds}, 4 s ${nSlow}/${shift1.seeds}) · median takings ${p.takingsMedian} (4 s ${p.takingsMedianSlow}) · median refused pairs ${p.refusedPairsMedian}`;
+      planCells[seed] = `start ${shift1.startCoins} ${paysAtStart ? '>=' : '<'} ${shift1.price} · ${(share * 100).toFixed(0)} % of ${shift1.seeds} runs close with >= ${shift1.price} (95 % CI ${(ci.lo * 100).toFixed(0)}-${(ci.hi * 100).toFixed(0)} %; fast ${nFast}/${shift1.seeds}, 4 s ${nSlow}/${shift1.seeds}) · information: median takings ${p.takingsMedian} (4 s ${p.takingsMedianSlow}; plan section 0: ${T.takings.join('-')}, ${band(p.takingsMedian, T.takings)}) · median refused pairs ${p.refusedPairsMedian} (plan: about ten, read as ${T.refusedPairs.join('-')}, ${band(p.refusedPairsMedian, T.refusedPairs)})`;
       planPass[seed] = vPlan === 0; planViolation[seed] = vPlan;
     }
-    rows.push({ id: 'shift1.plan', name: "shift 1 earns table 2, the plan's narrative (4 runs in 5, takings 850-1160, ~10 pairs)", target: `>= ${T.share * 100} % of runs close >= ${shift1.price} · takings ${T.takings.join('-')} · pairs ${T.refusedPairs.join('-')}`, cells: planCells, pass: planPass, violation: planViolation, ok: vPlan === 0 });
+    rows.push({ id: 'shift1.plan', name: 'shift 1 earns table 2: at least 4 runs in 5 can buy it when the shift closes (owner decision 1)', target: `start < ${shift1.price} and >= ${T.share * 100} % of runs close >= ${shift1.price}`, cells: planCells, pass: planPass, violation: planViolation, ok: vPlan === 0 });
     // The goal chip suggests what an average shift reaches, capacity lane first: table 2 is the first goal of every shop whose cheapest device level costs at least as much
     // (when a device is within reach so is the table, and the capacity lane wins). A cheaper device pre-empts it on the runs whose first shift took ~1/3 of its price.
     const first: Record<string, string> = {}, firstPass: Record<string, boolean | null> = {}, firstViolation: Record<string, number> = {}, short = Math.max(0, shift1.price - shift1.cheapestDevice) / shift1.price;
@@ -274,7 +274,7 @@ export function gateTable({ careers, standard, shift1, config }: GateInputs): Ga
 export const failing = (rows: Gate[]) => rows.filter(r => !r.ok).map(r => r.id);
 export function formatGateTable(rows: Gate[], seeds: number[]): string[] {
   const head = ['gate', 'target', ...seeds.map(s => `seed ${s}`), 'PASS/FAIL'];
-  return [head.join(' | '), ...rows.map(r => [r.name, r.target, ...seeds.map(s => `${r.cells[s] ?? 'n/a'}${r.pass[s] === false ? ' (x)' : ''}`), r.ok ? 'PASS' : 'FAIL'].join(' | '))];
+  return [head.join(' | '), ...rows.map(r => [r.name, r.target, ...seeds.map(s => `${r.cells[s] ?? 'n/a'}${r.pass[s] === false ? ' (x)' : ''}`), r.info ? 'INFO' : r.ok ? 'PASS' : 'FAIL'].join(' | '))];
 }
 /** What a sweep minimises: the gates that fail (each seed of a gate counts), then how far they are from their targets (sum of violations). */
 export const score = (rows: Gate[]) => ({ fails: rows.reduce((n, r) => n + Object.values(r.pass).filter(p => p === false).length, 0), violation: rows.reduce((n, r) => n + Object.values(r.violation).reduce((a, b) => a + b, 0), 0) });
