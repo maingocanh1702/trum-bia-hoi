@@ -9,7 +9,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { buyGlassQuote, buyTableQuote, buyChairQuote, tableUpgradeQuote, chairUpgradeQuote, tableUpgrade, tableBenefit, effectiveTableLevel, chairPatienceMult, trayDishes, tableSlots, guestPatienceLeft, isEconomy2, isSeatModel, PAIR, BUSINESS_UNLOCKS, menuReport, orderPreparation, beerStatus, washerStatus, kitchenStatus, flyerQuote, SIGN_STYLES, signboardQuote, DISHES, EQUIPMENT, currentGuests, deliveryQuote, dogUpgradeQuote, encodeSave, freshnessMs, kickAllQuote, kickTableQuote, kickTableRule, lifePathStatus, restockQuote, restRequired, rushStatus, stockCap, unlockQuote, upgradeQuote, wellRestedRemaining, type BusinessUnlock, type Command, type Equipment, type Order, type RequirementStatus, type Table, type DomainEvent, type Game } from '../../../packages/engine/src';
 import { Sprite, TableSeats, chairAsset, menuAsset, reactions, hasSpriteArt, trayAsset } from './assets';
 import { translate } from './i18n';
-import { advanceGuide, dispatch, download, readSettings, writeSettings, replaceSave, type BootSession } from './local';
+import { advanceGuide, dispatch, download, openingConfig, readSettings, writeSettings, replaceSave, type BootSession } from './local';
 import { Quests } from './Quests';
 import { Kitchen } from './Kitchen';
 import { MenuReport } from './MenuReport';
@@ -276,8 +276,9 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
     <button onClick={() => location.reload()}>{t('save.retry')}</button></main>;
 
   const shift = w.shift, inShift = w.phase !== 'resting';
-  // D8 (rules 28): the first shifts of a save open at once, so between them the stamina is not a wait: one answer from the engine for the bar and the rest line.
-  const mustRest = restRequired(w, game.config), energyMs = inShift || mustRest ? w.staminaMs : c.shift.durationMs;
+  // D8 (rules 28): the first shifts of a save open at once, so between them the stamina is not a wait. The bar and the rest line ask `restRequired` of the
+  // snapshot the next opening will use: locally `openingConfig` (the bundle when the pin is older, as `dispatch` sends it); remotely the server's pin.
+  const mustRest = restRequired(w, remote ? game.config : openingConfig(game as Game)), energyMs = inShift || mustRest ? w.staminaMs : c.shift.durationMs;
   const rush = rushStatus(w, game.config);
   const rushReports = sheet === 'book' ? w.events.filter(e => e.type === 'rush_ended' && e.data.shiftId === shift?.id) : [];
   const kitchen = kitchenStatus(w, game.config);
