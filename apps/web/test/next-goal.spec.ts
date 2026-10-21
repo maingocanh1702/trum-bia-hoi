@@ -112,24 +112,25 @@ for (const viewport of viewports) test(`on the seat model a brand-new save's fir
   await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await load(page, null, Date.parse('2026-09-08T10:00:00Z'));
   await expect(page.locator('.hud button')).toHaveCount(0);
-  await expect(chip(page)).toBeVisible(); await expect(chip(page)).toContainText('Mua bàn mới · +1 chỗ'); await expect(chip(page)).toContainText('1.500 xu · thiếu 750');
+  await expect(chip(page)).toBeVisible(); await expect(chip(page)).toContainText('Mua bàn mới · +1 chỗ'); await expect(chip(page)).toContainText('1.070 xu · thiếu 320');
   await expect(chip(page)).toHaveAccessibleName(/^Mục tiêu kế tiếp: Mua bàn mới · \+1 chỗ/);
   const box = (await chip(page).boundingBox())!; expect(box.height).toBeGreaterThanOrEqual(44); expect(box.x + box.width).toBeLessThanOrEqual(viewport.width); expect(await fits(page)).toBe(true);
   expect((await axe(page)).violations).toEqual([]); await tbh.shot(`ng-seat-chip-shift1-${viewport.width}.png`);
   await chip(page).click();
   const sheet = page.locator('dialog[open]'); await expect(sheet).toBeVisible();
   await expect(sheet.locator('[data-goal]')).toHaveCount(1); await expect(sheet.locator('[data-goal]')).toHaveAttribute('data-goal', 'buyTable'); // one card: the chip's goal
-  await expect(sheet.getByRole('button', { name: /^Mua bàn · 1\.500 xu$/ })).toBeDisabled(); await expect(sheet.locator('.buy-reason')).toHaveText('Chưa đủ xu');
+  await expect(sheet.getByRole('button', { name: /^Mua bàn · 1\.070 xu$/ })).toBeDisabled(); await expect(sheet.locator('.buy-reason')).toHaveText('Chưa đủ xu');
   expect((await axe(page)).violations).toEqual([]); expect(errors).toEqual([]);
 });
 
 for (const viewport of viewports) test(`on the seat model the chip moves on after every table bought and says what is still missing at ${viewport.width}px`, async ({ page, tbh }) => {
   await page.setViewportSize(viewport);
-  const f = fixture('seat-closed', 1, 10000); await load(page, f.save, f.now); expect(f.coins).toBe(24945);
-  await expect(chip(page)).toContainText('Mua bàn mới · +1 chỗ'); await expect(chip(page)).toContainText('1.500 xu · đủ rồi'); await tbh.shot(`ng-seat-chip-ready-${viewport.width}.png`);
+  // 9 828 base is the old 10 000 less the 172 base table 2 got cheaper (428 against 600): the three purchases below keep their old arithmetic, 24 515 - 1 070 = 23 445 - 9 250 = 14 195, 55 short of table 4.
+  const f = fixture('seat-closed', 1, 9828); await load(page, f.save, f.now); expect(f.coins).toBe(24515);
+  await expect(chip(page)).toContainText('Mua bàn mới · +1 chỗ'); await expect(chip(page)).toContainText('1.070 xu · đủ rồi'); await tbh.shot(`ng-seat-chip-ready-${viewport.width}.png`);
   await chip(page).click(); const sheet = page.locator('dialog[open]');
   await expect(sheet.locator('[data-goal="buyTable"]')).toBeVisible();
-  await sheet.getByRole('button', { name: 'Mua bàn · 1.500 xu', exact: true }).click(); await waitSaved(page); await page.keyboard.press('Escape'); // 23 445 left
+  await sheet.getByRole('button', { name: 'Mua bàn · 1.070 xu', exact: true }).click(); await waitSaved(page); await page.keyboard.press('Escape'); // 23 445 left
   await expect(chip(page)).toContainText('Mua bàn mới · +1 chỗ'); await expect(chip(page)).toContainText('9.250 xu · đủ rồi');
   await chip(page).click(); await page.locator('dialog[open]').getByRole('button', { name: 'Mua bàn · 9.250 xu', exact: true }).click(); await waitSaved(page); await page.keyboard.press('Escape'); // 14 195 left
   await expect(chip(page)).toContainText('Mua bàn mới · +1 chỗ'); await expect(chip(page)).toContainText('14.250 xu · thiếu 55');
@@ -157,5 +158,5 @@ test('on the seat model the chip is English in English, with the units of the En
   const f = fixture('seat-closed', 1, 4000); await page.clock.setFixedTime(f.now);
   await page.addInitScript(({ save }) => { if (localStorage.getItem('goal-seeded')) return; localStorage.setItem('goal-seeded', '1'); localStorage.setItem('tbh.save.v1', save); localStorage.setItem('tbh.settings.v1', JSON.stringify({ locale: 'en', guideDone: true, guideIndex: null, muted: true })); }, { save: f.save });
   await page.goto('/'); await expect(page.locator('.game-shell')).toBeVisible();
-  await expect(chip(page)).toContainText('Buy a new table · Seats +1'); await expect(chip(page)).toContainText('1,500 coins · ready'); await expect(chip(page)).toHaveAccessibleName(/^Next goal: Buy a new table/);
+  await expect(chip(page)).toContainText('Buy a new table · Seats +1'); await expect(chip(page)).toContainText('1,070 coins · ready'); await expect(chip(page)).toHaveAccessibleName(/^Next goal: Buy a new table/);
 });

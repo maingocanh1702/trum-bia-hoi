@@ -192,7 +192,7 @@ for (const viewport of viewports) {
     await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click();
     const sheet = page.locator('dialog[open] .sheet-content');
     await expect(sheet.getByRole('button')).toHaveCount(1); await expect(sheet.locator('[data-goal]')).toHaveCount(1); await expect(sheet.locator('[data-goal]')).toHaveAttribute('data-goal', 'buyTable');
-    await expect(sheet.getByRole('button')).toHaveText('Mua bàn · 1.500 xu'); await expect(sheet.getByRole('button')).toHaveAttribute('data-spotlight', '');
+    await expect(sheet.getByRole('button')).toHaveText('Mua bàn · 1.070 xu'); await expect(sheet.getByRole('button')).toHaveAttribute('data-spotlight', '');
     expect((await axe(page)).violations).toEqual([]);
     await tbh.shot(`p0-seat-upgrade-one-card-${viewport.width}.png`);
     await sheet.getByRole('button').click(); await waitSaved(page);
@@ -201,7 +201,7 @@ for (const viewport of viewports) {
     await expect(lit(page)).toHaveCount(0); // bought: the nudge is spent
     await page.keyboard.press('Escape');
     const saved = fixture('inspect', undefined, await page.evaluate(async () => { const m = '/src/browser-save.ts'; return (await import(m)).readBrowserSave(); }));
-    expect(saved.tables).toBe(2); expect(saved.coins).toBe(f.coins - 1500);
+    expect(saved.tables).toBe(2); expect(saved.coins).toBe(f.coins - 1070);
     expect(errors).toEqual([]);
   });
 }

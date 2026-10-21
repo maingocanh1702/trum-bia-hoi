@@ -4,8 +4,8 @@ import { config } from '../src';
 
 // Plan "Vui 3 ca" S5 (eco21-balance-pass): JSON 2.1.0 seals the numbers of the balance pass. They were found for the plan's own acceptance bot (seats and chairs first, direct
 // leasing, no dog, seeds 42 and 99, a start on 2026-09-09) by the designed table ladder (packages/engine/sim/solve-ladder.ts), the random and coordinate-descent searches of
-// packages/engine/sim/balance-sweep.ts / balance-grid.ts and judged by the gate evaluator packages/engine/sim/balance-gates.ts (`npm run sim:balance`: every row green on
-// seeds 42 and 99 except the shift-1 wallet row, see the shift-1 test below; evidence under artifacts/verification/feat-eco21-balance-pass/). The sim gates (`npm run sim`,
+// packages/engine/sim/balance-sweep.ts / balance-grid.ts and judged by the gate evaluator packages/engine/sim/balance-gates.ts (`npm run sim:balance`: every gate row green on
+// seeds 42 and 99, the owner's price of table 2 included, see the shift-1 test below; evidence under artifacts/verification/feat-eco21-balance-pass/). The sim gates (`npm run sim`,
 // `sim:onboarding`, `sim:rush`, `sim:career:gate`) are the proof that they work together; this file is the tripwire: a change to one of them has to be made on purpose, with the
 // gate table re-run, and not slip in through a neighbouring edit.
 const raw = config.raw, t = raw.upgrades.table;
@@ -19,12 +19,12 @@ test('2.1.0 is the sealed version and the first-shifts allowance is three shifts
 test('the sealed economy numbers of the balance pass', () => {
   assert.equal(raw.tip.rate, 0.17);
   assert.equal(raw.shift.dailyEarnCapBase, 400000); // D24, the owner's number: no gate row needs another
-  assert.equal(raw.shift.startingCoinsBase, 300); // 750 coins, the wallet of S4: see the shift-1 test below
+  assert.equal(raw.shift.startingCoinsBase, 300); // 750 coins, the wallet of S4: below table 2's 1 070, see the shift-1 test below
   assert.equal(raw.locations.leaseDays, 3); // the brief's lease (B5, DESIGN-story section 3)
   assert.deepEqual(raw.locations.list.map(l => l.tableSlots), [8, 8, 8, 8, 8, 8, 8, 8, 8]);
   assert.deepEqual(raw.locations.list.map(l => l.rentPerDayBase), [0, 1200, 2000, 3000, 4200, 5400, 7200, 9600, 13200]);
   assert.deepEqual(raw.locations.list.map(l => l.mult), [1, 1.012, 1.025, 1.038, 1.05, 1.063, 1.075, 1.088, 1.1]);
-  assert.deepEqual(t.tablePriceBase, [600, 3700, 5700, 9600, 12900, 15900, 16000]);
+  assert.deepEqual(t.tablePriceBase, [428, 3700, 5700, 9600, 12900, 15900, 16000]); // table 2 = 428 base = 1 070 xu: the owner's price (owner decision 1 of S5), see the shift-1 test below
   assert.deepEqual(t.chairPriceBase, [400, 600, 900, 1200, 1600, 2000, 2400, 2800]);
   assert.equal(t.chairsAfterTables, 4);
   assert.deepEqual(t.tableUpgrade.levels.map(l => [l.priceBase, l.stepBase]), [[7000, 2500], [34000, 13500], [59500, 20500]]);
@@ -75,12 +75,14 @@ test('the first purchase of a new shop stays table 2: no device level costs less
   }
 });
 
-test('the starting wallet does not afford table 2: a new save EARNS its first table in shift 1 (plan section 0, P0)', () => {
-  // "Kết ca 1: mua bàn 2 (850-1.160 xu + 750 khởi đầu)": the wallet at the start of shift 1 is 750 coins and table 2 costs 1 500, so the player earns the difference. A wallet that pays
-  // table 2 at second zero (700 base in the first seal of S5) took that beat away for a row of the economy table, which review round 1 of S5 refused; the gate row shift1.wallet of
-  // the balance evaluator checks the same from the other side (the end of shift 1 must reach the price on every probe).
+test('the starting wallet does not afford table 2: a new save EARNS its first table in shift 1 (plan section 0, P0; the owner\'s price)', () => {
+  // "Kết ca 1: mua bàn 2 (850-1.160 xu + 750 khởi đầu)": the wallet at the start of shift 1 is 750 coins and the player earns the difference. A wallet that pays table 2 at second zero
+  // (700 base in the first seal of S5) took that beat away for a row of the economy table, which review round 1 of S5 refused. Owner decision 1 of S5 (the founder, 2026-10-21): shift 1
+  // must earn enough to buy table 2 and the mechanism is its price, 428 base = 1 070 xu, the highest round price at which at least 4 runs in 5 can buy it when shift 1 closes (the gate
+  // row shift1.plan of the balance evaluator, 300 probes, confirmed over 600: both service models) with every other gate row green on seeds 42 and 99. The price was 1 500 xu until then;
+  // the old line "the wallet pays at most half of it" cannot hold (750 is 70 % of 1 070) and is replaced by "shift 1 still has to earn at least 300 xu".
   const wallet = config.values.shift.startingCoinsBase, table2 = config.values.upgrades.table.tablePriceBase[0];
-  assert.equal(wallet, 750); assert.equal(table2, 1500);
+  assert.equal(wallet, 750); assert.equal(table2, 1070);
   assert.ok(wallet < table2, `the start wallet (${wallet}) is below table 2 (${table2})`);
-  assert.ok(wallet * 2 <= table2, 'and it pays at most half of it: shift 1 has real work to do');
+  assert.ok(table2 - wallet >= 300, 'shift 1 still has to earn at least 300 xu before table 2 is affordable');
 });

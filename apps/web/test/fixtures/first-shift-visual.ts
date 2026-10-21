@@ -61,7 +61,7 @@ if (mode === 'crowd') {
   const shifts = Number(process.argv[3] ?? 1);
   const raw: any = structuredClone(mode === 'rest' ? capacityModel : config.raw);
   if (mode === 'rest') raw._meta.version = 'capacity-fixture'; // a custom version: the bundled seat model never replaces this snapshot at an opening
-  raw.shift.startingCoinsBase = 4000; // 10 000 xu: the first goal (3 750, or the second table at 1 500) is affordable once shift 1 ends
+  raw.shift.startingCoinsBase = 4000; // 10 000 xu: the first goal (3 750, or the second table at 1 070) is affordable once shift 1 ends
   const g = new Game(loadConfig(raw), 42, start);
   for (let n = 1; n <= shifts; n++) {
     // Between shifts the stall rests until stamina is full again; every attempt is its own command (idempotency keys cache results).
