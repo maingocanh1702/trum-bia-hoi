@@ -9,7 +9,7 @@ import { readSave, waitSaved } from './storage';
 // only: the table's popover shows the price of sending its lingering guests home, in coins and reputation, from `kickTableQuote` (the command's own quote), and
 // ONE tap sends them home; while the guests still wait for their food, or the wallet is short, the button is dimmed with exactly one reason. Saves come from the
 // real engine (fixtures/kick-table.ts) and are read back through it.
-type Fixture = { save: string; now: number; coins: number; reputation: number; target: { id: string; n: number; state: string }; waiting: { id: string; n: number } | null;
+type Fixture = { save: string; now: number; phase: string; coins: number; reputation: number; target: { id: string; n: number; state: string }; waiting: { id: string; n: number } | null;
   quote: { cost: number | null; reputation: number; reason: string | null; ok: boolean }; queue: { id: string; size: number }[]; cleaningMs: number; seatingMs: number };
 const fixture = (mode: string, save?: string) => JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/kick-table.ts', mode], { encoding: 'utf8', input: save }));
 const words = (text: string) => text.trim().split(/\s+/).filter(word => /[\p{L}\p{N}]/u.test(word)).length;
@@ -137,6 +137,20 @@ for (const [mode, why] of [['pin', 'a save pinned to the S6 content of JSON 2.1.
     await tbh.shot(`kick-${mode}-390.png`); expect(tbh.consoleErrors()).toEqual([]);
   });
 }
+
+// Review round 1: once the player closes the shift no guest arrives any more and the shift book's "Mời tất cả về" is the cheaper way out, so the popover offers
+// no single send-home; the engine would still take this table (the fixture's quote is ok): it is the popover that hides the block.
+for (const viewport of viewports) test(`Wave 3 a closing shift offers no Mời về: the lingering table's popover has no send-home block at ${viewport.width}px`, async ({ page, tbh }) => {
+  await page.setViewportSize(viewport);
+  const { f, t, open } = await boot(page, 'vi', 'closing');
+  expect(f.phase).toBe('closing'); expect(f.target.state).toBe('consuming'); expect(f.quote.ok).toBe(true);
+  const panel = await open(f.target);
+  await expect(panel.locator('.idle-table-info')).toContainText(t('table.consuming'));
+  await expect(panel.locator('[class*="kick-"]')).toHaveCount(0); await expect(panel.getByRole('button', { name: t('kick.button'), exact: true })).toHaveCount(0);
+  await tbh.shot(`kick-closing-${viewport.width}.png`);
+  const now = await saved(page); expect(now.phase).toBe('closing'); expect(now.kickCommands).toEqual([]);
+  expect(tbh.consoleErrors()).toEqual([]);
+});
 
 for (const reduce of [false, true]) test(`Wave 3 ${reduce ? 'with' : 'without'} reduced motion: the send-home block has no motion of its own; the falling reputation ${reduce ? 'stays still' : 'moves'}`, async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });

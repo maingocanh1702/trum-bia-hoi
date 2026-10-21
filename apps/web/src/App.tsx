@@ -600,8 +600,9 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
       const dishes = active ? orderDishes(o) : [];
       const preparation = orderPreparation(w, game.config, o);
       // Wave 3 "Mời về" (D3): a table with guests offers to send them home once they linger after their tray (kickTableQuote reads the command): its price in
-      // coins and reputation, one tap; dimmed with the one reason while they wait for their food or the wallet is short. Revealed with the HUD (after shift 1).
-      const kick = kickTableRule(c) && show.hud && guests.length ? kickTableQuote(w, game.config, table) : null;
+      // coins and reputation, one tap; dimmed with the one reason while they have not finished their order or the wallet is short. Revealed with the HUD (after
+      // shift 1) and offered only while the shift is open: once it closes no guest arrives and the shift book's "Mời tất cả về" is the cheaper way out.
+      const kick = kickTableRule(c) && show.hud && w.phase === 'open' && guests.length ? kickTableQuote(w, game.config, table) : null;
       const kickWhy = kick && !kick.ok ? whyNot(kick.reason) : '', kickPrice = kick?.cost != null ? `kick-price-${table.id}` : '';
       return <section ref={orderPanelRef} id="active-table-order" className={`order-panel ${o?.state === 'grace' ? 'is-urgent' : ''}`} role="dialog" aria-label={t('table', { n: w.tables.indexOf(table) + 1 })}>
         <header><span className={`customer-tag type-${type}`}>{guests.length ? t(`customer.${type}`) : t('table.empty')}</span><span>{t('table', { n: w.tables.indexOf(table) + 1 })}</span><button className="icon-button" aria-label={t('close')} onClick={() => setSelectedTable(null)}><Icon name="close" /></button></header>

@@ -796,8 +796,8 @@
   "table.tray": "Mâm {n} món",
   "kick.button": "Mời về",
   "kick.price": "{cost} xu · −{rep} uy tín",
-  "reason.tableNotLingering": "Khách đang chờ món",
-  "error.tableNotLingering": "Khách đang chờ món, chưa mời về được.",
+  "reason.tableNotLingering": "Khách chưa dùng món xong",
+  "error.tableNotLingering": "Bàn này chưa mời về được lúc này.",
   "error.kickCostChanged": "Giá mời về vừa đổi. Xem lại nhé.",
   "error.kickTableUnavailable": "Bản cấu hình này chưa có Mời về."
 }

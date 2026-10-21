@@ -10,6 +10,7 @@ import { fullHud } from './full-hud';
 //   occupied  a table a Chi Pheo keeps after his round (`occupied`): 0 coins, -2 reputation
 //   pin       `linger` on the S6 content of JSON 2.1.0 (no `kickTable` section): the save keeps that pin, so there is no "Mời về"
 //   first     shift 1 of a new save (onboarding on, the HUD not yet revealed) with a lingering table
+//   closing   `linger`, then the player closes the shift (`endShift`): the lingering pair still sits, the shift is `closing` (the command would still take it)
 //   inspect   reads a browser save back through the engine (stdin)
 const mode = process.argv[2] ?? 'linger';
 const lingering = (t: Table) => t.state === 'consuming' || t.state === 'occupied';
@@ -50,10 +51,11 @@ if (mode === 'inspect') {
     serveNext(g, command => { send(command); });
     g.advance(w.now + 100);
   }
+  if (mode === 'closing') must({ type: 'endShift' });
   const target = w.tables.find(t => mode === 'poor' ? t.state === 'consuming' : mode === 'occupied' ? t.state === 'occupied' : first ? lingering(t) : t.state === 'consuming' && t.group!.customers.length === 2)!;
   const waiting = w.tables.find(t => t.state === 'waiting' && t.order!.state === 'pending') ?? null;
   const quote = kickTableQuote(w, g.config, target);
-  process.stdout.write(JSON.stringify({ save: encodeSave(g), now: w.now, coins: w.coins, reputation: w.reputation, completedShifts: w.completedShifts,
+  process.stdout.write(JSON.stringify({ save: encodeSave(g), now: w.now, phase: w.phase, coins: w.coins, reputation: w.reputation, completedShifts: w.completedShifts,
     target: { id: target.id, n: w.tables.indexOf(target) + 1, state: target.state, guests: target.group!.customers.length }, waiting: waiting && { id: waiting.id, n: w.tables.indexOf(waiting) + 1 },
     quote: { cost: quote.cost, reputation: quote.reputation, reason: quote.reason, ok: quote.ok }, queue: w.queue.map(group => ({ id: group.id, size: group.customers.length })),
     cleaningMs: g.config.values.runtime.tableCleaningMs, seatingMs: g.config.values.runtime.tableSeatingMs }));
