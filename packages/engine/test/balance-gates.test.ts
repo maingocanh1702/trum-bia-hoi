@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { config } from '../src';
-import { gateTable, failing, score, runShift1, TARGETS, type CareerMetrics, type GateInputs, type Shift1Metrics, type StandardMetrics } from '../sim/balance-gates';
+import { gateTable, failing, score, runShift1, wilson, TARGETS, type CareerMetrics, type GateInputs, type Shift1Metrics, type StandardMetrics } from '../sim/balance-gates';
 import { DOOR_TARGETS, type DoorBand } from '../sim/door';
 
 /**
@@ -30,7 +30,7 @@ const inputs = (over: { [seed: number]: Partial<CareerMetrics> } = {}, standard 
 
 test('a career inside every target passes every one of the 23 rows on both seeds', () => {
   const rows = gateTable(inputs());
-  assert.equal(rows.length, 23, '20 plan / brief B5 rows, the STRICT shift-1 row, the PLAN-LITERAL shift-1 row and the first-goal row');
+  assert.equal(rows.length, 23, '20 plan / brief B5 rows, the STRICT shift-1 row, the PLAN-NARRATIVE shift-1 row (`shift1.plan`) and the first-goal row');
   assert.deepEqual(rows.map(r => r.id).filter(id => id.startsWith('shift1.')), ['shift1.wallet', 'shift1.plan', 'shift1.firstGoal']);
   assert.deepEqual(failing(rows), []);
   assert.ok(rows.every(r => r.ok && r.pass[42] === true && r.pass[99] === true && r.violation[42] === 0 && r.violation[99] === 0));
@@ -98,7 +98,7 @@ test('the standard k row fails below 2.0 and above 3.0 on any of its four measur
 test('the shift-1 rows: the start wallet must not buy table 2, every run must earn it, and no device may be cheaper', () => {
   const only = (id: string, s1: Shift1Metrics) => { const rows = gateTable(inputs({}, undefined, s1)); assert.deepEqual(failing(rows), [id]); return rows.find(r => r.id === id)!; };
   const paid = gateTable(inputs({}, undefined, shift1({ startCoins: 1500 })));
-  assert.deepEqual(failing(paid), ['shift1.wallet', 'shift1.plan'], 'a start wallet of 1 500 xu pays table 2 before shift 1: P0, in the strict row and in the plan-literal one');
+  assert.deepEqual(failing(paid), ['shift1.wallet', 'shift1.plan'], 'a start wallet of 1 500 xu pays table 2 before shift 1: P0, in the strict row and in the plan-narrative one');
   assert.equal(paid.find(r => r.id === 'shift1.wallet')!.pass[42], false);
   assert.equal(only('shift1.wallet', shift1({ afterRestock: { min: 1499, p05: 1800, median: 2306, max: 3000 }, below: 1 })).pass[42], false, 'one run in 60 ends 1 xu short');
   const slow = only('shift1.wallet', shift1({ slowCoarse: { min: 1000, median: 2000 }, belowSlow: 7 })); assert.equal(slow.pass[99], false, 'the 4 s service model counts as much as the fast one');
@@ -106,7 +106,7 @@ test('the shift-1 rows: the start wallet must not buy table 2, every run must ea
   assert.equal(only('shift1.firstGoal', shift1({ cheapestDevice: 1499 })).pass[42], false, 'a device level cheaper than table 2 pre-empts the first goal');
 });
 
-test("the plan-literal shift-1 row (PLAN section 0 and 7, the playtest sheet's 4 of 5): share of runs, takings and pairs, beside the strict row and never instead of it", () => {
+test("the plan-narrative shift-1 row (the numbers of PLAN section 0 and 7; its 4 of 5 is plan section 4's for five human newcomers, transposed to the share of the probes): share of runs, takings and pairs, beside the strict row and never instead of it", () => {
   const T = TARGETS.shift1Plan;
   assert.equal(T.share, 0.8); assert.deepEqual(T.takings, [850, 1160]); assert.deepEqual(T.refusedPairs, [8, 12]);
   const only = (id: string, plan: Partial<Shift1Metrics['plan']>, rest: Partial<Shift1Metrics> = {}) => {
@@ -122,7 +122,7 @@ test("the plan-literal shift-1 row (PLAN section 0 and 7, the playtest sheet's 4
   for (const [takings, ok] of [[850, true], [1160, true], [849, false], [1161, false], [588, false], [1292, false]] as const) assert.equal(only('shift1.plan', { takingsMedian: takings }).row.ok, ok, `median takings ${takings}`);
   // about ten refused pairs: 8 to 12 inclusive
   for (const [pairs, ok] of [[8, true], [12, true], [7, false], [13, false], [6, false], [16, false]] as const) assert.equal(only('shift1.plan', { refusedPairsMedian: pairs }).row.ok, ok, `median refused pairs ${pairs}`);
-  // the strict row is not softened by the new one: 10 of 60 runs short fails the strict row and leaves the plan-literal one green
+  // the strict row is not softened by the new one: 10 of 60 runs short fails the strict row and leaves the plan-narrative one green
   const strict = gateTable(inputs({}, undefined, shift1({ below: 10, afterRestock: { min: 1200, p05: 1300, median: 2306, max: 3000 } })));
   assert.deepEqual(failing(strict), ['shift1.wallet'], 'the strict row asks every run');
   assert.equal(strict.find(r => r.id === 'shift1.plan')!.ok, true);
@@ -135,4 +135,18 @@ test('the shift-1 probe reads the numbers of the plan from the same runs as the 
   assert.equal(p.takingsMedian, m.closing.median - m.startCoins, 'the takings are the closing wallet of the fast model minus the start wallet');
   assert.ok(p.shareFast >= 1 - m.below / 6 - 1e-9, 'a run that closes below the price also ends below it after the restock, so the strict count can only be the larger one');
   assert.ok(Number.isInteger(p.refusedPairsMedian) && p.refusedPairsMedian >= 0 && Number.isInteger(p.refusedPairsMedianSlow) && p.refusedPairsMedianSlow >= 0);
+});
+
+test('the shift-1 probe counts 300 runs by default and every share prints its 95 % Wilson interval (review round 3: 48 of 60 reads 68-88 %)', () => {
+  assert.equal(TARGETS.shift1Seeds, 300);
+  const near = (x: number, y: number) => Math.abs(x - y) < 0.005;
+  const a = wilson(48, 60); assert.ok(near(a.lo, 0.68) && near(a.hi, 0.88), `48 of 60: ${a.lo} - ${a.hi}`);
+  const b = wilson(207, 300); assert.ok(near(b.lo, 0.636) && near(b.hi, 0.739), `207 of 300: ${b.lo} - ${b.hi}`);
+  const c = wilson(79, 300); assert.ok(near(c.lo, 0.217) && near(c.hi, 0.315), `79 of 300: ${c.lo} - ${c.hi}`);
+  assert.equal(wilson(0, 60).lo, 0); assert.ok(wilson(60, 60).hi > 0.999999); assert.deepEqual(wilson(0, 0), { lo: 0, hi: 1 });
+  assert.ok(wilson(80, 300).hi - wilson(80, 300).lo < wilson(16, 60).hi - wilson(16, 60).lo, 'five times the probes, a narrower interval');
+  const row = (k: number) => gateTable(inputs({}, undefined, shift1({ seeds: 300, plan: { ...shift1().plan, shareFast: k / 300, shareSlow: k / 300 } }))).find(r => r.id === 'shift1.plan')!;
+  assert.equal(row(240).ok, true, '240 of 300 is exactly 4 in 5'); assert.equal(row(239).ok, false);
+  assert.match(row(207).cells[42], /69 % of 300 runs close with >= 1500 \(95 % CI 64-74 %; fast 207\/300, 4 s 207\/300\)/, 'the cell says n, the share and its interval');
+  assert.equal(row(207).ok, false, 'the point estimate decides the row, the interval is information');
 });

@@ -13,7 +13,7 @@ import { serveNext } from './policy';
  * of dotted paths, runs the career bot on each seed, the standard-k sim and the shift-1 wallet probe, and prints the table `gate | target | seed 42 | seed 99 |
  * PASS/FAIL`. Every run is deterministic. A sweep is a loop over patches (balance-sweep.ts) and keeps every run: patch + metrics + table.
  *   node --import tsx packages/engine/sim/balance-gates.ts [--patch=file.json] [--set=path=json ...] [--seeds=42,99] [--days=30] [--label=name] [--out=dir]
- *        [--job=career:42|standard|shift1] [--onboarding-pair] [--shift1=60] [--no-standard] [--start=YYYY-MM-DD] [--bot=price]
+ *        [--job=career:42|standard|shift1] [--onboarding-pair] [--shift1=300] [--no-standard] [--start=YYYY-MM-DD] [--bot=price]
  * THE PROTOCOL (plan section 5 S5 row, brief B5) is the default: seeds 42 and 99, the S1-S4 career bot (seats and chairs first, then the cheapest) with direct leasing and no dog,
  * started on 2026-09-09. `--start` moves the first day (a Vietnam midnight; 2026-09-06 is the first day of a 21-day season) and `--bot=price` runs the price-decides bot v4:
  * information runs that say how much of a table belongs to the protocol, never the acceptance table.
@@ -23,10 +23,14 @@ import { serveNext } from './policy';
 export const TARGETS = {
   kGate: ADVANCED_CAREER_K_MAX, totalValueMax: Math.round(ADVANCED_TOTAL_VALUE_BASELINE * (1 + ADVANCED_TOTAL_VALUE_MAX_OVER_BASELINE)),
   lp7: [140, 170] as const, equipmentMax: 170, tables8Lv4: 170, table4: 48, chair1: [40, 56] as const, lv2First: 56, lv4First: 120,
-  lp2: 48, lp4: 96, lp5: 120, maxGap: 8, dailyCapNotBefore: 150, beerOutMax: 0.10, shift1Seeds: 60,
-  // The plan's own words about shift 1 (the PLAN-LITERAL P0 row; the STRICT row asks every probe): section 0 table, shift 1: "~10 cặp nhìn quán rồi đi" and "Kết ca: mua bàn 2 (850-1.160 xu + 750 khởi đầu)"
-  // (the takings of shift 1 are 850-1 160 xu on a 750 xu start), section 7 owner line 3 "kết ca 1 mua được bàn 2 (1.500 xu)", and the playtest sheet's PLAN section 4 threshold
-  // "≥ 4/5 mua món đầu kết ca 1 không mở Help" (docs/phase0-alpha-playtest.md): at least four probes in five can buy table 2 when the shift closes.
+  lp2: 48, lp4: 96, lp5: 120, maxGap: 8, dailyCapNotBefore: 150, beerOutMax: 0.10,
+  // The shift-1 probe counts 300 runs: a share of 60 runs has a 95 % interval of about +-10 points (48 of 60 reads 68-88 %), a share of 300 about +-5 (review round 3 of S5); about 25 s.
+  shift1Seeds: 300,
+  // The plan's words about shift 1 (the PLAN-NARRATIVE P0 row `shift1.plan`, called plan-literal in review round 2; the STRICT row asks every probe): section 0 table, shift 1: "~10 cặp nhìn quán rồi đi" and "Kết ca: mua bàn 2 (850-1.160 xu + 750 khởi đầu)"
+  // (the takings of shift 1 are 850-1 160 xu on a 750 xu start), section 7 owner line 3 "kết ca 1 mua được bàn 2 (1.500 xu)". Plan section 4 (row fun-onboarding-visual; the playtest sheet
+  // docs/phase0-alpha-playtest.md:134 repeats it as "Ngưỡng PLAN §4") asks for FIVE HUMAN newcomers: at least 4/5 buy table 2 at the end of shift 1 without opening help. The plan has NO criterion on a
+  // share of bot probes: the row TRANSPOSES that 4/5 to the share of the probes (served at once or on a 4 s beat; a first-time human is slower), and the 8-12 band for "~10 cặp" and the 850-1 160 band
+  // (DESIGN-story 2b says 850-1 150) are the narrative of section 0 read as bands. The transposition and the bands are the worker's reading, not plan acceptance.
   shift1Plan: { share: 0.8, takings: [850, 1160] as const, refusedPairs: [8, 12] as const },
 };
 export type Patch = Record<string, unknown>;
@@ -145,8 +149,14 @@ export function runStandard(patch: Patch, seeds: number[], onboardingPair: boole
  * and the wallet after the full beer restock the playable journey buys before it opens the Upgrades sheet. Plan section 7 line 3 ("kết ca 1 mua được bàn 2")
  * must hold on EVERY run, not on average: the minimum decides.
  */
+/** The Wilson score interval of a share (k of n), 95 % by default: what a share of probes can be said to be (a point estimate over 60 probes is good for about +-10 points). */
+export function wilson(k: number, n: number, z = 1.96): { lo: number; hi: number } {
+  if (n <= 0) return { lo: 0, hi: 1 };
+  const p = k / n, d = 1 + z * z / n, c = p + z * z / (2 * n), m = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n));
+  return { lo: Math.max(0, (c - m) / d), hi: Math.min(1, (c + m) / d) };
+}
 export interface Shift1Metrics { seeds: number; price: number; startCoins: number; cheapestDevice: number; closing: { min: number; p05: number; median: number; max: number }; afterRestock: { min: number; p05: number; median: number; max: number }; below: number; belowSlow: number; served: { min: number; median: number }; slowCoarse: { min: number; median: number };
-  /** The plan's own reading of shift 1: the share of runs whose wallet, the moment the shift closes, is at least table 2's price (fast and 4 s service models), the median takings (closing wallet - start wallet) and the median pairs turned away at the door. */
+  /** The plan's narrative of shift 1, read as numbers: the share of runs whose wallet, the moment the shift closes, is at least table 2's price (fast and 4 s service models), the median takings (closing wallet - start wallet) and the median pairs turned away at the door. */
   plan: { shareFast: number; shareSlow: number; takingsMedian: number; takingsMedianSlow: number; refusedPairsMedian: number; refusedPairsMedianSlow: number } }
 export function runShift1(config: SeedConfig, seeds: number): Shift1Metrics {
   // The player of those journeys: shift 1 has no stock sheet, so only the beer is refilled (the keg's own button, when the stock falls below one batch),
@@ -241,16 +251,18 @@ export function gateTable({ careers, standard, shift1, config }: GateInputs): Ga
       pass[seed] = v === 0; violation[seed] = v;
     }
     rows.push({ id: 'shift1.wallet', name: 'shift 1 earns table 2 (start wallet < its price, every run ends with enough)', target: `start < ${shift1.price} and every end >= ${shift1.price}`, cells, pass, violation, ok: v === 0 });
-    // The same P0, in the plan's own words (TARGETS.shift1Plan), beside the strict row and never instead of it: the start wallet must not pay table 2, at least four runs in five must be able
-    // to buy it the moment the shift closes (the worse of the two service models), the median takings must sit in the plan's 850-1 160 xu and the median shop must send about ten pairs away.
+    // The same P0, read through the plan's narrative (TARGETS.shift1Plan), beside the strict row and never instead of it: the start wallet must not pay table 2, at least four runs in five (the plan's
+    // 4/5 is for five HUMAN newcomers; this is its transposition to the share of the probes) must be able to buy it the moment the shift closes (the worse of the two service models), the median takings
+    // must sit in 850-1 160 xu and the median shop must send about ten pairs away. The 95 % interval of the share is printed with it: the pass test stays the point estimate.
     const planCells: Record<string, string> = {}, planPass: Record<string, boolean | null> = {}, planViolation: Record<string, number> = {}, T = TARGETS.shift1Plan, p = shift1.plan;
     const share = Math.min(p.shareFast, p.shareSlow), shortfall = share >= T.share - 1e-9 ? 0 : (T.share - share) / T.share;
     const vPlan = (paysAtStart ? 1 : 0) + Math.max(shortfall, miss(p.takingsMedian, ...T.takings), miss(p.refusedPairsMedian, ...T.refusedPairs));
+    const nFast = Math.round(p.shareFast * shift1.seeds), nSlow = Math.round(p.shareSlow * shift1.seeds), ci = wilson(Math.min(nFast, nSlow), shift1.seeds);
     for (const seed of seeds) {
-      planCells[seed] = `start ${shift1.startCoins} ${paysAtStart ? '>=' : '<'} ${shift1.price} · ${(share * 100).toFixed(0)} % of runs close with >= ${shift1.price} (fast ${Math.round(p.shareFast * shift1.seeds)}/${shift1.seeds}, 4 s ${Math.round(p.shareSlow * shift1.seeds)}/${shift1.seeds}) · median takings ${p.takingsMedian} (4 s ${p.takingsMedianSlow}) · median refused pairs ${p.refusedPairsMedian}`;
+      planCells[seed] = `start ${shift1.startCoins} ${paysAtStart ? '>=' : '<'} ${shift1.price} · ${(share * 100).toFixed(0)} % of ${shift1.seeds} runs close with >= ${shift1.price} (95 % CI ${(ci.lo * 100).toFixed(0)}-${(ci.hi * 100).toFixed(0)} %; fast ${nFast}/${shift1.seeds}, 4 s ${nSlow}/${shift1.seeds}) · median takings ${p.takingsMedian} (4 s ${p.takingsMedianSlow}) · median refused pairs ${p.refusedPairsMedian}`;
       planPass[seed] = vPlan === 0; planViolation[seed] = vPlan;
     }
-    rows.push({ id: 'shift1.plan', name: "shift 1 earns table 2, the plan's own words (4 runs in 5, takings 850-1160, ~10 pairs)", target: `>= ${T.share * 100} % of runs close >= ${shift1.price} · takings ${T.takings.join('-')} · pairs ${T.refusedPairs.join('-')}`, cells: planCells, pass: planPass, violation: planViolation, ok: vPlan === 0 });
+    rows.push({ id: 'shift1.plan', name: "shift 1 earns table 2, the plan's narrative (4 runs in 5, takings 850-1160, ~10 pairs)", target: `>= ${T.share * 100} % of runs close >= ${shift1.price} · takings ${T.takings.join('-')} · pairs ${T.refusedPairs.join('-')}`, cells: planCells, pass: planPass, violation: planViolation, ok: vPlan === 0 });
     // The goal chip suggests what an average shift reaches, capacity lane first: table 2 is the first goal of every shop whose cheapest device level costs at least as much
     // (when a device is within reach so is the table, and the capacity lane wins). A cheaper device pre-empts it on the runs whose first shift took ~1/3 of its price.
     const first: Record<string, string> = {}, firstPass: Record<string, boolean | null> = {}, firstViolation: Record<string, number> = {}, short = Math.max(0, shift1.price - shift1.cheapestDevice) / shift1.price;
