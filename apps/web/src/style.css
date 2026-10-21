@@ -59,20 +59,16 @@ small { font-size: 11px; }
 .glass-counter .sprite { width: 27px; height: 27px; }
 .glass-counter > span:first-of-type { font-size: 16px; font-weight: 800; }
 .glass-counter small { font-size: 10px; font-weight: 500; }
-.yard { position: relative; flex: 1; min-height: 325px; margin: 0 12px; }
-.table-space { position: absolute; width: 132px; height: 101px; transform: translateX(-50%); }
-.table-0 { left: 25%; top: 23%; }
-.table-1 { left: 75%; top: 23%; }
-.table-2 { left: 50%; top: 69%; }
-.table-3 { left: 25%; top: 110%; }
-.table-4 { left: 75%; top: 110%; }
-.table-5 { left: 50%; top: 155%; }
-.yard:has(.table-3) { min-height: 620px; }
-.yard:has(.table-3) .table-0, .yard:has(.table-3) .table-1 { top: 13%; }
-.yard:has(.table-3) .table-2 { top: 40%; }
-.yard:has(.table-3) .table-3, .yard:has(.table-3) .table-4 { top: 68%; }
-.yard:has(.table-3) .table-5 { top: 92%; }
+/* S6 (D13, P4): the yard is a grid of the location's places (`data-slots`), two abreast on a phone, four on a wide screen; a place without a table is an
+   empty spot (`.table-slot`), so the shop is seen growing. A row is tall enough for a table, its chairs and its caption; nothing is positioned by hand. */
+.yard { position: relative; flex: 1; min-height: 270px; margin: 0 12px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 128px; justify-items: center; align-content: start; padding: 8px 0 48px; }
+.table-space { position: relative; width: 132px; height: 101px; }
+.table-slot { display: grid; place-items: end center; padding-bottom: 20px; }
+.slot-mark { width: 84px; height: 42px; border: 2px dashed color-mix(in srgb, var(--inoxDark) 60%, transparent); border-radius: 50%; background: color-mix(in srgb, var(--streetBgShade) 35%, transparent); }
 .table-object { display: block; width: 132px; height: 77px; border: 0; background: transparent; padding: 0; color: var(--ink); position: relative; }
+/* S6 (D14): the tray on the table top, one small dish per slot the level allows; the real order speaks in the bubble above. */
+.tray { position: absolute; left: 50%; top: 20px; transform: translateX(-50%); display: flex; gap: 1px; z-index: 1; pointer-events: none; }
+.tray .sprite { width: 15px; height: 15px; }
 .table-object > .sprite { width: 78px; height: 48px; position: absolute; left: 27px; top: 15px; border-radius: 50%; box-shadow: 0 7px 0 var(--inoxDark), 0 9px 7px color-mix(in srgb,var(--panel) 17%,transparent); }
 .table-object > .placeholder { background: var(--inox); }
 .stools { position: absolute; inset: 0; }
@@ -169,8 +165,6 @@ progress::-webkit-progress-value { background: var(--beerAmber); border-radius: 
   .stall-scene { height: 230px; }
   .equipment-row { gap: 24px; }
   .equipment-object { width: 68px; }
-  .yard { min-height: 320px; }
-  .table-0 { left: 24%; }.table-1 { left: 76%; }
   .sheet { margin-bottom: 28px; border-radius: 14px; max-height: 86dvh; }
 }
 @media (max-width: 380px) {
@@ -184,7 +178,6 @@ progress::-webkit-progress-value { background: var(--beerAmber); border-radius: 
   .hud { padding-top: 10px; padding-bottom: 6px; }
   .stall-scene { height: 202px; padding-top: 6px; }
   .equipment-row { padding-top: 10px; }
-  .yard { min-height: 270px; }
   .stock-strip { margin-top: 0; padding-top: 0; padding-bottom: 0; }
   .bottom-nav { padding-top: 8px; padding-bottom: max(10px,env(safe-area-inset-bottom)); }
   .bottom-nav > button { min-height: 58px; }
@@ -198,7 +191,6 @@ progress::-webkit-progress-value { background: var(--beerAmber); border-radius: 
   .equipment-object .sprite { width: 40px; height: 40px; }
   .equipment-object > span { font-size: 9px; }
   .glass-counter { height: 22px; }
-  .yard { min-height: 260px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }

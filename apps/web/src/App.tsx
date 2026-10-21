@@ -6,8 +6,8 @@ import { Seasons } from './Seasons';
 import { Leaderboard } from './Leaderboard';
 import { Locations } from './Locations';
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { buyGlassQuote, buyTableQuote, buyChairQuote, tableUpgradeQuote, chairUpgradeQuote, tableUpgrade, tableBenefit, effectiveTableLevel, chairPatienceMult, guestPatienceLeft, isEconomy2, isSeatModel, PAIR, BUSINESS_UNLOCKS, menuReport, orderPreparation, beerStatus, washerStatus, kitchenStatus, flyerQuote, SIGN_STYLES, signboardQuote, DISHES, EQUIPMENT, currentGuests, deliveryQuote, dogUpgradeQuote, encodeSave, freshnessMs, kickAllQuote, lifePathStatus, restockQuote, restRequired, rushStatus, stockCap, unlockQuote, upgradeQuote, wellRestedRemaining, type BusinessUnlock, type Command, type Equipment, type Order, type RequirementStatus, type Table, type DomainEvent, type Game } from '../../../packages/engine/src';
-import { Sprite, TableSeats, menuAsset, reactions, hasSpriteArt } from './assets';
+import { buyGlassQuote, buyTableQuote, buyChairQuote, tableUpgradeQuote, chairUpgradeQuote, tableUpgrade, tableBenefit, effectiveTableLevel, chairPatienceMult, trayDishes, tableSlots, guestPatienceLeft, isEconomy2, isSeatModel, PAIR, BUSINESS_UNLOCKS, menuReport, orderPreparation, beerStatus, washerStatus, kitchenStatus, flyerQuote, SIGN_STYLES, signboardQuote, DISHES, EQUIPMENT, currentGuests, deliveryQuote, dogUpgradeQuote, encodeSave, freshnessMs, kickAllQuote, lifePathStatus, restockQuote, restRequired, rushStatus, stockCap, unlockQuote, upgradeQuote, wellRestedRemaining, type BusinessUnlock, type Command, type Equipment, type Order, type RequirementStatus, type Table, type DomainEvent, type Game } from '../../../packages/engine/src';
+import { Sprite, TableSeats, chairAsset, menuAsset, reactions, hasSpriteArt, trayAsset } from './assets';
 import { translate } from './i18n';
 import { advanceGuide, dispatch, download, readSettings, writeSettings, replaceSave, type BootSession } from './local';
 import { Quests } from './Quests';
@@ -305,7 +305,12 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   // F27/P0(a): at most one element carries data-spotlight; first-play also gets a pointer arrow on it.
   const spot = pickSpotlight(w, game.config, { sheet, dialogOpen: Boolean(sheet || selectedEquipment) });
   const goal = firstGoal(w, game.config), beerEmpty = beerOut(w, game.config);
-  const next = settings.goalChip ? pickNextGoal(w, game.config) : null; // the chip; the Settings switch only hides it
+  const nextGoal = pickNextGoal(w, game.config), next = settings.goalChip ? nextGoal : null; // the chip; the Settings switch only hides it
+  // S6 (D10): a quick "Mua ghế" on the HUD that does not pause, the way "Nhập bia" does: only while a second chair is the registry's next goal AND the wallet pays it
+  // (the sensible next step, D18: chairs come after the tables and before the levels); otherwise nothing is shown, the chip already says what is missing.
+  const quickChair = show.upgrades && nextGoal && nextGoal.card.kind === 'buyChair' && nextGoal.cost !== null && w.coins >= nextGoal.cost
+    ? { tableId: nextGoal.card.tableId, n: w.tables.findIndex(x => x.id === (nextGoal.card as { tableId: string }).tableId) + 1, cost: nextGoal.cost } : null;
+  const slots = tableSlots(w, game.config); // S6 (D13): the yard draws every place of the current location, the unbought ones as empty spots
   const leaveFree = toast?.loss ? !toast.loss.coins && !toast.loss.reputation : false; // a group turned away at the door costs nothing
   const leaveLabel = !toast?.loss ? '' : toast.reason && leaveFree ? t('loss.ariaFree', { reason: t(`leave.${toast.reason}`) })
     : toast.reason ? t('loss.ariaReason', { reason: t(`leave.${toast.reason}`), coins: num(toast.loss.coins), reputation: num(toast.loss.reputation) })
@@ -340,7 +345,8 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
     const special = guests.find(x => x.type === 'vip')?.type ?? guests.find(x => x.type !== 'thuong')?.type;
     const here = spot.target && 'tableId' in spot.target && spot.target.tableId === table.id ? spot.target.kind : null;
     const litBubble = Boolean(activeOrder) && here !== null && selectedTable !== table.id, litTable = here === 'seated' && !activeOrder;
-    return <section className={`table-space table-${index} state-${table.state} ${activeOrder ? 'has-order' : ''} ${special ? `guest-${special}` : ''} ${o?.state === 'grace' ? 'is-urgent' : ''} ${selectedTable === table.id ? 'is-selected' : ''}`} key={table.id} data-table-id={table.id} aria-label={t('table', { n: index + 1 })}>
+    const dishes = trayDishes(c, table), chairLevel = table.chairLevel ?? 1; // S6 (P4): the tray shows the dishes the table's level allows; the chairs show their level
+    return <section className={`table-space table-${index} state-${table.state} ${activeOrder ? 'has-order' : ''} ${special ? `guest-${special}` : ''} ${o?.state === 'grace' ? 'is-urgent' : ''} ${selectedTable === table.id ? 'is-selected' : ''}`} key={table.id} data-table-id={table.id} data-chair-level={chairLevel} aria-label={t('table', { n: index + 1 })}>
       {activeOrder && <button {...lit(litBubble)} className={`table-order-hint ${ready ? 'is-ready' : ''} ${o.state === 'grace' ? 'is-urgent' : ''}`} onClick={e => showTable(table.id, e.currentTarget)} aria-label={t('order.details', { n: index + 1 })} aria-describedby={`${o.id}-description ${o.id}-time`}>
         <span className="bubble-dishes" aria-hidden="true">{orderDishes(o).map(({ dish, items }) => <span key={dish} className="bubble-dish"><Sprite id={dish === 'bia' ? stale ? 'glass-stale' : 'glass-full' : menuAsset[dish]} />{items.length > 1 && <b>{items.length}</b>}</span>)}</span>
         <span className="sr-only" id={`${o.id}-description`}>{orderDishes(o).map(({ dish, items }) => `${t(`dish.${dish}`)} × ${items.length}`).join(', ')} · {t(ready ? 'order.ready' : 'table.waiting')}</span>
@@ -350,12 +356,13 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
         {litBubble && pointer}
       </button>}
       <button {...lit(litTable)} className="table-object" data-level={table.level} aria-haspopup="dialog" aria-controls={selectedTable === table.id ? 'active-table-order' : undefined} onClick={e => showTable(table.id, e.currentTarget)} aria-label={t('order.details', { n: index + 1 })}>
-        <TableSeats capacity={table.capacity} customers={guests} feedback={feedback} />
+        <TableSeats capacity={table.capacity} chairLevel={chairLevel} customers={guests} feedback={feedback} />
         <Sprite id={`table-lv${table.level}-empty`} />
+        <span className="tray" aria-hidden="true" data-dishes={dishes}>{trayAsset.slice(0, dishes).map(id => <Sprite key={id} id={id} />)}</span>
         <span className="table-number">{index + 1}</span>
         {litTable && pointer}
       </button>
-      <div className="table-caption">{special && <strong className="guest-label">{t(`customer.${special}`)}</strong>}<span>{t(`table.${table.state}`)}</span>{!table.group && <small>{t('table.seats', { n: table.capacity })}</small>}{served && table.until !== null && ['consuming', 'occupied'].includes(table.state) && <time className="enjoy-time">{time(table.until - w.now)}</time>}</div>
+      <div className="table-caption">{special && <strong className="guest-label">{t(`customer.${special}`)}</strong>}<span>{t(`table.${table.state}`)}</span>{!table.group && <small>{t('table.seats', { n: table.capacity })} · {t('table.tray', { n: dishes })}</small>}{served && table.until !== null && ['consuming', 'occupied'].includes(table.state) && <time className="enjoy-time">{time(table.until - w.now)}</time>}</div>
     </section>;
   }
   function equipmentButton(kind: Equipment) {
@@ -409,6 +416,11 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
     if (card.kind === 'equipment') return upgradeCard(card.equipment);
     if (card.kind === 'business') return businessCard(card.item);
     if (card.kind === 'buyTable') return buyTableButton(goal.id);
+    // S6: a chair goal on its own (the one-card sheet, or a sheet that lists chairs apart from their tables); the full lane keeps it on its table's card.
+    if (card.kind === 'buyChair' || card.kind === 'chairUpgrade') {
+      const i = w.tables.findIndex(x => x.id === card.tableId), table = w.tables[i];
+      return <div className="upgrade-card" key={goal.id}><Sprite id={chairAsset(card.kind === 'chairUpgrade' ? (table.chairLevel ?? 1) + 1 : table.chairLevel ?? 1)} /><h3>{t('table', { n: i + 1 })}</h3>{card.kind === 'buyChair' ? chairBuyBlock(table) : chairLevelBlock(table)}</div>;
+    }
     return entryCard(goal);
   }
   /** F27/P3 + FEEDBACK II.4: every buy button shows its price and, when dimmed, exactly one reason: the first refusal its command would give (rules.ts quotes). */
@@ -424,16 +436,24 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
     const b = tableBenefit(c, level), parts = [b.extraRounds > 0 && t('table.benefit.rounds', { n: b.extraRounds }), b.pExtraMoi > 0 && t('table.benefit.snack', { n: Math.round(b.pExtraMoi * 100) }), b.tipMult > 1 && t('table.benefit.tip', { n: decimal(b.tipMult) })].filter((part): part is string => Boolean(part));
     return parts.length ? parts : [t('table.benefit.none')];
   };
-  function tableCard(table: Table, i: number) {
-    // The life-path gate names the level the player has to reach: one reason, in words (reason.lifePathRequired).
-    const gateName = (level: number) => level > 0 ? levelName(level) : '';
-    const q = tableUpgradeQuote(w, game.config, table), why = q.gate === 'maxLevel' ? '' : whyNot(q.reason, q.next?.repBase?.[0], gateName(q.requiredLifePath)); // top level: nothing is left to buy, so the button's own label "Đã tối đa" is the one reason, even while guests sit there (the command answers the transient tableBusy first, which would only mislead)
-    // Seat model: a one-chair table sells its second chair on its own card, with the quote's one reason; a pair is the most a table holds.
+  // The life-path gate names the level the player has to reach: one reason, in words (reason.lifePathRequired).
+  const gateName = (level: number) => level > 0 ? levelName(level) : '';
+  /** Seat model: a one-chair table sells its second chair (registry item `chair:<table>`), price and the quote's one reason; a pair is the most a table holds, so a pair has no block. */
+  function chairBuyBlock(table: Table) {
     const chair = isSeatModel(c) && table.capacity < PAIR ? buyChairQuote(w, game.config, table) : null, chairWhy = chair ? whyNot(chair.reason) : '';
-    // S4 (rules 28): a snapshot with the level ladders also says what the level and the chairs give and sells the chair level, price and one reason like the others.
-    const ladders = isSeatModel(c) && tableUpgrade(c) !== null, comfort = ladders ? chairUpgradeQuote(w, game.config, table) : null;
-    const comfortWhy = comfort && comfort.gate !== 'maxLevel' ? whyNot(comfort.reason, 0, gateName(comfort.requiredLifePath)) : '', chairLevel = table.chairLevel ?? 1;
-    return <div className="upgrade-card" key={table.id} data-goal={`table:${table.id}`}><Sprite id={`table-lv${table.level}-empty`} /><h3>{t('table', { n: i + 1 })}</h3><p>{t('table.seats', { n: table.capacity })}</p>{ladders && <><div className="table-perk"><p>{t('level', { n: table.level })}</p><ul>{perks(effectiveTableLevel(table)).map(label => <li key={label}>{label}</li>)}</ul></div><p className="chair-perk">{t('table.chairLevel', { n: chairLevel, mult: decimal(chairPatienceMult(c, chairLevel)) })}</p></>}{chair && <><button disabled={!chair.ok} aria-describedby={chairWhy ? `chair-reason-${table.id}` : undefined} onClick={() => run({ type: 'buyChair', tableId: table.id })}>{t('upgrade.buyChair', { cost: num(chair.cost ?? 0) })}</button>{chairWhy && <p id={`chair-reason-${table.id}`} className="buy-reason" role="status">{chairWhy}</p>}</>}<button {...lit(spot.target?.kind === 'goal' && goal?.kind === 'table' && goal.table.id === table.id)} disabled={!q.ok} aria-describedby={why ? `table-reason-${table.id}` : undefined} onClick={() => run({ type: 'upgradeTable', tableId: table.id })}>{q.next ? t('upgrade.buy', { cost: num(q.cost!) }) : t('upgrade.tableMax')}</button>{why && <p id={`table-reason-${table.id}`} className="buy-reason" role="status">{why}</p>}{comfort && <><button data-action="chairUpgrade" disabled={!comfort.ok} aria-describedby={comfortWhy ? `comfort-reason-${table.id}` : undefined} onClick={() => run({ type: 'upgradeChair', tableId: table.id })}>{comfort.next ? t('upgrade.chairUp', { cost: num(comfort.cost!) }) : t('upgrade.chairMax')}</button>{comfortWhy && <p id={`comfort-reason-${table.id}`} className="buy-reason" role="status">{comfortWhy}</p>}</>}</div>;
+    return chair && <div className="buy-card chair-goal" data-goal={`chair:${table.id}`}><button disabled={!chair.ok} aria-describedby={chairWhy ? `chair-reason-${table.id}` : undefined} onClick={() => run({ type: 'buyChair', tableId: table.id })}>{t('upgrade.buyChair', { cost: num(chair.cost ?? 0) })}</button>{chairWhy && <p id={`chair-reason-${table.id}`} className="buy-reason" role="status">{chairWhy}</p>}</div>;
+  }
+  /** S4 (rules 28): a snapshot with the level ladders sells the chair level (registry item `chairLevel:<table>`), price and one reason like the others. */
+  function chairLevelBlock(table: Table) {
+    const comfort = isSeatModel(c) && tableUpgrade(c) !== null ? chairUpgradeQuote(w, game.config, table) : null;
+    const comfortWhy = comfort && comfort.gate !== 'maxLevel' ? whyNot(comfort.reason, 0, gateName(comfort.requiredLifePath)) : '';
+    return comfort && <div className="buy-card chair-goal" data-goal={`chairLevel:${table.id}`}><button data-action="chairUpgrade" disabled={!comfort.ok} aria-describedby={comfortWhy ? `comfort-reason-${table.id}` : undefined} onClick={() => run({ type: 'upgradeChair', tableId: table.id })}>{comfort.next ? t('upgrade.chairUp', { cost: num(comfort.cost!) }) : t('upgrade.chairMax')}</button>{comfortWhy && <p id={`comfort-reason-${table.id}`} className="buy-reason" role="status">{comfortWhy}</p>}</div>;
+  }
+  function tableCard(table: Table, i: number) {
+    const q = tableUpgradeQuote(w, game.config, table), why = q.gate === 'maxLevel' ? '' : whyNot(q.reason, q.next?.repBase?.[0], gateName(q.requiredLifePath)); // top level: nothing is left to buy, so the button's own label "Đã tối đa" is the one reason, even while guests sit there (the command answers the transient tableBusy first, which would only mislead)
+    // S4 (rules 28): a snapshot with the level ladders also says what the level and the chairs give; S6: the chair and the chair level are registry items of their own, drawn on this card.
+    const ladders = isSeatModel(c) && tableUpgrade(c) !== null, chairLevel = table.chairLevel ?? 1;
+    return <div className="upgrade-card" key={table.id} data-goal={`table:${table.id}`}><Sprite id={`table-lv${table.level}-empty`} /><h3>{t('table', { n: i + 1 })}</h3><p>{t('table.seats', { n: table.capacity })}</p>{ladders && <><div className="table-perk"><p>{t('level', { n: table.level })}</p><ul>{perks(effectiveTableLevel(table)).map(label => <li key={label}>{label}</li>)}</ul></div><p className="chair-perk">{t('table.chairLevel', { n: chairLevel, mult: decimal(chairPatienceMult(c, chairLevel)) })}</p></>}{chairBuyBlock(table)}<button {...lit(spot.target?.kind === 'goal' && goal?.kind === 'table' && goal.table.id === table.id)} disabled={!q.ok} aria-describedby={why ? `table-reason-${table.id}` : undefined} onClick={() => run({ type: 'upgradeTable', tableId: table.id })}>{q.next ? t('upgrade.buy', { cost: num(q.cost!) }) : t('upgrade.tableMax')}</button>{why && <p id={`table-reason-${table.id}`} className="buy-reason" role="status">{why}</p>}{chairLevelBlock(table)}</div>;
   }
 
   return <div className="game-shell" data-save-state={saveError ? 'error' : saving ? 'saving' : 'saved'} data-frame={frame}>
@@ -461,9 +481,13 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
         <button {...lit(spot.target?.kind === 'restock')} aria-describedby="beer-supply-status" disabled={!beerRestock.ok} onClick={() => run({ type: 'restock', dish: 'bia', mode: 'full' })}>{t('stock.quickBeer', { n: num(beerRestock.quantity), cost: num(beerRestock.cost) })}</button>
         {w.coins < beerRestock.cost && <small>{t('error.notEnoughCoins')}</small>}
       </section>}
+      {quickChair && <section className="beer-stock-warning quick-chair" aria-label={t('upgrade.quickChairTitle')}>
+        <button onClick={() => run({ type: 'buyChair', tableId: quickChair.tableId })}>{t('upgrade.quickChair', { n: quickChair.n, cost: num(quickChair.cost) })}</button>
+      </section>}
       {remote && <div className={`network-status is-${remote.state}`} role="status" aria-live="polite"><span>{t(remote.accountBusy ? 'account.confirming' : `network.${remote.state}`)}</span>{remote.state === 'invalidSession' && <button onClick={onReauthenticate}>{t('account.reauthenticate')}</button>}{remote.pending > 0 && <strong>{t('network.pending', { n: remote.pending })}</strong>}</div>}
-      <section className="yard" aria-label={t(`location.${w.location}`)}>
+      <section className="yard" aria-label={t(`location.${w.location}`)} data-slots={slots}>
         {w.tables.map(renderTable)}
+        {Array.from({ length: Math.max(0, slots - w.tables.length) }, (_, i) => <div key={`slot-${w.tables.length + i}`} className={`table-space table-${w.tables.length + i} table-slot`} role="img" aria-label={t('yard.slot')}><span className="slot-mark" /></div>)}
         <DoorQueue world={w} config={game.config} turnedAway={turnedAway} t={t} />
         {!inShift && !shift && <div className="opening-note"><h2>{t('rest.title')}</h2><p>{t('rest.copy')}</p><button className="primary" onClick={() => run({ type: 'startShift' })}><Icon name="bolt" />{t('nav.shift')}</button><small>{t('rest.free')}</small></div>}
       </section>
