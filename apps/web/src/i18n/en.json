@@ -785,5 +785,12 @@
   "upgrade.chairMax": "Chairs at max level",
   "error.chairUpgradeUnavailable": "This shop has no chair upgrades yet.",
   "goal.fx.rounds": "Rounds +{n}",
-  "goal.fx.snack": "2nd snack {n}%"
+  "goal.fx.snack": "2nd snack {n}%",
+  "goal.buyChair": "Add chair to table {n}",
+  "goal.chairLevel": "Upgrade chairs of table {n}",
+  "goal.fx.patience": "patience ×{n}",
+  "upgrade.quickChairTitle": "Quick chair purchase",
+  "upgrade.quickChair": "Add chair · table {n} · {cost} coins",
+  "yard.slot": "Empty table spot",
+  "table.tray": "Tray slots: {n}"
 }

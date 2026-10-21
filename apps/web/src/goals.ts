@@ -1,4 +1,4 @@
-import { BUSINESS_UNLOCKS, EQUIPMENT, buyTableQuote, config as seed, flyerQuote, instantPour, signboardQuote, tableBenefit, tableBenefitGained, tableUpgrade, tableUpgradeQuote, unlockQuote, upgradeQuote, type BusinessUnlock, type Config, type Equipment, type WorldView } from '../../../packages/engine/src';
+import { BUSINESS_UNLOCKS, EQUIPMENT, PAIR, buyChairQuote, buyTableQuote, chairUpgrade, chairUpgradeQuote, config as seed, flyerQuote, instantPour, isSeatModel, signboardQuote, tableBenefit, tableBenefitGained, tableUpgrade, tableUpgradeQuote, unlockQuote, upgradeQuote, type BusinessUnlock, type Config, type Equipment, type WorldView } from '../../../packages/engine/src';
 
 /**
  * F27/P0 "Mục tiêu kế tiếp": every purchasable thing of the Upgrades sheet as data. The goal chip picks from this list and the sheet
@@ -11,8 +11,8 @@ export const LANES: readonly Lane[] = ['capacity', 'speed', 'guests'];
 
 /** Which card of the sheet shows the item. */
 export type Card =
-  | { kind: 'table'; tableId: string } | { kind: 'buyTable' } | { kind: 'equipment'; equipment: Equipment }
-  | { kind: 'business'; item: BusinessUnlock } | { kind: 'flyer' } | { kind: 'signboard' };
+  | { kind: 'table'; tableId: string } | { kind: 'buyTable' } | { kind: 'buyChair'; tableId: string } | { kind: 'chairUpgrade'; tableId: string }
+  | { kind: 'equipment'; equipment: Equipment } | { kind: 'business'; item: BusinessUnlock } | { kind: 'flyer' } | { kind: 'signboard' };
 /** An i18n key; `keyed` params are themselves keys, translated before they are interpolated. */
 export interface Copy { key: string; params?: Record<string, string | number>; keyed?: Record<string, string> }
 
@@ -78,8 +78,23 @@ const flyer: Provider = (w, c) => {
   const q = flyerQuote(w, c); // paid in reputation, so the coin-priced chip never picks it; the sheet still lists it in its lane
   return [goal({ id: 'flyer', lane: 'guests', card: { kind: 'flyer' }, name: { key: 'goal.flyer' }, effect: null, currency: 'rep', cost: q.cost, eligible: q.buyReason === null || q.buyReason === 'reputationRequired' })];
 };
-/** The registry. Wave 2 adds chairs (capacity) and new dishes (speed) here. */
-export const PROVIDERS: readonly Provider[] = [tables, newTable, equipment, sign, flyer, business];
+/**
+ * S6 (D18): the second chair of a table, one goal per one-chair table of a seat-model game, priced by the second chairs the shop owns (buyChairQuote) and
+ * locked until `chairsAfterTables` tables stand. A pair is the most a table holds, so a two-chair table lists nothing (cost null, never eligible).
+ */
+const chairs: Provider = (w, c) => !isSeatModel(c.values) ? [] : w.tables.map((table, i) => {
+  const q = buyChairQuote(w, c, table), full = table.capacity >= PAIR;
+  return goal({ id: `chair:${table.id}`, lane: 'capacity', card: { kind: 'buyChair', tableId: table.id }, name: { key: 'goal.buyChair', params: { n: i + 1 } },
+    effect: full ? null : { key: 'goal.fx.seatsAdded', params: { n: PAIR - table.capacity } }, cost: full ? null : q.cost, eligible: !full && q.cost !== null && q.reason !== 'chairsLocked' });
+});
+/** S6 (D15): the chair level of a table, one goal per table of a snapshot with the chair ladder: the order patience the next level gives, as one number (×1,15 → ×1,3). */
+const chairLevels: Provider = (w, c) => !chairUpgrade(c.values) ? [] : w.tables.map((table, i) => {
+  const q = chairUpgradeQuote(w, c, table);
+  return goal({ id: `chairLevel:${table.id}`, lane: 'capacity', card: { kind: 'chairUpgrade', tableId: table.id }, name: { key: 'goal.chairLevel', params: { n: i + 1 } },
+    effect: q.next ? { key: 'goal.fx.patience', params: { n: q.next.patienceMult } } : null, cost: q.cost, eligible: q.cost !== null && q.gate === null });
+});
+/** The registry: the four seat-model items of the capacity lane (S6: table levels, new tables, second chairs, chair levels), then speed and guests. New dishes (speed) are still to come. */
+export const PROVIDERS: readonly Provider[] = [tables, newTable, chairs, chairLevels, equipment, sign, flyer, business];
 
 export const listGoals = (w: WorldView, c: Config): Goal[] => PROVIDERS.flatMap(provider => provider(w, c));
 

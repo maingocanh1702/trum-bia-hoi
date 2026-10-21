@@ -785,5 +785,12 @@
   "upgrade.chairMax": "Ghế đã tối đa",
   "error.chairUpgradeUnavailable": "Quán này chưa có nâng cấp ghế.",
   "goal.fx.rounds": "+{n} đợt gọi",
-  "goal.fx.snack": "mồi thứ 2 {n}%"
+  "goal.fx.snack": "mồi thứ 2 {n}%",
+  "goal.buyChair": "Thêm ghế bàn {n}",
+  "goal.chairLevel": "Nâng ghế bàn {n}",
+  "goal.fx.patience": "kiên nhẫn ×{n}",
+  "upgrade.quickChairTitle": "Mua ghế nhanh",
+  "upgrade.quickChair": "Mua ghế bàn {n} · {cost} xu",
+  "yard.slot": "Chỗ đặt bàn còn trống",
+  "table.tray": "Mâm {n} món"
 }
