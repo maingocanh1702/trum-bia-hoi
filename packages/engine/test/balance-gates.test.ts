@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { config } from '../src';
-import { gateTable, failing, score, formatGateTable, runShift1, wilson, TARGETS, type CareerMetrics, type GateInputs, type Shift1Metrics, type StandardMetrics } from '../sim/balance-gates';
+import { gateTable, failing, gateVerdict, score, formatGateTable, runShift1, wilson, TARGETS, type CareerMetrics, type GateInputs, type Shift1Metrics, type StandardMetrics } from '../sim/balance-gates';
 import { DOOR_TARGETS, type DoorBand } from '../sim/door';
 
 /**
@@ -82,6 +82,14 @@ for (const [id, what, change] of doctored) {
     }
   });
 }
+
+test('npm run sim:balance ends red when a gate row fails and green when only the information row is unmet (review 07 r1: the exit code, not only the printed line)', () => {
+  assert.deepEqual(gateVerdict(gateTable(inputs())), { failing: [], exitCode: 0 }, 'every gate inside its target: exit 0');
+  for (const [id, , change] of [doctored[0], doctored[10], doctored[17]]) assert.deepEqual(gateVerdict(gateTable(inputs({ 99: change }))), { failing: [id], exitCode: 1 }, `${id} red: exit 1`);
+  const strictOnly = gateTable(inputs({}, undefined, shift1({ afterRestock: { min: 1499, p05: 1800, median: 2306, max: 3000 }, below: 1 })));
+  assert.match(strictOnly.find(r => r.id === 'shift1.wallet')!.cells[42], /information, not a gate: not met/, 'the strict reading is not met');
+  assert.deepEqual(gateVerdict(strictOnly), { failing: [], exitCode: 0 }, 'an unmet information row never makes the command red');
+});
 
 test('the daily cap and the beer row read their rules as written: "or never" and "< 10 %"', () => {
   assert.deepEqual(failing(gateTable(inputs({ 42: { capShift: null }, 99: { capShift: 150 } }))), [], 'never reaching the cap, or at shift 150 exactly, passes');

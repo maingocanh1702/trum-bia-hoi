@@ -273,6 +273,8 @@ export function gateTable({ careers, standard, shift1, config }: GateInputs): Ga
   return rows;
 }
 export const failing = (rows: Gate[]) => rows.filter(r => !r.ok).map(r => r.id);
+/** The verdict `npm run sim:balance` ends with (review 07 r1): the failing gate rows and the exit code, 1 as soon as one gate row fails (an INFO row never does). */
+export function gateVerdict(rows: Gate[]) { const ids = failing(rows); return { failing: ids, exitCode: ids.length ? 1 : 0 }; }
 export function formatGateTable(rows: Gate[], seeds: number[]): string[] {
   const head = ['gate', 'target', ...seeds.map(s => `seed ${s}`), 'PASS/FAIL'];
   return [head.join(' | '), ...rows.map(r => [r.name, r.target, ...seeds.map(s => `${r.cells[s] ?? 'n/a'}${r.pass[s] === false ? ' (x)' : ''}`), r.info ? 'INFO' : r.ok ? 'PASS' : 'FAIL'].join(' | '))];
@@ -324,6 +326,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const merged = mergeJobs(args.patch, results);
     for (const line of formatGateTable(merged.rows, args.seeds)) console.log(line);
     console.log(`failing gates (${merged.score.fails} seed-cells, violation ${merged.score.violation.toFixed(3)}): ${merged.failing.join(', ') || 'none'}`);
+    process.exitCode = gateVerdict(merged.rows).exitCode; // a red gate row makes the command red (like `sim:kick`), not only the printed line
     if (args.out) {
       mkdirSync(args.out, { recursive: true });
       writeFileSync(join(args.out, `${args.label}.json`), JSON.stringify({ label: args.label, patch: args.patch, days: args.days, seeds: args.seeds, score: merged.score, failing: merged.failing, rows: merged.rows, careers: merged.careers, standard: merged.standard, shift1: merged.shift1 }, null, 2) + '\n');
