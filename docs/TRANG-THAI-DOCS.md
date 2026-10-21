@@ -104,3 +104,4 @@ Ba mục item-list (hành phi, đá lạnh, giá cosmetic) đã **chốt theo đ
 | 2026-09-18 | Thêm quyết định 17–18/09 (mục 3 #10–15) + hàng chờ D24/D25; trỏ tới PLAN-vui-3-ca, FEEDBACK v3.3, DESIGN-story-3-tuan; GDD v1.13, 03-SPEC v1.4, HANDOFF v1.42 |
 | 2026-10-20 | S5 `eco21-balance-pass`: mục 3 #15 và hàng chờ D24/D25 đổi từ "ứng viên W9, chưa sửa JSON" thành "đã chốt trong JSON 2.1.0" (số cân bằng lại bằng sim, bảng cổng ở 08-SPEC changelog); chưa có playtest người thật. |
 | 2026-10-21 | S5 review vòng 1: bảng cổng đo lại bằng bot của plan (không phải v4), số chốt mới (08-SPEC changelog 2026-10-21); 21/22 hàng đạt, hàng ví ca 1 (P0) đỏ và là quyết định của owner; ví khởi đầu về 750 xu. |
+| 2026-10-21 | S5 review vòng 2: trả lại trần ngày 400 k, hợp đồng 3 ngày, LP7 2 tr (không cổng nào cần số khác); hai quyết định owner của S5 được nêu tên — P0 (ca 1 mua bàn 2) và `tableSlots` 8 ở mọi mặt bằng; bảng cổng 23 hàng, 21 đạt. |
