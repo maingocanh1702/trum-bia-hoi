@@ -980,7 +980,8 @@ const flat = (value: unknown, path = '', out = new Map<string, string>()): Map<s
   else out.set(path, JSON.stringify(value));
   return out;
 };
-const SEAT_MODEL_KEYS: { path: string; tier: 'A' | 'B'; since: string; edit: (raw: Config['raw']) => unknown; read: (raw: Config['raw']) => unknown }[] = [
+type Seed = typeof config.raw; // the bundled seat seed: the only shape that carries every key below (Config['raw'] is the union with the frozen pins)
+const SEAT_MODEL_KEYS: { path: string; tier: 'A' | 'B'; since: string; edit: (raw: Seed) => unknown; read: (raw: Seed) => unknown }[] = [
   { path: 'spawn.pPair', tier: 'A', since: 'S1 2.0.20', edit: raw => (raw.spawn.pPair = 0.45), read: raw => raw.spawn.pPair },
   { path: 'upgrades.table.tablePriceBase', tier: 'A', since: 'S1 2.0.20', edit: raw => (raw.upgrades.table.tablePriceBase[0] += 1, raw.upgrades.table.tablePriceBase), read: raw => raw.upgrades.table.tablePriceBase },
   { path: 'upgrades.table.chairPriceBase', tier: 'A', since: 'S1 2.0.20', edit: raw => (raw.upgrades.table.chairPriceBase[0] += 1, raw.upgrades.table.chairPriceBase), read: raw => raw.upgrades.table.chairPriceBase },
@@ -1005,8 +1006,8 @@ test('S6: every seat-model key S1-S5 added is governed by its tier, editable one
   for (const [i, key] of SEAT_MODEL_KEYS.entries()) {
     assert.equal(registryPolicy([key.path], config).tier, key.tier, `${key.path} (${key.since}) is governed as Tier ${key.tier}`);
     const author = f.actor('economy', `economy-${i}`), base = f.registry.latest();
-    const before = f.registry.config(base.version).raw, expected = JSON.stringify(key.edit(structuredClone(before)));
-    const d = f.draft(key.edit, author);
+    const before = f.registry.config(base.version).raw, expected = JSON.stringify(key.edit(structuredClone(before) as Seed));
+    const d = f.draft(raw => { key.edit(raw as Seed); }, author);
     // The diff of the proposal is exactly this key (its leaf or the array it lives in), nothing else.
     const was = flat(before), changed = [...flat(f.registry.config(d.version).raw)].filter(([path, value]) => !path.startsWith('_meta.') && was.get(path) !== value).map(([path]) => path);
     assert.ok(changed.length > 0 && changed.every(path => path === key.path || path.startsWith(key.path + '.')), `${key.path}: changed ${changed.join(', ')}`);
@@ -1021,7 +1022,7 @@ test('S6: every seat-model key S1-S5 added is governed by its tier, editable one
     assert.ok(Number(row.measured_k) >= config.values.k.band[0] && Number(row.measured_k) <= config.values.k.band[1], `${key.path}: k ${row.measured_k} in band`);
     assert.equal(pub.effective_at > f.now, key.tier === 'A', `${key.path}: Tier A waits for the next day, Tier B the next shift`);
     f.now = Math.max(f.now, pub.effective_at); assert.equal(f.registry.active().version, d.version);
-    assert.equal(JSON.stringify(key.read(f.registry.active().raw)), expected, `${key.path}: the published value is the edited one`);
+    assert.equal(JSON.stringify(key.read(f.registry.active().raw as Seed)), expected, `${key.path}: the published value is the edited one`);
     // A real player opens on it: the store registers the version and its first shift pins it.
     const store = f.open(), player = `player-${i}`; assert.equal(store.createPlayer(player, 100 + i).configVersion, d.version);
     const opened = store.command(player, { idempotencyKey: `open-${i}`, command: { type: 'startShift' } });
