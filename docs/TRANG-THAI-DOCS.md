@@ -1,11 +1,11 @@
-# 📌 TRẠNG THÁI BỘ DOCS — Trùm Bia Hơi (cập nhật 18/09/2026)
+# 📌 TRẠNG THÁI BỘ DOCS — Trùm Bia Hơi (cập nhật 22/10/2026)
 
-> Bản **mới nhất**, thay cho mọi bản trước (không giữ lịch sử). Cập nhật lần cuối: 08/09/2026, sau khi áp nốt các việc còn lại. Trả lời: bộ docs đã đủ để giao dev/designer build game chưa, còn gì chờ chủ dự án.
+> Bản **mới nhất**, thay cho mọi bản trước (không giữ lịch sử). Cập nhật lần cuối: 22/10/2026 (Đợt 4 đóng gói "Vui 3 ca": chỉ sửa các câu đã thành sai, xem changelog). Trả lời: bộ docs đã đủ để giao dev/designer build game chưa, còn gì chờ chủ dự án.
 > Kiểm bằng cách mở từng file HANDOFF trỏ tới và đối chiếu với `docs/config/economy.tbh.json` (nguồn số).
 
 ## 1. Kết luận
 
-**Đủ để build; M0 đã qua kiểm tra tự động, M1–M3 có bản local đang hoàn thiện.** Tiến độ code và giới hạn hiện tại: `docs/build-progress.md` (14 feature đang triển khai, 0 hoàn tất; review độc lập đang chờ). Prompt dán vào Claude Code: **`12-PROMPT-claude-build.md` Phần 1** (gói `11-PROMPT-PACK` Phần B + vòng lặp Codex review); Codex chạy bằng `codex exec review --base master - < docs/prompts/codex-review.md` (codex-cli 0.152 có sẵn trên máy). Ràng buộc rõ, số tập trung ở JSON, layout có ảnh tham khảo, onboarding đã thành luật, gate `npm run check:config` chạy được ở gốc repo và đang xanh trên `packages/engine` (40 section, 39 section phân loại). Không còn mục 🔴.
+**Đủ để build; M0 đã qua kiểm tra tự động, M1–M3 có bản local đang hoàn thiện.** Tiến độ code và giới hạn hiện tại: `docs/build-progress.md`; bảng trạng thái `docs/implementation-tracker.md` + `docs/dashboard.md`: **20 feature đang triển khai, 0/28 hoàn tất**, 6 hoãn (đếm lại 22/10/2026 theo bảng của tracker). Prompt dán vào Claude Code: **`12-PROMPT-claude-build.md` Phần 1** (gói `11-PROMPT-PACK` Phần B + vòng lặp Codex review); Codex chạy bằng `codex exec review --base master - < docs/prompts/codex-review.md` (codex-cli 0.152 có sẵn trên máy). Ràng buộc rõ, số tập trung ở JSON, layout có ảnh tham khảo, onboarding đã thành luật, gate `npm run check:config` chạy được ở gốc repo và đang xanh trên `packages/engine` (40 section, 39 section phân loại). Không còn mục 🔴.
 
 Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **2 việc nhỏ trước khi giao** (mục 4b). Quy trình build **do dev tự quyết** — Level 3 không còn bắt buộc.
 
@@ -15,7 +15,7 @@ Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **2 việc nh�
 |---|---|---|
 | Gameplay lõi (ca, hệ bàn, Order, freshness, rót/rửa tự động) | ✅ | GDD §1–§10, 03-SPEC §1–§9 |
 | Gameplay lớp 3–5 (khách, thời tiết, rush, meta, risk) | ✅ | GDD §7–§16, F07–F22 |
-| Economy | ✅ | 08-SPEC v1.3.7 + `economy.tbh.json` 1.7.1 (`_meta.governance` tier A/B/C) |
+| Economy | ✅ | 08-SPEC v1.3.11 (changelog tới 22/10/2026) + `economy.tbh.json` **2.1.0** (rules 28, mô hình bàn ghế; `_meta.governance` tier A/B/C) |
 | Asset | ✅ | 11-PROMPT-PACK Phần A v1.11, checklist v1.4 (**~550** = ~475 sprite/icon + 75 audio id; 8 đã có), naming §11, design-tokens |
 | Âm thanh | ✅ | Checklist §B7: **75 id** (mỗi id `.ogg` + `.m4a`), thư mục theo nhóm, phát theo event id → manifest |
 | UI / component / motion | ✅ | UI invariants HANDOFF §6 + brief B binding 10; 09-SPEC/05-SPEC/F24 = tham khảo |
@@ -24,7 +24,7 @@ Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **2 việc nh�
 | Tech (engine, config, lưu trữ, server) | ✅ | 10-SPEC v1.7 §1/§5/§7/§9/§10/§13, F23 §8 — **localStorage trước, server ở M4** |
 | Admin / Config Registry | ✅ | BRD §5.2 + §11; 08-SPEC §22 |
 | Bảng xếp hạng | ✅ | **F28 v1.0** + JSON `leaderboard` (tier A) |
-| Lộ trình & tracker | ✅ | 06-ROADMAP **v3.1** — 1 phase, mốc M0–M9 (M7 = Donate + pháp lý); `implementation-tracker` **v0.8.0** (14 đang triển khai, 0/28 hoàn tất; F26 ⏸ bỏ), `dashboard.*` rebuild |
+| Lộ trình & tracker | ✅ | 06-ROADMAP **v3.1** — 1 phase, mốc M0–M9 (M7 = Donate + pháp lý); `implementation-tracker` **v0.64.0** (20 đang triển khai, 0/28 hoàn tất; F26 ⏸ bỏ), `dashboard.*` rebuild |
 | Hướng dẫn agent (đọc trước HANDOFF) | ✅ | `CLAUDE.md`/`AGENTS.md` dòng verify → `check:config` ở root + build/test/sim của game mới (prototype chỉ khi đụng `prototype/`); `SESSION-TRACK-LOG` block build mới nhất + checkpoint hiện tại; 11-PROMPT-PACK §0.2 thứ tự = config → engine + local save → server M4 |
 | Content bank | ⏸ pending | `docs/content/` mới là đề xuất schema + 5 ví dụ |
 | Tính năng kiểm tra (policy check) | ⏸ pending | F15 §4; ship `risk.inspection.enabled=false` |
@@ -50,7 +50,7 @@ Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **2 việc nh�
 12. **k gate D4(a)**: đo trên đơn chuẩn; k quan sát được vượt 3,5.
 13. **Full story = 168 ca** (3 tuần × 8 ca), LP nén (LP7 = màn kết: 2 tr base), **M6 mở lại** vào hồi 3, trần ngày 400 k base, hợp đồng mặt bằng 3 ngày, `tableSlots` (JSON 2.1.0 giữ đúng các số owner này; riêng `tableSlots` 8 từ quán đầu là quyết định owner thứ hai của S5, BLOCKERS `04 · tableSlots`). Cooldown 30 phút và trần ca 8/6/5 giữ.
 14. **Mùa 21 ngày**, bảng xếp hạng theo mùa; mỗi mùa mới thêm một lớp gameplay.
-15. Số kinh tế đi kèm đã **chốt trong JSON 2.1.0 / rules 28** (S5 `eco21-balance-pass`, 20/10/2026): bộ ứng viên W9 được sim cân bằng lại — đo bằng bot của plan (bàn/ghế trước, thuê thẳng, không chó, bắt đầu 09/09), 21/23 hàng cổng đạt trên seed 42 và 99; hai hàng "kết ca 1 mua nổi bàn 2" (nghiêm: mọi lượt; theo plan: ≥ 4/5 lượt, thu 850–1.160, ~10 cặp) đỏ ở D19 `maxMult` 4 và `tableSlots` 8 ở mọi mặt bằng đảo D13, nên PR ghi `[NEEDS OWNER DECISION]` hai lần; số và bảng cổng ở 08-SPEC changelog 2026-10-21 (vòng 2) / JSON 2.1.0. Chưa có playtest người thật.
+15. Số kinh tế đi kèm đã **chốt trong JSON 2.1.0 / rules 28** (S5 `eco21-balance-pass`): bộ ứng viên W9 được sim cân bằng lại, đo bằng bot của plan (bàn/ghế trước, thuê thẳng, không chó, bắt đầu 09/09); sau hai quyết định owner 21/10/2026 (bàn 2 = **1.070 xu**; `tableSlots` 8 ở mọi mặt bằng, đảo D13) **22/22 hàng cổng ĐẠT + 1 hàng thông tin** trên seed 42 và 99 (`npm run sim:balance`; biên mỏng: ghế 2 đầu tiên ca 40 \| 40 so với cửa sổ 40–56, khoảng trống mua dài nhất 8 \| 7, cặp bị từ chối ca 1 5 \| 5, 83 % lượt probe mua nổi bàn 2 khi đóng ca 1). Đợt 3 (`fun-kick-table`) thêm section Tier A `kickTable` (`feeRate` 1,5, `repPerGuest` 2) dưới cùng nhãn 2.1.0 — nhãn nay mang 8 nội dung trong lịch sử git, chưa deploy: mọi lần chơi thử bắt đầu từ bộ nhớ trình duyệt trống + DB server mới. Số và bảng cổng: 08-SPEC changelog 2026-10-21/22. Chưa có playtest người thật.
 16. **Thứ tự ưu tiên trải nghiệm:** (1) onboarding nhìn-là-hiểu (F27 luật #5 đè: step guide chỉ là dự phòng) → (2) mua sắm lần lượt → (3) economy. Slice `fun-onboarding-visual` đứng đầu Đợt 1.
 
 ## 4. Còn chờ chủ dự án (đều đã có default, không chặn dev)
@@ -59,6 +59,8 @@ Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **2 việc nh�
 |---|---|---|---|
 | 0 | **D24 trần ngày 400 k base, D25 hàng đợi 1 + ghế/8** — owner chưa bác | dùng default; đã chốt trong JSON 2.1.0 (S5): trần ngày **400 k base** như owner (review vòng 1 từng hạ xuống 350 k mà không cổng nào cần, vòng 2 trả lại), hàng đợi 1 + ghế/8 giữ | playtest người thật |
 | 0b | **Hai quyết định owner của S5 — ĐÃ CHỐT 21/10/2026** (founder, `OWNER-DECISIONS-S5.md`, user xác nhận trong chat): (1) P0 — kết ca 1 mua nổi bàn 2: cách (a), bàn 2 giá **1.070 xu** (428 base; trước 1.500 xu): ≥ 4 lượt trong 5 mua nổi khi ca 1 đóng (83 % ở n = 300, 81 % ở n = 600; ví đầu 750 xu); (2) `tableSlots` 8 ở mọi mặt bằng (đảo D13 "hẻm đầu = 4 bàn") được duyệt | đã áp trong JSON 2.1.0 và DECISIONS `## 04 · owner decision 1` / `2`; BLOCKERS `04 · P0` và `04 · tableSlots` đã đóng | xong; còn playtest 3 ca của owner |
+| 0c | **Ba OWNER CALL của Đợt 2–3 (chưa đổi gì trong code hay JSON):** (1) chip "Mục tiêu kế tiếp" dẫn người chơi mua bốn ghế 2 ngay sau bàn 4 (7.750 xu, trước bàn 5 giá 24.000 xu) trong khi cổng S5 đo bằng bot mua đủ 8 bàn rồi mới mua ghế (ghế 2 đầu tiên ca 40 \| 40; đường của chip sớm hơn khoảng 27 ca); (2) luật "+10 % thu nhập 30 ngày" của Mời về đọc trên thu nhập gộp (`kickTable.feeRate` 1,5, đang chốt) hay ròng sau phí (0,5 đạt; review khuyên đọc ròng); (3) "Mời về" nhận bàn `consuming` và `occupied` (plan ghi "`occupied`" nhưng giải nghĩa "đang nhâm nhi") | giữ như đang chạy: chip giữ luật; `feeRate` 1,5 đọc gộp; hai trạng thái | trước hoặc trong playtest 3 ca — `docs/handoff/2026-10-19-vui3ca/HANDOFF.md` §12–§13, DECISIONS `## 05 · review round 2: the chip's chair-first order …`, `## 06 · review round 1 …`, `## 06 · which tables can be sent home …` |
+| 0d | **Merge PR `feat/economy-2-1` → `main`, deploy `v-fb2` lên hai host, owner + 2–4 người chơi 3 ca** (phiếu 10 dòng ở `docs/phase0-alpha-playtest.md` §7, chưa tick) | PR mở, chưa merge, chưa deploy (lệnh phát hành ở `docs/cloudflare-guest.md` "Phát hành lên hai host", owner cho phép từng bước) | owner |
 | 1 | **Content bank** (câu hỏi kiểm tra · quest pool · lời thoại khách) + **tính năng kiểm tra** | ⏸ pending theo bạn; `docs/content/` là đề xuất; `risk.inspection.enabled=false` | M5–M6 |
 | 2 | **Cổng nhận donate tự động (nếu muốn) · mức age gate** | QR chuyển khoản + admin xác nhận tay; age gate là config | M7 |
 | 3 | **Nguồn lịch/tỉ số Cúp Bóng Đá** | Admin nhập tay (tier C); API thật = adapter + flag | M8 |
@@ -88,7 +90,7 @@ Ba mục item-list (hành phi, đá lạnh, giá cosmetic) đã **chốt theo đ
 
 ## 6. Bản đồ nhanh — đọc gì trước
 
-`00-HANDOFF` v1.15 (điểm vào, §4 scope + §6 quy ước) → **`12-PROMPT-claude-build.md`** (dev kickoff + Codex review) · `11-PROMPT-PACK` v1.14 Phần A (designer) / Phần B (chi tiết dev) → `02-GDD` v1.12 + `03-SPEC` (luật chơi) → `08-SPEC` v1.3.7 + `economy.tbh.json` 1.7.1 (số) → `06-ROADMAP` v3.1 (mốc M0–M9) + `implementation-tracker` v0.8.0 (14 đang triển khai, 0/28 hoàn tất) → `docs/features/F07–F28` → `docs/reference/` (layout) → `trum-bia-hoi-brd-admin.md` §5.2 (config admin).
+`00-HANDOFF` v1.15 (điểm vào, §4 scope + §6 quy ước) → **`12-PROMPT-claude-build.md`** (dev kickoff + Codex review) · `11-PROMPT-PACK` v1.14 Phần A (designer) / Phần B (chi tiết dev) → `02-GDD` v1.12 + `03-SPEC` (luật chơi) → `08-SPEC` v1.3.11 + `economy.tbh.json` 2.1.0 (số) → `06-ROADMAP` v3.1 (mốc M0–M9) + `implementation-tracker` v0.64.0 (20 đang triển khai, 0/28 hoàn tất) → `docs/features/F07–F28` → `docs/reference/` (layout) → `trum-bia-hoi-brd-admin.md` §5.2 (config admin).
 
 ## Changelog
 
@@ -105,3 +107,4 @@ Ba mục item-list (hành phi, đá lạnh, giá cosmetic) đã **chốt theo đ
 | 2026-10-20 | S5 `eco21-balance-pass`: mục 3 #15 và hàng chờ D24/D25 đổi từ "ứng viên W9, chưa sửa JSON" thành "đã chốt trong JSON 2.1.0" (số cân bằng lại bằng sim, bảng cổng ở 08-SPEC changelog); chưa có playtest người thật. |
 | 2026-10-21 | S5 review vòng 1: bảng cổng đo lại bằng bot của plan (không phải v4), số chốt mới (08-SPEC changelog 2026-10-21); 21/22 hàng đạt, hàng ví ca 1 (P0) đỏ và là quyết định của owner; ví khởi đầu về 750 xu. |
 | 2026-10-21 | S5 review vòng 2: trả lại trần ngày 400 k, hợp đồng 3 ngày, LP7 2 tr (không cổng nào cần số khác); hai quyết định owner của S5 được nêu tên — P0 (ca 1 mua bàn 2) và `tableSlots` 8 ở mọi mặt bằng; bảng cổng 23 hàng, 21 đạt. |
+| 2026-10-22 | Đợt 4 đóng gói "Vui 3 ca" (stage 07) — chỉ sửa các câu đã thành sai: số feature đang triển khai **14 → 20** (đếm lại theo bảng trạng thái của tracker; 0/28 hoàn tất, 6 hoãn) ở mục 1, mục 2 và mục 6; phiên bản tracker v0.8.0 → v0.64.0, 08-SPEC v1.3.7 → v1.3.11, JSON 1.7.1 → 2.1.0 (rules 28); mục 3 #15 nói trạng thái cuối của S5 (22/22 cổng ĐẠT + 1 INFO sau hai quyết định owner) và section `kickTable` của Đợt 3 dưới nhãn 2.1.0 (8 nội dung); mục 4 thêm hàng 0c (ba OWNER CALL của Đợt 2–3) và 0d (merge, deploy `v-fb2`, playtest 3 ca); tiêu đề và dòng "cập nhật lần cuối". |
