@@ -1054,3 +1054,34 @@ test('S6: the k check reacts to a seat key once a measurer reads it: the Lv4 tip
   assert.equal(f.db.prepare('SELECT state FROM registry_measurements WHERE version=?').get(blowup.version)!.state, 'refused');
   assert.equal(f.registry.active().version, small.version, 'the refused version never becomes active'); assert.equal(f.registry.latest().version, small.version);
 });
+
+// Wave 3 (plan section 6 `fun-kick-table`, FEEDBACK II.3, D3): the two keys of "Mời về" are a Tier A section of the config itself, each editable ONE BY ONE
+// through the registry (an Economy author proposes, a second Super approves, the publication waits for the next day), admitted by the measured k, and the
+// published value reaches a real player at the opening -- the same cycle the S6 case above runs for every seat key.
+const KICK_TABLE_KEYS: { path: string; edit: (raw: Seed) => unknown; read: (raw: Seed) => unknown }[] = [
+  { path: 'kickTable.feeRate', edit: raw => (raw.kickTable.feeRate = 0.6), read: raw => raw.kickTable.feeRate },
+  { path: 'kickTable.repPerGuest', edit: raw => (raw.kickTable.repPerGuest = 3), read: raw => raw.kickTable.repPerGuest },
+];
+test('Wave 3: the two kickTable keys are Tier A, editable one by one through the registry by an Economy author and a second Super, admitted by the measured k, and reach a new player', t => {
+  const f = fixture(t, config, sampleMeasurer);
+  for (const [i, key] of KICK_TABLE_KEYS.entries()) {
+    assert.deepEqual(registryPolicy([key.path], config), { tier: 'A', tiers: ['A'], superOnly: false, effective: 'next_day', modes: ['next_day'] }, `${key.path} is a dual-approval key of the next day`);
+    const author = f.actor('economy', `kick-economy-${i}`), base = f.registry.latest(), before = f.registry.config(base.version).raw;
+    const expected = JSON.stringify(key.edit(structuredClone(before) as Seed));
+    const d = f.draft(raw => { key.edit(raw as Seed); }, author);
+    const was = flat(before), changed = [...flat(f.registry.config(d.version).raw)].filter(([path, value]) => !path.startsWith('_meta.') && was.get(path) !== value).map(([path]) => path);
+    assert.deepEqual(changed, [key.path], `${key.path}: the proposal changes exactly this key`);
+    assert.throws(() => f.registry.publish(author, d.version), /approvalRequired/, `${key.path}: a Tier A key waits for a Super`);
+    assert.throws(() => f.registry.approve(author, d.version), /forbidden/, `${key.path}: the Economy author cannot approve it`);
+    f.registry.approve(f.actor('super', 'kick-reviewer'), d.version);
+    const pub = f.registry.publish(author, d.version);
+    assert.equal(f.db.prepare('SELECT state FROM registry_measurements WHERE version=?').get(d.version)!.state, 'admitted', `${key.path}: admitted by the measured k`);
+    assert.ok(pub.effective_at > f.now, `${key.path}: scheduled for the next day`);
+    f.now = pub.effective_at; assert.equal(f.registry.active().version, d.version);
+    assert.equal(JSON.stringify(key.read(f.registry.active().raw as Seed)), expected, `${key.path}: the published value is the edited one`);
+    const store = f.open(), player = `kick-player-${i}`; assert.equal(store.createPlayer(player, 300 + i).configVersion, d.version);
+    const opened = store.command(player, { idempotencyKey: `kick-open-${i}`, command: { type: 'startShift' } });
+    assert.ok(opened.result.ok); assert.equal(opened.world.shift!.configVersion, d.version, `${key.path}: a shift opens on the published key`);
+  }
+  for (const key of KICK_TABLE_KEYS) assert.equal(registryPolicy([key.path], f.registry.active()).tier, 'A', 'the governance itself did not move');
+});

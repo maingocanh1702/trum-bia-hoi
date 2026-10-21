@@ -65,7 +65,8 @@
             "upgrades.table.chairPriceBase",
             "upgrades.table.chairsAfterTables",
             "upgrades.table.tableUpgrade",
-            "upgrades.table.chairUpgrade"
+            "upgrades.table.chairUpgrade",
+            "kickTable"
           ],
           "featureFlags": [
             "weather.phase1Enabled",
@@ -603,6 +604,11 @@
     "queueOverflow": 0,
     "kickToCloseFormula": "Σ ab(c)",
     "kickStubbornRepBase": "ceil(secondsSeated/10)*5"
+  },
+  "kickTable": {
+    "_rule": "Mời về (rules 28, Đợt 3 fun-kick-table, FEEDBACK II.3, D3): kickTable {tableId, maxCost} mời về một bàn khách đang nhâm nhi sau khi đã được phục vụ — nhóm ngồi lại với mâm đã giao (consuming) hoặc chỉ còn Chí Phèo giữ bàn (occupied); bàn đang có khách chờ món, đang ngồi vào, đang dọn hay trống thì không. Xu = Σ round(gross đơn gần nhất của từng khách × feeRate × customerTypes.leavePenaltyMult) (VIP ×10, Chí Phèo 0), trả từ ví, ghi spent; maxCost thấp hơn giá thật → từ chối kickCostChanged, thiếu xu → notEnoughCoins. Uy tín −repPerGuest mỗi khách (không ×k, reputation.notScaledByK; không xuống dưới 0). Khách không tính lost, không phạt customerLeft, không tăng lostStreak; bàn sang dọn rồi nhận nhóm kế. Thay dòng 🟡 'Tiễn ngồi lỳ' của 08-SPEC §9 (penalty.kickStubbornRepBase giữ cho pin cũ, không còn dùng). Snapshot không có mục này (pin ≤ 2.1.0 của S5/S6, pin sức chứa, pin 1.x) không có lệnh: kickTableUnavailable.",
+    "feeRate": 0.5,
+    "repPerGuest": 2
   },
   "ledgers": {
     "coins": "tiêu được",

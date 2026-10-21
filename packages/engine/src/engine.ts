@@ -3,7 +3,7 @@ import { leaseQuote, leaveLocationQuote } from './locations';
 import { kitchenStatus } from './kitchen';
 import { isEconomy2, isSeatModel, PAIR, CHAIRS_WITH_TABLE, config as defaultConfig, configContent, BUSINESS_UNLOCKS, SIGN_STYLES, signWeightMult, DISHES, EQUIPMENT, WEATHER, deliveryBundles, arrivalIntervalMs, capacityDemandMult, tableUpgrade, tableBenefit, tableBenefitGained, effectiveTableLevel, chairPatienceMult, type Config, type SeatedType, type Rush } from './config';
 import { integer, random, weighted } from './rng';
-import { buyGlassQuote, buyTableQuote, buyChairQuote, chairUpgradeQuote, tableUpgradeQuote, addStock, credit, creditBatchSafe, currentGuests, customerValue, dayKey, deliveryInterval, deliveryQuote, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, noCooldownOpening, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
+import { buyGlassQuote, buyTableQuote, buyChairQuote, chairUpgradeQuote, tableUpgradeQuote, addStock, credit, creditBatchSafe, currentGuests, customerValue, dayKey, deliveryInterval, deliveryQuote, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, kickTableQuote, noCooldownOpening, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
 import { lifePathStatus, lifePathRewardQuote, unlockQuote } from './progression';
 import { signboardQuote, signboardStyle } from './signboard';
 import { attendanceDay, attendanceRewardQuote, applyQuestEvent, planDailyQuests, questRewardQuote, zeroLossWindow } from './quests';
@@ -758,7 +758,7 @@ export class Game {
     if (this.world.seasons && entry.rulesVersion < SEASON_RULES) throw Error('replay:rulesVersion');
     if (['rentLocation', 'leaveLocation'].includes(entry.command.type) && entry.rulesVersion < LEASE_RULES) throw Error('replay:rulesVersion');
     if (entry.command.type === 'buyGlass' && entry.rulesVersion < ECONOMY_RULES) throw Error('replay:rulesVersion');
-    if ((entry.command.type === 'buyChair' || entry.command.type === 'upgradeChair' || isSeatModel(config.values)) && entry.rulesVersion < SEAT_RULES) throw Error('replay:rulesVersion');
+    if ((entry.command.type === 'buyChair' || entry.command.type === 'upgradeChair' || entry.command.type === 'kickTable' || isSeatModel(config.values)) && entry.rulesVersion < SEAT_RULES) throw Error('replay:rulesVersion');
     if (entry.command.type === 'adoptCalendarRules' && entry.rulesVersion !== ABSENT_CALENDAR_RULES) throw Error('replay:rulesVersion');
     if ((entry.command.type === 'connectionRestored' || entry.command.type === 'connectionLost' && entry.command.shiftId === null) && entry.rulesVersion < CONNECTION_RULES) throw Error('replay:rulesVersion');
     if (entry.command.type === 'connectionLost' && (entry.rulesVersion < DISCONNECT_RULES || entry.rulesVersion >= ABSENT_CALENDAR_RULES && !entry.command.lossId)) throw Error('replay:rulesVersion');
@@ -1103,6 +1103,24 @@ export class Game {
         this.spend(q.cost); t.chairLevel = q.next.level;
         this.emit('chair_upgraded', { tableId: t.id, level: t.chairLevel, cost: q.cost, patienceMult: q.next.patienceMult }); return { ok: true, amount: q.cost };
       }
+      case 'kickTable': {
+        // Wave 3 "Mời về" (D3): a table whose guests linger after their tray goes home for its price in coins (spent) and reputation; nobody is lost or fined,
+        // the table is cleaned and seats the next group. A snapshot without the `kickTable` section has no such command (kickTableQuote).
+        const t = w.tables.find(t => t.id === cmd.tableId);
+        if (!t) return fail('tableGone');
+        const q = kickTableQuote(w, this.config, t);
+        if (!this.seatModel() || q.reason === 'kickTableUnavailable') return fail('kickTableUnavailable');
+        if (q.cost === null) return fail(q.reason!);
+        if (q.cost > cmd.maxCost) return fail('kickCostChanged'); // the price moved since the player saw it
+        if (!q.ok) return fail(q.reason!);
+        this.spend(q.cost);
+        const reputationBefore = w.reputation;
+        this.changeRep(-q.reputation);
+        this.emit('table_kicked', { shiftId: s?.id ?? null, tableId: t.id, groupId: t.group!.id, orderId: t.order!.id, count: q.guests.length, cost: q.cost,
+          reputation: reputationBefore - w.reputation, vip: q.guests.filter(g => g.type === 'vip').length, chipheo: q.guests.filter(g => g.type === 'chipheo').length });
+        this.clean(t);
+        return { ok: true, amount: q.cost };
+      }
       case 'rentLocation': {
         const q = leaseQuote(w, this.config, cmd.locationId);
         if (cmd.leaseId !== q.leaseId || cmd.maxCost < q.cost) return fail('leaseChanged');
@@ -1178,6 +1196,7 @@ export function validReplayEnvelope(input: unknown): input is Envelope<Command |
     case 'serve': return typeof c.tableId === 'string' && typeof c.orderId === 'string';
     case 'serveDelivery': return typeof c.deliveryId === 'string';
     case 'upgradeTable': case 'buyChair': case 'upgradeChair': return typeof c.tableId === 'string';
+    case 'kickTable': return typeof c.tableId === 'string' && Number.isSafeInteger(c.maxCost) && c.maxCost >= 0;
     case 'claimLifePath': return Number.isSafeInteger(c.level) && c.level > 0;
     case 'buyUnlock': return BUSINESS_UNLOCKS.includes(c.item);
     case 'setSignboard': return SIGN_STYLES.includes(c.style);

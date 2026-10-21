@@ -1,6 +1,6 @@
 import { creditSeasons, seasonCreditSafe } from './seasons';
 import { signboardStyle } from './signboard';
-import { isEconomy2, isSeatModel, tableUpgrade, chairUpgrade, DISHES, PAIR, CHAIRS_WITH_TABLE, type Config, type Dish, type Equipment, type Rush } from './config';
+import { isEconomy2, isSeatModel, tableUpgrade, chairUpgrade, kickTableRule, DISHES, PAIR, CHAIRS_WITH_TABLE, type Config, type Dish, type Equipment, type Rush } from './config';
 import type { WorldView, Customer, Order, Table, World } from './types';
 
 // One formatter per timezone, built on first use. An Intl.DateTimeFormat owns a native ICU formatter
@@ -192,6 +192,29 @@ export function currentGuests(table: Table): Customer[] {
   if (!table.group) throw Error('state:tableGroup');
   if (table.state !== 'seating' && !table.order) throw Error('state:tableOrder');
   return table.state === 'occupied' ? table.group.customers.filter(c => c.type === 'chipheo') : table.group.customers;
+}
+/** Wave 3 (D3): the states in which a table's guests linger after their tray was served -- the group sits on its served round, or a Chi Pheo still keeps the table. */
+export const LINGERING_TABLE_STATES: readonly Table['state'][] = ['consuming', 'occupied'];
+/**
+ * What `kickTable` will answer (Wave 3 "Mời về", plan section 6, FEEDBACK II.3, D3), refusals in the command's order (an unknown table and a price that moved
+ * aside): a snapshot without the `kickTable` section has no such command; only a lingering table (`LINGERING_TABLE_STATES`) can be sent home -- not one whose
+ * guests sit down or wait for a dish, nor a table being cleaned or empty --; then the wallet. The price, per guest of the table: round(gross of the guest's
+ * latest order x feeRate x the type's leavePenaltyMult) (VIP x10, Chi Pheo 0); the reputation repPerGuest per guest (not scaled by k). Pure: the UI reads it.
+ */
+export function kickTableQuote(w: WorldView, c: Config, table: Table) {
+  const v = c.values, rule = kickTableRule(v);
+  if (!rule || !isSeatModel(v)) return { guests: [], cost: null, reputation: 0, reason: 'kickTableUnavailable', ok: false };
+  if (!LINGERING_TABLE_STATES.includes(table.state)) return { guests: [], cost: null, reputation: 0, reason: 'tableNotLingering', ok: false };
+  const order = table.order;
+  if (!order) throw Error('state:tableOrder');
+  const guests = currentGuests(table).map(customer => {
+    const gross = order.items.filter(i => i.customerId === customer.id).reduce((sum, i) => sum + v.menu[i.dish].price, 0);
+    return { customerId: customer.id, type: customer.type, fee: Math.round(gross * rule.feeRate * v.customerTypes[customer.type].leavePenaltyMult) };
+  });
+  const cost = guests.reduce((sum, guest) => sum + guest.fee, 0);
+  if (!Number.isSafeInteger(cost) || cost < 0) throw Error('ledger:invalid-kick-fee');
+  const reason = w.coins < cost ? 'notEnoughCoins' : null;
+  return { guests, cost, reputation: rule.repPerGuest * guests.length, reason, ok: reason === null };
 }
 /** Quote assigned orders only: guests still queueing/seating have not ordered or spent stock. */
 export function kickAllQuote(w: WorldView, c: Config) {

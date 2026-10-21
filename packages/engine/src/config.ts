@@ -50,6 +50,12 @@ const NO_BENEFIT: Readonly<TableBenefit> = Object.freeze({ extraRounds: 0, pExtr
 export function tableUpgrade(c: Economy): TableUpgrade | null { return Object.hasOwn(c.upgrades.table, 'tableUpgrade') ? (c.upgrades.table as SeatTable).tableUpgrade : null; }
 /** The S4 chair-level ladder (rules 28); null wherever `tableUpgrade` is. */
 export function chairUpgrade(c: Economy): ChairUpgrade | null { return Object.hasOwn(c.upgrades.table, 'chairUpgrade') ? (c.upgrades.table as SeatTable).chairUpgrade : null; }
+export type KickTableRule = typeof seed.kickTable;
+/**
+ * Wave 3 "Mời về" (rules 28, plan section 6, FEEDBACK II.3, D3): the price of sending a lingering table home. Null on every snapshot without the section (the
+ * S5/S6 contents of JSON 2.1.0, every older seat pin, a capacity pin, a 1.x pin): their games have no such command, so they replay as they always did.
+ */
+export function kickTableRule(c: Economy): KickTableRule | null { return Object.hasOwn(c, 'kickTable') ? (c as typeof seed).kickTable : null; }
 /** Total benefit of a table level (benefits stack: each ladder row lists the sum). Level 1, a level without a row and every older snapshot: none. */
 export function tableBenefit(c: Economy, level: number): TableBenefit {
   const row = tableUpgrade(c)?.levels.find(l => l.level === level);
@@ -150,13 +156,17 @@ const seedAt = (path: string): unknown => valueAt(seed, path);
 // Seat-model keys added after JSON 2.0.20/2.0.21. A pin is immutable, so a seat snapshot labelled before the version that introduced a group has the
 // shape of the seed without it (exact: no key of the group, no tier entry), and one labelled with or after that version needs the whole group.
 // `since` = the first version carrying the group, `paths` = the object keys it added, `tiers` = the names it added to the governance tier lists,
-// `restore` = keys the group REPLACED: the older pin still carries them, so the older shape gets them back from the frozen capacity file (2.0.4).
-const SEAT_KEYS_ADDED_LATER: readonly { since: string; paths: readonly string[]; tiers: Record<string, readonly string[]>; restore?: readonly string[] }[] = [
+// `restore` = keys the group REPLACED: the older pin still carries them, so the older shape gets them back from the frozen capacity file (2.0.4),
+// `optionalAt` = labels that were sealed both before and after the group joined them: a pin with such a label may lack the whole group (never half of it).
+const SEAT_KEYS_ADDED_LATER: readonly { since: string; paths: readonly string[]; tiers: Record<string, readonly string[]>; restore?: readonly string[]; optionalAt?: readonly string[] }[] = [
   { since: '2.0.22', paths: ['spawn.capacityDemand'], tiers: { A: ['spawn.capacityDemand'] } }, // plan S3, D19
   // plan S4, D14 D15 D18 D19: the table and chair ladders replace the postmvp `upgrades.backrest` placeholder (the same object in every older pin)
   { since: '2.0.23', paths: ['upgrades.table.tableUpgrade', 'upgrades.table.chairUpgrade'], tiers: { A: ['upgrades.table.tableUpgrade', 'upgrades.table.chairUpgrade'] }, restore: ['upgrades.backrest'] },
   // plan S5, D8 D23: the first shifts of a save's life open without the stamina cooldown; a value of the Tier A section `shift`, so there is no tier entry to add
   { since: '2.1.0', paths: ['shift.noCooldownFirstShifts'], tiers: {} },
+  // plan section 6 (Wave 3, D3): "Mời về". Plan section 2 seals Waves 2-3 as JSON 2.1.0, so that label exists without the section (the S5/S6 contents: their
+  // recorded histories and browser pins) and with it; a later label must carry it.
+  { since: '2.1.0', paths: ['kickTable'], tiers: { A: ['kickTable'] }, optionalAt: ['2.1.0'] },
 ];
 const versionOf = (label: unknown): number[] | null => { const m = typeof label === 'string' ? /^(\d+)\.(\d+)\.(\d+)$/.exec(label) : null; return m ? m.slice(1).map(Number) : null; };
 const olderThan = (label: unknown, since: string): boolean => { const a = versionOf(label), b = versionOf(since)!; return !!a && (a[0] - b[0] || a[1] - b[1] || a[2] - b[2]) < 0; };
@@ -165,9 +175,9 @@ const seatShapes = new Map<string, unknown>();
 /** The template of a seat-model snapshot: the seed, or the seed minus the key groups that snapshot predates (cached per combination). */
 function seatShape(input: unknown): unknown {
   const version = (input as { _meta?: { version?: unknown } } | null)?._meta?.version;
-  const absent = SEAT_KEYS_ADDED_LATER.filter(group => olderThan(version, group.since) && group.paths.every(path => !ownPath(input, path)));
+  const absent = SEAT_KEYS_ADDED_LATER.filter(group => (olderThan(version, group.since) || (group.optionalAt ?? []).includes(version as string)) && group.paths.every(path => !ownPath(input, path)));
   if (!absent.length) return seed;
-  const key = absent.map(group => group.since).join();
+  const key = absent.map(group => SEAT_KEYS_ADDED_LATER.indexOf(group)).join(); // by row, not by label: two groups share the label 2.1.0
   if (!seatShapes.has(key)) {
     const older = structuredClone(seed) as Record<string, any>;
     for (const group of absent) {
@@ -275,6 +285,16 @@ function validate(c: Economy): void {
     }
     // The shifts that open without a cooldown (S5, D8): a whole number of shifts, 0 turns the allowance off.
     if (Object.hasOwn(c.shift, 'noCooldownFirstShifts')) whole(c.shift.noCooldownFirstShifts, 'shift.noCooldownFirstShifts');
+    // Mời về (Wave 3, D3): a finite rate (never negative: scan), a whole reputation cost, and the dearest kick a pair can be asked for (beer and two of the
+    // dearest dishes each, the largest leave multiplier) stays a safe whole number of coins.
+    const kick = kickTableRule(c);
+    if (kick) {
+      if (!Number.isFinite(kick.feeRate)) throw Error('config:kickTable.feeRate');
+      whole(kick.repPerGuest, 'kickTable.repPerGuest');
+      const tray = c.menu.bia.price + 2 * Math.max(...DISHES.map(d => c.menu[d].price)); // config-exempt: structural tray bound (beer + a first and a second snack, D14 D19)
+      const leave = Math.max(...Object.values(c.customerTypes).filter(t => 'leavePenaltyMult' in t).map(t => (t as { leavePenaltyMult: number }).leavePenaltyMult));
+      whole(Math.round(tray * kick.feeRate * leave) * PAIR, 'kickTable.maximumFee');
+    }
     // Table and chair levels (S4): levels in order from 2, whole prices that stay whole once scaled, a gate inside the life path, benefits that only grow.
     const gate = (n: number) => { whole(n, 'lifePathGate'); if (n >= c.lifePath.length) throw Error('config:lifePathGate'); };
     const prices = (row: { priceBase: number; stepBase: number }, at: string) => {
