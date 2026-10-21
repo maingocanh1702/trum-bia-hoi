@@ -91,10 +91,11 @@ test('the S6 save keeps its pin: the bundled 2.1.0 now carries kickTable, so ope
   must(g, { type: 'startShift' }); assert.equal(g.world.shift!.configVersion, '2.1.0'); assert.equal(kickTableRule(g.config.values), null, 'and opens its next shift on it');
 });
 
-test('the bundled seed carries kickTable {feeRate 0.5, repPerGuest 2} as a Tier A section that k does not scale, and keeps the label 2.1.0', () => {
-  assert.equal(seed.kickTable.feeRate, 0.5); assert.equal(seed.kickTable.repPerGuest, 2);
+test('the bundled seed carries kickTable {feeRate 1.5, repPerGuest 2} as a Tier A section that k does not scale, and keeps the label 2.1.0', () => {
+  // feeRate: the candidate 0.5 overshot the plan's +10 % income rule; raised in 0.25 steps until it held on seeds 42 and 99 (sim/kick-table.ts, DECISIONS 06).
+  assert.equal(seed.kickTable.feeRate, 1.5); assert.equal(seed.kickTable.repPerGuest, 2);
   assert.equal(typeof seed.kickTable._rule, 'string');
-  assert.deepEqual([config.values.kickTable.feeRate, config.values.kickTable.repPerGuest], [0.5, 2], 'a rate and a count of reputation: neither ends in Base, k = 2.5 scales neither');
+  assert.deepEqual([config.values.kickTable.feeRate, config.values.kickTable.repPerGuest], [1.5, 2], 'a rate and a count of reputation: neither ends in Base, k = 2.5 scales neither');
   assert.ok(seed._meta.governance.tiers.A.sections.includes('kickTable'), 'Tier A: dual approval, next day');
   for (const tier of ['B', 'C'] as const) assert.equal(seed._meta.governance.tiers[tier].sections.includes('kickTable'), false);
   assert.equal(seed._meta.version, '2.1.0');
@@ -109,7 +110,7 @@ test('snapshots from before kickTable load with their bytes; every half-way shap
   // A pin labelled before 2.1.0 that already carries the section is a complete snapshot (the S3-S5 convention); loading it first must not change how the S6 pin
   // is shaped afterwards (the template cache is keyed by the groups a pin lacks, not by their labels: two groups since 2.1.0 no longer share a key).
   const early = s5Raw(); early.kickTable = structuredClone(seed.kickTable); early._meta.governance.tiers.A.sections.push('kickTable');
-  assert.equal(kickTableRule(loadConfig(early).values)?.feeRate, 0.5);
+  assert.equal(kickTableRule(loadConfig(early).values)?.feeRate, seed.kickTable.feeRate);
   assert.equal(JSON.stringify(loadConfig(s6Raw()).raw), JSON.stringify(s6), 'the S6 pin still loads after it');
   const bad: [string, RegExp, () => unknown][] = [
     ['the section without its Tier A entry', /config:_meta\.governance\.tiers\.A\.sections:array/, () => { const r = s6Raw(); r.kickTable = structuredClone(seed.kickTable); return r; }],
@@ -169,8 +170,8 @@ test('the price is feeRate x the gross of each guest\'s latest order x the type\
   const [ordinary, vip] = ['thuong', 'vip'].map(type => table.group!.customers.find(c => c.type === type)!);
   const q = kickTableQuote(w, g.config, table);
   assert.deepEqual(q.guests.map(x => [x.customerId, x.type, x.fee]), [...table.group!.customers].map(c => [c.id, c.type, fee(g, table, c.id)]));
-  assert.equal(q.guests.find(x => x.type === 'vip')!.fee, Math.round(table.order!.items.filter(i => i.customerId === vip.id).reduce((s, i) => s + seed.menu[i.dish].price, 0) * 0.5 * 10), 'VIP: x10');
-  assert.equal(q.guests.find(x => x.type === 'thuong')!.fee, Math.round(table.order!.items.filter(i => i.customerId === ordinary.id).reduce((s, i) => s + seed.menu[i.dish].price, 0) * 0.5), 'an ordinary guest: x1');
+  assert.equal(q.guests.find(x => x.type === 'vip')!.fee, Math.round(table.order!.items.filter(i => i.customerId === vip.id).reduce((s, i) => s + seed.menu[i.dish].price, 0) * 1.5 * 10), 'VIP: x10');
+  assert.equal(q.guests.find(x => x.type === 'thuong')!.fee, Math.round(table.order!.items.filter(i => i.customerId === ordinary.id).reduce((s, i) => s + seed.menu[i.dish].price, 0) * 1.5), 'an ordinary guest: x1');
   assert.equal(q.cost, fee(g, table, ordinary.id) + fee(g, table, vip.id)); assert.equal(q.reputation, 2 * 2, '2 guests x repPerGuest 2, not x k');
   const coins = w.coins, rep = w.reputation, spent = w.shift!.stats.spent;
   assert.deepEqual(kick(g, table, q.cost!), { ok: true, amount: q.cost });
