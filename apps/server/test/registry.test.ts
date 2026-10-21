@@ -1056,13 +1056,16 @@ test('S6: the k check reacts to a seat key once a measurer reads it: the Lv4 tip
 });
 
 // Wave 3 (plan section 6 `fun-kick-table`, FEEDBACK II.3, D3): the two keys of "Mời về" are a Tier A section of the config itself, each editable ONE BY ONE
-// through the registry (an Economy author proposes, a second Super approves, the publication waits for the next day), admitted by the measured k, and the
-// published value reaches a real player at the opening -- the same cycle the S6 case above runs for every seat key.
+// through the registry (an Economy author proposes, a second Super approves, the publication waits for the next day), and the published value reaches a real
+// player at the opening -- the same cycle the S6 case above runs for every seat key. What this case does NOT prove: that the k admission guards these keys. It
+// does not react to them: `sampleMeasurer` prices one beer from `menu.bia.price`, and the production `measureKViaForecast` (apps/server/src/forecast.ts)
+// projects with `createManagementPolicy` (packages/engine/sim/forecast.ts), whose bot never kicks; a `feeRate` of 0 would be admitted too. The guards of these
+// two keys are the validator (validate in config.ts), the dual approval and running `npm run sim:kick` before publishing (08-SPEC section 22, `kickTable` row).
 const KICK_TABLE_KEYS: { path: string; edit: (raw: Seed) => unknown; read: (raw: Seed) => unknown }[] = [
   { path: 'kickTable.feeRate', edit: raw => (raw.kickTable.feeRate = 0.6), read: raw => raw.kickTable.feeRate },
   { path: 'kickTable.repPerGuest', edit: raw => (raw.kickTable.repPerGuest = 3), read: raw => raw.kickTable.repPerGuest },
 ];
-test('Wave 3: the two kickTable keys are Tier A, editable one by one through the registry by an Economy author and a second Super, admitted by the measured k, and reach a new player', t => {
+test('Wave 3: the two kickTable keys are Tier A, editable one by one through the registry by an Economy author and a second Super, and reach a new player (the k admission does not react to them)', t => {
   const f = fixture(t, config, sampleMeasurer);
   for (const [i, key] of KICK_TABLE_KEYS.entries()) {
     assert.deepEqual(registryPolicy([key.path], config), { tier: 'A', tiers: ['A'], superOnly: false, effective: 'next_day', modes: ['next_day'] }, `${key.path} is a dual-approval key of the next day`);
@@ -1075,7 +1078,7 @@ test('Wave 3: the two kickTable keys are Tier A, editable one by one through the
     assert.throws(() => f.registry.approve(author, d.version), /forbidden/, `${key.path}: the Economy author cannot approve it`);
     f.registry.approve(f.actor('super', 'kick-reviewer'), d.version);
     const pub = f.registry.publish(author, d.version);
-    assert.equal(f.db.prepare('SELECT state FROM registry_measurements WHERE version=?').get(d.version)!.state, 'admitted', `${key.path}: admitted by the measured k`);
+    assert.equal(f.db.prepare('SELECT state FROM registry_measurements WHERE version=?').get(d.version)!.state, 'admitted', `${key.path}: the publication runs the k measurement and is admitted (that measurement does not read kickTable)`);
     assert.ok(pub.effective_at > f.now, `${key.path}: scheduled for the next day`);
     f.now = pub.effective_at; assert.equal(f.registry.active().version, d.version);
     assert.equal(JSON.stringify(key.read(f.registry.active().raw as Seed)), expected, `${key.path}: the published value is the edited one`);
