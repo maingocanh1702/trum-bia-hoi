@@ -1,5 +1,5 @@
 // Confirmation sweep 2 (plan S5): candidate B (the bundled JSON when this plan was written) passed every gate, but on the first-purchase journeys of the guest and playable
-// tiers 13 % of the first shifts ended with the goal chip pointing at the stall's second level (1 250 xu) instead of table 2 (1 500 xu): the chip suggests what an average
+// tiers 13 % of the first shifts ended with the goal chip pointing at the stall's second level (1 250 xu) instead of table 2 (1 500 xu then; 1 070 xu since owner decision 1 of S5, the stall's Lv2 being 1 875 xu now): the chip suggests what an average
 // shift reaches, capacity lane first, so a device level that costs LESS than table 2 pre-empts it whenever the shift took between 1/3 of the two prices (the sealed numbers
 // of the first alley). The new gate `shift1.firstGoal` asks that no device level costs less than table 2, i.e. the stall's second level is at least 600 base. Any such price
 // breaks B's thin cells (gap, days 8-14 door), so the search starts again from B with that floor and looks for a clean neighbour. Scales are relative to the BUNDLED numbers,

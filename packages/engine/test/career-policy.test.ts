@@ -43,8 +43,8 @@ test('the price decides: with a table that costs more than a device the bot buys
   assert.ok(bought(cheapest).includes('upgrade'), 'a device is the cheapest thing it can pay for'); assert.equal(cheapest.world.tables.length, 1);
   assert.deepEqual(bought(seatsFirst), [], 'saving for the table: nothing else is bought');
   assert.equal(seatsFirst.world.tables.length, 1);
-  // With the ordinary prices no device level costs less than table 2 (the stall's second level costs the same, 1 500: the goal chip needs it so, sealed-economy.test.ts),
-  // and a tie goes to the seat, so a rich new shop buys table 2 first under both bots.
+  // With the ordinary prices no device level costs less than table 2 (the stall's Lv2 is 1 875 xu, at or above table 2's 1 070: the goal chip needs it so, sealed-economy.test.ts),
+  // and a tie would go to the seat, so a rich new shop buys table 2 first under both bots.
   const ordinary = (seatsFirst: boolean) => {
     const raw = structuredClone(seed); raw.shift.startingCoinsBase = 4000;
     const g = new Game(loadConfig(raw), 42, T0); createManagementPolicy(g, send(g), { seatsFirst })();

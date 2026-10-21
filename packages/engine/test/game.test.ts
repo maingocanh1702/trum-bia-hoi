@@ -22,7 +22,7 @@ function firstOrder(g: Game) {
 }
 
 test('all money Base values scale once; menu, times and probabilities retain their units', () => {
-  assert.equal(config.values.shift.startingCoinsBase, 750); // 300 base, the wallet of S4: a new save must EARN table 2 (1 500 xu) in shift 1, the start wallet does not buy it
+  assert.equal(config.values.shift.startingCoinsBase, 750); // 300 base, the wallet of S4: a new save must EARN table 2 (1 070 xu since owner decision 1 of S5, it was 1 500 xu) in shift 1, the start wallet does not buy it
   assert.equal(config.values.upgrades.keg.priceBase[1], 5000); // 2 000 base: Lv2 of the 2.1.0 re-priced keg ladder
   assert.equal(config.values.quests.loginTrackRepBase[0], 5);
   assert.equal(config.values.menu.bia.price, 50);

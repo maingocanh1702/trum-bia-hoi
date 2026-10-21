@@ -15,7 +15,7 @@ export const named = [
   { name: 'keg storage and batch', values: [[1, 1], [1.5, 1.5], [2, 1.5], [3, 2]].map(([s, b]) => ({ label: `keg x${s}/${b}`, patch: kegs(s, b) })) },
   { name: 'stall stock Lv1', values: values('cap', [15, 25, 45, 80], v => ({ 'upgrades.stall.stockCap.0': v })) },
   { name: 'rush warning', values: values('ms', [10000, 20000, 45000], v => ({ 'rush.schedule.warningMs': v })) },
-  // Table 2 is the first rung of the table ladder (600 base = 1 500 xu in the plan, the chip and every doc): its price decides what "enough" means for the row.
+  // Table 2 is the first rung of the table ladder (600 base = 1 500 xu in the plan, the chip and every doc when this plan was written; 428 base = 1 070 xu since owner decision 1 of S5): its price decides what "enough" means for the row.
   { name: 'table 2 price (ladder rung 1)', values: values('base', [350, 400, 500, 600, 800], v => ({ 'upgrades.table.tablePriceBase.0': v })) },
 ];
 export default { base: { 'shift.startingCoinsBase': 300 }, coordinates: named };
