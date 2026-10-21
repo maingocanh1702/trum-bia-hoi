@@ -793,5 +793,11 @@
   "upgrade.quickChairTitle": "Quick chair purchase",
   "upgrade.quickChair": "Add chair · table {n} · {cost} coins",
   "yard.slot": "Empty table spot",
-  "table.tray": "Tray slots: {n}"
+  "table.tray": "Tray slots: {n}",
+  "kick.button": "Send home",
+  "kick.price": "{cost} coins · −{rep} reputation",
+  "reason.tableNotLingering": "Guests await their food",
+  "error.tableNotLingering": "These guests are still waiting for food.",
+  "error.kickCostChanged": "The send-home price changed. Check again.",
+  "error.kickTableUnavailable": "This version cannot send tables home."
 }
