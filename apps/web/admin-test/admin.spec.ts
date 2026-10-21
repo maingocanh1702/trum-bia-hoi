@@ -378,7 +378,21 @@ test('S6 seat-model keys S1-S5 are editable one by one: each proposes with exact
   else await expect(detail(page).getByRole('button', { name: 'Duyệt đề xuất' })).toBeVisible();
  }
  expect(await page.locator('.admin-proposals strong').filter({ hasText: 'S6 seat-model key' }).count()).toBe(keys.length);
- // 2) Tier A end to end: the Economy Admin proposes, a Super (another person) approves and publishes; it is scheduled for the next day and admitted by the measured k.
+ // 2) Tier B end to end, AT ONCE and FIRST: the Economy Admin proposes on the active base, approves and publishes alone (next_shift = now); a guest already playing
+ // keeps its pin, the next new player opens on it. It must come before the Tier A key: a publication may never activate before the latest one does
+ // (registry.ts publicationAt: `registry:scheduleConflict`), and a Tier A key is scheduled for the next Vietnam midnight.
+ const old = await playerContext(browser); const oldVersion = (await (await old.ctx.request.get('/api/player/state')).json()).configVersion;
+ await editJson(published.B.path, published.B.value); const versionB = await proposal(page);
+ await detail(page).getByRole('button', { name: 'Duyệt đề xuất' }).click(); await detail(page).getByRole('button', { name: 'Xuất bản', exact: true }).click();
+ await page.getByRole('button', { name: 'Xác nhận xuất bản', exact: true }).click(); await expect(detail(page)).toContainText('Đã xuất bản');
+ const detailB = await (await page.request.get('/api/admin/config?version=' + versionB)).json();
+ expect(detailB.measurement.state).toBe('admitted'); expect(detailB.publication.effective_at).toBeLessThanOrEqual(detailB.publication.published_at); // admitted by the measured k, effective at once
+ expect((await (await old.ctx.request.get('/api/player/state')).json()).configVersion).toBe(oldVersion); // a player already playing keeps his pin
+ const atOnce = await playerContext(browser); expect(atOnce.state.configVersion).toBe(versionB);
+ expect((await (await atOnce.ctx.request.get('/api/player/config?version=' + versionB)).json()).runtime.queueBaseSlots).toBe(published.B.value);
+ await old.ctx.close(); await atOnce.ctx.close();
+ // 3) Tier A end to end, SCHEDULED: the Economy Admin proposes on the Tier B version (the latest admitted one is the draft's base), a Super (another person)
+ // approves and publishes; the registry schedules it for the next Vietnam midnight and admits it by the measured k.
  await editJson(published.A.path, published.A.value); const versionA = await proposal(page);
  await expect(detail(page)).toContainText('Thay đổi cấp A');
  const other = await browser.newContext({ baseURL: 'http://127.0.0.1:4181' }), approver = await other.newPage(); await login(approver, 'super-one');
@@ -388,19 +402,15 @@ test('S6 seat-model keys S1-S5 are editable one by one: each proposes with exact
  await expect(detail(approver)).toContainText('Đã xuất bản'); await expect(detail(approver)).toContainText('Từ ngày mới'); await expect(detail(approver).getByText('Hẹn giờ', { exact: true })).toBeVisible();
  const session = await (await approver.request.get('/api/admin/auth')).json(), detailA = await (await approver.request.get('/api/admin/config?version=' + versionA)).json();
  expect(detailA.publication.effective_at).toBeGreaterThan(session.actor.issuedAt); expect(detailA.measurement.state).toBe('admitted');
- expect(detailA.snapshot.spawn.capacityDemand.refTables).toBe(published.A.value);
+ expect(detailA.snapshot.spawn.capacityDemand.refTables).toBe(published.A.value); expect(detailA.snapshot.runtime.queueBaseSlots).toBe(published.B.value); // built on the Tier B version: both keys
  await other.close();
- // 3) Tier B end to end: the Economy Admin proposes on the new base, approves and publishes alone; the next new player is pinned to it at once.
- const old = await playerContext(browser); const oldVersion = (await (await old.ctx.request.get('/api/player/state')).json()).configVersion;
- await page.getByRole('button', { name: 'Làm mới', exact: true }).click();
- await editJson(published.B.path, published.B.value); const versionB = await proposal(page);
- await detail(page).getByRole('button', { name: 'Duyệt đề xuất' }).click(); await detail(page).getByRole('button', { name: 'Xuất bản', exact: true }).click();
- await page.getByRole('button', { name: 'Xác nhận xuất bản', exact: true }).click(); await expect(detail(page)).toContainText('Đã xuất bản');
- const detailB = await (await page.request.get('/api/admin/config?version=' + versionB)).json(); expect(detailB.measurement.state).toBe('admitted');
- expect((await (await old.ctx.request.get('/api/player/state')).json()).configVersion).toBe(oldVersion); // a player already playing keeps his pin
- const fresh = await playerContext(browser); expect(fresh.state.configVersion).toBe(versionB);
- const config = await (await fresh.ctx.request.get('/api/player/config?version=' + versionB)).json();
- expect(config.runtime.queueBaseSlots).toBe(published.B.value); expect(config.spawn.capacityDemand.refTables).toBe(published.A.value); // the Tier B version is built on the scheduled Tier A one
  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
- await old.ctx.close(); await fresh.ctx.close();
+ // 4) Both reach a new player: the isolated server clock (apps/web/admin-test/server.ts `/__test/advance`, the offset every `now()` reads) is moved one
+ // minute past the Tier A activation. Admin sessions (8 h) expire with that move, so nothing below talks to the admin API; a new guest opens on the
+ // Tier A version, whose config carries the Tier A key and the Tier B key it was built on.
+ await page.request.get('/api/__test/advance?ms=' + (detailA.publication.effective_at - detailA.publication.published_at + 60000));
+ const fresh = await playerContext(browser); expect(fresh.state.configVersion).toBe(versionA);
+ const config = await (await fresh.ctx.request.get('/api/player/config?version=' + versionA)).json();
+ expect(config.spawn.capacityDemand.refTables).toBe(published.A.value); expect(config.runtime.queueBaseSlots).toBe(published.B.value);
+ await fresh.ctx.close();
 });
