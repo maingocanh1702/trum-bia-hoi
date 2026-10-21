@@ -146,6 +146,8 @@ const SEAT_KEYS_ADDED_LATER: readonly { since: string; paths: readonly string[];
   { since: '2.0.22', paths: ['spawn.capacityDemand'], tiers: { A: ['spawn.capacityDemand'] } }, // plan S3, D19
   // plan S4, D14 D15 D18 D19: the table and chair ladders replace the postmvp `upgrades.backrest` placeholder (the same object in every older pin)
   { since: '2.0.23', paths: ['upgrades.table.tableUpgrade', 'upgrades.table.chairUpgrade'], tiers: { A: ['upgrades.table.tableUpgrade', 'upgrades.table.chairUpgrade'] }, restore: ['upgrades.backrest'] },
+  // plan S5, D8 D23: the first shifts of a save's life open without the stamina cooldown; a value of the Tier A section `shift`, so there is no tier entry to add
+  { since: '2.1.0', paths: ['shift.noCooldownFirstShifts'], tiers: {} },
 ];
 const versionOf = (label: unknown): number[] | null => { const m = typeof label === 'string' ? /^(\d+)\.(\d+)\.(\d+)$/.exec(label) : null; return m ? m.slice(1).map(Number) : null; };
 const olderThan = (label: unknown, since: string): boolean => { const a = versionOf(label), b = versionOf(since)!; return !!a && (a[0] - b[0] || a[1] - b[1] || a[2] - b[2]) < 0; };
@@ -262,6 +264,8 @@ function validate(c: Economy): void {
       whole(c.spawn.capacityDemand.refTables, 'spawn.capacityDemand.refTables', 1);
       if (!Number.isFinite(c.spawn.capacityDemand.maxMult) || c.spawn.capacityDemand.maxMult < 1) throw Error('config:spawn.capacityDemand.maxMult');
     }
+    // The shifts that open without a cooldown (S5, D8): a whole number of shifts, 0 turns the allowance off.
+    if (Object.hasOwn(c.shift, 'noCooldownFirstShifts')) whole(c.shift.noCooldownFirstShifts, 'shift.noCooldownFirstShifts');
     // Table and chair levels (S4): levels in order from 2, whole prices that stay whole once scaled, a gate inside the life path, benefits that only grow.
     const gate = (n: number) => { whole(n, 'lifePathGate'); if (n >= c.lifePath.length) throw Error('config:lifePathGate'); };
     const prices = (row: { priceBase: number; stepBase: number }, at: string) => {

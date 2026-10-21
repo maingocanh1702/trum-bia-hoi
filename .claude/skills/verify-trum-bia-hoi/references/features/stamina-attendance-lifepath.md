@@ -52,7 +52,7 @@ same `quests.ts` file — cross-link, not restated here.
   progress bar), `'Xem nâng cấp quán'` → `.business-card` unlock tiles, buy button `` `Mua ·
   ${price} xu` ``, owned state `'Đã có'` (disabled).
 
-- **Rules 28 (S1):** `parseProgressRequirement` adds `N tables` (owned tables); LP1 `requires` is `["4 tables"]` (D18), LP7 keeps `"10 seats"` (chairs) — unreachable while every alley has 4 slots. Pinned snapshots keep `"4 seats"`.
+- **Rules 28 (S1):** `parseProgressRequirement` adds `N tables` (owned tables); LP1 `requires` is `["4 tables"]` (D18), LP7 keeps `"10 seats"` (chairs) — unreachable while every alley has 4 slots (S5, JSON 2.1.0: every alley holds 8 tables, 10 seats are reachable and LP7 falls at shift 164-165 of the gate table's careers). Pinned snapshots keep `"4 seats"`.
 
 ## How to reach it
 
@@ -125,16 +125,13 @@ same `quests.ts` file — cross-link, not restated here.
   cannot require milestones that need them, including through earlier levels or another unlock'`. Line
   20 of the first test directly asserts `life_path_level_reached` fires exactly once with `level:
   'LP1'` — the autonomous-catch-up mechanism is proven, not just claimed.
-- `packages/engine/test/career.test.ts:6` — `'two real career days conserve the wallet and replay
-  purchases, claims, clocks and earned LP from a fresh save'` — cited **because** it directly asserts
-  `game.log.some(e => e.command.type === 'claimLifePath')` and `report.rows[1].lifePath === 1` across
-  a real 2-day bot-driven replay (not just adjacency to "career"); it also asserts `attendance_claimed`
-  fires twice. This is the only integration-level proof that claiming and attendance survive a
-  multi-day realistic run; [economy-k-ledger](economy-k-ledger.md) already cites this file's sim
-  cousin (`sim:career:gate`'s `assertAdvancedCareerK`) for the k-band angle — that gate's own
-  precondition (`lifePath >= 4`) is indirect, real-run evidence that life-path progression reaches at
-  least LP4 in a 30-day simulated career, though it asserts nothing about the claim mechanics
-  themselves.
+- `packages/engine/test/career.test.ts:7` — `'six real career days conserve the wallet and replay purchases, claims, clocks and earned LP from a fresh save'` (S5: it was `'two real career days …'`; with the JSON 2.1.0 prices the plan's bot under steady demand buys tables 2-8 first, its first second chair at shift 32 and its first extra glass at 36, and reaches LP4 on day 6, so the harness runs six days) — cited **because** it directly asserts `game.log.some(e => e.command.type ===
+  'claimLifePath')`, a life path that never goes back and ends at LP3 or higher, and `attendance_claimed` fired once
+  per day across a real bot-driven replay (not just adjacency to "career"). This is the only integration-level proof
+  that claiming and attendance survive a multi-day realistic run; [economy-k-ledger](economy-k-ledger.md) already
+  cites this file's sim cousin (`sim:career:gate`'s `assertAdvancedCareerK`) for the k-band angle — that gate's own
+  precondition (`lifePath >= 4`) is indirect, real-run evidence that life-path progression reaches at least LP4 in a
+  30-day simulated career, though it asserts nothing about the claim mechanics themselves.
 - `apps/web/test/attendance.spec.ts` (4 tests): `` `attendance claims exactly once, shows unclaimed
   past days and survives reload at ${viewport.width}×${viewport.height}` ``, `'live midnight expires
   an unclaimed check-in and wraps after the seventh observed day'`, `'returning after offline days
@@ -145,6 +142,10 @@ same `quests.ts` file — cross-link, not restated here.
   the milestone list, progress bar, and that buying `phone` doesn't unlock `qr` early.
 
 - `packages/engine/test/seat-model.test.ts` — `life path 1 counts tables, not seats, so a two-chair table can never block the next table`; `packages/engine/test/progression.test.ts` — `LP1 needs its scaled lifetime threshold and four tables, without deferred dog ownership; old config pins remain strict` (six seats on three tables are not LP1) and `all configured subsidiary gates...` (LP7 needs a fifth table's slot).
+
+- S5 first-shifts allowance (D8, rules 28, `shift.noCooldownFirstShifts` = 3). Engine tier — `packages/engine/test/no-cooldown.test.ts` (9 tests, mutations 8/8 killed + 1 equivalent): `'a new save opens shifts 2 and 3 at once with full stamina, and shift 4 asks for the stamina again'` (the production path: `game.command(startShift)` / `advance`), `'the first shifts of a save's whole life count, however the days fall: the cap of the day stays, a quiet night does not reset them'`, `'noCooldownFirstShifts is a count of shifts: N lets shifts 2..N open at once, 0 and 1 never do'`, `'noCooldownOpening reads the snapshot that opens the shift: no key, no allowance; the count is the whole life of the save'`, `'a save pinned to JSON 2.0.23 that played one shift opens its second at once when that opening adopts the bundle: the first shifts of a life belong to the opening snapshot'`, the byte-for-byte replays `'a rules-28 history recorded on JSON 2.0.23 replays byte for byte and re-encodes unchanged: the cooldown starts at the second shift, both early openings are refused with restFirst'` (fixture `packages/engine/test/fixtures/seat-2.0.23-v28.json`, recorded by the S4 engine) and `'a history that opens its early shifts without a rest replays byte for byte: the new rule is deterministic'`, and the key's shape: `'the bundled seed carries the key as a Tier A shift value of 3, a version above 2.0.23, and no number outside the JSON'`, `'snapshots from before the key load, bytes kept, and refuse every half-way shape; the key never loosens an older shape'`. Run: `node --import tsx --test packages/engine/test/no-cooldown.test.ts`.
+- S5 UI tier — `apps/web/test/rest-first-shifts.spec.ts` (12 cases: vi + en at 360 / 390 / 1280): `` `D8 shifts 2 and 3 open at once and shift 4 waits, in ${locale} at ${viewport.width}px` `` (after shifts 1 and 2 the rest line says `rest.ready` — "Ca kế mở ngay, không cần chờ." — and the energy bar is not a wait; the opening button works at once) and `` `D8 after the third shift the 30 minutes apply and the opening is refused until they pass, in ${locale} at ${viewport.width}px` `` (the line is the 30-minute countdown again; saves come from the real engine through `apps/web/test/fixtures/first-shifts.ts`). Through the DOM only. Run: `npx playwright test apps/web/test/rest-first-shifts.spec.ts` (default config).
+- S5 numbers — `packages/engine/test/sealed-economy.test.ts` (7 tests) pins the sealed JSON 2.1.0 ladder `lifePath[].lifetimeBase` 8 k · 20 k · 80 k · 280 k · 680 k · 1,2 tr · 2 tr (the owner's ladder, back in round 2) and the league ladder equal to it (so `peak:` of LP4–7 matches the first 21-day season); the gate evaluator `packages/engine/sim/balance-gates.ts` is the proof that LP1+2 ≤ shift 48, LP3+4 ≤ 96, LP5 ≤ 120 and LP7 at 140–170 hold on seeds 42 and 99 (`node --import tsx packages/engine/sim/balance-gates.ts --patch=<json> --label=<n> --out=<dir>`).
 
 ## Verification procedure
 
@@ -268,3 +269,10 @@ freezing of stamina/attendance, not yet written).
 | Date | Change |
 |---|---|
 | 2026-10-20 | S4 `eco21-table-chair-upgrades` (JSON 2.0.23): Duong Len Trum gates the table levels (Lv2 LP1, Lv3 LP2, Lv4 LP4, replacing the badge and reputation of the S1 ladder) and the chair levels (Lv2 LP1, Lv3 LP2) through `lifePathGate` of the ladder rows, compared with `w.lifePath` (a reached mốc opens the gate without being claimed); refusal `lifePathRequired` carries `requiredLifePath`, the UI names the mốc (`reason.lifePathRequired`). Proof: `packages/engine/test/table-chair-upgrades.test.ts` `tableUpgradeQuote answers what upgradeTable will: ...` and `chairUpgradeQuote answers what upgradeChair will: ...`. |
+
+## Changelog — S5 balance pass
+| Date | Change |
+|---|---|
+| 2026-10-20 | S5 `eco21-balance-pass` (JSON 2.1.0): new Tier A `shift.noCooldownFirstShifts` = 3 behind rules 28 — shifts 1–3 of a save's whole life open without full stamina (stamina = 100 % at opening, the per-day cap stays), shift 4 asks for the 30 minutes again; old saves and pins before the key keep the old rule byte for byte. LP ladder 8 k … 2 tr (base) sealed with the league ladder equal to it; `career.test.ts` now runs seven days (its title changed). `tests cited`: `no-cooldown.test.ts`, `rest-first-shifts.spec.ts`, `sealed-economy.test.ts`. |
+| 2026-10-21 | S5 `eco21-balance-pass`, review round 1: the life-path ladder's last rung is 2.24 tr (2 tr before), the walk of `lifePathStatus` no longer copies the world per requirement token and a token is parsed once per economy (behaviour-neutral): `packages/engine/test/progression-status.test.ts` (3 tests: `'lifePathStatus answers exactly what the world-copying original answered, on 4000 random worlds in each economy'`, `'a level handed to requirementStatus reads exactly as a world copy carrying that level, for every token the economy knows'`, `'the parse cache is per economy: a token means what THIS economy says, and an unknown token still throws every time'`; three mutations red) keeps the original implementation and compares it. With the plan's bot (start 2026-09-09, seeds 42 / 99): LP1 at shift 14 / 15, LP2 47 / 47, LP3 51 / 50, LP4 55 / 55, LP5 70 / 69, LP7 167 / 162. `career.test.ts` is `six real career days …` (title changed again). |
+| 2026-10-21 | S5 `eco21-balance-pass`, review round 2: LP7 and league tier 7 are back at 2 000 000 base (5 tr on screen), the owner's ladder 8 k · 20 k · 80 k · 280 k · 680 k · 1,2 tr · 2 tr (no gate needed 2.24 tr): `sealed-economy.test.ts` pins `lifePath[].lifetimeBase` and the league tiers equal to it. With the plan's bot (start 2026-09-09, seeds 42 / 99): LP1 shift 14 / 15, LP2 47 / 48 (limit 48), LP3 51 / 51, LP4 56 / 56, LP5 70 / 71, LP7 164 / 165. |

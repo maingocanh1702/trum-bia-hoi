@@ -116,8 +116,8 @@
   `P0 an empty keg is greyed and exactly the refill button asks for a tap` (+ axe) ·
   `P0 the door shows patience rings and a refused group of ${2|1} says "${2 ghế|Hết chỗ}" at ${w}px` (×6, + axe on `.door`) ·
   `P0 after shift 1 the HUD opens up and the Upgrades sheet holds exactly one card at ${w}px` (×3, + axe; fixture `rest`: a capacity snapshot, the frozen 2.0.4 file with a custom version, where the card is the first table level-up) ·
-  `P0 on the seat model after shift 1 the Upgrades sheet holds exactly one card, the second table, at ${w}px` (×3, + axe; fixture `seat-rest`: the bundled seat model, the card is `[data-goal="buyTable"]` "Mua bàn · 1.500 xu" with the single spotlight,
-  after buying it the one card is the next table at 4.000 xu and the nudge is spent; the save holds 2 tables and `coins − 1.500`) ·
+  `P0 on the seat model after shift 1 the Upgrades sheet holds exactly one card, the second table, at ${w}px` (×3, + axe; fixture `seat-rest`: the bundled seat model, the card is `[data-goal="buyTable"]` "Mua bàn · 1.070 xu" with the single spotlight,
+  after buying it the one card is the next table at 9.250 xu and the nudge is spent; the save holds 2 tables and `coins − 1.070`) ·
   `P0 after shift 2 the full Upgrades list and the Journey button open and nothing blinks`.
   Stage 00 (Wave 1 × S1, 2026-10-20): a new shop has one table and its seed is random, so the coins-fly case waits up to 150 s of game time (was 40 s) for the first guest who really walks out
   — a pair is turned away at the door without a penalty (`spawn.pPair`), the first single who sits down and waits out their patience is the one whose reputation falls; same assertion, 12/12 on a repeat.

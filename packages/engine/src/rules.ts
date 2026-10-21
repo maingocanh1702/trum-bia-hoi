@@ -8,14 +8,22 @@ import type { WorldView, Customer, Order, Table, World } from './types';
 // call in this hot path (every step, plus nextDayAt's binary search) it grew a 3-day headless career
 // to 1.4GB RSS on a 38MB JS heap. Same formatter, same output -- day keys and rollovers are unchanged.
 const dayKeyFormatters = new Map<string, Intl.DateTimeFormat>();
+// A day only ever changes at a whole minute of the clock for the zone the config allows (the validator pins `shift.dayRollover.tz` to the seed's Asia/Ho_Chi_Minh,
+// whose offset has been a whole number of minutes since 1970) and the simulations ask for the same minute thousands of times per simulated minute, so the last
+// answer per timezone is kept for its minute. daykey-formatter.test.ts compares it with a fresh formatter at every local midnight of a year in five timezones.
+const dayKeyMemo = new Map<string, { minute: number; key: string }>();
 export function dayKey(now: number, c: Config): string {
-  const tz = c.values.shift.dayRollover.tz;
+  const tz = c.values.shift.dayRollover.tz, minute = Math.floor(now / 60000); // config-exempt: milliseconds per minute
+  const last = dayKeyMemo.get(tz);
+  if (last?.minute === minute) return last.key;
   let formatter = dayKeyFormatters.get(tz);
   if (!formatter) {
     formatter = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' });
     dayKeyFormatters.set(tz, formatter);
   }
-  return formatter.format(now);
+  const key = formatter.format(now);
+  dayKeyMemo.set(tz, { minute, key });
+  return key;
 }
 /** Project the current rush first; upcoming slots are only relevant while accepting guests. */
 export function rushStatus(w: WorldView, c: Config) {
@@ -35,6 +43,18 @@ export function wellRestedBonus(w: WorldView, c: Config, payment: number, tip: n
   const bonus = wellRestedRemaining(w) > 0 ? Math.round((payment + tip) * c.values.shift.wellRested.mult) - payment - tip : 0;
   if (!Number.isSafeInteger(bonus) || bonus < 0) throw Error('ledger:invalid-bonus');
   return bonus;
+}
+/**
+ * D8 (rules 28, plan S5): the first `shift.noCooldownFirstShifts` shifts of a save's whole life open without full stamina, whatever the day. `c` is the
+ * snapshot that opens the shift; a snapshot without the key (JSON <= 2.0.23, a capacity pin, a 1.x pin) gives no allowance.
+ */
+export function noCooldownOpening(w: Pick<WorldView, 'completedShifts'>, c: Config): boolean {
+  const count = (c.values.shift as { noCooldownFirstShifts?: number }).noCooldownFirstShifts;
+  return count !== undefined && w.completedShifts < count;
+}
+/** What `startShift` asks of the stamina: full stamina is required (GDD 10), unless the first-shifts allowance applies. The one answer for the engine and the rest line of the screen. */
+export function restRequired(w: WorldView, c: Config): boolean {
+  return c.values.shift.openRequiresFullStamina && w.staminaMs < c.values.shift.durationMs && !noCooldownOpening(w, c);
 }
 export function stockCap(w: WorldView, c: Config): number { return c.values.upgrades.stall.stockCap[w.equipment.stall - 1]; }
 export function queueSlots(w: WorldView, c: Config): number {

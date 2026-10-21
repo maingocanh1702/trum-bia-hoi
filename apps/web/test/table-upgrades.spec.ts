@@ -54,14 +54,15 @@ for (const locale of ['vi', 'en'] as const) for (const viewport of [{ width: 390
     await perk(1, 2, [t('table.benefit.rounds', { n: 1 })]);
     await expect(level(1, lv3[0])).toBeDisabled(); await expect(level(1, lv3[0])).toHaveAccessibleDescription(t('reason.lifePathRequired', { name: t('lifePath.LP2') }));
     await expect(level(2, lv2[1])).toBeEnabled(); await expect(level(2, lv2[0])).toHaveCount(0);
-    // 3) Table 1's chairs to level 2 (1.15 x patience): the next chair level is the second upgrade of the shop and waits for LP2; the wallet no longer pays table 2's level.
+    // 3) Table 1's chairs to level 2 (1.15 x patience): the next chair level is the second upgrade of the shop and waits for LP2; the wallet still pays table 2's level.
     await chair(1, chairs[0]).click();
     await comfort(1, 2);
     await expect(chair(1, chairs[1])).toBeDisabled(); await expect(chair(1, chairs[1])).toHaveAccessibleDescription(t('reason.lifePathRequired', { name: t('lifePath.LP2') }));
-    await expect(level(2, lv2[1])).toBeDisabled(); await expect(level(2, lv2[1])).toHaveAccessibleDescription(t('reason.notEnoughCoins'));
-    // 4) Table 2's chairs (the shop's second chair upgrade) leave too little for the third table's chairs: one reason each, the wallet.
+    await expect(level(2, lv2[1])).toBeEnabled();
+    // 4) Table 2's chairs (the shop's second chair upgrade) leave too little for table 2's level and for the third table's chairs: one reason each, the wallet.
     await expect(chair(2, chairs[1])).toBeEnabled(); await chair(2, chairs[1]).click();
     await comfort(2, 2);
+    await expect(level(2, lv2[1])).toBeDisabled(); await expect(level(2, lv2[1])).toHaveAccessibleDescription(t('reason.notEnoughCoins'));
     await expect(chair(3, chairs[2])).toBeDisabled(); await expect(chair(3, chairs[2])).toHaveAccessibleDescription(t('reason.notEnoughCoins'));
     for (const n of [1, 2, 3, 4]) for (const button of await card(n).getByRole('button').all()) expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
     // Labels stay short: no line, chip or button of a card is longer than six words, whatever its level.

@@ -49,16 +49,16 @@ test('a new game opens one table with one chair; the home alley caps tables at i
   assert.equal(c.upgrades.table.startingTables, 1);
   assert.deepEqual(w.tables.map(t => [t.capacity, t.level]), [[1, c.runtime.initialTableLevel]]);
   const slots = c.locations.list.find(row => row.id === w.location)!.tableSlots;
-  assert.equal(slots, 4);
+  assert.equal(slots, 8); // JSON 2.1.0 (S5): eight places in every alley - the plan's strict seat-saving bot needs 6-8 table purchases before its first second chair
   const paid: number[] = [];
   while (w.tables.length < slots) {
     const q = buyTableQuote(w, g.config); assert.ok(q.ok, q.reason ?? '');
     assert.equal(q.cost, c.upgrades.table.tablePriceBase[w.tables.length - 1]);
     assert.deepEqual(send(g, { type: 'buyTable' }), { ok: true, amount: q.cost }); paid.push(q.cost!);
   }
-  assert.equal(w.lifePath, 0, 'tables 2-4 are never gated by Duong Len Trum');
-  assert.deepEqual(paid, seed.upgrades.table.tablePriceBase.slice(0, 3).map(n => Math.round(n * seed.k.value)));
-  assert.deepEqual(w.tables.map(t => t.capacity), [1, 1, 1, 1], 'every bought table comes with exactly one chair');
+  assert.equal(w.lifePath, 0, 'tables 2-8 are never gated by Duong Len Trum');
+  assert.deepEqual(paid, seed.upgrades.table.tablePriceBase.slice(0, slots - 1).map(n => Math.round(n * seed.k.value)));
+  assert.deepEqual(w.tables.map(t => t.capacity), Array(slots).fill(1), 'every bought table comes with exactly one chair');
   assert.deepEqual(buyTableQuote(w, g.config).reason, 'maxTables');
   assert.deepEqual(send(g, { type: 'buyTable' }), { ok: false, reason: 'maxTables' });
   const bought = w.events.filter(e => e.type === 'table_bought');
@@ -192,8 +192,11 @@ test('D2 migration: a 3-table x6-seat Lv3 save becomes 3 tables x2 chairs at lev
   assert.deepEqual(decodeSave(encodeSave(g)).world, w, 'the adoption replays byte for byte');
 });
 test('D2 migration keeps only the first tableSlots tables of a larger shop', () => {
+  // The bundled alleys hold eight tables since 2.1.0, so the larger shop (6 tables) meets an alley of four, as the plan's D13 drew it.
+  const raw = structuredClone(config.raw); raw._meta.version = 'migration-alley-4'; raw.locations.list.forEach(l => { l.tableSlots = 4; }); raw.upgrades.table.chairsAfterTables = 4;
+  const alleyOfFour = loadConfig(raw);
   const { g } = capacitySave(6), w = g.world, kept = w.tables.slice(0, 4).map(t => t.id);
-  assert.ok(g.command({ command: { type: 'startShift' }, at: w.now, idempotencyKey: 'adopt-seats' }, config).ok);
+  assert.ok(g.command({ command: { type: 'startShift' }, at: w.now, idempotencyKey: 'adopt-seats' }, alleyOfFour).ok);
   assert.deepEqual(w.tables.map(t => [t.id, t.capacity]), kept.map(id => [id, 2]));
   assert.deepEqual(w.events.find(e => e.type === 'seat_model_adopted')!.data, { shiftId: w.shift!.id, tablesBefore: 6, tablesAfter: 4, seatsBefore: 36, seatsAfter: 8 });
   assert.deepEqual(buyTableQuote(w, g.config).reason, 'maxTables');
@@ -210,7 +213,7 @@ test('seat-model commands and snapshots refuse pre-28 replay entries', () => {
 test('seat-model snapshots fail closed on unreachable chairs, short price ladders, unseatable onboarding or bad probabilities', () => {
   const cases: [string, (raw: Seed) => void][] = [
     ['no table slot for the starting table', raw => { raw.locations.list[0].tableSlots = 0; }],
-    ['chairs after more tables than any alley holds', raw => { raw.upgrades.table.chairsAfterTables = 5; }],
+    ['chairs after more tables than the smallest alley holds', raw => { raw.upgrades.table.chairsAfterTables = Math.min(...raw.locations.list.map(l => l.tableSlots)) + 1; }],
     ['table ladder shorter than the slots', raw => { raw.upgrades.table.tablePriceBase = [600]; }],
     ['chair ladder shorter than the slots', raw => { raw.upgrades.table.chairPriceBase = [4000]; }],
     ['pair probability', raw => { raw.spawn.pPair = 1.5; }],

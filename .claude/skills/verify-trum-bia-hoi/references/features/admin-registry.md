@@ -285,7 +285,7 @@ inspection, while storage failure prevents any write and confirmed ACK clears be
 operator pending intent'` · `'a delayed history response cannot restore protected contents after
 logout; damaged recovery is downloadable'`.
 
-`packages/engine/test/forecast.test.ts` (5 cases) — direct engine-tier proof of `projectEconomy`/
+`packages/engine/test/forecast.test.ts` (7 cases: the five below, the after-timeline case of the admin k admission and, since S5 review round 1, the D8 case at the end of this paragraph) — direct engine-tier proof of `projectEconomy`/
 `compareEconomy` (`packages/engine/sim/forecast.ts`), the sim `reportFromBackup()` above wraps for
 `/admin/forecast`: `'seven-day projection conserves the wallet, preserves a real paused input and
 deterministically replays every modeled command'`, `'scheduled and expired prices switch only at real
@@ -296,8 +296,7 @@ returned principal and renews by location identity after multiplier tuning'` (th
 a lease across a projected multiplier retune, checking deposit-refund/penalty math and per-location
 renewal identity). None of these five asserts a `k` value directly (unchanged by v5-admin-k-admission,
 which added `k` to `compareEconomy()`'s return but did not add assertions to these five) — the
-k-measurement proof instead lives in `registry.test.ts`'s new cases above, which exercise the field
-through `publish()`'s admission gate rather than through `compareEconomy()` in isolation.
+k-measurement proof instead lives in `registry.test.ts`'s new cases above, which exercise the field through `publish()`'s admission gate rather than through `compareEconomy()` in isolation. S5 review round 1 added `'the forecast opens the first shifts of a save at once and waits the cooldown from the fourth, like the engine; with the allowance off it waits from the second (D8)'`: the forecast bot asks the engine's own `restRequired` (rules.ts, read from the snapshot that opens the shift) instead of testing the stamina itself, so a 2.1.0 save's first three shifts open at once in the projection too; red with the old stamina condition.
 
 `apps/server/test/forecast.test.ts` (4 cases) — server-tier proof of the forecast Worker path that
 `measureKViaForecast()` rides on: `'seven-day registry plan includes removed audience and expiry
@@ -456,3 +455,4 @@ real upload.
 | Date | Change |
 |---|---|
 | 2026-10-20 | S4 (JSON 2.0.23): two Tier A dotted entries `upgrades.table.tableUpgrade` and `upgrades.table.chairUpgrade` (prices, gates, benefits: dual approval, `next_day`) join `_meta.governance.tiers.A.sections`; `registry.test.ts` `tier classifier covers every section, flags beat broad balance groups, and mixed changes require all roles` walks them and `npm run check:config` (coverage) resolves them. The admin editor tier on Windows stays the baseline's `SKIPPED:`; editing each key one by one and the k-admission check is S6's. |
+| 2026-10-21 | S5 `eco21-balance-pass`, review round 1: (a) `apps/web/admin-test/admin.spec.ts` `login()` moves the isolated clock one TOTP step (`/api/__test/advance?ms=30000`) before it asks `/api/__test/otp` for the code of every `super*` subject: `admin-auth.ts` `factor()` refuses a step not newer than the subject's last one (replay protection, untouched) and the test server answers the step of its own clock, so a second `super-one` login inside one 30 s step failed `M2-ONBOARDING` with "Mã không hợp lệ, hết hạn hoặc đã dùng" on the real Linux runs of both chain tips; `moderation.spec.ts` already did the same. Test-only, nothing weakened; the admin Playwright tier does not run on Windows (SKIPPED block of the S5 PR), the validation is the orchestrator's targeted Linux admin run. (b) `packages/engine/test/forecast.test.ts` gained the D8 case cited above (7 cases). |

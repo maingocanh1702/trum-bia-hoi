@@ -6,7 +6,7 @@ import { Seasons } from './Seasons';
 import { Leaderboard } from './Leaderboard';
 import { Locations } from './Locations';
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { buyGlassQuote, buyTableQuote, buyChairQuote, tableUpgradeQuote, chairUpgradeQuote, tableUpgrade, tableBenefit, effectiveTableLevel, chairPatienceMult, guestPatienceLeft, isEconomy2, isSeatModel, PAIR, BUSINESS_UNLOCKS, menuReport, orderPreparation, beerStatus, washerStatus, kitchenStatus, flyerQuote, SIGN_STYLES, signboardQuote, DISHES, EQUIPMENT, currentGuests, deliveryQuote, dogUpgradeQuote, encodeSave, freshnessMs, kickAllQuote, lifePathStatus, restockQuote, rushStatus, stockCap, unlockQuote, upgradeQuote, wellRestedRemaining, type BusinessUnlock, type Command, type Equipment, type Order, type RequirementStatus, type Table, type DomainEvent, type Game } from '../../../packages/engine/src';
+import { buyGlassQuote, buyTableQuote, buyChairQuote, tableUpgradeQuote, chairUpgradeQuote, tableUpgrade, tableBenefit, effectiveTableLevel, chairPatienceMult, guestPatienceLeft, isEconomy2, isSeatModel, PAIR, BUSINESS_UNLOCKS, menuReport, orderPreparation, beerStatus, washerStatus, kitchenStatus, flyerQuote, SIGN_STYLES, signboardQuote, DISHES, EQUIPMENT, currentGuests, deliveryQuote, dogUpgradeQuote, encodeSave, freshnessMs, kickAllQuote, lifePathStatus, restockQuote, restRequired, rushStatus, stockCap, unlockQuote, upgradeQuote, wellRestedRemaining, type BusinessUnlock, type Command, type Equipment, type Order, type RequirementStatus, type Table, type DomainEvent, type Game } from '../../../packages/engine/src';
 import { Sprite, TableSeats, menuAsset, reactions, hasSpriteArt } from './assets';
 import { translate } from './i18n';
 import { advanceGuide, dispatch, download, readSettings, writeSettings, replaceSave, type BootSession } from './local';
@@ -274,6 +274,8 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
     <button onClick={() => location.reload()}>{t('save.retry')}</button></main>;
 
   const shift = w.shift, inShift = w.phase !== 'resting';
+  // D8 (rules 28): the first shifts of a save open at once, so between them the stamina is not a wait: one answer from the engine for the bar and the rest line.
+  const mustRest = restRequired(w, game.config), energyMs = inShift || mustRest ? w.staminaMs : c.shift.durationMs;
   const rush = rushStatus(w, game.config);
   const rushReports = sheet === 'book' ? w.events.filter(e => e.type === 'rush_ended' && e.data.shiftId === shift?.id) : [];
   const kitchen = kitchenStatus(w, game.config);
@@ -440,7 +442,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
     <main className={`game weather-${shift?.weather ?? 'sunny'}${!w.active || w.paused ? ' is-paused' : ''}`}>
       <header className="hud">
         <div className="money" {...lit(spot.target?.kind === 'wallet')}><Icon name="coin" /><div><span className="sr-only">{t('coins')}</span><strong>{num(w.coins)}</strong></div>{spot.target?.kind === 'wallet' && pointer}</div>
-        {show.hud && <div className="energy"><div><Icon name="bolt" /><strong>{inShift && shift ? time(shift.endsAt - w.now) : `${Math.floor(w.staminaMs / c.shift.durationMs * 100)}%`}</strong></div><span className="energy-track"><i style={{ width: `${w.staminaMs / c.shift.durationMs * 100}%` }} /></span></div>}
+        {show.hud && <div className="energy"><div><Icon name="bolt" /><strong>{inShift && shift ? time(shift.endsAt - w.now) : `${Math.floor(energyMs / c.shift.durationMs * 100)}%`}</strong></div><span className="energy-track"><i style={{ width: `${energyMs / c.shift.durationMs * 100}%` }} /></span></div>}
         {show.hud && <button className="icon-button settings-button" onClick={() => open('settings')} aria-label={t('nav.settings')}><Icon name="settings" /></button>}
       </header>
       {next && <div className="goal-row"><GoalChip goal={next} coins={w.coins} t={t} num={num} decimal={decimal} onOpen={openGoal} /></div>}
@@ -467,7 +469,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
       </section>
       {show.hud && <div className="stock-strip">{DISHES.filter(d => c.menu[d].unlock.kitchenLevel <= w.equipment.kitchen).map(d => <button key={d} className={d === 'bia' ? 'beer-stock' : undefined} onClick={() => open('stock')} aria-label={d === 'bia' ? beerInventory : `${t(`ingredient.${d}`)}: ${w.inventory[d]}/${stockCap(w, game.config)}`}><Sprite id={d === 'bia' ? 'keg-lv1' : menuAsset[d]} /><strong>{w.inventory[d]}<small>/{stockCap(w, game.config)}</small></strong></button>)}<button className={`flyer-stock ${flyers.remainingMs > 0 ? 'active' : ''}`} onClick={() => open('flyer')} aria-label={t('flyer.open', { n: flyers.stock })}><Sprite id="flyer-bundle" /><strong>{flyers.remainingMs > 0 ? time(flyers.remainingMs) : flyers.stock}</strong></button>{show.quests && <button className="quest-trigger" onClick={() => open('quests')} aria-label={t('quests.title')}><Icon name="book" /><strong>{w.daily?.rows.filter(r => r.progress >= r.target).length ?? 0}/{c.quests.daily.count}</strong></button>}<button className="reputation" onClick={() => open('journey')}><Icon name="star" />{num(w.reputation)}</button></div>}
       {w.phase === 'closing' && <p className="status-line">{t('closing')}</p>}
-      {!inShift && shift && <div className="status-line rest-summary"><span>{w.staminaMs < c.shift.durationMs ? c.shift.regenRate > 0 ? t('rest.regen', { time: time(Math.ceil((c.shift.durationMs - w.staminaMs) / c.shift.regenRate / 1000) * 1000) }) : t('rest.regenPaused') : t('rest.free')}</span><button onClick={() => open('book')}><Icon name="book" />{t('nav.book')}</button></div>}
+      {!inShift && shift && <div className="status-line rest-summary"><span>{mustRest ? c.shift.regenRate > 0 ? t('rest.regen', { time: time(Math.ceil((c.shift.durationMs - w.staminaMs) / c.shift.regenRate / 1000) * 1000) }) : t('rest.regenPaused') : w.staminaMs < c.shift.durationMs ? t('rest.ready') : t('rest.free')}</span><button onClick={() => open('book')}><Icon name="book" />{t('nav.book')}</button></div>}
       {showGuide && <div className="guide" role="status"><span className="guide-mark">!</span><p>{t(guide.waitFor === 'order_ready' ? `order.feedback.${orderPreparation(w, game.config, guideOrder)}` : guide.copyKey)}</p>{c.onboarding.stepGuide.skippable && <button onClick={() => setPrefs({ guideDone: true, guideIndex: null })}>{t('skip')}</button>}</div>}
       {show.hud && <nav className="bottom-nav" aria-label={t('brand')}>
         <button className={!inShift ? 'primary' : ''} onClick={() => inShift ? open('book') : run({ type: 'startShift' })}><Icon name={inShift ? 'book' : 'bolt'} /><span>{t(inShift ? 'nav.book' : 'nav.shift')}</span></button>

@@ -66,14 +66,19 @@ test('static guest serves, restocks, upgrades, closes shift and persists across 
   await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click();
   // Seat model (rules 28): the first purchase a one-table shop earns is table 2 (plan §7 owner line 3).
   const upgrade = page.getByRole('dialog').getByRole('button', { name: /^Mua bàn · / });
-  await expect(upgrade).toBeEnabled(); await upgrade.click();
+  // P0, owner decision 1 of S5 (the founder, 2026-10-21; BLOCKERS "04 · P0", gate row shift1.plan): table 2 costs 1 070 xu and at least 4 runs in 5 can buy it when shift 1 closes (83 % of 300 probes of the
+  // evaluator). This journey plays ONE random game per viewport, so about one run in five misses the purchase by the owner's own criterion (13 of 18 viewport-runs bought it on the price commit): the check
+  // stays SOFT, so a run on which it is red still runs the rest of the journey (persistence, reload, new tab) and shows that this is the only red line. The proof of the 4 in 5 is `npm run sim:balance`.
+  await expect(upgrade).toBeVisible();
+  await expect.soft(upgrade, 'P0: table 2 (1.070 xu) must be affordable at the end of shift 1 on at least 4 runs in 5 (plan section 7 owner line 3, gate shift1.plan)').toBeEnabled();
+  if (await upgrade.isEnabled()) await upgrade.click();
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Cài đặt', exact: true }).click();
   await expect(page.locator('.build-version code')).toHaveAttribute('title', process.env.TBH_GUEST_COMMIT ?? execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim());
   const before = await exported(page);
   expect(before.world.shift!.stats.served).toBeGreaterThan(0);
   const shop = (world: World) => world.tables.map(table => [table.id, table.capacity, table.level]);
-  expect(before.world.tables).toHaveLength(2);
+  expect.soft(before.world.tables, 'table 2 is bought').toHaveLength(2);
   await page.getByRole('button', { name: /Tài khoản/ }).click();
   await expect(page.locator('.account-panel')).toContainText(/Bản chơi trên trình duyệt.*Đăng nhập, đồng bộ và bảng xếp hạng online chưa mở/);
   await expect(page.locator('.account-benefits, .account-google')).toHaveCount(0);

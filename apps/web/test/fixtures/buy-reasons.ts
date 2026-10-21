@@ -10,7 +10,7 @@ import { steadyDemand } from '../../../../packages/engine/test/fixtures/steady-d
 //   rich          rich wallet, shift not open: table 1 at Lv3 (its next level wants a badge), tables 2-3 affordable, another table affordable
 //   maxed         both tables of a two-table shop are at their top level (the badge gate of Lv4 is lifted in this config): one has guests, one is empty
 //   seat-states   seat model, poor wallet, 2 tables of one chair: table 3 is out of reach, a chair waits for four tables, a level wants two chairs
-//   seat-rich     seat model, rich wallet, four tables of one chair, shift not open: every chair for sale, no level yet, the alley is full
+//   seat-rich     seat model, rich wallet, a full alley of tables of one chair (the alley's tableSlots), shift not open: every chair for sale, no level yet, no table left to buy
 //   seat-maxed    seat model, rich wallet, four tables: tables 1-2 are pairs at their top level (life-path gates lifted), table 1 has guests, table 2 is empty
 //   seat-maxed-both  the same two pairs with their chairs at the top too (Lv4 tables, Lv3 chairs): each card shows two "max" buttons, resting
 //   beer|wait|seat  a shift open a few seconds before the first guest leaves for that reason: out of beer · waited too long · no seat
@@ -66,12 +66,12 @@ if (mode === 'states') {
   send(g, { type: 'startShift' }, 'open'); step(g, () => g.world.tables[0].state !== 'empty');
   console.log(JSON.stringify({ save: encodeSave(g), now: g.world.now, coins: g.world.coins, tables: g.world.tables.map(t => ({ level: t.level, state: t.state })) }));
 } else if (mode === 'seat-states') {
-  // One table bought with the wallet the shop started with, so the next table (4 000) and every chair are out of reach: 750 xu are left.
+  // One table bought with the wallet the shop started with, so the next table (9 250) and every chair (1 000 and up) are out of reach: the 750 xu of a new shop are left.
   const g = configured(raw => { raw.shift.startingCoinsBase += raw.upgrades.table.tablePriceBase[0]; });
   send(g, { type: 'buyTable' }, 'table-2');
   console.log(JSON.stringify(facts(g)));
 } else if (mode === 'seat-rich') {
-  console.log(JSON.stringify(facts(seatShop(4, 0))));
+  console.log(JSON.stringify(facts(seatShop(config.values.locations.list.find(row => row.id === config.values.locations.fallback)!.tableSlots, 0))));
 } else if (mode === 'seat-maxed') {
   // The shipped levels sit behind Duong Len Trum (LP1 / LP2 / LP4, S4), earned over days: those gates are lifted here so two pairs can really be upgraded to the end.
   const g = seatShop(4, 2, raw => { for (const row of raw.upgrades.table.tableUpgrade.levels) row.lifePathGate = 0; });

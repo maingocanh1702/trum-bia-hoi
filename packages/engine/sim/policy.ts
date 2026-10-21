@@ -19,7 +19,12 @@ export function seatGrowth(game: Game): { cost: number; command: Command } | nul
   return null;
 }
 
-export function createManagementPolicy(game:Game,send:(command:Command)=>void) {
+/**
+ * `directLease` (career policy v4, plan S5): a shop that is free to lease takes the BEST location the life path allows and the wallet pays for, straight away,
+ * instead of climbing one location per lease (D13 / DESIGN-story "thuê thẳng mặt bằng"). The default keeps the stepwise climb of v3, which the server forecast
+ * (apps/server/src/forecast.ts) still projects.
+ */
+export function createManagementPolicy(game:Game,send:(command:Command)=>void,{directLease=false,seatsFirst=true}:{directLease?:boolean;seatsFirst?:boolean}={}) {
   const w=game.world;
   let attainedLocationId:unknown=w.lease?.locationId??w.location;
   if(!w.lease)for(let i=w.events.length-1;i>=0;i--) {
@@ -42,9 +47,13 @@ export function createManagementPolicy(game:Game,send:(command:Command)=>void) {
     }
     for (const item of ['phone', 'qr'] as const) { const q = unlockQuote(w, config, item); if (q.ok && affordable(q.cost)) send({ type: 'buyUnlock', item }); }
     // Seat model (plan S1, D18): seats first -- the next table, else one second chair -- saving for it before anything else.
-    const growth = seatGrowth(game);
+    const growth = seatsFirst ? seatGrowth(game) : null;
     if (growth) { if (affordable(growth.cost)) send(growth.command); return attendLocation(); }
     const candidates: { cost: number; command: Command }[] = [];
+    if (!seatsFirst && isSeatModel(c)) { // the price decides: tables and chairs are candidates like everything else
+      const table = buyTableQuote(w, config); if (table.ok) candidates.push({ cost: table.cost!, command: { type: 'buyTable' } });
+      for (const t of w.tables) { const q = buyChairQuote(w, config, t); if (q.ok) { candidates.push({ cost: q.cost!, command: { type: 'buyChair', tableId: t.id } }); break; } }
+    }
     for (const kind of EQUIPMENT) { const q = upgradeQuote(w, config, kind); if (q.ok) candidates.push({ cost: q.cost!, command: { type: 'upgrade', kind } }); }
     // Table levels pay off on a capacity snapshot, and on a seat snapshot once it carries the S4 ladders (extra round, second snack, tip); chair levels
     // (patience) only with them. A seat snapshot from before the ladders keeps buying neither, as it always did.
@@ -68,7 +77,12 @@ export function createManagementPolicy(game:Game,send:(command:Command)=>void) {
       if (!q.stock && !q.buyReason) send({ type: 'buyFlyer' });
       if (!flyerQuote(w, config).useReason) send({ type: 'activateFlyer', shiftId: w.shift!.id });
     }
-    if (w.phase === 'resting' && !w.lease) {
+    if (w.phase === 'resting' && !w.lease && directLease) {
+      for (const l of c.locations.list.filter(l => l.id !== c.locations.fallback).sort((a, b) => b.mult - a.mult)) {
+        const q = leaseQuote(w, config, l.id);
+        if (q.ok && affordable(q.cost)) { send({ type: 'rentLocation', locationId: l.id, leaseId: q.leaseId, maxCost: q.cost }); attainedLocationId = l.id; break; }
+      }
+    } else if (w.phase === 'resting' && !w.lease) {
       const attained=c.locations.list.find(l=>l.id===attainedLocationId);
       if(!attained)throw Error('policy:locationMissing');
       const ordered = c.locations.list.filter(l => l.id !== c.locations.fallback).sort((a, b) => a.mult - b.mult);

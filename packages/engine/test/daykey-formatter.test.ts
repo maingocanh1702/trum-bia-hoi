@@ -53,3 +53,28 @@ test('a different timezone gets its own cached formatter and never leaks into th
   assert.equal(dayKey(at, other), '2026-09-08');
   assert.equal(dayKey(at, config), '2026-09-09');
 });
+
+test('the per-minute memo never changes an answer: every local midnight of a year in five timezones, a minute either side, and a random walk through the clock', () => {
+  // The memo keeps the last answer of a timezone for its minute. A day changes only at a whole minute, so a memoised answer must equal a fresh formatter's at every
+  // millisecond: check the instants around each local midnight (the only place an answer can change) and 100 000 random instants, interleaving the timezones.
+  const zones = [tz, 'America/Los_Angeles', 'Asia/Kolkata', 'Australia/Lord_Howe', 'Pacific/Chatham'];
+  const fresh = new Map(zones.map(zone => [zone, new Intl.DateTimeFormat('en-CA', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit' })]));
+  const as = (zone: string) => ({ ...config, values: { ...config.values, shift: { ...config.values.shift, dayRollover: { ...config.values.shift.dayRollover, tz: zone } } } }) as typeof config;
+  const configs = new Map(zones.map(zone => [zone, as(zone)]));
+  const check = (zone: string, at: number) => assert.equal(dayKey(at, configs.get(zone)!), fresh.get(zone)!.format(at), `${zone} at ${new Date(at).toISOString()}`);
+  const start = Date.parse('2026-01-01T00:00:00Z');
+  for (const zone of zones) {
+    // Midnights found by scanning every 15 minutes (offsets are whole multiples of 15 minutes here) and probing the minute around each change of date.
+    let previous = fresh.get(zone)!.format(start);
+    for (let at = start; at < start + 366 * 86400000; at += 900000) {
+      const key = fresh.get(zone)!.format(at);
+      if (key !== previous) for (let probe = at - 900000 - 1000; probe <= at + 1000; probe += 500) { check(zone, probe); check(zones[(zones.indexOf(zone) + 1) % zones.length], probe); }
+      previous = key;
+    }
+  }
+  let state = 12345;
+  const random = () => { state = (state * 1103515245 + 12345) % 2147483648; return state / 2147483648; };
+  for (let i = 0; i < 100000; i++) check(zones[Math.floor(random() * zones.length)], start + Math.floor(random() * 3 * 366 * 86400000));
+  assert.throws(() => dayKey(NaN, config), RangeError); assert.throws(() => dayKey(NaN, config), RangeError); // an invalid time is never answered from the memo
+});
+

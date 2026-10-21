@@ -55,6 +55,19 @@ test('a candidate whose after-timeline versions are a subset of the before-timel
  assert.notEqual(report.k.candidate.mean,report.k.baseline.mean);
 });
 
+test('the forecast opens the first shifts of a save at once and waits the cooldown from the fourth, like the engine; with the allowance off it waits from the second (D8)',()=>{
+ const open=(count:number)=>changed('forecast-first-shifts-'+count,raw=>{raw.shift.dailyShiftCap.newbie=8;raw.entitlements.freeSessionsPerDay.bySegment.newbie=8;(raw.shift as {noCooldownFirstShifts?:number}).noCooldownFirstShifts=count;});
+ const gaps=(cfg:Config)=>{
+  const events=projectEconomy(new Game(cfg,42,START),[{from:0,config:cfg}],1).game.world.events,opened=events.filter(e=>e.type==='shift_opened').map(e=>e.at),closed=events.filter(e=>e.type==='shift_closed').map(e=>e.at);
+  assert.ok(opened.length>=4&&closed.length>=3,'a day holds the first four shifts');return [1,2,3].map(i=>opened[i]-closed[i-1]);
+ };
+ const cfg=open(3),cooldown=cfg.values.shift.durationMs/cfg.values.shift.regenRate-1000;
+ const [second,third,fourth]=gaps(cfg);
+ assert.ok(second<60000&&third<60000,'shifts 2 and 3 open the moment the previous one has closed');assert.ok(fourth>=cooldown,'shift 4 waits the 30 minutes of GDD 10');
+ const off=gaps(open(0));
+ assert.ok(off.every(gap=>gap>=cooldown),'with the allowance off every opening after the first waits for the stamina, as before S5');
+});
+
 test('forecast rejects unsupported horizons and ambiguous timelines before projecting',()=>{
  const source=new Game(config,42,START);
  for(const days of [0,-1,1.1,8,NaN,Infinity])assert.throws(()=>projectEconomy(source,[{from:0,config}],days),/forecast:days/);

@@ -6,6 +6,10 @@ import { credit } from '../src/rules';
 import { nextSeasonEnd } from '../src/seasons';
 const DAY = 86400000;
 const epoch = Date.parse(config.values.league.seasons.epochUtc);
+const rankingDays = config.values.league.seasons.ranking.days;
+/** The calendar these period tests were written for: a weekly ranking inside a two-week contest, so the two windows differ. JSON 2.1.0 seals ONE 21-day window for both
+ *  (the career's first Vietnam midnight is a ranking-season start), which cannot show "ranking resets, the contest continues"; the mechanism is proven on this calendar. */
+function split(): Config { const raw = structuredClone(config.raw); raw.league.seasons.ranking.days = 7; raw.league.seasons.contest.days = 14; return loadConfig(raw); }
 const send = (g: Game, command: Command) => g.command({ at: g.world.now, idempotencyKey: `season-${g.log.length}`, command });
 const replay = (g: Game) => assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
 function served(at = epoch + DAY, c: Config = config) {
@@ -29,7 +33,7 @@ test('actual service creates both seasonal counters and a real peak; refunds, qu
 
 test('exact ranking boundary resets only ranking; menu and offline clocks preserve waiting time and fine/coarse replay equality', () => {
   for (const active of [true, false]) {
-    const a = served(), w = a.world;
+    const a = served(epoch + DAY, split()), w = a.world;
     send(a, { type: 'activity', active, ...(active ? { paused: true } : {}) });
     const b = decodeSave(encodeSave(a)), amount = w.seasonEarned, end = w.seasons!.ranking.endsAt;
     const table = w.tables.find(t => t.order)!, wait = table.order!.placedAt + table.order!.patienceMs - w.now;
@@ -45,7 +49,7 @@ test('exact ranking boundary resets only ranking; menu and offline clocks preser
 });
 
 test('an order served exactly at rollover belongs wholly to the new window and idempotent retries do not add another score', () => {
-  const end = epoch + 7 * DAY, g = new Game(config, 42, end - 11000);
+  const end = epoch + rankingDays * DAY, g = new Game(config, 42, end - 11000);
   send(g, { type: 'startShift' }); g.advance(end);
   const table = g.world.tables.find(t => t.order?.items.every(i => i.state === 'ready'))!;
   const e = { at: end, idempotencyKey: 'at-boundary', command: { type: 'serve' as const, tableId: table.id, orderId: table.order!.id } };
@@ -82,26 +86,26 @@ test('daily cap counts actual credited income only; zero credit leaves tie times
 test('completed shifts are attributed at close time independently of earnings, with no fake authenticated rank', () => {
   const g = served(); send(g, { type: 'endShift' }); g.advance(g.world.now + 3600000);
   assert.equal(g.world.completedShifts, 1); assert.equal(g.world.seasons!.ranking.closedShifts, 1); assert.equal(g.world.seasons!.contest.closedShifts, 1);
-  send(g, { type: 'activity', active: false }); g.catchUp(epoch + 7 * DAY);
+  send(g, { type: 'activity', active: false }); g.catchUp(epoch + rankingDays * DAY);
   assert.equal(g.world.seasons!.results[0].closedShifts, 1); assert.equal(g.world.seasons!.ranking.closedShifts, 0); replay(g);
 });
 
 test('period terms stay pinned through config changes and each next season adopts the latest accepted config', () => {
-  const g = served(); send(g, { type: 'endShift' }); g.advance(g.world.now + 3600000);
-  const periods = structuredClone(g.world.seasons!), raw = structuredClone(config.raw); raw._meta.version = 'seasons-next';
+  const base = split(), g = served(epoch + DAY, base); send(g, { type: 'endShift' }); g.advance(g.world.now + 3600000);
+  const periods = structuredClone(g.world.seasons!), raw = structuredClone(base.raw); raw._meta.version = 'seasons-next';
   raw.league.tiers.forEach((tier, i) => { if (i) tier.minSeasonEarnedBase *= 2; }); raw.ledgers.countedSources.fill('servePayment');
   const next = loadConfig(raw);
   assert.ok(g.command({ at: g.world.now, idempotencyKey: 'new-pin', command: { type: 'startShift' } }, next).ok);
   assert.deepEqual(g.world.seasons, periods);
   send(g, { type: 'activity', active: false }); g.catchUp(periods.ranking.endsAt);
-  assert.equal(g.world.seasons!.ranking.configVersion, next.version); assert.equal(g.world.seasons!.contest.configVersion, config.version);
+  assert.equal(g.world.seasons!.ranking.configVersion, next.version); assert.equal(g.world.seasons!.contest.configVersion, base.version);
   assert.deepEqual(g.world.seasons!.ranking.tiers, next.values.league.tiers); assert.deepEqual(g.world.seasons!.contest.tiers, periods.contest.tiers);
   replay(g);
   const ranking = g.world.seasonEarned, contest = g.world.seasons!.contestEarned; credit(g.world, next, 50, 'serveTip');
   assert.equal(g.world.seasonEarned, ranking); assert.equal(g.world.seasons!.contestEarned, contest + 50);
   g.catchUp(periods.contest.endsAt); assert.equal(g.world.seasons!.contest.configVersion, next.version);
-  const shifted = structuredClone(config.raw); shifted._meta.version = 'different-schedule'; shifted.league.seasons.ranking.days = 10;
-  const initial = new Game(config, 42, epoch);
+  const shifted = structuredClone(base.raw); shifted._meta.version = 'different-schedule'; shifted.league.seasons.ranking.days = 10;
+  const initial = new Game(base, 42, epoch);
   assert.ok(initial.command({ at: epoch, idempotencyKey: 'first-pin', command: { type: 'startShift' } }, loadConfig(shifted)).ok);
   assert.equal(initial.world.seasons!.ranking.endsAt, epoch + 10 * DAY); replay(initial);
 });
@@ -135,21 +139,21 @@ test('real served revenue crosses configured tiers and the reached peak survives
   const raw = structuredClone(config.raw); raw.league.tiers.forEach((tier, i) => { tier.minSeasonEarnedBase = i; });
   const g = served(epoch + DAY, loadConfig(raw)); assert.equal(g.world.peakLeague, 'huyen_thoai');
   assert.equal(seasonTier(g.world, g.config).tier.id, 'huyen_thoai');
-  send(g, { type: 'activity', active: false }); g.catchUp(epoch + 14 * DAY);
+  send(g, { type: 'activity', active: false }); g.catchUp(epoch + Math.max(rankingDays, config.values.league.seasons.contest.days) * DAY); // both windows have reset
   assert.equal(g.world.peakLeague, 'huyen_thoai'); assert.equal(seasonTier(g.world, g.config).tier.id, 'dong'); replay(g);
 });
 
 test('a new calendar accepted at or after rollover replaces the unused window, even if a read already advanced it', () => {
   for (const after of [0, 3600000]) for (const preRead of [true, false]) {
-    const g = served(); send(g, { type: 'endShift' }); g.advance(g.world.now + 3600000);
-    const old = structuredClone(g.world.seasons!), raw = structuredClone(config.raw); raw._meta.version = `calendar-${after}-${preRead}`;
+    const base = split(), g = served(epoch + DAY, base); send(g, { type: 'endShift' }); g.advance(g.world.now + 3600000);
+    const old = structuredClone(g.world.seasons!), raw = structuredClone(base.raw); raw._meta.version = `calendar-${after}-${preRead}`;
     raw.league.seasons.epochUtc = '2026-04-12T10:00:00Z'; raw.league.seasons.ranking.days = 10;
     const next = loadConfig(raw), at = old.ranking.endsAt + after;
     if (preRead) g.catchUp(at);
     assert.ok(g.command({ at, idempotencyKey: 'rollover-pin', command: { type: 'startShift' } }, next).ok);
     const ranking = g.world.seasons!.ranking, window = seasonWindow(at, next, 'ranking');
     assert.equal(ranking.id, window.id); assert.equal(ranking.endsAt, window.endsAt); assert.equal(ranking.configVersion, next.version);
-    assert.equal(ranking.trackingFromAt, at); assert.equal(g.world.seasons!.contest.configVersion, config.version);
+    assert.equal(ranking.trackingFromAt, at); assert.equal(g.world.seasons!.contest.configVersion, base.version);
     assert.equal(g.world.seasons!.results[0].earned, old.contestEarned); replay(g);
   }
 });
@@ -172,8 +176,8 @@ test('a later tip, bonus or second customer cannot partially credit an overflowi
       const first = t.group!.customers[0], second = { ...first, id: 'overflow-second' }; t.group!.customers.push(second);
       t.order!.items.push(...t.order!.items.map(i => ({ ...i, id: `${i.id}-second`, customerId: second.id })));
     }
-    // At least the first payment fits; a subsequent component does not.
-    w.seasons!.contestEarned = Number.MAX_SAFE_INTEGER - (boundary === 'tip' ? 60 : 68);
+    // At least the first payment fits; a subsequent component does not (2.1.0: payment 50 + tip 10 = 60, then the rounded 10 % bonus 6, or a second customer's 50).
+    w.seasons!.contestEarned = Number.MAX_SAFE_INTEGER - (boundary === 'tip' ? 55 : 63);
     const before = structuredClone(w), entry = { at: w.now, idempotencyKey: 'overflow-order', command: { type: 'serve' as const, tableId: t.id, orderId: t.order!.id } };
     assert.equal(g.command(entry).reason, 'rewardOverflow'); assert.deepEqual(w, before);
     assert.equal(g.command(entry).reason, 'rewardOverflow'); assert.deepEqual(w, before);
