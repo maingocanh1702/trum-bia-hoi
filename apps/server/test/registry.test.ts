@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { AddressInfo } from 'node:net';
 import { setTimeout as delay } from 'node:timers/promises';
-import { config, configContent, Game, loadConfig, seasonWindow, serveValueStats, type Config } from '@tbh/engine';
+import { config, configContent, Game, loadConfig, seasonWindow, serveValueStats, tableUpgrade, type Config } from '@tbh/engine';
 import { GameStore } from '../src/store';
 import { createGameServer } from '../src/http';
 import { measureKViaForecast } from '../src/forecast';
@@ -1032,4 +1032,25 @@ test('S6: every seat-model key S1-S5 added is governed by its tier, editable one
   assert.equal(seen.size, SEAT_MODEL_KEYS.length);
   // Nothing of the governance itself moved: the section lists of the active config still classify every key above.
   for (const key of SEAT_MODEL_KEYS) assert.equal(registryPolicy([key.path], f.registry.active()).tier, key.tier);
+});
+
+// The S6 case above proves that every seat key is measured and admitted; `sampleMeasurer` prices one beer from `menu.bia.price` alone, so no seat key can move
+// its k. This measurer reads a seat key: the tip factor of the top table level (S4, the Lv4 table's tip x1.25 on a pair's tray) scales the sample k, so it equals
+// the sample k on the seed and goes far out of band when that factor does. The registry refuses the publication on the measured value, never on the self-reported one.
+const seatMeasurer: MeasureK = (candidate, version, actor) => (sampleMeasurer(candidate, version, actor) as number) * tableUpgrade(candidate.values)!.levels.at(-1)!.tipMult / tableUpgrade(config.values)!.levels.at(-1)!.tipMult;
+test('S6: the k check reacts to a seat key once a measurer reads it: the Lv4 tip factor far out of range is measured and refused, a small one is admitted', t => {
+  const f = fixture(t, config, seatMeasurer);
+  const small = f.draft(raw => { (raw as Seed).upgrades.table.tableUpgrade.levels[2].tipMult = 1.3; }); // a step up from 1.25, inside the band
+  f.registry.approve(f.actor('super', 'reviewer'), small.version); const pub = f.registry.publish(f.actor(), small.version); // Tier A: scheduled for the next day
+  assert.equal(f.db.prepare('SELECT state FROM registry_measurements WHERE version=?').get(small.version)!.state, 'admitted');
+  f.now = pub.effective_at; assert.equal(f.registry.active().version, small.version);
+  const blowup = f.draft(raw => { (raw as Seed).upgrades.table.tableUpgrade.levels[2].tipMult = 40; }, f.actor('economy', 'another-author')); // k.value and k.band untouched: the self-report alone would admit it
+  f.registry.approve(f.actor('super', 'reviewer'), blowup.version);
+  assert.throws(() => f.registry.publish(f.actor('economy', 'another-author'), blowup.version), (error: unknown) => {
+    assert.ok(error instanceof Error); assert.match(error.message, /^registry:bindingRange$/);
+    const e = error as Error & { measured: number; band: readonly number[] };
+    assert.ok(e.measured > e.band[1], `measured ${e.measured} should exceed band[1] ${e.band[1]}`); return true;
+  });
+  assert.equal(f.db.prepare('SELECT state FROM registry_measurements WHERE version=?').get(blowup.version)!.state, 'refused');
+  assert.equal(f.registry.active().version, small.version, 'the refused version never becomes active'); assert.equal(f.registry.latest().version, small.version);
 });

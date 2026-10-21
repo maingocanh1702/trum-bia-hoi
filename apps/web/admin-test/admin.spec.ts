@@ -327,9 +327,13 @@ test('M2-ONBOARDING local editor publishes thresholds and guide steps; disabled 
 // S6 (plan S6 row "Admin sửa được từng key mới", brief B6, PR #14 k-admission): every key the seat-model slices S1-S5 added to the seed is a key of its own in
 // the editor, each edit proposes with EXACTLY its own diff row (an Economy Admin's draft; a Tier A key says it needs a second Super), and the two publication
 // paths run end to end on one key each: a Tier A key (spawn.capacityDemand.refTables) through a second Super, scheduled for the next day, and a Tier B key
-// (runtime.queueBaseSlots) by the Economy Admin at once, both admitted by the measured k and pinned by the next new player. The admission of every one of
-// the keys is pinned server-side by apps/server/test/registry.test.ts "S6: every seat-model key S1-S5 added is governed ..." (the daily publication limit per
-// author is five, so the browser publishes two and proposes the rest). Written on Windows, where the admin tier cannot run: validated on the Linux run.
+// (runtime.queueBaseSlots) by the Economy Admin at once. Both are measured and admitted (the admin test server, apps/web/admin-test/server.ts, builds its GameStore
+// without a measureK, so the registry's default measurer reads the candidate's own k.value: the admission path runs, it does not react to a seat key here; the
+// measured-k refusal of a seat key is pinned server-side by apps/server/test/registry.test.ts "S6: the k check reacts to a seat key ..."). A player already playing
+// keeps its pin; the next new player after the Tier B publication opens on it, and the next new player after the Tier A activation (the isolated clock moved past
+// it) opens on a version carrying both keys. The admission of every one of the 17 keys is pinned server-side by registry.test.ts "S6: every seat-model key S1-S5
+// added is governed ..." (the daily publication limit per author is five, so the browser publishes two and proposes the rest). Written on Windows, where the admin
+// tier cannot run: validated on the Linux run (30/30 x3 on 715b609).
 test('S6 seat-model keys S1-S5 are editable one by one: each proposes with exactly its own diff row, a Tier A key publishes through a second Super and a Tier B key at once, both reach a new player', async ({ page, browser }) => {
  test.setTimeout(300000);
  await login(page); // economy: proposes every key; approves and publishes Tier B alone
@@ -377,7 +381,7 @@ test('S6 seat-model keys S1-S5 are editable one by one: each proposes with exact
   if (key.tier === 'A') { await expect(detail(page)).toContainText('Thay đổi cấp A'); await expect(detail(page).getByRole('button', { name: 'Duyệt đề xuất' })).toHaveCount(0); }
   else await expect(detail(page).getByRole('button', { name: 'Duyệt đề xuất' })).toBeVisible();
  }
- expect(await page.locator('.admin-proposals strong').filter({ hasText: 'S6 seat-model key' }).count()).toBe(keys.length);
+ await expect(page.locator('.admin-proposals strong').filter({ hasText: 'S6 seat-model key' })).toHaveCount(keys.length); // waits for the list to refresh after the last proposal
  // 2) Tier B end to end, AT ONCE and FIRST: the Economy Admin proposes on the active base, approves and publishes alone (next_shift = now); a guest already playing
  // keeps its pin, the next new player opens on it. It must come before the Tier A key: a publication may never activate before the latest one does
  // (registry.ts publicationAt: `registry:scheduleConflict`), and a Tier A key is scheduled for the next Vietnam midnight.
