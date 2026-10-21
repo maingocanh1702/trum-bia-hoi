@@ -5,7 +5,7 @@
 
 ## 1. Kết luận
 
-**Đủ để build; M0 đã qua kiểm tra tự động, M1–M3 có bản local đang hoàn thiện.** Tiến độ code và giới hạn hiện tại: `docs/build-progress.md`; bảng trạng thái `docs/implementation-tracker.md` + `docs/dashboard.md`: **20 feature đang triển khai, 0/28 hoàn tất**, 6 hoãn (đếm lại 22/10/2026 theo bảng của tracker). Prompt dán vào Claude Code: **`12-PROMPT-claude-build.md` Phần 1** (gói `11-PROMPT-PACK` Phần B + vòng lặp Codex review); Codex chạy bằng `codex exec review --base master - < docs/prompts/codex-review.md` (codex-cli 0.152 có sẵn trên máy). Ràng buộc rõ, số tập trung ở JSON, layout có ảnh tham khảo, onboarding đã thành luật, gate `npm run check:config` chạy được ở gốc repo và đang xanh trên `packages/engine` (40 section, 39 section phân loại). Không còn mục 🔴.
+**Đủ để build; M0 đã qua kiểm tra tự động, M1–M3 có bản local đang hoàn thiện.** Tiến độ code và giới hạn hiện tại: `docs/build-progress.md`; bảng trạng thái `docs/implementation-tracker.md` + `docs/dashboard.md`: **20 feature đang triển khai, 0/28 hoàn tất**, 6 hoãn (đếm lại 22/10/2026 theo bảng của tracker). Prompt dán vào Claude Code: **`12-PROMPT-claude-build.md` Phần 1** (gói `11-PROMPT-PACK` Phần B + vòng lặp Codex review); Codex chạy bằng `codex exec review --base master - < docs/prompts/codex-review.md` (codex-cli 0.152 có sẵn trên máy). Ràng buộc rõ, số tập trung ở JSON, layout có ảnh tham khảo, onboarding đã thành luật, gate `npm run check:config` chạy được ở gốc repo và đang xanh trên `packages/engine` (42 section, 41 đã xếp tier — `npm run check:config`, 22/10/2026). Không còn mục 🔴.
 
 Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **2 việc nhỏ trước khi giao** (mục 4b). Quy trình build **do dev tự quyết** — Level 3 không còn bắt buộc.
 
@@ -24,7 +24,7 @@ Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **2 việc nh�
 | Tech (engine, config, lưu trữ, server) | ✅ | 10-SPEC v1.7 §1/§5/§7/§9/§10/§13, F23 §8 — **localStorage trước, server ở M4** |
 | Admin / Config Registry | ✅ | BRD §5.2 + §11; 08-SPEC §22 |
 | Bảng xếp hạng | ✅ | **F28 v1.0** + JSON `leaderboard` (tier A) |
-| Lộ trình & tracker | ✅ | 06-ROADMAP **v3.1** — 1 phase, mốc M0–M9 (M7 = Donate + pháp lý); `implementation-tracker` **v0.64.0** (20 đang triển khai, 0/28 hoàn tất; F26 ⏸ bỏ), `dashboard.*` rebuild |
+| Lộ trình & tracker | ✅ | 06-ROADMAP **v3.3** — 1 phase, mốc M0–M9 (M7 = Donate + pháp lý); `implementation-tracker` **v0.64.0** (20 đang triển khai, 0/28 hoàn tất; F26 ⏸ bỏ), `dashboard.*` rebuild |
 | Hướng dẫn agent (đọc trước HANDOFF) | ✅ | `CLAUDE.md`/`AGENTS.md` dòng verify → `check:config` ở root + build/test/sim của game mới (prototype chỉ khi đụng `prototype/`); `SESSION-TRACK-LOG` block build mới nhất + checkpoint hiện tại; 11-PROMPT-PACK §0.2 thứ tự = config → engine + local save → server M4 |
 | Content bank | ⏸ pending | `docs/content/` mới là đề xuất schema + 5 ví dụ |
 | Tính năng kiểm tra (policy check) | ⏸ pending | F15 §4; ship `risk.inspection.enabled=false` |
@@ -79,7 +79,7 @@ Ba mục item-list (hành phi, đá lạnh, giá cosmetic) đã **chốt theo đ
 ## 5. Git & việc nội bộ
 
 - **Đã vào `master`:** 4 commit `b4c39eb` → `8bca922` (docs pack 08/09, quyết định, tracker/dashboard, `package.json` gốc, bỏ Level 3) — fast-forward từ nhánh `docs/2026-09-08-docs-pack` (nhánh giữ lại, xoá được). **Lưu ý:** checkout sang nhánh cũ/`origin/master` sẽ làm các file docs biến mất khỏi thư mục (chúng chỉ tồn tại từ `b4c39eb`) — không phải mất dữ liệu, `git checkout master` là quay lại. Chưa push origin. Git chạy trực tiếp trên máy (qua mount không xoá được `index.lock`).
-- `PHASE_DATES` trong `tools/dashboard-engine/build_dashboard.py` để trống có chủ đích (ROADMAP v3.1 chưa gán ngày) — dashboard ghi "Chưa gán ngày"; điền lại khi team chốt ước lượng.
+- `PHASE_DATES` trong `tools/dashboard-engine/build_dashboard.py` để trống có chủ đích (ROADMAP v3.3 chưa gán ngày) — dashboard ghi "Chưa gán ngày"; điền lại khi team chốt ước lượng.
 - Script vá một lần `scripts/apply_pending_0809.py` đã xoá. Backup `$HOME/*.bak` trên máy có thể xoá.
 - **(16/09/2026)** Nhánh công cụ xác minh agent (`agent-verification`, tách biệt với bộ docs build
   game ở trên) đã xong M1/M2: 12 PR (`#1`-`#12`) — skill `/how`, skill `verify-trum-bia-hoi` (23
@@ -90,7 +90,7 @@ Ba mục item-list (hành phi, đá lạnh, giá cosmetic) đã **chốt theo đ
 
 ## 6. Bản đồ nhanh — đọc gì trước
 
-`00-HANDOFF` v1.15 (điểm vào, §4 scope + §6 quy ước) → **`12-PROMPT-claude-build.md`** (dev kickoff + Codex review) · `11-PROMPT-PACK` v1.14 Phần A (designer) / Phần B (chi tiết dev) → `02-GDD` v1.12 + `03-SPEC` (luật chơi) → `08-SPEC` v1.3.11 + `economy.tbh.json` 2.1.0 (số) → `06-ROADMAP` v3.1 (mốc M0–M9) + `implementation-tracker` v0.64.0 (20 đang triển khai, 0/28 hoàn tất) → `docs/features/F07–F28` → `docs/reference/` (layout) → `trum-bia-hoi-brd-admin.md` §5.2 (config admin).
+`00-HANDOFF` v1.43 (điểm vào, §4 scope + §6 quy ước) → **`12-PROMPT-claude-build.md`** (dev kickoff + Codex review) · `11-PROMPT-PACK` v1.14 Phần A (designer) / Phần B (chi tiết dev) → `02-GDD` v1.13 + `03-SPEC` (luật chơi) → `08-SPEC` v1.3.11 + `economy.tbh.json` 2.1.0 (số) → `06-ROADMAP` v3.3 (mốc M0–M9) + `implementation-tracker` v0.64.0 (20 đang triển khai, 0/28 hoàn tất) → `docs/features/F07–F28` → `docs/reference/` (layout) → `trum-bia-hoi-brd-admin.md` §5.2 (config admin).
 
 ## Changelog
 
@@ -108,3 +108,4 @@ Ba mục item-list (hành phi, đá lạnh, giá cosmetic) đã **chốt theo đ
 | 2026-10-21 | S5 review vòng 1: bảng cổng đo lại bằng bot của plan (không phải v4), số chốt mới (08-SPEC changelog 2026-10-21); 21/22 hàng đạt, hàng ví ca 1 (P0) đỏ và là quyết định của owner; ví khởi đầu về 750 xu. |
 | 2026-10-21 | S5 review vòng 2: trả lại trần ngày 400 k, hợp đồng 3 ngày, LP7 2 tr (không cổng nào cần số khác); hai quyết định owner của S5 được nêu tên — P0 (ca 1 mua bàn 2) và `tableSlots` 8 ở mọi mặt bằng; bảng cổng 23 hàng, 21 đạt. |
 | 2026-10-22 | Đợt 4 đóng gói "Vui 3 ca" (stage 07) — chỉ sửa các câu đã thành sai: số feature đang triển khai **14 → 20** (đếm lại theo bảng trạng thái của tracker; 0/28 hoàn tất, 6 hoãn) ở mục 1, mục 2 và mục 6; phiên bản tracker v0.8.0 → v0.64.0, 08-SPEC v1.3.7 → v1.3.11, JSON 1.7.1 → 2.1.0 (rules 28); mục 3 #15 nói trạng thái cuối của S5 (22/22 cổng ĐẠT + 1 INFO sau hai quyết định owner) và section `kickTable` của Đợt 3 dưới nhãn 2.1.0 (8 nội dung); mục 4 thêm hàng 0c (ba OWNER CALL của Đợt 2–3) và 0d (merge, deploy `v-fb2`, playtest 3 ca); tiêu đề và dòng "cập nhật lần cuối". |
+| 2026-10-22 | Đợt 4, review vòng 1 của stage 07 — thêm các câu đã thành sai còn sót: mục 1 "42 section, 41 đã xếp tier" (không còn 40/39), mục 2, 5 và 6 `06-ROADMAP` v3.3, mục 6 `00-HANDOFF` v1.43 và `02-GDD` v1.13. |

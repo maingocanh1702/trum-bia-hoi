@@ -112,11 +112,11 @@ Vòng đời cốc: `clean → in_use(reservedGlassId) → dirty → queue → w
 
 ## 5. Hệ Bàn (đơn vị chính, Lớp 2 mở rộng)
 
-> 🟢 **Owner 17–18/09/2026 — thay hẳn bảng "cấp bàn = sức chứa 2/4/6/8" dưới đây** (số chờ S5, luật đã chốt; chi tiết `docs/FEEDBACK-2026-09-17.md` §II.2 v3.3):
-> - Khởi đầu **1 bàn × 1 ghế**; thứ tự mở khoá tuyến tính **bàn 2 → 3 → 4 (kèm 1 ghế) → ghế thứ 2 từng bàn (chỉ sau đủ 4 bàn) → nâng cấp bàn (bàn phải có 2 ghế)**. Tối đa **2 ghế/bàn**; số chỗ đặt bàn theo mặt bằng (`tableSlots`: Hẻm 4 … Phố Cổ/Ga Metro/Phố Tây 8; **JSON 2.1.0 chốt 8 ở mọi mặt bằng**, 08-SPEC §12 và changelog 2026-10-21).
+> 🟢 **Owner 17–18/09/2026 — thay hẳn bảng "cấp bàn = sức chứa 2/4/6/8" dưới đây** (luật đã chốt; số chốt JSON 2.1.0: 08-SPEC §8.6, 03-SPEC §6; chi tiết `docs/FEEDBACK-2026-09-17.md` §II.2 v3.3):
+> - Khởi đầu **1 bàn × 1 ghế**; thứ tự mở khoá tuyến tính **bàn 2 → 3 → 4 (kèm 1 ghế) → ghế thứ 2 từng bàn (chỉ sau đủ 4 bàn) → nâng cấp bàn (bàn phải có 2 ghế)**. Tối đa **2 ghế/bàn**; số chỗ đặt bàn theo mặt bằng (`tableSlots`: Hẻm 4 … Phố Cổ/Ga Metro/Phố Tây 8; **JSON 2.1.0 chốt 8 ở mọi mặt bằng**, 08-SPEC §16 và changelog 2026-10-21).
 > - **Ghế** quyết định mâm: bàn 1 ghế đón khách lẻ gọi *bia hoặc 1 mồi tức thì*; bàn 2 ghế đón **cặp** và mỗi khách gọi *bia + 1 mồi*. Cỡ nhóm **độc lập với quán** (`spawn.pPair` 0,5): cặp gặp quán chưa có bàn 2 ghế → bỏ đi tại cửa, không phạt.
 > - **Cấp bàn = một lợi ích khác mỗi cấp, cộng dồn**: Lv2 khách gọi thêm 1 đợt · Lv3 mồi thứ 2 · Lv4 tip ×1,25. Bỏ gate huy hiệu Kết Nối của bàn VIP. Nâng ghế Lv1–3 (kiên nhẫn ×1/1,15/1,30) là làn riêng.
-> - Bàn/ghế mua được cả khi bàn đang có khách (áp cho nhóm kế). Hàng đợi **1 + ghế/8** (cầu thừa từ chối tại cửa, không trừ uy tín). Giá theo giá trị biên đo trên engine: bàn 1,5 k/4 k/8 k xu, ghế 10 k/15 k/22,5 k/30 k xu (bộ W9, chờ S5).
+> - Bàn/ghế mua được cả khi bàn đang có khách (áp cho nhóm kế). Hàng đợi **1 + ghế/8** (cầu thừa từ chối tại cửa, không trừ uy tín). Giá chốt JSON 2.1.0 (08-SPEC §8.6, 03-SPEC §6): bàn 2…8 = 1.070 · 9.250 · 14.250 · 24.000 · 32.250 · 39.750 · 40.000 xu; ghế 2 (theo số ghế 2 đã mua toàn quán) = 1.000 · 1.500 · 2.250 · 3.000 · 4.000 · 5.000 · 6.000 · 7.000 xu.
 
 **Domain model:**
 ```ts
@@ -240,7 +240,7 @@ Mỗi loại ép một quyết định: VIP/vội = tốc độ, bàn lai rai = 
 
 ## 11. Hai hệ tiến trình + Vụ Bia (meta, Lớp 5)
 
-> 🟢 **Owner 18/09 — nén cho game 3 tuần:** Đường Lên Trùm LP1–7 `lifetimeBase` 8 k · 20 k · 80 k · 280 k · 680 k · 1,2 tr · 2 tr (thay 50 k … 50 tr; JSON 2.1.0 giữ đúng thang này); LP7 = **màn kết** ("Chuyện quán bạn" + huy hiệu Trùm); LP1 `requires` "4 seats" ↔ 4 bàn 1 ghế, không gate bàn 2–4 bằng LP. Giải Nhậu 8 bậc = cùng thang. **Vụ Bia = mùa 21 ngày**, bảng xếp hạng theo mùa; mùa 1 = story, mỗi mùa sau thêm một lớp gameplay (M6 → M8 → …). Chi tiết `docs/DESIGN-story-3-tuan-2026-09-18.md`.
+> 🟢 **Owner 18/09 — nén cho game 3 tuần:** Đường Lên Trùm LP1–7 `lifetimeBase` 8 k · 20 k · 80 k · 280 k · 680 k · 1,2 tr · 2 tr (thay 50 k … 50 tr; JSON 2.1.0 giữ đúng thang này); LP7 = **màn kết** ("Chuyện quán bạn" + huy hiệu Trùm); LP1 `requires` "4 tables" (4 bàn; S1, D18), không gate bàn 2–4 bằng LP. Giải Nhậu 8 bậc = cùng thang. **Vụ Bia = mùa 21 ngày**, bảng xếp hạng theo mùa; mùa 1 = story, mỗi mùa sau thêm một lớp gameplay (M6 → M8 → …). Chi tiết `docs/DESIGN-story-3-tuan-2026-09-18.md`.
 
 > **Bảng đổi tên (cascade từ `item-list-upgrade-levels.md` v1.4):** League → **Giải Nhậu**, Season → **Vụ Bia**, Life Path → **Đường Lên Trùm**, Đền Thiêng → **Bàn Thờ Ông Địa**. Chi tiết bảng tên bậc/mốc: xem `docs/item-list-upgrade-levels.md` §15.
 
@@ -269,9 +269,9 @@ Mỗi loại ép một quyết định: VIP/vội = tốc độ, bàn lai rai = 
 
 ## 12. Mặt bằng (multiplier + rent + cọc)
 
-> 🟢 **Owner 18/09:** mỗi mặt bằng có **số chỗ đặt bàn** `tableSlots` (4 · 4 · 5 · 6 · 6 · 7 · 8 · 8 · 8) — đổi mặt bằng là bước tiến thật, không chỉ hệ số nhân; hợp đồng `leaseDays` 7 → **3**; được thuê thẳng mặt bằng cao hơn khi đủ LP; bàn vượt chỗ ở mặt bằng nhỏ hơn tạm gấp lại. *(JSON 2.1.0: `leaseDays` 3 như owner; **`tableSlots` 8 ở mọi mặt bằng là quyết định owner thứ hai của S5** (đảo D13; BLOCKERS `04 · tableSlots`); mult 1,0 → 1,1 — 08-SPEC §12 và changelog 2026-10-21; câu hỏi cho owner về `mult` ở DECISIONS.)*
+> 🟢 **Owner 18/09:** mỗi mặt bằng có **số chỗ đặt bàn** `tableSlots` (4 · 4 · 5 · 6 · 6 · 7 · 8 · 8 · 8) — đổi mặt bằng là bước tiến thật, không chỉ hệ số nhân; hợp đồng `leaseDays` 7 → **3**; được thuê thẳng mặt bằng cao hơn khi đủ LP; bàn vượt chỗ ở mặt bằng nhỏ hơn tạm gấp lại. *(JSON 2.1.0: `leaseDays` 3 như owner; **`tableSlots` 8 ở mọi mặt bằng là quyết định owner thứ hai của S5** (đảo D13; BLOCKERS `04 · tableSlots`); mult 1,0 → 1,1 — 08-SPEC §16 và changelog 2026-10-21; câu hỏi cho owner về `mult` ở DECISIONS.)*
 
-9 vị trí vỉa hè, multiplier ×1.0→×1.8, rent/ngày `Dn(e)=round(700·(e/5)·(1+e/50)) ×k` *(JSON 2.1.0: multiplier ×1.0→×1.1 và rent/ngày theo bảng 08-SPEC §12, 0,3 × công thức này)*. Trả trước cả kỳ (**7 ngày**; JSON 2.1.0: **3 ngày**) + **cọc 25% (hoàn lại)**; rời sớm mất cọc + về Hẻm Nhỏ. Gate theo Đường Lên Trùm.
+9 vị trí vỉa hè, multiplier ×1.0→×1.8, rent/ngày `Dn(e)=round(700·(e/5)·(1+e/50)) ×k` *(JSON 2.1.0: multiplier ×1.0→×1.1 và rent/ngày theo bảng 08-SPEC §16, 0,3 × công thức này)*. Trả trước cả kỳ (**7 ngày**; JSON 2.1.0: **3 ngày**) + **cọc 25% (hoàn lại)**; rời sớm mất cọc + về Hẻm Nhỏ. Gate theo Đường Lên Trùm.
 - Hẻm Nhỏ (start) → … → **Gần Sân Vận Động** (vị trí hot mới, ăn theo World Cup) → Phố Cổ (LP4) → Ga Metro (LP5) → Khu Phố Tây (LP6).
 
 ---
@@ -423,7 +423,7 @@ Mục tiêu: chứng minh **vòng lặp vận hành ca vui & economy cân**. KH�
 |---|---|---|
 | Phục vụ theo ca, 5 lớp economy | 🟢 CORE | nền tảng |
 | Hệ bàn (đơn vị chính) | 🟢 CORE | spec: `03-SPEC-he-ban.md`; **mô hình v3.3 (18/09): ghế = mâm, cấp bàn = lợi ích, thứ tự bàn→ghế→cấp** |
-| Story 3 tuần (168 ca) + mùa 21 ngày | 🟢 owner 18/09 | `docs/DESIGN-story-3-tuan-2026-09-18.md`; số chờ S5 |
+| Story 3 tuần (168 ca) + mùa 21 ngày | 🟢 owner 18/09 | `docs/DESIGN-story-3-tuan-2026-09-18.md`; số chốt JSON 2.1.0 (08-SPEC §15/§16, changelog 2026-10-21) |
 | Lớp rủi ro M6 trong story (hồi 3) | 🟢 owner 18/09 | mở lại quyết định hoãn 11/09 |
 | Bia mất hơi (concept) | 🟢 CORE | hậu quả thì 🟡 |
 | Menu 6 món (danh mục) | 🟢 CORE | giá/vốn cụ thể 🟡 |
@@ -487,3 +487,4 @@ Mục tiêu: chứng minh **vòng lặp vận hành ca vui & economy cân**. KH�
 | 2026-10-21 / S5 review vòng 3 | Chỉ sửa thống kê và lời văn của gói P0, không đổi số nào của GDD: các tỉ lệ "mua nổi bàn 2 ở ca 1" của dòng vòng 2 là số của 60 lượt đầu; đếm lại trên **300 lượt** (khoảng Wilson 95 %): bộ chốt **26 %** (22–32 %), D19 `maxMult` 2 → 67 %, giá bàn 2 ≈ 1.100 xu → **78 %** (80 % lần đầu ở 1.073 xu), phương án (d) 69 %; ba số của plan (thu 850–1.160, ~10 cặp, bàn 2 cuối ca 1) không cùng đứng được với D19 `maxMult` 4 và gần như không ở mọi `maxMult` (BLOCKERS `04 · P0`). Thay câu "đòn rẻ nhất là D19 `maxMult` ≈ 2 hoặc giá bàn 2 ≈ 1.100 xu" của dòng trên. |
 | 2026-10-21 / S5 quyết định owner | Hai quyết định owner của S5 đã chốt (founder, user xác nhận trong chat): (1) P0 — giá bàn 2 **1.070 xu** (428 base; trước 1.500 xu) để ≥ 4 lượt trong 5 mua nổi bàn 2 khi ca 1 đóng (83 % ở n = 300, 81 % ở n = 600; ví đầu vẫn 750 xu), thay các câu "đòn rẻ nhất là D19 `maxMult` ≈ 2 hoặc giá bàn 2 ≈ 1.100 xu" của dòng vòng 2 và các số 26 % / 78 % của dòng vòng 3 (bộ trước giá mới); (2) `tableSlots` 8 ở mọi mặt bằng được duyệt (đảo D13). 08-SPEC changelog 2026-10-21 (vòng quyết định owner). |
 | 2026-10-22 / Đợt 3 `fun-kick-table` | §11 uy tín: tiêu uy tín để "tiễn bàn lỳ ∝ giây ngồi" (thiết kế cũ; 08 §9 dòng 🟡 "Tiễn ngồi lỳ", `penalty.kickStubbornRepBase` không còn dùng) thay bằng **"Mời về"** (`kickTable {tableId, maxCost}`, rules 28, JSON 2.1.0 mục Tier A `kickTable {feeRate 1,5, repPerGuest 2}`): chỉ bàn khách đã được phục vụ và đang nhâm nhi (`consuming`, hoặc `occupied` khi chỉ còn Chí Phèo), không khi khách đang ngồi vào hay chờ món; mỗi khách −`repPerGuest` uy tín (không ×k, không xuống dưới 0) và xu = `round(feeRate × gross đơn gần nhất × leavePenaltyMult)` (VIP ×10, Chí Phèo 0); không tính mất khách, không −5; nút trong popover bàn từ ca 2, chỉ khi ca đang mở. §9 telegraph: "tiễn bàn lỳ" → "mời về bàn đang nhâm nhi". Số và luật: 08 §9/§22 + changelog 2026-10-22; DECISIONS `## 06 ·`. |
+| 2026-10-22 / Đợt 4 đóng gói (stage 07, review vòng 1) | Bỏ các câu "chờ S5" và số W9 đã thành sai ở trạng thái cuối: §5 số bàn/ghế = số chốt JSON 2.1.0 (bàn 2…8 = 1.070 … 40.000 xu, ghế 2 = 1.000 … 7.000 xu; 08-SPEC §8.6, 03-SPEC §6); §11 LP1 `requires` "4 tables" (không còn "4 seats"); bảng quyết định: story 3 tuần "số chốt JSON 2.1.0"; ba ghi chú trỏ `tableSlots`/mult/rent sang 08-SPEC **§16** (bảng mặt bằng; §12 là chó giữ quán). Không đổi luật hay số. |
