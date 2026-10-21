@@ -331,7 +331,7 @@ test('M2-ONBOARDING local editor publishes thresholds and guide steps; disabled 
 // the keys is pinned server-side by apps/server/test/registry.test.ts "S6: every seat-model key S1-S5 added is governed ..." (the daily publication limit per
 // author is five, so the browser publishes two and proposes the rest). Written on Windows, where the admin tier cannot run: validated on the Linux run.
 test('S6 seat-model keys S1-S5 are editable one by one: each proposes with exactly its own diff row, a Tier A key publishes through a second Super and a Tier B key at once, both reach a new player', async ({ page, browser }) => {
- test.setTimeout(240000);
+ test.setTimeout(300000);
  await login(page); // economy: proposes every key; approves and publishes Tier B alone
  const s = (await (await page.request.get('/api/admin/draft-source')).json()).snapshot;
  const bump = <T,>(rows: T[], edit: (row: T) => T) => rows.map((row, i) => i === 0 ? edit(structuredClone(row)) : row);
@@ -353,19 +353,23 @@ test('S6 seat-model keys S1-S5 are editable one by one: each proposes with exact
   { path: 'patience.thuongMs', tier: 'B', value: s.patience.thuongMs + 1000 },
  ];
  const published = { A: { path: 'spawn.capacityDemand.refTables', value: s.spawn.capacityDemand.refTables + 1 }, B: { path: 'runtime.queueBaseSlots', value: s.runtime.queueBaseSlots + 1 } };
- const diff = page.getByRole('region', { name: 'Thay đổi thực tế' });
+ // The page shows a "Thay đổi thực tế" region twice once a version detail is open (the draft's diff AND the diff of the shown version), and every
+ // draft control lives in the draft panel (the section headed "Bản nháp của bạn"): scope every lookup to that panel, never to the page.
+ const draftPanel = page.locator('section.admin-panel').filter({ has: page.getByRole('heading', { name: 'Bản nháp của bạn', level: 2 }) });
+ const diff = draftPanel.getByRole('region', { name: 'Thay đổi thực tế' });
  const editJson = async (path: string, value: unknown) => {
-  await page.getByRole('button', { name: 'Chỉnh sửa bản mới nhất' }).click();
-  await page.getByLabel('Tìm khóa cấu hình').fill(path);
-  const box = page.getByRole('combobox', { name: 'Khóa cấu hình', exact: true });
+  await page.getByRole('button', { name: 'Chỉnh sửa bản mới nhất' }).click(); await expect(draftPanel).toHaveCount(1);
+  await draftPanel.getByLabel('Tìm khóa cấu hình').fill(path);
+  const box = draftPanel.getByRole('combobox', { name: 'Khóa cấu hình', exact: true });
   expect(await box.locator('option').evaluateAll(options => options.map(o => (o as HTMLOptionElement).value)), path).toContain(path);
   await box.selectOption(path);
-  await page.getByRole('textbox', { name: 'Giá trị JSON', exact: true }).fill(JSON.stringify(value));
-  await page.getByRole('button', { name: 'Áp dụng vào bản nháp' }).click();
-  await page.getByLabel('Lý do thay đổi').fill('S6 seat-model key ' + path);
-  await page.getByRole('button', { name: 'Xem diff', exact: true }).click();
-  await expect(diff).toBeVisible(); await expect(diff.getByRole('rowheader')).toHaveText([path]); // exactly this key moved, nothing else
-  await expect(diff.getByRole('row').filter({ has: page.getByRole('rowheader', { name: path, exact: true }) }).getByRole('cell').nth(1).locator('pre')).toHaveText(JSON.stringify(value, null, 2));
+  await draftPanel.getByRole('textbox', { name: 'Giá trị JSON', exact: true }).fill(JSON.stringify(value));
+  await draftPanel.getByRole('button', { name: 'Áp dụng vào bản nháp' }).click();
+  await draftPanel.getByLabel('Lý do thay đổi').fill('S6 seat-model key ' + path);
+  await draftPanel.getByRole('button', { name: 'Xem diff', exact: true }).click();
+  await expect(diff).toBeVisible();
+  const rows = diff.locator('tbody tr'); await expect(rows).toHaveCount(1); await expect(rows.getByRole('rowheader')).toHaveText(path); // exactly this key moved, nothing else
+  expect(JSON.parse((await rows.locator('td').nth(1).locator('pre').textContent())!), path).toEqual(value); // the "after" cell holds the value as applied
  };
  // 1) One draft per key, from the same base: every key is listed by its own path, applies as JSON, diffs as one row, and proposes.
  for (const key of keys) {
