@@ -1,6 +1,8 @@
 /* fun-buy-buttons-reason: one reason under a dimmed buy button, the reason on the loss toast, the shift book's "why guests left" list. No motion. */
 .buy-card { display: flex; flex-direction: column; }
 .buy-reason { margin: 6px 0 0; font-size: 13px; line-height: 1.3; color: var(--cream); text-align: center; }
+/* S6: the registry's one-number effect (before → after) above the buy button of every capacity item. */
+.goal-effect { margin: 0 0 4px; font-size: 12px; line-height: 1.3; color: var(--coinGold); text-align: center; }
 .toast-loss > .loss-reason { font-size: 16px; }
 .toast-loss[data-reason="seat"] { border-color: var(--warning); }
 .leave-reasons { margin: 14px 0; }

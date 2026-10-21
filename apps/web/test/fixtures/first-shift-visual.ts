@@ -4,7 +4,9 @@ import { steadyDemand } from '../../../../packages/engine/test/fixtures/steady-d
 
 // Deterministic saves for the P0 first-shift visuals (fun-onboarding-visual). Always the real engine, never hand-written JSON.
 //   crowd <size>  one table, a full door queue (every queueSlots slot holds a group), a long-patience guest seated; the NEXT arrival is refused with `size` guests
-//   steady        a brand-new game as the app creates it (onboarding on), except that capacity demand is off: guests keep arriving at the pace these
+//   crowd2        the same full door at a 0.7 s arrival pace (`spawn.baseMs` and the no-rush `rush.none.floorMs` set to 700, a test cadence, config-exempt):
+//                 the next TWO arrivals are refused inside one door-bubble lifetime (2.2 s), as a heavy rush with a full queue or a flyer does (S6 review round 2)
+//   steady       a brand-new game as the app creates it (onboarding on), except that capacity demand is off: guests keep arriving at the pace these
 //                 visuals were written for (the specs are about coins, rings and bubbles, not about how quiet one table is: capacity-demand.test.ts)
 //   dry           shift 1 open with no beer anywhere
 //   ready         shift 1, ten seconds in: the first guest's order is ready and nobody was served yet (the pointer is on the check)
@@ -31,11 +33,33 @@ function crowd(seed: number): Game | null {
   return overflow && Number(overflow.data.size) === want ? g : null;
 }
 
+/** S6 review round 2: a full door whose next two arrivals are refused `gap` ms apart (`pace` × the first refused group's size, well inside the 2.2 s bubble lifetime). */
+function crowd2(seed: number, pace: number): { game: Game; sizes: number[]; gap: number } | null {
+  const raw = steadyDemand(structuredClone(config.raw));
+  raw.upgrades.table.startingTables = 1; raw.spawn.baseMs = pace; raw.rush.none.floorMs = pace; raw.patience.thuongMs = 180000; raw.onboarding.firstShift.firstGroupSize = 1;
+  const g = new Game(loadConfig(raw), seed, start);
+  if (!g.command({ at: g.world.now, idempotencyKey: 'open', command: { type: 'startShift' } }).ok) throw Error('fixture:shift-not-open');
+  const slots = queueSlots(g.world, g.config);
+  for (let step = 0; step < 4000 && g.world.queue.length < slots; step++) g.advance(g.world.now + 100);
+  if (g.world.queue.length < slots) return null;
+  const probe = decodeSave(encodeSave(g)); const before = probe.world.events.length;
+  const refused = () => probe.world.events.slice(before).filter(e => e.type === 'queue_overflow');
+  for (let step = 0; step < 300 && refused().length < 2; step++) probe.advance(probe.world.now + 100);
+  const [first, second] = refused();
+  if (!first || !second) return null;
+  return { game: g, sizes: [Number(first.data.size), Number(second.data.size)], gap: second.at - first.at };
+}
+
 if (mode === 'crowd') {
   let game: Game | null = null;
   for (let seed = 1; seed < 400 && !game; seed++) game = crowd(seed);
   if (!game) throw Error('fixture:no-crowd-seed');
   console.log(JSON.stringify({ save: encodeSave(game), now: game.world.now, queue: game.world.queue.length }));
+} else if (mode === 'crowd2') {
+  let found: ReturnType<typeof crowd2> = null;
+  for (let seed = 1; seed < 400 && !found; seed++) found = crowd2(seed, 700);
+  if (!found) throw Error('fixture:no-crowd2-seed');
+  console.log(JSON.stringify({ save: encodeSave(found.game), now: found.game.world.now, queue: found.game.world.queue.length, sizes: found.sizes, gap: found.gap }));
 } else if (mode === 'steady') {
   const g = new Game(loadConfig(steadyDemand(structuredClone(config.raw))), 42, start);
   console.log(JSON.stringify({ save: encodeSave(g), now: g.world.now }));

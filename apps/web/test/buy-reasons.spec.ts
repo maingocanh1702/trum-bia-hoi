@@ -2,6 +2,7 @@ import { test, expect } from './tbh-fixture';
 import type { Page } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import AxeBuilder from '@axe-core/playwright';
+import { readFileSync } from 'node:fs';
 
 // fun-buy-buttons-reason (PLAN "Vui 3 ca" §4 + P3): a price on every buy button and exactly one reason when it is dimmed, one reason on every
 // "a guest left" toast, and the shift book ranking the reasons. Engine-made saves, DOM-only proof.
@@ -99,12 +100,14 @@ for (const viewport of viewports) test(`a dimmed seat button keeps its price and
   await expect(buy.locator('.buy-reason')).toHaveText('Chưa đủ xu'); await expect(buy.locator('.buy-reason')).toHaveCount(1);
   // A second chair opens only once the shop owns four tables, whatever the wallet says: that one reason; a level needs two chairs.
   const card = tableCard(sheet, 1), chair = card.getByRole('button', { name: /^Thêm ghế · [\d.]+ xu$/ }), level = card.getByRole('button', { name: /^Nâng · [\d.]+ xu$/ });
-  await expect(chair).toBeDisabled(); await expect(chair).toHaveAccessibleDescription('Mua đủ bàn trước');
+  // The locked chair names the tables it waits for (chairsAfterTables of the config: four, while the alley has eight places), never "every table".
+  const after = JSON.parse(readFileSync('docs/config/economy.tbh.json', 'utf8')).upgrades.table.chairsAfterTables as number; expect(after).toBe(4);
+  await expect(chair).toBeDisabled(); await expect(chair).toHaveAccessibleDescription(`Mở sau khi đủ ${after} bàn`);
   await expect(level).toBeDisabled(); await expect(level).toHaveAccessibleDescription('Bàn cần 2 ghế');
   // S4: the chairs have a level of their own, behind Duong Len Trum LP1: the third button of the card, with its own price and its own one reason.
   const comfort = card.getByRole('button', { name: /^Nâng ghế · [\d.]+ xu$/ });
   await expect(comfort).toBeDisabled(); await expect(comfort).toHaveAccessibleDescription('Cần đạt Phụ Quán');
-  await expect(card.locator('.buy-reason')).toHaveText(['Mua đủ bàn trước', 'Bàn cần 2 ghế', 'Cần đạt Phụ Quán']); // one line per dimmed button, never two for one
+  await expect(card.locator('.buy-reason')).toHaveText([`Mở sau khi đủ ${after} bàn`, 'Bàn cần 2 ghế', 'Cần đạt Phụ Quán']); // one line per dimmed button, never two for one
   for (const button of [buy.getByRole('button'), chair, level, comfort]) expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   expect((await axe(page)).violations).toEqual([]); await tbh.shot(`br-seat-states-${viewport.width}.png`);

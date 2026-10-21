@@ -17,5 +17,6 @@ if (process.argv[2] === 'inspect') {
   process.stdout.write(JSON.stringify({ save: encodeSave(g), now: g.world.now, coins: g.world.coins,
     tablePrices: prices.slice(0, tables).map(n => Math.round(n * raw.k.value)), chairPrice: Math.round(prices[tables] * raw.k.value),
     nextChairPrice: Math.round(table.chairPriceBase[1] * raw.k.value),
-    levelPrice: tableUpgrade(values)!.levels[0].priceBase, chairUpPrice: chairUpgrade(values)!.priceBase })); // S4: the first level of the first table, and the first chair upgrade of the shop
+    levelPrice: tableUpgrade(values)!.levels[0].priceBase, chairUpPrice: chairUpgrade(values)!.priceBase, // S4: the first level of the first table, and the first chair upgrade of the shop
+    chairsAfterTables: table.chairsAfterTables, chairUpMult: chairUpgrade(values)!.levels[0].patienceMult })); // S6: the tables a second chair waits for, the patience the first chair level gives
 }

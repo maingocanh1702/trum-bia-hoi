@@ -2027,6 +2027,40 @@
       "review_notes": "Generated matching red low plastic stool. Original alpha preserved; downscaled runtime checked; final export optimization/family approval pending."
     },
     {
+      "id": "chair-backrest",
+      "type": "sprite",
+      "path": "assets/chair-backrest-procedural-v1.png",
+      "source": "original_procedural_synthesis",
+      "dimensions": [
+        128,
+        160
+      ],
+      "transparent": true,
+      "usage": [
+        "table-chairs"
+      ],
+      "status": "draft",
+      "review_notes": "S6 (plan D15) chair level 2, 'ghe tua nhua': the red moulded-plastic chair with a backrest, drawn procedurally by scripts/chair_sprites.py (no image API in the build environment) in the style of the table exports: token palette stoolRed x0.70/1/1.12 plus the 2 px outline #3a2730, hard alpha, the chair crop of the pipeline (128x160, bottom anchor, 6 % padding, same ground contact as chair-plastic). QA strip assets/_qa/chair-backrest-qa.png and the three-level contact sheet assets/_qa/contact-chair-levels-procedural-v1.png; readable at 33 px on the yard. Art direction review pending: a generated or hand-drawn chair may replace it under the same id.",
+      "script": "scripts/chair_sprites.py"
+    },
+    {
+      "id": "chair-cushion",
+      "type": "sprite",
+      "path": "assets/chair-cushion-procedural-v1.png",
+      "source": "original_procedural_synthesis",
+      "dimensions": [
+        128,
+        160
+      ],
+      "transparent": true,
+      "usage": [
+        "table-chairs"
+      ],
+      "status": "draft",
+      "review_notes": "S6 (plan D15) chair level 3, 'ghe go dem': the wooden chair with a red cushion and a slatted back, drawn procedurally by scripts/chair_sprites.py in the style of the table exports: token palette panelBorder (wood) and stoolRed (cushion) x0.70/1/1.12 plus the 2 px outline #3a2730, hard alpha, the chair crop of the pipeline (128x160, bottom anchor, 6 % padding, same ground contact as chair-plastic). QA strip assets/_qa/chair-cushion-qa.png and the contact sheet assets/_qa/contact-chair-levels-procedural-v1.png. Art direction review pending: a generated or hand-drawn chair may replace it under the same id.",
+      "script": "scripts/chair_sprites.py"
+    },
+    {
       "id": "owner-idle",
       "type": "sprite",
       "usage": [

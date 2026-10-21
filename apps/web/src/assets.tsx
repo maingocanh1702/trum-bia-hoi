@@ -23,11 +23,16 @@ export function Sprite({ id, className = '' }: { id: string; className?: string 
 }
 
 export const reactions: Record<string, string> = { early: '🤩', earlyNoTip: '🙂', late: '😐', grace: '😥', stale: '😖' };
-export function TableSeats({ capacity, customers = [], feedback = [] }: { capacity: number; customers?: Customer[]; feedback?: { customerId: string; kind: string }[] }) {
+/** S6 (D15): the chair art of a chair level — the plastic stool, then "ghế tựa nhựa" (a plastic chair with a backrest), then "ghế gỗ đệm" (a cushioned wooden chair); a level above the art keeps the last sprite. */
+const CHAIR_ART = ['chair-plastic', 'chair-backrest', 'chair-cushion'] as const;
+export const chairAsset = (chairLevel: number): string => CHAIR_ART[Math.min(CHAIR_ART.length, Math.max(1, chairLevel)) - 1];
+/** S6 (D14): the tray drawn on a table, one sprite per dish its level allows (`trayDishes`): the beer, the snack, the second snack of a Lv3+ pair. */
+export const trayAsset = ['glass-full', menuAsset.lac, menuAsset.nem] as const;
+export function TableSeats({ capacity, chairLevel = 1, customers = [], feedback = [] }: { capacity: number; chairLevel?: number; customers?: Customer[]; feedback?: { customerId: string; kind: string }[] }) {
   return <div className="stools" aria-hidden="true">{Array.from({ length: capacity }, (_, i) => {
     const angle = i * Math.PI * 2 / capacity + Math.PI;
     const customer = customers[i];
     const reaction = feedback.find(s => s.customerId === customer?.id);
-    return <span className={`seat ${customer ? 'seat-customer' : 'seat-empty'}`} key={customer?.id ?? i} data-customer-id={customer?.id} style={{ left: `${50 + 45 * Math.cos(angle)}%`, top: `${70 + 30 * Math.sin(angle)}%` }}><Sprite id={customer ? `customer-${customer.type.replace('_', '-')}` : 'chair-plastic'} />{reaction && <span className={`customer-reaction reaction-${reaction.kind}`}>{reactions[reaction.kind]}</span>}</span>;
+    return <span className={`seat ${customer ? 'seat-customer' : 'seat-empty'}`} key={customer?.id ?? i} data-customer-id={customer?.id} style={{ left: `${50 + 45 * Math.cos(angle)}%`, top: `${70 + 30 * Math.sin(angle)}%` }}><Sprite id={customer ? `customer-${customer.type.replace('_', '-')}` : chairAsset(chairLevel)} />{reaction && <span className={`customer-reaction reaction-${reaction.kind}`}>{reactions[reaction.kind]}</span>}</span>;
   })}</div>;
 }

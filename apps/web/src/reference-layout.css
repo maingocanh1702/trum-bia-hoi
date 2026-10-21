@@ -45,9 +45,8 @@
 .glass-counter { position: absolute; left: calc(50% + 66px); top: 100px; height: 25px; border-radius: 6px; background: #456760; color: #fff; padding: 1px 6px 1px 0; gap: 1px; }
 .glass-counter > span:first-of-type { font-size: 12px; }
 .glass-counter .sprite { width: 20px; height: 26px; }
-.yard { flex: 1; min-height: 330px; margin: 0 44px 0 12px; }
+.yard { margin: 0 56px 0 12px; }
 .table-space { width: 132px; height: 103px; }
-.table-0 { left: 25%; top: 18%; }.table-1 { left: 75%; top: 18%; }.table-2 { left: 50%; top: 68%; }
 .table-caption { font-size: 9px; margin-top: 3px; }
 .table-caption > span, .guest-label { display: block; }
 .guest-label { font-size: 10px; color: #203e36; text-transform: uppercase; }
@@ -119,8 +118,8 @@
 @keyframes reaction-in { from { opacity: 0; transform: translate(-50%, 5px) scale(.6); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
 @container (min-width: 640px) {
   .stall-scene { margin-top: 32px; height: 231px; }
-  .yard { margin-left: 60px; margin-right: 70px; min-height: 285px; }
-  .table-0 { left: 15%; top: 23%; }.table-1 { left: 50%; top: 23%; }.table-2 { left: 85%; top: 23%; }
+  .yard { margin-left: 60px; margin-right: 70px; }
+  .yard-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } /* 510 px of yard: three 132 px tables abreast; four need 760 px */
   .stock-strip { right: 16px; top: 143px; }
 }
 @media (max-height: 770px) {

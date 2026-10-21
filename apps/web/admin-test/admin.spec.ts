@@ -323,3 +323,98 @@ test('M2-ONBOARDING local editor publishes thresholds and guide steps; disabled 
  const offVersion = await publish({ 'onboarding.enabled': false });
  for (const locale of ['vi', 'en']) await inspect(locale, false, offVersion);
 });
+
+// S6 (plan S6 row "Admin sửa được từng key mới", brief B6, PR #14 k-admission): every key the seat-model slices S1-S5 added to the seed is a key of its own in
+// the editor, each edit proposes with EXACTLY its own diff row (an Economy Admin's draft; a Tier A key says it needs a second Super), and the two publication
+// paths run end to end on one key each: a Tier A key (spawn.capacityDemand.refTables) through a second Super, scheduled for the next day, and a Tier B key
+// (runtime.queueBaseSlots) by the Economy Admin at once. Both are measured and admitted (the admin test server, apps/web/admin-test/server.ts, builds its GameStore
+// without a measureK, so the registry's default measurer reads the candidate's own k.value: the admission path runs, it does not react to a seat key here; the
+// measured-k refusal of a seat key is pinned server-side by apps/server/test/registry.test.ts "S6: the k check reacts to a seat key ..."). A player already playing
+// keeps its pin; the next new player after the Tier B publication opens on it, and the next new player after the Tier A activation (the isolated clock moved past
+// it) opens on a version carrying both keys. The admission of every one of the 17 keys is pinned server-side by registry.test.ts "S6: every seat-model key S1-S5
+// added is governed ..." (the daily publication limit per author is five, so the browser publishes two and proposes the rest). Written on Windows, where the admin
+// tier cannot run: validated on the Linux run (30/30 x3 on 715b609).
+test('S6 seat-model keys S1-S5 are editable one by one: each proposes with exactly its own diff row, a Tier A key publishes through a second Super and a Tier B key at once, both reach a new player', async ({ page, browser }) => {
+ test.setTimeout(300000);
+ await login(page); // economy: proposes every key; approves and publishes Tier B alone
+ const s = (await (await page.request.get('/api/admin/draft-source')).json()).snapshot;
+ const bump = <T,>(rows: T[], edit: (row: T) => T) => rows.map((row, i) => i === 0 ? edit(structuredClone(row)) : row);
+ const keys: { path: string; tier: 'A' | 'B'; value: unknown }[] = [
+  { path: 'spawn.pPair', tier: 'A', value: Math.round((s.spawn.pPair - 0.05) * 100) / 100 },
+  { path: 'spawn.capacityDemand.maxMult', tier: 'A', value: s.spawn.capacityDemand.maxMult - 1 },
+  { path: 'locations.list', tier: 'A', value: bump(s.locations.list as { tableSlots: number }[], row => ({ ...row, tableSlots: row.tableSlots - 1 })) },
+  { path: 'upgrades.table.tablePriceBase', tier: 'A', value: bump(s.upgrades.table.tablePriceBase as number[], n => n + 1) },
+  { path: 'upgrades.table.chairPriceBase', tier: 'A', value: bump(s.upgrades.table.chairPriceBase as number[], n => n + 1) },
+  { path: 'upgrades.table.chairsAfterTables', tier: 'A', value: s.upgrades.table.chairsAfterTables - 1 },
+  { path: 'upgrades.table.orderShape.solo.pBeer', tier: 'A', value: 0.65 },
+  { path: 'upgrades.table.orderShape.pair.pMoi', tier: 'A', value: 0.8 },
+  { path: 'upgrades.table.tableUpgrade.levels', tier: 'A', value: bump(s.upgrades.table.tableUpgrade.levels as { priceBase: number }[], row => ({ ...row, priceBase: row.priceBase + 100 })) },
+  { path: 'upgrades.table.chairUpgrade.priceBase', tier: 'A', value: s.upgrades.table.chairUpgrade.priceBase + 100 },
+  { path: 'upgrades.table.chairUpgrade.stepBase', tier: 'A', value: s.upgrades.table.chairUpgrade.stepBase + 100 },
+  { path: 'upgrades.table.chairUpgrade.levels', tier: 'A', value: bump(s.upgrades.table.chairUpgrade.levels as { patienceMult: number }[], row => ({ ...row, patienceMult: 1.2 })) },
+  { path: 'shift.noCooldownFirstShifts', tier: 'A', value: s.shift.noCooldownFirstShifts + 1 },
+  { path: 'runtime.queueSeatsPerSlot', tier: 'B', value: s.runtime.queueSeatsPerSlot - 2 },
+  { path: 'patience.thuongMs', tier: 'B', value: s.patience.thuongMs + 1000 },
+ ];
+ const published = { A: { path: 'spawn.capacityDemand.refTables', value: s.spawn.capacityDemand.refTables + 1 }, B: { path: 'runtime.queueBaseSlots', value: s.runtime.queueBaseSlots + 1 } };
+ // The page shows a "Thay đổi thực tế" region twice once a version detail is open (the draft's diff AND the diff of the shown version), and every
+ // draft control lives in the draft panel (the section headed "Bản nháp của bạn"): scope every lookup to that panel, never to the page.
+ const draftPanel = page.locator('section.admin-panel').filter({ has: page.getByRole('heading', { name: 'Bản nháp của bạn', level: 2 }) });
+ const diff = draftPanel.getByRole('region', { name: 'Thay đổi thực tế' });
+ const editJson = async (path: string, value: unknown) => {
+  await page.getByRole('button', { name: 'Chỉnh sửa bản mới nhất' }).click(); await expect(draftPanel).toHaveCount(1);
+  await draftPanel.getByLabel('Tìm khóa cấu hình').fill(path);
+  const box = draftPanel.getByRole('combobox', { name: 'Khóa cấu hình', exact: true });
+  expect(await box.locator('option').evaluateAll(options => options.map(o => (o as HTMLOptionElement).value)), path).toContain(path);
+  await box.selectOption(path);
+  await draftPanel.getByRole('textbox', { name: 'Giá trị JSON', exact: true }).fill(JSON.stringify(value));
+  await draftPanel.getByRole('button', { name: 'Áp dụng vào bản nháp' }).click();
+  await draftPanel.getByLabel('Lý do thay đổi').fill('S6 seat-model key ' + path);
+  await draftPanel.getByRole('button', { name: 'Xem diff', exact: true }).click();
+  await expect(diff).toBeVisible();
+  const rows = diff.locator('tbody tr'); await expect(rows).toHaveCount(1); await expect(rows.getByRole('rowheader')).toHaveText(path); // exactly this key moved, nothing else
+  expect(JSON.parse((await rows.locator('td').nth(1).locator('pre').textContent())!), path).toEqual(value); // the "after" cell holds the value as applied
+ };
+ // 1) One draft per key, from the same base: every key is listed by its own path, applies as JSON, diffs as one row, and proposes.
+ for (const key of keys) {
+  await editJson(key.path, key.value); await proposal(page);
+  if (key.tier === 'A') { await expect(detail(page)).toContainText('Thay đổi cấp A'); await expect(detail(page).getByRole('button', { name: 'Duyệt đề xuất' })).toHaveCount(0); }
+  else await expect(detail(page).getByRole('button', { name: 'Duyệt đề xuất' })).toBeVisible();
+ }
+ await expect(page.locator('.admin-proposals strong').filter({ hasText: 'S6 seat-model key' })).toHaveCount(keys.length); // waits for the list to refresh after the last proposal
+ // 2) Tier B end to end, AT ONCE and FIRST: the Economy Admin proposes on the active base, approves and publishes alone (next_shift = now); a guest already playing
+ // keeps its pin, the next new player opens on it. It must come before the Tier A key: a publication may never activate before the latest one does
+ // (registry.ts publicationAt: `registry:scheduleConflict`), and a Tier A key is scheduled for the next Vietnam midnight.
+ const old = await playerContext(browser); const oldVersion = (await (await old.ctx.request.get('/api/player/state')).json()).configVersion;
+ await editJson(published.B.path, published.B.value); const versionB = await proposal(page);
+ await detail(page).getByRole('button', { name: 'Duyệt đề xuất' }).click(); await detail(page).getByRole('button', { name: 'Xuất bản', exact: true }).click();
+ await page.getByRole('button', { name: 'Xác nhận xuất bản', exact: true }).click(); await expect(detail(page)).toContainText('Đã xuất bản');
+ const detailB = await (await page.request.get('/api/admin/config?version=' + versionB)).json();
+ expect(detailB.measurement.state).toBe('admitted'); expect(detailB.publication.effective_at).toBeLessThanOrEqual(detailB.publication.published_at); // admitted by the measured k, effective at once
+ expect((await (await old.ctx.request.get('/api/player/state')).json()).configVersion).toBe(oldVersion); // a player already playing keeps his pin
+ const atOnce = await playerContext(browser); expect(atOnce.state.configVersion).toBe(versionB);
+ expect((await (await atOnce.ctx.request.get('/api/player/config?version=' + versionB)).json()).runtime.queueBaseSlots).toBe(published.B.value);
+ await old.ctx.close(); await atOnce.ctx.close();
+ // 3) Tier A end to end, SCHEDULED: the Economy Admin proposes on the Tier B version (the latest admitted one is the draft's base), a Super (another person)
+ // approves and publishes; the registry schedules it for the next Vietnam midnight and admits it by the measured k.
+ await editJson(published.A.path, published.A.value); const versionA = await proposal(page);
+ await expect(detail(page)).toContainText('Thay đổi cấp A');
+ const other = await browser.newContext({ baseURL: 'http://127.0.0.1:4181' }), approver = await other.newPage(); await login(approver, 'super-one');
+ await approver.getByLabel('Mã phiên bản', { exact: true }).fill(versionA); await approver.getByRole('button', { name: 'Xem phiên bản', exact: true }).click();
+ await detail(approver).getByRole('button', { name: 'Duyệt đề xuất' }).click(); await detail(approver).getByRole('button', { name: 'Xuất bản', exact: true }).click();
+ await approver.getByRole('button', { name: 'Xác nhận xuất bản', exact: true }).click();
+ await expect(detail(approver)).toContainText('Đã xuất bản'); await expect(detail(approver)).toContainText('Từ ngày mới'); await expect(detail(approver).getByText('Hẹn giờ', { exact: true })).toBeVisible();
+ const session = await (await approver.request.get('/api/admin/auth')).json(), detailA = await (await approver.request.get('/api/admin/config?version=' + versionA)).json();
+ expect(detailA.publication.effective_at).toBeGreaterThan(session.actor.issuedAt); expect(detailA.measurement.state).toBe('admitted');
+ expect(detailA.snapshot.spawn.capacityDemand.refTables).toBe(published.A.value); expect(detailA.snapshot.runtime.queueBaseSlots).toBe(published.B.value); // built on the Tier B version: both keys
+ await other.close();
+ expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+ // 4) Both reach a new player: the isolated server clock (apps/web/admin-test/server.ts `/__test/advance`, the offset every `now()` reads) is moved one
+ // minute past the Tier A activation. Admin sessions (8 h) expire with that move, so nothing below talks to the admin API; a new guest opens on the
+ // Tier A version, whose config carries the Tier A key and the Tier B key it was built on.
+ await page.request.get('/api/__test/advance?ms=' + (detailA.publication.effective_at - detailA.publication.published_at + 60000));
+ const fresh = await playerContext(browser); expect(fresh.state.configVersion).toBe(versionA);
+ const config = await (await fresh.ctx.request.get('/api/player/config?version=' + versionA)).json();
+ expect(config.spawn.capacityDemand.refTables).toBe(published.A.value); expect(config.runtime.queueBaseSlots).toBe(published.B.value);
+ await fresh.ctx.close();
+});

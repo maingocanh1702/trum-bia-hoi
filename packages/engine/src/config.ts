@@ -64,6 +64,15 @@ export function tableBenefitGained(c: Economy, level: number): keyof TableBenefi
 }
 /** Order-patience multiplier of a chair level (D15): 1 at level 1 and on every snapshot without the chair ladder. */
 export function chairPatienceMult(c: Economy, level: number): number { return chairUpgrade(c)?.levels.find(l => l.level === level)?.patienceMult ?? 1; }
+/**
+ * The most dishes one guest's tray holds at a table (D14, S6: the tray drawn on the yard): a one-chair table serves beer OR one instant dish, a pair
+ * beer + one snack, and a level whose row has `pExtraMoi` a second snack (the level counts only at two chairs: `effectiveTableLevel`). A capacity
+ * snapshot's tray is beer + one snack. The order itself is built in `Game.order()`; this only reads the shape it follows.
+ */
+export function trayDishes(c: Economy, table: { level: number; capacity: number }): number {
+  const soloOrPair = isSeatModel(c) && table.capacity < PAIR ? 1 : 2; // config-exempt: structural tray shape (D14): one dish for a solo guest, beer + a snack for a guest of a pair
+  return soloOrPair + (tableBenefit(c, effectiveTableLevel(table)).pExtraMoi > 0 ? 1 : 0);
+}
 
 /** Decode the single supported config curve grammar; never execute formula text. */
 export function dailyTargetCurve(c: Economy) {

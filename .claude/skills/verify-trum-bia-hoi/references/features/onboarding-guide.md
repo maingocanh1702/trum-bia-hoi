@@ -115,6 +115,8 @@
   `P0 the ready check with its pointer passes axe and keeps 44px targets at ${w}px` (×3) ·
   `P0 an empty keg is greyed and exactly the refill button asks for a tap` (+ axe) ·
   `P0 the door shows patience rings and a refused group of ${2|1} says "${2 ghế|Hết chỗ}" at ${w}px` (×6, + axe on `.door`) ·
+  `P0 two refusals inside one bubble lifetime: the door says the newest reason and no bubble covers a guest at ${w}px` (×3, S6 review round 2: fixture `crowd2` with two `queue_overflow` 630 ms apart;
+  at most one refused group drawn with its one bubble, no `.door-bubble` box over another `.door-guest` on any 100 ms frame, the second refusal replaces the first < 2.2 s after it; no axe: the live clock keeps refusing groups, the ×6 case is the door's axe pass) ·
   `P0 after shift 1 the HUD opens up and the Upgrades sheet holds exactly one card at ${w}px` (×3, + axe; fixture `rest`: a capacity snapshot, the frozen 2.0.4 file with a custom version, where the card is the first table level-up) ·
   `P0 on the seat model after shift 1 the Upgrades sheet holds exactly one card, the second table, at ${w}px` (×3, + axe; fixture `seat-rest`: the bundled seat model, the card is `[data-goal="buyTable"]` "Mua bàn · 1.070 xu" with the single spotlight,
   after buying it the one card is the next table at 9.250 xu and the nudge is spent; the save holds 2 tables and `coins − 1.070`) ·
