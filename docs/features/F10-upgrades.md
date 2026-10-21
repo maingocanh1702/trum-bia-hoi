@@ -26,16 +26,18 @@ type PlayerUpgrades = Record<UpgradeKind, number>
 
 ## 3. Upgrade tables
 
-| Kind | Levels price base | Main stats |
-|---|---|---|
-| `keg` | 0 / 5,000 / 20,000 / 80,000 / 300,000 | pour slots 1/2/3/4/6, pourMs 2000->1200; keg refill ON: storage 3/6/10/18/40, batch 2/3/5/8/14, refillMs 12/8/6/5/4 s (08-SPEC §8.1, JSON 2.0.1) |
-| `washer` | 0 / 4,000 / 16,000 / 60,000 / 200,000 | wash slots 1->5, washMs 7000->1500 |
-| `cooler` | 0 / 3,000 / 12,000 / 45,000 / 150,000 | freshness 12s->20s->35s->60s->infinite |
-| `stall` | 0 / 1,500 / 8,000 / 30,000 / 120,000 | inventory cap 15->150 |
-| `table` | see `03-SPEC-he-ban.md` | capacity/sprite |
-| `kitchen` | — / 12,000 / 50,000 / 160,000 / 400,000 | unlock hot dishes, prep slots/speed |
+Numbers in force: JSON **2.1.0** (S5 `eco21-balance-pass`, sealed by simulation; 08-SPEC §8.1–§8.6). Price base per level, displayed ×k 2.5.
 
-Displayed price = `round(priceBaseXu * k)`.
+| Kind | Levels price base (Lv1 → Lv5; kitchen Lv0 → Lv4) | Main stats |
+|---|---|---|
+| `keg` | 0 / 2,000 / 7,750 / 38,750 / 146,750 | ready reserve `kegStorage` 4/7/12/20/40, refill batch `kegBatch` 2/3/5/8/14, `refillMs` 12/8/6/5/4 s. Rules 28 (seat model, `refillEnabled` on): **instant pour** — a ready beer and a clean glass are a ready beer in the tick of the order, so a keg level buys reserve + refill only; the tap columns (`pourSlots` 1/2/3/4/6, `pourMs` 2000→1200) drive only capacity pins, rules ≤ 27 replays and refill-off snapshots |
+| `washer` | 0 / 1,500 / 6,250 / 29,500 / 97,750 | glasses per wash batch (`slots`) 1/1/2/3/5, `washMs` 7000/5000/4000/2500/1500 |
+| `cooler` | 0 / 1,250 / 4,500 / 22,500 / 73,250 | glass freshness 12 s → 20 s → 35 s → 60 s → infinite |
+| `stall` | 0 / 750 / 3,250 / 14,250 / 59,000 | stock cap per ingredient 15/25/45/80/150 (Lv2 at 1,875 xu is the cheapest device level: no device level costs less than table 2, so the goal chip shows table 2 after shift 1) |
+| `kitchen` | — / 4,500 / 19,500 / 78,500 / 195,500 | Lv1 opens `dau`/`topmo`, Lv2 `long`; pans 1/2/2/3 × portions 2/2/3/3, prep ×1.00/0.90/0.80/0.70 |
+| `table` (seat model, rules 28) | four commands, not one ladder: `buyTable` (table n = `tablePriceBase[n−2]` = 428 · 3,700 · 5,700 · 9,600 · 12,900 · 15,900 · 16,000 base → **1,070** … 40,000 xu; cap `tableSlots` 8 in every location), `buyChair` (second chairs after 4 tables, `chairPriceBase` 400 … 2,800 base by second chairs owned), `upgradeTable` Lv1→4 (target-level price `priceBase + stepBase × n`: 7,000 + 2,500 n · 34,000 + 13,500 n · 59,500 + 20,500 n; gates LP1/LP2/LP4; the table needs two chairs), `upgradeChair` Lv1→3 (12,000 + 6,000 t; gates LP1/LP2) | seats and tray shape (1 chair: a single guest, beer *or* one instant snack; 2 chairs: a pair, beer + one snack); table levels give the NEXT group +1 round (Lv2), a second snack 35 % (Lv3), tip ×1.25 at that table (Lv4); chair levels give order patience ×1.15 / ×1.30 — `03-SPEC-he-ban.md` §6 |
+
+Displayed price = `round(priceBaseXu * k)`. Device gates (`upgrades.lifePathGate`): Lv4 of every device needs LP2, Lv5 LP3; kitchen Lv3/Lv4 LP3/LP4. A pinned snapshot keeps the prices it was pinned with; the capacity-model table ladder (level = seats) survives only on capacity pins.
 
 ## 4. Purchase rules
 
@@ -43,14 +45,15 @@ Displayed price = `round(priceBaseXu * k)`.
 - Upgrade increments one level only; no skip.
 - Buying upgrade spends `coins`, not `seasonEarned`.
 - Owner update 2026-09-09: equipment, kitchen and table purchases are allowed during a shift. Management stays paused until the menu closes. Empty-table upgrades retain badge/reputation gates; existing guests/orders are not reset.
+- Rules 28 (seat model, Waves 2–3): no seat-model purchase needs an empty table — a bought chair, table level or chair level serves the NEXT group (the seated group keeps its tray and perks); every button shows its price and, when dimmed, exactly one reason, the first refusal of the command's own quote (`buyTableQuote` / `buyChairQuote` / `tableUpgradeQuote` / `chairUpgradeQuote` in `rules.ts`). The HUD's quick "Mua ghế bàn n · giá" buys the next chair in one tap without pausing (D10), like the quick beer refill.
 
 ## 5. Effects
 
-- `keg`: controls concurrent pours and pour duration.
+- `keg`: rules 28 — ready reserve and refill batch/speed (instant pour); capacity pins and old replays — concurrent pours and pour duration.
 - `washer`: controls dirty glass queue throughput.
 - `cooler`: changes `beerFreshnessMs`.
 - `stall`: changes stock caps and overflow conversion.
-- `table`: changes `capacity`, sprite, table slots.
+- `table`: rules 28 — tables (cap `tableSlots`), second chairs (pairs and the double tray), table levels (perks for the next group) and chair levels (order patience), each with its own sprite (table by level, chair by chair level, tray by the dishes the level allows; S6 yard); capacity pins — `capacity`, sprite, table slots.
 - `kitchen`: unlocks `dau`, `topmo`, `long`, prep slots.
 
 ## 6. UI
@@ -274,3 +277,4 @@ Old1.x active shifts retain their complete raw config. New2.0.1 config is pinned
 | 2026-10-21 S5 rules 28 (JSON 2.1.0, review vòng 1) | **Số chốt mới thay dòng 2026-10-20** (bảng cổng: 08-SPEC changelog 2026-10-21): bàn thứ 2…8 = 600 · 3 700 · 5 700 · 9 600 · 12 900 · 15 900 · 16 000 base, ghế 2 = 400 · 600 · 900 · 1 200 · 1 600 · 2 000 · 2 400 · 2 800 base (×2,5 hiển thị); nâng bàn →Lv2 7 000 + 2 500·n, →Lv3 34 000 + 13 500·n, →Lv4 59 500 + 20 500·n, nâng ghế 12 000 + 6 000·t (gate và lợi ích của S4 giữ nguyên); thiết bị Lv2–5 (base): bom 2 000 · 7 750 · 38 750 · 146 750, rửa 1 500 · 6 250 · 29 500 · 97 750, hầm 1 250 · 4 500 · 22 500 · 73 250, quầy 750 · 3 250 · 14 250 · 59 000, bếp Lv1–4 4 500 · 19 500 · 78 500 · 195 500; sàn giá giữ (quầy Lv2 = 750 base = 1 875 xu ≥ bàn 2 = 1 500 xu). Ví khởi đầu về **750 xu** (300 base): kết ca 1 mua nổi bàn 2 ở 15 / 60 lượt, trung vị thu ròng 533 xu (hàng P0 đỏ, quyết định của owner). |
 | 2026-10-21 S5 rules 28 (JSON 2.1.0, quyết định owner) | **Giá bàn 2 = 428 base = 1.070 xu** (trước 600 base = 1.500 xu), thay con số 1 500 xu của dòng trên; bàn 3…8 (3 700 · 5 700 · 9 600 · 12 900 · 15 900 · 16 000 base), ghế, thang nâng và thiết bị giữ nguyên; sàn giá giữ (quầy Lv2 = 750 base = 1 875 xu ≥ bàn 2 = 1 070 xu). Ví khởi đầu vẫn **750 xu**: kết ca 1 mua nổi bàn 2 ở **83 % của 300 lượt** (79–87 %; 81 % ở n = 600) — tiêu chí 4/5 của owner (quyết định owner 1, 21/10/2026; 08-SPEC changelog 2026-10-21, DECISIONS `## 04 · owner decision 1`). Chip mục tiêu và nút "Mua bàn" đọc giá từ config ("Mua bàn · 1.070 xu"). |
 | 2026-10-21 S6 rules 28 (UI, JSON 2.1.0 giữ nguyên) | Registry mục tiêu (`apps/web/src/goals.ts`) đủ **bốn món bàn ghế** của làn Sức chứa: `table:` (nâng bàn), `buyTable`, **`chair:<bàn>` (ghế 2: +1 chỗ, giá `buyChairQuote`, khoá tới đủ `chairsAfterTables` bàn)** và **`chairLevel:<bàn>` (nâng ghế: kiên nhẫn ×1,15 / ×1,3, giá `chairUpgradeQuote`)**, mỗi món giá + hiệu ứng một con số + đúng một lý do; hai `Card` mới + hai case `renderCard`, luật chip không đổi — nên từ S6 chip có thể trỏ vào ghế 2 (sau đủ 4 bàn, rẻ hơn mọi bàn sau) và vào cấp ghế khi LP1 mở (test `next-goal.test.ts` đổi assertion có chủ ý: "levels and chairs are not its goals yet" → đi hết thang bàn, rồi ghế, rồi cấp ghế). HUD: **nút nhanh "Mua ghế bàn n · giá" không pause** (D10; cùng mẫu "Nhập bia nhanh"), chỉ hiện khi ghế 2 là mục tiêu kế tiếp và ví trả nổi. Thẻ bàn giữ nút ghế / nâng ghế nhưng mỗi nút là một khối `data-goal` của món đó (chip mở sheet đúng khối). Bằng chứng: `quick-chair.spec.ts` (vi/en × 3 viewport: một chạm mua một ghế, đồng hồ ca chạy tiếp, reload; không hiện khi thiếu xu), `next-goal.test.ts` (3 case S6), `goal-quotes.test.ts` giữ nguyên (một định nghĩa duy nhất cho mỗi quote trong `rules.ts`). |
+| 2026-10-22 Wave 4 close-out (stage 07, JSON 2.1.0, rules 28) | Body brought to the chain's final state (plan §7 "F04/F10/F13/F25/F27, chỉ giữ bản mới nhất"): §3 lists the sealed 2.1.0 device ladders (keg 2,000 · 7,750 · 38,750 · 146,750, washer 1,500 · 6,250 · 29,500 · 97,750, cooler 1,250 · 4,500 · 22,500 · 73,250, stall 750 · 3,250 · 14,250 · 59,000, kitchen 4,500 · 19,500 · 78,500 · 195,500 base) instead of the 2.0.1 prices, states that a keg level buys reserve + refill under instant pour, and gives the table its four seat-model commands with the 2.1.0 prices (table 2 = 1,070 xu); §4 adds the rules-28 purchase rules (no empty table needed, the next group gets the change, one reason from the command's quote, the quick chair button); §5 the effects of keg and table under rules 28. Numbers checked against `docs/config/economy.tbh.json` and 08-SPEC §8; no rule or number changed. Open owner call that touches this feature: the goal chip steers to the four second chairs right after table 4 while the sealed gates were measured with a tables-first bot (HANDOFF vui3ca §12). |

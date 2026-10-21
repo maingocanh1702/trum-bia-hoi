@@ -29,18 +29,20 @@ type PlayerLifePath = {
 
 ## 3. Mốc Đường Lên Trùm
 
-Base values multiply by `k`.
+Base values multiply by `k` (2.5). Numbers in force: JSON **2.1.0** (S5 `eco21-balance-pass`; the owner's compressed ladder for the 3-week story, D20–D21; the league uses the same ladder). Rewards: 08-SPEC §15.
 
-| Level | Tên hiển thị | Base lifetime earned | Unlock intent |
-|---|---|--:|---|
-| LP0 | Bưng Bê | 0 | start |
-| LP1 | Phụ Quán | 50.000 | basic social/profile |
-| LP2 | Tay Ngang | 150.000 | qualified referral milestone target |
-| LP3 | Chủ Sạp | 500.000 | advanced upgrades/Tem Trang Trí |
-| LP4 | Chủ Quán | 1.500.000 | Phố Cổ |
-| LP5 | Ông Chủ | 5.000.000 | Ga Metro |
-| LP6 | Đại Gia Bia | 15.000.000 | Khu Phố Tây |
-| LP7 | Trùm Bia Hơi | 50.000.000 | prestige cap |
+| Level | Tên hiển thị | Base lifetime earned (×k) | Điều kiện phụ (`requires`) | Gates it opens (rules 28) |
+|---|---|--:|---|---|
+| LP0 | Bưng Bê | 0 | — | start |
+| LP1 | Phụ Quán | 8.000 (20.000) | 4 bàn (`4 tables`, D18) | Điện thoại, mặt bằng LP1, Giờ Vàng nặng; nâng bàn Lv2, nâng ghế Lv2 |
+| LP2 | Tay Ngang | 20.000 (50.000) | Quầy Lv3 + Điện thoại | QR, Tờ rơi, mặt bằng LP2; nâng bàn Lv3, nâng ghế Lv3; thiết bị Lv4 |
+| LP3 | Chủ Sạp | 80.000 (200.000) | thiết bị Lv3 + QR | mặt bằng LP3; thiết bị Lv5, bếp Lv3 |
+| LP4 | Chủ Quán | 280.000 (700.000) | tờ rơi + peak Bom Bạc | Phố Cổ; nâng bàn Lv4; bếp Lv4 |
+| LP5 | Ông Chủ | 680.000 (1.700.000) | biển hiệu + peak Bom Vàng | Ga Metro |
+| LP6 | Đại Gia Bia | 1.200.000 (3.000.000) | thiết bị & quầy Lv5 + peak Vua Bia | Khu Phố Tây |
+| LP7 | Trùm Bia Hơi | 2.000.000 (5.000.000) | 10 chỗ + peak Trùm Bia Hơi | prestige (màn kết "Chuyện quán bạn" là slice `story-ending` của Đợt 5, chưa làm) |
+
+Measured pace of the plan's protocol bot (seats first, direct leasing, no dog, start 2026-09-09, 8 shifts a day; `npm run sim:balance`, seed 42 | 99): LP1 at shift 13 | 13, LP2 45 | 46, LP3 48 | 49, LP4 53 | 54, LP5 68 | 69, LP7 163 | 165 (day 21) — every plan §5 target (LP1+2 ≤ 48, LP3+4 ≤ 96, LP5 ≤ 120, LP7 140–170) holds, LP2 with a thin margin. `peak:` requirements read the current 21-day season window, so LP4–LP7 depend on the day of the window a save starts (information runs: 08-SPEC changelog 2026-10-21).
 
 ## 4. Earning rules
 
@@ -177,3 +179,4 @@ is not allLP0–LP7 or production career readiness. Advanced k remains unapprove
 | 2026-10-20 S5 rules 28 (JSON 2.1.0) | Thang `lifetimeBase` LP1…7 = 8 k · 20 k · 80 k · 280 k · 680 k · 1,2 tr · 2 tr (base; hiển thị ×2,5: 20 k · 50 k · 200 k · 700 k · 1,7 tr · 3 tr · 5 tr) đã nằm trong JSON và được sim cân bằng xác nhận cùng giá bàn/ghế/thiết bị và `tableSlots` 4/4/5/6/6/7/8/8/8 (LP7 "10 seats" = 5 bàn × 2 ghế, đạt được ở mặt bằng ≥ 5 chỗ — hết điều kiện "chưa đạt được" của dòng S1). Bot career v4 (mua rẻ nhất trước, thuê thẳng), seed 42 / 99, 8 ca/ngày: LP1 ca 20 / 20, LP2 ca 23 / 23, LP3 ca 45 / 45, LP4 ca 73 / 70, LP5 ca 100 / 97, LP7 ca 144 / 142 (ngày 18–19); mục tiêu plan §5 (LP1+2 ≤ 48, LP3+4 ≤ 96, LP5 ≤ 120, LP7 140–170) đều đạt. Lưu ý đo: `peak:` đọc thu nhập của cửa sổ mùa hiện tại (21 ngày), nên bot bắt đầu ở nửa đêm VN đầu tiên của một mùa; career bắt đầu giữa mùa sẽ đo lịch mùa chứ không đo kinh tế (số đo mốc muộn: 08-SPEC changelog 2026-10-20 / JSON 2.1.0). |
 | 2026-10-21 S5 rules 28 (JSON 2.1.0, review vòng 1) | Thay dòng 2026-10-20: thang `lifetimeBase` LP1…6 = 8 k · 20 k · 80 k · 280 k · 680 k · 1,2 tr, **LP7 = 2,24 tr** base (×2,5: 5,6 tr). Bot của plan (bàn/ghế trước, thuê thẳng, không chó; bắt đầu 2026-09-09; seed 42 / 99, 8 ca/ngày): LP1 ca 14 / 15, LP2 ca 47 / 47, LP3 ca 51 / 50, LP4 ca 55 / 55, LP5 ca 70 / 69, LP7 ca 167 / 162 (ngày 21: LP7 đến cùng lúc món thiết bị cuối cùng); mục tiêu plan §5 (LP1+2 ≤ 48, LP3+4 ≤ 96, LP5 ≤ 120, LP7 140–170) đều đạt. LP2 sát giới hạn (47 / 48): nó chờ quầy Lv3 + điện thoại, mà bot chỉ mua sau khi đủ bàn và ghế của mặt bằng. |
 | 2026-10-21 S5 rules 28 (JSON 2.1.0, review vòng 2) | Thay dòng vòng 1: **LP7 = 2 tr** base (×2,5: 5 tr), thang owner 8 k · 20 k · 80 k · 280 k · 680 k · 1,2 tr · 2 tr. Bot của plan (bàn/ghế trước, thuê thẳng, không chó; 2026-09-09; seed 42 / 99): LP1 ca 14 / 15, LP2 47 / 48, LP3 51 / 51, LP4 56 / 56, LP5 70 / 71, LP7 164 / 165. |
+| 2026-10-22 Wave 4 close-out (stage 07, JSON 2.1.0, rules 28) | Body brought to the chain's final state (plan §7): §3 lists the sealed 2.1.0 ladder (8 k · 20 k · 80 k · 280 k · 680 k · 1,2 tr · 2 tr base, ×2,5 on screen) with its `requires` and the gates each level opens under rules 28 (table levels LP1/LP2/LP4, chair levels LP1/LP2, devices Lv4/Lv5 LP2/LP3, kitchen Lv3/Lv4 LP3/LP4, locations, phone, QR, flyer, heavy rush) instead of the original 50 k … 50 tr table; the measured pace is the final one after owner decision 1 (table 2 = 1 070 xu): LP1 13 \| 13, LP2 45 \| 46, LP3 48 \| 49, LP4 53 \| 54, LP5 68 \| 69, LP7 163 \| 165 (`npm run sim:balance`, seeds 42 \| 99; it supersedes the shift numbers of the round-2 row above, which were measured with table 2 at 1 500 xu). Numbers checked against `docs/config/economy.tbh.json`; no rule or number changed. |
