@@ -13,10 +13,11 @@ import { serveNext } from './policy';
  * of dotted paths, runs the career bot on each seed, the standard-k sim and the shift-1 wallet probe, and prints the table `gate | target | seed 42 | seed 99 |
  * PASS/FAIL`. Every run is deterministic. A sweep is a loop over patches (balance-sweep.ts) and keeps every run: patch + metrics + table.
  *   node --import tsx packages/engine/sim/balance-gates.ts [--patch=file.json] [--set=path=json ...] [--seeds=42,99] [--days=30] [--label=name] [--out=dir]
- *        [--job=career:42|standard|shift1] [--onboarding-pair] [--shift1=300] [--no-standard] [--start=YYYY-MM-DD] [--bot=price]
+ *        [--job=career:42|standard|shift1] [--onboarding-pair] [--shift1=300] [--no-standard] [--start=YYYY-MM-DD] [--bot=price|kick]
  * THE PROTOCOL (plan section 5 S5 row, brief B5) is the default: seeds 42 and 99, the S1-S4 career bot (seats and chairs first, then the cheapest) with direct leasing and no dog,
- * started on 2026-09-09. `--start` moves the first day (a Vietnam midnight; 2026-09-06 is the first day of a 21-day season) and `--bot=price` runs the price-decides bot v4:
- * information runs that say how much of a table belongs to the protocol, never the acceptance table.
+ * started on 2026-09-09. `--start` moves the first day (a Vietnam midnight; 2026-09-06 is the first day of a 21-day season), `--bot=price` runs the price-decides bot v4 and
+ * `--bot=kick` the protocol bot that also sends lingering tables home (Wave 3, sim/kick-table.ts): information runs that say how much of a table belongs to the
+ * protocol, never the acceptance table.
  * The numbers below are the OWNER'S ACCEPTANCE PROTOCOL, never a tuning input and never a live gameplay limit.
  */
 // config-exempt: owner acceptance protocol of plan S5 (targets of the gate table), not gameplay tuning.
@@ -130,8 +131,8 @@ export function careerMetrics(game: Game, report: ReturnType<typeof simulateCare
     firstDays: report.rows.slice(0, 6).map(r => ({ day: r.day, income: r.income, coins: r.coins, tables: r.tables.length, lifePath: r.lifePath })) };
 }
 
-export function runCareer(config: SeedConfig, seed: number, days: number, extra: { startAt?: number; seatsFirst?: boolean } = {}): CareerMetrics {
-  const { game, report } = simulateCareer({ days, seed, config, startAt: extra.startAt, policy: { seatsFirst: extra.seatsFirst } }); // the protocol of plan S5 unless asked otherwise: seats first, direct leasing, 2026-09-09
+export function runCareer(config: SeedConfig, seed: number, days: number, extra: { startAt?: number; seatsFirst?: boolean; kick?: boolean } = {}): CareerMetrics {
+  const { game, report } = simulateCareer({ days, seed, config, startAt: extra.startAt, policy: { seatsFirst: extra.seatsFirst, kick: extra.kick } }); // the protocol of plan S5 unless asked otherwise: seats first, direct leasing, 2026-09-09, no kick
   return careerMetrics(game, report, config);
 }
 
@@ -281,7 +282,7 @@ export const score = (rows: Gate[]) => ({ fails: rows.reduce((n, r) => n + Objec
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------
 export interface JobResult { job: string; ms: number; career?: CareerMetrics; standard?: StandardMetrics; shift1?: Shift1Metrics }
-export interface JobOptions { days: number; onboardingPair: boolean; shift1Seeds: number; standardSeeds: number[]; startAt?: number; seatsFirst?: boolean; skipStandard?: boolean }
+export interface JobOptions { days: number; onboardingPair: boolean; shift1Seeds: number; standardSeeds: number[]; startAt?: number; seatsFirst?: boolean; kick?: boolean; skipStandard?: boolean }
 export function runJob(job: string, patch: Patch, options: JobOptions): JobResult {
   const started = Date.now(), config = patchedConfig(patch);
   const [kind, arg] = job.split(':');
@@ -308,13 +309,13 @@ function parseArgs(argv: string[]) {
   for (const a of argv.filter(x => x.startsWith('--set='))) { const [path, ...rest] = a.slice(6).split('='); patch[path] = JSON.parse(rest.join('=')); }
   const seeds = (option('seeds') ?? '42,99').split(',').map(Number);
   return { patch, seeds, days: Number(option('days') ?? 30), label: option('label') ?? 'run', out: option('out'), job: option('job'),
-    startAt: option('start') ? Date.parse(`${option('start')}T00:00:00+07:00`) : undefined, seatsFirst: option('bot') === 'price' ? false : undefined,
+    startAt: option('start') ? Date.parse(`${option('start')}T00:00:00+07:00`) : undefined, seatsFirst: option('bot') === 'price' ? false : undefined, kick: option('bot') === 'kick' ? true : undefined,
     onboardingPair: argv.includes('--onboarding-pair'), shift1: Number(option('shift1') ?? TARGETS.shift1Seeds), standard: !argv.includes('--no-standard') };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = parseArgs(process.argv.slice(2));
-  const options: JobOptions = { days: args.days, onboardingPair: args.onboardingPair, shift1Seeds: args.shift1, standardSeeds: args.seeds, startAt: args.startAt, seatsFirst: args.seatsFirst };
+  const options: JobOptions = { days: args.days, onboardingPair: args.onboardingPair, shift1Seeds: args.shift1, standardSeeds: args.seeds, startAt: args.startAt, seatsFirst: args.seatsFirst, kick: args.kick };
   if (args.job) { // one job, JSON on stdout: the unit of work of the sweep driver
     console.log(JSON.stringify(runJob(args.job, args.patch, options)));
   } else {

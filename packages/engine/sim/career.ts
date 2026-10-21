@@ -19,6 +19,7 @@ const DEFAULT_START = Date.parse('2026-09-09T00:00:00+07:00');
 export const SEASON_START = Date.parse('2026-09-06T00:00:00+07:00');
 export const CAREER_POLICY = 'v3 + direct leasing (plan section 5 S5: "bot ưu tiên bàn/ghế, thuê thẳng mặt bằng, không mua chó"): fresh game; configured newbie shifts/day; stamina rest only where the engine asks for it (restRequired: shifts 2 and 3 open at once, D8); 100ms whole-table/deadline service; 1s management; claim earned rewards; bulk restock/one when empty; keep one bulk per unlocked dish as capital reserve; phone/QR when affordable; seat model: save for the next table, then a second chair per table, before any other purchase; then cheapest eligible device/glass/sign/neon (capacity snapshots also table levels; seat snapshots with the S4 ladders also table and chair levels, once their life-path gate is open); never the dog (M6 deferred); target two glasses per seat; one flyer/shift; a free shop leases the best location the life path allows and the wallet pays for, straight away (direct leasing), again at every lease expiry. Every coin purchase is logged with its shift. No injected state or fabricated rewards. Diagnostic, not optimal-play or balance certification.';
 export const CAREER_POLICY_PRICE = 'v4 (information only, not the acceptance protocol): as the protocol bot except that the price decides (plan section 9: "bot mua rẻ nhất trước"): the cheapest affordable purchase first among tables, second chairs, devices, glasses, signs/neon and, once their life-path gate is open, table and chair levels, instead of seats first.';
+export const CAREER_POLICY_KICK = ' + Wave 3 kick bot (plan section 6, FEEDBACK II.3 "bot luôn-mời"; an option, never the acceptance protocol): every management second, while the shift is open with at least 40 s to go and a group waits at the door, send home (kickTable) the cheapest lingering table a waiting group can sit at, if the wallet pays it and keeps its stock reserve. A kick is a fee, not a purchase: it is left out of the purchase log.';
 /** One coin purchase (restock excluded) and the shift it lands in: bought while resting counts toward the next shift. */
 export interface CareerPurchase { shift: number; day: number; command: Command['type']; item: string; cost: number }
 const MILESTONE_COMMANDS: readonly Command['type'][] = ['buyTable', 'buyChair', 'upgrade', 'upgradeTable', 'upgradeChair'];
@@ -27,7 +28,7 @@ const MILESTONE_COMMANDS: readonly Command['type'][] = ['buyTable', 'buyChair', 
 export interface CareerShift { shift: number; day: number; arrived: number; served: number; lost: number; rejected: number; noSeat: number; penalty: number }
 
 /** `config` defaults to the bundled seed; a test may hand a patched snapshot to isolate one subject from the early-game pace. */
-export function simulateCareer({ days = 30, seed = 42, startAt = DEFAULT_START, config = bundledConfig, policy = {} }: { days?: number; seed?: number; startAt?: number; config?: typeof bundledConfig; policy?: { seatsFirst?: boolean } } = {}, onDay?: (row: CareerDay) => void) {
+export function simulateCareer({ days = 30, seed = 42, startAt = DEFAULT_START, config = bundledConfig, policy = {} }: { days?: number; seed?: number; startAt?: number; config?: typeof bundledConfig; policy?: { seatsFirst?: boolean; kick?: boolean } } = {}, onDay?: (row: CareerDay) => void) {
   assert.ok(Number.isInteger(days) && days >= 1 && days <= MAX_DAYS, 'days must be an integer in 1..90');
   assert.ok(Number.isSafeInteger(seed), 'seed must be a safe integer');
   assert.ok(Number.isSafeInteger(startAt) && startAt >= 0 && dayKey(startAt - 1, config) !== dayKey(startAt, config), 'startAt must be a VN midnight');
@@ -52,10 +53,10 @@ export function simulateCareer({ days = 30, seed = 42, startAt = DEFAULT_START, 
     const other = w.coins - coins - (w.lifetimeEarned - earned);
     if (other < 0) {
       spent[command.type] = (spent[command.type] ?? 0) - other;
-      if (command.type !== 'restock') purchases.push({ shift: w.completedShifts + 1, day: today, command: command.type, item: item(command), cost: -other });
+      if (command.type !== 'restock' && command.type !== 'kickTable') purchases.push({ shift: w.completedShifts + 1, day: today, command: command.type, item: item(command), cost: -other });
     } else rewardCredits += other;
   };
-  const seatsFirst=policy.seatsFirst??true, manage=createManagementPolicy(game,send,{directLease:true,seatsFirst}); // the protocol bot: seats first + direct leasing; `seatsFirst: false` is the information bot v4
+  const seatsFirst=policy.seatsFirst??true, kick=policy.kick??false, manage=createManagementPolicy(game,send,{directLease:true,seatsFirst,kick}); // the protocol bot: seats first + direct leasing; `seatsFirst: false` is the information bot v4, `kick: true` the Wave 3 kick bot
   for (let day = 0; day < days; day++) {
     today = day + 1; const purchaseStart = purchases.length;
     const openingCoins = w.coins, earnedBefore = w.lifetimeEarned, completedBefore = w.completedShifts;
@@ -108,7 +109,10 @@ export function simulateCareer({ days = 30, seed = 42, startAt = DEFAULT_START, 
     rows.push(row); onDay?.(row);
   }
   const eventTypes = new Set(['life_path_level_reached', 'life_path_reward_claimed', 'lease_started', 'lease_expired', 'lease_deposit_refunded', 'unlock_bought', 'signboard_installed', 'signboard_bought', 'signboard_equipped', 'upgrade_bought', 'table_upgraded', 'chair_upgraded', 'table_bought', 'chair_bought', 'seat_model_adopted', 'glasses_bought', 'dog_bought', 'dog_upgraded', 'flyer_bought']);
-  const report = { policy: seatsFirst ? CAREER_POLICY : CAREER_POLICY_PRICE, days, seed, startAt, configVersion: config.version, rulesVersion: game.log.at(-1)!.rulesVersion,
+  // Wave 3: what sending tables home did over the career (zero for the protocol bot): how often, what it cost in coins and in reputation actually taken.
+  const kicked = w.events.filter(e => e.type === 'table_kicked');
+  const kicks = { count: kicked.length, guests: kicked.reduce((n, e) => n + Number(e.data.count), 0), cost: kicked.reduce((n, e) => n + Number(e.data.cost), 0), reputation: kicked.reduce((n, e) => n + Number(e.data.reputation), 0) };
+  const report = { policy: (seatsFirst ? CAREER_POLICY : CAREER_POLICY_PRICE) + (kick ? CAREER_POLICY_KICK : ''), kicks, days, seed, startAt, configVersion: config.version, rulesVersion: game.log.at(-1)!.rulesVersion,
     commandCount: game.log.length, commandHash: createHash('sha256').update(JSON.stringify(game.log)).digest('hex'), eventCount: w.events.length,
     kBand: c.k.band, advancedBandDecision: 'owner-2026-09-10: standard cold/full menus keep k 2..3; advanced career aggregate k <= 3.5; re-evaluate after Alpha playtest with real player data',
     value: serveValueStats(w.serves, config), normalised: normalisedStats(standardServes, c.k.anchorValuePerServe), rows, milestones: w.events.filter(e => eventTypes.has(e.type)), seasonResults: w.seasons!.results,
