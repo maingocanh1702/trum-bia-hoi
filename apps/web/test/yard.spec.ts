@@ -75,11 +75,30 @@ for (const locale of ['vi', 'en'] as const) test(`S6 a new shop shows its one ta
   await tbh.shot(`yard-fresh-${locale}.png`); expect(tbh.consoleErrors()).toEqual([]);
 });
 
-test('S6 with reduced motion nothing in the yard animates, and the static cues (chairs, tray, empty spots) stay', async ({ page, tbh }) => {
+// A live shift (fixture `live`: two one-chair tables in the first row, a ready order and its bubble, which carries the one spotlight): the bubble of a
+// first-row table rises into the band the grid keeps above its rows and never covers the beer line (S2's one set of numbers) or the door band.
+for (const viewport of viewports) test(`S6 on a live shift the order bubble of a first-row table stays below the beer line and the door band, and one thing blinks, at ${viewport.width}px`, async ({ page, tbh }) => {
+  await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  const { f } = await boot(page, 'vi', 'live');
+  expect(f.readyTable).toBeLessThan(2); // a table of the first row
+  const bubble = page.locator(`.table-space.table-${f.readyTable} .table-order-hint`); await expect(bubble).toHaveClass(/is-ready/);
+  await expect(page.locator('[data-spotlight]')).toHaveCount(1); await expect(bubble).toHaveAttribute('data-spotlight', ''); // P0: the ready order is the one thing that blinks
+  const [hint, beer, door, grid] = await Promise.all([bubble.boundingBox(), page.locator('#beer-supply-status').boundingBox(), page.locator('.yard-door').boundingBox(), page.locator('.yard-grid').boundingBox()]);
+  expect(hint && beer && door && grid).toBeTruthy();
+  expect(overlaps(hint!, beer!), 'the bubble covers the beer line').toBe(false);
+  expect(hint!.y).toBeGreaterThanOrEqual(door!.y + door!.height - 1); // below the door band, which stays free for the queue
+  expect(hint!.y).toBeGreaterThanOrEqual(grid!.y - 1); // inside the band the grid keeps above its first row
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await tbh.shot(`yard-live-${viewport.width}.png`); expect(errors).toEqual([]); expect(tbh.consoleErrors()).toEqual([]);
+});
+
+test('S6 reduced motion: the live yard animates (the spotlight pulse) without it and not at all with it, while the static cues (chairs, tray, spots) stay', async ({ page, tbh }) => {
   await page.setViewportSize(viewports[1]);
-  await boot(page, 'vi', 'full', true);
-  await expect(page.locator('.yard .table-object')).toHaveCount(8);
-  expect(await page.evaluate(() => document.querySelector('.yard')!.getAnimations({ subtree: true }).filter(a => a.playState === 'running').length)).toBe(0);
-  await expect(page.locator('.yard .seat')).toHaveCount(16); await expect(page.locator('.yard .tray')).toHaveCount(8);
+  await boot(page, 'vi', 'live');
+  const running = () => page.evaluate(() => document.querySelector('.yard')!.getAnimations({ subtree: true }).filter(a => a.playState === 'running').length);
+  await expect(page.locator('.yard [data-spotlight]')).toHaveCount(1); expect(await running()).toBeGreaterThan(0); // the spotlight pulse runs without the preference
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect.poll(running).toBe(0); // with it nothing in the yard moves
+  await expect(page.locator('.yard [data-spotlight]')).toHaveCount(1); await expect(page.locator('.yard .seat')).toHaveCount(2); await expect(page.locator('.yard .tray')).toHaveCount(2); await expect(page.locator('.yard .table-slot')).toHaveCount(6); // the static cues stay
   expect(tbh.consoleErrors()).toEqual([]);
 });

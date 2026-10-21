@@ -145,10 +145,12 @@ for (const [size, label] of [[2, '2 ghế'], [1, 'Hết chỗ']] as const) {
     await page.setViewportSize(viewport);
     const f = fixture('crowd', String(size)); await load(page, f.save, f.now);
     const guests = page.locator('.door-guest:not(.is-leaving)'); await expect(guests).toHaveCount(f.queue);
+    await expect(guests.first()).toBeInViewport({ ratio: 1 }); await expect(guests.first().locator('.door-ring')).toBeInViewport({ ratio: 1 }); // S6 review round 1: the door band is above the fold, eight places or not
     const before = Number(await guests.first().getAttribute('data-patience'));
     await run(page, 20000, 250, async () => (await page.locator('[data-turned-away]').count()) > 0);
     await expect(page.locator('[data-turned-away]')).toHaveAttribute('data-turned-away', String(size));
-    await expect(page.locator('.door-bubble')).toHaveText(label);
+    await expect(page.locator('.door-bubble')).toHaveText(label); await expect(page.locator('.door-bubble')).toBeInViewport({ ratio: 1 }); await expect(page.locator('[data-turned-away]')).toBeInViewport({ ratio: 1 });
+    await tbh.shot(`p0-door-${size}-${viewport.width}.png`);
     expect(Number(await guests.first().getAttribute('data-patience'))).toBeLessThan(before); // the ring drained while they waited
     await page.clock.runFor(2400); await page.waitForTimeout(20);
     await expect(page.locator('[data-turned-away]')).toHaveCount(0); // they walked off

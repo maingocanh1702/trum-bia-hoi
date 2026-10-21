@@ -26,7 +26,7 @@ for (const locale of ['vi', 'en'] as const) for (const viewport of [{ width: 390
   test(`seat model sells tables 2-8, a second chair once four tables stand, each with its price and one reason (${locale}) at ${viewport.width}×${viewport.height}`, async ({ page, tbh }) => {
     const copy = JSON.parse(readFileSync(`apps/web/src/i18n/${locale}.json`, 'utf8')) as Record<string, string>;
     const t = (key: string, params: Record<string, string | number> = {}) => copy[key].replace(/\{(\w+)\}/g, (_, name: string) => String(params[name]));
-    const xu = (n: number) => new Intl.NumberFormat(locale === 'vi' ? 'vi-VN' : 'en-US').format(n);
+    const xu = (n: number) => new Intl.NumberFormat(locale === 'vi' ? 'vi-VN' : 'en-US').format(n), decimal = (n: number) => new Intl.NumberFormat(locale === 'vi' ? 'vi-VN' : 'en-US', { maximumFractionDigits: 2 }).format(n);
     const f = fixture();
     // Fixed, not paused: the shop's clock stays at f.now while page timers (axe's included) still run.
     await page.setViewportSize(viewport); await page.clock.setFixedTime(f.now);
@@ -41,7 +41,11 @@ for (const locale of ['vi', 'en'] as const) for (const viewport of [{ width: 390
     const sheet = page.getByRole('dialog'), cards = sheet.locator('#upgrade-tables ~ .upgrade-grid .upgrade-card'), first = cards.first();
     await expect(cards).toHaveCount(1); await expect(first.getByText(t('table.seats', { n: 1 }), { exact: true })).toBeVisible();
     const chair = first.getByRole('button', { name: t('upgrade.buyChair', { cost: xu(f.chairPrice) }), exact: true });
-    await expect(chair).toBeDisabled(); await expect(first.getByText(t('reason.chairsLocked'), { exact: true })).toBeVisible();
+    await expect(chair).toBeDisabled(); await expect(first.getByText(t('reason.chairsLocked', { n: f.chairsAfterTables }), { exact: true })).toBeVisible(); // the one reason is true on 2.1.0: the chair opens at four tables, not after every table
+    // S6: every capacity item says its effect before -> after on its block: the chair "1 -> 2 chỗ", the chair level "kiên nhẫn x1 -> x1,15", the next table "+1 chỗ".
+    await expect(first.locator('[data-goal^="chair:"] .goal-effect')).toHaveText(t('goal.fx.seatsTo', { from: 1, to: 2 }));
+    await expect(first.locator('[data-goal^="chairLevel:"] .goal-effect')).toHaveText(t('goal.fx.patienceTo', { from: decimal(1), to: decimal(f.chairUpMult) }));
+    await expect(sheet.locator('[data-goal="buyTable"] .goal-effect')).toHaveText(t('goal.fx.seatsAdded', { n: 1 }));
     const level = first.getByRole('button', { name: t('upgrade.buy', { cost: xu(f.levelPrice) }), exact: true });
     await expect(level).toBeDisabled(); await expect(first.getByText(t('reason.tableNeedsChairs'), { exact: true })).toBeVisible();
     expect(await axe(page)).toEqual([]);
@@ -53,7 +57,7 @@ for (const locale of ['vi', 'en'] as const) for (const viewport of [{ width: 390
     await expect(sheet.getByRole('button', { name: t('upgrade.addTable'), exact: true })).toBeDisabled();
     await expect(sheet.getByText(t('reason.maxTables'), { exact: true })).toBeVisible();
     await expect(chair).toBeEnabled(); await chair.click();
-    await expect(first.getByText(t('table.seats', { n: 2 }), { exact: true })).toBeVisible(); await expect(chair).toHaveCount(0);
+    await expect(first.getByText(t('table.seats', { n: 2 }), { exact: true })).toBeVisible(); await expect(chair).toHaveCount(0); await expect(first.locator('[data-goal^="chair:"]')).toHaveCount(0); // a pair lists no chair item
     // The usual starting coins are left: the next chair and the paired table's level each say "not enough coins";
     // the one-chair table's level still names the missing chair.
     const second = cards.nth(1);

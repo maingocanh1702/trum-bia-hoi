@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Game, config, loadConfig, isSeatModel, tableUpgrade, tableUpgradeQuote, buyTableQuote, buyChairQuote, chairUpgrade, chairUpgradeQuote, PAIR, type Command } from '../src';
+import { Game, config, loadConfig, isSeatModel, tableUpgrade, tableUpgradeQuote, buyTableQuote, buyChairQuote, chairPatienceMult, chairUpgrade, chairUpgradeQuote, PAIR, type Command } from '../src';
 import { LANES, listGoals, pickNextGoal, reachMult, shiftAverage } from '../../../apps/web/src/goals';
 import capacityModel from '../../../docs/config/legacy/economy-2.0.4.json';
 import { capacityConfig } from './fixtures/capacity-model';
@@ -147,7 +147,7 @@ test('the chip walks the table ladder, then the second chairs once the alley is 
     const goal = pick(g)!;
     if (w.tables.length < table.chairsAfterTables) assert.equal(goal.id, 'buyTable', `table ${w.tables.length + 1}: chairs are still locked`);
     else assert.equal(goal.id, `chair:${w.tables[0].id}`, 'from the fourth table on the cheapest capacity item is the first second chair');
-    prices.push(buyTableQuote(w, g.config).cost); assert.ok(send(g, { type: 'buyTable' }).ok);
+    const q = buyTableQuote(w, g.config); if (goal.id === 'buyTable') assert.equal(goal.cost, q.cost, 'the chip quotes what the command charges'); prices.push(q.cost); assert.ok(send(g, { type: 'buyTable' }).ok);
   }
   assert.deepEqual(prices, table.tablePriceBase.slice(0, slots - 1), 'each rung of the ladder once, in order');
   assert.equal(listGoals(w, g.config).find(x => x.id === 'buyTable')!.eligible, false, 'the alley is full');
@@ -155,7 +155,7 @@ test('the chip walks the table ladder, then the second chairs once the alley is 
   const chairPrices: (number | null)[] = [];
   for (const [i, t] of w.tables.entries()) {
     const goal = pick(g)!;
-    assert.deepEqual([goal.id, goal.lane, goal.card, goal.effect, goal.cost], [`chair:${t.id}`, 'capacity', { kind: 'buyChair', tableId: t.id }, { key: 'goal.fx.seatsAdded', params: { n: 1 } }, buyChairQuote(w, g.config, t).cost], `chair ${i + 1}`);
+    assert.deepEqual([goal.id, goal.lane, goal.card, goal.effect, goal.cost], [`chair:${t.id}`, 'capacity', { kind: 'buyChair', tableId: t.id }, { key: 'goal.fx.seatsTo', params: { from: 1, to: PAIR } }, buyChairQuote(w, g.config, t).cost], `chair ${i + 1}`);
     chairPrices.push(goal.cost); assert.ok(send(g, { type: 'buyChair', tableId: t.id }).ok);
     const bought = listGoals(w, g.config).find(x => x.id === `chair:${t.id}`)!;
     assert.deepEqual([bought.cost, bought.effect, bought.eligible], [null, null, false], 'a pair is the most a table holds: nothing left to list');
@@ -164,7 +164,7 @@ test('the chip walks the table ladder, then the second chairs once the alley is 
   // Two chairs make a table able to level up and the chair ladder opens too, but both first levels sit behind Duong Len Trum LP1 (S4), so the chip points at a device.
   const level = listGoals(w, g.config).find(x => x.id === `table:${w.tables[0].id}`)!, chairLevel = listGoals(w, g.config).find(x => x.id === `chairLevel:${w.tables[0].id}`)!;
   assert.equal(level.cost !== null && level.eligible, false); assert.equal(chairLevel.cost !== null && chairLevel.eligible, false);
-  assert.deepEqual([chairLevel.card, chairLevel.effect], [{ kind: 'chairUpgrade', tableId: w.tables[0].id }, { key: 'goal.fx.patience', params: { n: chairUpgrade(v)!.levels[0].patienceMult } }]);
+  assert.deepEqual([chairLevel.card, chairLevel.effect], [{ kind: 'chairUpgrade', tableId: w.tables[0].id }, { key: 'goal.fx.patienceTo', params: { from: 1, to: chairUpgrade(v)!.levels[0].patienceMult } }], 'before -> after: the chairs are level 1 (x1) and the next rung says what they become');
   assert.equal(pick(g)!.lane, 'speed');
 });
 
@@ -179,7 +179,7 @@ test('S6: the four seat-model items of the capacity lane say what their commands
     const chair = byId(`chair:${t.id}`), q = buyChairQuote(w, g.config, t);
     if (t.capacity >= PAIR) assert.deepEqual([chair.cost, chair.eligible], [null, false]); else assert.deepEqual([chair.cost, chair.eligible], [q.cost, q.ok]);
     const level = byId(`chairLevel:${t.id}`), cq = chairUpgradeQuote(w, g.config, t);
-    assert.deepEqual([level.cost, level.eligible, level.effect], [cq.cost, cq.gate === null && cq.cost !== null, { key: 'goal.fx.patience', params: { n: cq.next!.patienceMult } }]);
+    assert.deepEqual([level.cost, level.eligible, level.effect], [cq.cost, cq.gate === null && cq.cost !== null, { key: 'goal.fx.patienceTo', params: { from: chairPatienceMult(v, t.chairLevel ?? 1), to: cq.next!.patienceMult } }]);
     const table = byId(`table:${t.id}`), tq = tableUpgradeQuote(w, g.config, t);
     assert.deepEqual([table.cost, table.eligible], [tq.cost, tq.gate === null && tq.cost !== null]); // a one-chair table's level is gated (tableNeedsChairs)
   }
@@ -192,7 +192,7 @@ test('S6: the four seat-model items of the capacity lane say what their commands
   // A chair level bought through the command moves its goal one rung up and the shop-wide price of the next one with it, as the quote says.
   assert.ok(send(g, { type: 'upgradeChair', tableId: w.tables[0].id }).ok);
   const next = listGoals(w, g.config), lv2 = next.find(x => x.id === `chairLevel:${w.tables[0].id}`)!, other = next.find(x => x.id === `chairLevel:${w.tables[1].id}`)!;
-  assert.deepEqual([lv2.cost, lv2.effect, lv2.eligible], [chairUpgradeQuote(w, g.config, w.tables[0]).cost, { key: 'goal.fx.patience', params: { n: ladder.levels[1].patienceMult } }, false], 'Lv3 of the chairs waits for LP2');
+  assert.deepEqual([lv2.cost, lv2.effect, lv2.eligible], [chairUpgradeQuote(w, g.config, w.tables[0]).cost, { key: 'goal.fx.patienceTo', params: { from: ladder.levels[0].patienceMult, to: ladder.levels[1].patienceMult } }, false], 'Lv3 of the chairs waits for LP2; the effect now reads x1.15 -> x1.3');
   assert.equal(other.cost, ladder.priceBase + ladder.stepBase, 'the next chair level of another table pays one step more');
 });
 
@@ -203,7 +203,7 @@ test('S6: no chair goal on a capacity snapshot, and no chair-level goal on a sea
   const goals = listGoals(w, pin.config);
   assert.ok(!goals.some(x => x.card.kind === 'chairUpgrade'), 'JSON 2.0.22 has no chair ladder');
   const chair = goals.find(x => x.id === `chair:${w.tables[0].id}`)!;
-  assert.deepEqual([chair.cost, chair.eligible, chair.effect], [buyChairQuote(w, pin.config, w.tables[0]).cost, true, { key: 'goal.fx.seatsAdded', params: { n: 1 } }], 'the second chair is S1: the pin sells it');
+  assert.deepEqual([chair.cost, chair.eligible, chair.effect], [buyChairQuote(w, pin.config, w.tables[0]).cost, true, { key: 'goal.fx.seatsTo', params: { from: 1, to: PAIR } }], 'the second chair is S1: the pin sells it, 1 -> 2 chairs');
 });
 
 test('S4: with two chairs and its life-path gate open a table level is a chip goal: capacity lane, cheapest first, the price follows the ladder, the effect is its benefit', () => {
@@ -222,7 +222,7 @@ test('S4: with two chairs and its life-path gate open a table level is a chip go
   for (let i = 1; i < w.tables.length; i++) assert.ok(send(g, { type: 'upgradeTable', tableId: w.tables[i].id }).ok);
   // S6: every table is Lv2 and Lv3 waits for LP2, but the chair ladder (S4, LP1 for its first level) is open: its first rung is the cheapest capacity item left.
   const chairs = chairUpgrade(v)!, comfort = pick(g)!;
-  assert.deepEqual([comfort.id, comfort.lane, comfort.cost, comfort.effect], [`chairLevel:${w.tables[0].id}`, 'capacity', chairs.priceBase, { key: 'goal.fx.patience', params: { n: chairs.levels[0].patienceMult } }], 'the chairs of table 1: patience x1.15');
+  assert.deepEqual([comfort.id, comfort.lane, comfort.cost, comfort.effect], [`chairLevel:${w.tables[0].id}`, 'capacity', chairs.priceBase, { key: 'goal.fx.patienceTo', params: { from: 1, to: chairs.levels[0].patienceMult } }], 'the chairs of table 1: patience x1 -> x1.15');
   for (const table of w.tables) assert.ok(send(g, { type: 'upgradeChair', tableId: table.id }).ok);
   assert.equal(pick(g)!.lane, 'speed', 'every table is Lv2 with Lv2 chairs; Lv3 of both ladders waits for LP2');
   w.lifePath = ladder[1].lifePathGate;

@@ -55,8 +55,11 @@ for (const locale of ['vi', 'en'] as const) for (const viewport of [{ width: 390
     await expect(level(1, lv3[0])).toBeDisabled(); await expect(level(1, lv3[0])).toHaveAccessibleDescription(t('reason.lifePathRequired', { name: t('lifePath.LP2') }));
     await expect(level(2, lv2[1])).toBeEnabled(); await expect(level(2, lv2[0])).toHaveCount(0);
     // 3) Table 1's chairs to level 2 (1.15 x patience): the next chair level is the second upgrade of the shop and waits for LP2; the wallet still pays table 2's level.
+    // S6: the chair-level block says before -> after (x1 -> x1,15 now, x1,15 -> x1,3 once bought); the level block says what the next level gives (table 1 is Lv2: Lv3's second snack).
+    const fx = (n: number) => card(n).locator('[data-goal^="chairLevel:"] .goal-effect');
+    await expect(fx(1)).toHaveText(t('goal.fx.patienceTo', { from: decimal(1), to: decimal(1.15) })); await expect(card(1).locator('.goal-effect').first()).toHaveText(t('goal.fx.snack', { n: 35 }));
     await chair(1, chairs[0]).click();
-    await comfort(1, 2);
+    await comfort(1, 2); await expect(fx(1)).toHaveText(t('goal.fx.patienceTo', { from: decimal(1.15), to: decimal(1.3) })); await expect(fx(2)).toHaveText(t('goal.fx.patienceTo', { from: decimal(1), to: decimal(1.15) }));
     await expect(chair(1, chairs[1])).toBeDisabled(); await expect(chair(1, chairs[1])).toHaveAccessibleDescription(t('reason.lifePathRequired', { name: t('lifePath.LP2') }));
     await expect(level(2, lv2[1])).toBeEnabled();
     // 4) Table 2's chairs (the shop's second chair upgrade) leave too little for table 2's level and for the third table's chairs: one reason each, the wallet.
