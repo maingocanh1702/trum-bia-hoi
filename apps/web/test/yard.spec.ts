@@ -56,6 +56,8 @@ for (const viewport of viewports) test(`S6 a full first alley: eight tables of t
   await expect(page.locator('[data-spotlight]')).toHaveCount(0); // a resting shop with nothing to tap: nothing blinks (P0: at most one thing ever does)
   const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
   expect(axe.violations).toEqual([]);
+  // Review 07 r1 (W4): the fixture has played one shift, so no "Quán nhỏ đã sẵn sàng" note covers the grid: the screenshot shows the eight tables themselves.
+  await expect(page.locator('.opening-note')).toHaveCount(0);
   await page.locator('.yard').scrollIntoViewIfNeeded(); await tbh.shot(`yard-full-${viewport.width}.png`);
   expect(errors).toEqual([]); expect(tbh.consoleErrors()).toEqual([]);
 });
@@ -90,6 +92,30 @@ for (const viewport of viewports) test(`S6 on a live shift the order bubble of a
   expect(hint!.y).toBeGreaterThanOrEqual(grid!.y - 1); // inside the band the grid keeps above its first row
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await tbh.shot(`yard-live-${viewport.width}.png`); expect(errors).toEqual([]); expect(tbh.consoleErrors()).toEqual([]);
+});
+
+// Review 07 r1 (W1): a busy alley (fixture `rows`: eight tables of two chairs, an open shift, an unserved order at every table) hangs an order bubble and
+// its patience track above every table. A bubble of row 2 or below rises into the band its row keeps free and never covers the caption (state, countdown,
+// "n chỗ · Mâm m món": the cue "Mời về" relies on) or the drawing of another table, on a phone's two columns and on a wide screen's three.
+for (const viewport of viewports) test(`S6 a busy alley: the order bubbles of every row cover no other table's caption or drawing, at ${viewport.width}px`, async ({ page, tbh }) => {
+  await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  const { f } = await boot(page, 'vi', 'rows');
+  const yard = page.locator('.yard'), open = f.openTables as number[];
+  expect(f.tables).toHaveLength(8); expect(open).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+  await expect(yard.locator('.table-order-hint')).toHaveCount(open.length);
+  const tops = (await boxes(yard.locator('.table-object'))).map(b => Math.round(b.y)), rows = [...new Set(tops)].sort((a, b) => a - b), rowOf = (i: number) => rows.indexOf(tops[i]);
+  expect(rows).toHaveLength(viewport.width < 640 ? 4 : 3); // four rows of two on a phone, three rows of three on a wide screen
+  expect(new Set(open.filter(i => rowOf(i) >= 1).map(rowOf)).size).toBeGreaterThanOrEqual(2); // the subject: bubbles in rows 2 and 3 (and 4 on a phone)
+  for (const i of open) {
+    const hint = yard.locator(`.table-space.table-${i} .table-order-hint`), track = hint.locator('.patience-track');
+    const parts = [(await hint.boundingBox())!, ...(await track.count() ? [(await track.boundingBox())!] : [])];
+    for (let j = 0; j < f.tables.length; j++) if (j !== i) for (const target of ['.table-caption', '.table-object']) {
+      const box = (await yard.locator(`.table-space.table-${j} ${target}`).boundingBox())!;
+      for (const part of parts) expect(overlaps(part, box), `the bubble of table ${i + 1} (row ${rowOf(i) + 1}) covers the ${target} of table ${j + 1} (row ${rowOf(j) + 1})`).toBe(false);
+    }
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.locator('.yard').scrollIntoViewIfNeeded(); await tbh.shot(`yard-rows-${viewport.width}.png`); expect(errors).toEqual([]); expect(tbh.consoleErrors()).toEqual([]);
 });
 
 test('S6 reduced motion: the live yard animates (the spotlight pulse) without it and not at all with it, while the static cues (chairs, tray, spots) stay', async ({ page, tbh }) => {
