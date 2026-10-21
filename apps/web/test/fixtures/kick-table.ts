@@ -20,11 +20,11 @@ if (mode === 'inspect') {
     kicks: w.events.filter(e => e.type === 'table_kicked').map(e => e.data), kickCommands: g.log.filter(entry => entry.command.type === 'kickTable').map(entry => ({ ...entry.command, result: entry.result })),
     left: w.events.filter(e => e.type === 'customer_left').length }));
 } else {
-  const raw = structuredClone(config.raw) as typeof config.raw & { kickTable?: unknown };
+  const raw = structuredClone(config.raw);
   const first = mode === 'first';
   if (!first) { fullHud(raw); raw.onboarding.enabled = false; }
   raw._meta.version = mode === 'pin' ? '2.1.0' : 'kick-table-fixture'; // a pin of the bundled label keeps its own content (the browser adopts only a newer X.Y.Z)
-  if (mode === 'pin') { delete raw.kickTable; raw._meta.governance.tiers.A.sections = raw._meta.governance.tiers.A.sections.filter(name => name !== 'kickTable'); }
+  if (mode === 'pin') { delete (raw as { kickTable?: unknown }).kickTable; raw._meta.governance.tiers.A.sections = raw._meta.governance.tiers.A.sections.filter(name => name !== 'kickTable'); }
   for (const weather of WEATHER) raw.weather[weather].weight = weather === 'sunny' ? 1 : 0;
   raw.rush.schedule.perShift = 0; raw.spawn.capacityDemand.maxMult = 1;
   const weights: Record<string, number> = mode === 'poor' ? { vip: 1, thuong: 0.001 } : mode === 'occupied' ? { thuong: 3, chipheo: 1 } : first ? { thuong: 1, ngoily: 1 } : { thuong: 1, ngoily: 2 };
