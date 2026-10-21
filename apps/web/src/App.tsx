@@ -440,7 +440,8 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   // The life-path gate names the level the player has to reach: one reason, in words (reason.lifePathRequired).
   const gateName = (level: number) => level > 0 ? levelName(level) : '';
   /** S6 (plan S6 row "giá + hiệu ứng trước→sau + 1 lý do"): the registry's one-number effect of an item, printed on its block of the sheet; nothing when the item has nothing left to buy. */
-  const effectLine = (id: string) => { const e = sheetGoals.find(g => g.id === id)?.effect; return e ? <p className="goal-effect">{say(t, e, num, decimal)}</p> : null; };
+  // The effect line of a capacity block: only while the item still has a price (S6 review round 2: a full alley's "Mua thêm bàn" has nothing left to promise, so no "+1 chỗ" above it).
+  const effectLine = (id: string) => { const g = sheetGoals.find(x => x.id === id); return g?.effect && g.cost !== null ? <p className="goal-effect">{say(t, g.effect, num, decimal)}</p> : null; };
   /** Seat model: a one-chair table sells its second chair (registry item `chair:<table>`): its effect (1 → 2 chỗ), its price and the quote's one reason (a locked chair names the tables it waits for); a pair is the most a table holds, so a pair has no block. */
   function chairBuyBlock(table: Table) {
     const chair = isSeatModel(c) && table.capacity < PAIR ? buyChairQuote(w, game.config, table) : null, chairWhy = chair ? whyNot(chair.reason, isSeatModel(c) ? c.upgrades.table.chairsAfterTables : 0) : '';

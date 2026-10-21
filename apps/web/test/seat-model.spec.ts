@@ -56,6 +56,7 @@ for (const locale of ['vi', 'en'] as const) for (const viewport of [{ width: 390
     }
     await expect(sheet.getByRole('button', { name: t('upgrade.addTable'), exact: true })).toBeDisabled();
     await expect(sheet.getByText(t('reason.maxTables'), { exact: true })).toBeVisible();
+    await expect(sheet.locator('[data-goal="buyTable"] .goal-effect')).toHaveCount(0); // S6 review round 2: a full alley promises no seat above the dimmed "Mua thêm bàn"
     await expect(chair).toBeEnabled(); await chair.click();
     await expect(first.getByText(t('table.seats', { n: 2 }), { exact: true })).toBeVisible(); await expect(chair).toHaveCount(0); await expect(first.locator('[data-goal^="chair:"]')).toHaveCount(0); // a pair lists no chair item
     // The usual starting coins are left: the next chair and the paired table's level each say "not enough coins";
