@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-10-22 04:07 · **Branch hiện tại:** `feat/fun-kick-table`
+> **Cập nhật:** 2026-10-22 05:53 · **Branch hiện tại:** `feat/economy-2-1`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 
@@ -33,7 +33,7 @@
 | `F04` | Vòng Đời Cốc — bottleneck cốc clean→in_use→dirty→washing→clean | 🟡 In progress | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
 | `F01` | Vòng Lặp Mở Ca — ca 12 phút, thể lực, trần ngày 1 tr (JSON 2.1.0) | 🟡 In progress | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
 | `F02` | Menu & Kinh Tế Quán — 3 món P0 (bia+2 mồi), đo k | 🟡 In progress | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
-| `F03` | Hệ Bàn — 3 bàn, serve theo Order | 🟡 In progress | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
+| `F03` | Hệ Bàn — bàn ghế (1 bàn 1 ghế → 8 bàn × 2 ghế), serve theo Order | 🟡 In progress | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
 | `F05` | Độ Hơi Bia — mất hơi 12s, cờ vàng, MVP mềm | 🟡 In progress | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
 | `F06` | Tip / Uy tín / Phạt — VIP ×10, grace window | 🟡 In progress | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
 | `F08` | Giờ Vàng — 2 mức (nhẹ 90s/nặng 150s), spawn floor | 🟡 In progress | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
@@ -63,7 +63,7 @@
 | `F23` | Kiến Trúc Server Quán — server-auth, websocket, CAPTCHA | 🟡 In progress | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
 | `F12` | Giải Nhậu & Vụ Bia — 8 bậc, 2 Vụ Bia song song | 🟡 In progress | IN_PROGRESS ✓ normal | `packages/engine/src/seasons.ts` |
 | `F13` | Đường Lên Trùm — LP0–LP7, gate tính năng & mặt bằng | 🟡 In progress | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
-| `F14` | Mặt Bằng Quán — 9 mặt bằng, rent/cọc 7 ngày | 🟡 In progress | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
+| `F14` | Mặt Bằng Quán — 9 mặt bằng, rent/cọc 3 ngày (JSON 2.1.0) | 🟡 In progress | IN_PROGRESS ✓ normal | `codex/game-build-isolated` |
 | `F15` | Sự Cố Quán Nhậu — bảo kê, trộm offline, đánh nhau (kiểm tra ATTP ⏸ pending) | ⏸ Deferred | — | `—` |
 | `F16` | Rủ Bạn & Huy Hiệu — 3 mốc, huy hiệu Kết Nối | ⬜ Not started | — | `—` |
 | `F28` | Bảng Xếp Hạng & Bàn Thờ Ông Địa — top N, hàng của tôi, snapshot kết Vụ | 🟡 In progress | IN_PROGRESS ✓ normal | `apps/server/src/competitive-score.ts` |
@@ -112,14 +112,14 @@
 - **Phase:** Phase 0
 - **Notes:** Config 6 món; helper value chung cho menu/sim;20 normal/combined rows, mỗi seed ≥500 lượt: k2.3125–2.7562;143 unit/63 browser và full-base review menu không nêu findings. Chưa đủ full M3 acceptance.
 
-### F03 — Hệ Bàn — 3 bàn, serve theo Order
+### F03 — Hệ Bàn — bàn ghế (1 bàn 1 ghế → 8 bàn × 2 ghế), serve theo Order
 
 - **Status:** 🟡 In progress
 - **Branch:** `codex/game-build-isolated`
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 0
-- **Notes:** A4 rules26: mâm/guide dùng trạng thái chuẩn bị thật; ghi nhận nguyên nhân quan sát tại hạn chờ trước cleanup, giữ replay cũ (`docs/improve-a4-feedback.md`). Rules21 nhận giá ghế11–48 và sửa vị trí bàn4–6 không che nút phục vụ; acceptance đầy đủ tiếp tục. Order cấp bàn, 1 chạm, grace, mua/nâng bàn. Giá ghế vượt mốc 10 và edge cases còn cần hoàn tất.
+- **Notes:** A4 rules26: mâm/guide dùng trạng thái chuẩn bị thật; ghi nhận nguyên nhân quan sát tại hạn chờ trước cleanup, giữ replay cũ (`docs/improve-a4-feedback.md`). Rules21 nhận giá ghế11–48 và sửa vị trí bàn4–6 không che nút phục vụ; acceptance đầy đủ tiếp tục. Order cấp bàn, 1 chạm, grace, mua/nâng bàn. Giá ghế vượt mốc 10 và edge cases còn cần hoàn tất. Rules 28 (Đợt 2–3 "Vui 3 ca", JSON 2.1.0; nhánh `feat/economy-2-1`, PR vào `main` chờ owner): mô hình bàn ghế — quán mới 1 bàn × 1 ghế; mua bàn (bàn 2 = 1.070 xu … bàn 8; trần `tableSlots` 8 ở mọi mặt bằng), ghế 2 sau đủ 4 bàn (cặp + mâm bia và mồi), cấp bàn Lv1–4 = lợi ích cho nhóm kế (bàn cần 2 ghế), cấp ghế Lv1–3; cặp không có bàn 2 ghế bỏ đi tại cửa không phạt; cầu theo sức chứa, hàng đợi 1 + ghế/8; "Mời về" bàn đang nhâm nhi (Đợt 3). Luật: 03-SPEC §6 (thân viết lại 22/10/2026) + ghi chú §2/§4/§7.
 
 ### F05 — Độ Hơi Bia — mất hơi 12s, cờ vàng, MVP mềm
 
@@ -137,7 +137,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 0
-- **Notes:** Per-customer tip, VIP, phạt, cap và ba ledger đã có; Queue patience + không phạt lại bàn đã phục vụ đã có regression; Tỉnh Táo rules v3 qua kiểm thử/review không findings tại c984541; phí đóng ca rules v4 có xác nhận live/shiftId/maxCost, review CLEAN tại 5bce63c; tiễn từng bàn bằng uy tín còn tiếp tục.
+- **Notes:** Per-customer tip, VIP, phạt, cap và ba ledger đã có; Queue patience + không phạt lại bàn đã phục vụ đã có regression; Tỉnh Táo rules v3 qua kiểm thử/review không findings tại c984541; phí đóng ca rules v4 có xác nhận live/shiftId/maxCost, review CLEAN tại 5bce63c; tiễn từng bàn bằng uy tín còn tiếp tục. Đợt 3 (rules 28, JSON 2.1.0, trên nhánh tích hợp): "Mời về" bàn đang nhâm nhi bằng xu (`kickTable.feeRate` 1,5 × gross đơn gần nhất × `leavePenaltyMult`; VIP ×10, Chí Phèo 0) + uy tín (−2 mỗi khách, không ×k), không tính mất khách — thay cách "tiễn bàn lỳ bằng uy tín"; đọc luật +10 % theo gross hay net là OWNER CALL (HANDOFF vui3ca §13).
 
 ### F08 — Giờ Vàng — 2 mức (nhẹ 90s/nặng 150s), spawn floor
 
@@ -155,7 +155,7 @@
 - **Wave:** 🎨 Design
 - **Gates:** 🔒S
 - **Phase:** Phase 1
-- **Notes:** Sân xanh/cảnh phố, HUD gọn, quầy trên, kho dọc, thẻ mâm khi chạm bàn. 12 E2E pass; review CLEAN tại `2d80437`. Bếp/mồi nóng thêm7 sprite native RGBA; Bàn Lv2–Lv4 thêm3 imagegen pixel draft; bom bia Lv2–Lv5 thêm4 imagegen pixel draft; manifest hiện16 sprite placeholders và108 draft files gồm audio +4 Blender studies lưu trữ. Export palette/alpha/anchor checks và4viewport service/art smoke PASS; review11ceb79 đã giải quyết3 findings, export failure test được chạy độc lập PASS. Đã cập nhật brief owner: portrait casual-management, HUD bám mép, panel skeuomorphic bo tròn, pill dày, chữ tròn đậm, bóng mềm và game vỉa hè Việt Nam. Owner menu pause đã triển khai: giữ Nhập hàng mở sau mua, chỉ resume khi đóng; rules16 tách presence khỏi pause;156 engine/67 browser pass và native full-base review tại `7c60c70` không nêu lỗi cần sửa. Chưa đủ art/release.
+- **Notes:** Sân xanh/cảnh phố, HUD gọn, quầy trên, kho dọc, thẻ mâm khi chạm bàn. 12 E2E pass; review CLEAN tại `2d80437`. Bếp/mồi nóng thêm7 sprite native RGBA; Bàn Lv2–Lv4 thêm3 imagegen pixel draft; bom bia Lv2–Lv5 thêm4 imagegen pixel draft; manifest hiện16 sprite placeholders và108 draft files gồm audio +4 Blender studies lưu trữ. Export palette/alpha/anchor checks và4viewport service/art smoke PASS; review11ceb79 đã giải quyết3 findings, export failure test được chạy độc lập PASS. Đã cập nhật brief owner: portrait casual-management, HUD bám mép, panel skeuomorphic bo tròn, pill dày, chữ tròn đậm, bóng mềm và game vỉa hè Việt Nam. Owner menu pause đã triển khai: giữ Nhập hàng mở sau mua, chỉ resume khi đóng; rules16 tách presence khỏi pause;156 engine/67 browser pass và native full-base review tại `7c60c70` không nêu lỗi cần sửa. Chưa đủ art/release. S6 (Đợt 2, rules 28): sân vẽ 8 chỗ theo cấp bàn, số ghế, cấp ghế và mâm; hai sprite ghế vẽ thủ tục (`chair-backrest`, `chair-cushion`, draft; `scripts/chair_sprites.py`); `check:assets` 134 mục, 3 placeholder (không thêm).
 
 ### F07 — Các Kiểu Khách — 3 loại P1 (thường/vội/VIP)
 
@@ -182,7 +182,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S 🔒B
 - **Phase:** Phase 1
-- **Notes:** A4 gợi ý theo nhóm mất khách lớn nhất; unknown thắng khi đồng hạng, bàn tối đa không hiện nút nâng vô dụng. Rules21 bom dự trữ + vòi timed riêng, mua cốc, gate LP và capacity UI đã qua221 unit/server+75 browser và native review. Cân bằng nâng cao đang chờ quyết định (k tới3.2074); art và full acceptance tiếp tục. Lịch sử: Bom/rửa/hầm/quầy/bếp + mua/nâng bàn có command/UI; phone/QR quote/gate/command/UI + boa qua review không còn findings tại598f66f; Biển rules9 lắp/đổi5 kiểu, gate uy tín, customer mix/Neon +5 sprite draft;95 unit/37 E2E xanh, full-diff review bdbb493..9239007 không còn findings sau3 sửa lỗi biên. Tờ rơi rules11 có mua bằng uy tín, LP2, kho/timer/báo cáo/UI VI-EN;108 unit/40 E2E +30 k rows qua; full-diff review360453e..d5be3e0 không có lỗi actionable, nghi vấn nhân k đã bị bác bằng thực thi. Free flyer daily5/5 đã được producer claimDailyBonus + quests.test xác nhận; cốc mua và full F10 tiếp tục. Owner rules17: nâng cấp asset trong ca, giữ pause đến khi đóng menu; save v16 replay + mobile purchase đã qua config/build/166 unit/69 E2E và native review3ff21df không còn findings. Owner batch/HUD rules18/config1.7.3 đã qua174 unit/72 browser, config/build,20 canonical1000-serve k rows2.5821–2.9601 và15 rush; native reviewfe59758..7897bdd không còn lỗi actionable sau2 sửa HUD. Bia dự trữ tách kho thô, refill khi lấy lên mâm; save cũ nhận config ở ca kế tiếp. F10 đầy đủ/art từng cấp tiếp tục. Wave 1 / S3 `fun-next-goal` (2026-10-15, branch `feat/fun-next-goal`, stacked on `feat/fun-locale-default-vi`): HUD chip "Mục tiêu kế tiếp" from shift 1 + Upgrades sheet in three lanes (Sức chứa · Tốc độ · Khách) from the data-driven registry `apps/web/src/goals.ts`; Tier C `nextGoal.reachMult` = 3 (JSON 2.0.6); read-only engine quotes `tableUpgradeQuote`/`buyTableQuote` (parity-tested, commands untouched); `shape()` tolerates older tier lists in pinned snapshots. UI-only, no economy or rule change. Rules 28 (S4 `eco21-table-chair-upgrades`, JSON 2.0.23): nâng bàn Lv1→4 giá theo cấp đích (n = số bàn đã đạt cấp; Lv2 LP1 · Lv3 LP2 · Lv4 LP4; Lv2 +1 đợt gọi, Lv3 mồi thứ 2 35 %, Lv4 tip ×1,25) và nâng ghế Lv1→3 (kiên nhẫn ×1,15 / ×1,30; LP1 / LP2) — nút giá + 1 lý do, chip nhận cấp bàn làm mục tiêu; thay key postmvp `backrest`; pin ≤ 2.0.22 giữ thang cũ; k/bảng cửa đo, gate hoãn cho S5.
+- **Notes:** A4 gợi ý theo nhóm mất khách lớn nhất; unknown thắng khi đồng hạng, bàn tối đa không hiện nút nâng vô dụng. Rules21 bom dự trữ + vòi timed riêng, mua cốc, gate LP và capacity UI đã qua221 unit/server+75 browser và native review. Cân bằng nâng cao đang chờ quyết định (k tới3.2074); art và full acceptance tiếp tục. Lịch sử: Bom/rửa/hầm/quầy/bếp + mua/nâng bàn có command/UI; phone/QR quote/gate/command/UI + boa qua review không còn findings tại598f66f; Biển rules9 lắp/đổi5 kiểu, gate uy tín, customer mix/Neon +5 sprite draft;95 unit/37 E2E xanh, full-diff review bdbb493..9239007 không còn findings sau3 sửa lỗi biên. Tờ rơi rules11 có mua bằng uy tín, LP2, kho/timer/báo cáo/UI VI-EN;108 unit/40 E2E +30 k rows qua; full-diff review360453e..d5be3e0 không có lỗi actionable, nghi vấn nhân k đã bị bác bằng thực thi. Free flyer daily5/5 đã được producer claimDailyBonus + quests.test xác nhận; cốc mua và full F10 tiếp tục. Owner rules17: nâng cấp asset trong ca, giữ pause đến khi đóng menu; save v16 replay + mobile purchase đã qua config/build/166 unit/69 E2E và native review3ff21df không còn findings. Owner batch/HUD rules18/config1.7.3 đã qua174 unit/72 browser, config/build,20 canonical1000-serve k rows2.5821–2.9601 và15 rush; native reviewfe59758..7897bdd không còn lỗi actionable sau2 sửa HUD. Bia dự trữ tách kho thô, refill khi lấy lên mâm; save cũ nhận config ở ca kế tiếp. F10 đầy đủ/art từng cấp tiếp tục. Wave 1 / S3 `fun-next-goal` (2026-10-15, branch `feat/fun-next-goal`, stacked on `feat/fun-locale-default-vi`): HUD chip "Mục tiêu kế tiếp" from shift 1 + Upgrades sheet in three lanes (Sức chứa · Tốc độ · Khách) from the data-driven registry `apps/web/src/goals.ts`; Tier C `nextGoal.reachMult` = 3 (JSON 2.0.6); read-only engine quotes `tableUpgradeQuote`/`buyTableQuote` (parity-tested, commands untouched); `shape()` tolerates older tier lists in pinned snapshots. UI-only, no economy or rule change. Rules 28 (S4 `eco21-table-chair-upgrades`, JSON 2.0.23): nâng bàn Lv1→4 giá theo cấp đích (n = số bàn đã đạt cấp; Lv2 LP1 · Lv3 LP2 · Lv4 LP4; Lv2 +1 đợt gọi, Lv3 mồi thứ 2 35 %, Lv4 tip ×1,25) và nâng ghế Lv1→3 (kiên nhẫn ×1,15 / ×1,30; LP1 / LP2) — nút giá + 1 lý do, chip nhận cấp bàn làm mục tiêu; thay key postmvp `backrest`; pin ≤ 2.0.22 giữ thang cũ; k/bảng cửa đo, gate hoãn cho S5. S5 (JSON 2.1.0): giá chốt cả cây (bàn 2 = 1.070 xu, thiết bị Lv2–5, nâng bàn/ghế; 08-SPEC §8, F10 §3); S6: làn Sức chứa có 4 món bàn ghế của registry (giá + hiệu ứng trước→sau + 1 lý do), nút nhanh "Mua ghế" không pause. Chip dẫn mua ghế 2 ngay sau bàn 4 = OWNER CALL (HANDOFF vui3ca §12).
 
 ### F25 — Ngôn Ngữ / Tài Khoản — chọn vi/en, guest play, Google login (kể cả giữa ca)
 
@@ -200,7 +200,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 1
-- **Notes:** Steer18 local onboarding PASS: existing admin threshold/step/on-off publication verified in VI/EN; retained guide hidden when disabled;20 paired k cohorts and418unit/server PASS. Real Google minute5/consent PENDING; five-user playtest owner-WAIVED. Wave 1 / S1 `fun-onboarding-visual` (2026-10-15, branch `feat/fun-onboarding-visual`): PLAN 18/09 P0 built UI-only — one spotlight at a time, coins/reputation flying from their source, door queue with patience rings and refused-group bubble, minimal shift-1 HUD + progressive disclosure (Tier C `onboarding.featureReveal.*`/`idleToGuideMs`, JSON 2.0.5), step guide demoted to a fallback. `verify:all` 595 tests, sims and doctor green; 390/360/1280 e2e + axe 0 violations; five-new-player test = empty owner checklist (`phase0-alpha-playtest.md` §6) → SKIPPED, not PASS.
+- **Notes:** Steer18 local onboarding PASS: existing admin threshold/step/on-off publication verified in VI/EN; retained guide hidden when disabled;20 paired k cohorts and418unit/server PASS. Real Google minute5/consent PENDING; five-user playtest owner-WAIVED. Wave 1 / S1 `fun-onboarding-visual` (2026-10-15, branch `feat/fun-onboarding-visual`): PLAN 18/09 P0 built UI-only — one spotlight at a time, coins/reputation flying from their source, door queue with patience rings and refused-group bubble, minimal shift-1 HUD + progressive disclosure (Tier C `onboarding.featureReveal.*`/`idleToGuideMs`, JSON 2.0.5), step guide demoted to a fallback. `verify:all` 595 tests, sims and doctor green; 390/360/1280 e2e + axe 0 violations; five-new-player test = empty owner checklist (`phase0-alpha-playtest.md` §6) → SKIPPED, not PASS. Đợt 2–3 (rules 28, JSON 2.1.0): ca 1 = 1 bàn × 1 ghế, ví 750 xu, khoảng 5 cặp bị từ chối ở cửa (bong bóng "2 ghế"), sheet sau ca 1 đúng 1 món "Mua bàn · 1.070 xu" (≥ 4/5 save mua nổi khi đóng ca 1), ca 2–3 mở ngay, ca 4 đòi thể lực; phiếu 10 dòng của owner ở `docs/phase0-alpha-playtest.md` §7 (chưa tick).
 
 ### F11 — Bếp & Mồi Nóng — bếp 4 cấp, 3 mồi nóng
 
@@ -236,7 +236,7 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S 🔒B
 - **Phase:** Phase 3
-- **Notes:** Rules23: hai mùa theo lịch, thu nhập sau daily cap, peak thật, lịch sử cá nhân và panel VI/EN. Đã verify/review tại faece69: 248 engine/server, 79 browser + 6 kiểm tra lại, config/build/k nền/rush qua. E25 public live ranking628eb72 verified/review CLEAN. Steer18: immutable end-season snapshots/name-at-capture/history implemented,418unit/server +6browser +6axe scans PASS; independent correction review CLEAN. F12-CLAIM/mailbox PENDING by owner2026-09-11, OUT of v0.3.
+- **Notes:** Rules23: hai mùa theo lịch, thu nhập sau daily cap, peak thật, lịch sử cá nhân và panel VI/EN. Đã verify/review tại faece69: 248 engine/server, 79 browser + 6 kiểm tra lại, config/build/k nền/rush qua. E25 public live ranking628eb72 verified/review CLEAN. Steer18: immutable end-season snapshots/name-at-capture/history implemented,418unit/server +6browser +6axe scans PASS; independent correction review CLEAN. F12-CLAIM/mailbox PENDING by owner2026-09-11, OUT of v0.3. S5 (JSON 2.1.0): thang Giải Nhậu = thang Đường Lên Trùm (8 k · 20 k · 80 k · 280 k · 680 k · 1,2 tr · 2 tr base); một mùa 21 ngày cho cả Phân Hạng và Tranh Bá.
 
 ### F13 — Đường Lên Trùm — LP0–LP7, gate tính năng & mặt bằng
 
@@ -245,16 +245,16 @@
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 3
-- **Notes:** Requirements/claim-once và producers đã có. Hai seed30ngày (480ca) tớiLP4; replay tháng khớp,250tests/config/build/k nền/rush/review qua. FullLP0–LP7/balance còn mở; save tháng80MB vượt localStorage; adapter IndexedDB c9db016 đã review và qua91browser/80MB exactreopen/Appboot.
+- **Notes:** Requirements/claim-once và producers đã có. Hai seed30ngày (480ca) tớiLP4; replay tháng khớp,250tests/config/build/k nền/rush/review qua. FullLP0–LP7/balance còn mở; save tháng80MB vượt localStorage; adapter IndexedDB c9db016 đã review và qua91browser/80MB exactreopen/Appboot. Rules 28: LP1 cần "4 bàn" (S1), mốc LP là gate của cấp bàn/ghế (S4); S5 (JSON 2.1.0): thang 8 k · 20 k · 80 k · 280 k · 680 k · 1,2 tr · 2 tr base, bot giao thức LP1+2 ca 45 \
 
-### F14 — Mặt Bằng Quán — 9 mặt bằng, rent/cọc 7 ngày
+### F14 — Mặt Bằng Quán — 9 mặt bằng, rent/cọc 3 ngày (JSON 2.1.0)
 
 - **Status:** 🟡 In progress
 - **Branch:** `codex/game-build-isolated`
 - **Wave:** 🎮 Code
 - **Gates:** 🔒S
 - **Phase:** Phase 3
-- **Notes:** Rules22 quote/purchase/early move/expiry/refund, real-calendar pause/offline, config/replay/SQLite và menu VI/EN.234 engine/server,77browser,config/build,10kcohorts+15rush pass; native review fixes verified atce7564b. Steer18 F14 shift report PASS: historical location/pinned multipliers, expiry and move/reload tested in VI/EN; break-even/art/neighborhood còn tiếp tục.
+- **Notes:** Rules22 quote/purchase/early move/expiry/refund, real-calendar pause/offline, config/replay/SQLite và menu VI/EN.234 engine/server,77browser,config/build,10kcohorts+15rush pass; native review fixes verified atce7564b. Steer18 F14 shift report PASS: historical location/pinned multipliers, expiry and move/reload tested in VI/EN; break-even/art/neighborhood còn tiếp tục. S5 (JSON 2.1.0): kỳ thuê 3 ngày (trước 7), rent 0,3 × bảng cũ, `mult` 1,0 → 1,1, `tableSlots` 8 ở mọi mặt bằng (quyết định owner 2 của S5, đảo D13: đổi mặt bằng không mở thêm bàn) — câu hỏi owner còn mở: `mult` có thành đòn giá trở lại không.
 
 ### F28 — Bảng Xếp Hạng & Bàn Thờ Ông Địa — top N, hàng của tôi, snapshot kết Vụ
 
