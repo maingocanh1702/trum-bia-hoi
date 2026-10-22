@@ -138,7 +138,11 @@ test('snapshots from before the key load, bytes kept, and refuse every half-way 
   const withKey = raw(); withKey.shift.noCooldownFirstShifts = 3;
   assert.equal((loadConfig(withKey).values.shift as { noCooldownFirstShifts?: number }).noCooldownFirstShifts, 3, 'a copy labelled 2.0.23 that carries the key is a complete snapshot too');
   const bad: [string, RegExp, (r: any) => void][] = [
-    ['a snapshot labelled with the new version that lacks the key', /config:shift:keys/, r => { r._meta.version = seed._meta.version; }],
+    // "the new version" is the label that introduced the key (2.1.0); the bundled label (2.1.1 since owner call 1) also needs `kickTable`, so its case
+    // carries that section and lacks only the key under test.
+    ['a snapshot labelled with the new version that lacks the key', /config:shift:keys/, r => { r._meta.version = '2.1.0'; }],
+    ['a snapshot labelled with the bundled version that lacks only the key', /config:shift:keys/, r => {
+      r._meta.version = seed._meta.version; r.kickTable = structuredClone(seed.kickTable); r._meta.governance.tiers.A.sections.push('kickTable'); }],
     ['a string instead of a count', /config:shift\.noCooldownFirstShifts:type/, r => { r.shift.noCooldownFirstShifts = '3'; }],
     ['a fraction of a shift', /config:shift\.noCooldownFirstShifts:integer/, r => { r.shift.noCooldownFirstShifts = 2.5; }],
     ['a negative count', /negative|config:shift\.noCooldownFirstShifts/, r => { r.shift.noCooldownFirstShifts = -1; }],
