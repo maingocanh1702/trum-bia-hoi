@@ -45,7 +45,7 @@ test('default guest full shift', async ({ page, context }) => {
       // A cooldown/rejected order can leave its context panel open; dismiss it before the next table.
       await page.keyboard.press('Escape');
     }
-    // Shift 1 is the minimal HUD (wallet, keg, tables): no stock sheet or upgrades yet. Reload keeps the same guest shift.
+    // Shift 1 already shows the HUD since JSON 2.1.2 (it was wallet, keg, tables); this journey drives only tables and the keg's quick button there. Reload keeps the same guest shift.
     if(!restored&&w.shift.stats.served>0){
       await page.reload();await synced(page);expect((await snapshot(page)).shift.id).toBe(firstShift);expect((await snapshot(page)).playerId).toBe(playerId);restored=true;
     }
@@ -59,7 +59,7 @@ test('default guest full shift', async ({ page, context }) => {
   w=await snapshot(page);expect(w.phase).toBe('resting');expect(w.completedShifts).toBe(1);
   // The closing book opens by itself once the client has seen the shift end (it can lag the server by a poll): close it before the HUD steps.
   const book=page.getByRole('heading',{name:'Sổ ca hôm nay',exact:true});await expect(book).toBeVisible();await page.keyboard.press('Escape');await expect(book).toBeHidden();
-  // The HUD opens after shift 1: the stock sheet pauses and restocks, and the Upgrades sheet holds exactly the first goal.
+  // After shift 1: the stock sheet pauses and restocks, and the Upgrades sheet holds exactly the first goal.
   await page.getByRole('button',{name:'Nhập hàng',exact:true}).click();await expect(page.getByRole('button',{name:/Thùng Cấp Cứu/})).toHaveCount(0);
   const stockRow=page.locator('.stock-row').first(),fullStock=stockRow.getByRole('button',{name:/^(Mua bom )?Đầy kho/});
   if(await fullStock.isEnabled()){await purchase(page,fullStock);restocked=true;}

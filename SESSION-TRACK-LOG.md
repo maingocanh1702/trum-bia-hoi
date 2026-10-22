@@ -7,6 +7,14 @@
 
 ---
 
+## HUD đủ và nút Nâng cấp từ ca 1 (founder override, config 2.1.2) — 2026-10-22 (orchestrator, nhánh `feat/hud-from-shift-1`)
+
+Founder chơi `https://trumbiahoi.com` (v-fb2) bằng save mới và thấy thiếu thanh dưới (Mở ca · Nhập hàng · Nâng cấp), nút Cài đặt, đồng hồ ca và dải kho — F27 giấu chúng tới hết ca 1. Quyết định (founder, chọn phương án chỉ-đổi-config): `onboarding.featureReveal.hudAfterShifts` và `upgradeAfterShifts` 1 → 0, nhãn JSON 2.1.1 → **2.1.2**; không đổi code, CSS, copy hay số kinh tế; Hành trình / Nhiệm vụ / giải đấu giữ 2 / 2 / 3 ca. Ghi đè đúng hai ngưỡng của luật owner 18/09 "HUD ca 1 chỉ 3 thứ" (giữ nguyên làm lịch sử ở GDD §17, 09-SPEC, F27). Hệ quả cùng cổng `show.hud`: nút "Mời về" cũng hiện từ ca 1 (kick-table.spec cập nhật).
+Kiểm chứng (Windows): `check:config` · `check:i18n` · `build` · `check:assets` xanh; `npm test` 801 test, 47 đỏ = baseline Windows, 0 mới; `sim:onboarding` · `sim:rush` · `sim:career:gate` (k 3,151 | 3,153; hash lệnh đổi theo nhãn) xanh; `sim:balance` exit 0, `shift1.plan` ĐẠT (83 % của 300 lượt); Playwright local 351 spec → 16 đỏ đúng danh mục (first-shift-visual, next-goal, kick-table) → sửa, ba file đó 78/78; ảnh màn đầu 390 · 360 · 1280 xem `autopilot-logs/`. Linux và smoke guest: xem body PR.
+Người chơi cũ: save ghim 2.1.1 / 2.0.x giữ ngưỡng đã ghim tới lần "Mở ca" kế tiếp (mở bằng bản đóng gói 2.1.2, `local.ts` `openingConfig`); ai đã xong ≥ 1 ca vốn đã thấy HUD; save mới thấy HUD ở ca 1.
+Chưa phát hành: Netlify và Cloudflare vẫn phục vụ `v-fb2` (R `5336be7`).
+**Việc kế:** founder xem PR → merge → xin prompt phát hành hai host (Netlify + Cloudflare).
+
 ## Vòng quyết định owner của PR #30 — bốn OWNER CALL đã chốt và áp vào `feat/economy-2-1` — 2026-10-22 (autopilot stage 07b)
 
 Founder trả lời bốn OWNER CALL (`.autopilot-state/OWNER-CALLS-S7.md`; DECISIONS `## 07 · owner calls 2026-10-22`): (1) giá "Mời về" `kickTable.feeRate` **0,5**, luật +10 % đọc theo thu nhập ròng — cổng `sim:kick` nay đọc ròng (+8,85 % \| +9,06 % ĐẠT; gộp +13,24 % \| +13,40 % là thông tin; seed giữ lại 7 ròng +10,41 %, thông tin); JSON lên **2.1.1**, rules vẫn 28 (save ghim 2.1.0 nhận 2.1.1 ở lần mở ca kế; DB server đã đăng ký 2.1.0 mở được nhưng vẫn phục vụ bản đã publish; `sim:balance` giống từng byte; `sim:career:gate` cùng k và giá trị, hash mới `13e0785a…` \| `bc0c256f…` chỉ vì nhãn); (2) "đang nhâm nhi" = `consuming` + `occupied` giữ; (3) chip "Mục tiêu kế tiếp" không gợi ý ghế 2 trước bàn 8 (provider `chairs` của `apps/web/src/goals.ts`; bộ lọc tầm với có thể cho thiết bị đi trước bàn 5–8, nên nhịp của người theo chip chưa đo), nút nhanh "Mua ghế" chỉ hiện sau bàn 8; (4) smoke guest đỏ CHỈ ở hai dòng soft "mua bàn 2" được đưa lên bước promote nếu `npm run sim:balance` exit 0 với `shift1.plan` ĐẠT trên đúng commit (`docs/cloudflare-guest.md` bước 1b/4/7/8, `docs/deploy-log.md`).

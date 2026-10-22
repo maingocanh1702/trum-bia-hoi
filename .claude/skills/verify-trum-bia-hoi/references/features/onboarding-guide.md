@@ -8,8 +8,8 @@
   `stepGuide: {onFirstPlay: true, skippable: true, maxAutoRepeatsPerDay: 2, steps: [5 entries]}`,
   `loginPrompt: {afterFirstShift: true, onLeaderboardOpen: true, onLeaveWithProgress: true, cooldownShifts: 3,
   leaveProgress: {minCompletedShifts: 1, minLifetimeEarned: 1}}`, `hints.*`, `featureReveal:
-  {upgradeAfterShifts: 1, questsAfterShifts: 2, leagueAfterShifts: 3, locationsAfterLifePathLevel: 1,
-  hudAfterShifts: 1, upgradeAllAfterShifts: 2, journeyAfterShifts: 2}` (the last three and `idleToGuideMs` are JSON 2.0.5 keys:
+  {upgradeAfterShifts: 0, questsAfterShifts: 2, leagueAfterShifts: 3, locationsAfterLifePathLevel: 1,
+  hudAfterShifts: 0, upgradeAllAfterShifts: 2, journeyAfterShifts: 2}` (`upgradeAfterShifts` and `hudAfterShifts` were 1 until JSON 2.1.2, founder 2026-10-22) (the last three and `idleToGuideMs` are JSON 2.0.5 keys:
   older pins lack them, `config.ts` `ADDED_LATER` lets those load byte-for-byte and `reveal.ts` reads the seed for the absent ones),
   `targets: {firstServeWithinMs: 30000, firstShiftLostGroupsMax: 1}`. The 5 `stepGuide.steps` entries
   (`id`/`waitFor`/`copyKey`, `open_upgrade` also carries `onlyAfter: "shift_closed"`) — see Gotchas for
@@ -23,6 +23,7 @@
   (`.spotlight-arrow`) guest → check → wallet and no banner. `reveal.ts` `revealed()` hides everything but wallet · keg · the goal chip (fun-next-goal, 2026-10-15; Settings can switch it off) until
   `featureReveal.hudAfterShifts` (Settings gear, timer, weather/rush row, stock strip, cooler/washer/kitchen, glass counter, bottom nav; Upgrades and Journey
   buttons have their own thresholds) and shows only one table's upgrade card (the first that can level up, an empty one when any is) in the Upgrades sheet until `upgradeAllAfterShifts`.
+  **Since 2026-10-22 (founder override, JSON 2.1.2) `hudAfterShifts` and `upgradeAfterShifts` are 0: the HUD, the nav and the Upgrades button show from shift 1, so the "hides everything but wallet · keg · chip" sentence above is the 2026-10-14 behaviour; journey / quests / league still wait for 2 / 2 / 3 shifts.**
   `DoorQueue.tsx` renders queued groups with patience rings and a refused group's bubble (`door.seats` / `door.full`, from `queue_overflow {size}`);
   `FlyingFeedback.tsx` + `App.tsx` `launch()` fly coins from the served table to the wallet and drop lost reputation from the leaving table or the door.
   `local.ts` `advanceGuide()` no longer starts the banner at first play: it starts after `lostStreakToGuide` lost guests or on the synthetic
@@ -107,7 +108,7 @@
 - **fun-onboarding-visual (2026-10-14).** `apps/web/test/first-shift-visual.spec.ts` (local config, engine-made saves from
   `apps/web/test/fixtures/first-shift-visual.ts`, DOM-only, 390×844 · 360×740 · 1280×720 where marked ×3; run
   `npx playwright test apps/web/test/first-shift-visual.spec.ts --workers=2`):
-  `P0 first shift shows wallet, keg and one thing to tap at a time at ${w}px` (×3: minimal HUD, at most one `[data-spotlight]` on every 250 ms frame,
+  `P0 first shift shows wallet, keg and one thing to tap at a time at ${w}px` (×3: the whole HUD shown since JSON 2.1.2 (the 2026-10-14 minimal HUD is gone), at most one `[data-spotlight]` on every 250 ms frame,
   stages guest → check → serve → wallet in order, the pointer retires after the first serve, no `.guide`, no horizontal scroll) ·
   `P0 coins fly from the table to the wallet and lost reputation falls from the guest at ${w}px` (×3) ·
   `P0 numbers and spotlights keep their cue without motion when the player asks for reduced motion` ·
@@ -117,6 +118,7 @@
   `P0 the door shows patience rings and a refused group of ${2|1} says "${2 ghế|Hết chỗ}" at ${w}px` (×6, + axe on `.door`) ·
   `P0 two refusals inside one bubble lifetime: the door says the newest reason and no bubble covers a guest at ${w}px` (×3, S6 review round 2: fixture `crowd2` with two `queue_overflow` 630 ms apart;
   at most one refused group drawn with its one bubble, no `.door-bubble` box over another `.door-guest` on any 100 ms frame, the second refusal replaces the first < 2.2 s after it; no axe: the live clock keeps refusing groups, the ×6 case is the door's axe pass) ·
+  `2.1.2 a brand-new save shows the whole HUD and Nâng cấp from shift 1 and keeps the journey for shift 2 at ${w}px` (×3 + axe + shot `hud-shift1-first-screen-${w}.png`: the nav reads Mở ca · Nhập hàng · Nâng cấp, the gear, timer row, weather row and stock strip are visible, no Journey button, no `.quest-trigger`, no `[data-spotlight]`, the Upgrades sheet holds one `[data-goal="buyTable"]`; the thresholds themselves: `packages/engine/test/spotlight-reveal.test.ts`, `sealed-economy.test.ts`) ·
   `P0 after shift 1 the HUD opens up and the Upgrades sheet holds exactly one card at ${w}px` (×3, + axe; fixture `rest`: a capacity snapshot, the frozen 2.0.4 file with a custom version, where the card is the first table level-up) ·
   `P0 on the seat model after shift 1 the Upgrades sheet holds exactly one card, the second table, at ${w}px` (×3, + axe; fixture `seat-rest`: the bundled seat model, the card is `[data-goal="buyTable"]` "Mua bàn · 1.070 xu" with the single spotlight,
   after buying it the one card is the next table at 9.250 xu and the nudge is spent; the save holds 2 tables and `coins − 1.070`) ·
@@ -294,3 +296,4 @@ machine.
 |---|---|
 | 2026-09-16 | Add current order feedback and rules26 loss evidence regression citations; historical replay remains unchanged. |
 | 2026-10-14 fun-onboarding-visual | First play no longer starts the step banner: spotlight + pointer, minimal first-shift HUD, door queue, flying numbers; the banner is a fallback (lost streak or `idleToGuideMs`). JSON 2.0.5 adds `onboarding.idleToGuideMs` and `featureReveal.{hudAfterShifts, upgradeAllAfterShifts, journeyAfterShifts}`. New proof cited above; the five-new-player test stays an owner playtest. |
+| 2026-10-22 founder override (JSON 2.1.2, config only) | `featureReveal.hudAfterShifts` and `upgradeAfterShifts` 1 → 0: shift 1 shows the whole HUD, the bottom nav (Mở ca · Nhập hàng · Nâng cấp) and the Upgrades button (founder: he needs restock and upgrade from the start); journey / quests / league (2 / 2 / 3) and `upgradeAllAfterShifts` 2 unchanged; no code. `first-shift-visual.spec.ts` asserts the HUD at shift 1 instead of the minimal one (and `.first()` on the two "Mở ca" buttons), plus a new test; `next-goal.spec.ts` counts the gear in `.hud`; `kick-table.spec.ts` now expects Mời về in shift 1 (same gate); `spotlight-reveal.test.ts` / `sealed-economy.test.ts` pin the thresholds and a 2.1.1 pin keeping its own until the next opening adopts 2.1.2. |

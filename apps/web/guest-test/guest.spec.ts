@@ -29,7 +29,7 @@ test('static guest serves, restocks, upgrades, closes shift and persists across 
   await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
   await expect(page.locator('.order-panel')).toHaveCount(0);
   await expect(page.locator('.toast-gain')).toBeVisible();
-  // Shift 1 is the minimal first-shift HUD: wallet, keg and tables. Serve through ordinary play until it closes by itself;
+  // Shift 1 shows the whole HUD (JSON 2.1.2, founder 2026-10-22; it was wallet, keg and tables before). Serve through ordinary play until it closes by itself;
   // the quick beer button refills the keg when it appears. No injected wallet or fixture config.
   const book = page.getByRole('heading', { name: 'Sổ ca hôm nay', exact: true });
   // A 12-minute shift plus the guests still at their tables takes 180-197 steps of 4 s: leave real headroom.
@@ -54,7 +54,7 @@ test('static guest serves, restocks, upgrades, closes shift and persists across 
   }
   await page.screenshot({ path: `.qa/guest-metrics-${info.project.name}.png` });
   await page.keyboard.press('Escape');
-  // The HUD opens after shift 1: restock, then the first goal (one card) earned through ordinary service.
+  // After shift 1: restock, then the first goal (one card) earned through ordinary service.
   await page.getByRole('button', { name: 'Nhập hàng', exact: true }).click();
   // The quick refill of the loop may already have topped the stock up (15/15): then there is nothing to buy, and the pause check below still holds.
   const bom = page.locator('.stock-row').first().getByRole('button', { name: 'Mua bom +1 · 12 xu', exact: true });

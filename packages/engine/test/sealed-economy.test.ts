@@ -11,10 +11,15 @@ import { config } from '../src';
 const raw = config.raw, t = raw.upgrades.table;
 const increasing = (list: readonly (number | null)[]) => list.filter((v): v is number => v !== null && v > 0).every((v, i, all) => !i || v > all[i - 1]);
 
-test('the bundled label is 2.1.1 (the balance pass sealed under 2.1.0, unchanged, plus the founder\'s kickTable price of 2026-10-22) and the first-shifts allowance is three shifts', () => {
-  assert.equal(config.version, '2.1.1'); // owner call 1: a ninth content of 2.1.0 needed a new label (DECISIONS `## 07 · owner calls 2026-10-22`)
-  assert.equal(raw.kickTable.feeRate, 0.5); // the only number 2.1.1 changes; every assertion below is the balance pass of 2.1.0
+test('the bundled label is 2.1.2 (the balance pass sealed under 2.1.0, unchanged, plus the founder\'s kickTable price of 2.1.1 and the HUD reveal of 2.1.2, both 2026-10-22) and the first-shifts allowance is three shifts', () => {
+  assert.equal(config.version, '2.1.2'); // 2.1.1 = owner call 1 (a ninth content of 2.1.0 needed a new label, DECISIONS `## 07 · owner calls 2026-10-22`); 2.1.2 = the founder's HUD override, UI thresholds only
+  assert.equal(raw.kickTable.feeRate, 0.5); // the only economy number 2.1.1 changed and 2.1.2 keeps; every assertion below is the balance pass of 2.1.0
   assert.equal(raw.shift.noCooldownFirstShifts, 3);
+});
+
+test('the reveal thresholds: 2.1.2 shows the HUD and the Upgrades button from shift 1 (founder 2026-10-22) and moves nothing else', () => {
+  assert.deepEqual(raw.onboarding.featureReveal, { upgradeAfterShifts: 0, questsAfterShifts: 2, leagueAfterShifts: 3, locationsAfterLifePathLevel: 1, hudAfterShifts: 0, upgradeAllAfterShifts: 2, journeyAfterShifts: 2 });
+  assert.deepEqual([raw.onboarding.firstShift.firstGroupSize, raw.onboarding.firstShift.firstOrder, raw.onboarding.firstShift.riskEventsDisabled, raw.onboarding.firstShift.rushDisabled], [1, ['bia'], true, true], 'shift 1 is still one guest, one beer, no risk and no rush');
 });
 
 test('the sealed economy numbers of the balance pass', () => {

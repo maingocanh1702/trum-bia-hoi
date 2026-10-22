@@ -23,7 +23,7 @@
   the settings gear, the shift clock, weather/rush row, stock strip, cooler/washer/kitchen, glass counter and the whole nav stay hidden until
   `onboarding.featureReveal.hudAfterShifts` completed shifts (Upgrades/Journey buttons have their own thresholds, the Upgrades
   sheet shows one card until `upgradeAllAfterShifts`). `reveal.ts` `revealed()` is the single switch; 1.x snapshots and `onboarding.enabled=false`
-  reveal everything. Exactly one element may carry `data-spotlight` (`spotlight.ts`), numbers travel through the decorative `.fly-layer`
+  reveal everything. **Since 2026-10-22 (founder override, JSON 2.1.2) `hudAfterShifts` and `upgradeAfterShifts` are 0: the whole HUD, the nav and the Upgrades button show from shift 1 (journey / quests / league still wait for 2 / 2 / 3 shifts); the two sentences above describe 2026-10-14 to 2026-10-21.** Exactly one element may carry `data-spotlight` (`spotlight.ts`), numbers travel through the decorative `.fly-layer`
   and queued groups render in `.door` — proof in `apps/web/test/first-shift-visual.spec.ts` (see [onboarding-guide](onboarding-guide.md)).
 - Sheets: a `Sheet` union of 15 named values + `null` (`:22`): `account, seasons, locations, stock,
   upgrades, book, close, journey, settings, config, dog, delivery, signboard, flyer, quests`. Every
@@ -266,6 +266,8 @@ the manifest — don't confuse a missing icon with a missing sprite.
 | 2026-10-20 S2 | Cite `instant-pour.spec.ts` (keg one set of numbers, instant tray, capacity pin's tap, axe 0 on the keg sheet); the A5 line now names the keg's reserve + refill labels. Strings added: `production.tank`, `production.instantHint`, `goal.fx.keg` (vi + en, `check:i18n` 912 paired keys). |
 
 | 2026-10-19 S1 | Cite `requirement-copy.test.ts` (every requirement key has vi + en copy, bundled and pinned configs); rules 28 added the `requirement.tables` row. |
+
+| 2026-10-22 founder override (JSON 2.1.2, config only) | The HUD and the bottom nav show from shift 1 (`hudAfterShifts` 0, `upgradeAfterShifts` 0): `apps/web/test/first-shift-visual.spec.ts` asserts them on a brand-new save at 390 · 360 · 1280 (axe, no horizontal scroll); `guest.spec.ts` and `playable-test/shift.spec.ts` keep their steps (comments only: shift 1 is no longer "the minimal HUD"). The 2026-09-16 guest-build heading above ("restock/upgrade happen after it closes") is history: restock and upgrade are available during shift 1 now. |
 
 
 ### Wave B — 2026-09-16 proof

@@ -1,7 +1,7 @@
 {
   "_meta": {
     "name": "Trùm Bia Hơi — economy config",
-    "version": "2.1.1",
+    "version": "2.1.2",
     "date": "2026-10-22",
     "spec": "08-SPEC-economy-constants.md (cùng số, cùng tên trường)",
     "rules": [
@@ -1191,11 +1191,11 @@
       "returningPlayerResetAfterDays": 30
     },
     "featureReveal": {
-      "upgradeAfterShifts": 1,
+      "upgradeAfterShifts": 0,
       "questsAfterShifts": 2,
       "leagueAfterShifts": 3,
       "locationsAfterLifePathLevel": 1,
-      "hudAfterShifts": 1,
+      "hudAfterShifts": 0,
       "upgradeAllAfterShifts": 2,
       "journeyAfterShifts": 2
     },

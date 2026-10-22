@@ -9,9 +9,9 @@ import { fullHud } from './full-hud';
 //   poor      one table, an empty wallet, a VIP sipping his served tray: his kick costs more than he paid
 //   occupied  a table a Chi Pheo keeps after his round (`occupied`): 0 coins, -2 reputation
 //   pin       `linger` on a content of JSON 2.1.0 without the `kickTable` section (the S5/S6 contents): the shift it is pinned for offers no "Mời về"
-//   pin-rest  the same 2.1.0 pin after one whole shift, at rest: the bundle is 2.1.1 since owner call 1 (2026-10-22), a numerically newer label, so the browser
+//   pin-rest  the same 2.1.0 pin after one whole shift, at rest: the bundle is 2.1.2 (2.1.1 since owner call 1, 2026-10-22; 2.1.2 the founder's HUD override), a numerically newer label, so the browser
 //             opens the next shift on it (`local.ts` `openingConfig`) and with it kickTable
-//   first     shift 1 of a new save (onboarding on, the HUD not yet revealed) with a lingering table
+//   first     shift 1 of a new save (onboarding on, the HUD revealed from shift 1 since JSON 2.1.2) with a lingering table
 //   closing   `linger`, then the player closes the shift (`endShift`): the lingering pair still sits, the shift is `closing` (the command would still take it)
 //   inspect   reads a browser save back through the engine (stdin)
 const mode = process.argv[2] ?? 'linger';
