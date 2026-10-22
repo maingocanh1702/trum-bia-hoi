@@ -277,7 +277,9 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
 
   const shift = w.shift, inShift = w.phase !== 'resting';
   // D8 (rules 28): the first shifts of a save open at once, so between them the stamina is not a wait. The bar and the rest line ask `restRequired` of the
-  // snapshot the next opening will use: locally `openingConfig` (the bundle when the pin is older, as `dispatch` sends it); remotely the server's pin.
+  // snapshot the next opening will use: locally `openingConfig` (the bundle when the pin is older, as `dispatch` sends it). Remote mode keeps the pin of the
+  // server snapshot, but the server opens a new shift with `registry.resolve(id, now)`: after a registry publication the two can differ, so a remote player in
+  // the first shifts may see a wait the opening does not ask (open item, BLOCKERS `07 · remote rest line …`).
   const mustRest = restRequired(w, remote ? game.config : openingConfig(game as Game)), energyMs = inShift || mustRest ? w.staminaMs : c.shift.durationMs;
   const rush = rushStatus(w, game.config);
   const rushReports = sheet === 'book' ? w.events.filter(e => e.type === 'rush_ended' && e.data.shiftId === shift?.id) : [];

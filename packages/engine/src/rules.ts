@@ -56,6 +56,8 @@ export function noCooldownOpening(w: Pick<WorldView, 'completedShifts'>, c: Conf
  * What `startShift` asks of the stamina when `c` opens the shift: full stamina is required (GDD 10), unless the first-shifts allowance applies. The engine keeps
  * its own copy (gated by the rules version; it compares with the pin's `durationMs`), so a caller must pass the snapshot that will OPEN the shift: the browser
  * passes `openingConfig` (`apps/web/src/local.ts`: the bundle when the pin is older), the forecast its timeline's snapshot, the career sim its only snapshot.
+ * The remote client passes the pin of its server snapshot, while the server opens with `registry.resolve(id, now)`: the two differ after a registry
+ * publication (an open item: BLOCKERS `07 · remote rest line can disagree with the server's opening after a registry publication`).
  */
 export function restRequired(w: WorldView, c: Config): boolean {
   return c.values.shift.openRequiresFullStamina && w.staminaMs < c.values.shift.durationMs && !noCooldownOpening(w, c);

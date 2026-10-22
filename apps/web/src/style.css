@@ -63,10 +63,14 @@ small { font-size: 11px; }
    without a table is an empty spot (`.table-slot`), so the shop is seen growing. A row is tall enough for a table, its chairs and its caption; nothing is
    positioned by hand. The door (the queue, its patience rings, the "2 ghế" bubble: P0(c)'s wordless tutorial) sits in its own band at the TOP of the yard,
    so it stays above the fold whatever the number of places below; the grid reserves 56 px above its first row for that row's order bubbles. Every row
-   below keeps a band of 25 px of room (a 128 px row holds a 103 px table) plus a 49 px row gap, so a bubble of row 2+ and its patience track (about
-   55 px above their table) never cover the caption of the table above, even the tallest one: a lingering table's guest label, state and enjoy
-   countdown hang 21 px below its space (review 07 r1; yard.spec.ts "a busy alley" and "a busy alley under lingering tables": 49 px is the smallest gap
-   that passes both, 31 px only cleared tables that wait for their order). */
+   below keeps a band of 25 px of room (a 128 px row holds a 103 px table) plus a 49 px row gap: a ONE-row order bubble of row 2+ and its patience track
+   (53 px above their table) clear the measured captions of the table above, a lingering table's three lines (guest label, state, enjoy countdown:
+   21 px below its space) included, with 0 px to spare (review 07 r1; yard.spec.ts "a busy alley" and "a busy alley under lingering tables", fixtures
+   `rows` / `linger-rows`: Lv1 tables, at most three dish icons, the fallback UI font; 49 px is the smallest gap that passes both). Not covered (review
+   07 r2, recorded, not fixed): a spotlit Lv3+ pair table whose order holds three or more different snacks wraps `.bubble-dishes` into a second row that
+   rises about 78 px and covers about 25 px of a lingering countdown above (22 px of the door band on row 1; four different snacks wrap even unlit); a
+   UI font taller than the fallback adds about 2 px. Remedy if it shows: a one-row bubble (`flex-wrap: nowrap`, narrower sprites past three icons) and
+   a `linger-rows` variant with Lv3 pair tables. */
 .yard { position: relative; flex: 1; min-height: 270px; margin: 0 12px; display: flex; flex-direction: column; }
 .yard-door { min-height: 44px; display: flex; align-items: center; padding-left: 2px; }
 .yard-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 128px; row-gap: 49px; justify-items: center; align-content: start; padding: 56px 0 16px; }
