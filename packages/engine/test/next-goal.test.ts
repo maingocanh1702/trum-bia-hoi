@@ -224,6 +224,26 @@ test('owner call 3 (the founder, 2026-10-22): while a table can still be bought 
   }
 });
 
+test('owner call 3 with a shift history: while the next table is out of reach (reachMult x the average shift) the chip shows an in-reach device, never the table and never a second chair', () => {
+  // Review 07b r1 (MAJOR): owner call 3 leaves the chip's reach filter as it was. On the protocol bot's own income 3 x the average shift is about 8 000 xu at
+  // shift 16 and 17 000 xu at shift 40 (artifacts/verification/feat-economy-2-1/stage07/career-42.json, -99.json), below table 5's 24 000 xu, so with the second
+  // chairs out of the chip the capacity lane has nothing in reach and the chip moves to the speed lane: a chip-follower does not keep the bot's table-then-chair
+  // rhythm (it is not measured). This case pins what the chip does on such a save, not a rhythm: four one-chair tables, 20 closed shifts, 68 000 xu earned.
+  const g = game(), w = g.world, v = g.config.values; assert.ok(isSeatModel(v)); w.coins = 10_000_000;
+  while (w.tables.length < v.upgrades.table.chairsAfterTables) assert.ok(send(g, { type: 'buyTable' }).ok);
+  closed(g, 20, 68_000); w.lifePath = 1; w.coins = 2_500; // LP1 is 20 000 xu earned: the chair level's gate is open too
+  const limit = reachMult(g.config) * shiftAverage(w)!, table = buyTableQuote(w, g.config), goals = listGoals(w, g.config);
+  assert.equal(limit, 10_200, '3 x (68 000 / 20)');
+  assert.ok(table.cost !== null && table.cost > limit, `table 5 (${table.cost} xu) is out of reach (${limit} xu)`);
+  const chair = goals.find(x => x.id === `chair:${w.tables[0].id}`)!;
+  assert.ok(chair.cost !== null && chair.cost <= limit, 'the second chair is open and within reach ...');
+  assert.equal(chair.eligible, false, '... but no chip goal while table 5 is for sale');
+  const goal = pick(g)!;
+  assert.deepEqual([goal.lane, goal.card.kind], ['speed', 'equipment'], 'no capacity item in reach: the chip shows a device');
+  assert.ok(goal.cost! <= limit, 'within reach');
+  assert.notEqual(goal.id, 'buyTable'); assert.notEqual(goal.card.kind, 'buyChair');
+});
+
 test('S4: with two chairs and its life-path gate open a table level is a chip goal: capacity lane, cheapest first, the price follows the ladder, the effect is its benefit', () => {
   const g = game(), w = g.world, v = g.config.values; assert.ok(isSeatModel(v)); w.coins = 100_000_000;
   const ladder = tableUpgrade(v)!.levels; assert.ok(ladder);
