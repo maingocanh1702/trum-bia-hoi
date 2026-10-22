@@ -1,7 +1,7 @@
 {
   "_meta": {
     "name": "Trùm Bia Hơi — economy config",
-    "version": "2.1.2",
+    "version": "2.1.3",
     "date": "2026-10-22",
     "spec": "08-SPEC-economy-constants.md (cùng số, cùng tên trường)",
     "rules": [
@@ -1137,7 +1137,10 @@
         "bia"
       ],
       "riskEventsDisabled": true,
-      "rushDisabled": true
+      "rushDisabled": true,
+      "excludedCustomerTypes": [
+        "ngoily"
+      ]
     },
     "lostStreakToGuide": 3,
     "idleToGuideMs": 45000,
@@ -1197,7 +1200,8 @@
       "locationsAfterLifePathLevel": 1,
       "hudAfterShifts": 0,
       "upgradeAllAfterShifts": 2,
-      "journeyAfterShifts": 2
+      "journeyAfterShifts": 2,
+      "kickAfterShifts": 1
     },
     "targets": {
       "firstServeWithinMs": 30000,
