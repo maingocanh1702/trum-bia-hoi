@@ -4,13 +4,15 @@
 
 - Config (`docs/config/economy.tbh.json:1100-1172`, tier C, `_rule: "F27 (🟢 ràng buộc 08/09)..."`), real shape:
   `enabled: true`, `firstShift: {guaranteedFirstGroupWithinMs: 8000, firstGroupType: 'thuong', firstGroupSize: 1,
-  firstOrder: ['bia'], riskEventsDisabled: true, rushDisabled: true}`, `lostStreakToGuide: 3`, `idleToGuideMs: 45000` (JSON 2.0.5),
+  firstOrder: ['bia'], riskEventsDisabled: true, rushDisabled: true, excludedCustomerTypes: ['ngoily']}` (the last key JSON 2.1.3, founder 2026-10-22:
+  the seated types an onboarding shift never draws), `lostStreakToGuide: 3`, `idleToGuideMs: 45000` (JSON 2.0.5),
   `stepGuide: {onFirstPlay: true, skippable: true, maxAutoRepeatsPerDay: 2, steps: [5 entries]}`,
   `loginPrompt: {afterFirstShift: true, onLeaderboardOpen: true, onLeaveWithProgress: true, cooldownShifts: 3,
   leaveProgress: {minCompletedShifts: 1, minLifetimeEarned: 1}}`, `hints.*`, `featureReveal:
   {upgradeAfterShifts: 0, questsAfterShifts: 2, leagueAfterShifts: 3, locationsAfterLifePathLevel: 1,
-  hudAfterShifts: 0, upgradeAllAfterShifts: 2, journeyAfterShifts: 2}` (`upgradeAfterShifts` and `hudAfterShifts` were 1 until JSON 2.1.2, founder 2026-10-22) (the last three and `idleToGuideMs` are JSON 2.0.5 keys:
-  older pins lack them, `config.ts` `ADDED_LATER` lets those load byte-for-byte and `reveal.ts` reads the seed for the absent ones),
+  hudAfterShifts: 0, upgradeAllAfterShifts: 2, journeyAfterShifts: 2, kickAfterShifts: 1}` (`upgradeAfterShifts` and `hudAfterShifts` were 1 until JSON 2.1.2, founder 2026-10-22) (`hudAfterShifts` · `upgradeAllAfterShifts` · `journeyAfterShifts` and `idleToGuideMs` are JSON 2.0.5 keys:
+  older pins lack them, `config.ts` `ADDED_LATER` lets those load byte-for-byte and `reveal.ts` reads the seed for the absent ones; `kickAfterShifts` ("Mời về", JSON 2.1.3, AND-ed with
+  the HUD in `revealed().kick`) and `firstShift.excludedCustomerTypes` are one `SEAT_KEYS_ADDED_LATER` row `since: '2.1.3'`: an older label loads without them byte for byte, `reveal.ts` reads the seed),
   `targets: {firstServeWithinMs: 30000, firstShiftLostGroupsMax: 1}`. The 5 `stepGuide.steps` entries
   (`id`/`waitFor`/`copyKey`, `open_upgrade` also carries `onlyAfter: "shift_closed"`) — see Gotchas for
   what `onlyAfter`'s value actually does. `k.band` (the invariant `sim:onboarding` checks against) is
@@ -133,6 +135,15 @@
   `reveal thresholds and the idle window are optional in old pins, validated when present, and never fractional or negative`.
   Specs that are not about onboarding keep the whole HUD through `apps/web/test/fixtures/full-hud.ts` (`fullHud(raw)` zeroes the four reveal thresholds)
   or `apps/web/test/fresh-game.ts` (`bootFresh`); the five-new-player test is an owner playtest (`docs/phase0-alpha-playtest.md` §6), never PASS here.
+- **Founder 2026-10-22, Part A (JSON 2.1.3).** A1 "Mời về" not in shift 1: `packages/engine/test/spotlight-reveal.test.ts` `Mời về has its own reveal threshold, after one completed shift and never without the HUD; a pin without the key reads the seed`
+  (+ `kick` in `feature reveal follows completed shifts, …` and `a save pinned to 2.1.1 keeps its HUD thresholds until its next opening adopts the bundled 2.1.3, and shows no Mời về in shift 1 either way`);
+  UI: `apps/web/test/kick-table.spec.ts` `Wave 3 in shift 1 Mời về is not shown yet, though the HUD is: it is revealed after one completed shift (JSON 2.1.3, founder 2026-10-22)` (fixture `first`) and
+  `Wave 3 after one completed shift Mời về is on a lingering table: the price line and the button (JSON 2.1.3, founder 2026-10-22)` (fixture `second`). A2 no `ngoily` in the onboarding shift:
+  `packages/engine/test/first-shift-guests.test.ts` (6 cases: none in shift 1 even at weight 0.6 and back in shift 2; the exclusion equals the draw at weight 0, shift 1 identical world;
+  a 2.1.2 pin still draws them and replays byte for byte; the recorded S6 history `seat-2.1.0-v28.json` served one in its shift 1 and still replays to its hash; onboarding off excludes none;
+  key loading and validation). A3 one "Mở ca": `apps/web/test/yard.spec.ts` `A3 at rest exactly one Mở ca is on screen, the bottom nav's: whole, uncovered and in the thumb zone, and the opening note points at it (${locale}) at ${viewport.width}px`
+  (vi/en × 390/360/1280, axe) and `apps/web/test/first-shift-visual.spec.ts` `A3 a save pinned to 2.1.1 with no shift played hides the bottom nav, so the opening note keeps its one Mở ca; the opening adopts the bundle at ${viewport.width}px` (×3, axe; fixture `pin-2.1.1`);
+  the four `.first()` of PR #32 in `first-shift-visual.spec.ts` are strict locators again.
 - `apps/web/test/feedback.spec.ts` — `A4 ${locale} actual empty and refilling order feedback agrees with the guide at ${width}px` (VI/EN ×360/390/1280): wait-ready uses the actual current order cause, including empty raw stock and a reserved refill with raw stock zero. Run `npx playwright test apps/web/test/feedback.spec.ts`.
 
 - `packages/engine/test/game.test.ts`, inside `'startup rejects configurations that create fractional
@@ -297,3 +308,4 @@ machine.
 | 2026-09-16 | Add current order feedback and rules26 loss evidence regression citations; historical replay remains unchanged. |
 | 2026-10-14 fun-onboarding-visual | First play no longer starts the step banner: spotlight + pointer, minimal first-shift HUD, door queue, flying numbers; the banner is a fallback (lost streak or `idleToGuideMs`). JSON 2.0.5 adds `onboarding.idleToGuideMs` and `featureReveal.{hudAfterShifts, upgradeAllAfterShifts, journeyAfterShifts}`. New proof cited above; the five-new-player test stays an owner playtest. |
 | 2026-10-22 founder override (JSON 2.1.2, config only) | `featureReveal.hudAfterShifts` and `upgradeAfterShifts` 1 → 0: shift 1 shows the whole HUD, the bottom nav (Mở ca · Nhập hàng · Nâng cấp) and the Upgrades button (founder: he needs restock and upgrade from the start); journey / quests / league (2 / 2 / 3) and `upgradeAllAfterShifts` 2 unchanged; no code. `first-shift-visual.spec.ts` asserts the HUD at shift 1 instead of the minimal one (and `.first()` on the two "Mở ca" buttons), plus a new test; `next-goal.spec.ts` counts the gear in `.hud`; `kick-table.spec.ts` now expects Mời về in shift 1 (same gate); `spotlight-reveal.test.ts` / `sealed-economy.test.ts` pin the thresholds and a 2.1.1 pin keeping its own until the next opening adopts 2.1.2. |
+| 2026-10-22 founder, Part A (JSON 2.1.3) | Two Tier C keys: `featureReveal.kickAfterShifts` 1 ("Mời về" from shift 2, AND-ed with the HUD: `revealed().kick`) and `firstShift.excludedCustomerTypes` ["ngoily"] (an engine rule of the onboarding shift, gated by the key); the opening note drops its "Mở ca" while the bottom nav is shown and points at the nav's (`rest.startBelow`). `kick-table.spec.ts` again expects no Mời về in shift 1 (the 2.1.2 row above had turned it around) plus a shift-2 case; `first-shift-visual.spec.ts` uses strict "Mở ca" locators again and gains the 2.1.1-pin exception; `yard.spec.ts` asserts one Mở ca in the thumb zone; new `first-shift-guests.test.ts`. Proof cited above. |
