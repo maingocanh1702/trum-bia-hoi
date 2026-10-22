@@ -96,8 +96,9 @@ if (mode === 'states') {
   console.log(JSON.stringify(liveBefore(build, e => e.type === 'queue_overflow')));
 } else if (mode === 'book') {
   // Mid-shift (the shift book opens from the nav only while a shift runs). Waiting is the common reason, beer rarer, groups are also turned
-  // away: the counts differ, so the book's order is not the fixed default order.
-  const g = configured(raw => { steadyDemand(raw); raw.onboarding.enabled = false; raw.upgrades.table.startingTables = 1; raw.spawn.baseMs = 3000; raw.patience.thuongMs = 30000; raw.inventory.startingStock.bia[0] = 0; }); // steady demand: the subject is the book, not the door cadence
+  // away: the counts differ, so the book's order is not the fixed default order. Pairs a one-chair shop turns away are the draw of every pin before 2.1.4
+  // (the bundled `spawn.singlesUntilPairSeat` sends no pair before a two-chair table), so that rule is off here: the book's pairs line is the subject.
+  const g = configured(raw => { steadyDemand(raw); raw.onboarding.enabled = false; raw.upgrades.table.startingTables = 1; raw.spawn.baseMs = 3000; raw.patience.thuongMs = 30000; raw.inventory.startingStock.bia[0] = 0; raw.spawn.singlesUntilPairSeat = false; }); // steady demand: the subject is the book, not the door cadence
   send(g, { type: 'startShift' }, 'open');
   // The first guests found no beer (seat model: a pair or a queued group may time out first, so wait for a loss that is really about beer); then the stall restocked and nobody served.
   const beerLost = () => { const l = menuReport(g.world, g.config)!.losses; return l.beerStock + l.beerRefill; };

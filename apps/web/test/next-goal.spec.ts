@@ -127,7 +127,9 @@ for (const viewport of viewports) test(`on the seat model the chip moves on afte
   await page.setViewportSize(viewport);
   // 9 828 base was the old 10 000 less the 172 base table 2 got cheaper (428 against 600): the three purchases below keep their old arithmetic, 24 515 - 1 070 = 23 445 - 9 250 = 14 195, 55 short of table 4.
   // 9 842 since JSON 2.1.3 (founder 2026-10-22: no Bàn lai rai in shift 1): the unserved shift 1 of this fixture now costs 90 in walk-out penalties where it cost 55, so the base is 14 higher (x2.5 = 35) and every number below stays.
-  const f = fixture('seat-closed', 1, 9842); await load(page, f.save, f.now); expect(f.coins).toBe(24515);
+  // 9 879 since JSON 2.1.4 (founder 2026-10-22, early pacing: singles until a table seats a pair): the guests of that unserved shift 1 now sit down and walk out (183 in penalties)
+  // where pairs were turned away for free, so the base is 37 higher (x2.5 = 92.5, rounded once) and every number below stays.
+  const f = fixture('seat-closed', 1, 9879); await load(page, f.save, f.now); expect(f.coins).toBe(24515);
   await expect(chip(page)).toContainText('Mua bàn mới · +1 chỗ'); await expect(chip(page)).toContainText('1.070 xu · đủ rồi'); await tbh.shot(`ng-seat-chip-ready-${viewport.width}.png`);
   await chip(page).click(); const sheet = page.locator('dialog[open]');
   await expect(sheet.locator('[data-goal="buyTable"]')).toBeVisible();

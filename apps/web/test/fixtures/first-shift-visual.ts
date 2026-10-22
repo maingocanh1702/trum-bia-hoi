@@ -22,6 +22,8 @@ const start = Date.parse('2026-09-16T03:00:00Z');
 function crowd(seed: number): Game | null {
   const raw = steadyDemand(structuredClone(config.raw));
   raw.upgrades.table.startingTables = 1; raw.spawn.baseMs = 2000; raw.patience.thuongMs = 180000; raw.onboarding.firstShift.firstGroupSize = 1;
+  // A pair at a one-chair shop ("2 ghế") is the draw of every pin before 2.1.4: the bundled `spawn.singlesUntilPairSeat` (founder 2026-10-22) sends none before a two-chair table.
+  if (want === 2) raw.spawn.singlesUntilPairSeat = false;
   const g = new Game(loadConfig(raw), seed, start);
   if (!g.command({ at: g.world.now, idempotencyKey: 'open', command: { type: 'startShift' } }).ok) throw Error('fixture:shift-not-open');
   const queued = () => g.world.queue.length, slots = queueSlots(g.world, g.config); // a full door: every queue slot holds a group (1 + seats/8 on the bundled seed)

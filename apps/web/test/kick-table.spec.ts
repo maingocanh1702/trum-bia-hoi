@@ -169,14 +169,14 @@ test('Wave 3 after one completed shift Mời về is on a lingering table: the p
   expect(tbh.consoleErrors()).toEqual([]);
 });
 
-// Owner call 1 (the founder, 2026-10-22): the price moved to feeRate 0.5 under a new label, 2.1.1 (2.1.2 the same day, the HUD thresholds, then 2.1.3, the shift-1 fixes: the bundle is 2.1.3 now), so a save pinned to a 2.1.0 content without the section no
+// Owner call 1 (the founder, 2026-10-22): the price moved to feeRate 0.5 under a new label, 2.1.1 (2.1.2 the same day, the HUD thresholds, then 2.1.3, the shift-1 fixes, then 2.1.4, the early pacing: the bundle is 2.1.4 now), so a save pinned to a 2.1.0 content without the section no
 // longer keeps its pin for ever: its next "Mở ca" opens on the numerically newer bundle (`local.ts` `openingConfig`) and the shop can send tables home from then on.
 // Until 2.1.1 the bundle was a second content of 2.1.0 and such a save kept its pin (no Mời về) for good.
-test('Wave 3 a save pinned to the S6 content of JSON 2.1.0 adopts the bundled 2.1.3 at its next Mở ca, and with it Mời về at the founder\'s price', async ({ page, tbh }) => {
+test('Wave 3 a save pinned to the S6 content of JSON 2.1.0 adopts the bundled 2.1.4 at its next Mở ca, and with it Mời về at the founder\'s price', async ({ page, tbh }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const f = fixture('pin-rest') as { save: string; now: number; phase: string; completedShifts: number; version: string; feeRate: number | null; bundle: { version: string; feeRate: number | null } };
   expect([f.phase, f.completedShifts, f.version, f.feeRate]).toEqual(['resting', 1, '2.1.0', null]); // one shift on the pin, which has no kickTable
-  expect(f.bundle).toEqual({ version: '2.1.3', feeRate: 0.5 });
+  expect(f.bundle).toEqual({ version: '2.1.4', feeRate: 0.5 });
   const copy = JSON.parse(readFileSync('apps/web/src/i18n/vi.json', 'utf8')) as Record<string, string>;
   await page.clock.setFixedTime(f.now);
   await page.addInitScript(({ save }) => {
