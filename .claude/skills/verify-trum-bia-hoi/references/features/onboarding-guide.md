@@ -137,7 +137,7 @@
   or `apps/web/test/fresh-game.ts` (`bootFresh`); the five-new-player test is an owner playtest (`docs/phase0-alpha-playtest.md` §6), never PASS here.
 - **Founder 2026-10-22, Part A (JSON 2.1.3).** A1 "Mời về" not in shift 1: `packages/engine/test/spotlight-reveal.test.ts` `Mời về has its own reveal threshold, after one completed shift and never without the HUD; a pin without the key reads the seed`
   (+ `kick` in `feature reveal follows completed shifts, …` and `a save pinned to 2.1.1 keeps its HUD thresholds until its next opening adopts the bundled 2.1.3, and shows no Mời về in shift 1 either way`);
-  UI: `apps/web/test/kick-table.spec.ts` `Wave 3 in shift 1 Mời về is not shown yet, though the HUD is: it is revealed after one completed shift (JSON 2.1.3, founder 2026-10-22)` (fixture `first`) and
+  UI: `apps/web/test/kick-table.spec.ts` `Wave 3 in shift 1 Mời về is not shown yet, though the HUD is: it is revealed after one completed shift (JSON 2.1.3, founder 2026-10-22)` (fixture `first`; review A-r1, 2026-10-23: it also opens the shift book from the nav and finds no "Mời tất cả về", which `App.tsx` gates with the same `show.kick`) and
   `Wave 3 after one completed shift Mời về is on a lingering table: the price line and the button (JSON 2.1.3, founder 2026-10-22)` (fixture `second`). A2 no `ngoily` in the onboarding shift:
   `packages/engine/test/first-shift-guests.test.ts` (6 cases: none in shift 1 even at weight 0.6 and back in shift 2; the exclusion equals the draw at weight 0, shift 1 identical world;
   a 2.1.2 pin still draws them and replays byte for byte; the recorded S6 history `seat-2.1.0-v28.json` served one in its shift 1 and still replays to its hash; onboarding off excludes none;
