@@ -145,7 +145,12 @@ test('Wave 3 in shift 1 Mời về is not shown yet, though the HUD is: it is re
   const panel = await open(f.target);
   await expect(panel.locator('.idle-table-info')).toContainText(t(`table.${f.target.state}`));
   await expect(panel.locator('.kick-table')).toHaveCount(0); await expect(panel.getByRole('button', { name: t('kick.button'), exact: true })).toHaveCount(0);
-  await tbh.shot('kick-first-390.png'); expect(tbh.consoleErrors()).toEqual([]);
+  await tbh.shot('kick-first-390.png');
+  // Review A-r1 F2: the shift book's "Mời tất cả về" is Mời về too, behind the same reveal: since 2.1.2 the nav's "Sổ ca" opens the book in shift 1, and it offers no send-all there.
+  await panel.getByRole('button', { name: t('close'), exact: true }).click(); await page.locator('.bottom-nav').getByRole('button', { name: t('nav.book'), exact: true }).click();
+  const book = page.getByRole('dialog', { name: t('book.title'), exact: true }); await expect(book).toBeVisible();
+  await expect(book.getByRole('button', { name: t('book.end'), exact: true })).toBeVisible(); await expect(book.getByRole('button', { name: new RegExp(`^${t('book.kick', { cost: '#' }).split('#')[0]}`) })).toHaveCount(0);
+  expect(tbh.consoleErrors()).toEqual([]);
 });
 
 test('Wave 3 after one completed shift Mời về is on a lingering table: the price line and the button (JSON 2.1.3, founder 2026-10-22)', async ({ page, tbh }) => {
@@ -156,7 +161,12 @@ test('Wave 3 after one completed shift Mời về is on a lingering table: the p
   await expect(panel.locator('.kick-table')).toHaveCount(1);
   await expect(panel.locator('.kick-price')).toHaveText(t('kick.price', { cost: xu(f.quote.cost!), rep: xu(f.quote.reputation) }));
   if (f.quote.ok) await expect(button).toBeEnabled(); else await expect(button).toBeDisabled();
-  await tbh.shot('kick-second-390.png'); expect(tbh.consoleErrors()).toEqual([]);
+  await tbh.shot('kick-second-390.png');
+  // Review A-r1 F2: and from the same shift the book offers "Mời tất cả về" with its price, as before #32 (the guests are lingering, so it costs their fees).
+  await panel.getByRole('button', { name: t('close'), exact: true }).click(); await page.locator('.bottom-nav').getByRole('button', { name: t('nav.book'), exact: true }).click();
+  const book = page.getByRole('dialog', { name: t('book.title'), exact: true }); await expect(book).toBeVisible();
+  await expect(book.getByRole('button', { name: new RegExp(`^${t('book.kick', { cost: '#' }).split('#')[0]}`) })).toBeEnabled();
+  expect(tbh.consoleErrors()).toEqual([]);
 });
 
 // Owner call 1 (the founder, 2026-10-22): the price moved to feeRate 0.5 under a new label, 2.1.1 (2.1.2 the same day, the HUD thresholds, then 2.1.3, the shift-1 fixes: the bundle is 2.1.3 now), so a save pinned to a 2.1.0 content without the section no
