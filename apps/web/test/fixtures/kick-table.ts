@@ -9,9 +9,10 @@ import { fullHud } from './full-hud';
 //   poor      one table, an empty wallet, a VIP sipping his served tray: his kick costs more than he paid
 //   occupied  a table a Chi Pheo keeps after his round (`occupied`): 0 coins, -2 reputation
 //   pin       `linger` on a content of JSON 2.1.0 without the `kickTable` section (the S5/S6 contents): the shift it is pinned for offers no "Mời về"
-//   pin-rest  the same 2.1.0 pin after one whole shift, at rest: the bundle is 2.1.2 (2.1.1 since owner call 1, 2026-10-22; 2.1.2 the founder's HUD override), a numerically newer label, so the browser
-//             opens the next shift on it (`local.ts` `openingConfig`) and with it kickTable
+//   pin-rest  the same 2.1.0 pin after one whole shift, at rest: the bundle is 2.1.3 (2.1.1 since owner call 1, 2026-10-22; 2.1.2 the founder's HUD override, 2.1.3 his
+//             shift-1 fixes), a numerically newer label, so the browser opens the next shift on it (`local.ts` `openingConfig`) and with it kickTable
 //   first     shift 1 of a new save (onboarding on, the HUD revealed from shift 1 since JSON 2.1.2) with a lingering table
+//   second    the same new save after its shift 1 (played to its natural end), in shift 2 with a lingering table: "Mời về" is revealed from there (JSON 2.1.3)
 //   closing   `linger`, then the player closes the shift (`endShift`): the lingering pair still sits, the shift is `closing` (the command would still take it)
 //   inspect   reads a browser save back through the engine (stdin)
 const mode = process.argv[2] ?? 'linger';
@@ -25,17 +26,17 @@ if (mode === 'inspect') {
     feeRate: kickTableRule(g.config.values)?.feeRate ?? null }));
 } else {
   const raw = structuredClone(config.raw);
-  const first = mode === 'first', pinned = mode === 'pin' || mode === 'pin-rest';
-  if (!first) { fullHud(raw); raw.onboarding.enabled = false; }
+  const fresh = mode === 'first' || mode === 'second', pinned = mode === 'pin' || mode === 'pin-rest';
+  if (!fresh) { fullHud(raw); raw.onboarding.enabled = false; }
   raw._meta.version = pinned ? '2.1.0' : 'kick-table-fixture'; // a pin keeps its own content until a numerically newer bundle opens its next shift
   if (pinned) { delete (raw as { kickTable?: unknown }).kickTable; raw._meta.governance.tiers.A.sections = raw._meta.governance.tiers.A.sections.filter(name => name !== 'kickTable'); }
   for (const weather of WEATHER) raw.weather[weather].weight = weather === 'sunny' ? 1 : 0;
   raw.rush.schedule.perShift = 0; raw.spawn.capacityDemand.maxMult = 1;
-  const weights: Record<string, number> = mode === 'poor' ? { vip: 1, thuong: 0.001 } : mode === 'occupied' ? { thuong: 3, chipheo: 1 } : first ? { thuong: 1, ngoily: 1 } : { thuong: 1, ngoily: 2 };
+  const weights: Record<string, number> = mode === 'poor' ? { vip: 1, thuong: 0.001 } : mode === 'occupied' ? { thuong: 3, chipheo: 1 } : fresh ? { thuong: 1, ngoily: 1 } : { thuong: 1, ngoily: 2 };
   for (const [key, profile] of Object.entries(raw.customerTypes)) if ('weight' in profile) profile.weight = weights[key] ?? 0;
-  const tables = mode === 'poor' || first ? 1 : 4;
+  const tables = mode === 'poor' || fresh ? 1 : 4;
   raw.spawn.pPair = tables === 1 ? 0 : 1; raw.spawn.baseMs = raw.rush.none.floorMs = 3000;
-  raw.shift.startingCoinsBase = mode === 'poor' ? 0 : first ? raw.shift.startingCoinsBase : 40000;
+  raw.shift.startingCoinsBase = mode === 'poor' ? 0 : fresh ? raw.shift.startingCoinsBase : 40000;
   const g = new Game(loadConfig(raw), 42, Date.parse('2026-10-22T10:00:00+07:00')), w = g.world;
   const send = (command: Command) => g.command({ at: w.now, idempotencyKey: `kt-${g.log.length}`, command });
   const must = (command: Command) => { const r = send(command); if (!r.ok) throw Error(`fixture:${command.type}:${r.reason}`); };
@@ -47,6 +48,10 @@ if (mode === 'inspect') {
   while (w.tables.length < tables) must({ type: 'buyTable' });
   if (tables >= raw.upgrades.table.chairsAfterTables) for (const table of w.tables) must({ type: 'buyChair', tableId: table.id });
   must({ type: 'startShift' });
+  if (mode === 'second') { // shift 1 to its natural end, then shift 2 (the first shifts of a save need no rest)
+    for (let i = 0; w.phase !== 'resting'; i++) { if (i > 20000) throw Error('fixture:second:no-close'); step(); }
+    must({ type: 'startShift' });
+  }
   if (mode === 'pin-rest') {
     for (let i = 0; w.phase !== 'resting'; i++) { if (i > 20000) throw Error('fixture:pin-rest:no-close'); step(); } // the shift runs to its natural end
     process.stdout.write(JSON.stringify({ save: encodeSave(g), now: w.now, phase: w.phase, completedShifts: w.completedShifts, version: g.config.version,
@@ -55,12 +60,12 @@ if (mode === 'inspect') {
     const ready = (): boolean => {
       if (mode === 'poor') return w.tables.some(t => t.state === 'consuming' && t.group!.customers[0].type === 'vip');
       if (mode === 'occupied') return w.reputation >= 2 && w.tables.some(t => t.state === 'occupied');
-      if (first) return w.tables.some(lingering);
+      if (fresh) return w.tables.some(lingering);
       return w.queue.length > 0 && w.tables.some(t => t.state === 'consuming' && t.group!.customers.length === 2) && w.tables.some(t => t.state === 'waiting' && t.order!.state === 'pending');
     };
     for (let i = 0; !ready(); i++) { if (i > 6000 || w.phase !== 'open') throw Error(`fixture:${mode}:not-reached`); step(); }
     if (mode === 'closing') must({ type: 'endShift' });
-    const target = w.tables.find(t => mode === 'poor' ? t.state === 'consuming' : mode === 'occupied' ? t.state === 'occupied' : first ? lingering(t) : t.state === 'consuming' && t.group!.customers.length === 2)!;
+    const target = w.tables.find(t => mode === 'poor' ? t.state === 'consuming' : mode === 'occupied' ? t.state === 'occupied' : fresh ? lingering(t) : t.state === 'consuming' && t.group!.customers.length === 2)!;
     const waiting = w.tables.find(t => t.state === 'waiting' && t.order!.state === 'pending') ?? null;
     const quote = kickTableQuote(w, g.config, target);
     process.stdout.write(JSON.stringify({ save: encodeSave(g), now: w.now, phase: w.phase, coins: w.coins, reputation: w.reputation, completedShifts: w.completedShifts,

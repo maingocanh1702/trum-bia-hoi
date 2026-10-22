@@ -14,6 +14,7 @@ import { steadyDemand } from '../../../../packages/engine/test/fixtures/steady-d
 //   rest <n>      n shifts closed (default 1) with enough coins for the first goal and nothing bought, on a capacity snapshot (the frozen 2.0.4 file:
 //                 a table level is seats, which Wave 1 wrote this for; an old save keeps it until its next opening adopts the seat model)
 //   seat-rest <n> the same on the bundled seat model (rules 28), where the first goal is the second table
+//   pin-2.1.1     a brand-new game pinned to the 2.1.1 content (the released v-fb2: HUD and Upgrades after one shift, none of the 2.1.3 keys), no shift played
 //   inspect       print facts about a save read from stdin
 const mode = process.argv[2] ?? 'rest', want = Number(process.argv[3] ?? 1);
 const start = Date.parse('2026-09-16T03:00:00Z');
@@ -95,6 +96,13 @@ if (mode === 'crowd') {
     if (g.world.phase !== 'resting' || g.world.completedShifts !== n) throw Error(`fixture:shift-${n}-not-closed`);
   }
   console.log(JSON.stringify({ save: encodeSave(g), now: g.world.now, coins: g.world.coins }));
+} else if (mode === 'pin-2.1.1') {
+  // 2.1.1 = the bundled content with the two thresholds the founder moved in 2.1.2 back at 1 and without the two keys of 2.1.3.
+  const raw: any = structuredClone(config.raw); raw._meta.version = '2.1.1';
+  Object.assign(raw.onboarding.featureReveal, { hudAfterShifts: 1, upgradeAfterShifts: 1 });
+  delete raw.onboarding.featureReveal.kickAfterShifts; delete raw.onboarding.firstShift.excludedCustomerTypes;
+  const g = new Game(loadConfig(raw), 42, start);
+  console.log(JSON.stringify({ save: encodeSave(g), now: g.world.now, version: g.config.version }));
 } else {
   const w = decodeSave(await new Promise<string>(resolve => { let text = ''; process.stdin.on('data', c => { text += c; }); process.stdin.on('end', () => resolve(text)); })).world;
   console.log(JSON.stringify({ coins: w.coins, tableLevels: w.tables.map(t => t.level), tables: w.tables.length, completedShifts: w.completedShifts, phase: w.phase }));

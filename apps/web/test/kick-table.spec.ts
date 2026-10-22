@@ -9,7 +9,7 @@ import { readSave, waitSaved } from './storage';
 // only: the table's popover shows the price of sending its lingering guests home, in coins and reputation, from `kickTableQuote` (the command's own quote), and
 // ONE tap sends them home; while the guests still wait for their food, or the wallet is short, the button is dimmed with exactly one reason. Saves come from the
 // real engine (fixtures/kick-table.ts) and are read back through it.
-type Fixture = { save: string; now: number; phase: string; coins: number; reputation: number; target: { id: string; n: number; state: string }; waiting: { id: string; n: number } | null;
+type Fixture = { save: string; now: number; phase: string; coins: number; reputation: number; completedShifts: number; target: { id: string; n: number; state: string }; waiting: { id: string; n: number } | null;
   quote: { cost: number | null; reputation: number; reason: string | null; ok: boolean }; queue: { id: string; size: number }[]; cleaningMs: number; seatingMs: number };
 const fixture = (mode: string, save?: string) => JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/kick-table.ts', mode], { encoding: 'utf8', input: save }));
 const words = (text: string) => text.trim().split(/\s+/).filter(word => /[\p{L}\p{N}]/u.test(word)).length;
@@ -135,27 +135,38 @@ test('Wave 3 a save pinned to the S6 content of JSON 2.1.0 (no kickTable section
   await tbh.shot('kick-pin-390.png'); expect(tbh.consoleErrors()).toEqual([]);
 });
 
-// Founder 2026-10-22 (JSON 2.1.2, config only): the HUD is there from shift 1 and "Mời về" is revealed with it (`show.hud`), so a lingering table of shift 1 offers it with the
-// same price line and button as in any later shift. Before 2.1.2 this case said the opposite ("not shown yet, revealed with the HUD after the first shift", P0).
-test('Wave 3 in shift 1 Mời về comes with the HUD: the price line and the button are on a lingering table (JSON 2.1.2, founder 2026-10-22)', async ({ page, tbh }) => {
+// Founder 2026-10-22, A1 (JSON 2.1.3): "Mời về" is not available in shift 1. It has its own reveal threshold (`featureReveal.kickAfterShifts` 1) AND-ed with the HUD
+// (`revealed().kick`), so the HUD of shift 1 (JSON 2.1.2) no longer brings it. This restores the shift-1 assertion PR #32 had turned around ("Mời về comes with the HUD").
+test('Wave 3 in shift 1 Mời về is not shown yet, though the HUD is: it is revealed after one completed shift (JSON 2.1.3, founder 2026-10-22)', async ({ page, tbh }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  const { f, t, xu, open } = await boot(page, 'vi', 'first');
-  expect(['consuming', 'occupied']).toContain(f.target.state);
+  const { f, t, open } = await boot(page, 'vi', 'first');
+  expect(['consuming', 'occupied']).toContain(f.target.state); expect(f.completedShifts).toBe(0);
+  await expect(page.locator('.bottom-nav')).toBeVisible(); // the HUD is there: the block is hidden by its own threshold, not by the HUD's
+  const panel = await open(f.target);
+  await expect(panel.locator('.idle-table-info')).toContainText(t(`table.${f.target.state}`));
+  await expect(panel.locator('.kick-table')).toHaveCount(0); await expect(panel.getByRole('button', { name: t('kick.button'), exact: true })).toHaveCount(0);
+  await tbh.shot('kick-first-390.png'); expect(tbh.consoleErrors()).toEqual([]);
+});
+
+test('Wave 3 after one completed shift Mời về is on a lingering table: the price line and the button (JSON 2.1.3, founder 2026-10-22)', async ({ page, tbh }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const { f, t, xu, open } = await boot(page, 'vi', 'second');
+  expect(['consuming', 'occupied']).toContain(f.target.state); expect([f.phase, f.completedShifts]).toEqual(['open', 1]);
   const panel = await open(f.target), button = panel.getByRole('button', { name: t('kick.button'), exact: true });
   await expect(panel.locator('.kick-table')).toHaveCount(1);
   await expect(panel.locator('.kick-price')).toHaveText(t('kick.price', { cost: xu(f.quote.cost!), rep: xu(f.quote.reputation) }));
   if (f.quote.ok) await expect(button).toBeEnabled(); else await expect(button).toBeDisabled();
-  await tbh.shot('kick-first-390.png'); expect(tbh.consoleErrors()).toEqual([]);
+  await tbh.shot('kick-second-390.png'); expect(tbh.consoleErrors()).toEqual([]);
 });
 
-// Owner call 1 (the founder, 2026-10-22): the price moved to feeRate 0.5 under a new label, 2.1.1 (2.1.2 the same day, the HUD thresholds: the bundle is 2.1.2 now), so a save pinned to a 2.1.0 content without the section no
+// Owner call 1 (the founder, 2026-10-22): the price moved to feeRate 0.5 under a new label, 2.1.1 (2.1.2 the same day, the HUD thresholds, then 2.1.3, the shift-1 fixes: the bundle is 2.1.3 now), so a save pinned to a 2.1.0 content without the section no
 // longer keeps its pin for ever: its next "Mở ca" opens on the numerically newer bundle (`local.ts` `openingConfig`) and the shop can send tables home from then on.
 // Until 2.1.1 the bundle was a second content of 2.1.0 and such a save kept its pin (no Mời về) for good.
-test('Wave 3 a save pinned to the S6 content of JSON 2.1.0 adopts the bundled 2.1.2 at its next Mở ca, and with it Mời về at the founder\'s price', async ({ page, tbh }) => {
+test('Wave 3 a save pinned to the S6 content of JSON 2.1.0 adopts the bundled 2.1.3 at its next Mở ca, and with it Mời về at the founder\'s price', async ({ page, tbh }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const f = fixture('pin-rest') as { save: string; now: number; phase: string; completedShifts: number; version: string; feeRate: number | null; bundle: { version: string; feeRate: number | null } };
   expect([f.phase, f.completedShifts, f.version, f.feeRate]).toEqual(['resting', 1, '2.1.0', null]); // one shift on the pin, which has no kickTable
-  expect(f.bundle).toEqual({ version: '2.1.2', feeRate: 0.5 });
+  expect(f.bundle).toEqual({ version: '2.1.3', feeRate: 0.5 });
   const copy = JSON.parse(readFileSync('apps/web/src/i18n/vi.json', 'utf8')) as Record<string, string>;
   await page.clock.setFixedTime(f.now);
   await page.addInitScript(({ save }) => {
