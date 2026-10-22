@@ -77,6 +77,27 @@ for (const locale of ['vi', 'en'] as const) test(`S6 a new shop shows its one ta
   await tbh.shot(`yard-fresh-${locale}.png`); expect(tbh.consoleErrors()).toEqual([]);
 });
 
+// Review 07 r1 (W1 follow-up): at rest the "Quán nhỏ đã sẵn sàng" note hangs from the top of the yard with the height of its text, so its "Mở ca" button
+// does not move with the height of the grid. Centred in a box of 15-90 % of the yard, it slid under the sticky bottom nav once W1's row band made the yard
+// taller (axe target-size at 1280×720), and it already sat under the nav at 360×740 with the HUD shown. The corners and the centre of the button must be
+// the button itself, inside the viewport, in both languages.
+for (const locale of ['vi', 'en'] as const) for (const viewport of viewports) test(`S6 at rest the opening note's start button is whole on screen above the bottom nav (${locale}) at ${viewport.width}px`, async ({ page, tbh }) => {
+  await page.setViewportSize(viewport);
+  const { t } = await boot(page, locale, 'fresh');
+  const note = page.locator('.opening-note'), button = note.getByRole('button', { name: t('nav.shift'), exact: true });
+  await expect(note).toBeVisible(); await expect(page.locator('.bottom-nav')).toBeVisible(); // the HUD and the nav are shown: the rest screen between shifts
+  await expect(button).toBeInViewport({ ratio: 1 });
+  const covered = await button.evaluate(el => {
+    const b = el.getBoundingClientRect(), d = 3;
+    return [[b.left + d, b.top + d], [b.right - d, b.top + d], [b.left + d, b.bottom - d], [b.right - d, b.bottom - d], [b.left + b.width / 2, b.top + b.height / 2]]
+      .filter(([x, y]) => !document.elementFromPoint(x, y)?.closest('.opening-note .primary')).length;
+  });
+  expect(covered, 'points of the start button painted over by another element').toBe(0);
+  const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze(); expect(axe.violations).toEqual([]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await tbh.shot(`yard-rest-note-${locale}-${viewport.width}.png`); expect(tbh.consoleErrors()).toEqual([]);
+});
+
 // A live shift (fixture `live`: two one-chair tables in the first row, a ready order and its bubble, which carries the one spotlight): the bubble of a
 // first-row table rises into the band the grid keeps above its rows and never covers the beer line (S2's one set of numbers) or the door band.
 for (const viewport of viewports) test(`S6 on a live shift the order bubble of a first-row table stays below the beer line and the door band, and one thing blinks, at ${viewport.width}px`, async ({ page, tbh }) => {

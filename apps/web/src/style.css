@@ -83,7 +83,10 @@ small { font-size: 11px; }
 .table-caption small { display: block; font-size: 9px; font-weight: 400; opacity: .7; margin-top: 2px; }
 .patience-track { background: var(--streetBgShade); height: 4px; margin: 4px 0 5px; border-radius: 2px; overflow: hidden; }
 .patience-track i { display: block; background: var(--success); height: 100%; }
-.opening-note { position: absolute; inset: 15% 10px 10%; display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center; background: color-mix(in srgb,var(--beerFoam) 96%,transparent); border: 1px solid var(--streetBgShade); border-radius: 8px; padding: 20px; z-index: 7; }
+/* The rest note ("Quán nhỏ đã sẵn sàng" and its "Mở ca") hangs from the top of the yard with the height of its text, so its button does not move with the
+   height of the grid: centred in a box from 15 % to 90 % of the yard, it slid under the sticky bottom nav once the yard grew taller than the screen
+   (review 07 r1: axe target-size at 1280×720 after the 31 px row gap; already under the nav at 360×740 with the HUD shown). yard.spec.ts "at rest …". */
+.opening-note { position: absolute; inset: 12px 10px auto; display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center; background: color-mix(in srgb,var(--beerFoam) 96%,transparent); border: 1px solid var(--streetBgShade); border-radius: 8px; padding: 20px; z-index: 7; }
 .opening-note h2 { font-size: 20px; }
 .opening-note p { font-size: 12px; max-width: 250px; line-height: 1.8; margin: 9px 0 16px; }
 .opening-note small { font-size: 10px; margin-top: 16px; }
