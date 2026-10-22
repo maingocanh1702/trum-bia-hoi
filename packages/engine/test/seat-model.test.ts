@@ -112,7 +112,8 @@ test('a one-chair table never gives one guest beer and a dish together; a two-ch
 });
 
 test('a pair with no two-chair table leaves at the door: no penalty, no reputation change, never lost', () => {
-  const g = seatGame(raw => { raw.spawn.pPair = 1; }), w = g.world;
+  // The door rule of every pin before 2.1.4: the bundled 2.1.4 draws no pair while no table seats two (`spawn.singlesUntilPairSeat`, early-pacing.test.ts), so that rule is off here.
+  const g = seatGame(raw => { raw.spawn.pPair = 1; raw.spawn.singlesUntilPairSeat = false; }), w = g.world;
   assert.ok(send(g, { type: 'startShift' }).ok);
   play(g, () => w.serves.length === 1); // onboarding's forced single still sits and pays
   const coins = w.coins, reputation = w.reputation, streak = w.lostStreak, from = w.events.length;

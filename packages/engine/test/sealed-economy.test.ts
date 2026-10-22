@@ -11,10 +11,15 @@ import { config } from '../src';
 const raw = config.raw, t = raw.upgrades.table;
 const increasing = (list: readonly (number | null)[]) => list.filter((v): v is number => v !== null && v > 0).every((v, i, all) => !i || v > all[i - 1]);
 
-test('the bundled label is 2.1.3 (the balance pass sealed under 2.1.0, unchanged, plus the founder\'s kickTable price of 2.1.1, the HUD reveal of 2.1.2 and the shift-1 fixes of 2.1.3, all 2026-10-22) and the first-shifts allowance is three shifts', () => {
-  assert.equal(config.version, '2.1.3'); // 2.1.1 = owner call 1 (a ninth content of 2.1.0 needed a new label, DECISIONS `## 07 · owner calls 2026-10-22`); 2.1.2 = the founder's HUD override, UI thresholds only; 2.1.3 = the founder's shift-1 fixes (two Tier C keys)
-  assert.equal(raw.kickTable.feeRate, 0.5); // the only economy number 2.1.1 changed and 2.1.2 / 2.1.3 keep; every assertion below is the balance pass of 2.1.0
+test('the bundled label is 2.1.4 (the balance pass sealed under 2.1.0, unchanged, plus the founder\'s kickTable price of 2.1.1, the HUD reveal of 2.1.2, the shift-1 fixes of 2.1.3 and the early pacing of 2.1.4, all 2026-10-22) and the first-shifts allowance is three shifts', () => {
+  assert.equal(config.version, '2.1.4'); // 2.1.1 = owner call 1 (a ninth content of 2.1.0 needed a new label, DECISIONS `## 07 · owner calls 2026-10-22`); 2.1.2 = the founder's HUD override, UI thresholds only; 2.1.3 = the founder's shift-1 fixes (two Tier C keys); 2.1.4 = his early pacing (three rule keys, Part B1)
+  assert.equal(raw.kickTable.feeRate, 0.5); // the only economy number 2.1.1 changed and 2.1.2 / 2.1.3 / 2.1.4 keep; every assertion below is the balance pass of 2.1.0
   assert.equal(raw.shift.noCooldownFirstShifts, 3);
+});
+
+test('the early pacing of 2.1.4 (founder 2026-10-22, Part B1): singles until a table seats a pair (Tier A), the pending arrival re-planned at a rush edge, no flat beer in shift 1; no number moves', () => {
+  assert.deepEqual([raw.spawn.singlesUntilPairSeat, raw.rush.schedule.replanPendingArrival, raw.onboarding.firstShift.staleDisabled], [true, true, true]);
+  assert.ok(raw._meta.governance.tiers.A.sections.includes('spawn.singlesUntilPairSeat'), 'Tier A, like spawn.pPair: the founder approved it');
 });
 
 test('the reveal thresholds: 2.1.2 shows the HUD and the Upgrades button from shift 1, 2.1.3 keeps Mời về for shift 2 and Bàn lai rai out of shift 1 (founder 2026-10-22); nothing else moves', () => {

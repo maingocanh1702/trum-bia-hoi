@@ -1,8 +1,8 @@
 {
   "_meta": {
     "name": "Trùm Bia Hơi — economy config",
-    "version": "2.1.3",
-    "date": "2026-10-22",
+    "version": "2.1.4",
+    "date": "2026-10-23",
     "spec": "08-SPEC-economy-constants.md (cùng số, cùng tên trường)",
     "rules": [
       "Trường kết thúc bằng 'Base' = xu/uy tín gốc, NHÂN k lúc load: displayed = round(valueBase * k).",
@@ -59,6 +59,7 @@
             "donation",
             "spawn.pPair",
             "spawn.capacityDemand",
+            "spawn.singlesUntilPairSeat",
             "locations.list",
             "upgrades.table.orderShape",
             "upgrades.table.tablePriceBase",
@@ -276,6 +277,7 @@
     "queueSlotsFormula": "queueBaseSlots + floor(totalCapacity / queueSeatsPerSlot) — seed rules 28: 1 + floor(totalCapacity / 8); snapshot sức chứa và pin trước 2.0.22: 2 + floor(totalCapacity / 3)",
     "playerServeCeilingPerSec": 0.74,
     "pPair": 0.5,
+    "singlesUntilPairSeat": true,
     "capacityDemand": {
       "refTables": 6,
       "maxMult": 4,
@@ -545,6 +547,7 @@
         "none"
       ],
       "heavyFromLifePath": 1,
+      "replanPendingArrival": true,
       "_rule": "Founder 09/09 (E7): đợt 'heavy' chỉ xuất hiện khi lifePath ≥ heavyFromLifePath; trước đó cả 2 đợt là 'light'."
     }
   },
@@ -1140,7 +1143,8 @@
       "rushDisabled": true,
       "excludedCustomerTypes": [
         "ngoily"
-      ]
+      ],
+      "staleDisabled": true
     },
     "lostStreakToGuide": 3,
     "idleToGuideMs": 45000,

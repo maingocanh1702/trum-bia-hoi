@@ -50,17 +50,17 @@ test('the server sends a lingering table home once per key, at the price of the 
 });
 
 // Owner call 1 (the founder, 2026-10-22): the price moved to kickTable.feeRate 0.5 and, being a ninth content of the label, the bundle went to 2.1.1 (2.1.2 the same day:
-// the founder's HUD thresholds, then 2.1.3, his shift-1 fixes; no kickTable change; the bundle is 2.1.3 now). A dev database
+// the founder's HUD thresholds, then 2.1.3, his shift-1 fixes, then 2.1.4, his early pacing; no kickTable change; the bundle is 2.1.4 now). A dev database
 // that registered a 2.1.0 content (the S6 content without the section, or the content stage 07 shipped with it at 1.5) used to refuse a different 2.1.0 bundle
-// at startup (`store:configVersionConflict`); 2.1.3 is a new label, so the store opens, registers it beside the old one for import and replay, and keeps
-// serving what its registry published (the bundle is a candidate, never activated by a restart): to play 2.1.3 in remote mode, start from a fresh database.
-test('a database that registered a 2.1.0 content opens on the bundled 2.1.3 without store:configVersionConflict and keeps serving what its registry published', t => {
+// at startup (`store:configVersionConflict`); 2.1.4 is a new label, so the store opens, registers it beside the old one for import and replay, and keeps
+// serving what its registry published (the bundle is a candidate, never activated by a restart): to play 2.1.4 in remote mode, start from a fresh database.
+test('a database that registered a 2.1.0 content opens on the bundled 2.1.4 without store:configVersionConflict and keeps serving what its registry published', t => {
   const dir = mkdtempSync(join(tmpdir(), 'tbh-label-')); const stores: GameStore[] = [];
   t.after(() => { for (const s of stores) if (s) s.close(); rmSync(dir, { recursive: true, force: true }); });
   const s6 = loadConfig(JSON.parse(JSON.parse(readFileSync(new URL('../../../packages/engine/test/fixtures/seat-2.1.0-v28.json', import.meta.url), 'utf8')).save).config);
   const shippedRaw = structuredClone(config.raw); shippedRaw._meta.version = '2.1.0'; shippedRaw._meta.date = '2026-10-20'; shippedRaw.kickTable.feeRate = 1.5;
   const shipped = loadConfig(shippedRaw); // the content stage 07 shipped as 2.1.0
-  assert.equal(config.version, '2.1.3');
+  assert.equal(config.version, '2.1.4');
   for (const [name, old, other] of [['the S6 content', s6, shipped], ['the stage-07 content', shipped, s6]] as const) {
     const file = join(dir, `${name.replace(/\W+/g, '-')}.db`), now = NOW, open = (c: Config) => { const s = new GameStore(file, c, () => now); stores.push(s); return s; };
     const a = open(old); a.createPlayer('p', 42);
@@ -72,6 +72,6 @@ test('a database that registered a 2.1.0 content opens on the bundled 2.1.3 with
     assert.equal(b.createPlayer('q', 7).configVersion, '2.1.0', `${name}: a new player gets the published version`);
     b.close();
     const db = new DatabaseSync(file, { readOnly: true });
-    try { assert.deepEqual(db.prepare('SELECT version FROM configs ORDER BY version').all().map(row => row.version), ['2.1.0', '2.1.3'], `${name}: 2.1.3 is registered beside it`); } finally { db.close(); }
+    try { assert.deepEqual(db.prepare('SELECT version FROM configs ORDER BY version').all().map(row => row.version), ['2.1.0', '2.1.4'], `${name}: 2.1.4 is registered beside it`); } finally { db.close(); }
   }
 });

@@ -70,7 +70,8 @@ test('capacityDemandMult is min(maxMult, max(1, refTables / tables)); a snapshot
 test('the gap to the next group is multiplied by the demand factor of the tables owned: x4, x3, x2, x1.5 (singles and pairs, seed 42)', () => {
   const d = seed.spawn.capacityDemand;
   for (const [pPair, size] of [[0, 1], [1, 2]] as const) for (const tables of [1, 2, 3, 4]) {
-    const g = seatGame(raw => { raw.onboarding.enabled = false; raw.spawn.pPair = pPair; }), w = g.world;
+    // Groups of two at one-chair tables: the 2.1.4 rule `spawn.singlesUntilPairSeat` is off, as on every older pin (early-pacing.test.ts has it on).
+    const g = seatGame(raw => { raw.onboarding.enabled = false; raw.spawn.pPair = pPair; raw.spawn.singlesUntilPairSeat = false; }), w = g.world;
     while (w.tables.length < tables) assert.ok(send(g, { type: 'buyTable' }).ok);
     assert.ok(send(g, { type: 'startShift' }).ok);
     const s = w.shift!, mult = Math.min(d.maxMult, Math.max(1, d.refTables / tables));
@@ -111,7 +112,7 @@ test('capacity demand scales the gap of every rush kind too, after the rush floo
     const raw = structuredClone(seed); patch(raw);
     assert.deepEqual(RUSH_TYPES.map(kind => +perGuest(raw, kind).toFixed(3)), anchors, `${name}: the per-guest cadence the expectation starts from`);
     for (const kind of RUSH_TYPES) for (const [pPair, size] of [[0, 1], [1, 2]] as const) for (const tables of [1, 2, 3, 4]) {
-      const g = seatGame(r => { r.onboarding.enabled = false; r.spawn.pPair = pPair; patch(r); }), w = g.world;
+      const g = seatGame(r => { r.onboarding.enabled = false; r.spawn.pPair = pPair; r.spawn.singlesUntilPairSeat = false; patch(r); }), w = g.world; // pairs at one-chair tables: the pre-2.1.4 draw
       while (w.tables.length < tables) assert.ok(send(g, { type: 'buyTable' }).ok);
       assert.ok(send(g, { type: 'startShift' }).ok);
       const s = w.shift!;

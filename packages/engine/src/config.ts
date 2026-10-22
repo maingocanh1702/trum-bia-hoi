@@ -61,6 +61,13 @@ export function kickTableRule(c: Economy): KickTableRule | null { return Object.
  * renormalised over the rest and uses the same randomness). None on every snapshot without the key (JSON <= 2.1.2, a capacity pin, a 1.x pin): they replay as before.
  */
 export function firstShiftExcludedTypes(c: Economy): readonly string[] { return (c.onboarding.firstShift as { excludedCustomerTypes?: readonly string[] }).excludedCustomerTypes ?? []; }
+// Founder 2026-10-22 (JSON 2.1.4, Part B1). Each is false on every snapshot without its key (JSON <= 2.1.3, a capacity pin, a 1.x pin): those replay as before.
+/** While no table seats a pair, every group is one guest (`Game.spawn()`: the draw at pair probability 0); from the first two-chair table `spawn.pPair` applies. */
+export function singlesUntilPairSeat(c: Economy): boolean { return (c.spawn as { singlesUntilPairSeat?: boolean }).singlesUntilPairSeat === true; }
+/** When a rush starts or ends, the arrival already planned comes no later than one guest's gap at the new pace (`Game.updateRush()`). */
+export function replanPendingArrival(c: Economy): boolean { return (c.rush.schedule as { replanPendingArrival?: boolean }).replanPendingArrival === true; }
+/** Poured beer never goes flat in a save's onboarding shift (`freshnessMs()` is then unbounded, like the top cooler level). */
+export function firstShiftStaleDisabled(c: Economy): boolean { return (c.onboarding.firstShift as { staleDisabled?: boolean }).staleDisabled === true; }
 /** Total benefit of a table level (benefits stack: each ladder row lists the sum). Level 1, a level without a row and every older snapshot: none. */
 export function tableBenefit(c: Economy, level: number): TableBenefit {
   const row = tableUpgrade(c)?.levels.find(l => l.level === level);
@@ -177,6 +184,9 @@ const SEAT_KEYS_ADDED_LATER: readonly { since: string; paths: readonly string[];
   // Founder 2026-10-22: "Mời về" gets its own reveal threshold and shift 1 keeps "Bàn lai rai" out. Both sit in the Tier C section `onboarding` (no tier entry to add);
   // every older label, the released 2.1.1 included, loads without them byte for byte.
   { since: '2.1.3', paths: ['onboarding.featureReveal.kickAfterShifts', 'onboarding.firstShift.excludedCustomerTypes'], tiers: {} },
+  // Founder 2026-10-22 (Part B1, early pacing): singles until a table seats a pair (Tier A, listed like `spawn.pPair`), the pending arrival re-planned when a rush
+  // starts or ends (Tier B, section `rush`) and no flat beer in shift 1 (Tier C, section `onboarding`). Every older label, 2.1.3 included, loads without them byte for byte.
+  { since: '2.1.4', paths: ['spawn.singlesUntilPairSeat', 'rush.schedule.replanPendingArrival', 'onboarding.firstShift.staleDisabled'], tiers: { A: ['spawn.singlesUntilPairSeat'] } },
 ];
 const versionOf = (label: unknown): number[] | null => { const m = typeof label === 'string' ? /^(\d+)\.(\d+)\.(\d+)$/.exec(label) : null; return m ? m.slice(1).map(Number) : null; };
 const olderThan = (label: unknown, since: string): boolean => { const a = versionOf(label), b = versionOf(since)!; return !!a && (a[0] - b[0] || a[1] - b[1] || a[2] - b[2]) < 0; };

@@ -1,7 +1,7 @@
 import { SEASON_KINDS, compatibleSeasonTiers, nextSeasonEnd, pinUnusedSeasons, syncSeasons } from './seasons';
 import { leaseQuote, leaveLocationQuote } from './locations';
 import { kitchenStatus } from './kitchen';
-import { isEconomy2, isSeatModel, PAIR, CHAIRS_WITH_TABLE, config as defaultConfig, configContent, BUSINESS_UNLOCKS, SIGN_STYLES, signWeightMult, DISHES, EQUIPMENT, WEATHER, deliveryBundles, arrivalIntervalMs, capacityDemandMult, firstShiftExcludedTypes, tableUpgrade, tableBenefit, tableBenefitGained, effectiveTableLevel, chairPatienceMult, type Config, type SeatedType, type Rush } from './config';
+import { isEconomy2, isSeatModel, PAIR, CHAIRS_WITH_TABLE, config as defaultConfig, configContent, BUSINESS_UNLOCKS, SIGN_STYLES, signWeightMult, DISHES, EQUIPMENT, WEATHER, deliveryBundles, arrivalIntervalMs, capacityDemandMult, firstShiftExcludedTypes, singlesUntilPairSeat, replanPendingArrival, tableUpgrade, tableBenefit, tableBenefitGained, effectiveTableLevel, chairPatienceMult, type Config, type SeatedType, type Rush } from './config';
 import { integer, random, weighted } from './rng';
 import { buyGlassQuote, buyTableQuote, buyChairQuote, chairUpgradeQuote, tableUpgradeQuote, addStock, credit, creditBatchSafe, currentGuests, customerValue, dayKey, deliveryInterval, deliveryQuote, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, kickTableQuote, noCooldownOpening, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
 import { lifePathStatus, lifePathRewardQuote, unlockQuote } from './progression';
@@ -305,6 +305,9 @@ export class Game {
         if (s.rushScheduleSeed !== undefined) slot!.eventStart = w.events.length;
         this.emit('rush_started', { kind, until: slot!.end, weather: s.weather, location: w.location, ...(s.rushScheduleSeed === undefined ? {} : { shiftId: s.id, slot: index! }) });
       }
+      // Founder 2026-10-22 (JSON 2.1.4): the arrival planned at the old pace comes no later than one guest's gap at the new one, so a rush opens with guests
+      // instead of a wait planned before it; a pin without the key keeps that timer, as before.
+      if (w.phase === 'open' && replanPendingArrival(this.config.values)) s.nextSpawnAt = Math.min(s.nextSpawnAt, w.now + this.arrivalGap(1));
     }
     if (w.phase === 'open') for (const [index, r] of s.rushes.entries()) {
       if (!r.warned && w.now >= r.start - this.config.values.rush.schedule.warningMs && w.now < r.start) {
@@ -575,8 +578,10 @@ export class Game {
   private spawn(): void {
     const w = this.world, c = this.config.values, s = w.shift!, seatModel = this.seatModel();
     const first = s.firstGroup && s.onboarding;
-    // Seat model (D17): group size is independent of the shop; capacity pins draw up to the largest table.
-    const size = first ? c.onboarding.firstShift.firstGroupSize : seatModel ? random(w) < seatModel.spawn.pPair ? PAIR : 1 : integer(w, 1, Math.max(...w.tables.map(t => t.capacity)));
+    // Seat model (D17): group size is independent of the shop; capacity pins draw up to the largest table. Founder 2026-10-22 (JSON 2.1.4, Tier A): while no
+    // table seats a pair the pair probability is 0 (the same draw, so no group is sent away for want of a second chair); a pin without the key draws pairs, as before.
+    const pPair = seatModel && singlesUntilPairSeat(seatModel) && !w.tables.some(t => t.capacity >= PAIR) ? 0 : seatModel?.spawn.pPair ?? 0;
+    const size = first ? c.onboarding.firstShift.firstGroupSize : seatModel ? random(w) < pPair ? PAIR : 1 : integer(w, 1, Math.max(...w.tables.map(t => t.capacity)));
     // Founder 2026-10-22 (JSON 2.1.3): an onboarding shift draws none of `firstShift.excludedCustomerTypes` (no "Bàn lai rai" in shift 1): like a type of weight 0,
     // the draw is renormalised over the others with the same randomness. A pin without the key excludes none, so its shifts replay as before.
     const excluded = s.onboarding ? firstShiftExcludedTypes(c) : [];
@@ -614,12 +619,16 @@ export class Game {
       this.emit('customer_spawned', { groupId: group.id, size, weather: s.weather, rush: s.rush });
       this.seatQueue();
     }
-    const rush = rushConfig(this.config, s.rush);
+    s.nextSpawnAt = w.now + this.arrivalGap(size);
+    s.firstGroup = false;
+  }
+  /** The wait after a group of `size` guests until the next group: the cadence of the weather, rush and flyer, x the group size (perCustomer), x the capacity demand, rounded once. */
+  private arrivalGap(size: number): number {
+    const w = this.world, c = this.config.values, s = w.shift!, seatModel = this.seatModel(), rush = rushConfig(this.config, s.rush);
     const interval = this.rulesVersion >= ARRIVAL_INTERVAL_RULES ? arrivalIntervalMs(c, s.weather, s.rush, this.rulesVersion >= FLYER_RULES && !!s.flyer) : Math.max(c.spawn.baseMs * c.weather[s.weather].spawnIntervalMult * rush.spawnIntervalMult, rush.floorMs);
     // D19: a small shop is offered fewer guests (x1 on every snapshot without capacityDemand; the first guest of a shift is never delayed by it).
     const demand = seatModel ? capacityDemandMult(seatModel, w.tables.length) : 1;
-    s.nextSpawnAt = w.now + Math.round(interval * (c.spawn.perCustomer ? size : 1) * demand);
-    s.firstGroup = false;
+    return Math.round(interval * (c.spawn.perCustomer ? size : 1) * demand);
   }
   private order(t: Table): void {
     const w = this.world, c = this.config.values, s = w.shift!, group = t.group!;

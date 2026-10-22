@@ -1,6 +1,6 @@
 import { creditSeasons, seasonCreditSafe } from './seasons';
 import { signboardStyle } from './signboard';
-import { isEconomy2, isSeatModel, tableUpgrade, chairUpgrade, kickTableRule, DISHES, PAIR, CHAIRS_WITH_TABLE, type Config, type Dish, type Equipment, type Rush } from './config';
+import { isEconomy2, isSeatModel, tableUpgrade, chairUpgrade, kickTableRule, firstShiftStaleDisabled, DISHES, PAIR, CHAIRS_WITH_TABLE, type Config, type Dish, type Equipment, type Rush } from './config';
 import type { WorldView, Customer, Order, Table, World } from './types';
 
 // One formatter per timezone, built on first use. An Intl.DateTimeFormat owns a native ICU formatter
@@ -165,6 +165,8 @@ export function dogUpgradeQuote(w: WorldView, c: Config) {
   return { next, materials, cost, ok: cost !== null && Number.isSafeInteger(cost) && cost >= 0 && w.coins >= cost && materials.every(m => m.have >= m.quantity) };
 }
 export function freshnessMs(w: WorldView, c: Config): number {
+  // Founder 2026-10-22 (JSON 2.1.4): no flat beer while the save has completed no shift (its onboarding shift); a snapshot without the key: as before.
+  if (w.shift?.onboarding && w.completedShifts === 0 && firstShiftStaleDisabled(c.values)) return Infinity;
   const base = c.values.upgrades.cooler.freshnessMs[w.equipment.cooler - 1];
   return base === null ? Infinity : base * c.values.weather[w.shift?.weather ?? 'sunny'].freshnessMult;
 }

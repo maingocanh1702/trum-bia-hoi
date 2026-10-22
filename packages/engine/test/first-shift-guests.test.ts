@@ -14,10 +14,12 @@ const T0 = Date.parse('2026-10-22T10:00:00+07:00');
 const sha = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 /** The bundled seed with the two lingering guests drawn often (the weights of the recorded S6 history below), so a shift 1 without them is not luck. */
 const lively = (patch?: (raw: Seed) => void) => { const raw = structuredClone(seed); raw.customerTypes.ngoily.weight = 0.6; raw.customerTypes.chipheo.weight = 0.4; patch?.(raw); return raw; };
-/** The same content as it was before 2.1.3: the label 2.1.2, without the two keys 2.1.3 added. */
+/** The same content as it was before 2.1.3: the label 2.1.2, without the two keys 2.1.3 added (nor the three of 2.1.4 and their Tier A entry). */
 const before213 = (raw: Seed) => {
   raw._meta.version = '2.1.2';
   delete (raw.onboarding.featureReveal as Record<string, unknown>).kickAfterShifts; delete (raw.onboarding.firstShift as Record<string, unknown>).excludedCustomerTypes;
+  delete (raw.spawn as Record<string, unknown>).singlesUntilPairSeat; delete (raw.rush.schedule as Record<string, unknown>).replanPendingArrival; delete (raw.onboarding.firstShift as Record<string, unknown>).staleDisabled;
+  raw._meta.governance.tiers.A.sections = raw._meta.governance.tiers.A.sections.filter(name => name !== 'spawn.singlesUntilPairSeat');
 };
 /** Open the next shifts one by one, keep the shelves stocked and serve every ready tray until each closes; the types of every guest who sat down, per shift. */
 function play(g: Game, shifts: number): string[][] {

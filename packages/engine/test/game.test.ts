@@ -77,7 +77,8 @@ test('grace rescues the whole table; exact grace end expires and charges only on
   assert.ok(h.world.glasses.every(x => x.state !== 'in_use' || x.itemId !== f.table.order?.items[0].id));
 });
 test('flat beer keeps payment and has only one reputation penalty even when late', () => {
-  const g = create(); const { command } = firstOrder(g);
+  // The subject is what a flat beer costs: the founder's 2.1.4 rule keeps beer fresh in a save's first shift (`firstShift.staleDisabled`, early-pacing.test.ts), so it is off here.
+  const g = create(c => { c.onboarding.firstShift.staleDisabled = false; }); const { command } = firstOrder(g);
   g.world.reputation = 10;
   assert.deepEqual(send(g, command, 23000), { ok: true, outcome: 'stale', amount: 50 });
   assert.equal(g.world.reputation, 9);

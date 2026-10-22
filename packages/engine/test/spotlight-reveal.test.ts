@@ -122,15 +122,18 @@ test('feature reveal follows completed shifts, onboarding off shows everything a
 // next opening takes the bundle, as `dispatch` hands it to `startShift` (apps/web/src/local.ts `openingConfig`: the numerically newer label wins); one completed shift
 // already showed the HUD and the button, so nothing moves for a player past shift 1. The 2.1.0 save is the recorded, older pin of the same family.
 // 2.1.3 (founder 2026-10-22): the 2.1.1 content also lacks `kickAfterShifts` (and `excludedCustomerTypes`); "Mời về" stays out of shift 1 before and after the adoption.
-test('a save pinned to 2.1.1 keeps its HUD thresholds until its next opening adopts the bundled 2.1.3, and shows no Mời về in shift 1 either way', () => {
+// 2.1.4 (founder 2026-10-22, early pacing): it lacks the three pacing keys too, so it is the 2.1.1 content as it shipped.
+test('a save pinned to 2.1.1 keeps its HUD thresholds until its next opening adopts the bundled 2.1.4, and shows no Mời về in shift 1 either way', () => {
   const was = structuredClone(config.raw); was._meta.version = '2.1.1'; Object.assign(was.onboarding.featureReveal, { hudAfterShifts: 1, upgradeAfterShifts: 1 });
   delete (was.onboarding.featureReveal as Record<string, number>).kickAfterShifts; delete (was.onboarding.firstShift as Record<string, unknown>).excludedCustomerTypes;
+  delete (was.spawn as Record<string, unknown>).singlesUntilPairSeat; delete (was.rush.schedule as Record<string, unknown>).replanPendingArrival; delete (was.onboarding.firstShift as Record<string, unknown>).staleDisabled;
+  was._meta.governance.tiers.A.sections = was._meta.governance.tiers.A.sections.filter(name => name !== 'spawn.singlesUntilPairSeat');
   const g = new Game(loadConfig(was), 42, at), w = g.world;
-  assert.equal(g.config.version, '2.1.1'); assert.equal(config.version, '2.1.3');
+  assert.equal(g.config.version, '2.1.1'); assert.equal(config.version, '2.1.4');
   assert.deepEqual(revealed(w, g.config), { hud: false, kick: false, upgrades: false, upgradeList: false, journey: false, quests: false, league: false }, 'its own thresholds, before any shift');
   assert.deepEqual(revealed({ completedShifts: 1 }, g.config), revealed({ completedShifts: 1 }, config), 'one finished shift: the same screen on the pin and on the bundle');
   assert.ok(g.command({ at: w.now, idempotencyKey: 'open', command: { type: 'startShift' } }, config).ok, 'the opening takes the newer bundle');
-  assert.equal(g.config.version, '2.1.3');
+  assert.equal(g.config.version, '2.1.4');
   assert.deepEqual(revealed(g.world, g.config), { hud: true, kick: false, upgrades: true, upgradeList: false, journey: false, quests: false, league: false });
   const recorded = decodeSave(JSON.parse(readFileSync('packages/engine/test/fixtures/seat-2.1.0-v28.json', 'utf8')).save).config;
   const own = recorded.values.onboarding.featureReveal as Record<string, number>; // older snapshots may lack the key, so the loaded type is a union
