@@ -81,13 +81,19 @@ const flyer: Provider = (w, c) => {
 /**
  * S6 (D18): the second chair of a table, one goal per one-chair table of a seat-model game, priced by the second chairs the shop owns (buyChairQuote) and
  * locked until `chairsAfterTables` tables stand. A pair is the most a table holds, so a two-chair table lists nothing (cost null, never eligible).
+ * Owner call 3 (the founder, 2026-10-22): the chip buys every table first, the order the sealed S5 gates were measured on, so a chair is never its goal while
+ * a table can still be bought (`buyTableQuote` has a price and the reason is not `maxTables`); the sheet still sells it (price, effect and reason unchanged).
  */
-const chairs: Provider = (w, c) => !isSeatModel(c.values) ? [] : w.tables.map((table, i) => {
-  const q = buyChairQuote(w, c, table), full = table.capacity >= PAIR;
-  // The effect is before → after in one copy: "1 → 2 chỗ" (plan S6 row: "hiệu ứng trước→sau").
-  return goal({ id: `chair:${table.id}`, lane: 'capacity', card: { kind: 'buyChair', tableId: table.id }, name: { key: 'goal.buyChair', params: { n: i + 1 } },
-    effect: full ? null : { key: 'goal.fx.seatsTo', params: { from: table.capacity, to: PAIR } }, cost: full ? null : q.cost, eligible: !full && q.cost !== null && q.reason !== 'chairsLocked' });
-});
+const chairs: Provider = (w, c) => {
+  if (!isSeatModel(c.values)) return [];
+  const table = buyTableQuote(w, c), tablesFirst = table.cost !== null && table.reason !== 'maxTables';
+  return w.tables.map((t, i) => {
+    const q = buyChairQuote(w, c, t), full = t.capacity >= PAIR;
+    // The effect is before → after in one copy: "1 → 2 chỗ" (plan S6 row: "hiệu ứng trước→sau").
+    return goal({ id: `chair:${t.id}`, lane: 'capacity', card: { kind: 'buyChair', tableId: t.id }, name: { key: 'goal.buyChair', params: { n: i + 1 } },
+      effect: full ? null : { key: 'goal.fx.seatsTo', params: { from: t.capacity, to: PAIR } }, cost: full ? null : q.cost, eligible: !tablesFirst && !full && q.cost !== null && q.reason !== 'chairsLocked' });
+  });
+};
 /** S6 (D15): the chair level of a table, one goal per table of a snapshot with the chair ladder: the order patience it gives, before → after (×1 → ×1,15, ×1,15 → ×1,3). */
 const chairLevels: Provider = (w, c) => !chairUpgrade(c.values) ? [] : w.tables.map((table, i) => {
   const q = chairUpgradeQuote(w, c, table);
