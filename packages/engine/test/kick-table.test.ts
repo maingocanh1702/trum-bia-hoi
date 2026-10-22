@@ -81,33 +81,34 @@ test('a rules-28 history recorded on JSON 2.1.0 by the S6 engine replays byte fo
   assert.equal(sha(g.world), before, 'a refused kick changes nothing in the world');
 });
 
-test('the S6 save adopts the bundled 2.1.2 at its next opening (a newer label, not a second content of 2.1.0): its tables can then be sent home, and the history replays byte for byte', () => {
+test('the S6 save adopts the bundled 2.1.3 at its next opening (a newer label, not a second content of 2.1.0): its tables can then be sent home, and the history replays byte for byte', () => {
   // Owner call 1 (the founder, 2026-10-22): the price moved to feeRate 0.5, a ninth content, so the label went to 2.1.1 (DECISIONS `## 07 · owner calls 2026-10-22`).
   // Until then the bundle was a second content of 2.1.0 and this save could never adopt it (configVersionConflict): it kept its pin and never offered "Mời về".
-  // The same day the founder's HUD-from-shift-1 override moved the label on to 2.1.2 (two UI thresholds, kickTable untouched): the bundle is what this test adopts.
+  // The same day the founder's HUD-from-shift-1 override moved the label on to 2.1.2 (two UI thresholds) and his shift-1 fixes to 2.1.3 (two Tier C keys), kickTable
+  // untouched both times: the bundle is what this test adopts.
   const g = decodeSave(s6Fixture().save);
   g.advance(g.world.now + Math.ceil((g.config.raw.shift.durationMs - g.world.staminaMs) / g.config.raw.shift.regenRate));
-  assert.equal(g.config.version, '2.1.0'); assert.equal(config.version, '2.1.2', 'the bundle carries a newer label than the pin');
+  assert.equal(g.config.version, '2.1.0'); assert.equal(config.version, '2.1.3', 'the bundle carries a newer label than the pin');
   // A different content under the SAME label is still refused: the content stage 07 shipped as 2.1.0 (with the section, feeRate 1.5) cannot replace the S6 pin.
   const shipped = structuredClone(config.raw); shipped._meta.version = '2.1.0'; shipped._meta.date = '2026-10-20'; shipped.kickTable.feeRate = 1.5;
   assert.deepEqual(g.command({ command: { type: 'startShift' }, at: g.world.now, idempotencyKey: 'open-same-label' }, loadConfig(shipped)), { ok: false, reason: 'configVersionConflict' },
     'the engine refuses a second content under one label');
   assert.equal(g.world.phase, 'resting'); assert.equal(kickTableRule(g.config.values), null, 'the save still runs its own S6 content');
-  // The browser hands the bundle to the next opening because 2.1.2 is numerically newer than the pin (apps/web/src/local.ts `openingConfig`): accepted.
+  // The browser hands the bundle to the next opening because 2.1.3 is numerically newer than the pin (apps/web/src/local.ts `openingConfig`): accepted.
   must(g, { type: 'startShift' }); assert.equal(g.world.shift!.configVersion, '2.1.0', 'without the bundle the save opens on its own pin, as before');
   const h = decodeSave(s6Fixture().save);
   h.advance(h.world.now + Math.ceil((h.config.raw.shift.durationMs - h.world.staminaMs) / h.config.raw.shift.regenRate));
   assert.ok(h.command({ command: { type: 'startShift' }, at: h.world.now, idempotencyKey: 'open-bundle' }, config).ok, 'the newer bundle opens the next shift');
-  assert.equal(h.world.shift!.configVersion, '2.1.2'); assert.deepEqual(kickTableRule(h.config.values), config.values.kickTable, 'and brings kickTable at the founder\'s price');
-  assert.ok(play(h, 240000, { stop: () => find(h, t => LINGERING.includes(t.state)) }), 'a table lingers on the adopted 2.1.2');
+  assert.equal(h.world.shift!.configVersion, '2.1.3'); assert.deepEqual(kickTableRule(h.config.values), config.values.kickTable, 'and brings kickTable at the founder\'s price');
+  assert.ok(play(h, 240000, { stop: () => find(h, t => LINGERING.includes(t.state)) }), 'a table lingers on the adopted 2.1.3');
   const table = find(h, t => LINGERING.includes(t.state))!, q = kickTableQuote(h.world, h.config, table);
   assert.ok(q.ok, `${q.reason}`); assert.deepEqual(kick(h, table, q.cost!), { ok: true, amount: q.cost }, 'its guests can be sent home');
   const again = decodeSave(encodeSave(h));
-  assert.equal(sha(again.world), sha(h.world), 'the history (three shifts on the S6 pin, one on 2.1.2 with a send-home) replays to the same world');
+  assert.equal(sha(again.world), sha(h.world), 'the history (three shifts on the S6 pin, one on 2.1.3 with a send-home) replays to the same world');
   assert.equal(encodeSave(again), encodeSave(h), 'and re-encodes byte for byte');
 });
 
-test('the bundled seed carries kickTable {feeRate 0.5, repPerGuest 2} as a Tier A section that k does not scale (the price of 2.1.1, kept by the bundled 2.1.2)', () => {
+test('the bundled seed carries kickTable {feeRate 0.5, repPerGuest 2} as a Tier A section that k does not scale (the price of 2.1.1, kept by the bundled 2.1.2 and 2.1.3)', () => {
   // feeRate: the founder's answer to owner call 1 (2026-10-22): the plan's candidate 0.5, with the +10 % income rule read on the income NET of the kick fees
   // (sim/kick-table.ts: net +8.85 % | +9.06 % on seeds 42 | 99). Wave 3 had read the rule on gross income and sealed 1.5 under 2.1.0 (DECISIONS `## 06 ·`).
   assert.equal(seed.kickTable.feeRate, 0.5); assert.equal(seed.kickTable.repPerGuest, 2);
@@ -115,7 +116,7 @@ test('the bundled seed carries kickTable {feeRate 0.5, repPerGuest 2} as a Tier 
   assert.deepEqual([config.values.kickTable.feeRate, config.values.kickTable.repPerGuest], [0.5, 2], 'a rate and a count of reputation: neither ends in Base, k = 2.5 scales neither');
   assert.ok(seed._meta.governance.tiers.A.sections.includes('kickTable'), 'Tier A: dual approval, next day');
   for (const tier of ['B', 'C'] as const) assert.equal(seed._meta.governance.tiers[tier].sections.includes('kickTable'), false);
-  assert.equal(seed._meta.version, '2.1.2', 'a new content gets a new label: 2.1.0 holds eight contents of history, 2.1.1 the price, 2.1.2 only the HUD reveal thresholds');
+  assert.equal(seed._meta.version, '2.1.3', 'a new content gets a new label: 2.1.0 holds eight contents of history, 2.1.1 the price, 2.1.2 only the HUD reveal thresholds, 2.1.3 the two Tier C keys of the shift-1 fixes');
   assert.deepEqual(kickTableRule(config.values), config.values.kickTable);
   assert.equal(kickTableRule(capacityConfig.values), null); assert.equal(kickTableRule(loadConfig(structuredClone(legacy)).values), null);
 });
@@ -123,7 +124,7 @@ test('the bundled seed carries kickTable {feeRate 0.5, repPerGuest 2} as a Tier 
 test('snapshots from before kickTable load with their bytes; every half-way shape is refused; kickTable never loosens an older shape', () => {
   const s6 = s6Raw(); assert.equal(JSON.stringify(loadConfig(s6).raw), JSON.stringify(s6), 'the S6 content of 2.1.0: raw bytes kept');
   const s5 = s5Raw(); assert.equal(JSON.stringify(loadConfig(s5).raw), JSON.stringify(s5), 'a 2.0.23 pin too');
-  const full = structuredClone(seed); assert.equal(loadConfig(full).version, '2.1.2', 'the bundled seed itself');
+  const full = structuredClone(seed); assert.equal(loadConfig(full).version, '2.1.3', 'the bundled seed itself');
   // The contents of 2.1.0 that carried the section (Wave 3 and stage 07, feeRate 0.5 then 1.5: browser saves and dev databases of this laptop) are complete
   // snapshots of a label older than 2.1.1, so they load with their bytes as well.
   const shipped = structuredClone(seed); shipped._meta.version = '2.1.0'; shipped._meta.date = '2026-10-20'; shipped.kickTable.feeRate = 1.5;

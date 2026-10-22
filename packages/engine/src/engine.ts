@@ -1,7 +1,7 @@
 import { SEASON_KINDS, compatibleSeasonTiers, nextSeasonEnd, pinUnusedSeasons, syncSeasons } from './seasons';
 import { leaseQuote, leaveLocationQuote } from './locations';
 import { kitchenStatus } from './kitchen';
-import { isEconomy2, isSeatModel, PAIR, CHAIRS_WITH_TABLE, config as defaultConfig, configContent, BUSINESS_UNLOCKS, SIGN_STYLES, signWeightMult, DISHES, EQUIPMENT, WEATHER, deliveryBundles, arrivalIntervalMs, capacityDemandMult, tableUpgrade, tableBenefit, tableBenefitGained, effectiveTableLevel, chairPatienceMult, type Config, type SeatedType, type Rush } from './config';
+import { isEconomy2, isSeatModel, PAIR, CHAIRS_WITH_TABLE, config as defaultConfig, configContent, BUSINESS_UNLOCKS, SIGN_STYLES, signWeightMult, DISHES, EQUIPMENT, WEATHER, deliveryBundles, arrivalIntervalMs, capacityDemandMult, firstShiftExcludedTypes, tableUpgrade, tableBenefit, tableBenefitGained, effectiveTableLevel, chairPatienceMult, type Config, type SeatedType, type Rush } from './config';
 import { integer, random, weighted } from './rng';
 import { buyGlassQuote, buyTableQuote, buyChairQuote, chairUpgradeQuote, tableUpgradeQuote, addStock, credit, creditBatchSafe, currentGuests, customerValue, dayKey, deliveryInterval, deliveryQuote, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, kickTableQuote, noCooldownOpening, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
 import { lifePathStatus, lifePathRewardQuote, unlockQuote } from './progression';
@@ -577,7 +577,10 @@ export class Game {
     const first = s.firstGroup && s.onboarding;
     // Seat model (D17): group size is independent of the shop; capacity pins draw up to the largest table.
     const size = first ? c.onboarding.firstShift.firstGroupSize : seatModel ? random(w) < seatModel.spawn.pPair ? PAIR : 1 : integer(w, 1, Math.max(...w.tables.map(t => t.capacity)));
-    const types = Object.entries(c.customerTypes).filter(([, v]) => v.usesTable && v.weight > 0) as [SeatedType, typeof c.customerTypes.thuong][];
+    // Founder 2026-10-22 (JSON 2.1.3): an onboarding shift draws none of `firstShift.excludedCustomerTypes` (no "Bàn lai rai" in shift 1): like a type of weight 0,
+    // the draw is renormalised over the others with the same randomness. A pin without the key excludes none, so its shifts replay as before.
+    const excluded = s.onboarding ? firstShiftExcludedTypes(c) : [];
+    const types = Object.entries(c.customerTypes).filter(([key, v]) => v.usesTable && v.weight > 0 && !excluded.includes(key)) as [SeatedType, typeof c.customerTypes.thuong][];
     let vipCount = 0;
     const customers: Customer[] = Array.from({ length: size }, () => {
       const type = first ? c.onboarding.firstShift.firstGroupType as SeatedType : weighted(w, types.map(([key, value]) => {

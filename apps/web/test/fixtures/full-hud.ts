@@ -4,6 +4,8 @@
  * first-shift-visual.spec.ts.
  */
 export function fullHud<T extends { onboarding: { featureReveal: object } }>(raw: T): T {
-  Object.assign(raw.onboarding.featureReveal, { upgradeAfterShifts: 0, hudAfterShifts: 0, upgradeAllAfterShifts: 0, journeyAfterShifts: 0 });
+  const reveal = raw.onboarding.featureReveal as Record<string, number>;
+  Object.assign(reveal, { upgradeAfterShifts: 0, hudAfterShifts: 0, upgradeAllAfterShifts: 0, journeyAfterShifts: 0 });
+  if ('kickAfterShifts' in reveal) reveal.kickAfterShifts = 0; // JSON 2.1.3 ("Mời về", "Mời tất cả về"): only contents from that label carry it, a capacity snapshot refuses the key
   return raw;
 }

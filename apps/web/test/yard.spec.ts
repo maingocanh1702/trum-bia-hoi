@@ -25,7 +25,8 @@ async function boot(page: Page, locale: string, mode: string, reducedMotion = fa
 }
 const boxes = async (items: Locator) => Promise.all((await items.all()).map(async el => (await el.boundingBox())!));
 const overlaps = (a: { x: number; y: number; width: number; height: number }, b: typeof a) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
-/** Every image the yard shows is really decoded (a missing sprite would be an empty placeholder box, caught by the src checks below). */
+/** Every image the yard shows is really decoded (a missing sprite would be an empty placeholder box, caught by the src checks below). Polled: images decode after
+ *  mount, and one early sample raced them (red 3 in 6 under --repeat-each once the A3 note got shorter, 2026-10-22); a sprite that never loads still fails. */
 const loaded = (page: Page, scope: string) => page.locator(`${scope} img`).evaluateAll(imgs => imgs.every(img => (img as HTMLImageElement).complete && (img as HTMLImageElement).naturalWidth > 0));
 
 for (const viewport of viewports) test(`S6 a full first alley: eight tables of two chairs fit the yard, each drawn by its table level, chair level and tray, at ${viewport.width}px`, async ({ page, tbh }) => {
@@ -47,7 +48,7 @@ for (const viewport of viewports) test(`S6 a full first alley: eight tables of t
   // Every level of both ladders and every tray size is on the yard at once (the fixture spreads them over the eight tables).
   expect(new Set(f.tables.map((x: { level: number }) => x.level))).toEqual(new Set([1, 2, 3, 4])); expect(new Set(f.tables.map((x: { chairLevel: number }) => x.chairLevel))).toEqual(new Set([1, 2, 3]));
   expect(new Set(f.tables.map((x: { dishes: number }) => x.dishes))).toEqual(new Set([2, 3]));
-  expect(await loaded(page, '.yard')).toBe(true);
+  await expect.poll(() => loaded(page, '.yard')).toBe(true);
   // Layout: no horizontal scroll, every table target at least 44 px and inside the viewport, no two tables overlapping (HANDOFF section 11: eight at 360 px).
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   const objects = await boxes(yard.locator('.table-object'));
@@ -72,25 +73,34 @@ for (const locale of ['vi', 'en'] as const) test(`S6 a new shop shows its one ta
   await expect(yard.locator('.table-slot img')).toHaveCount(0); // an empty spot invents no art
   await expect(yard.locator('.table-0 .seat img.sprite')).toHaveAttribute('src', /chair-plastic/);
   await expect(yard.locator('.table-0 .tray')).toHaveAttribute('data-dishes', '1'); await expect(yard.locator('.table-0 .table-caption')).toContainText(t('table.tray', { n: 1 }));
-  expect(await loaded(page, '.yard')).toBe(true); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await expect.poll(() => loaded(page, '.yard')).toBe(true); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze(); expect(axe.violations).toEqual([]);
   await tbh.shot(`yard-fresh-${locale}.png`); expect(tbh.consoleErrors()).toEqual([]);
 });
 
 // Review 07 r1 (W1 follow-up): at rest the "Quán nhỏ đã sẵn sàng" note hangs from the top of the yard with the height of its text, so its "Mở ca" button
-// does not move with the height of the grid. Centred in a box of 15-90 % of the yard, it slid under the sticky bottom nav once W1's row band made the yard
-// taller (axe target-size at 1280×720), and it already sat under the nav at 360×740 with the HUD shown. The corners and the centre of the button must be
-// the button itself, inside the viewport, in both languages.
-for (const locale of ['vi', 'en'] as const) for (const viewport of viewports) test(`S6 at rest the opening note's start button is whole on screen above the bottom nav (${locale}) at ${viewport.width}px`, async ({ page, tbh }) => {
+// did not move with the height of the grid; centred, it had slid under the sticky bottom nav (axe target-size at 1280×720, under the nav at 360×740).
+// Founder 2026-10-22 (A3): exactly one "Mở ca" on screen. With the bottom nav shown the note keeps its text, has no button of its own and points down at the
+// nav's, which is the one "Mở ca" of the page: whole on screen, its corners and centre its own, at least 44 px, in the thumb zone (the bottom third of the
+// screen), in both languages. A pin that still hides the nav keeps the note's button: first-shift-visual.spec.ts `A3 a save pinned to 2.1.1 …`.
+for (const locale of ['vi', 'en'] as const) for (const viewport of viewports) test(`A3 at rest exactly one Mở ca is on screen, the bottom nav's: whole, uncovered and in the thumb zone, and the opening note points at it (${locale}) at ${viewport.width}px`, async ({ page, tbh }) => {
   await page.setViewportSize(viewport);
   const { t } = await boot(page, locale, 'fresh');
-  const note = page.locator('.opening-note'), button = note.getByRole('button', { name: t('nav.shift'), exact: true });
-  await expect(note).toBeVisible(); await expect(page.locator('.bottom-nav')).toBeVisible(); // the HUD and the nav are shown: the rest screen between shifts
+  const note = page.locator('.opening-note'), button = page.getByRole('button', { name: t('nav.shift'), exact: true }); // strict: one button of that name on the page
+  await expect(note).toBeVisible(); await expect(page.locator('.bottom-nav')).toBeVisible(); // the HUD and the nav are shown: the rest screen of a new shop
+  await expect(note.locator('h2')).toHaveText(t('rest.title')); await expect(note).toContainText(t('rest.copy')); await expect(note).toContainText(t('rest.free')); // the note keeps its text
+  await expect(note.getByRole('button')).toHaveCount(0);
+  await expect(note.locator('.start-below')).toHaveText(t('rest.startBelow', { button: t('nav.shift') })); await expect(note.locator('.start-below b')).toHaveText(t('nav.shift'));
+  await expect(button).toHaveCount(1); await expect(page.locator('.bottom-nav').getByRole('button', { name: t('nav.shift'), exact: true })).toHaveCount(1);
   await expect(button).toBeInViewport({ ratio: 1 });
+  const box = (await button.boundingBox())!;
+  expect(box.width).toBeGreaterThanOrEqual(44); expect(box.height).toBeGreaterThanOrEqual(44);
+  expect(box.y, 'the button sits in the bottom third of the screen').toBeGreaterThanOrEqual(viewport.height * 2 / 3);
   const covered = await button.evaluate(el => {
-    const b = el.getBoundingClientRect(), d = 3;
+    // the nav's buttons are rounded (13 px): a corner probe sits that far in along the diagonal, inside the painted button, not on the nav behind its corner
+    const b = el.getBoundingClientRect(), d = Math.max(3, Math.ceil(parseFloat(getComputedStyle(el).borderTopLeftRadius) * (1 - Math.SQRT1_2)) + 1);
     return [[b.left + d, b.top + d], [b.right - d, b.top + d], [b.left + d, b.bottom - d], [b.right - d, b.bottom - d], [b.left + b.width / 2, b.top + b.height / 2]]
-      .filter(([x, y]) => !document.elementFromPoint(x, y)?.closest('.opening-note .primary')).length;
+      .filter(([x, y]) => !el.contains(document.elementFromPoint(x, y))).length;
   });
   expect(covered, 'points of the start button painted over by another element').toBe(0);
   const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze(); expect(axe.violations).toEqual([]);

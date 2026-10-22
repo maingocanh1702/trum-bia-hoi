@@ -7,7 +7,7 @@ import { fullHud } from './full-hud';
  * without the stamina cooldown, so between them the rest line has nothing to wait for; after the third it is the 30 minutes of GDD 10 again. Every shift is played
  * through the production engine (opened with the real command, run to its natural end); nothing is edited in the save.
  * argv[3] = `legacy` (review 07 r1, W2): the same save pinned to the last capacity-model seed (JSON 2.0.4, the content of the deployed guest build), which
- * carries no `shift.noCooldownFirstShifts`; its next "Mở ca" in the browser opens with the bundled 2.1.2 (`local.ts` `openingConfig`) and that allowance.
+ * carries no `shift.noCooldownFirstShifts`; its next "Mở ca" in the browser opens with the bundled 2.1.3 (`local.ts` `openingConfig`) and that allowance.
  */
 const closed = Number(process.argv[2] ?? 1), legacy = process.argv[3] === 'legacy';
 const raw = legacy ? capacityRaw() : fullHud(structuredClone(config.raw));
