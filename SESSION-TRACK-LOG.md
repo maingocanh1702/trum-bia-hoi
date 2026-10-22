@@ -7,6 +7,14 @@
 
 ---
 
+## Nhịp đầu game của founder (config 2.1.4) — 2026-10-23 (IMPROVE-EARLY-GAME Part B1, worker, nhánh `feat/early-pacing` xếp chồng trên Part A) — **BLOCKED: chờ founder**
+
+Founder 22/10/2026: (B1.1) khách lẻ tới khi quán có bàn 2 ghế → `spawn.singlesUntilPairSeat` (Tier A, founder duyệt); (B1.2) Giờ Vàng đầu phải có khách → unit test trên pin 2.1.3 xác nhận hẹn giờ khách đặt trước đợt không được hẹn lại → `rush.schedule.replanPendingArrival` (`min(còn lại, khoảng cách 1 khách theo nhịp mới)` lúc đợt bắt đầu/kết thúc); (B1.3) ca 1 bia không hết hơi → `onboarding.firstShift.staleDisabled`. Ba key gate theo key, rules giữ 28, nhãn 2.1.3 → **2.1.4**; không đổi số kinh tế nào.
+Đo trước/sau (`packages/engine/sim/early-pacing.ts`, 200 seed, 1 bàn, nắng, người mới): ca 1 nhóm ngồi 6 → 17, cặp bị từ chối 5,5 → 0, khoảng cách trung vị 63 → 42 s, dài nhất 210 → 42 s, giây không ai ngồi 627 → 489 / 720 (vẫn ~2/3 ca trống ở 1 bàn: báo cáo, không chỉnh), bia hết hơi 1 → 0, xu cuối ca 1 1 299 → 2 433; đợt light ca 2 đến / phục vụ / mất 5 / 1 / 0 → 6 / 5,5 / 0, khách đầu của đợt 32,8 → 14,7 s.
+Kiểm chứng (Windows): `check:config` · `check:i18n` · `check:assets` · `build` · `build:guest` xanh; `npm test` 819, 47 đỏ = baseline, 0 mới; Playwright local 359/359; guest smoke 3/3; `sim:onboarding` · `sim:rush` ĐẠT.
+**STOP:** `sim:balance` trên A2 + B1 — hai ô seed 42 của Part A **xanh** (LP2 27, chuỗi 6) nhưng 4 hàng **đỏ** ở seed 42 và 99 (tổng 30 ngày 10,057 / 9,945 tr; ghế 2 đầu tiên ca 21 / 22; bỏ đi ca 1–24 15,7 / 13,0 %; cặp bị từ chối ca 1 0 / 0); `sim:career:gate` đỏ. A/B không A2: cùng 4 hàng đỏ. Không chỉnh số. Phương án: `.autopilot-state/reports/B1-PR-BODY.md` §2; 08-SPEC changelog 2026-10-23 / JSON 2.1.4; TRANG-THAI-DOCS hàng 0f.
+Chưa phát hành: Netlify v6, Cloudflare v-fb2. **Việc kế:** founder chọn phương án cho STOP của B1 → orchestrator mở PR B1 (xếp chồng trên PR A); B2 chờ.
+
 ## Part A: founder quyết STOP + review vòng 1 — 2026-10-23 (worker, nhánh `feat/shift1-founder-fixes`) — chờ orchestrator kiểm và mở PR A
 
 Founder 23/10/2026 chọn **phương án (c)** (`.autopilot-state/A-FOUNDER-DECISION-2026-10-23.md`): giữ A1/A2/A3 như đã làm, không chỉnh số; hai ô seed 42 đỏ của `sim:balance` **chuyển sang B1, không miễn** (chạy lại giao thức trên A2 + B1, A/B seed 42 và 99 với `excludedCustomerTypes: []`, quét 10 seed để tham khảo; vẫn đỏ → STOP, báo số, không chỉnh); Part A **không phát hành riêng**. Dòng "BLOCKED: chờ founder" của block ngay dưới đã được quyết như vậy.

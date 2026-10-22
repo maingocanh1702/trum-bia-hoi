@@ -117,6 +117,7 @@ Vòng đời cốc: `clean → in_use(reservedGlassId) → dirty → queue → w
 > - **Ghế** quyết định mâm: bàn 1 ghế đón khách lẻ gọi *bia hoặc 1 mồi tức thì*; bàn 2 ghế đón **cặp** và mỗi khách gọi *bia + 1 mồi*. Cỡ nhóm **độc lập với quán** (`spawn.pPair` 0,5): cặp gặp quán chưa có bàn 2 ghế → bỏ đi tại cửa, không phạt.
 > - **Cấp bàn = một lợi ích khác mỗi cấp, cộng dồn**: Lv2 khách gọi thêm 1 đợt · Lv3 mồi thứ 2 · Lv4 tip ×1,25. Bỏ gate huy hiệu Kết Nối của bàn VIP. Nâng ghế Lv1–3 (kiên nhẫn ×1/1,15/1,30) là làn riêng.
 > - Bàn/ghế mua được cả khi bàn đang có khách (áp cho nhóm kế). Hàng đợi **1 + ghế/8** (cầu thừa từ chối tại cửa, không trừ uy tín). Giá chốt JSON 2.1.0 (08-SPEC §8.6, 03-SPEC §6): bàn 2…8 = 1.070 · 9.250 · 14.250 · 24.000 · 32.250 · 39.750 · 40.000 xu; ghế 2 (theo số ghế 2 đã mua toàn quán) = 1.000 · 1.500 · 2.250 · 3.000 · 4.000 · 5.000 · 6.000 · 7.000 xu.
+> - 🟢 **2026-10-22 founder (JSON 2.1.4, Part B1): khách lẻ tới khi quán có bàn 2 ghế.** Khi chưa bàn nào có 2 ghế, mọi nhóm là 1 khách (`spawn.singlesUntilPairSeat`, Tier A; xác suất cặp 0); từ bàn 2 ghế đầu tiên `spawn.pPair` 0,5 áp như cũ. Không còn cặp bị từ chối "Hết chỗ" ở quán mới. Pin ≤ 2.1.3 giữ luật cũ. STOP: `sim:balance` + `sim:career:gate` đỏ, chờ founder (08-SPEC changelog 2026-10-23 / JSON 2.1.4).
 
 **Domain model:**
 ```ts
@@ -167,6 +168,7 @@ type Customer = {               // giữ field gốc
 - Base **12s** (= 3–4× thời gian 1 lượt rót-bưng ≈ 5s → đệm ~2 cốc; cốc thứ 3+ mới rủi ro → chỉ phạt tích trữ).
 - Nâng qua **Hầm lạnh** theo đường cong Thùng đá: L1 12s · L2 20s · L3 35s · L4 60s · L5 ∞.
 - Thời tiết nóng ×0.67 (mất hơi nhanh hơn ~1.5× — ánh xạ đá tan ×1.5).
+- 🟢 **2026-10-22 founder (JSON 2.1.4): ca 1 (chưa xong ca nào) bia không hết hơi** (`onboarding.firstShift.staleDisabled`): người mới còn đọc hướng dẫn (ly đầu đời trên trumbiahoi.com 22/10 hết hơi sau 12 s). Huy hiệu tủ lạnh ca 1 hiện ∞; từ ca 2 như trên.
 
 **Tầng 2 — Bom đã mở (phụ, optional):** `kegFreshnessMs` base ~4 phút, nâng cùng Hầm lạnh (×1.5/cấp). Quá hạn → giảm tip toàn quán tới khi thay bom (= "cap + tan" tầng kho).
 
@@ -221,6 +223,7 @@ Mỗi loại ép một quyết định: VIP/vội = tốc độ, bàn lai rai = 
 - **Nặng** (150s): pay ×1.1, tip ×1.18, phạt ×2.5, spawn interval ×0.2 → **canh bạc throughput**.
 - **Sàn spawn** (`rushMinIntervalMs`): nhẹ 1.000ms / nặng **700ms** → trần đầu vào ~1,43 khách/giây. ✅ **Đo live: trần phục vụ ~0,74 ly/giây ổn định** (heavy: 143 vào/150s nhưng chỉ phục vụ ~111 → ~22% bỏ = phần vượt công suất). → cân throughput quanh mốc này; Tỉnh Táo ×1.1 đo được **+~21% thực thu** trên 1 Giờ Vàng nặng.
 - **Ô "Cao điểm tới" telegraph**: lịch rush pre-roll có seed (location×session), hiện loại+ETA → cho người chơi chuẩn bị (đầy đá/cốc, mời về bàn đang nhâm nhi).
+- 🟢 **2026-10-22 founder (JSON 2.1.4): Giờ Vàng mở bằng khách.** Lúc đợt bắt đầu và kết thúc, lượt khách đã hẹn theo nhịp cũ được hẹn lại `min(còn lại, khoảng cách 1 khách theo nhịp mới)` (`rush.schedule.replanPendingArrival`); trước đó đợt light đầu ở 1 bàn có thể không có ai đến (shift-205, 22/10).
 - Theme bia hơi: **giờ tan tầm** + **giờ trận World Cup** (§14). Humid + heavy = tệ nhất (tip sụp ~9%).
 
 ---
@@ -494,3 +497,4 @@ Mục tiêu: chứng minh **vòng lặp vận hành ca vui & economy cân**. KH�
 | 2026-10-22 / Đợt 4 đóng gói (stage 07, review vòng 1) | Bỏ các câu "chờ S5" và số W9 đã thành sai ở trạng thái cuối: §5 số bàn/ghế = số chốt JSON 2.1.0 (bàn 2…8 = 1.070 … 40.000 xu, ghế 2 = 1.000 … 7.000 xu; 08-SPEC §8.6, 03-SPEC §6); §11 LP1 `requires` "4 tables" (không còn "4 seats"); bảng quyết định: story 3 tuần "số chốt JSON 2.1.0"; ba ghi chú trỏ `tableSlots`/mult/rent sang 08-SPEC **§16** (bảng mặt bằng; §12 là chó giữ quán). Không đổi luật hay số. |
 | 2026-10-22 / founder override (JSON 2.1.2) | §17: dòng "2026-10-22 founder override" dưới callout owner 18/09 — HUD và nút Nâng cấp hiện từ ca 1 (hai ngưỡng Tier C về 0; Hành trình / Nhiệm vụ / giải đấu giữ 2 / 2 / 3 ca). Không đổi số kinh tế, luật hay k. Câu "HUD ca 1 chỉ 3 thứ" giữ nguyên làm lịch sử; nguồn: 08-SPEC changelog 2026-10-22 / JSON 2.1.2. |
 | 2026-10-22 / founder (JSON 2.1.3) | §17: dòng "2026-10-22 founder (JSON 2.1.3)" dưới dòng 2.1.2 — "Mời về" chỉ từ ca 2 (ngưỡng riêng, AND với HUD), ca 1 không có khách "Bàn lai rai", màn đầu chỉ một nút "Mở ca". Không đổi số kinh tế; hai key Tier C mới, nhãn 2.1.3; nguồn: 08-SPEC changelog 2026-10-22 / JSON 2.1.3. |
+| 2026-10-23 / founder 22/10 (JSON 2.1.4, Part B1) | §5, §6, §9: ba dòng 🟢 ghi ngày — khách lẻ tới khi có bàn 2 ghế (Tier A), ca 1 bia không hết hơi, Giờ Vàng hẹn lại lượt khách đang chờ lúc bắt đầu/kết thúc. Không đổi số kinh tế; ba key luật mới, nhãn 2.1.4. STOP: `sim:balance` + `sim:career:gate` đỏ, chờ founder (08-SPEC changelog 2026-10-23 / JSON 2.1.4). |

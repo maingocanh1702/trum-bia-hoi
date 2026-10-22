@@ -4,8 +4,8 @@
 
 - Config (`docs/config/economy.tbh.json:1100-1172`, tier C, `_rule: "F27 (🟢 ràng buộc 08/09)..."`), real shape:
   `enabled: true`, `firstShift: {guaranteedFirstGroupWithinMs: 8000, firstGroupType: 'thuong', firstGroupSize: 1,
-  firstOrder: ['bia'], riskEventsDisabled: true, rushDisabled: true, excludedCustomerTypes: ['ngoily']}` (the last key JSON 2.1.3, founder 2026-10-22:
-  the seated types an onboarding shift never draws), `lostStreakToGuide: 3`, `idleToGuideMs: 45000` (JSON 2.0.5),
+  firstOrder: ['bia'], riskEventsDisabled: true, rushDisabled: true, excludedCustomerTypes: ['ngoily'], staleDisabled: true}` (`excludedCustomerTypes` JSON 2.1.3, founder 2026-10-22:
+  the seated types an onboarding shift never draws; `staleDisabled` JSON 2.1.4, founder 2026-10-22: no flat beer in that shift), `lostStreakToGuide: 3`, `idleToGuideMs: 45000` (JSON 2.0.5),
   `stepGuide: {onFirstPlay: true, skippable: true, maxAutoRepeatsPerDay: 2, steps: [5 entries]}`,
   `loginPrompt: {afterFirstShift: true, onLeaderboardOpen: true, onLeaveWithProgress: true, cooldownShifts: 3,
   leaveProgress: {minCompletedShifts: 1, minLifetimeEarned: 1}}`, `hints.*`, `featureReveal:
@@ -136,7 +136,7 @@
   Specs that are not about onboarding keep the whole HUD through `apps/web/test/fixtures/full-hud.ts` (`fullHud(raw)` zeroes the four reveal thresholds)
   or `apps/web/test/fresh-game.ts` (`bootFresh`); the five-new-player test is an owner playtest (`docs/phase0-alpha-playtest.md` §6), never PASS here.
 - **Founder 2026-10-22, Part A (JSON 2.1.3).** A1 "Mời về" not in shift 1: `packages/engine/test/spotlight-reveal.test.ts` `Mời về has its own reveal threshold, after one completed shift and never without the HUD; a pin without the key reads the seed`
-  (+ `kick` in `feature reveal follows completed shifts, …` and `a save pinned to 2.1.1 keeps its HUD thresholds until its next opening adopts the bundled 2.1.3, and shows no Mời về in shift 1 either way`);
+  (+ `kick` in `feature reveal follows completed shifts, …` and `a save pinned to 2.1.1 keeps its HUD thresholds until its next opening adopts the bundled 2.1.4, and shows no Mời về in shift 1 either way`);
   UI: `apps/web/test/kick-table.spec.ts` `Wave 3 in shift 1 Mời về is not shown yet, though the HUD is: it is revealed after one completed shift (JSON 2.1.3, founder 2026-10-22)` (fixture `first`; review A-r1, 2026-10-23: it also opens the shift book from the nav and finds no "Mời tất cả về", which `App.tsx` gates with the same `show.kick`) and
   `Wave 3 after one completed shift Mời về is on a lingering table: the price line and the button (JSON 2.1.3, founder 2026-10-22)` (fixture `second`). A2 no `ngoily` in the onboarding shift:
   `packages/engine/test/first-shift-guests.test.ts` (6 cases: none in shift 1 even at weight 0.6 and back in shift 2; the exclusion equals the draw at weight 0, shift 1 identical world;
@@ -206,6 +206,7 @@
   `economy2.test.ts:34,49,105,133,142` (kitchen-batch/keg-carry setup via `firstGroupSize`/`firstOrder`/
   `guaranteedFirstGroupWithinMs`), `game.test.ts:224,317` (round-precedence sampling setup),
   `checkpoint.test.ts:41`, `well-rested.test.ts:40,160`, `production.test.ts:30`.
+- **Founder 2026-10-22, Part B1 (JSON 2.1.4).** B1.3 no flat beer in the onboarding shift: `packages/engine/test/early-pacing.test.ts` `B1.3 no flat beer in shift 1: a beer left 15 s on the tray is served fresh (no glass_stale, no stale serve, no stale reputation); from shift 2 the same wait makes it flat` and `B1.3 a pin without the key (JSON 2.1.3): the first beer of a new save left 15 s goes flat, as before`; UI `apps/web/test/economy2.spec.ts` `JSON 2.1.4 in shift 1 of a new save beer never goes flat: the cooler badge reads ∞, while its sheet still states the level's own seconds`. Shift 1 at one table also seats singles only (spawn-queue-seating, B1.1). Measurement of shifts 1-2 (not a gate): `node --import tsx packages/engine/sim/early-pacing.ts`.
 
 ## Verification procedure
 
@@ -309,3 +310,4 @@ machine.
 | 2026-10-14 fun-onboarding-visual | First play no longer starts the step banner: spotlight + pointer, minimal first-shift HUD, door queue, flying numbers; the banner is a fallback (lost streak or `idleToGuideMs`). JSON 2.0.5 adds `onboarding.idleToGuideMs` and `featureReveal.{hudAfterShifts, upgradeAllAfterShifts, journeyAfterShifts}`. New proof cited above; the five-new-player test stays an owner playtest. |
 | 2026-10-22 founder override (JSON 2.1.2, config only) | `featureReveal.hudAfterShifts` and `upgradeAfterShifts` 1 → 0: shift 1 shows the whole HUD, the bottom nav (Mở ca · Nhập hàng · Nâng cấp) and the Upgrades button (founder: he needs restock and upgrade from the start); journey / quests / league (2 / 2 / 3) and `upgradeAllAfterShifts` 2 unchanged; no code. `first-shift-visual.spec.ts` asserts the HUD at shift 1 instead of the minimal one (and `.first()` on the two "Mở ca" buttons), plus a new test; `next-goal.spec.ts` counts the gear in `.hud`; `kick-table.spec.ts` now expects Mời về in shift 1 (same gate); `spotlight-reveal.test.ts` / `sealed-economy.test.ts` pin the thresholds and a 2.1.1 pin keeping its own until the next opening adopts 2.1.2. |
 | 2026-10-22 founder, Part A (JSON 2.1.3) | Two Tier C keys: `featureReveal.kickAfterShifts` 1 ("Mời về" from shift 2, AND-ed with the HUD: `revealed().kick`) and `firstShift.excludedCustomerTypes` ["ngoily"] (an engine rule of the onboarding shift, gated by the key); the opening note drops its "Mở ca" while the bottom nav is shown and points at the nav's (`rest.startBelow`). `kick-table.spec.ts` again expects no Mời về in shift 1 (the 2.1.2 row above had turned it around) plus a shift-2 case; `first-shift-visual.spec.ts` uses strict "Mở ca" locators again and gains the 2.1.1-pin exception; `yard.spec.ts` asserts one Mở ca in the thumb zone; new `first-shift-guests.test.ts`. Proof cited above. |
+| 2026-10-23 founder, Part B1 (JSON 2.1.4) | `firstShift.staleDisabled` true (Tier C, engine rule gated by the key): no flat beer while the save has completed no shift; `firstShift` shape and the renamed 2.1.1-pin citation updated. STOP: `sim:balance` + `sim:career:gate` red on this label, waiting for the founder (08-SPEC changelog 2026-10-23 / JSON 2.1.4). |
