@@ -467,7 +467,7 @@ test('snapshots from before the keys load, bytes kept, and refuse every half-way
     ['the keys without their Tier A entries', /config:_meta\.governance\.tiers\.A\.sections:array/, r => { r.upgrades.table.tableUpgrade = ladder(); r.upgrades.table.chairUpgrade = chair(); }],
     ['the Tier A entries without the keys', /config:_meta\.governance\.tiers\.A\.sections:array/, r => { tiers(r); }],
     ['only one of the two keys', /config:upgrades\.table:keys/, r => { r.upgrades.table.tableUpgrade = ladder(); tiers(r); delete r.upgrades.backrest; }],
-    // "the new version" is the label that introduced the keys (2.0.23); the bundled label (2.1.1 since owner call 1) also needs the later groups
+    // "the new version" is the label that introduced the keys (2.0.23); the bundled label (2.1.2 since the founder's HUD override of 2026-10-22; `kickTable` came with 2.1.1) also needs the later groups
     // (`shift.noCooldownFirstShifts`, `kickTable`), so its case carries them and lacks only the keys under test.
     ['a snapshot labelled with the new version that lacks the keys', /config:upgrades\.table:keys/, r => { r._meta.version = '2.0.23'; tiers(r); delete r.upgrades.backrest; }],
     ['a snapshot labelled with the bundled version that lacks only the keys', /config:upgrades\.table:keys/, r => {

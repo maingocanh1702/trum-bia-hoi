@@ -125,27 +125,37 @@ test('Wave 3 D3: a Chi Pheo who keeps his table goes home for 0 coins and the re
   await tbh.shot('kick-occupied-390.png'); expect(tbh.consoleErrors()).toEqual([]);
 });
 
-for (const [mode, why] of [['pin', 'a save pinned to the S6 content of JSON 2.1.0 (no kickTable section) offers no Mời về in the shift it is pinned for'],
-  ['first', 'in shift 1 Mời về is not shown yet: it is revealed with the HUD after the first shift (P0)']] as const) {
-  test(`Wave 3 ${why}`, async ({ page, tbh }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    const { f, t, open } = await boot(page, 'vi', mode);
-    expect(['consuming', 'occupied']).toContain(f.target.state);
-    const panel = await open(f.target);
-    await expect(panel.locator('.idle-table-info')).toContainText(t(`table.${f.target.state}`));
-    await expect(panel.locator('.kick-table')).toHaveCount(0); await expect(panel.getByRole('button', { name: t('kick.button'), exact: true })).toHaveCount(0);
-    await tbh.shot(`kick-${mode}-390.png`); expect(tbh.consoleErrors()).toEqual([]);
-  });
-}
+test('Wave 3 a save pinned to the S6 content of JSON 2.1.0 (no kickTable section) offers no Mời về in the shift it is pinned for', async ({ page, tbh }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const { f, t, open } = await boot(page, 'vi', 'pin');
+  expect(['consuming', 'occupied']).toContain(f.target.state);
+  const panel = await open(f.target);
+  await expect(panel.locator('.idle-table-info')).toContainText(t(`table.${f.target.state}`));
+  await expect(panel.locator('.kick-table')).toHaveCount(0); await expect(panel.getByRole('button', { name: t('kick.button'), exact: true })).toHaveCount(0);
+  await tbh.shot('kick-pin-390.png'); expect(tbh.consoleErrors()).toEqual([]);
+});
 
-// Owner call 1 (the founder, 2026-10-22): the price moved to feeRate 0.5 under a new label, 2.1.1, so a save pinned to a 2.1.0 content without the section no
+// Founder 2026-10-22 (JSON 2.1.2, config only): the HUD is there from shift 1 and "Mời về" is revealed with it (`show.hud`), so a lingering table of shift 1 offers it with the
+// same price line and button as in any later shift. Before 2.1.2 this case said the opposite ("not shown yet, revealed with the HUD after the first shift", P0).
+test('Wave 3 in shift 1 Mời về comes with the HUD: the price line and the button are on a lingering table (JSON 2.1.2, founder 2026-10-22)', async ({ page, tbh }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const { f, t, xu, open } = await boot(page, 'vi', 'first');
+  expect(['consuming', 'occupied']).toContain(f.target.state);
+  const panel = await open(f.target), button = panel.getByRole('button', { name: t('kick.button'), exact: true });
+  await expect(panel.locator('.kick-table')).toHaveCount(1);
+  await expect(panel.locator('.kick-price')).toHaveText(t('kick.price', { cost: xu(f.quote.cost!), rep: xu(f.quote.reputation) }));
+  if (f.quote.ok) await expect(button).toBeEnabled(); else await expect(button).toBeDisabled();
+  await tbh.shot('kick-first-390.png'); expect(tbh.consoleErrors()).toEqual([]);
+});
+
+// Owner call 1 (the founder, 2026-10-22): the price moved to feeRate 0.5 under a new label, 2.1.1 (2.1.2 the same day, the HUD thresholds: the bundle is 2.1.2 now), so a save pinned to a 2.1.0 content without the section no
 // longer keeps its pin for ever: its next "Mở ca" opens on the numerically newer bundle (`local.ts` `openingConfig`) and the shop can send tables home from then on.
 // Until 2.1.1 the bundle was a second content of 2.1.0 and such a save kept its pin (no Mời về) for good.
-test('Wave 3 a save pinned to the S6 content of JSON 2.1.0 adopts the bundled 2.1.1 at its next Mở ca, and with it Mời về at the founder\'s price', async ({ page, tbh }) => {
+test('Wave 3 a save pinned to the S6 content of JSON 2.1.0 adopts the bundled 2.1.2 at its next Mở ca, and with it Mời về at the founder\'s price', async ({ page, tbh }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const f = fixture('pin-rest') as { save: string; now: number; phase: string; completedShifts: number; version: string; feeRate: number | null; bundle: { version: string; feeRate: number | null } };
   expect([f.phase, f.completedShifts, f.version, f.feeRate]).toEqual(['resting', 1, '2.1.0', null]); // one shift on the pin, which has no kickTable
-  expect(f.bundle).toEqual({ version: '2.1.1', feeRate: 0.5 });
+  expect(f.bundle).toEqual({ version: '2.1.2', feeRate: 0.5 });
   const copy = JSON.parse(readFileSync('apps/web/src/i18n/vi.json', 'utf8')) as Record<string, string>;
   await page.clock.setFixedTime(f.now);
   await page.addInitScript(({ save }) => {

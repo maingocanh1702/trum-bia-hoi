@@ -8,7 +8,7 @@ for (const locale of ['vi', 'en']) for (const viewport of [{ width: 360, height:
   test(`A6 settings shows the build commit in ${locale} at ${viewport.width}px`, async ({ page, tbh }) => {
     const copy = JSON.parse(readFileSync(`apps/web/src/i18n/${locale}.json`, 'utf8'));
     await page.setViewportSize(viewport);
-    await bootFresh(page, { locale, muted: true }); // the gear opens with the HUD, which a brand-new game reveals only after shift 1
+    await bootFresh(page, { locale, muted: true }); // the gear opens with the HUD (a brand-new game shows it from shift 1 since JSON 2.1.2; `bootFresh` keeps its full-HUD save either way)
     await page.getByRole('button', { name: copy['nav.settings'], exact: true }).click();
     const build = page.locator('.build-version');
     await expect(build).toContainText(copy['settings.build']);

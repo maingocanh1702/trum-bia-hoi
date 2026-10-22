@@ -7,7 +7,7 @@ import { GameStore } from '../../server/src/store';
 import { createGameServer } from '../../server/src/http';
 import { fullHud } from '../test/fixtures/full-hud';
 let offset = 0;
-// These suites are about accounts, sync and ranking, not onboarding: every HUD control exists from shift 1 (first-shift-visual.spec.ts proves the minimal HUD).
+// These suites are about accounts, sync and ranking, not onboarding: every HUD control exists from shift 1 (JSON 2.1.2 makes that the bundled default; first-shift-visual.spec.ts proves it on a brand-new save).
 const raw = fullHud(structuredClone(config.raw)); raw._meta.version = 'remote-browser-fixture'; raw.shift.startingCoinsBase = 100000; raw.leaderboard.topN = 2;
 // Accessibility coverage reveals later menus without changing progress, purchases or production config.
 if (process.env.TBH_A11Y_TEST === '1') { raw.onboarding.featureReveal.questsAfterShifts = 0; raw.onboarding.featureReveal.leagueAfterShifts = 0; }

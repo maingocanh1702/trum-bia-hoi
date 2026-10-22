@@ -118,7 +118,7 @@ test('the total-value gate: 30 days of standard orders stay within +10 % of the 
 });
 
 test('the gate reads the standard order from config 2.1.0 on and the raw k of the older definition before it (04-SPEC section 5)', () => {
-  assert.equal(advancedKBasis('2.1.0'), 'standard-order'); assert.equal(advancedKBasis('2.1.1'), 'standard-order'); assert.equal(advancedKBasis('2.10.0'), 'standard-order');
+  assert.equal(advancedKBasis('2.1.0'), 'standard-order'); assert.equal(advancedKBasis('2.1.1'), 'standard-order'); assert.equal(advancedKBasis('2.1.2'), 'standard-order'); assert.equal(advancedKBasis('2.10.0'), 'standard-order');
   assert.equal(advancedKBasis('2.0.23'), 'raw'); assert.equal(advancedKBasis('2.0.4'), 'raw'); assert.equal(advancedKBasis('1.7.3'), 'raw');
   const report = { seed: 42, days: 30, configVersion: '2.1.0', rows: [{ lifePath: 4 }], value: { served: 31000, kValue: 5.5, totalValue: 14e6 },
     normalised: { served: 24000, extraRoundServes: 7000, totalValue: 8.5e6, mean: 354, kValue: 4.29 } };

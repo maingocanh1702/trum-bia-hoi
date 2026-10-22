@@ -31,7 +31,7 @@ const fits = (page: Page) => page.evaluate(() => document.documentElement.scroll
 for (const viewport of viewports) test(`a brand-new save shows its first goal from shift 1, and a tap opens the sheet at that item at ${viewport.width}px`, async ({ page, tbh }) => {
   await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   const f = fixture('closed', 0, 300); expect(f.coins).toBe(750); await load(page, f.save, f.now); // a brand-new game on a capacity snapshot: the seat model has its own test below
-  await expect(page.locator('.hud button')).toHaveCount(0); // the minimal shift-1 HUD: the wallet; the chip sits right under it
+  await expect(page.locator('.hud button')).toHaveCount(1); // the settings gear and nothing else: this 2.0.4 snapshot has no `hudAfterShifts`, so the reveal falls back to the bundled seed (0 since JSON 2.1.2, founder 2026-10-22); the chip sits right under the header
   await expect(chip(page)).toBeVisible(); await expect(chip(page)).toContainText('Nâng bàn 1 · 4 chỗ'); await expect(chip(page)).toContainText('3.750 xu · thiếu 3.000');
   await expect(chip(page)).toHaveAccessibleName(/^Mục tiêu kế tiếp: Nâng bàn 1 · 4 chỗ/);
   const box = (await chip(page).boundingBox())!; expect(box.height).toBeGreaterThanOrEqual(44); expect(box.x + box.width).toBeLessThanOrEqual(viewport.width); expect(await fits(page)).toBe(true);
@@ -111,7 +111,7 @@ test('the chip is English in English, with the units of the English copy', async
 for (const viewport of viewports) test(`on the seat model a brand-new save's first goal is the second table, and a tap opens the sheet at that one card at ${viewport.width}px`, async ({ page, tbh }) => {
   await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await load(page, null, Date.parse('2026-09-08T10:00:00Z'));
-  await expect(page.locator('.hud button')).toHaveCount(0);
+  await expect(page.locator('.hud button')).toHaveCount(1); // the settings gear: the HUD is there from shift 1 (JSON 2.1.2, founder 2026-10-22); the header holds the wallet, the timer and the gear
   await expect(chip(page)).toBeVisible(); await expect(chip(page)).toContainText('Mua bàn mới · +1 chỗ'); await expect(chip(page)).toContainText('1.070 xu · thiếu 320');
   await expect(chip(page)).toHaveAccessibleName(/^Mục tiêu kế tiếp: Mua bàn mới · \+1 chỗ/);
   const box = (await chip(page).boundingBox())!; expect(box.height).toBeGreaterThanOrEqual(44); expect(box.x + box.width).toBeLessThanOrEqual(viewport.width); expect(await fits(page)).toBe(true);

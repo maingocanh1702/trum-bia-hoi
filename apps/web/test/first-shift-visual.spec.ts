@@ -36,12 +36,13 @@ for (const viewport of viewports) {
   test(`P0 first shift shows wallet, keg and one thing to tap at a time at ${viewport.width}px`, async ({ page, tbh }) => {
     await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
     await load(page, null, fresh());
-    // Minimal HUD (P0 d): everything else stays hidden until it unlocks.
+    // Founder 2026-10-22 (JSON 2.1.2): the whole HUD is there from shift 1, so the P0 (d) minimal HUD no longer holds; only the later unlocks stay hidden (quests, the step banner).
     await expect(page.locator('.money')).toBeVisible(); await expect(page.locator('.equipment-object.keg')).toBeVisible();
-    for (const hidden of ['.bottom-nav', '.stock-strip', '.energy', '.weather-row', '.equipment-object.cooler', '.equipment-object.washer', '.glass-counter', '.quest-trigger', '.guide', '.settings-button']) await expect(page.locator(hidden)).toHaveCount(0);
-    await expect(page.locator('.hud button')).toHaveCount(0); // the header holds the wallet and nothing else; the goal chip of slice 3 fills the free slot
+    for (const shown of ['.bottom-nav', '.stock-strip', '.energy', '.weather-row', '.equipment-object.cooler', '.equipment-object.washer', '.glass-counter', '.settings-button']) await expect(page.locator(shown)).toBeVisible();
+    for (const hidden of ['.quest-trigger', '.guide']) await expect(page.locator(hidden)).toHaveCount(0);
+    await expect(page.locator('.hud button')).toHaveCount(1); // the header holds the wallet, the timer and the settings gear; the goal chip of slice 3 sits right under it
     await expect(lit(page)).toHaveCount(0);
-    await page.getByRole('button', { name: 'Mở ca', exact: true }).click();
+    await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click(); // two "Mở ca" now: the rest-screen button and the bottom nav
     // Guest sits at ~7.2 s, the order is ready at ~10 s. Follow the pointer guest -> check -> Serve -> wallet; never two at once.
     const stages: string[] = [];
     const stage = () => lit(page).evaluate(el => el.matches('.table-object') ? 'guest' : el.matches('.table-order-hint') ? 'check' : el.matches('.primary') ? 'serve' : el.matches('.money') ? 'wallet' : 'other');
@@ -66,7 +67,7 @@ for (const viewport of viewports) {
     test.setTimeout(90000); // the wait for the first guest who walks out is long on a one-table shop (below)
     await page.setViewportSize(viewport);
     const steady = fixture('steady'); await load(page, steady.save, steady.now); // a brand-new game with capacity demand off (fixture comment): this spec is about the visuals, not the pace
-    await page.getByRole('button', { name: 'Mở ca', exact: true }).click();
+    await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
     await page.clock.runFor(10200); await page.waitForTimeout(20);
     await page.locator('.table-order-hint').first().click(); await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
     await page.clock.runFor(200); await page.waitForTimeout(20);
@@ -87,10 +88,29 @@ for (const viewport of viewports) {
   });
 }
 
+// Founder 2026-10-22 (JSON 2.1.2, config only): a brand-new save shows the bottom nav (Mở ca · Nhập hàng · Nâng cấp), the settings gear, the timer row and the stock strip
+// at shift 1; the journey button, the quests and the league are not there yet (they open after 2 / 2 / 3 shifts: spotlight-reveal.test.ts, and the shift-2 test below).
+for (const viewport of viewports) test(`2.1.2 a brand-new save shows the whole HUD and Nâng cấp from shift 1 and keeps the journey for shift 2 at ${viewport.width}px`, async ({ page, tbh }) => {
+  await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  await load(page, null, fresh(), false);
+  for (const shown of ['.energy', '.weather-row', '.stock-strip', '.settings-button', '.bottom-nav']) await expect(page.locator(shown)).toBeVisible();
+  await expect(page.locator('.bottom-nav button')).toHaveText([/Mở ca/, /Nhập hàng/, /Nâng cấp/]);
+  await expect(page.getByRole('button', { name: /Đường lên Trùm/ })).toHaveCount(0); await expect(page.locator('.quest-trigger')).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await expect(lit(page)).toHaveCount(0); // nothing calls for a tap yet: 750 coins cannot buy table 2
+  expect((await axe(page)).violations).toEqual([]);
+  await tbh.shot(`hud-shift1-first-screen-${viewport.width}.png`);
+  await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click(); // the sheet opens at shift 1 and holds exactly the first goal
+  const sheet = page.locator('dialog[open] .sheet-content');
+  await expect(sheet.locator('[data-goal]')).toHaveCount(1); await expect(sheet.locator('[data-goal]')).toHaveAttribute('data-goal', 'buyTable');
+  await page.keyboard.press('Escape'); await expect(page.locator('dialog[open]')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
 test('P0 numbers and spotlights keep their cue without motion when the player asks for reduced motion', async ({ page }) => {
   await page.setViewportSize(viewports[0]); await page.emulateMedia({ reducedMotion: 'reduce' });
   await load(page, null, fresh());
-  await page.getByRole('button', { name: 'Mở ca', exact: true }).click();
+  await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
   await run(page, 14000, 250, async () => (await page.locator('.table-order-hint.is-ready[data-spotlight]').count()) > 0);
   const bubble = lit(page); await expect(bubble).toHaveCount(1);
   expect(await bubble.evaluate(el => getComputedStyle(el).animationName)).toBe('none');
@@ -106,7 +126,7 @@ test('P0 numbers and spotlights keep their cue without motion when the player as
 test('P0 the step guide is only a fallback: idleness before the first serve starts it once and a tap resets the wait', async ({ page }) => {
   await page.setViewportSize(viewports[0]);
   const f = fixture('patient'); await load(page, f.save, f.now);
-  await page.getByRole('button', { name: 'Mở ca', exact: true }).click();
+  await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
   await page.clock.runFor(30000); await page.mouse.click(5, 5); // a tap resets the 45 s window
   await page.clock.runFor(30000); await page.waitForTimeout(20);
   await expect(page.locator('.guide')).toHaveCount(0);
