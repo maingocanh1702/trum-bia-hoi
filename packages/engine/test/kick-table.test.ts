@@ -81,24 +81,40 @@ test('a rules-28 history recorded on JSON 2.1.0 by the S6 engine replays byte fo
   assert.equal(sha(g.world), before, 'a refused kick changes nothing in the world');
 });
 
-test('the S6 save keeps its pin: the bundled 2.1.0 now carries kickTable, so opening a shift with the bundle is refused as a second content of the same label', () => {
+test('the S6 save adopts the bundled 2.1.1 at its next opening (a newer label, not a second content of 2.1.0): its tables can then be sent home, and the history replays byte for byte', () => {
+  // Owner call 1 (the founder, 2026-10-22): the price moved to feeRate 0.5, a ninth content, so the label went to 2.1.1 (DECISIONS `## 07 · owner calls 2026-10-22`).
+  // Until then the bundle was a second content of 2.1.0 and this save could never adopt it (configVersionConflict): it kept its pin and never offered "Mời về".
   const g = decodeSave(s6Fixture().save);
   g.advance(g.world.now + Math.ceil((g.config.raw.shift.durationMs - g.world.staminaMs) / g.config.raw.shift.regenRate));
-  assert.equal(config.version, g.config.version, 'the label stayed 2.1.0 (DECISIONS 06)');
-  assert.deepEqual(g.command({ command: { type: 'startShift' }, at: g.world.now, idempotencyKey: 'open-bundle' }, config), { ok: false, reason: 'configVersionConflict' },
-    'the engine refuses a different content under one label (the browser never offers it: it adopts only a numerically newer bundle)');
+  assert.equal(g.config.version, '2.1.0'); assert.equal(config.version, '2.1.1', 'the bundle carries a newer label than the pin');
+  // A different content under the SAME label is still refused: the content stage 07 shipped as 2.1.0 (with the section, feeRate 1.5) cannot replace the S6 pin.
+  const shipped = structuredClone(config.raw); shipped._meta.version = '2.1.0'; shipped._meta.date = '2026-10-20'; shipped.kickTable.feeRate = 1.5;
+  assert.deepEqual(g.command({ command: { type: 'startShift' }, at: g.world.now, idempotencyKey: 'open-same-label' }, loadConfig(shipped)), { ok: false, reason: 'configVersionConflict' },
+    'the engine refuses a second content under one label');
   assert.equal(g.world.phase, 'resting'); assert.equal(kickTableRule(g.config.values), null, 'the save still runs its own S6 content');
-  must(g, { type: 'startShift' }); assert.equal(g.world.shift!.configVersion, '2.1.0'); assert.equal(kickTableRule(g.config.values), null, 'and opens its next shift on it');
+  // The browser hands the bundle to the next opening because 2.1.1 is numerically newer than the pin (apps/web/src/local.ts `openingConfig`): accepted.
+  must(g, { type: 'startShift' }); assert.equal(g.world.shift!.configVersion, '2.1.0', 'without the bundle the save opens on its own pin, as before');
+  const h = decodeSave(s6Fixture().save);
+  h.advance(h.world.now + Math.ceil((h.config.raw.shift.durationMs - h.world.staminaMs) / h.config.raw.shift.regenRate));
+  assert.ok(h.command({ command: { type: 'startShift' }, at: h.world.now, idempotencyKey: 'open-bundle' }, config).ok, 'the newer bundle opens the next shift');
+  assert.equal(h.world.shift!.configVersion, '2.1.1'); assert.deepEqual(kickTableRule(h.config.values), config.values.kickTable, 'and brings kickTable at the founder\'s price');
+  assert.ok(play(h, 240000, { stop: () => find(h, t => LINGERING.includes(t.state)) }), 'a table lingers on the adopted 2.1.1');
+  const table = find(h, t => LINGERING.includes(t.state))!, q = kickTableQuote(h.world, h.config, table);
+  assert.ok(q.ok, `${q.reason}`); assert.deepEqual(kick(h, table, q.cost!), { ok: true, amount: q.cost }, 'its guests can be sent home');
+  const again = decodeSave(encodeSave(h));
+  assert.equal(sha(again.world), sha(h.world), 'the history (three shifts on the S6 pin, one on 2.1.1 with a send-home) replays to the same world');
+  assert.equal(encodeSave(again), encodeSave(h), 'and re-encodes byte for byte');
 });
 
-test('the bundled seed carries kickTable {feeRate 1.5, repPerGuest 2} as a Tier A section that k does not scale, and keeps the label 2.1.0', () => {
-  // feeRate: the candidate 0.5 overshot the plan's +10 % income rule; raised in 0.25 steps until it held on seeds 42 and 99 (sim/kick-table.ts, DECISIONS 06).
-  assert.equal(seed.kickTable.feeRate, 1.5); assert.equal(seed.kickTable.repPerGuest, 2);
+test('the bundled seed carries kickTable {feeRate 0.5, repPerGuest 2} as a Tier A section that k does not scale, under the label 2.1.1', () => {
+  // feeRate: the founder's answer to owner call 1 (2026-10-22): the plan's candidate 0.5, with the +10 % income rule read on the income NET of the kick fees
+  // (sim/kick-table.ts: net +8.85 % | +9.06 % on seeds 42 | 99). Wave 3 had read the rule on gross income and sealed 1.5 under 2.1.0 (DECISIONS `## 06 ·`).
+  assert.equal(seed.kickTable.feeRate, 0.5); assert.equal(seed.kickTable.repPerGuest, 2);
   assert.equal(typeof seed.kickTable._rule, 'string');
-  assert.deepEqual([config.values.kickTable.feeRate, config.values.kickTable.repPerGuest], [1.5, 2], 'a rate and a count of reputation: neither ends in Base, k = 2.5 scales neither');
+  assert.deepEqual([config.values.kickTable.feeRate, config.values.kickTable.repPerGuest], [0.5, 2], 'a rate and a count of reputation: neither ends in Base, k = 2.5 scales neither');
   assert.ok(seed._meta.governance.tiers.A.sections.includes('kickTable'), 'Tier A: dual approval, next day');
   for (const tier of ['B', 'C'] as const) assert.equal(seed._meta.governance.tiers[tier].sections.includes('kickTable'), false);
-  assert.equal(seed._meta.version, '2.1.0');
+  assert.equal(seed._meta.version, '2.1.1', 'a new content gets a new label: 2.1.0 holds eight contents of history');
   assert.deepEqual(kickTableRule(config.values), config.values.kickTable);
   assert.equal(kickTableRule(capacityConfig.values), null); assert.equal(kickTableRule(loadConfig(structuredClone(legacy)).values), null);
 });
@@ -106,16 +122,22 @@ test('the bundled seed carries kickTable {feeRate 1.5, repPerGuest 2} as a Tier 
 test('snapshots from before kickTable load with their bytes; every half-way shape is refused; kickTable never loosens an older shape', () => {
   const s6 = s6Raw(); assert.equal(JSON.stringify(loadConfig(s6).raw), JSON.stringify(s6), 'the S6 content of 2.1.0: raw bytes kept');
   const s5 = s5Raw(); assert.equal(JSON.stringify(loadConfig(s5).raw), JSON.stringify(s5), 'a 2.0.23 pin too');
-  const full = structuredClone(seed); assert.equal(loadConfig(full).version, '2.1.0', 'the bundled seed itself');
+  const full = structuredClone(seed); assert.equal(loadConfig(full).version, '2.1.1', 'the bundled seed itself');
+  // The contents of 2.1.0 that carried the section (Wave 3 and stage 07, feeRate 0.5 then 1.5: browser saves and dev databases of this laptop) are complete
+  // snapshots of a label older than 2.1.1, so they load with their bytes as well.
+  const shipped = structuredClone(seed); shipped._meta.version = '2.1.0'; shipped._meta.date = '2026-10-20'; shipped.kickTable.feeRate = 1.5;
+  assert.equal(JSON.stringify(loadConfig(shipped).raw), JSON.stringify(shipped), 'the stage-07 content of 2.1.0: raw bytes kept');
+  assert.equal(kickTableRule(loadConfig(shipped).values)?.feeRate, 1.5, 'and its own price');
   // A pin labelled before 2.1.0 that already carries the section is a complete snapshot (the S3-S5 convention); loading it first must not change how the S6 pin
-  // is shaped afterwards (the template cache is keyed by the groups a pin lacks, not by their labels: two groups since 2.1.0 no longer share a key).
+  // is shaped afterwards (the template cache is keyed by the groups a pin lacks, not by their labels).
   const early = s5Raw(); early.kickTable = structuredClone(seed.kickTable); early._meta.governance.tiers.A.sections.push('kickTable');
   assert.equal(kickTableRule(loadConfig(early).values)?.feeRate, seed.kickTable.feeRate);
   assert.equal(JSON.stringify(loadConfig(s6Raw()).raw), JSON.stringify(s6), 'the S6 pin still loads after it');
   const bad: [string, RegExp, () => unknown][] = [
     ['the section without its Tier A entry', /config:_meta\.governance\.tiers\.A\.sections:array/, () => { const r = s6Raw(); r.kickTable = structuredClone(seed.kickTable); return r; }],
     ['the Tier A entry without the section', /config:_meta\.governance\.tiers\.A\.sections:array/, () => { const r = s6Raw(); r._meta.governance.tiers.A.sections.push('kickTable'); return r; }],
-    ['a label after 2.1.0 that lacks the section', /config::keys/, () => { const r = s6Raw(); r._meta.version = '2.1.1'; return r; }],
+    ['the label 2.1.1 without the section', /config::keys/, () => { const r = s6Raw(); r._meta.version = '2.1.1'; return r; }],
+    ['a later label without the section', /config::keys/, () => { const r = s6Raw(); r._meta.version = '2.2.0'; return r; }],
     ['an unknown key in the section', /config:kickTable:keys/, () => { const r = structuredClone(seed) as any; r.kickTable.bogus = 1; return r; }],
     ['a missing rate', /config:kickTable:keys/, () => { const r = structuredClone(seed) as any; delete r.kickTable.feeRate; return r; }],
     ['a rate that is not a number', /config:kickTable\.feeRate:type/, () => { const r = structuredClone(seed) as any; r.kickTable.feeRate = '0.5'; return r; }],
@@ -170,8 +192,8 @@ test('the price is feeRate x the gross of each guest\'s latest order x the type\
   const [ordinary, vip] = ['thuong', 'vip'].map(type => table.group!.customers.find(c => c.type === type)!);
   const q = kickTableQuote(w, g.config, table);
   assert.deepEqual(q.guests.map(x => [x.customerId, x.type, x.fee]), [...table.group!.customers].map(c => [c.id, c.type, fee(g, table, c.id)]));
-  assert.equal(q.guests.find(x => x.type === 'vip')!.fee, Math.round(table.order!.items.filter(i => i.customerId === vip.id).reduce((s, i) => s + seed.menu[i.dish].price, 0) * 1.5 * 10), 'VIP: x10');
-  assert.equal(q.guests.find(x => x.type === 'thuong')!.fee, Math.round(table.order!.items.filter(i => i.customerId === ordinary.id).reduce((s, i) => s + seed.menu[i.dish].price, 0) * 1.5), 'an ordinary guest: x1');
+  assert.equal(q.guests.find(x => x.type === 'vip')!.fee, Math.round(table.order!.items.filter(i => i.customerId === vip.id).reduce((s, i) => s + seed.menu[i.dish].price, 0) * 0.5 * 10), 'VIP: x10');
+  assert.equal(q.guests.find(x => x.type === 'thuong')!.fee, Math.round(table.order!.items.filter(i => i.customerId === ordinary.id).reduce((s, i) => s + seed.menu[i.dish].price, 0) * 0.5), 'an ordinary guest: x1');
   assert.equal(q.cost, fee(g, table, ordinary.id) + fee(g, table, vip.id)); assert.equal(q.reputation, 2 * 2, '2 guests x repPerGuest 2, not x k');
   const coins = w.coins, rep = w.reputation, spent = w.shift!.stats.spent;
   assert.deepEqual(kick(g, table, q.cost!), { ok: true, amount: q.cost });
@@ -207,7 +229,7 @@ test('D3: a Chi Pheo who keeps a table goes home for 0 coins and -2 reputation',
 
 test('a price that moved is refused with kickCostChanged before the wallet; a short wallet with notEnoughCoins; neither costs anything', () => {
   // One table, one chair, an empty wallet, nearly only VIPs (the signboard check wants one other type): a served VIP pays 2.7 x his gross (payment + the tip
-  // x10) and his kick costs 5 x it, so the wallet of his own serve never covers it.
+  // x10) and his kick costs feeRate x 10 = 5 x his gross (0.5, the founder's price), so the wallet of his own serve never covers it.
   const g = shop(raw => { guests(raw, { vip: 1, thuong: 0.001 }); raw.spawn.pPair = 0; }, { tables: 1, coinsBase: 0 }), w = g.world;
   must(g, { type: 'startShift' });
   const vipSits = () => find(g, t => t.state === 'consuming' && t.group!.customers[0].type === 'vip');

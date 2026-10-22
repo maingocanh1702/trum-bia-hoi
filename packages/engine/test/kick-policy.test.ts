@@ -4,6 +4,7 @@ import seed from '../../../docs/config/economy.tbh.json';
 import { Game, loadConfig, kickTableQuote, LINGERING_TABLE_STATES, WEATHER, type Command } from '../src';
 import { createManagementPolicy, kickLingering, serveNext, KICK_MIN_SHIFT_LEFT_MS, MANAGEMENT_MS, STEP_MS } from '../sim/policy';
 import { simulateCareer } from '../sim/career';
+import { kickLines, kickVerdict, type KickRun } from '../sim/kick-table';
 import { steadyDemand } from './fixtures/steady-demand';
 
 // Wave 3 (plan section 6 `fun-kick-table`, FEEDBACK II.3): the career-sim "kick" bot sends a lingering table home when the queue is non-empty and at least 40 s of
@@ -79,4 +80,27 @@ test('the never-kick protocol bot sends no table home; the kick bot does, and it
   assert.ok(kick.kicks.count > 0, `${kick.kicks.count} kicks in a day`); assert.ok(kick.policy.includes('kick bot'));
   assert.equal(kick.purchases.some(p => p.command === 'kickTable'), false, 'a kick is a fee, left out of the purchase log');
   assert.equal(kick.rows.reduce((sum, row) => sum + (row.spent.kickTable ?? 0), 0), kick.kicks.cost, 'the career ledger books every fee as spent (its wallet check holds every day)');
+});
+
+// Owner call 1 (the founder, 2026-10-22): the plan's "+10 % income" rule of `npm run sim:kick` is read on the 30-day income NET of the kick fees, with
+// `kickTable.feeRate` 0.5; the gross gain (income before the fees) stays printed as information. Doctored runs pin the reading, so neither the gate nor its
+// printout can drift back to gross silently: the founder's own seed-42 numbers at 0.5 (gross +13.24 %, net +8.85 %) pass, a net gain past +10 % fails.
+test('the sim:kick gate reads the 30-day income net of the kick fees (owner call 1, 2026-10-22); the gross gain is printed as information', () => {
+  const run = (bot: 'never' | 'kick', income: number, kickCost: number): KickRun => ({ seed: 42, bot, income, net: income - kickCost, kicks: kickCost ? 100 : 0,
+    kickGuests: kickCost ? 150 : 0, kickCost, kickReputation: kickCost ? 300 : 0, finalReputation: 1000, served: 30000, lost: 900, standardK: 3.15, standardValue: 9_040_022,
+    rawK: 3.93, lifePath: 7, commandHash: bot });
+  const never = run('never', 10_000_000, 0);
+  const founder = kickVerdict(never, run('kick', 11_324_000, 11_324_000 - 10_885_000));
+  assert.ok(Math.abs(founder.incomeOver - 0.1324) < 1e-9 && Math.abs(founder.netOver - 0.0885) < 1e-9);
+  assert.equal(founder.incomeOk, true, 'net +8.85 % passes although the gross gain is +13.24 %');
+  assert.equal(kickVerdict(never, run('kick', 12_000_000, 1_001_000)).incomeOk, true, 'net +9.99 % passes');
+  assert.equal(kickVerdict(never, run('kick', 11_001_000, 0)).incomeOk, false, 'net +10.01 % fails, whatever the gross says');
+  assert.equal(kickVerdict(never, run('kick', 13_000_000, 1_999_000)).incomeOk, false, 'net +10.01 % behind a gross +30 % fails too');
+  const lines = kickLines([founder], 0.5, 2, 30);
+  assert.ok(lines.includes('30-day income net of the kick fees, kick bot vs never-kick | <= +10 % | +8.85 % | PASS'), lines.join('\n'));
+  assert.ok(lines.includes('information: 30-day income before the kick fees (gross), kick bot vs never-kick | - | +13.24 % | INFO'), lines.join('\n'));
+  assert.deepEqual(lines.filter(line => / \| (PASS|FAIL)$/.test(line)).map(line => line.split(' | ')[0]),
+    ['30-day income net of the kick fees, kick bot vs never-kick', 'final reputation, kick bot (never-kick)'], 'two gate rows: the net income and the reputation');
+  const failing = kickLines([kickVerdict(never, run('kick', 11_001_000, 0))], 0.5, 2, 30);
+  assert.ok(failing.includes('30-day income net of the kick fees, kick bot vs never-kick | <= +10 % | +10.01 % | FAIL'), failing.join('\n'));
 });

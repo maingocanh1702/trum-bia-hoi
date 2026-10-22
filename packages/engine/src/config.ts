@@ -157,16 +157,18 @@ const seedAt = (path: string): unknown => valueAt(seed, path);
 // shape of the seed without it (exact: no key of the group, no tier entry), and one labelled with or after that version needs the whole group.
 // `since` = the first version carrying the group, `paths` = the object keys it added, `tiers` = the names it added to the governance tier lists,
 // `restore` = keys the group REPLACED: the older pin still carries them, so the older shape gets them back from the frozen capacity file (2.0.4),
-// `optionalAt` = labels that were sealed both before and after the group joined them: a pin with such a label may lack the whole group (never half of it).
+// `optionalAt` = labels that were sealed both before and after the group joined them: a pin with such a label may lack the whole group (never half of it;
+// no row needs it since the label 2.1.1, see the last row).
 const SEAT_KEYS_ADDED_LATER: readonly { since: string; paths: readonly string[]; tiers: Record<string, readonly string[]>; restore?: readonly string[]; optionalAt?: readonly string[] }[] = [
   { since: '2.0.22', paths: ['spawn.capacityDemand'], tiers: { A: ['spawn.capacityDemand'] } }, // plan S3, D19
   // plan S4, D14 D15 D18 D19: the table and chair ladders replace the postmvp `upgrades.backrest` placeholder (the same object in every older pin)
   { since: '2.0.23', paths: ['upgrades.table.tableUpgrade', 'upgrades.table.chairUpgrade'], tiers: { A: ['upgrades.table.tableUpgrade', 'upgrades.table.chairUpgrade'] }, restore: ['upgrades.backrest'] },
   // plan S5, D8 D23: the first shifts of a save's life open without the stamina cooldown; a value of the Tier A section `shift`, so there is no tier entry to add
   { since: '2.1.0', paths: ['shift.noCooldownFirstShifts'], tiers: {} },
-  // plan section 6 (Wave 3, D3): "Mời về". Plan section 2 seals Waves 2-3 as JSON 2.1.0, so that label exists without the section (the S5/S6 contents: their
-  // recorded histories and browser pins) and with it; a later label must carry it.
-  { since: '2.1.0', paths: ['kickTable'], tiers: { A: ['kickTable'] }, optionalAt: ['2.1.0'] },
+  // plan section 6 (Wave 3, D3): "Mời về". The label 2.1.0 exists without the section (the S5/S6 contents: their recorded histories and browser pins) and with it
+  // (Wave 3 and stage 07: complete snapshots of a label older than `since`, so they load as they are). 2.1.1, the founder's price of 2026-10-22 (owner call 1), is the
+  // first label that must carry it; until then this row was `since: '2.1.0'` with `optionalAt: ['2.1.0']` (DECISIONS `## 06 · the label stays 2.1.0 ...`).
+  { since: '2.1.1', paths: ['kickTable'], tiers: { A: ['kickTable'] } },
 ];
 const versionOf = (label: unknown): number[] | null => { const m = typeof label === 'string' ? /^(\d+)\.(\d+)\.(\d+)$/.exec(label) : null; return m ? m.slice(1).map(Number) : null; };
 const olderThan = (label: unknown, since: string): boolean => { const a = versionOf(label), b = versionOf(since)!; return !!a && (a[0] - b[0] || a[1] - b[1] || a[2] - b[2]) < 0; };
@@ -177,7 +179,7 @@ function seatShape(input: unknown): unknown {
   const version = (input as { _meta?: { version?: unknown } } | null)?._meta?.version;
   const absent = SEAT_KEYS_ADDED_LATER.filter(group => (olderThan(version, group.since) || (group.optionalAt ?? []).includes(version as string)) && group.paths.every(path => !ownPath(input, path)));
   if (!absent.length) return seed;
-  const key = absent.map(group => SEAT_KEYS_ADDED_LATER.indexOf(group)).join(); // by row, not by label: two groups share the label 2.1.0
+  const key = absent.map(group => SEAT_KEYS_ADDED_LATER.indexOf(group)).join(); // by row, not by label: two groups may share a label (2.1.0 did, until 2.1.1)
   if (!seatShapes.has(key)) {
     const older = structuredClone(seed) as Record<string, any>;
     for (const group of absent) {

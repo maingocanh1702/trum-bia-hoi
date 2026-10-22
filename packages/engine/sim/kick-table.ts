@@ -11,9 +11,11 @@ import { patchedConfig, type Patch } from './balance-gates';
  * AND 99, 30 days each. The rule: the kick bot's 30-day income may exceed the never-kick bot's by at most 10 % and its reputation at the end must be >= 0; if the
  * income overshoots, raise `kickTable.feeRate` (`--set=kickTable.feeRate=0.75`) and run again, recording every attempt.
  * Income = what the career sim calls income (career.ts: `w.lifetimeEarned` gained each day: payments, tips and shipper net as service credits them, capped per
- * day by `shift.dailyEarnCapBase`), read gross (before the kick fees), and is the gated number. It is NOT the number of the S5 30-day value gate: that gate reads
- * the served standard-order value (balance-gates.ts `m.standard.totalValue`, printed here as "value std"). Net = income minus the kick fees. Gross or net is the
- * owner's call (HANDOFF section 13); both are printed, with the served value, k, the guests served and lost, the kicks, and both bots' final reputation.
+ * day by `shift.dailyEarnCapBase`). The gated number is that income NET of the kick fees (income minus the fees the kick bot paid; the never-kick bot pays none):
+ * the founder's reading of the rule (owner call 1, 2026-10-22, with `feeRate` 0.5; DECISIONS `## 07 · owner calls 2026-10-22`). Wave 3 had gated the gross
+ * income (before the fees) and sealed 1.5; gross stays printed as information. Neither is the number of the S5 30-day value gate: that gate reads the served
+ * standard-order value (balance-gates.ts `m.standard.totalValue`, printed here as "value std"). Printed with the served value, k, the guests served and lost,
+ * the kicks, and both bots' final reputation.
  *   node --import tsx packages/engine/sim/kick-table.ts [--seeds=42,99] [--days=30] [--set=kickTable.feeRate=0.5 ...] [--out=file.json]
  */
 // config-exempt: the owner's acceptance of plan section 6 / FEEDBACK II.3 ("thu nhập 30 ngày ≤ +10 %, uy tín cuối ≥ 0"), not a gameplay limit.
@@ -30,10 +32,11 @@ export function kickRun(config: SeedConfig, seed: number, days: number, kick: bo
     kickReputation: report.kicks.reputation, finalReputation: last.reputation, served: report.value.served, lost: report.shiftStats.reduce((n, s) => n + s.lost, 0),
     standardK: report.normalised.kValue, standardValue: report.normalised.totalValue, rawK: report.value.kValue, lifePath: last.lifePath, commandHash: report.commandHash };
 }
+/** `incomeOver` the gross gain (information), `netOver` the gain net of the kick fees, `incomeOk` the income gate: the NET gain is at most +10 % (owner call 1). */
 export interface KickVerdict { seed: number; never: KickRun; kick: KickRun; incomeOver: number; netOver: number; incomeOk: boolean; reputationOk: boolean }
 export function kickVerdict(never: KickRun, kick: KickRun): KickVerdict {
   const incomeOver = kick.income / never.income - 1, netOver = kick.net / never.net - 1;
-  return { seed: never.seed, never, kick, incomeOver, netOver, incomeOk: incomeOver <= KICK_INCOME_MAX_OVER_NEVER, reputationOk: kick.finalReputation >= KICK_FINAL_REPUTATION_MIN };
+  return { seed: never.seed, never, kick, incomeOver, netOver, incomeOk: netOver <= KICK_INCOME_MAX_OVER_NEVER, reputationOk: kick.finalReputation >= KICK_FINAL_REPUTATION_MIN };
 }
 const pct = (x: number) => `${x >= 0 ? '+' : ''}${(x * 100).toFixed(2)} %`;
 const tr = (x: number) => `${(x / 1e6).toFixed(3)} tr`;
@@ -44,10 +47,10 @@ export function kickLines(verdicts: KickVerdict[], feeRate: number, repPerGuest:
     `${run.kicks} (${run.kickGuests})`, run.kickCost, run.kickReputation, run.finalReputation, run.served, run.lost,
     `${run.standardK?.toFixed(3)} (${run.rawK?.toFixed(3)})`, tr(run.standardValue), run.lifePath].join(' | '));
   lines.push('gate | target | ' + verdicts.map(v => `seed ${v.seed}`).join(' | ') + ' | PASS/FAIL');
-  lines.push(`30-day income, kick bot vs never-kick | <= +${KICK_INCOME_MAX_OVER_NEVER * 100} % | ${verdicts.map(v => pct(v.incomeOver)).join(' | ')} | ${verdicts.every(v => v.incomeOk) ? 'PASS' : 'FAIL'}`);
+  lines.push(`30-day income net of the kick fees, kick bot vs never-kick | <= +${KICK_INCOME_MAX_OVER_NEVER * 100} % | ${verdicts.map(v => pct(v.netOver)).join(' | ')} | ${verdicts.every(v => v.incomeOk) ? 'PASS' : 'FAIL'}`);
   // The reputation row cannot fail by construction (Game.changeRep clamps reputation at 0), so it prints the never-kick bot's beside the kick bot's.
   lines.push(`final reputation, kick bot (never-kick) | >= ${KICK_FINAL_REPUTATION_MIN}, clamped at 0 | ${verdicts.map(v => `${v.kick.finalReputation} (${v.never.finalReputation})`).join(' | ')} | ${verdicts.every(v => v.reputationOk) ? 'PASS' : 'FAIL'}`);
-  lines.push(`information: 30-day income net of kick fees, kick bot vs never-kick | - | ${verdicts.map(v => pct(v.netOver)).join(' | ')} | INFO`);
+  lines.push(`information: 30-day income before the kick fees (gross), kick bot vs never-kick | - | ${verdicts.map(v => pct(v.incomeOver)).join(' | ')} | INFO`);
   lines.push(`information: served standard-order value (the S5 30-day value gate's number), kick bot vs never-kick | - | ${verdicts.map(v => pct(v.kick.standardValue / v.never.standardValue - 1)).join(' | ')} | INFO`);
   return lines;
 }
