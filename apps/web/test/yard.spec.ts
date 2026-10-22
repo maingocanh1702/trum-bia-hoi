@@ -139,6 +139,35 @@ for (const viewport of viewports) test(`S6 a busy alley: the order bubbles of ev
   await page.locator('.yard').scrollIntoViewIfNeeded(); await tbh.shot(`yard-rows-${viewport.width}.png`); expect(errors).toEqual([]); expect(tbh.consoleErrors()).toEqual([]);
 });
 
+// Review 07 r1 (W1, second look): the tallest caption is a lingering table's, whose guest label, state and enjoy countdown (the cue "Mời về" relies on) hang
+// about 21 px below its space. Fixture `linger-rows`: "lai rai" pairs sipping their served trays (tables 1-3 and 5-6) right above tables whose order is open
+// (4, 7, 8), on a phone's two columns (4 under 2, 7-8 under 5-6) and on a wide screen's three (4 under 1, 8 under 5). No bubble or patience track of a lower
+// row covers the caption or the drawing of another table. The old 31 px gap cleared only tables that wait for their order: it fails here by 10 px.
+for (const viewport of viewports) test(`S6 a busy alley under lingering tables: no order bubble covers the label, state or countdown of the table above, at ${viewport.width}px`, async ({ page, tbh }) => {
+  await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  const { f } = await boot(page, 'vi', 'linger-rows');
+  const yard = page.locator('.yard'), open = f.openTables as number[], lingering = f.lingering as number[];
+  expect(f.tables).toHaveLength(8); expect(lingering).toEqual([0, 1, 2, 4, 5]); expect(open).toEqual([3, 6, 7]);
+  for (const i of lingering) {
+    const space = yard.locator(`.table-space.table-${i}`);
+    await expect(space.locator('.guest-label')).toHaveCount(1); await expect(space.locator('.enjoy-time')).toHaveCount(1); // the three-line caption
+  }
+  await expect(yard.locator('.table-order-hint')).toHaveCount(open.length);
+  const tops = (await boxes(yard.locator('.table-object'))).map(b => Math.round(b.y)), rows = [...new Set(tops)].sort((a, b) => a - b), rowOf = (i: number) => rows.indexOf(tops[i]);
+  const xs = (await boxes(yard.locator('.table-object'))).map(b => Math.round(b.x)), above = (i: number) => tops.findIndex((y, j) => xs[j] === xs[i] && rowOf(j) === rowOf(i) - 1);
+  expect(open.filter(i => lingering.includes(above(i))).length).toBeGreaterThanOrEqual(2); // the subject: open orders right under lingering captions
+  for (const i of open) {
+    const hint = yard.locator(`.table-space.table-${i} .table-order-hint`), track = hint.locator('.patience-track');
+    const parts = [(await hint.boundingBox())!, ...(await track.count() ? [(await track.boundingBox())!] : [])];
+    for (let j = 0; j < f.tables.length; j++) if (j !== i) for (const target of ['.table-caption', '.table-object']) {
+      const box = (await yard.locator(`.table-space.table-${j} ${target}`).boundingBox())!;
+      for (const part of parts) expect(overlaps(part, box), `the bubble of table ${i + 1} (row ${rowOf(i) + 1}) covers the ${target} of table ${j + 1} (row ${rowOf(j) + 1})`).toBe(false);
+    }
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.locator('.yard').scrollIntoViewIfNeeded(); await tbh.shot(`yard-linger-rows-${viewport.width}.png`); expect(errors).toEqual([]); expect(tbh.consoleErrors()).toEqual([]);
+});
+
 test('S6 reduced motion: the live yard animates (the spotlight pulse) without it and not at all with it, while the static cues (chairs, tray, spots) stay', async ({ page, tbh }) => {
   await page.setViewportSize(viewports[1]);
   await boot(page, 'vi', 'live');

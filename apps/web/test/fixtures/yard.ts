@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { Game, config, loadConfig, encodeSave, decodeSave, tableSlots, trayDishes, chairUpgrade, tableUpgrade, isSeatModel } from '../../../../packages/engine/src';
+import { Game, config, loadConfig, encodeSave, decodeSave, tableSlots, trayDishes, chairUpgrade, tableUpgrade, isSeatModel, restockQuote, DISHES, WEATHER } from '../../../../packages/engine/src';
 import { fullHud } from './full-hud';
 import { steadyDemand } from '../../../../packages/engine/test/fixtures/steady-demand';
 
@@ -14,6 +14,12 @@ if (mode === 'inspect') {
   const raw = structuredClone(config.raw); raw._meta.version = 'yard-fixture'; fullHud(raw); raw.onboarding.enabled = false;
   if (mode === 'live') { steadyDemand(raw); raw.patience.thuongMs = 180000; raw.shift.startingCoinsBase += raw.upgrades.table.tablePriceBase[0]; } // a guest soon, he waits while the page is inspected; the wallet pays table 2 and keeps the usual start
   if (mode === 'rows') { steadyDemand(raw); raw.patience.thuongMs = 600000; raw.shift.startingCoinsBase = 2_000_000; } // a full alley of pairs; the guests wait while the page is inspected
+  if (mode === 'linger-rows') { // pairs of "lai rai" guests (a label on every caption, long sipping), sunny, no rush; the open orders wait while the page is inspected
+    for (const weather of WEATHER) raw.weather[weather].weight = weather === 'sunny' ? 1 : 0;
+    raw.rush.schedule.perShift = 0; raw.spawn.capacityDemand.maxMult = 1; raw.spawn.pPair = 1; raw.spawn.baseMs = raw.rush.none.floorMs = 3000;
+    for (const [key, profile] of Object.entries(raw.customerTypes)) if ('weight' in profile) profile.weight = key === 'ngoily' ? 1 : key === 'thuong' ? 0.001 : 0;
+    raw.patience.thuongMs = 600000; raw.shift.startingCoinsBase = 2_000_000; raw.glasses.start = raw.glasses.buyCap; // sixteen guests at once hold sixteen glasses
+  }
   if (mode === 'full') {
     for (const row of raw.upgrades.table.tableUpgrade.levels) row.lifePathGate = 0;
     for (const row of raw.upgrades.table.chairUpgrade.levels) row.lifePathGate = 0;
@@ -44,6 +50,30 @@ if (mode === 'inspect') {
     for (let i = 0; i < 20000 && !wanted.every(n => open().includes(n)); i++) g.advance(w.now + 100);
     if (!wanted.every(n => open().includes(n))) throw Error(`fixture:rows-without-orders:${open().join(',')}`);
     process.stdout.write(JSON.stringify({ save: encodeSave(g), now: w.now, slots, openTables: open(), tables: w.tables.map(t => ({ seats: t.capacity, level: t.level, chairLevel: t.chairLevel ?? 1, dishes: trayDishes(v, t) })) }));
+    process.exit(0);
+  }
+  if (mode === 'linger-rows') {
+    // Review 07 r1 (W1, second look): the tallest caption is a lingering table's — its guest label, its state and the enjoy countdown hang about 21 px below the
+    // table's space. Eight tables of two chairs, an OPEN shift: tables 1-3 (the first row on every screen) and 5-6 are served and sipping (`consuming`, countdown
+    // shown) while tables 4, 7 and 8 wait with an open order, so an order bubble hangs right under a lingering caption on a phone's two columns (4 under 2, 7-8
+    // under 5-6) and on a wide screen's three (4 under 1, 8 under 5). Only the chosen tables are served, by the real `serve` command.
+    while (w.tables.length < slots) send({ type: 'buyTable' });
+    for (const table of w.tables) send({ type: 'buyChair', tableId: table.id });
+    send({ type: 'startShift' });
+    const serveAt = [0, 1, 2, 4, 5], waitAt = [3, 6, 7];
+    const sipping = (i: number) => w.tables[i].state === 'consuming' && w.tables[i].until !== null;
+    const waiting = (i: number) => Boolean(w.tables[i].order && ['pending', 'grace'].includes(w.tables[i].order!.state));
+    const done = () => serveAt.every(sipping) && waitAt.every(waiting);
+    for (let i = 0; i < 40000 && !done(); i++) {
+      for (const dish of DISHES) if (restockQuote(w, g.config, dish, 'bulk').ok) g.command({ at: w.now, idempotencyKey: `yard-${g.log.length}`, command: { type: 'restock', dish, mode: 'bulk' } });
+      for (const n of serveAt) {
+        const order = w.tables[n].order;
+        if (order && ['pending', 'grace'].includes(order.state) && order.items.every(item => item.state === 'ready')) g.command({ at: w.now, idempotencyKey: `yard-${g.log.length}`, command: { type: 'serve', tableId: w.tables[n].id, orderId: order.id } }); // the engine refuses above the serve ceiling: tried again next tick
+      }
+      g.advance(w.now + 100);
+    }
+    if (!done()) throw Error(`fixture:linger-rows-not-reached:${w.tables.map(t => t.state).join(',')}`);
+    process.stdout.write(JSON.stringify({ save: encodeSave(g), now: w.now, slots, lingering: serveAt, openTables: waitAt, tables: w.tables.map(t => ({ seats: t.capacity, level: t.level, chairLevel: t.chairLevel ?? 1, dishes: trayDishes(v, t) })) }));
     process.exit(0);
   }
   if (mode === 'full') {
