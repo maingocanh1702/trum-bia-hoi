@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import type { World } from '../../../packages/engine/src';
+import { furnishShop } from './seat-shop';
 
 const world = async (page: Page): Promise<World> => (await (await page.request.get('/api/player/state')).json()).world;
 
@@ -12,6 +13,8 @@ test('A2 quick beer refill uses the real server while the shift remains live and
   await page.goto('/');
   await page.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
   await expect(page.locator('.network-status')).toContainText('Đã đồng bộ');
+  // One table with one chair pours too little beer for the loop below to drain the keg; furnish the shop first.
+  await furnishShop(page);
   await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
   await expect.poll(async () => (await world(page)).phase).toBe('open');
 

@@ -1,4 +1,4 @@
-import type { DomainEvent } from '../../../packages/engine/src';
+import { PAIR, type DomainEvent } from '../../../packages/engine/src';
 
 /**
  * F27/P3 "mọi mất mát có đúng 1 lý do": why a guest left, in the words a player is told. A guest whose order times out always
@@ -44,6 +44,13 @@ export function toastReason(events: readonly Leave[]): LeaveReason | null {
   if (!lost.length) return dominantLeaveReason(events);
   return lost.some(event => event.type === 'shipper_missed') ? null : dominantLeaveReason(lost);
 }
+
+/**
+ * The shift book's "pairs without a seat" (rules 28, S3): `stats.noSeat` counts the guests of pairs turned away at the door because no table had two
+ * chairs, and a pair is PAIR guests. A capacity save never writes it (0: the book shows no line). Singles turned away for a full queue are guests in the
+ * "no room" row of the list below, not pairs.
+ */
+export const pairsWithoutSeat = (stats: { noSeat?: number }): number => Math.floor(Math.max(0, stats.noSeat ?? 0) / PAIR);
 
 /**
  * The shift book's list: guests lost per reason, most first (ties in `LEAVE_REASONS` order), zero rows left out.

@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import {Game,config,loadConfig,DISHES,restockQuote,summarizeRush,type Command} from '../src';
+import {furnishFirstAlley} from './scenario';
 // config-exempt: controlled experiment seeds, sampling step and starting bankroll; never live tuning.
 const rows: (ReturnType<typeof summarizeRush> & { seed: number; kind: 'none' | 'light' | 'heavy'; seconds: number; loss: number; perSec: number })[]=[];
 for(const seed of [20260611,42,20260908,7,99]) for(const kind of ['none','light','heavy'] as const){
  const raw=structuredClone(config.raw); raw.onboarding.enabled=false;raw.shift.startingCoinsBase=100000;raw.rush.schedule.perShift=0;
  for(const weather of ['sunny','hot','humid','rain','cold'] as const)raw.weather[weather].weight=weather==='sunny'?1:0;
  const g=new Game(loadConfig(raw),seed,0),w=g.world,c=g.config.values;
+ furnishFirstAlley(g);
  const send=(command:Command)=>g.command({idempotencyKey:`probe-${g.log.length}`,at:w.now,command});
  send({type:'startShift'});
  const start=c.rush.schedule.noRushFirstMs,end=start+(kind==='none'?c.rush.heavy.durationMs:c.rush[kind].durationMs);

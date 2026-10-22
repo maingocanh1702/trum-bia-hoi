@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { Game, config, loadConfig, encodeSave, planDailyQuests, WEATHER } from '../../../../packages/engine/src';
 import { fullHud } from './full-hud';
-const raw = structuredClone(config.raw); raw.onboarding.enabled = false; raw.rush.schedule.perShift = 0;
+import { steadyDemand } from '../../../../packages/engine/test/fixtures/steady-demand';
+const raw = steadyDemand(structuredClone(config.raw)); raw.onboarding.enabled = false; raw.rush.schedule.perShift = 0; // the subject is the quest claim: steady demand, so a guest orders within the minute
 for (const weather of WEATHER) raw.weather[weather].weight = weather === 'sunny' ? 1 : 0;
 for (const [key, type] of Object.entries(raw.customerTypes)) if (type.usesTable) type.weight = key === 'thuong' ? 1 : 0;
 for (const bucket of raw.quests.daily.buckets) for (const range of Object.values(bucket.pool)) if (range) range[0] = range[1] = 1;

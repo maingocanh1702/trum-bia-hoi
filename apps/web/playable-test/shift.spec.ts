@@ -65,15 +65,18 @@ test('default guest full shift', async ({ page, context }) => {
   if(await fullStock.isEnabled()){await purchase(page,fullStock);restocked=true;}
   await page.keyboard.press('Escape');
   await page.getByRole('button',{name:'Nâng cấp',exact:true}).click();await expect(page.locator('.dog-entry')).toHaveCount(0);
-  // One card: the first table that can level up, an empty one when any is (a table mid-clean would lock the buy while the sheet pauses the world).
-  const goal=page.locator('dialog[open] .upgrade-card').getByRole('button',{name:/^Nâng ·/});await expect(page.locator('dialog[open] .upgrade-card')).toHaveCount(1);
-  const tableLevels=(world:{tables:{level:number}[]})=>world.tables.reduce((sum,t)=>sum+t.level,0);
-  if(await goal.isEnabled()){const before=tableLevels(await snapshot(page));await purchase(page,goal);await expect.poll(async()=>tableLevels(await snapshot(page))).toBe(before+1);upgraded=true;}
-  await page.keyboard.press('Escape');w=await snapshot(page);expect(w.shift.closedAt-w.shift.startedAt-w.shift.pausedMs).toBeGreaterThanOrEqual(config.shift.durationMs);expect(w.shift.stats.served).toBeGreaterThan(0);expect(restored&&restocked&&upgraded&&washing&&readyBuffer).toBe(true);
+  // Seat model (rules 28): the one card is table 2, the purchase a one-table shop earns first (plan §7 owner line 3); buying it needs no empty table.
+  const goal=page.getByRole('dialog').getByRole('button',{name:/^Mua bàn ·/});await expect(page.locator('dialog[open] [data-goal]')).toHaveCount(1);
+  if(await goal.isEnabled()){const before=await snapshot(page);await purchase(page,goal);await expect.poll(async()=>(await snapshot(page)).tables.length).toBe(before.tables.length+1);upgraded=true;}
+  // P0, owner decision 1 of S5 (the founder, 2026-10-21; BLOCKERS "04 · P0", gate row shift1.plan): table 2 costs 1 070 xu and at least 4 runs in 5 can buy it when shift 1 closes (83 % of 300 probes of the
+  // evaluator). This journey plays ONE game per viewport (it restocks the beer before it opens the Upgrades sheet), so about one run in five misses the purchase by the owner's own criterion (2 of 3 viewports
+  // bought it on the price commit; the 1280 one held about 1 073 xu a second before the end and the beer restock it buys first left it short): the check stays SOFT, so a run on which it is red still runs the rest of the journey (summary, reload, new tab, next day)
+  // and shows that this is the only red line. The proof of the 4 in 5 is `npm run sim:balance`.
+  await page.keyboard.press('Escape');w=await snapshot(page);expect(w.shift.closedAt-w.shift.startedAt-w.shift.pausedMs).toBeGreaterThanOrEqual(config.shift.durationMs);expect(w.shift.stats.served).toBeGreaterThan(0);expect.soft(upgraded,'P0: table 2 (1.070 xu) must be affordable at the end of shift 1 on at least 4 runs in 5 (plan section 7 owner line 3, gate shift1.plan)').toBe(true);expect({restored,restocked,washing,readyBuffer}).toEqual({restored:true,restocked:true,washing:true,readyBuffer:true});
   await page.getByRole('button',{name:'Sổ ca',exact:true}).first().click();
   await expect(page.getByRole('heading',{name:'Sổ ca hôm nay',exact:true})).toBeVisible();await page.screenshot({path:`.qa/playable-${viewport.width}-summary.png`});
   await page.keyboard.press('Escape');const saved=await snapshot(page);await page.close();page=await context.newPage();watch(page);await page.setViewportSize(viewport);await enter(page);const reopened=await snapshot(page);
-  expect(reopened.playerId).toBe(playerId);expect(reopened.completedShifts).toBe(1);expect(reopened.coins).toBe(saved.coins);expect(reopened.equipment).toEqual(saved.equipment);expect(reopened.tables.map((t:{level:number})=>t.level)).toEqual(saved.tables.map((t:{level:number})=>t.level));expect(reopened.shift.id).toBe(firstShift);
+  expect(reopened.playerId).toBe(playerId);expect(reopened.completedShifts).toBe(1);expect(reopened.coins).toBe(saved.coins);expect(reopened.equipment).toEqual(saved.equipment);const shop=(x:typeof saved)=>x.tables.map((t:{id:string,capacity:number,level:number})=>[t.id,t.capacity,t.level]);expect(shop(reopened)).toEqual(shop(saved));expect(reopened.shift.id).toBe(firstShift);
   // Only the overnight rest is accelerated, using the existing isolated test-server clock.
   await page.request.post('/api/__test/overnight',{timeout:5*60*1000});await page.reload();await synced(page);
   await page.getByRole('button',{name:'Mở ca',exact:true}).first().click();await expect.poll(async()=>(await snapshot(page)).phase).toBe('open');expect((await snapshot(page)).shift.id).not.toBe(firstShift);

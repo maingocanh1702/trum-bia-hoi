@@ -2,12 +2,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { CURRENT_RULES, Game, config, loadConfig, currentGuests, kickAllQuote, customerValue, encodeSave, decodeSave, dayKey, type Command } from '../src';
+import { steadyDemand } from './fixtures/steady-demand';
 
 const send = (g: Game, command: Command, at = g.world.now) => g.command({ idempotencyKey: `close-${g.log.length}`, at, command });
-function create(at = 11000) {
-  const raw = structuredClone(config.raw);
+function create(at = 11000, patch = (_: typeof config.raw) => {}, before = (_: Game) => {}) {
+  const raw = steadyDemand(structuredClone(config.raw)); // the close fee is the subject: guests arrive as fast as these timings assume
   for (const k of ['hot', 'humid', 'rain', 'cold'] as const) raw.weather[k].weight = 0;
-  const g = new Game(loadConfig(raw), 42, 0);
+  patch(raw); const g = new Game(loadConfig(raw), 42, 0); before(g);
   send(g, { type: 'startShift' }); g.advance(at);
   return g;
 }
@@ -113,7 +114,9 @@ test('the actual v3 close save retains its free served-table dismissal, results 
 
 
 test('a new group between quote and confirmation cannot raise the approved fee silently', () => {
-  const g = create(), order = g.world.tables[0].order!, quoted = close(g), coins = g.world.coins;
+  // A second one-chair table seats the next single guest while the first order still waits.
+  const g = create(11000, raw => { raw.shift.startingCoinsBase = 100000; raw.spawn.pPair = 0; }, game => { assert.ok(send(game, { type: 'buyTable' }).ok); });
+  const order = g.world.tables[0].order!, quoted = close(g), coins = g.world.coins;
   const at = order.placedAt + order.patienceMs;
   assert.deepEqual(send(g, quoted, at), { ok: false, reason: 'closeCostChanged' });
   assert.ok(kickAllQuote(g.world, g.config).cost > quoted.maxCost);

@@ -2,6 +2,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { CURRENT_RULES, Game, config, loadConfig, lifePathStatus, requirementStatus, lifePathRewardQuote, unlockQuote, kickAllQuote, customerValue, encodeSave, decodeSave, type Command, type Result, type Economy } from '../src';
+import { capacityRaw } from './fixtures/capacity-model';
+/** A seat-model shop with four one-chair tables bought through real commands (LP1 counts tables). */
+function fourTables() {
+  const raw = structuredClone(config.raw); raw.shift.startingCoinsBase = 100000;
+  const g = new Game(loadConfig(raw), 42, 0);
+  while (g.world.tables.length < 4) assert.ok(send(g, { type: 'buyTable' }).ok);
+  return g;
+}
 const saved = readFileSync(new URL('./fixtures/legacy-progression-v5.json', import.meta.url), 'utf8');
 const send = (g: Game, command: Command) => g.command({ command, at: g.world.now, idempotencyKey: `progress-${g.log.length}` });
 function reachLP2() {
@@ -29,7 +37,7 @@ test('actual v5 history stays unchanged; current progression unlocks phone and L
 });
 
 test('all configured subsidiary gates are enforced and kitchen cannot make the five-level core device goal unreachable', () => {
-  const w = structuredClone(new Game().world); w.lifetimeEarned = config.values.lifePath.at(-1)!.lifetimeBase;
+  const w = structuredClone(fourTables().world); w.lifetimeEarned = config.values.lifePath.at(-1)!.lifetimeBase;
   const level = () => lifePathStatus(w, config).level;
   assert.equal(w.dogLevel, 0); assert.equal(level(), 1);
   w.unlocks.push('phone'); w.equipment.stall = 3; assert.equal(level(), 2);
@@ -39,7 +47,9 @@ test('all configured subsidiary gates are enforced and kitchen cannot make the f
   w.unlocks.push('signboard'); assert.equal(level(), 4); w.peakLeague = 'hong_ngoc'; assert.equal(level(), 5);
   Object.assign(w.equipment, { keg: 5, washer: 5, cooler: 5 }); w.peakLeague = 'kim_cuong'; assert.equal(level(), 5);
   w.equipment.stall = 5; assert.equal(level(), 6); w.peakLeague = 'huyen_thoai'; assert.equal(level(), 6);
-  w.tables[0].capacity = 6; assert.equal(level(), 7);
+  // LP7 "10 seats": four tables x two chairs is eight; the fifth table needs an alley with tableSlots >= 5 (S5 / location-slots).
+  for (const table of w.tables) table.capacity = 2;
+  assert.equal(level(), 6); w.tables.push({ ...structuredClone(w.tables[0]), id: 'fifth-slot' }); assert.equal(level(), 7);
   w.lifePath = 7; w.coins = 0; w.lifetimeEarned = 0; assert.equal(level(), 7);
   assert.equal(requirementStatus(w, config, 'equipment=5').met, true); assert.equal(requirementStatus(w, config, 'stall=5').met, true);
 });
@@ -122,18 +132,20 @@ test('phone and QR cannot require milestones that need them, including through e
 });
 
 
-test('LP1 needs its scaled lifetime threshold and four seats, without deferred dog ownership; old config pins remain strict', () => {
-  const w = structuredClone(new Game().world), threshold = config.values.lifePath[1].lifetimeBase;
+test('LP1 needs its scaled lifetime threshold and four tables, without deferred dog ownership; old config pins remain strict', () => {
+  const w = structuredClone(fourTables().world), threshold = config.values.lifePath[1].lifetimeBase;
   w.lifetimeEarned = threshold - 1;
   assert.equal(lifePathStatus(w, config).level, 0);
-  w.lifetimeEarned = threshold; w.tables = w.tables.slice(0, 2);
-  assert.equal(w.tables.reduce((n, t) => n + t.capacity, 0), 4);
+  w.lifetimeEarned = threshold;
   assert.equal(lifePathStatus(w, config).level, 1);
-  w.tables.pop(); assert.equal(lifePathStatus(w, config).level, 0);
-  const old = structuredClone(config.raw); old.lifePath[1].requires!.push('dog');
-  w.tables = structuredClone(new Game().world.tables);
-  assert.equal(lifePathStatus(w, loadConfig(old)).level, 0);
-  w.dogLevel = 1; assert.equal(lifePathStatus(w, loadConfig(old)).level, 1);
+  const tables = structuredClone(w.tables); w.tables.pop(); for (const table of w.tables) table.capacity = 2;
+  assert.equal(w.tables.reduce((n, t) => n + t.capacity, 0), 6);
+  assert.equal(lifePathStatus(w, config).level, 0, 'six seats on three tables are not four tables (D18)');
+  const old = capacityRaw(); old.lifePath[1].requires!.push('dog'); // the 2.0.3 pin: "4 seats" plus the deferred dog
+  const pinned = loadConfig(old);
+  w.tables = tables; w.lifetimeEarned = pinned.values.lifePath[1].lifetimeBase; // the pin keeps its own threshold, older than the 2.1.0 ladder
+  assert.equal(lifePathStatus(w, pinned).level, 0);
+  w.dogLevel = 1; assert.equal(lifePathStatus(w, pinned).level, 1);
   for (const token of ['unknown', 'LP1', 'phone']) {
     const bad = structuredClone(config.raw); bad.lifePath[1].requires!.push(token);
     assert.throws(() => loadConfig(bad), /config:/);

@@ -330,3 +330,6 @@ exactly the cross-tier journeys that belong there, not duplicated here.
 
 ### Wave B — 2026-09-16 proof
 - `apps/web/remote-test/remote.spec.ts` — 'real server serves once after lost acknowledgement, retains queue across reload, menus pause and reports resync' now compares all six displayed metrics with the authoritative API report before/after reload. Run with playwright.remote.config.ts (isolated server, no mocked responses).
+
+### Wave 3 — 2026-10-22 (`fun-kick-table`)
+- `apps/server/src/http.ts` `commandFields` gains `kickTable: ['tableId', 'maxCost']` (the `satisfies` over `Command['type']` makes forgetting it a compile error); `apps/server/test/http.test.ts` `every public action refuses injected authority fields before durable command logging` lists `kickTable` (a Windows baseline red — EBUSY on its temp database — green on Linux). `apps/server/test/kick-table.test.ts` `the server sends a lingering table home once per key, at the price of the pinned snapshot, and the result survives a restart` drives the remote path minus HTTP framing (`GameStore.command`: `kickCostChanged`, ok, a retry answers the recorded result and charges once, the history survives a reopen). The remote UI is the same `App.tsx` popover (a `RemoteGame` world view and the same pure quote); the remote tier is re-run for regressions.

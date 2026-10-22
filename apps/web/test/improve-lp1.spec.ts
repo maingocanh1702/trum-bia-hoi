@@ -26,9 +26,14 @@ test('production guest reaches LP1 without hidden dog and preserves previous shi
     await page.keyboard.press('Escape');
     return JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/lp1.ts', 'inspect'], { encoding: 'utf8', input: archive, maxBuffer: 64 * 1024 * 1024 }));
   };
-  expect(await inspect()).toEqual({ version: f.configVersion, level: 1, dog: 0, lifetime: f.lifetime });
+  // The opening adopted the seat-model bundle (rules 28, D2: 3 tables x2 chairs). LP1 now counts four tables (D18), never the dog.
+  expect(await inspect()).toEqual({ version: f.configVersion, level: 0, dog: 0, lifetime: f.lifetime, tables: 3 });
+  await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click();
+  await page.getByRole('button', { name: /^Mua bàn · / }).click();
+  await page.keyboard.press('Escape'); await waitSaved(page);
+  expect(await inspect()).toEqual({ version: f.configVersion, level: 1, dog: 0, lifetime: f.lifetime, tables: 4 });
   await expect(page.locator('.dog-object')).toHaveCount(0);
   await page.reload(); await expect(page.locator('.game-shell')).toBeVisible(); await waitSaved(page);
-  expect(await inspect()).toEqual({ version: f.configVersion, level: 1, dog: 0, lifetime: f.lifetime });
+  expect(await inspect()).toEqual({ version: f.configVersion, level: 1, dog: 0, lifetime: f.lifetime, tables: 4 });
   expect(errors).toEqual([]);
 });

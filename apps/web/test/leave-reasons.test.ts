@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Game, PREPARATION_CAUSES, config, loadConfig, menuReport, type DomainEvent } from '../../../packages/engine/src';
-import { LEAVE_REASONS, dominantLeaveReason, isLossEvent, leaveReason, leaveRows, toastReason } from '../src/leave-reasons';
+import { LEAVE_REASONS, dominantLeaveReason, isLossEvent, leaveReason, leaveRows, pairsWithoutSeat, toastReason } from '../src/leave-reasons';
 
 // F27/P3 (fun-buy-buttons-reason): every guest who leaves has exactly one reason, and the shift book ranks them by guests lost.
 const ev = (type: string, data: DomainEvent['data']): Pick<DomainEvent, 'type' | 'data'> => ({ type, data });
@@ -59,4 +59,24 @@ test('on a real neglected shift the book rows add up to the guests the engine co
   const rows = leaveRows(report.losses, stats.rejected);
   assert.equal(rows.reduce((sum, row) => sum + row.count, 0), stats.lost + stats.rejected);
   assert.deepEqual(rows.map(row => row.count), [...rows.map(row => row.count)].sort((a, b) => b - a));
+});
+
+test('S3: the shift book counts pairs turned away for lack of a two-chair table: noSeat guests / PAIR, nothing on a capacity save, never negative', () => {
+  assert.equal(pairsWithoutSeat({}), 0, 'a rules <= 27 shift never writes noSeat: no line in the book');
+  assert.equal(pairsWithoutSeat({ noSeat: 0 }), 0);
+  assert.equal(pairsWithoutSeat({ noSeat: 2 }), 1); assert.equal(pairsWithoutSeat({ noSeat: 12 }), 6);
+  assert.equal(pairsWithoutSeat({ noSeat: -4 }), 0, 'a corrupt negative count is never shown');
+});
+
+test('S3: on a real one-table shift the pairs line is exactly the pairs the engine turned away at the door (queue_overflow noSeat), singles refused for a full queue are not pairs', () => {
+  const raw = structuredClone(config.raw); raw.onboarding.enabled = false; raw.spawn.pPair = 0.5;
+  const g = new Game(loadConfig(raw), 42, Date.parse('2026-10-20T10:00:00Z'));
+  assert.ok(g.command({ at: g.world.now, idempotencyKey: 'open', command: { type: 'startShift' } }).ok);
+  for (let step = 0; step < 6000 && g.world.shift && !g.world.shift.closedAt; step++) g.advance(g.world.now + 1000); // nobody is ever served: the door fills and refuses
+  const stats = g.world.shift!.stats, doors = g.world.events.filter(e => e.type === 'queue_overflow');
+  const noSeat = doors.filter(e => e.data.reason === 'noSeat'), full = doors.filter(e => e.data.reason === 'full');
+  assert.ok(noSeat.length >= 2, `the shift must turn pairs away (${noSeat.length})`); assert.ok(full.length >= 1, `and singles for a full queue (${full.length})`);
+  assert.ok(noSeat.every(e => e.data.size === 2));
+  assert.equal(pairsWithoutSeat(stats), noSeat.length);
+  assert.equal(stats.rejected, doors.reduce((n, e) => n + Number(e.data.size), 0), 'the "no room" reason row still counts every guest turned away');
 });

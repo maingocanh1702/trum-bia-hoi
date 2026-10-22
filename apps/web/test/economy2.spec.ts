@@ -11,8 +11,10 @@ for (const width of [360, 390]) test(`new economy capacities, LP gate and glass 
   await page.goto('/'); const snapshot = async () => fixture('inspect', await readSave(page));
   await page.getByRole('button', { name: 'Vòi rót', exact: true }).click(); const keg = page.getByRole('dialog', { name: 'Vòi rót', exact: true });
   const capacity = seed.upgrades.keg.kegStorage[2];
-  await expect(keg.getByText(new RegExp(`dự trữ ${capacity} cốc$`))).toBeVisible();
-  await expect(keg.getByText(`Rót ra cốc: 3 vòi · 1.6 s/cốc · dự trữ ${capacity} cốc`, { exact: true })).toBeVisible();
+  // Instant pour (rules 28): one set of numbers, the reserve and its refill batch; the tap line (`Rót ra cốc: 3 vòi · 1.6 s/cốc · …`) belongs to capacity pins.
+  await expect(keg.getByText(`Dự trữ rót sẵn: ${capacity} cốc`, { exact: true })).toBeVisible();
+  await expect(keg.getByText(`Nạp từ bom vào dự trữ: ${seed.upgrades.keg.kegBatch[2]} cốc/mẻ · ${seed.upgrades.keg.refillMs[2] / 1000} s`, { exact: true })).toBeVisible();
+  await expect(keg).not.toContainText('Rót ra cốc'); await expect(keg).not.toContainText('Đang rót');
   await expect(keg.getByRole('button', { name: /^Nâng ·/ })).toBeDisabled(); await expect(keg.locator('.upgrade-card').getByRole('status')).toContainText('Cần đạt');
   const before = await snapshot(); await page.clock.runFor(30000); const after = await snapshot();
   expect(after.beer).toEqual(before.beer); expect(after.remaining).toBe(before.remaining);
@@ -53,7 +55,9 @@ for (const lang of ['vi', 'en']) test(`upgrade and stock labels distinguish ingr
   await expect(phone.locator('.requirement-list')).toContainText(labels[`lifePath.${seed.unlocks.phone.gate}`]);
   const qr = page.locator('.business-card').filter({ hasText: labels['business.qr'] });
   await expect(qr.locator('.requirement-list li').first()).toContainText(labels['requirement.phone']);
-  await expect(qr).toContainText(copy('business.qrEffect', { mult: seed.tip.qrMult }));
+  // Review 07 r1 (W3): the card writes the multiplier the way the goal chip does (`say(..., decimal)`): "×1,2" in Vietnamese, "×1.2" in English.
+  const qrMult = new Intl.NumberFormat(lang === 'vi' ? 'vi-VN' : 'en-US', { maximumFractionDigits: 2 }).format(seed.tip.qrMult);
+  await expect(qr).toContainText(copy('business.qrEffect', { mult: qrMult })); await expect(qr).toContainText(lang === 'vi' ? '×1,2' : '×1.2');
   await expect(page.locator('.kitchen-entry')).toContainText(labels['kitchen.locked']);
   await expect(page.locator('.kitchen-entry')).not.toContainText('0/0');
   await page.locator('.kitchen-entry').click();

@@ -157,3 +157,23 @@ Future Cloudflare receipts use the Worker version ID in place of the Netlify dep
 | Date | Change |
 |---|---|
 | 2026-09-30 | Cloudflare hosting prepared and checked locally; no deployment, no site setting changed. |
+
+
+## Two-host release entry — the fields (2026-10-22, no deployment)
+
+Every release made with [Phát hành lên hai host](cloudflare-guest.md#phát-hành-lên-hai-host) writes ONE entry here (step 8 of that procedure) with these fields:
+
+| Field | What to record |
+|---|---|
+| Source commit | `git rev-parse HEAD` of step 1 (the commit `npm run verify:all` and `npm run check:assets` passed on) |
+| `shift1.plan` result and commit | step 1b: `npm run sim:balance` on that same commit — its exit code, the row `shift1.plan` (PASS/FAIL, share and 95 % interval) and the commit it ran on |
+| Dist digests | SHA-256 of `apps/web/dist/index.html` and of the file manifest: one pair for both hosts |
+| Netlify | new and previous deploy ID (rollback); SHA-256 of the served index (recorded only: Netlify injects markup) |
+| Cloudflare | new and previous version ID (rollback); SHA-256 of the served index (must equal the uploaded file) |
+| Smoke per host | stage smoke (step 4) and public smoke (step 7), per viewport |
+| Viewports red at the two soft lines | per host and step (4, 7): the viewports red ONLY at `P0: table 2 (1.070 xu) must be affordable …` / `table 2 is bought` of `apps/web/guest-test/guest.spec.ts`, every other assertion green, or "none". Such a run goes on to promotion only with step 1b PASS and the owner's word (owner call 4, the founder, 2026-10-22); a red at any other line stops the release |
+| Owner's word | who authorized the promotion, and when |
+
+| Date | Change |
+|---|---|
+| 2026-10-22 | Owner call 4 (the founder): the fields of a two-host release entry, with "viewports red at the two soft lines" and "`shift1.plan` result and commit" ([Cloudflare guest](cloudflare-guest.md) steps 1b, 4, 7, 8). No deployment, no site setting changed. |

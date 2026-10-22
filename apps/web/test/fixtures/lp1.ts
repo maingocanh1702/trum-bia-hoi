@@ -1,12 +1,14 @@
 import { Game, config, loadConfig, DISHES, restockQuote, encodeSave, decodeSave, type Command } from '../../../../packages/engine/src';
 import { serveNext } from '../../../../packages/engine/sim/policy';
+import { capacityRaw } from '../../../../packages/engine/test/fixtures/capacity-model';
 import { readFileSync } from 'node:fs';
 if (process.argv[2] === 'inspect') {
   const g = decodeSave(readFileSync(0, 'utf8'));
-  console.log(JSON.stringify({ version: g.config.version, level: g.world.lifePath, dog: g.world.dogLevel, lifetime: g.world.lifetimeEarned }));
+  console.log(JSON.stringify({ version: g.config.version, level: g.world.lifePath, dog: g.world.dogLevel, lifetime: g.world.lifetimeEarned, tables: g.world.tables.length }));
 } else {
   // Real old-release commands, no direct world mutation; browser exercises the next-shift migration.
-  const raw = structuredClone(config.raw); raw._meta.version = '2.0.3'; raw.lifePath[1].requires!.push('dog');
+  // The real 2.0.3 release: capacity model (3 two-seat tables) with LP1 "4 seats" + the deferred dog, played under rules 24.
+  const raw = capacityRaw(); raw._meta.version = '2.0.3'; raw.lifePath[1].requires!.push('dog');
   const g = new Game(loadConfig(raw), 42, Date.UTC(2026, 8, 16)), w = g.world;
   const send = (command: Command) => g.replay({ at: w.now, idempotencyKey: `lp1-${g.log.length}`, command, rulesVersion: 24, configVersion: g.config.version, result: { ok: true } });
   while (w.lifetimeEarned < config.values.lifePath[1].lifetimeBase) {

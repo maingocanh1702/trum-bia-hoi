@@ -1,4 +1,4 @@
-import { BUSINESS_UNLOCKS, EQUIPMENT, buyTableQuote, config as seed, flyerQuote, signboardQuote, tableUpgradeQuote, unlockQuote, upgradeQuote, type BusinessUnlock, type Config, type Equipment, type WorldView } from '../../../packages/engine/src';
+import { BUSINESS_UNLOCKS, EQUIPMENT, PAIR, buyChairQuote, buyTableQuote, chairPatienceMult, chairUpgrade, chairUpgradeQuote, config as seed, flyerQuote, instantPour, isSeatModel, signboardQuote, tableBenefit, tableBenefitGained, tableUpgrade, tableUpgradeQuote, unlockQuote, upgradeQuote, type BusinessUnlock, type Config, type Equipment, type WorldView } from '../../../packages/engine/src';
 
 /**
  * F27/P0 "Mục tiêu kế tiếp": every purchasable thing of the Upgrades sheet as data. The goal chip picks from this list and the sheet
@@ -11,8 +11,8 @@ export const LANES: readonly Lane[] = ['capacity', 'speed', 'guests'];
 
 /** Which card of the sheet shows the item. */
 export type Card =
-  | { kind: 'table'; tableId: string } | { kind: 'buyTable' } | { kind: 'equipment'; equipment: Equipment }
-  | { kind: 'business'; item: BusinessUnlock } | { kind: 'flyer' } | { kind: 'signboard' };
+  | { kind: 'table'; tableId: string } | { kind: 'buyTable' } | { kind: 'buyChair'; tableId: string } | { kind: 'chairUpgrade'; tableId: string }
+  | { kind: 'equipment'; equipment: Equipment } | { kind: 'business'; item: BusinessUnlock } | { kind: 'flyer' } | { kind: 'signboard' };
 /** An i18n key; `keyed` params are themselves keys, translated before they are interpolated. */
 export interface Copy { key: string; params?: Record<string, string | number>; keyed?: Record<string, string> }
 
@@ -27,10 +27,23 @@ export interface Goal {
 type Provider = (w: WorldView, c: Config) => Goal[];
 const goal = (g: Omit<Goal, 'busy' | 'currency'> & Partial<Pick<Goal, 'busy' | 'currency'>>): Goal => ({ busy: false, currency: 'coins', ...g });
 
+/** What a table level brings, as ONE number (S4, D19): the benefit that level adds to the one below it. */
+function levelEffect(c: Config, level: number): Copy | null {
+  const gained = tableBenefitGained(c.values, level), benefit = tableBenefit(c.values, level);
+  if (gained === 'extraRounds') return { key: 'goal.fx.rounds', params: { n: benefit.extraRounds } };
+  if (gained === 'pExtraMoi') return { key: 'goal.fx.snack', params: { n: Math.round(benefit.pExtraMoi * 100) } };
+  if (gained === 'tipMult') return { key: 'goal.fx.tip', params: { n: benefit.tipMult } };
+  return null;
+}
 const tables: Provider = (w, c) => w.tables.map((table, i) => {
   const q = tableUpgradeQuote(w, c, table);
+  // A capacity snapshot's table level is seats. Under the seat model (rules 28) a level adds no seat (chairs do): from the S4 ladder on it promises its
+  // benefit (one number: a round, a second snack, the tip); on a seat snapshot from before it there is nothing to promise, so the chip never points at
+  // it (the sheet still lists it). Every gate (two chairs, life path) must be open before the chip may suggest it.
+  const seats = q.next && 'capacity' in q.next ? q.next.capacity : null;
+  const benefit = tableUpgrade(c.values) && q.next ? levelEffect(c, q.next.level) : null;
   return goal({ id: `table:${table.id}`, lane: 'capacity', card: { kind: 'table', tableId: table.id }, name: { key: 'goal.table', params: { n: i + 1 } },
-    effect: q.next ? { key: 'goal.fx.seats', params: { n: q.next.capacity } } : null, cost: q.cost, eligible: q.cost !== null && q.gate === null, busy: q.reason === 'tableBusy' });
+    effect: benefit ?? (seats === null ? null : { key: 'goal.fx.seats', params: { n: seats } }), cost: q.cost, eligible: q.cost !== null && q.gate === null && (seats !== null || benefit !== null), busy: q.reason === 'tableBusy' });
 });
 const newTable: Provider = (w, c) => {
   const q = buyTableQuote(w, c);
@@ -39,7 +52,8 @@ const newTable: Provider = (w, c) => {
 };
 function equipmentEffect(c: Config, kind: Equipment, at: number): Copy | null {
   const u = c.values.upgrades;
-  if (kind === 'keg') return { key: 'goal.fx.taps', params: { n: u.keg.pourSlots[at] } };
+  // Instant pour (rules 28): the taps are off the serving path, so a keg level is worth its reserve, not its tap count.
+  if (kind === 'keg') return instantPour(c) ? { key: 'goal.fx.keg', params: { n: u.keg.kegStorage[at] } } : { key: 'goal.fx.taps', params: { n: u.keg.pourSlots[at] } };
   if (kind === 'washer') return { key: 'goal.fx.wash', params: { n: u.washer.slots[at] } };
   if (kind === 'stall') return { key: 'goal.fx.stock', params: { n: u.stall.stockCap[at] } };
   if (kind === 'kitchen') return { key: 'goal.fx.pans', params: { n: u.kitchen.slots[at] } };
@@ -64,8 +78,30 @@ const flyer: Provider = (w, c) => {
   const q = flyerQuote(w, c); // paid in reputation, so the coin-priced chip never picks it; the sheet still lists it in its lane
   return [goal({ id: 'flyer', lane: 'guests', card: { kind: 'flyer' }, name: { key: 'goal.flyer' }, effect: null, currency: 'rep', cost: q.cost, eligible: q.buyReason === null || q.buyReason === 'reputationRequired' })];
 };
-/** The registry. Wave 2 adds chairs (capacity) and new dishes (speed) here. */
-export const PROVIDERS: readonly Provider[] = [tables, newTable, equipment, sign, flyer, business];
+/**
+ * S6 (D18): the second chair of a table, one goal per one-chair table of a seat-model game, priced by the second chairs the shop owns (buyChairQuote) and
+ * locked until `chairsAfterTables` tables stand. A pair is the most a table holds, so a two-chair table lists nothing (cost null, never eligible).
+ * Owner call 3 (the founder, 2026-10-22): the chip buys every table first, the order the sealed S5 gates were measured on, so a chair is never its goal while
+ * a table can still be bought (`buyTableQuote` has a price and the reason is not `maxTables`); the sheet still sells it (price, effect and reason unchanged).
+ */
+const chairs: Provider = (w, c) => {
+  if (!isSeatModel(c.values)) return [];
+  const table = buyTableQuote(w, c), tablesFirst = table.cost !== null && table.reason !== 'maxTables';
+  return w.tables.map((t, i) => {
+    const q = buyChairQuote(w, c, t), full = t.capacity >= PAIR;
+    // The effect is before → after in one copy: "1 → 2 chỗ" (plan S6 row: "hiệu ứng trước→sau").
+    return goal({ id: `chair:${t.id}`, lane: 'capacity', card: { kind: 'buyChair', tableId: t.id }, name: { key: 'goal.buyChair', params: { n: i + 1 } },
+      effect: full ? null : { key: 'goal.fx.seatsTo', params: { from: t.capacity, to: PAIR } }, cost: full ? null : q.cost, eligible: !tablesFirst && !full && q.cost !== null && q.reason !== 'chairsLocked' });
+  });
+};
+/** S6 (D15): the chair level of a table, one goal per table of a snapshot with the chair ladder: the order patience it gives, before → after (×1 → ×1,15, ×1,15 → ×1,3). */
+const chairLevels: Provider = (w, c) => !chairUpgrade(c.values) ? [] : w.tables.map((table, i) => {
+  const q = chairUpgradeQuote(w, c, table);
+  return goal({ id: `chairLevel:${table.id}`, lane: 'capacity', card: { kind: 'chairUpgrade', tableId: table.id }, name: { key: 'goal.chairLevel', params: { n: i + 1 } },
+    effect: q.next ? { key: 'goal.fx.patienceTo', params: { from: chairPatienceMult(c.values, table.chairLevel ?? 1), to: q.next.patienceMult } } : null, cost: q.cost, eligible: q.cost !== null && q.gate === null });
+});
+/** The registry: the four seat-model items of the capacity lane (S6: table levels, new tables, second chairs, chair levels), then speed and guests. New dishes (speed) are still to come. */
+export const PROVIDERS: readonly Provider[] = [tables, newTable, chairs, chairLevels, equipment, sign, flyer, business];
 
 export const listGoals = (w: WorldView, c: Config): Goal[] => PROVIDERS.flatMap(provider => provider(w, c));
 

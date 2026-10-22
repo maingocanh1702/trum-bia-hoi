@@ -1,9 +1,14 @@
 import assert from 'node:assert/strict';
-import { Game, config, loadConfig, isEconomy2, WEATHER, type Command } from '../../src';
+import { Game, loadConfig, isEconomy2, WEATHER, type Command } from '../../src';
+import { capacityRaw } from './capacity-model';
 
-/** Controlled config, real commands and clock: no injected world state. */
-export function feedbackGame(patch?: (raw: typeof import('../../../../docs/config/economy.tbh.json')) => void) {
-  const raw = structuredClone(config.raw);
+/**
+ * Controlled config, real commands and clock: no injected world state. Loss causes are shape-agnostic; these
+ * fixtures keep the capacity model's three two-seat tables because they stage two-guest first groups and a
+ * second busy table (the seat model starts at one chair).
+ */
+export function feedbackGame(patch?: (raw: ReturnType<typeof capacityRaw>) => void) {
+  const raw = capacityRaw();
   assert.ok(isEconomy2(raw));
   raw.shift.startingCoinsBase = 100000;
   for (const weather of WEATHER) raw.weather[weather].weight = weather === 'sunny' ? 1 : 0;

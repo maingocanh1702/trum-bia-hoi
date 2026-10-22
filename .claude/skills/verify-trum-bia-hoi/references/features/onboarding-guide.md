@@ -115,10 +115,17 @@
   `P0 the ready check with its pointer passes axe and keeps 44px targets at ${w}px` (×3) ·
   `P0 an empty keg is greyed and exactly the refill button asks for a tap` (+ axe) ·
   `P0 the door shows patience rings and a refused group of ${2|1} says "${2 ghế|Hết chỗ}" at ${w}px` (×6, + axe on `.door`) ·
-  `P0 after shift 1 the HUD opens up and the Upgrades sheet holds exactly one card at ${w}px` (×3, + axe) ·
+  `P0 two refusals inside one bubble lifetime: the door says the newest reason and no bubble covers a guest at ${w}px` (×3, S6 review round 2: fixture `crowd2` with two `queue_overflow` 630 ms apart;
+  at most one refused group drawn with its one bubble, no `.door-bubble` box over another `.door-guest` on any 100 ms frame, the second refusal replaces the first < 2.2 s after it; no axe: the live clock keeps refusing groups, the ×6 case is the door's axe pass) ·
+  `P0 after shift 1 the HUD opens up and the Upgrades sheet holds exactly one card at ${w}px` (×3, + axe; fixture `rest`: a capacity snapshot, the frozen 2.0.4 file with a custom version, where the card is the first table level-up) ·
+  `P0 on the seat model after shift 1 the Upgrades sheet holds exactly one card, the second table, at ${w}px` (×3, + axe; fixture `seat-rest`: the bundled seat model, the card is `[data-goal="buyTable"]` "Mua bàn · 1.070 xu" with the single spotlight,
+  after buying it the one card is the next table at 9.250 xu and the nudge is spent; the save holds 2 tables and `coins − 1.070`) ·
   `P0 after shift 2 the full Upgrades list and the Journey button open and nothing blinks`.
-  Unit proof: `packages/engine/test/spotlight-reveal.test.ts` (7 cases: `pickSpotlight` precedence, first-play pointer, restock boundaries,
-  first-goal window, `revealed()` thresholds incl. onboarding-off, 1.x pins and old-pin seed fallback, and the door ring's `queuePatience`
+  Stage 00 (Wave 1 × S1, 2026-10-20): a new shop has one table and its seed is random, so the coins-fly case waits up to 150 s of game time (was 40 s) for the first guest who really walks out
+  — a pair is turned away at the door without a penalty (`spawn.pPair`), the first single who sits down and waits out their patience is the one whose reputation falls; same assertion, 12/12 on a repeat.
+  Unit proof: `packages/engine/test/spotlight-reveal.test.ts` (8 cases: `pickSpotlight` precedence, first-play pointer, restock boundaries,
+  first-goal window — `... (capacity snapshot)` and `between shifts the first goal is table 2, spotlighted on the nav, then on its own buy button, and only until the full list opens (seat model)` —
+  `revealed()` thresholds incl. onboarding-off, 1.x pins and old-pin seed fallback, and the door ring's `queuePatience`
   against a real rules-v1 engine that holds a queued group `graceMs` past its patience) and `packages/engine/test/presentation.test.ts`
   `first play shows no step banner; the fallback starts on idleness before the first serve, once, within the daily cap` and
   `reveal thresholds and the idle window are optional in old pins, validated when present, and never fractional or negative`.

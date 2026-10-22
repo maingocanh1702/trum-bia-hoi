@@ -44,7 +44,9 @@ test('real worker forecasts all existing saves, preserves source rows and keeps 
  let result;try {result=await forecastEconomy(f.store,f.actor,version,new AbortController().signal);}finally{clearInterval(timer);}
  assert.ok(ticks>1);assert.equal(dump(),before);assert.equal(result.status,'complete');assert.equal(result.audiencePlayers,1);assert.equal(result.changedPlayers,1);
  assert.equal(result.through-result.computedAt,7*DAY);assert.equal(result.daily.length,7);
- assert.ok(result.totals!.candidate.faucet>result.totals!.baseline.faucet);assert.equal(result.totals!.delta.faucet,result.totals!.candidate.faucet-result.totals!.baseline.faucet);
+ // The dearer beer pays more on the first day the two sides differ; after that the bot (which buys what it can afford) buys on different days, so seven-day totals are not ordered by price alone.
+ const firstDifference=result.daily.find(r=>r.candidate.faucet!==r.baseline.faucet);assert.ok(firstDifference&&firstDifference.candidate.faucet>firstDifference.baseline.faucet);
+ assert.equal(result.totals!.delta.faucet,result.totals!.candidate.faucet-result.totals!.baseline.faucet);
  assert.equal(result.members[0].inputConfigVersion,'forecast-test');assert.equal(result.vndRevenue.status,'unavailable');
  for(const side of ['baseline','candidate'] as const)for(const totals of [result.totals![side],...result.daily.map(r=>r[side])]) {
   assert.equal(totals.closingCoins,totals.openingCoins+totals.faucet+totals.depositRefunds-totals.sink-totals.penalties);

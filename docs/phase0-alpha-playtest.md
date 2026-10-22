@@ -120,6 +120,8 @@ Nâng cấp sau ca 1 là **nâng một bàn đang trống (3.750 xu)**, không p
 "2 ghế" chỉ hiện khi hàng chờ đầy và một nhóm bị từ chối ở cửa — hiếm ở Đợt 1; nếu không ai thấy,
 ghi `KHÔNG QUAN SÁT ĐƯỢC` thay vì chấm đạt/không đạt.
 
+**Trên build Đợt 2–3 (`v-fb2`, rules 28, JSON 2.1.1 — số S5 chốt ở 2.1.0):** quán mở với **1 bàn × 1 ghế**; món duy nhất trong sheet Nâng cấp sau ca 1 là **"Mua bàn · 1.070 xu"** (bàn 2), mua nổi khi ca 1 đóng ở khoảng 4 save trong 5; bong bóng "2 ghế" hiện ngay từ ca 1 (khoảng 5 cặp bị từ chối ở cửa vì quán chưa có bàn 2 ghế), nên cột 4 thường quan sát được. Ghi rõ tester chơi build nào (SHA ở Cài đặt).
+
 | Tester | Phục vụ khách đầu (giây từ **Mở ca**) | Mua món đầu sau ca 1 **không** mở Help? Có/Không | Nói đúng vì sao cặp bỏ đi? Có/Không/Không thấy | Số câu "cái này để làm gì" trong 3 ca | Ghi chú · ảnh |
 |---|---:|---|---|---:|---|
 | T01 |  |  |  |  |  |
@@ -134,6 +136,39 @@ ghi `KHÔNG QUAN SÁT ĐƯỢC` thay vì chấm đạt/không đạt.
 | ≥ 4/5 mua món đầu kết ca 1 không mở Help | Đếm "Có" cột 3 |  |
 | ≥ 4/5 nói đúng vì sao cặp bỏ đi | Đếm "Có" cột 4; "Không thấy" không tính vào mẫu số, ghi riêng |  |
 | ≤ 1 câu "cái này để làm gì" trong 3 ca | Mỗi tester ≤ 1 ở cột 5 |  |
+
+## 7. "Vui 3 ca" — 10 dòng owner tick sau 3 ca liên tiếp (owner chạy, CHƯA CHẠY)
+
+> **Việc của owner, không phải của agent.** Không dòng nào được tick; báo cáo ghi các dòng này là `SKIPPED: owner playtest`, không bao giờ là PASS.
+> Nguồn: `docs/PLAN-vui-3-ca-2026-09-18.md` §7 "10 dòng owner tick (acceptance cảm giác)" — chép nguyên văn lời của owner; dưới dòng có con số đã thành sai (hoặc dễ đọc nhầm) là một ghi chú *Số liệu hiện hành*, lời gốc giữ nguyên. Lệch số → quay lại S5, chỉ sửa JSON (plan §7).
+
+- **Bản phát hành:** nhánh `feat/economy-2-1` → PR vào `main` ("Vui 3 ca" Đợt 2–3: rules 28, JSON 2.1.1). Code đã kiểm chứng: stage 07 trên `8eced8b` rồi `331f9f9` (review vòng 1); vòng quyết định owner 22/10 (stage 07b: giá "Mời về", chip) trên tip cuối của PR #30. Commit phát hành = commit merge vào `main` khi owner merge, deploy `v-fb2` lên hai host. SHA ghi ở Cài đặt khi chơi: `__________`.
+- **Link:** https://trumbiahoi.netlify.app/ · https://trumbiahoi.com/ (cùng một bản build; hai origin = hai save riêng).
+- **Cách chơi:** owner + 2–4 người, mỗi người 3 ca liên tiếp, bắt đầu từ bộ nhớ trình duyệt trống (nhãn hiện hành 2.1.1; nhãn 2.1.0 mang 8 nội dung trong lịch sử git; chưa deploy bản nào).
+
+- [ ] **1.** Mở link lần đầu → vào thẳng game, tiếng Việt; **không đọc gì vẫn phục vụ được khách đầu** (bàn sáng, ✅ nhấp nháy, xu bay lên ví) — *Từ: I.1, P0*
+- [ ] **2.** Ca 1: 1 bàn 1 ghế; khách đầu ≤ 8 s; tap ✅ là xong; thấy cặp nhìn quán rồi đi + người chờ ngoài cửa; sổ ca đếm "cặp không có chỗ" — *Từ: S1 S2 S3*
+- [ ] **3.** HUD hiện mục tiêu kế tiếp từ ca 1; kết ca 1 mua được bàn 2 (1.500 xu) — *Từ: P2, S5*
+  - *Số liệu hiện hành (JSON 2.1.1, số của S5 giữ nguyên):* bàn 2 giá **1.070 xu** (428 base — quyết định owner 1 của S5, 21/10/2026; trước đó 1.500 xu). Ví đầu 750 xu; khoảng **4 save trong 5** mua nổi bàn 2 khi ca 1 đóng (83 % của 300 lượt probe, 81 % của 600 — tiêu chí 4/5 của owner), khoảng 3 trong 4 nếu nhập đầy bia trước khi mở Nâng cấp. Chip ca 1: "Mua bàn mới · +1 chỗ · 1.070 xu · thiếu 320".
+- [ ] **4.** Ca 2 và ca 3 mở ngay sau tổng kết; ca 4 báo chờ thể lực — *Từ: D8*
+- [ ] **5.** Bom báo "rót sẵn n" → gọi ≤ n bia mâm sẵn sàng ngay — *Từ: S2*
+- [ ] **6.** Mỗi khách đi có 1 lý do; sổ ca xếp lý do; ca 1–3 bỏ đi ≤ 30 % — *Từ: P3, S3*
+  - *Số liệu hiện hành (để đọc dòng này):* cặp bị từ chối tại cửa vì quán chưa có bàn 2 ghế (khoảng 5 cặp ở ca 1 — chủ đích của S3, không phạt, không trừ uy tín) không phải "bỏ đi"; bot đo bỏ đi có phạt ca 1–24 = 3,2 % \| 0,4 % khách được nhận (seed 42 \| 99, cổng ≤ 10 %).
+- [ ] **7.** Nhập bia / mua ghế 1 chạm, game không dừng — *Từ: D10*
+  - *Số liệu hiện hành (quyết định owner 3, 22/10/2026):* "Nhập bia nhanh" như cũ. Nút nhanh "Mua ghế bàn n · giá" chỉ hiện khi chip "Mục tiêu kế tiếp" trỏ vào một ghế 2 VÀ ví trả được; chip nay không gợi ý ghế 2 trước khi cả 8 chỗ có bàn, nên nút này chỉ hiện khi cả 8 chỗ đã có bàn (bot giao thức có bàn 8 ở ca 39 \| 40; người theo chip có thể muộn hơn, chưa đo) — trong 3 ca của phiếu này nó chưa hiện, phần "mua ghế 1 chạm" của dòng chỉ thấy được sau bàn 8. Ghế 2 vẫn mua được trong sheet "Nâng cấp" từ khi đủ 4 bàn (giá, hiệu ứng, lý do như cũ).
+- [ ] **8.** Chạm bàn lai rai → "Mời về" hiện xu + uy tín → bàn trống — *Từ: Đợt 3*
+  - *Số liệu hiện hành (JSON 2.1.1):* "Mời về" hiện từ ca 2 (cùng HUD) và chỉ khi ca đang mở, cho mọi bàn đang nhâm nhi (nhóm ngồi với mâm đã giao, hoặc chỉ còn Chí Phèo); giá = `feeRate` **0,5** × gross đơn gần nhất của mỗi khách (VIP ×10 nữa, tức 5× gross mâm của VIP; Chí Phèo 0 xu), −2 uy tín mỗi khách. Quyết định owner 1 và 2 (22/10/2026): luật "+10 % thu nhập" đọc theo thu nhập ròng sau phí (bot luôn mời: ròng +8,85 % \| +9,06 %, gộp +13,24 % \| +13,40 % — seed 42 \| 99); trước đó Đợt 3 chốt 1,5 theo thu nhập gộp. Ghi lại cảm giác về giá.
+- [ ] **9.** Sheet 3 làn, món nào cũng giá + hiệu ứng + 1 lý do (kể cả "Mở sau khi đủ 4 bàn" / "Bàn cần 2 ghế"); ghế 2 → cặp vào, mâm bia + mồi; sprite bàn/ghế đổi theo cấp — *Từ: S4 S6*
+- [ ] **10.** Nhịp: bàn 2 kết ca 1, bàn 3 ca 4–5, bàn 4 ca 8–9, ghế 2 đầu tiên ca ~12–14 (thu nhập ×3); không cảm giác "quá vắng" hay "quá dồn" — *Từ: S5*
+  - *Số liệu hiện hành (bot giao thức của S5 — mua bàn trước, không phải người chơi; `npm run sim:career`, seed 42 \| 99):* bàn 2 ngay sau ca 1, bàn 3 ca 7 \| 7, bàn 4 ca 13 \| 13, bàn 8 ca 39 \| 40, **ghế 2 đầu tiên ca 40 \| 40** (bot mua đủ 8 bàn rồi mới mua ghế; cửa sổ cổng S5 ca 40–56). Chip "Mục tiêu kế tiếp" nay không gợi ý ghế 2 trước bàn 8 (quyết định owner 3, 22/10/2026; trước đó chip dẫn mua bốn ghế 2 ngay sau bàn 4), nhưng chỉ gợi ý món giá ≤ 3 × tiền thu trung bình một ca: trong khoảng ca 13–40 bàn 5–8 (24.000–40.000 xu) nằm ngoài tầm, nên chip gợi ý thiết bị hoặc món kinh doanh trước — nhịp bàn/ghế của người theo chip KHÔNG phải nhịp của bot ở trên và chưa được đo. Ghi lại ca mua bàn 8 và ghế 2 đầu tiên của từng người chơi. "Thu nhập ×3" sau ghế 2 chưa được đo trong gói này.
+
+| Tester | Ca 1–3 chơi lúc (ngày, giờ) | SHA ở Cài đặt | Dòng không đạt (#) | Ghi chú · ảnh |
+|---|---|---|---|---|
+| Owner |  |  |  |  |
+| T1 |  |  |  |  |
+| T2 |  |  |  |  |
+| T3 |  |  |  |  |
+| T4 |  |  |  |  |
 
 ## Lưu trữ prototype — không phải hướng dẫn cho bản thử hiện tại
 
@@ -264,3 +299,5 @@ Final decision is `PASS` only when every row above has human evidence and no rep
 | 2026-09-16 / Wave B | Số đo ca đã qua kiểm thử UI, server và export trên nhánh A/B; cập nhật trạng thái hướng dẫn, giữ trống toàn bộ kết quả người chơi và không tuyên bố đã deploy. |
 
 | 2026-10-14 / fun-onboarding-visual | Thêm §6: phiếu trống cho bài test 5 người mới (tắt mọi hướng dẫn) của PLAN 18/09 §4. Owner chạy; không có kết quả người chơi nào được ghi, không đổi waiver lịch sử. |
+| 2026-10-22 / Vui 3 ca Đợt 4 (stage 07) | Thêm §7: phiếu trống 10 dòng owner tick của PLAN 18/09 §7 (chép nguyên văn, không dòng nào được tick) kèm bản phát hành (nhánh `feat/economy-2-1` → PR vào `main`, code đã kiểm chứng `8eced8b`, SHA phát hành ghi khi chơi) và hai link https://trumbiahoi.netlify.app/ · https://trumbiahoi.com/; dưới dòng 3 (bàn 2 nay 1.070 xu), 6 (từ chối tại cửa không phải bỏ đi), 8 (giá "Mời về" ở `feeRate` 1,5, OWNER CALL) và 10 (nhịp của bot S5: ghế 2 đầu tiên ca 40 \| 40 so với "ca ~12–14", OWNER CALL ghế-trước-bàn-5) có ghi chú *Số liệu hiện hành*, lời gốc giữ nguyên. §6 thêm một ghi chú cho build Đợt 2–3. Không ghi kết quả người chơi nào, không đổi waiver lịch sử. |
+| 2026-10-22 / Vui 3 ca, vòng owner calls (stage 07b) | §7 (chỉ ghi chú *Số liệu hiện hành*, lời owner giữ nguyên, không dòng nào được tick): dòng 7 thêm ghi chú — nút nhanh "Mua ghế" chỉ hiện sau bàn 8 vì chip nay không gợi ý ghế 2 trước bàn 8 (quyết định owner 3); dòng 8 — giá "Mời về" `feeRate` 0,5 (VIP 5× gross mâm), luật +10 % đọc theo thu nhập ròng, "đang nhâm nhi" = mọi bàn có khách ngồi với mâm đã giao hoặc chỉ còn Chí Phèo (quyết định owner 1, 2); dòng 10 — chip không gợi ý ghế 2 trước bàn 8, nhưng bộ lọc tầm với có thể cho thiết bị đi trước bàn 5–8: nhịp của người theo chip chưa đo (review 07b vòng 1 sửa câu "gần ca 40 như bot"); dòng 3, đầu mục và ghi chú §6 cho build Đợt 2–3: nhãn JSON 2.1.1 (số S5 giữ nguyên), mã đã kiểm chứng nêu cả vòng owner. |

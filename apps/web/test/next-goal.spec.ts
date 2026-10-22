@@ -5,6 +5,9 @@ import AxeBuilder from '@axe-core/playwright';
 import { waitSaved } from './storage';
 
 // fun-next-goal (PLAN "Vui 3 ca" §4): the "Mục tiêu kế tiếp" chip and the three lanes of the Upgrades sheet. Engine-made saves, DOM-only proof.
+// The tests written with Wave 1 describe a capacity snapshot (a table level is seats; fixture modes closed/oldpin run on the frozen 2.0.4 file, which an
+// old browser save keeps until its next opening adopts the seat model). They are unchanged except where they said "a brand-new save", which the app now
+// builds on the seat model. Their counterparts on the bundled seat model (rules 28: the first purchase is the second table) follow them, as `seat-*` tests.
 const viewports = [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1280, height: 720 }];
 const fixture = (mode: string, ...args: (string | number)[]) => JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/next-goal.ts', mode, ...args.map(String)], { encoding: 'utf8' }));
 const prefs = { locale: 'vi', guideDone: true, guideIndex: null, muted: true };
@@ -27,7 +30,7 @@ const fits = (page: Page) => page.evaluate(() => document.documentElement.scroll
 
 for (const viewport of viewports) test(`a brand-new save shows its first goal from shift 1, and a tap opens the sheet at that item at ${viewport.width}px`, async ({ page, tbh }) => {
   await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  await load(page, null, Date.parse('2026-09-08T10:00:00Z'));
+  const f = fixture('closed', 0, 300); expect(f.coins).toBe(750); await load(page, f.save, f.now); // a brand-new game on a capacity snapshot: the seat model has its own test below
   await expect(page.locator('.hud button')).toHaveCount(0); // the minimal shift-1 HUD: the wallet; the chip sits right under it
   await expect(chip(page)).toBeVisible(); await expect(chip(page)).toContainText('Nâng bàn 1 · 4 chỗ'); await expect(chip(page)).toContainText('3.750 xu · thiếu 3.000');
   await expect(chip(page)).toHaveAccessibleName(/^Mục tiêu kế tiếp: Nâng bàn 1 · 4 chỗ/);
@@ -100,4 +103,60 @@ test('the chip is English in English, with the units of the English copy', async
   await page.addInitScript(({ save }) => { if (localStorage.getItem('goal-seeded')) return; localStorage.setItem('goal-seeded', '1'); localStorage.setItem('tbh.save.v1', save); localStorage.setItem('tbh.settings.v1', JSON.stringify({ locale: 'en', guideDone: true, guideIndex: null, muted: true })); }, { save: f.save });
   await page.goto('/'); await expect(page.locator('.game-shell')).toBeVisible();
   await expect(chip(page)).toContainText('Upgrade table 1 · 4 seats'); await expect(chip(page)).toContainText('3,750 coins · ready'); await expect(chip(page)).toHaveAccessibleName(/^Next goal: Upgrade table 1/);
+});
+
+// ---- The seat model (rules 28, the bundled config): the chip's rule is unchanged; what it can point at is not. A table level adds no seat
+// (chairs do) and carries no benefit until S4, so the chip never suggests one; the second table is the first purchase of a one-table shop.
+
+for (const viewport of viewports) test(`on the seat model a brand-new save's first goal is the second table, and a tap opens the sheet at that one card at ${viewport.width}px`, async ({ page, tbh }) => {
+  await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  await load(page, null, Date.parse('2026-09-08T10:00:00Z'));
+  await expect(page.locator('.hud button')).toHaveCount(0);
+  await expect(chip(page)).toBeVisible(); await expect(chip(page)).toContainText('Mua bàn mới · +1 chỗ'); await expect(chip(page)).toContainText('1.070 xu · thiếu 320');
+  await expect(chip(page)).toHaveAccessibleName(/^Mục tiêu kế tiếp: Mua bàn mới · \+1 chỗ/);
+  const box = (await chip(page).boundingBox())!; expect(box.height).toBeGreaterThanOrEqual(44); expect(box.x + box.width).toBeLessThanOrEqual(viewport.width); expect(await fits(page)).toBe(true);
+  expect((await axe(page)).violations).toEqual([]); await tbh.shot(`ng-seat-chip-shift1-${viewport.width}.png`);
+  await chip(page).click();
+  const sheet = page.locator('dialog[open]'); await expect(sheet).toBeVisible();
+  await expect(sheet.locator('[data-goal]')).toHaveCount(1); await expect(sheet.locator('[data-goal]')).toHaveAttribute('data-goal', 'buyTable'); // one card: the chip's goal
+  await expect(sheet.getByRole('button', { name: /^Mua bàn · 1\.070 xu$/ })).toBeDisabled(); await expect(sheet.locator('.buy-reason')).toHaveText('Chưa đủ xu');
+  expect((await axe(page)).violations).toEqual([]); expect(errors).toEqual([]);
+});
+
+for (const viewport of viewports) test(`on the seat model the chip moves on after every table bought and says what is still missing at ${viewport.width}px`, async ({ page, tbh }) => {
+  await page.setViewportSize(viewport);
+  // 9 828 base is the old 10 000 less the 172 base table 2 got cheaper (428 against 600): the three purchases below keep their old arithmetic, 24 515 - 1 070 = 23 445 - 9 250 = 14 195, 55 short of table 4.
+  const f = fixture('seat-closed', 1, 9828); await load(page, f.save, f.now); expect(f.coins).toBe(24515);
+  await expect(chip(page)).toContainText('Mua bàn mới · +1 chỗ'); await expect(chip(page)).toContainText('1.070 xu · đủ rồi'); await tbh.shot(`ng-seat-chip-ready-${viewport.width}.png`);
+  await chip(page).click(); const sheet = page.locator('dialog[open]');
+  await expect(sheet.locator('[data-goal="buyTable"]')).toBeVisible();
+  await sheet.getByRole('button', { name: 'Mua bàn · 1.070 xu', exact: true }).click(); await waitSaved(page); await page.keyboard.press('Escape'); // 23 445 left
+  await expect(chip(page)).toContainText('Mua bàn mới · +1 chỗ'); await expect(chip(page)).toContainText('9.250 xu · đủ rồi');
+  await chip(page).click(); await page.locator('dialog[open]').getByRole('button', { name: 'Mua bàn · 9.250 xu', exact: true }).click(); await waitSaved(page); await page.keyboard.press('Escape'); // 14 195 left
+  await expect(chip(page)).toContainText('Mua bàn mới · +1 chỗ'); await expect(chip(page)).toContainText('14.250 xu · thiếu 55');
+});
+
+for (const viewport of viewports) test(`on the seat model the full Upgrades sheet keeps its three lanes and a table level is listed but never the chip at ${viewport.width}px`, async ({ page, tbh }) => {
+  await page.setViewportSize(viewport);
+  const f = fixture('seat-closed', 2, 4000); await load(page, f.save, f.now); expect(f.goal).toBe('buyTable');
+  await expect(chip(page)).toContainText('Mua bàn mới');
+  await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click(); const sheet = page.locator('dialog[open]');
+  await expect(sheet.locator('.goal-lane > h3:first-child')).toHaveText(['Sức chứa', 'Tốc độ', 'Khách']);
+  await expect(inLane(page, 'capacity').locator('[data-goal^="table:"]')).toHaveCount(1); await expect(inLane(page, 'capacity').locator('[data-goal="buyTable"]')).toHaveCount(1);
+  await expect(inLane(page, 'speed').locator('[data-goal^="equipment:"]')).toHaveCount(5);
+  await expect(inLane(page, 'guests').locator('[data-goal="signboard"], [data-goal="flyer"], [data-goal^="unlock:"]')).toHaveCount(4);
+  const level = inLane(page, 'capacity').locator('[data-goal="table:table-1"]').getByRole('button', { name: /^Nâng · [\d.]+ xu$/ });
+  await expect(level).toBeDisabled(); await expect(level).toHaveAccessibleDescription('Bàn cần 2 ghế'); // listed, with its price and one reason, but not what the chip points at
+  expect((await axe(page)).violations).toEqual([]); await tbh.shot(`ng-seat-lanes-${viewport.width}.png`);
+  await page.keyboard.press('Escape'); await expect(page.locator('dialog[open]')).toHaveCount(0);
+  await chip(page).click();
+  const target = page.locator('dialog[open] [data-goal="buyTable"]'); await expect(target).toBeVisible(); await expect(target).toHaveAttribute('data-targeted', ''); await expect(target).toBeInViewport();
+});
+
+test('on the seat model the chip is English in English, with the units of the English copy', async ({ page }) => {
+  await page.setViewportSize(viewports[0]);
+  const f = fixture('seat-closed', 1, 4000); await page.clock.setFixedTime(f.now);
+  await page.addInitScript(({ save }) => { if (localStorage.getItem('goal-seeded')) return; localStorage.setItem('goal-seeded', '1'); localStorage.setItem('tbh.save.v1', save); localStorage.setItem('tbh.settings.v1', JSON.stringify({ locale: 'en', guideDone: true, guideIndex: null, muted: true })); }, { save: f.save });
+  await page.goto('/'); await expect(page.locator('.game-shell')).toBeVisible();
+  await expect(chip(page)).toContainText('Buy a new table · Seats +1'); await expect(chip(page)).toContainText('1,070 coins · ready'); await expect(chip(page)).toHaveAccessibleName(/^Next goal: Buy a new table/);
 });

@@ -85,6 +85,8 @@ Mỗi lần phát hành (quyết định 2026-10-14): **một lần `npm run bui
 Build lại giữa chừng là hai host có thể phục vụ hai bản khác nhau, nên không làm.
 
 1. **Verify source một lần:** `npm run verify:all`, `npm run check:assets`. Ghi source commit (`git rev-parse HEAD`).
+   1b. **Bảng cân bằng trên đúng source commit đó:** `npm run sim:balance` (~70 s) phải exit 0 với hàng `shift1.plan` ("shift 1 earns table 2 …") ĐẠT.
+   Ghi kết quả hàng đó và commit đã chạy (bước 8). Không đạt thì ngoại lệ "hai dòng soft" của bước 4 và 7 không áp dụng: smoke đọc theo luật dừng như viết.
 2. **Build một lần:** `npm run build:guest`. Ghi SHA-256 của `apps/web/dist/index.html` và SHA-256 manifest file; một cặp số
    này là biên nhận chung của cả hai host.
 3. **Stage cả hai, chưa host nào lên production.** Upload đúng thư mục đó bằng CLI từ máy local:
@@ -94,14 +96,22 @@ Build lại giữa chừng là hai host có thể phục vụ hai bản khác nh
 4. **Smoke cả hai bản stage**, đủ ba viewport, `--workers=1`:
    `TBH_GUEST_URL=<preview-url hoặc draft-url> TBH_GUEST_COMMIT=<source sha> npx playwright test --config playwright.guest.config.ts --workers=1`.
    Một bên đỏ thì không promote bên nào; sửa rồi quay lại bước 1, hai bản stage cũ bỏ.
+   **Ngoại lệ duy nhất (chủ dự án, 2026-10-22):** lượt smoke đỏ CHỈ ở hai dòng soft "mua bàn 2" của `apps/web/guest-test/guest.spec.ts`
+   (`P0: table 2 (1.070 xu) must be affordable …` và `table 2 is bought`), mọi assertion khác xanh ở cả ba viewport, và bước 1b ĐẠT
+   (`npm run sim:balance` exit 0, hàng `shift1.plan` ĐẠT trên đúng source commit đang phát hành): không phải dừng, đưa sang bước 5 —
+   ghi rõ viewport nào đỏ ở hai dòng đó; promote vẫn chỉ theo lời chủ dự án. Đỏ ở bất kỳ dòng nào khác, ở viewport nào, vẫn dừng như trên.
+   Bước 1b không đạt thì không có ngoại lệ.
 5. **Dừng và báo chủ dự án** hai biên nhận stage (ID, URL, hash, kết quả smoke). **Chỉ promote khi chủ dự án nói.** Smoke xanh không phải là lệnh promote.
 6. **Promote cả hai** đúng bản đã test, theo lời chủ dự án: Cloudflare `npm run cf -- versions deploy <version-id>@100% --yes` (hoặc dashboard);
    Netlify promote đúng draft đã test (restore deploy, không build lại). Nếu chỉ một host lên được: ghi trạng thái lệch vào deploy-log và thử lại
    host còn lại; chỉ rollback host đã lên khi chủ dự án nói.
 7. **Smoke công khai cả hai:** như bước 4 với `TBH_GUEST_URL=https://trumbiahoi.com`, rồi với `TBH_GUEST_URL=https://trumbiahoi.netlify.app`.
+   Đọc như bước 4, cùng luật dừng và cùng ngoại lệ: đỏ CHỈ ở hai dòng soft "mua bàn 2", mọi assertion khác xanh ở cả ba viewport và bước 1b ĐẠT
+   thì ghi vào biên nhận (viewport nào); đỏ ở dòng nào khác, ở viewport nào, là dừng — báo chủ dự án, sửa rồi quay lại bước 1.
 8. **Một mục [deploy-log](deploy-log.md) mang cả hai biên nhận:** source commit; index SHA-256 và manifest SHA-256 của dist (một cặp cho cả hai host);
    Netlify: deploy ID mới và cũ, SHA-256 index đang phục vụ (Netlify chèn thẻ nên chỉ ghi lại, không đòi bằng file upload);
-   Cloudflare: version ID mới và cũ, SHA-256 index đang phục vụ (phải bằng file upload); kết quả smoke từng host.
+   Cloudflare: version ID mới và cũ, SHA-256 index đang phục vụ (phải bằng file upload); kết quả smoke từng host;
+   **viewport đỏ ở hai dòng soft** (từng host, bước 4 và bước 7; "không có" nếu xanh trọn); **kết quả `shift1.plan` và commit** của bước 1b.
 
 ## Rollback
 
@@ -180,3 +190,5 @@ gửi 780 heartbeat cách nhau 1 giây (một ca 12 phút cộng phần đóng q
 | 2026-09-30 | Owner moves the guest edition to Cloudflare Workers static assets on `trumbiahoi.com` and accepts the origin save reset. Added `wrangler.jsonc`, `npm run cf`, host-neutral `deploy/static/`; local workerd checks and guest smoke 3/3 PASS. No deployment performed. API stays off Workers (measured) and is planned for Oracle VM + Cloudflare Tunnel. |
 | 2026-09-30 | Recorded the admin page plan: ships with the M4 API on the same origin, `/admin / 200` rewrite verified on the local Cloudflare runtime, Cloudflare Access recommended as an extra layer. |
 | 2026-10-14 | Owner decision: the guest edition is published on both hosts in parallel from one build — Netlify (`trumbiahoi.netlify.app`, `netlify.toml` stays) and Cloudflare (`trumbiahoi.com`). Netlify is not retired and gets no redirect; the two origins keep separate browser saves (accepted). Rewrote the opening paragraph and the `netlify.toml` row, replaced the "Chuyển hẳn khỏi Netlify" plan, added the "Phát hành lên hai host" procedure. No deployment performed, no host setting changed. |
+| 2026-10-22 | Stage 07 review round 1 (D2) — how to read the release smoke of the "Vui 3 ca" build (Waves 2–3, JSON 2.1.0): `apps/web/guest-test/guest.spec.ts` carries two SOFT assertions on the table-2 step of owner decision 1 (`P0: table 2 (1.070 xu) must be affordable …` and `table 2 is bought`); about one random game in five misses that purchase, so the spec can exit 1 at exactly those two lines while the rest of the journey is green (stage 07: Windows 3 of 6 three-viewport runs had such a red viewport, 4 of 18 viewport-runs; Linux 1 of 1 run, 2 of 3 viewports). The stop rule of step 4 and step 7 is unchanged: a red line OTHER than those two stops the release. Whether a run red ONLY at those two lines (or a re-run) may be promoted is an OWNER CALL ("đọc smoke guest của bản này", merge packet of `feat/economy-2-1` → `main`); until the owner decides, the rule as written applies. No procedure step changed, nothing deployed. |
+| 2026-10-22 | Owner call 4 answered (the founder, 2026-10-22; option B with a guardrail) — how to read the release smoke: the stop rule of step 4 keeps its words and gains ONE exception: a smoke red ONLY at the two soft "mua bàn 2" lines of `apps/web/guest-test/guest.spec.ts` (`P0: table 2 (1.070 xu) must be affordable …` and `table 2 is bought`), every other assertion green at all three viewports, may go on to step 5, provided the new step 1b holds on the exact source commit being released (`npm run sim:balance` exit 0 with the row `shift1.plan` PASS); otherwise the old stop rule applies. Red at any other line, at any viewport, still stops (fix, then back to step 1). Promotion still needs the owner's word at step 5. Step 7 reads the public smoke the same way; step 8's deploy-log entry gains two fields ("viewports red at the two soft lines", "`shift1.plan` result and commit"); `docs/deploy-log.md` lists the entry fields. The two `expect.soft` lines stay soft; no code change, nothing deployed. Supersedes the "OWNER CALL" sentence of the row above. |

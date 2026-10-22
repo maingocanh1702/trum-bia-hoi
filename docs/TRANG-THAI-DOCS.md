@@ -1,11 +1,11 @@
-# 📌 TRẠNG THÁI BỘ DOCS — Trùm Bia Hơi (cập nhật 18/09/2026)
+# 📌 TRẠNG THÁI BỘ DOCS — Trùm Bia Hơi (cập nhật 22/10/2026)
 
-> Bản **mới nhất**, thay cho mọi bản trước (không giữ lịch sử). Cập nhật lần cuối: 08/09/2026, sau khi áp nốt các việc còn lại. Trả lời: bộ docs đã đủ để giao dev/designer build game chưa, còn gì chờ chủ dự án.
+> Bản **mới nhất**, thay cho mọi bản trước (không giữ lịch sử). Cập nhật lần cuối: 22/10/2026 (Đợt 4 đóng gói "Vui 3 ca": chỉ sửa các câu đã thành sai, xem changelog). Trả lời: bộ docs đã đủ để giao dev/designer build game chưa, còn gì chờ chủ dự án.
 > Kiểm bằng cách mở từng file HANDOFF trỏ tới và đối chiếu với `docs/config/economy.tbh.json` (nguồn số).
 
 ## 1. Kết luận
 
-**Đủ để build; M0 đã qua kiểm tra tự động, M1–M3 có bản local đang hoàn thiện.** Tiến độ code và giới hạn hiện tại: `docs/build-progress.md` (14 feature đang triển khai, 0 hoàn tất; review độc lập đang chờ). Prompt dán vào Claude Code: **`12-PROMPT-claude-build.md` Phần 1** (gói `11-PROMPT-PACK` Phần B + vòng lặp Codex review); Codex chạy bằng `codex exec review --base master - < docs/prompts/codex-review.md` (codex-cli 0.152 có sẵn trên máy). Ràng buộc rõ, số tập trung ở JSON, layout có ảnh tham khảo, onboarding đã thành luật, gate `npm run check:config` chạy được ở gốc repo và đang xanh trên `packages/engine` (40 section, 39 section phân loại). Không còn mục 🔴.
+**Đủ để build; M0 đã qua kiểm tra tự động, M1–M3 có bản local đang hoàn thiện.** Tiến độ code và giới hạn hiện tại: `docs/build-progress.md`; bảng trạng thái `docs/implementation-tracker.md` + `docs/dashboard.md`: **20 feature đang triển khai, 0/28 hoàn tất**, 6 hoãn (đếm lại 22/10/2026 theo bảng của tracker). Prompt dán vào Claude Code: **`12-PROMPT-claude-build.md` Phần 1** (gói `11-PROMPT-PACK` Phần B + vòng lặp Codex review); Codex chạy bằng `codex exec review --base master - < docs/prompts/codex-review.md` (codex-cli 0.152 có sẵn trên máy). Ràng buộc rõ, số tập trung ở JSON, layout có ảnh tham khảo, onboarding đã thành luật, gate `npm run check:config` chạy được ở gốc repo và đang xanh trên `packages/engine` (42 section, 41 đã xếp tier — `npm run check:config`, 22/10/2026). Không còn mục 🔴.
 
 Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **2 việc nhỏ trước khi giao** (mục 4b). Quy trình build **do dev tự quyết** — Level 3 không còn bắt buộc.
 
@@ -15,7 +15,7 @@ Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **2 việc nh�
 |---|---|---|
 | Gameplay lõi (ca, hệ bàn, Order, freshness, rót/rửa tự động) | ✅ | GDD §1–§10, 03-SPEC §1–§9 |
 | Gameplay lớp 3–5 (khách, thời tiết, rush, meta, risk) | ✅ | GDD §7–§16, F07–F22 |
-| Economy | ✅ | 08-SPEC v1.3.7 + `economy.tbh.json` 1.7.1 (`_meta.governance` tier A/B/C) |
+| Economy | ✅ | 08-SPEC v1.3.11 (changelog tới 22/10/2026) + `economy.tbh.json` **2.1.1** (rules 28, mô hình bàn ghế; số S5 chốt ở 2.1.0 + giá "Mời về" 0,5 của owner 22/10/2026; `_meta.governance` tier A/B/C) |
 | Asset | ✅ | 11-PROMPT-PACK Phần A v1.11, checklist v1.4 (**~550** = ~475 sprite/icon + 75 audio id; 8 đã có), naming §11, design-tokens |
 | Âm thanh | ✅ | Checklist §B7: **75 id** (mỗi id `.ogg` + `.m4a`), thư mục theo nhóm, phát theo event id → manifest |
 | UI / component / motion | ✅ | UI invariants HANDOFF §6 + brief B binding 10; 09-SPEC/05-SPEC/F24 = tham khảo |
@@ -24,7 +24,7 @@ Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **2 việc nh�
 | Tech (engine, config, lưu trữ, server) | ✅ | 10-SPEC v1.7 §1/§5/§7/§9/§10/§13, F23 §8 — **localStorage trước, server ở M4** |
 | Admin / Config Registry | ✅ | BRD §5.2 + §11; 08-SPEC §22 |
 | Bảng xếp hạng | ✅ | **F28 v1.0** + JSON `leaderboard` (tier A) |
-| Lộ trình & tracker | ✅ | 06-ROADMAP **v3.1** — 1 phase, mốc M0–M9 (M7 = Donate + pháp lý); `implementation-tracker` **v0.8.0** (14 đang triển khai, 0/28 hoàn tất; F26 ⏸ bỏ), `dashboard.*` rebuild |
+| Lộ trình & tracker | ✅ | 06-ROADMAP **v3.3** — 1 phase, mốc M0–M9 (M7 = Donate + pháp lý); `implementation-tracker` **v0.64.0** (20 đang triển khai, 0/28 hoàn tất; F26 ⏸ bỏ), `dashboard.*` rebuild |
 | Hướng dẫn agent (đọc trước HANDOFF) | ✅ | `CLAUDE.md`/`AGENTS.md` dòng verify → `check:config` ở root + build/test/sim của game mới (prototype chỉ khi đụng `prototype/`); `SESSION-TRACK-LOG` block build mới nhất + checkpoint hiện tại; 11-PROMPT-PACK §0.2 thứ tự = config → engine + local save → server M4 |
 | Content bank | ⏸ pending | `docs/content/` mới là đề xuất schema + 5 ví dụ |
 | Tính năng kiểm tra (policy check) | ⏸ pending | F15 §4; ship `risk.inspection.enabled=false` |
@@ -48,16 +48,19 @@ Còn lại: **3 việc "chốt sau"** (mục 4, có default) và **2 việc nh�
 10. Mục đích v1.0 = **vui khi tự chơi 3 ca**; ca = bận đầu (giữ 1 chạm giao mâm); 3 ca đầu không cooldown; HUD "mục tiêu kế tiếp" + sheet 3 làn; nút nhanh không pause.
 11. **Mô hình bàn ghế v3.3**: 1 bàn 1 ghế → bàn 2–4 (kèm ghế) → ghế 2 từng bàn (chỉ sau đủ 4 bàn; ghế 2 = đón cặp + mâm bia và mồi) → cấp bàn (Lv2 đợt thêm · Lv3 mồi 2 · Lv4 tip ×1,25). Cặp độc lập với quán; từ chối tại cửa không phạt; hàng đợi 1 + ghế/8. Số chỗ bàn theo mặt bằng.
 12. **k gate D4(a)**: đo trên đơn chuẩn; k quan sát được vượt 3,5.
-13. **Full story = 168 ca** (3 tuần × 8 ca), LP nén (LP7 = 2 tr base = màn kết), **M6 mở lại** vào hồi 3, trần ngày 400 k base, hợp đồng mặt bằng 3 ngày, `tableSlots`. Cooldown 30 phút và trần ca 8/6/5 giữ.
+13. **Full story = 168 ca** (3 tuần × 8 ca), LP nén (LP7 = màn kết: 2 tr base), **M6 mở lại** vào hồi 3, trần ngày 400 k base, hợp đồng mặt bằng 3 ngày, `tableSlots` (JSON 2.1.0 giữ đúng các số owner này; riêng `tableSlots` 8 từ quán đầu là quyết định owner thứ hai của S5, BLOCKERS `04 · tableSlots`). Cooldown 30 phút và trần ca 8/6/5 giữ.
 14. **Mùa 21 ngày**, bảng xếp hạng theo mùa; mỗi mùa mới thêm một lớp gameplay.
-15. Số kinh tế đi kèm = ứng viên đã sim (W9), **S5 chốt** vào JSON 2.1.0 / rules 28 — chưa sửa JSON.
+15. Số kinh tế đi kèm đã **chốt trong JSON 2.1.0 / rules 28** (S5 `eco21-balance-pass`): bộ ứng viên W9 được sim cân bằng lại, đo bằng bot của plan (bàn/ghế trước, thuê thẳng, không chó, bắt đầu 09/09); sau hai quyết định owner 21/10/2026 (bàn 2 = **1.070 xu**; `tableSlots` 8 ở mọi mặt bằng, đảo D13) **22/22 hàng cổng ĐẠT + 1 hàng thông tin** trên seed 42 và 99 (`npm run sim:balance`; biên mỏng: ghế 2 đầu tiên ca 40 \| 40 so với cửa sổ 40–56, khoảng trống mua dài nhất 8 \| 7, cặp bị từ chối ca 1 5 \| 5, 83 % lượt probe mua nổi bàn 2 khi đóng ca 1). Đợt 3 (`fun-kick-table`) thêm section Tier A `kickTable` (`feeRate` 1,5, `repPerGuest` 2) dưới cùng nhãn 2.1.0 — nhãn nay mang 8 nội dung trong lịch sử git, chưa deploy: mọi lần chơi thử bắt đầu từ bộ nhớ trình duyệt trống + DB server mới. Số và bảng cổng: 08-SPEC changelog 2026-10-21/22. Chưa có playtest người thật.
 16. **Thứ tự ưu tiên trải nghiệm:** (1) onboarding nhìn-là-hiểu (F27 luật #5 đè: step guide chỉ là dự phòng) → (2) mua sắm lần lượt → (3) economy. Slice `fun-onboarding-visual` đứng đầu Đợt 1.
 
 ## 4. Còn chờ chủ dự án (đều đã có default, không chặn dev)
 
 | # | Việc | Default đang dùng | Cần khi |
 |---|---|---|---|
-| 0 | **D24 trần ngày 400 k base, D25 hàng đợi 1 + ghế/8** — owner chưa bác | dùng default (đã sim W9) | S5 |
+| 0 | **D24 trần ngày 400 k base, D25 hàng đợi 1 + ghế/8** — owner chưa bác | dùng default; đã chốt trong JSON 2.1.0 (S5): trần ngày **400 k base** như owner (review vòng 1 từng hạ xuống 350 k mà không cổng nào cần, vòng 2 trả lại), hàng đợi 1 + ghế/8 giữ | playtest người thật |
+| 0b | **Hai quyết định owner của S5 — ĐÃ CHỐT 21/10/2026** (founder, `OWNER-DECISIONS-S5.md`, user xác nhận trong chat): (1) P0 — kết ca 1 mua nổi bàn 2: cách (a), bàn 2 giá **1.070 xu** (428 base; trước 1.500 xu): ≥ 4 lượt trong 5 mua nổi khi ca 1 đóng (83 % ở n = 300, 81 % ở n = 600; ví đầu 750 xu); (2) `tableSlots` 8 ở mọi mặt bằng (đảo D13 "hẻm đầu = 4 bàn") được duyệt | đã áp trong JSON 2.1.0 và DECISIONS `## 04 · owner decision 1` / `2`; BLOCKERS `04 · P0` và `04 · tableSlots` đã đóng | xong; còn playtest 3 ca của owner |
+| 0c | **Bốn OWNER CALL của PR #30 — ĐÃ CHỐT 22/10/2026** (founder): (1) giá "Mời về" `kickTable.feeRate` **0,5**, luật "+10 % thu nhập 30 ngày" đọc theo thu nhập ròng sau phí (cổng `sim:kick` đọc ròng: +8,85 % \| +9,06 %); JSON nhãn **2.1.1**; (2) "Mời về" nhận mọi bàn đang nhâm nhi (`consuming` + `occupied`): giữ như niêm phong; (3) chip "Mục tiêu kế tiếp" không gợi ý ghế 2 trước bàn 8 (nút nhanh "Mua ghế" chỉ hiện sau bàn 8; bộ lọc tầm với có thể cho thiết bị đi trước bàn 5–8, nên nhịp của người theo chip chưa đo — ghi chú còn lại, không phải OWNER CALL); (4) smoke guest lúc phát hành đỏ CHỈ ở hai dòng soft "mua bàn 2" được đưa lên bước promote nếu `npm run sim:balance` exit 0 với hàng `shift1.plan` ĐẠT trên đúng commit phát hành | đã áp: JSON 2.1.1 + `sim:kick` đọc ròng; `apps/web/src/goals.ts` (provider `chairs`); `docs/cloudflare-guest.md` bước 1b/4/7/8 | xong — `docs/handoff/2026-10-19-vui3ca/HANDOFF.md` §12–§14, DECISIONS `## 07 · owner calls 2026-10-22` |
+| 0d | **Merge PR `feat/economy-2-1` → `main`, deploy `v-fb2` lên hai host, owner + 2–4 người chơi 3 ca** (phiếu 10 dòng ở `docs/phase0-alpha-playtest.md` §7, chưa tick) | PR mở, chưa merge, chưa deploy (lệnh phát hành ở `docs/cloudflare-guest.md` "Phát hành lên hai host", owner cho phép từng bước) | owner |
 | 1 | **Content bank** (câu hỏi kiểm tra · quest pool · lời thoại khách) + **tính năng kiểm tra** | ⏸ pending theo bạn; `docs/content/` là đề xuất; `risk.inspection.enabled=false` | M5–M6 |
 | 2 | **Cổng nhận donate tự động (nếu muốn) · mức age gate** | QR chuyển khoản + admin xác nhận tay; age gate là config | M7 |
 | 3 | **Nguồn lịch/tỉ số Cúp Bóng Đá** | Admin nhập tay (tier C); API thật = adapter + flag | M8 |
@@ -76,7 +79,7 @@ Ba mục item-list (hành phi, đá lạnh, giá cosmetic) đã **chốt theo đ
 ## 5. Git & việc nội bộ
 
 - **Đã vào `master`:** 4 commit `b4c39eb` → `8bca922` (docs pack 08/09, quyết định, tracker/dashboard, `package.json` gốc, bỏ Level 3) — fast-forward từ nhánh `docs/2026-09-08-docs-pack` (nhánh giữ lại, xoá được). **Lưu ý:** checkout sang nhánh cũ/`origin/master` sẽ làm các file docs biến mất khỏi thư mục (chúng chỉ tồn tại từ `b4c39eb`) — không phải mất dữ liệu, `git checkout master` là quay lại. Chưa push origin. Git chạy trực tiếp trên máy (qua mount không xoá được `index.lock`).
-- `PHASE_DATES` trong `tools/dashboard-engine/build_dashboard.py` để trống có chủ đích (ROADMAP v3.1 chưa gán ngày) — dashboard ghi "Chưa gán ngày"; điền lại khi team chốt ước lượng.
+- `PHASE_DATES` trong `tools/dashboard-engine/build_dashboard.py` để trống có chủ đích (ROADMAP v3.3 chưa gán ngày) — dashboard ghi "Chưa gán ngày"; điền lại khi team chốt ước lượng.
 - Script vá một lần `scripts/apply_pending_0809.py` đã xoá. Backup `$HOME/*.bak` trên máy có thể xoá.
 - **(16/09/2026)** Nhánh công cụ xác minh agent (`agent-verification`, tách biệt với bộ docs build
   game ở trên) đã xong M1/M2: 12 PR (`#1`-`#12`) — skill `/how`, skill `verify-trum-bia-hoi` (23
@@ -87,7 +90,7 @@ Ba mục item-list (hành phi, đá lạnh, giá cosmetic) đã **chốt theo đ
 
 ## 6. Bản đồ nhanh — đọc gì trước
 
-`00-HANDOFF` v1.15 (điểm vào, §4 scope + §6 quy ước) → **`12-PROMPT-claude-build.md`** (dev kickoff + Codex review) · `11-PROMPT-PACK` v1.14 Phần A (designer) / Phần B (chi tiết dev) → `02-GDD` v1.12 + `03-SPEC` (luật chơi) → `08-SPEC` v1.3.7 + `economy.tbh.json` 1.7.1 (số) → `06-ROADMAP` v3.1 (mốc M0–M9) + `implementation-tracker` v0.8.0 (14 đang triển khai, 0/28 hoàn tất) → `docs/features/F07–F28` → `docs/reference/` (layout) → `trum-bia-hoi-brd-admin.md` §5.2 (config admin).
+`00-HANDOFF` v1.44 (điểm vào, §4 scope + §6 quy ước) → **`12-PROMPT-claude-build.md`** (dev kickoff + Codex review) · `11-PROMPT-PACK` v1.14 Phần A (designer) / Phần B (chi tiết dev) → `02-GDD` v1.13 + `03-SPEC` (luật chơi) → `08-SPEC` v1.3.11 + `economy.tbh.json` 2.1.0 (số) → `06-ROADMAP` v3.3 (mốc M0–M9) + `implementation-tracker` v0.64.0 (20 đang triển khai, 0/28 hoàn tất) → `docs/features/F07–F28` → `docs/reference/` (layout) → `trum-bia-hoi-brd-admin.md` §5.2 (config admin).
 
 ## Changelog
 
@@ -101,3 +104,9 @@ Ba mục item-list (hành phi, đá lạnh, giá cosmetic) đã **chốt theo đ
 
 | 2026-09-09 rules10 | Local config seed1.7.1 records ordinary-vs-active spawn-floor semantics; numeric values unchanged. See F08/F09 and build-progress for implementation/review evidence. |
 | 2026-09-18 | Thêm quyết định 17–18/09 (mục 3 #10–15) + hàng chờ D24/D25; trỏ tới PLAN-vui-3-ca, FEEDBACK v3.3, DESIGN-story-3-tuan; GDD v1.13, 03-SPEC v1.4, HANDOFF v1.42 |
+| 2026-10-20 | S5 `eco21-balance-pass`: mục 3 #15 và hàng chờ D24/D25 đổi từ "ứng viên W9, chưa sửa JSON" thành "đã chốt trong JSON 2.1.0" (số cân bằng lại bằng sim, bảng cổng ở 08-SPEC changelog); chưa có playtest người thật. |
+| 2026-10-21 | S5 review vòng 1: bảng cổng đo lại bằng bot của plan (không phải v4), số chốt mới (08-SPEC changelog 2026-10-21); 21/22 hàng đạt, hàng ví ca 1 (P0) đỏ và là quyết định của owner; ví khởi đầu về 750 xu. |
+| 2026-10-21 | S5 review vòng 2: trả lại trần ngày 400 k, hợp đồng 3 ngày, LP7 2 tr (không cổng nào cần số khác); hai quyết định owner của S5 được nêu tên — P0 (ca 1 mua bàn 2) và `tableSlots` 8 ở mọi mặt bằng; bảng cổng 23 hàng, 21 đạt. |
+| 2026-10-22 | Đợt 4 đóng gói "Vui 3 ca" (stage 07) — chỉ sửa các câu đã thành sai: số feature đang triển khai **14 → 20** (đếm lại theo bảng trạng thái của tracker; 0/28 hoàn tất, 6 hoãn) ở mục 1, mục 2 và mục 6; phiên bản tracker v0.8.0 → v0.64.0, 08-SPEC v1.3.7 → v1.3.11, JSON 1.7.1 → 2.1.0 (rules 28); mục 3 #15 nói trạng thái cuối của S5 (22/22 cổng ĐẠT + 1 INFO sau hai quyết định owner) và section `kickTable` của Đợt 3 dưới nhãn 2.1.0 (8 nội dung); mục 4 thêm hàng 0c (ba OWNER CALL của Đợt 2–3) và 0d (merge, deploy `v-fb2`, playtest 3 ca); tiêu đề và dòng "cập nhật lần cuối". |
+| 2026-10-22 | Đợt 4, review vòng 1 của stage 07 — thêm các câu đã thành sai còn sót: mục 1 "42 section, 41 đã xếp tier" (không còn 40/39), mục 2, 5 và 6 `06-ROADMAP` v3.3, mục 6 `00-HANDOFF` v1.43 và `02-GDD` v1.13. |
+| 2026-10-22 | Vòng quyết định owner của PR #30 (stage 07b): hàng 0c "Ba OWNER CALL" → **bốn OWNER CALL ĐÃ CHỐT** (giá "Mời về" 0,5 đọc ròng + JSON 2.1.1; "đang nhâm nhi" giữ; chip không gợi ý ghế 2 trước bàn 8; smoke guest có ngoại lệ hai dòng soft với điều kiện `sim:balance`). Mục 3 #15 ("chốt trong JSON 2.1.0") giữ nguyên: số S5 vẫn là số của 2.1.0, nhãn 2.1.1 chỉ đổi `kickTable.feeRate`. Thứ tự đọc: `00-HANDOFF` v1.43 → v1.44; mục 1 dòng Economy: JSON 2.1.0 → 2.1.1. |

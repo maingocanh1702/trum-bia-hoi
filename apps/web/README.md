@@ -1,9 +1,11 @@
 # Trùm Bia Hơi web
 
-Normal startup connects to the authenticated server. Run the API with `TBH_DB`,
-`TBH_ORIGIN=http://127.0.0.1:5173` and `TBH_PORT=5175`, then `npm run dev`.
-Vite proxies `/api` to `http://127.0.0.1:5175`; override `TBH_API_TARGET` for an
-isolated server. Production needs a same-origin reverse proxy from `/api/*` to
+Normal startup connects to the authenticated server. Run the API with
+`TBH_DB=<file> TBH_ORIGIN=http://127.0.0.1:4215 npm run dev:server` (the script sets
+`TBH_PORT` to the `dev-api` port), then `npm run dev` (the `dev-web` port). The ports
+come from `scripts/verify/port.ts`: 4215 / 4216 in a plain clone, another pair in a
+worktree (`npm run verify:port -- --role=dev-web`, `--role=dev-api`). Vite proxies
+`/api` to the `dev-api` port; override `TBH_API_TARGET` for an isolated server. Production needs a same-origin reverse proxy from `/api/*` to
 API `/*`. `npm run build` emits static files, not a running API.
 
 The browser renders `WorldView`, fetches the exact pinned economy schema, and
@@ -68,3 +70,4 @@ The guest edition is published on two hosts in parallel from one `npm run build:
 |---|---|
 | 2026-09-30 | Guest hosting target changed from Netlify to Cloudflare; build mode and gameplay unchanged. |
 | 2026-10-14 | Owner decision: guest edition published on Netlify and Cloudflare in parallel from one build; revises the 2026-09-30 row (Netlify is not replaced). Build mode and gameplay unchanged. |
+| 2026-10-22 | The local start line named the old fixed pair 5173 / 5175; the dev server and the API take their ports from `scripts/verify/port.ts` (`dev-web` / `dev-api`: 4215 / 4216 in a plain clone) and `npm run dev:server` sets `TBH_PORT` itself (stage 07 review round 1, D1). No code change. |

@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { AddressInfo } from 'node:net';
 import { setTimeout as delay } from 'node:timers/promises';
-import { config, configContent, Game, loadConfig, seasonWindow, serveValueStats, type Config } from '@tbh/engine';
+import { config, configContent, Game, loadConfig, seasonWindow, serveValueStats, tableUpgrade, type Config } from '@tbh/engine';
 import { GameStore } from '../src/store';
 import { createGameServer } from '../src/http';
 import { measureKViaForecast } from '../src/forecast';
@@ -14,7 +14,7 @@ import { ConfigRegistry, registryPolicy, type AdminActor, type ConfigScope, type
 const NOW = Date.parse('2026-09-10T10:00:00Z');
 // Default measurer trusts the candidate's own declared k.value -- identical to the pre-existing self-report
 // check, so every test below that never touches raw.k sees admission behave exactly as before this feature.
-function fixture(t: { after(fn: () => unknown): void }, seed = config, measureK?: MeasureK) {
+function fixture(t: { after(fn: () => unknown): void }, seed: Config = config, measureK?: MeasureK) {
   const dir = mkdtempSync(join(tmpdir(), 'tbh-registry-')), file = join(dir, 'game.db');
   let now = NOW; const stores: GameStore[] = [], connections: DatabaseSync[] = [];
   const open = (c = seed) => { const s = new GameStore(file, c, () => now, measureK); stores.push(s); return s; };
@@ -969,4 +969,122 @@ test('a later admitted emergency supersedes a schedule even after an earlier eme
   const draftE3 = f.registry.propose(f.actor('super'), { key: 'e3', baseVersion: f.registry.active().version, snapshot: snapshotE3, reason: 'Third emergency', emergency: true });
   const previewE3 = f.registry.impact(f.actor('super'), draftE3.version);
   assert.deepEqual(previewE3.supersedes, []);
+});
+
+// S6 (plan S6 row "admin registry nhận key mới", brief B6, PR #14): every key the seat-model slices S1-S5 added to the seed is governed by a tier of the
+// config itself, editable ONE BY ONE through the registry by the roles its tier names (propose, approve, publish: a Tier A key needs a second Super, a
+// Tier B key its Economy author), admitted by the MEASURED k and not by the self-reported scalar, and the published key reaches a real player at the opening.
+// Each key is its own publication under its own author (the daily limit is per author); the diff of every publication is exactly that one key.
+const flat = (value: unknown, path = '', out = new Map<string, string>()): Map<string, string> => {
+  if (value && typeof value === 'object' && !Array.isArray(value)) for (const [k, v] of Object.entries(value)) flat(v, path ? `${path}.${k}` : k, out);
+  else out.set(path, JSON.stringify(value));
+  return out;
+};
+type Seed = typeof config.raw; // the bundled seat seed: the only shape that carries every key below (Config['raw'] is the union with the frozen pins)
+const SEAT_MODEL_KEYS: { path: string; tier: 'A' | 'B'; since: string; edit: (raw: Seed) => unknown; read: (raw: Seed) => unknown }[] = [
+  { path: 'spawn.pPair', tier: 'A', since: 'S1 2.0.20', edit: raw => (raw.spawn.pPair = 0.45), read: raw => raw.spawn.pPair },
+  { path: 'upgrades.table.tablePriceBase', tier: 'A', since: 'S1 2.0.20', edit: raw => (raw.upgrades.table.tablePriceBase[0] += 1, raw.upgrades.table.tablePriceBase), read: raw => raw.upgrades.table.tablePriceBase },
+  { path: 'upgrades.table.chairPriceBase', tier: 'A', since: 'S1 2.0.20', edit: raw => (raw.upgrades.table.chairPriceBase[0] += 1, raw.upgrades.table.chairPriceBase), read: raw => raw.upgrades.table.chairPriceBase },
+  { path: 'upgrades.table.chairsAfterTables', tier: 'A', since: 'S1 2.0.20', edit: raw => (raw.upgrades.table.chairsAfterTables = 3), read: raw => raw.upgrades.table.chairsAfterTables },
+  { path: 'upgrades.table.orderShape.solo.pBeer', tier: 'A', since: 'S1 2.0.20', edit: raw => (raw.upgrades.table.orderShape.solo.pBeer = 0.65), read: raw => raw.upgrades.table.orderShape.solo.pBeer },
+  { path: 'upgrades.table.orderShape.pair.pMoi', tier: 'A', since: 'S1 2.0.20', edit: raw => (raw.upgrades.table.orderShape.pair.pMoi = 0.8), read: raw => raw.upgrades.table.orderShape.pair.pMoi },
+  { path: 'locations.list', tier: 'A', since: 'S1 2.0.20 (tableSlots per place; 8 everywhere since S5)', edit: raw => (raw.locations.list[0].tableSlots = 7, raw.locations.list), read: raw => raw.locations.list },
+  { path: 'spawn.capacityDemand.refTables', tier: 'A', since: 'S3 2.0.22', edit: raw => (raw.spawn.capacityDemand.refTables = 7), read: raw => raw.spawn.capacityDemand.refTables },
+  { path: 'spawn.capacityDemand.maxMult', tier: 'A', since: 'S3 2.0.22', edit: raw => (raw.spawn.capacityDemand.maxMult = 3), read: raw => raw.spawn.capacityDemand.maxMult },
+  { path: 'runtime.queueBaseSlots', tier: 'B', since: 'S3 2.0.22 (value)', edit: raw => (raw.runtime.queueBaseSlots = 2), read: raw => raw.runtime.queueBaseSlots },
+  { path: 'runtime.queueSeatsPerSlot', tier: 'B', since: 'S3 2.0.22 (value)', edit: raw => (raw.runtime.queueSeatsPerSlot = 6), read: raw => raw.runtime.queueSeatsPerSlot },
+  { path: 'patience.thuongMs', tier: 'B', since: 'S3 2.0.22 (value)', edit: raw => (raw.patience.thuongMs = 25000), read: raw => raw.patience.thuongMs },
+  { path: 'upgrades.table.tableUpgrade.levels', tier: 'A', since: 'S4 2.0.23', edit: raw => (raw.upgrades.table.tableUpgrade.levels[0].priceBase += 100, raw.upgrades.table.tableUpgrade.levels), read: raw => raw.upgrades.table.tableUpgrade.levels },
+  { path: 'upgrades.table.chairUpgrade.priceBase', tier: 'A', since: 'S4 2.0.23', edit: raw => (raw.upgrades.table.chairUpgrade.priceBase += 100), read: raw => raw.upgrades.table.chairUpgrade.priceBase },
+  { path: 'upgrades.table.chairUpgrade.stepBase', tier: 'A', since: 'S4 2.0.23', edit: raw => (raw.upgrades.table.chairUpgrade.stepBase += 100), read: raw => raw.upgrades.table.chairUpgrade.stepBase },
+  { path: 'upgrades.table.chairUpgrade.levels', tier: 'A', since: 'S4 2.0.23', edit: raw => (raw.upgrades.table.chairUpgrade.levels[0].patienceMult = 1.2, raw.upgrades.table.chairUpgrade.levels), read: raw => raw.upgrades.table.chairUpgrade.levels },
+  { path: 'shift.noCooldownFirstShifts', tier: 'A', since: 'S5 2.1.0', edit: raw => (raw.shift.noCooldownFirstShifts = 4), read: raw => raw.shift.noCooldownFirstShifts },
+];
+test('S6: every seat-model key S1-S5 added is governed by its tier, editable one by one through the registry by the roles of that tier, admitted by the measured k, and reaches a new player', t => {
+  const f = fixture(t, config, sampleMeasurer);
+  const seen = new Set<string>();
+  for (const [i, key] of SEAT_MODEL_KEYS.entries()) {
+    assert.equal(registryPolicy([key.path], config).tier, key.tier, `${key.path} (${key.since}) is governed as Tier ${key.tier}`);
+    const author = f.actor('economy', `economy-${i}`), base = f.registry.latest();
+    const before = f.registry.config(base.version).raw, expected = JSON.stringify(key.edit(structuredClone(before) as Seed));
+    const d = f.draft(raw => { key.edit(raw as Seed); }, author);
+    // The diff of the proposal is exactly this key (its leaf or the array it lives in), nothing else.
+    const was = flat(before), changed = [...flat(f.registry.config(d.version).raw)].filter(([path, value]) => !path.startsWith('_meta.') && was.get(path) !== value).map(([path]) => path);
+    assert.ok(changed.length > 0 && changed.every(path => path === key.path || path.startsWith(key.path + '.')), `${key.path}: changed ${changed.join(', ')}`);
+    if (key.tier === 'A') {
+      assert.throws(() => f.registry.publish(author, d.version), /approvalRequired/, `${key.path}: a Tier A key waits for a Super`);
+      assert.throws(() => f.registry.approve(author, d.version), /forbidden/, `${key.path}: the Economy author cannot approve a Tier A key`);
+      f.registry.approve(f.actor('super', 'reviewer'), d.version);
+    } else f.registry.approve(author, d.version); // Tier B: single approval, the Economy Admin's own
+    const pub = f.registry.publish(author, d.version);
+    const row = f.db.prepare('SELECT state, measured_k FROM registry_measurements WHERE version=?').get(d.version)!;
+    assert.equal(row.state, 'admitted', `${key.path}: admitted by the measured k`);
+    assert.ok(Number(row.measured_k) >= config.values.k.band[0] && Number(row.measured_k) <= config.values.k.band[1], `${key.path}: k ${row.measured_k} in band`);
+    assert.equal(pub.effective_at > f.now, key.tier === 'A', `${key.path}: Tier A waits for the next day, Tier B the next shift`);
+    f.now = Math.max(f.now, pub.effective_at); assert.equal(f.registry.active().version, d.version);
+    assert.equal(JSON.stringify(key.read(f.registry.active().raw as Seed)), expected, `${key.path}: the published value is the edited one`);
+    // A real player opens on it: the store registers the version and its first shift pins it.
+    const store = f.open(), player = `player-${i}`; assert.equal(store.createPlayer(player, 100 + i).configVersion, d.version);
+    const opened = store.command(player, { idempotencyKey: `open-${i}`, command: { type: 'startShift' } });
+    assert.ok(opened.result.ok, `${key.path}: a shift opens on the published key`); assert.equal(opened.world.shift!.configVersion, d.version);
+    seen.add(key.path);
+  }
+  assert.equal(seen.size, SEAT_MODEL_KEYS.length);
+  // Nothing of the governance itself moved: the section lists of the active config still classify every key above.
+  for (const key of SEAT_MODEL_KEYS) assert.equal(registryPolicy([key.path], f.registry.active()).tier, key.tier);
+});
+
+// The S6 case above proves that every seat key is measured and admitted; `sampleMeasurer` prices one beer from `menu.bia.price` alone, so no seat key can move
+// its k. This measurer reads a seat key: the tip factor of the top table level (S4, the Lv4 table's tip x1.25 on a pair's tray) scales the sample k, so it equals
+// the sample k on the seed and goes far out of band when that factor does. The registry refuses the publication on the measured value, never on the self-reported one.
+const seatMeasurer: MeasureK = (candidate, version, actor) => (sampleMeasurer(candidate, version, actor) as number) * tableUpgrade(candidate.values)!.levels.at(-1)!.tipMult / tableUpgrade(config.values)!.levels.at(-1)!.tipMult;
+test('S6: the k check reacts to a seat key once a measurer reads it: the Lv4 tip factor far out of range is measured and refused, a small one is admitted', t => {
+  const f = fixture(t, config, seatMeasurer);
+  const small = f.draft(raw => { (raw as Seed).upgrades.table.tableUpgrade.levels[2].tipMult = 1.3; }); // a step up from 1.25, inside the band
+  f.registry.approve(f.actor('super', 'reviewer'), small.version); const pub = f.registry.publish(f.actor(), small.version); // Tier A: scheduled for the next day
+  assert.equal(f.db.prepare('SELECT state FROM registry_measurements WHERE version=?').get(small.version)!.state, 'admitted');
+  f.now = pub.effective_at; assert.equal(f.registry.active().version, small.version);
+  const blowup = f.draft(raw => { (raw as Seed).upgrades.table.tableUpgrade.levels[2].tipMult = 40; }, f.actor('economy', 'another-author')); // k.value and k.band untouched: the self-report alone would admit it
+  f.registry.approve(f.actor('super', 'reviewer'), blowup.version);
+  assert.throws(() => f.registry.publish(f.actor('economy', 'another-author'), blowup.version), (error: unknown) => {
+    assert.ok(error instanceof Error); assert.match(error.message, /^registry:bindingRange$/);
+    const e = error as Error & { measured: number; band: readonly number[] };
+    assert.ok(e.measured > e.band[1], `measured ${e.measured} should exceed band[1] ${e.band[1]}`); return true;
+  });
+  assert.equal(f.db.prepare('SELECT state FROM registry_measurements WHERE version=?').get(blowup.version)!.state, 'refused');
+  assert.equal(f.registry.active().version, small.version, 'the refused version never becomes active'); assert.equal(f.registry.latest().version, small.version);
+});
+
+// Wave 3 (plan section 6 `fun-kick-table`, FEEDBACK II.3, D3): the two keys of "Mời về" are a Tier A section of the config itself, each editable ONE BY ONE
+// through the registry (an Economy author proposes, a second Super approves, the publication waits for the next day), and the published value reaches a real
+// player at the opening -- the same cycle the S6 case above runs for every seat key. What this case does NOT prove: that the k admission guards these keys. It
+// does not react to them: `sampleMeasurer` prices one beer from `menu.bia.price`, and the production `measureKViaForecast` (apps/server/src/forecast.ts)
+// projects with `createManagementPolicy` (packages/engine/sim/forecast.ts), whose bot never kicks; a `feeRate` of 0 would be admitted too. The guards of these
+// two keys are the validator (validate in config.ts), the dual approval and running `npm run sim:kick` before publishing (08-SPEC section 22, `kickTable` row).
+const KICK_TABLE_KEYS: { path: string; edit: (raw: Seed) => unknown; read: (raw: Seed) => unknown }[] = [
+  { path: 'kickTable.feeRate', edit: raw => (raw.kickTable.feeRate = 0.6), read: raw => raw.kickTable.feeRate },
+  { path: 'kickTable.repPerGuest', edit: raw => (raw.kickTable.repPerGuest = 3), read: raw => raw.kickTable.repPerGuest },
+];
+test('Wave 3: the two kickTable keys are Tier A, editable one by one through the registry by an Economy author and a second Super, and reach a new player (the k admission does not react to them)', t => {
+  const f = fixture(t, config, sampleMeasurer);
+  for (const [i, key] of KICK_TABLE_KEYS.entries()) {
+    assert.deepEqual(registryPolicy([key.path], config), { tier: 'A', tiers: ['A'], superOnly: false, effective: 'next_day', modes: ['next_day'] }, `${key.path} is a dual-approval key of the next day`);
+    const author = f.actor('economy', `kick-economy-${i}`), base = f.registry.latest(), before = f.registry.config(base.version).raw;
+    const expected = JSON.stringify(key.edit(structuredClone(before) as Seed));
+    const d = f.draft(raw => { key.edit(raw as Seed); }, author);
+    const was = flat(before), changed = [...flat(f.registry.config(d.version).raw)].filter(([path, value]) => !path.startsWith('_meta.') && was.get(path) !== value).map(([path]) => path);
+    assert.deepEqual(changed, [key.path], `${key.path}: the proposal changes exactly this key`);
+    assert.throws(() => f.registry.publish(author, d.version), /approvalRequired/, `${key.path}: a Tier A key waits for a Super`);
+    assert.throws(() => f.registry.approve(author, d.version), /forbidden/, `${key.path}: the Economy author cannot approve it`);
+    f.registry.approve(f.actor('super', 'kick-reviewer'), d.version);
+    const pub = f.registry.publish(author, d.version);
+    assert.equal(f.db.prepare('SELECT state FROM registry_measurements WHERE version=?').get(d.version)!.state, 'admitted', `${key.path}: the publication runs the k measurement and is admitted (that measurement does not read kickTable)`);
+    assert.ok(pub.effective_at > f.now, `${key.path}: scheduled for the next day`);
+    f.now = pub.effective_at; assert.equal(f.registry.active().version, d.version);
+    assert.equal(JSON.stringify(key.read(f.registry.active().raw as Seed)), expected, `${key.path}: the published value is the edited one`);
+    const store = f.open(), player = `kick-player-${i}`; assert.equal(store.createPlayer(player, 300 + i).configVersion, d.version);
+    const opened = store.command(player, { idempotencyKey: `kick-open-${i}`, command: { type: 'startShift' } });
+    assert.ok(opened.result.ok); assert.equal(opened.world.shift!.configVersion, d.version, `${key.path}: a shift opens on the published key`);
+  }
+  for (const key of KICK_TABLE_KEYS) assert.equal(registryPolicy([key.path], f.registry.active()).tier, 'A', 'the governance itself did not move');
 });

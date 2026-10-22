@@ -1,8 +1,18 @@
 import seed from '../../../docs/config/economy.tbh.json';
+import capacityModel from '../../../docs/config/legacy/economy-2.0.4.json';
 import legacy from '../../../docs/config/legacy/economy-1.7.3.json';
 
-export type Economy = typeof seed | typeof legacy;
-export function isEconomy2(c: Economy): c is typeof seed { return Object.hasOwn(c.upgrades, 'lifePathGate'); }
+export type Economy = typeof seed | typeof capacityModel | typeof legacy;
+/** Economy 2.x snapshot (life-path device gates): the current seat model or a pinned 2.0 capacity model. */
+export function isEconomy2(c: Economy): c is typeof seed | typeof capacityModel { return Object.hasOwn(c.upgrades, 'lifePathGate'); }
+/** Seat model v3.3 (rules 28): a table owns 1-2 chairs; table levels no longer decide capacity. */
+export function isSeatModel(c: Economy): c is typeof seed { return Object.hasOwn(c.upgrades.table, 'chairPriceBase'); }
+/** A pair is the largest group and the most chairs one table holds; every table comes with one chair. */
+export const PAIR = 2, CHAIRS_WITH_TABLE = 1; // config-exempt: structural seat-model shape (plan D13/D17, FEEDBACK II.2 v3.3), not tuning
+/** Largest group a snapshot can seat. */
+export function groupLimit(c: Economy): number {
+  return isSeatModel(c) ? PAIR : Math.max(...c.upgrades.table.levels.map(t => t.capacity));
+}
 export type Dish = keyof Economy['menu'];
 export type Equipment = 'keg' | 'washer' | 'cooler' | 'stall' | 'kitchen';
 export type CustomerType = keyof Economy['customerTypes'];
@@ -19,6 +29,55 @@ export function arrivalIntervalMs(c: Economy, weather: Weather, kind: Rush, camp
   const rush = c.rush[kind];
   const interval = (kind === 'none' ? Math.max(c.spawn.baseMs, rush.floorMs) : c.spawn.baseMs) * c.weather[weather].spawnIntervalMult * rush.spawnIntervalMult * (campaign ? c.unlocks.flyer.spawnIntervalMult : 1);
   return kind === 'none' ? interval : Math.max(interval, rush.floorMs);
+}
+
+/**
+ * Capacity demand (plan D19, rules 28): while the shop owns fewer than `refTables` tables the gap to the next group grows by
+ * min(maxMult, max(1, refTables / tables)). A snapshot pinned before the key (JSON <= 2.0.21), a capacity pin and a 1.x pin have none: x1.
+ */
+export function capacityDemandMult(c: Economy, tables: number): number {
+  const demand = (c.spawn as { capacityDemand?: { refTables: number; maxMult: number } }).capacityDemand;
+  return demand ? Math.min(demand.maxMult, Math.max(1, demand.refTables / Math.max(1, tables))) : 1;
+}
+
+type SeatTable = typeof seed.upgrades.table;
+export type TableUpgrade = SeatTable['tableUpgrade'];
+export type ChairUpgrade = SeatTable['chairUpgrade'];
+/** What a table of some level gives the group that sits down at it (plan D14/D19). */
+export interface TableBenefit { extraRounds: number; pExtraMoi: number; tipMult: number }
+const NO_BENEFIT: Readonly<TableBenefit> = Object.freeze({ extraRounds: 0, pExtraMoi: 0, tipMult: 1 }); // config-exempt: the neutral benefit of level 1 and of a snapshot without the ladder
+/** The S4 table-level ladder (rules 28); null on a snapshot from before it (JSON <= 2.0.22), on a capacity pin and on a 1.x pin. */
+export function tableUpgrade(c: Economy): TableUpgrade | null { return Object.hasOwn(c.upgrades.table, 'tableUpgrade') ? (c.upgrades.table as SeatTable).tableUpgrade : null; }
+/** The S4 chair-level ladder (rules 28); null wherever `tableUpgrade` is. */
+export function chairUpgrade(c: Economy): ChairUpgrade | null { return Object.hasOwn(c.upgrades.table, 'chairUpgrade') ? (c.upgrades.table as SeatTable).chairUpgrade : null; }
+export type KickTableRule = typeof seed.kickTable;
+/**
+ * Wave 3 "Mời về" (rules 28, plan section 6, FEEDBACK II.3, D3): the price of sending a lingering table home. Null on every snapshot without the section (the
+ * S5/S6 contents of JSON 2.1.0, every older seat pin, a capacity pin, a 1.x pin): their games have no such command, so they replay as they always did.
+ */
+export function kickTableRule(c: Economy): KickTableRule | null { return Object.hasOwn(c, 'kickTable') ? (c as typeof seed).kickTable : null; }
+/** Total benefit of a table level (benefits stack: each ladder row lists the sum). Level 1, a level without a row and every older snapshot: none. */
+export function tableBenefit(c: Economy, level: number): TableBenefit {
+  const row = tableUpgrade(c)?.levels.find(l => l.level === level);
+  return row ? { extraRounds: row.extraRounds, pExtraMoi: row.pExtraMoi, tipMult: row.tipMult } : NO_BENEFIT;
+}
+/** The level of a table that counts for the group sitting at it: a level only works with two chairs, so a one-chair table is Lv1 whatever it kept (a migrated save). The engine records it on the group, the card lists its perks. */
+export function effectiveTableLevel(table: { level: number; capacity: number }): number { return table.capacity >= PAIR ? table.level : 1; }
+/** The benefit a level adds to the one below it, named by its key (analytics `table_upgraded.what`). */
+export function tableBenefitGained(c: Economy, level: number): keyof TableBenefit | 'none' {
+  const now = tableBenefit(c, level), before = tableBenefit(c, level - 1);
+  return (['extraRounds', 'pExtraMoi', 'tipMult'] as const).find(key => now[key] !== before[key]) ?? 'none';
+}
+/** Order-patience multiplier of a chair level (D15): 1 at level 1 and on every snapshot without the chair ladder. */
+export function chairPatienceMult(c: Economy, level: number): number { return chairUpgrade(c)?.levels.find(l => l.level === level)?.patienceMult ?? 1; }
+/**
+ * The most dishes one guest's tray holds at a table (D14, S6: the tray drawn on the yard): a one-chair table serves beer OR one instant dish, a pair
+ * beer + one snack, and a level whose row has `pExtraMoi` a second snack (the level counts only at two chairs: `effectiveTableLevel`). A capacity
+ * snapshot's tray is beer + one snack. The order itself is built in `Game.order()`; this only reads the shape it follows.
+ */
+export function trayDishes(c: Economy, table: { level: number; capacity: number }): number {
+  const soloOrPair = isSeatModel(c) && table.capacity < PAIR ? 1 : 2; // config-exempt: structural tray shape (D14): one dish for a solo guest, beer + a snack for a guest of a pair
+  return soloOrPair + (tableBenefit(c, effectiveTableLevel(table)).pExtraMoi > 0 ? 1 : 0);
 }
 
 /** Decode the single supported config curve grammar; never execute formula text. */
@@ -63,16 +122,16 @@ export function signWeightMult(definition: Economy['signboard']['styles'][SignSt
 export const BUSINESS_UNLOCKS = ['phone', 'qr'] as const;
 export type BusinessUnlock = typeof BUSINESS_UNLOCKS[number];
 export type ProgressRequirement =
-  | { kind: 'seats' | 'equipment' | 'stall' | 'level'; need: number; exact: boolean }
+  | { kind: 'seats' | 'tables' | 'equipment' | 'stall' | 'level'; need: number; exact: boolean }
   | { kind: 'owned'; target: string }
   | { kind: 'peak'; target: string };
 /** Closed config grammar; unknown tokens never become an unlocked prerequisite. */
 export function parseProgressRequirement(token: string, c: Economy): ProgressRequirement {
-  const seats = /^(\d+) seats$/.exec(token), gear = /^(equipment|stall)(>=|=)(\d+)$/.exec(token);
-  if (seats || gear) {
-    const need = Number(seats?.[1] ?? gear![3]); // config-exempt: numbered regex capture groups
+  const shop = /^(\d+) (seats|tables)$/.exec(token), gear = /^(equipment|stall)(>=|=)(\d+)$/.exec(token);
+  if (shop || gear) {
+    const need = Number(shop?.[1] ?? gear![3]); // config-exempt: numbered regex capture groups
     if (!Number.isSafeInteger(need) || need < 1) throw Error('config:progressRequirementNumber');
-    return { kind: seats ? 'seats' : gear![1] as 'equipment' | 'stall', need, exact: gear?.[2] === '=' };
+    return { kind: shop ? shop[2] as 'seats' | 'tables' : gear![1] as 'equipment' | 'stall', need, exact: gear?.[2] === '=' };
   }
   const level = c.lifePath.findIndex(row => row.id === token);
   if (level >= 0) return { kind: 'level', need: level, exact: false };
@@ -83,14 +142,62 @@ export function parseProgressRequirement(token: string, c: Economy): ProgressReq
 
 // Presentation-only thresholds added after earlier releases. Older pinned snapshots predate them and keep their raw bytes;
 // a snapshot that carries one must still shape-check it, and the web client falls back to the bundled seed for the absent ones.
+// The reverse holds for exactly one shape: a pre-seat snapshot from after Wave 1 (JSON 2.0.5/2.0.6) carries them although the frozen
+// capacity file (2.0.4) that shapes it does not, so there, and only there, a key the expected shape lacks takes the bundled seed as its
+// template. A 1.x or a seat-model snapshot never extends its shape: main refused these keys on a 1.x pin, and so does this.
 const ADDED_LATER = new Set(['nextGoal', 'onboarding.loginPrompt.leaveProgress', 'onboarding.idleToGuideMs',
   'onboarding.featureReveal.hudAfterShifts', 'onboarding.featureReveal.upgradeAllAfterShifts', 'onboarding.featureReveal.journeyAfterShifts']);
 
 // Sections that joined a governance tier after earlier releases (tier -> names); shape() lets an older pinned snapshot lack exactly these.
 const TIER_SECTIONS_ADDED_LATER: Record<string, readonly string[]> = { C: ['nextGoal'] };
+const valueAt = (root: unknown, path: string): unknown => path.split('.').reduce<unknown>((node, key) => (node as Record<string, unknown> | undefined)?.[key], root);
+const seedAt = (path: string): unknown => valueAt(seed, path);
 
-/** Complete snapshots only: a partial or malformed config must never become live. */
-function shape(value: unknown, expected: unknown, path: string): void {
+// Seat-model keys added after JSON 2.0.20/2.0.21. A pin is immutable, so a seat snapshot labelled before the version that introduced a group has the
+// shape of the seed without it (exact: no key of the group, no tier entry), and one labelled with or after that version needs the whole group.
+// `since` = the first version carrying the group, `paths` = the object keys it added, `tiers` = the names it added to the governance tier lists,
+// `restore` = keys the group REPLACED: the older pin still carries them, so the older shape gets them back from the frozen capacity file (2.0.4),
+// `optionalAt` = labels that were sealed both before and after the group joined them: a pin with such a label may lack the whole group (never half of it;
+// no row needs it since the label 2.1.1, see the last row).
+const SEAT_KEYS_ADDED_LATER: readonly { since: string; paths: readonly string[]; tiers: Record<string, readonly string[]>; restore?: readonly string[]; optionalAt?: readonly string[] }[] = [
+  { since: '2.0.22', paths: ['spawn.capacityDemand'], tiers: { A: ['spawn.capacityDemand'] } }, // plan S3, D19
+  // plan S4, D14 D15 D18 D19: the table and chair ladders replace the postmvp `upgrades.backrest` placeholder (the same object in every older pin)
+  { since: '2.0.23', paths: ['upgrades.table.tableUpgrade', 'upgrades.table.chairUpgrade'], tiers: { A: ['upgrades.table.tableUpgrade', 'upgrades.table.chairUpgrade'] }, restore: ['upgrades.backrest'] },
+  // plan S5, D8 D23: the first shifts of a save's life open without the stamina cooldown; a value of the Tier A section `shift`, so there is no tier entry to add
+  { since: '2.1.0', paths: ['shift.noCooldownFirstShifts'], tiers: {} },
+  // plan section 6 (Wave 3, D3): "Mời về". The label 2.1.0 exists without the section (the S5/S6 contents: their recorded histories and browser pins) and with it
+  // (Wave 3 and stage 07: complete snapshots of a label older than `since`, so they load as they are). 2.1.1, the founder's price of 2026-10-22 (owner call 1), is the
+  // first label that must carry it; until then this row was `since: '2.1.0'` with `optionalAt: ['2.1.0']` (DECISIONS `## 06 · the label stays 2.1.0 ...`).
+  { since: '2.1.1', paths: ['kickTable'], tiers: { A: ['kickTable'] } },
+];
+const versionOf = (label: unknown): number[] | null => { const m = typeof label === 'string' ? /^(\d+)\.(\d+)\.(\d+)$/.exec(label) : null; return m ? m.slice(1).map(Number) : null; };
+const olderThan = (label: unknown, since: string): boolean => { const a = versionOf(label), b = versionOf(since)!; return !!a && (a[0] - b[0] || a[1] - b[1] || a[2] - b[2]) < 0; };
+const ownPath = (root: unknown, path: string): boolean => path.split('.').every(key => { const has = !!root && typeof root === 'object' && Object.hasOwn(root, key); root = has ? (root as Record<string, unknown>)[key] : undefined; return has; });
+const seatShapes = new Map<string, unknown>();
+/** The template of a seat-model snapshot: the seed, or the seed minus the key groups that snapshot predates (cached per combination). */
+function seatShape(input: unknown): unknown {
+  const version = (input as { _meta?: { version?: unknown } } | null)?._meta?.version;
+  const absent = SEAT_KEYS_ADDED_LATER.filter(group => (olderThan(version, group.since) || (group.optionalAt ?? []).includes(version as string)) && group.paths.every(path => !ownPath(input, path)));
+  if (!absent.length) return seed;
+  const key = absent.map(group => SEAT_KEYS_ADDED_LATER.indexOf(group)).join(); // by row, not by label: two groups may share a label (2.1.0 did, until 2.1.1)
+  if (!seatShapes.has(key)) {
+    const older = structuredClone(seed) as Record<string, any>;
+    for (const group of absent) {
+      for (const path of group.paths) { const keys = path.split('.'), last = keys.pop()!; delete keys.reduce((node, k) => node[k], older)[last]; }
+      for (const path of group.restore ?? []) { const keys = path.split('.'), last = keys.pop()!; keys.reduce((node, k) => node[k], older)[last] = structuredClone(valueAt(capacityModel, path)); }
+      for (const [tier, names] of Object.entries(group.tiers)) older._meta.governance.tiers[tier].sections = older._meta.governance.tiers[tier].sections.filter((name: string) => !names.includes(name));
+    }
+    seatShapes.set(key, older);
+  }
+  return seatShapes.get(key);
+}
+
+/**
+ * Complete snapshots only: a partial or malformed config must never become live. Keys are compared as OWN keys (`k in e` walks the
+ * prototype chain, so a JSON key named `constructor` or `toString` would count as known and never be checked). `wave1` is set when
+ * `expected` is the frozen capacity file, the one shape a pre-seat Wave 1 pin may extend with ADDED_LATER keys.
+ */
+function shape(value: unknown, expected: unknown, path: string, wave1 = false): void {
   if (expected === null) {
     if (value !== null && (typeof value !== 'number' || !Number.isFinite(value))) throw Error(`config:${path}`);
   } else if (Array.isArray(expected)) {
@@ -99,23 +206,25 @@ function shape(value: unknown, expected: unknown, path: string): void {
       if (!Array.isArray(value) || !value.every(token => typeof token === 'string')) throw Error(`config:${path}:array`);
       return; // validate() still rejects unknown tokens and dependency cycles.
     }
-    // The tier registry decides who may edit which section, so a list is exact: the seed's membership, minus only the sections that
-    // joined that tier later (a snapshot pinned before then keeps the shorter list). No duplicate, unknown, moved or missing name.
+    // The tier registry decides who may edit which section, so a list is exact: the expected membership, minus only the sections that
+    // joined that tier later (a snapshot pinned before then keeps the shorter list) and, on the capacity shape alone, plus only those
+    // same sections (a pre-seat snapshot from after they joined). No duplicate, unknown, moved or missing name.
     const tier = /^_meta\.governance\.tiers\.([A-C])\.sections$/.exec(path);
     if (tier) {
       const later = TIER_SECTIONS_ADDED_LATER[tier[1]] ?? [];
       if (!Array.isArray(value) || !value.every(name => typeof name === 'string') || new Set(value).size !== value.length
-        || value.some(name => !expected.includes(name)) || expected.some(name => !value.includes(name) && !later.includes(name))) throw Error(`config:${path}:array`);
+        || value.some(name => !expected.includes(name) && !(wave1 && later.includes(name))) || expected.some(name => !value.includes(name) && !later.includes(name))) throw Error(`config:${path}:array`);
       return;
     }
     if (!Array.isArray(value) || value.length !== expected.length) throw Error(`config:${path}:array`);
-    expected.forEach((v, i) => shape(value[i], v, `${path}.${i}`));
+    expected.forEach((v, i) => shape(value[i], v, `${path}.${i}`, wave1));
   } else if (typeof expected === 'object') {
     if (!value || typeof value !== 'object' || Array.isArray(value)) throw Error(`config:${path}:object`);
     const e = expected as Record<string, unknown>, v = value as Record<string, unknown>, at = (k: string) => path ? `${path}.${k}` : k;
-    const keys = Object.keys(e).filter(k => k in v || !ADDED_LATER.has(at(k)));
-    if (keys.some(k => !(k in v)) || Object.keys(v).some(k => !(k in e))) throw Error(`config:${path}:keys`);
-    for (const k of keys) shape(v[k], e[k], at(k));
+    const keys = Object.keys(e).filter(k => Object.hasOwn(v, k) || !ADDED_LATER.has(at(k))), extra = Object.keys(v).filter(k => !Object.hasOwn(e, k));
+    if (keys.some(k => !Object.hasOwn(v, k)) || extra.some(k => !(wave1 && ADDED_LATER.has(at(k))))) throw Error(`config:${path}:keys`);
+    for (const k of keys) shape(v[k], e[k], at(k), wave1);
+    for (const k of extra) shape(v[k], seedAt(at(k)), at(k)); // an extra is an ADDED_LATER key of a Wave 1 pin: the seed's subtree is its exact shape
   } else if (typeof value !== typeof expected || (typeof value === 'number' && !Number.isFinite(value))) {
     throw Error(`config:${path}:type`);
   }
@@ -151,7 +260,7 @@ function validate(c: Economy): void {
     const tipMult = Math.max(...customers.map(t => t.tipMult)) * Math.max(...RUSH_TYPES.map(r => c.rush[r].tipMult)) * Math.max(...WEATHER.map(w => c.weather[w].tipMult)) * Math.max(1, c.tip.qrMult);
     for (const location of c.locations.list) {
       const payment = Math.ceil(gross * payMult * location.mult), tip = Math.ceil(Math.ceil(payment * c.tip.rate) * tipMult);
-      whole(Math.ceil((payment + tip) * c.shift.wellRested.mult) * Math.max(...c.upgrades.table.levels.map(t => t.capacity)), 'locations.maximumService');
+      whole(Math.ceil((payment + tip) * c.shift.wellRested.mult) * groupLimit(c), 'locations.maximumService');
       if (!location.id.trim() || location.mult <= 0) throw Error('config:locationIdentity');
       whole(location.rentPerDayBase, 'locations.rent');
       const rent = Math.round(location.rentPerDayBase * c.k.value) * c.locations.leaseDays;
@@ -160,6 +269,61 @@ function validate(c: Economy): void {
     whole(c.locations.leaseDays * 86400000, 'locations.duration', 1); // config-exempt: calendar days to milliseconds
     whole(c.locations.leaseDays, 'locations.leaseDays', 1);
     if (c.locations.depositRate < 0 || c.locations.depositRate > 1) throw Error('config:depositRate');
+  }
+  if (isSeatModel(c)) {
+    // Every alley seats the starting tables, every reachable table/chair has a price and chairs open somewhere.
+    const table = c.upgrades.table, slots = c.locations.list.map(row => row.tableSlots);
+    slots.forEach(n => whole(n, 'locations.tableSlots', table.startingTables));
+    // tablePriceBase[n-2] prices the n-th table (the first is free); chairPriceBase holds one second chair per table.
+    if (table.tablePriceBase.length < Math.max(...slots) - 1 || table.chairPriceBase.length < Math.max(...slots)) throw Error('config:seatPriceLadder');
+    for (const price of [...table.tablePriceBase, ...table.chairPriceBase]) { whole(price, 'table.seatPrice'); whole(Math.round(price * c.k.value), 'table.scaledSeatPrice'); }
+    whole(table.chairsAfterTables, 'table.chairsAfterTables', 1);
+    if (table.chairsAfterTables > Math.min(...slots)) throw Error('config:chairsAfterTables');
+    for (const p of [c.spawn.pPair, table.orderShape.solo.pBeer, table.orderShape.pair.pMoi]) if (p < 0 || p > 1) throw Error('config:seatProbability');
+    // Capacity demand (S3): a whole reference shop of at least one table; a multiplier below one would speed arrivals up, never slow them.
+    if (Object.hasOwn(c.spawn, 'capacityDemand')) {
+      whole(c.spawn.capacityDemand.refTables, 'spawn.capacityDemand.refTables', 1);
+      if (!Number.isFinite(c.spawn.capacityDemand.maxMult) || c.spawn.capacityDemand.maxMult < 1) throw Error('config:spawn.capacityDemand.maxMult');
+    }
+    // The shifts that open without a cooldown (S5, D8): a whole number of shifts, 0 turns the allowance off.
+    if (Object.hasOwn(c.shift, 'noCooldownFirstShifts')) whole(c.shift.noCooldownFirstShifts, 'shift.noCooldownFirstShifts');
+    // Mời về (Wave 3, D3): a finite rate (never negative: scan), a whole reputation cost, and the dearest kick a pair can be asked for (beer and two of the
+    // dearest dishes each, the largest leave multiplier) stays a safe whole number of coins.
+    const kick = kickTableRule(c);
+    if (kick) {
+      if (!Number.isFinite(kick.feeRate)) throw Error('config:kickTable.feeRate');
+      whole(kick.repPerGuest, 'kickTable.repPerGuest');
+      const tray = c.menu.bia.price + 2 * Math.max(...DISHES.map(d => c.menu[d].price)); // config-exempt: structural tray bound (beer + a first and a second snack, D14 D19)
+      const leave = Math.max(...Object.values(c.customerTypes).filter(t => 'leavePenaltyMult' in t).map(t => (t as { leavePenaltyMult: number }).leavePenaltyMult));
+      whole(Math.round(tray * kick.feeRate * leave) * PAIR, 'kickTable.maximumFee');
+    }
+    // Table and chair levels (S4): levels in order from 2, whole prices that stay whole once scaled, a gate inside the life path, benefits that only grow.
+    const gate = (n: number) => { whole(n, 'lifePathGate'); if (n >= c.lifePath.length) throw Error('config:lifePathGate'); };
+    const prices = (row: { priceBase: number; stepBase: number }, at: string) => {
+      for (const key of ['priceBase', 'stepBase'] as const) { whole(row[key], `${at}.${key}`); whole(Math.round(row[key] * c.k.value), `${at}.scaled${key}`); }
+    };
+    if (Object.hasOwn(table, 'tableUpgrade')) {
+      let before: { extraRounds: number; pExtraMoi: number; tipMult: number } = { extraRounds: 0, pExtraMoi: 0, tipMult: 1 };
+      table.tableUpgrade.levels.forEach((row, i) => {
+        const at = `tableUpgrade.levels.${i}`;
+        if (row.level !== i + 2) throw Error('config:upgrades.table.tableUpgrade:levelOrder');
+        prices(row, at); gate(row.lifePathGate); whole(row.extraRounds, `${at}.extraRounds`);
+        if (!(row.pExtraMoi >= 0 && row.pExtraMoi <= 1)) throw Error('config:upgrades.table.tableUpgrade:pExtraMoi');
+        if (!(Number.isFinite(row.tipMult) && row.tipMult >= 1)) throw Error('config:upgrades.table.tableUpgrade:tipMult');
+        if (row.extraRounds < before.extraRounds || row.pExtraMoi < before.pExtraMoi || row.tipMult < before.tipMult) throw Error('config:upgrades.table.tableUpgrade:benefitOrder');
+        before = row;
+      });
+    }
+    if (Object.hasOwn(table, 'chairUpgrade')) {
+      prices(table.chairUpgrade, 'chairUpgrade');
+      let before = 1; // level 1: the chairs every table starts with
+      table.chairUpgrade.levels.forEach((row, i) => {
+        if (row.level !== i + 2) throw Error('config:upgrades.table.chairUpgrade:levelOrder');
+        gate(row.lifePathGate);
+        if (!(Number.isFinite(row.patienceMult) && row.patienceMult >= before)) throw Error('config:upgrades.table.chairUpgrade:patienceMult');
+        before = row.patienceMult;
+      });
+    }
   }
   if (!c._meta.version.trim() || c.k.value < c.k.band[0] || c.k.value > c.k.band[1]) throw Error('config:k');
   positive(c.k.anchorValuePerServe, 'anchor');
@@ -250,19 +414,25 @@ function validate(c: Economy): void {
   for (const key of dependencies.keys()) visit(key);
   for (const crate of Object.values(c.crates)) for (const amount of Object.values(crate)) whole(amount, 'crate');
   if (c.ledgers.countedSources.some(source => !seed.ledgers.countedSources.includes(source))) throw Error('config:countedSources');
-  const initialTable = c.upgrades.table.levels[c.runtime.initialTableLevel - 1];
-  if (!initialTable) throw Error('config:initialTableLevel');
+  if (!c.upgrades.table.levels[c.runtime.initialTableLevel - 1]) throw Error('config:initialTableLevel');
   whole(c.upgrades.table.startingTables, 'startingTables', 1);
-  whole(c.upgrades.table.maxTables, 'maxTables', c.upgrades.table.startingTables);
   c.upgrades.table.levels.forEach((table, index) => {
     if (table.level !== index + 1) throw Error('config:tableLevelOrder');
-    whole(table.capacity, 'table.capacity', 1); whole(table.priceBase, 'table.priceBase');
-    if (index > 0 && table.capacity <= c.upgrades.table.levels[index - 1].capacity) throw Error('config:tableCapacityOrder');
+    whole(table.priceBase, 'table.priceBase');
   });
+  if (!isSeatModel(c)) {
+    whole(c.upgrades.table.maxTables, 'maxTables', c.upgrades.table.startingTables);
+    const levels = c.upgrades.table.levels;
+    levels.forEach((table, index) => {
+      whole(table.capacity, 'table.capacity', 1);
+      if (index > 0 && table.capacity <= levels[index - 1].capacity) throw Error('config:tableCapacityOrder');
+    });
+  }
   for (const weather of WEATHER) for (const kind of RUSH_TYPES) for (const campaign of [false, true]) {
     const interval = arrivalIntervalMs(c, weather, kind, campaign);
     whole(Math.round(interval), 'spawn.interval', 1);
-    for (const table of c.upgrades.table.levels) whole(Math.round(interval * (c.spawn.perCustomer ? table.capacity : 1)), 'spawn.groupInterval', 1);
+    whole(Math.round(interval * (c.spawn.perCustomer ? groupLimit(c) : 1)), 'spawn.groupInterval', 1);
+    if (isSeatModel(c) && Object.hasOwn(c.spawn, 'capacityDemand')) whole(Math.round(interval * (c.spawn.perCustomer ? groupLimit(c) : 1) * c.spawn.capacityDemand.maxMult), 'spawn.demandInterval', 1);
   }
   for (const [dish, stock] of Object.entries(c.inventory.startingStock)) {
     stock.forEach(n => whole(n, `startingStock.${dish}`));
@@ -282,7 +452,10 @@ function validate(c: Economy): void {
   if ('nextGoal' in c && !(Number.isFinite(c.nextGoal.reachMult) && c.nextGoal.reachMult > 0)) throw Error('config:nextGoal.reachMult');
   const reveal: Record<string, number> = c.onboarding.featureReveal;
   for (const key of ['hudAfterShifts', 'upgradeAllAfterShifts', 'journeyAfterShifts']) if (key in reveal) whole(reveal[key], `featureReveal.${key}`);
-  if (c.onboarding.firstShift.firstGroupSize > initialTable.capacity || c.onboarding.firstShift.guaranteedFirstGroupWithinMs < c.runtime.tableSeatingMs) throw Error('config:firstGroup');
+  // The forced first guest must fit a new table; at one chair that guest's tray is one item (D14).
+  const firstSeats = isSeatModel(c) ? CHAIRS_WITH_TABLE : c.upgrades.table.levels[c.runtime.initialTableLevel - 1].capacity;
+  if (c.onboarding.firstShift.firstGroupSize > firstSeats || c.onboarding.firstShift.guaranteedFirstGroupWithinMs < c.runtime.tableSeatingMs ||
+    isSeatModel(c) && c.onboarding.firstShift.firstOrder.length !== 1) throw Error('config:firstGroup');
   if (!DISHES.every(d => c.menu[d].unlock.kitchenLevel < c.upgrades.kitchen.priceBase.length)) throw Error('config:menuKitchenLevel');
   for (const p of [c.tip.patienceThreshold, c.demandMix.pMoi, c.demandMix.pNemGivenMoi, c.demandMix.pSecondRound]) {
     if (p < 0 || p > 1) throw Error('config:probability');
@@ -314,7 +487,7 @@ function validate(c: Economy): void {
       const weights = Object.entries(c.customerTypes).filter(([, t]) => t.usesTable && t.weight > 0).map(([type, t]) => ({ type, weight: t.weight * ((c.weather[weather].customerWeightMult as Record<string, number>)[type] ?? 1) * (type === 'voi' && 'voiWeightMult' in rush ? Number(rush.voiWeightMult) : 1) * signWeightMult(definition, type) }));
       const total = weights.reduce((sum, entry) => sum + entry.weight, 0);
       const postCap = weights.reduce((sum, entry) => sum + (entry.type === 'vip' ? 0 : entry.weight), 0);
-      const capCanExclude = c.upgrades.table.levels.some(t => t.capacity > c.customerTypes.vip.maxPerGroupPhase2);
+      const capCanExclude = groupLimit(c) > c.customerTypes.vip.maxPerGroupPhase2;
       if (!Number.isFinite(total) || total <= 0 || (capCanExclude && postCap <= 0)) throw Error('config:signboardWeights');
     }
   }
@@ -388,7 +561,10 @@ function freeze<T>(value: T): T {
 }
 
 export function loadConfig(input: unknown = seed) {
-  shape(input, Object.hasOwn((input as Economy)?.upgrades ?? {}, 'lifePathGate') ? seed : legacy, '');
+  // Generation by marker: 1.x has no life-path gates, the 2.0 capacity model has no chair prices.
+  const upgrades = (input as Economy)?.upgrades ?? {}, table = (upgrades as { table?: object }).table ?? {};
+  const template = !Object.hasOwn(upgrades, 'lifePathGate') ? legacy : Object.hasOwn(table, 'chairPriceBase') ? seatShape(input) : capacityModel;
+  shape(input, template, '', template === capacityModel);
   const raw = structuredClone(input) as Economy;
   validate(raw);
   const values = freeze(scale(raw, raw.k.value) as Economy);
@@ -408,4 +584,6 @@ export type Config = ReturnType<typeof loadConfig>;
 /** Immutable snapshot identity ignores object-key order, while array order remains meaningful. */
 export const configContent = (c: Config) => JSON.stringify(c.raw, (_, value) => value && typeof value === 'object' && !Array.isArray(value)
   ? Object.fromEntries(Object.keys(value).sort().map(key => [key, value[key]])) : value);
-export const config = loadConfig();
+/** The bundled registry seed: loadConfig() validated it against the seat-model shape, so its type is that shape. */
+export type SeedConfig = Omit<Config, 'raw' | 'values'> & { readonly raw: typeof seed; readonly values: typeof seed };
+export const config = loadConfig() as SeedConfig;

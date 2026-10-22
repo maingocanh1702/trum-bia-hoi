@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Game, config, loadConfig, encodeSave, decodeSave, isEconomy2, leaseQuote, type Config, type Command } from '../src';
 import { projectEconomy, compareEconomy, DAY_MS } from '../sim/forecast';
+import { capacityRaw } from './fixtures/capacity-model';
 const START=Date.parse('2026-09-09T00:00:00+07:00');
 const changed=(version:string,edit:(raw:Config['raw'])=>void)=>{const raw=structuredClone(config.raw);raw._meta.version=version;edit(raw);return loadConfig(raw);};
 
@@ -54,6 +55,19 @@ test('a candidate whose after-timeline versions are a subset of the before-timel
  assert.notEqual(report.k.candidate.mean,report.k.baseline.mean);
 });
 
+test('the forecast opens the first shifts of a save at once and waits the cooldown from the fourth, like the engine; with the allowance off it waits from the second (D8)',()=>{
+ const open=(count:number)=>changed('forecast-first-shifts-'+count,raw=>{raw.shift.dailyShiftCap.newbie=8;raw.entitlements.freeSessionsPerDay.bySegment.newbie=8;(raw.shift as {noCooldownFirstShifts?:number}).noCooldownFirstShifts=count;});
+ const gaps=(cfg:Config)=>{
+  const events=projectEconomy(new Game(cfg,42,START),[{from:0,config:cfg}],1).game.world.events,opened=events.filter(e=>e.type==='shift_opened').map(e=>e.at),closed=events.filter(e=>e.type==='shift_closed').map(e=>e.at);
+  assert.ok(opened.length>=4&&closed.length>=3,'a day holds the first four shifts');return [1,2,3].map(i=>opened[i]-closed[i-1]);
+ };
+ const cfg=open(3),cooldown=cfg.values.shift.durationMs/cfg.values.shift.regenRate-1000;
+ const [second,third,fourth]=gaps(cfg);
+ assert.ok(second<60000&&third<60000,'shifts 2 and 3 open the moment the previous one has closed');assert.ok(fourth>=cooldown,'shift 4 waits the 30 minutes of GDD 10');
+ const off=gaps(open(0));
+ assert.ok(off.every(gap=>gap>=cooldown),'with the allowance off every opening after the first waits for the stamina, as before S5');
+});
+
 test('forecast rejects unsupported horizons and ambiguous timelines before projecting',()=>{
  const source=new Game(config,42,START);
  for(const days of [0,-1,1.1,8,NaN,Infinity])assert.throws(()=>projectEconomy(source,[{from:0,config}],days),/forecast:days/);
@@ -62,10 +76,10 @@ test('forecast rejects unsupported horizons and ambiguous timelines before proje
 });
 
 test('an existing signed lease separates returned principal and renews by location identity after multiplier tuning',()=>{
- const fixture=changed('forecast-lease-fixture',raw=>{
-  assert.ok(isEconomy2(raw));raw.shift.startingCoinsBase=1000000;
-  raw.lifePath[1].lifetimeBase=1;raw.lifePath[1].requires=raw.lifePath[1].requires!.map(()=>'LP0');
- });
+ // A pinned capacity-model player: its crowded three two-seat tables keep losing orders, so penalty accounting is exercised.
+ const fixtureRaw=capacityRaw();fixtureRaw._meta.version='forecast-lease-fixture';fixtureRaw.shift.startingCoinsBase=1000000;
+ fixtureRaw.lifePath[1].lifetimeBase=1;fixtureRaw.lifePath[1].requires=fixtureRaw.lifePath[1].requires!.map(()=>'LP0');
+ const fixture=loadConfig(fixtureRaw);
  const source=new Game(fixture,42,START);
  const send=(command:Command)=>assert.ok(source.command({command,at:source.world.now,idempotencyKey:`lease-setup-${source.log.length}`}).ok);
  send({type:'startShift'});source.advance(START+11000);

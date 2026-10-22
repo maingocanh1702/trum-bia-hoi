@@ -59,20 +59,28 @@ small { font-size: 11px; }
 .glass-counter .sprite { width: 27px; height: 27px; }
 .glass-counter > span:first-of-type { font-size: 16px; font-weight: 800; }
 .glass-counter small { font-size: 10px; font-weight: 500; }
-.yard { position: relative; flex: 1; min-height: 325px; margin: 0 12px; }
-.table-space { position: absolute; width: 132px; height: 101px; transform: translateX(-50%); }
-.table-0 { left: 25%; top: 23%; }
-.table-1 { left: 75%; top: 23%; }
-.table-2 { left: 50%; top: 69%; }
-.table-3 { left: 25%; top: 110%; }
-.table-4 { left: 75%; top: 110%; }
-.table-5 { left: 50%; top: 155%; }
-.yard:has(.table-3) { min-height: 620px; }
-.yard:has(.table-3) .table-0, .yard:has(.table-3) .table-1 { top: 13%; }
-.yard:has(.table-3) .table-2 { top: 40%; }
-.yard:has(.table-3) .table-3, .yard:has(.table-3) .table-4 { top: 68%; }
-.yard:has(.table-3) .table-5 { top: 92%; }
+/* S6 (D13, P4): the yard is the door band, then a grid of the location's places (`data-slots`), two abreast on a phone, three on a wide screen; a place
+   without a table is an empty spot (`.table-slot`), so the shop is seen growing. A row is tall enough for a table, its chairs and its caption; nothing is
+   positioned by hand. The door (the queue, its patience rings, the "2 ghế" bubble: P0(c)'s wordless tutorial) sits in its own band at the TOP of the yard,
+   so it stays above the fold whatever the number of places below; the grid reserves 56 px above its first row for that row's order bubbles. Every row
+   below keeps a band of 25 px of room (a 128 px row holds a 103 px table) plus a 49 px row gap: a ONE-row order bubble of row 2+ and its patience track
+   (53 px above their table) clear the measured captions of the table above, a lingering table's three lines (guest label, state, enjoy countdown:
+   21 px below its space) included, with 0 px to spare (review 07 r1; yard.spec.ts "a busy alley" and "a busy alley under lingering tables", fixtures
+   `rows` / `linger-rows`: Lv1 tables, at most three dish icons, the fallback UI font; 49 px is the smallest gap that passes both). Not covered (review
+   07 r2, recorded, not fixed): a spotlit Lv3+ pair table whose order holds three or more different snacks wraps `.bubble-dishes` into a second row that
+   rises about 78 px and covers about 25 px of a lingering countdown above (22 px of the door band on row 1; four different snacks wrap even unlit); a
+   UI font taller than the fallback adds about 2 px. Remedy if it shows: a one-row bubble (`flex-wrap: nowrap`, narrower sprites past three icons) and
+   a `linger-rows` variant with Lv3 pair tables. */
+.yard { position: relative; flex: 1; min-height: 270px; margin: 0 12px; display: flex; flex-direction: column; }
+.yard-door { min-height: 44px; display: flex; align-items: center; padding-left: 2px; }
+.yard-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 128px; row-gap: 49px; justify-items: center; align-content: start; padding: 56px 0 16px; }
+.table-space { position: relative; width: 132px; height: 101px; }
+.table-slot { display: grid; place-items: end center; padding-bottom: 20px; }
+.slot-mark { width: 84px; height: 42px; border: 2px dashed color-mix(in srgb, var(--inoxDark) 60%, transparent); border-radius: 50%; background: color-mix(in srgb, var(--streetBgShade) 35%, transparent); }
 .table-object { display: block; width: 132px; height: 77px; border: 0; background: transparent; padding: 0; color: var(--ink); position: relative; }
+/* S6 (D14): the tray on the table top, one small dish per slot the level allows; the real order speaks in the bubble above. */
+.tray { position: absolute; left: 50%; top: 20px; transform: translateX(-50%); display: flex; gap: 1px; z-index: 1; pointer-events: none; }
+.tray .sprite { width: 15px; height: 15px; }
 .table-object > .sprite { width: 78px; height: 48px; position: absolute; left: 27px; top: 15px; border-radius: 50%; box-shadow: 0 7px 0 var(--inoxDark), 0 9px 7px color-mix(in srgb,var(--panel) 17%,transparent); }
 .table-object > .placeholder { background: var(--inox); }
 .stools { position: absolute; inset: 0; }
@@ -81,7 +89,10 @@ small { font-size: 11px; }
 .table-caption small { display: block; font-size: 9px; font-weight: 400; opacity: .7; margin-top: 2px; }
 .patience-track { background: var(--streetBgShade); height: 4px; margin: 4px 0 5px; border-radius: 2px; overflow: hidden; }
 .patience-track i { display: block; background: var(--success); height: 100%; }
-.opening-note { position: absolute; inset: 15% 10px 10%; display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center; background: color-mix(in srgb,var(--beerFoam) 96%,transparent); border: 1px solid var(--streetBgShade); border-radius: 8px; padding: 20px; z-index: 7; }
+/* The rest note ("Quán nhỏ đã sẵn sàng" and its "Mở ca") hangs from the top of the yard with the height of its text, so its button does not move with the
+   height of the grid: centred in a box from 15 % to 90 % of the yard, it slid under the sticky bottom nav once the yard grew taller than the screen
+   (review 07 r1: axe target-size at 1280×720 once the row gap grew; already under the nav at 360×740 with the HUD shown). yard.spec.ts "at rest …". */
+.opening-note { position: absolute; inset: 12px 10px auto; display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center; background: color-mix(in srgb,var(--beerFoam) 96%,transparent); border: 1px solid var(--streetBgShade); border-radius: 8px; padding: 20px; z-index: 7; }
 .opening-note h2 { font-size: 20px; }
 .opening-note p { font-size: 12px; max-width: 250px; line-height: 1.8; margin: 9px 0 16px; }
 .opening-note small { font-size: 10px; margin-top: 16px; }
@@ -169,8 +180,6 @@ progress::-webkit-progress-value { background: var(--beerAmber); border-radius: 
   .stall-scene { height: 230px; }
   .equipment-row { gap: 24px; }
   .equipment-object { width: 68px; }
-  .yard { min-height: 320px; }
-  .table-0 { left: 24%; }.table-1 { left: 76%; }
   .sheet { margin-bottom: 28px; border-radius: 14px; max-height: 86dvh; }
 }
 @media (max-width: 380px) {
@@ -184,7 +193,6 @@ progress::-webkit-progress-value { background: var(--beerAmber); border-radius: 
   .hud { padding-top: 10px; padding-bottom: 6px; }
   .stall-scene { height: 202px; padding-top: 6px; }
   .equipment-row { padding-top: 10px; }
-  .yard { min-height: 270px; }
   .stock-strip { margin-top: 0; padding-top: 0; padding-bottom: 0; }
   .bottom-nav { padding-top: 8px; padding-bottom: max(10px,env(safe-area-inset-bottom)); }
   .bottom-nav > button { min-height: 58px; }
@@ -198,7 +206,6 @@ progress::-webkit-progress-value { background: var(--beerAmber); border-radius: 
   .equipment-object .sprite { width: 40px; height: 40px; }
   .equipment-object > span { font-size: 9px; }
   .glass-counter { height: 22px; }
-  .yard { min-height: 260px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }

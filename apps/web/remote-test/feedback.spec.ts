@@ -1,10 +1,13 @@
 import { test, expect } from '@playwright/test';
+import { furnishShop } from './seat-shop';
 
 test('A4 real server supplies loss evidence without event history and remote advice survives reconnect', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
   await page.getByRole('button', { name: 'Chơi không đăng nhập', exact: true }).click();
   await expect(page.locator('.network-status')).toContainText('Đã đồng bộ');
+  // A one-chair shop turns every pair away at the door, so "buy tables" would outrank the ready-tray loss this test is about.
+  await furnishShop(page);
   await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
   await page.getByRole('button', { name: 'Xem mâm · bàn 1', exact: true }).first().click({ timeout: 20000 });
   await expect(page.locator('[data-preparation="ready"]')).toBeVisible({ timeout: 20000 });

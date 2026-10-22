@@ -1,0 +1,1809 @@
+{
+  "_meta": {
+    "name": "Trùm Bia Hơi — economy config",
+    "version": "2.0.23",
+    "date": "2026-10-20",
+    "spec": "08-SPEC-economy-constants.md (cùng số, cùng tên trường)",
+    "rules": [
+      "Trường kết thúc bằng 'Base' = xu/uy tín gốc, NHÂN k lúc load: displayed = round(valueBase * k).",
+      "Thời gian (Ms), hệ số (Mult), xác suất (P), weight, số lượng KHÔNG nhân k.",
+      "menu.*.price / bulkCost / unitCost là xu bia hơi ĐÃ CHỐT — không nhân k (k được suy ra từ menu).",
+      "Nhãn: core = không đổi · tune = chỉnh bằng playtest/sim · postmvp = chưa build.",
+      "Khi file này lệch 08-SPEC → file này là nguồn chạy; sửa spec cho khớp.",
+      "KHÔNG HARDCODE (founder 08/09): file này là SEED của Config Registry trong admin (trum-bia-hoi-brd-admin.md §5.2). Production đọc mọi key từ registry theo configVersion ghi vào từng ca; code chỉ giữ schema + default fallback. Đổi số = đổi trong admin, không deploy. Repo đồng bộ lại bằng export từ registry."
+    ],
+    "governance": {
+      "registryDoc": "trum-bia-hoi-brd-admin.md §5.2 (mô hình entry, RBAC, workflow) · 08-SPEC-economy-constants.md §22 (bảng key → tier) · 10-SPEC-tech-implementation.md §7 (config service)",
+      "keyFormat": "đường dẫn JSON trong file này, vd entitlements.freeSessionsPerDay.default, menu.bia.priceBase, rush.schedule",
+      "scaledByK": "key kết thúc bằng 'Base' → admin nhập giá trị Base, UI hiển thị cả giá trị sau ×k",
+      "scopes": [
+        "default",
+        "segment:<name>",
+        "campaign:<id>",
+        "player:<id>"
+      ],
+      "overridePrecedence": "player > campaign > segment > default; override player/campaign bắt buộc expiresAt",
+      "effectiveAt": [
+        "immediate",
+        "next_shift",
+        "next_day (00:00 Asia/Ho_Chi_Minh)",
+        "next_season"
+      ],
+      "versionLifecycle": [
+        "draft",
+        "approved",
+        "scheduled",
+        "active",
+        "archived"
+      ],
+      "perShiftPinning": "mỗi ca lưu configVersion; ca đang chạy không đổi version; replay anti-cheat dùng version của ca",
+      "tiers": {
+        "A": {
+          "meaning": "đổi tiền thật / tổng xu-ngày / thứ hạng / quyền truy cập",
+          "approval": "dual: Economy Admin (hoặc Game Admin cho campaign) đề xuất → Super Admin duyệt",
+          "defaultEffectiveAt": "next_day (league/lifePath/ledgers: next_season; campaign entitlements: immediate cho ca mở sau publish)",
+          "sections": [
+            "k",
+            "shift",
+            "entitlements",
+            "ledgers",
+            "tip",
+            "reputation",
+            "penalty",
+            "league",
+            "lifePath",
+            "lottery",
+            "shopSeason",
+            "cosmetics.donationTiersVnd",
+            "leaderboard",
+            "donation",
+            "spawn.pPair",
+            "spawn.capacityDemand",
+            "locations.list",
+            "upgrades.table.orderShape",
+            "upgrades.table.tablePriceBase",
+            "upgrades.table.chairPriceBase",
+            "upgrades.table.chairsAfterTables",
+            "upgrades.table.tableUpgrade",
+            "upgrades.table.chairUpgrade"
+          ],
+          "featureFlags": [
+            "weather.phase1Enabled",
+            "freshness.kegFreshnessEnabled",
+            "patience.graceEnabledFromPhase",
+            "upgrades.phase1UpgradesOutsideShiftOnly",
+            "shift.kickAllAllowed",
+            "lottery.legalGate"
+          ]
+        },
+        "B": {
+          "meaning": "cân bằng trong ca",
+          "approval": "single: Economy Admin",
+          "defaultEffectiveAt": "next_shift (risk, locations: next_day)",
+          "sections": [
+            "menu",
+            "inventory",
+            "demandMix",
+            "spawn",
+            "patience",
+            "enjoy",
+            "rounds",
+            "customerTypes",
+            "weather",
+            "rush",
+            "freshness",
+            "upgrades",
+            "glasses",
+            "signboard",
+            "unlocks",
+            "dog",
+            "quests",
+            "crates",
+            "chairmanBox",
+            "risk",
+            "locations",
+            "cosmetics",
+            "network",
+            "runtime"
+          ]
+        },
+        "C": {
+          "meaning": "content/ops, không đổi số economy (ngoài file này)",
+          "approval": "single: Game Admin",
+          "defaultEffectiveAt": "immediate",
+          "examples": [
+            "câu hỏi kiểm tra",
+            "quest pool composition",
+            "announcement",
+            "copy i18n",
+            "WC fixtures/teams",
+            "maintenance flag",
+            "min client version"
+          ],
+          "sections": [
+            "onboarding",
+            "nextGoal",
+            "audio"
+          ]
+        }
+      },
+      "unlistedKeyDefaultTier": "B",
+      "excludedFromRegistry": [
+        "prototypePhase0 (chỉ prototype offline)",
+        "_meta"
+      ],
+      "ci": "coverage test: key trong code ∉ registry → fail; scripts/check_economy_config.py chạy trên bản export từ registry"
+    },
+    "lifePathEvalRule": "Đánh giá đầy đủ lifetime và requires. Mốc đạt mở gate ngay, không phụ thuộc đã nhận thưởng; phần thưởng nhận một lần qua claimLifePath, giữ ledger canonical."
+  },
+  "k": {
+    "value": 2.5,
+    "anchorValuePerServe": 82.5,
+    "band": [
+      2.0,
+      3.0
+    ],
+    "measuredPrototype": [
+      2.24,
+      2.34
+    ],
+    "label": "tune"
+  },
+  "menu": {
+    "bia": {
+      "label": "Bia hơi",
+      "price": 50,
+      "bulkCost": 10,
+      "unitCost": 12,
+      "needsGlass": true,
+      "prepMs": 3000,
+      "station": "tap",
+      "unlock": {
+        "kitchenLevel": 0
+      },
+      "phase": 0
+    },
+    "lac": {
+      "label": "Lạc",
+      "price": 75,
+      "bulkCost": 26,
+      "unitCost": 31,
+      "needsGlass": false,
+      "prepMs": 0,
+      "station": "instant",
+      "unlock": {
+        "kitchenLevel": 0
+      },
+      "phase": 0
+    },
+    "nem": {
+      "label": "Nem chua",
+      "price": 150,
+      "bulkCost": 60,
+      "unitCost": 72,
+      "needsGlass": false,
+      "prepMs": 0,
+      "station": "instant",
+      "unlock": {
+        "kitchenLevel": 0
+      },
+      "phase": 0
+    },
+    "dau": {
+      "label": "Đậu tẩm hành",
+      "price": 100,
+      "bulkCost": 45,
+      "unitCost": 54,
+      "needsGlass": false,
+      "prepMs": 4000,
+      "station": "kitchen",
+      "unlock": {
+        "kitchenLevel": 1
+      },
+      "phase": 2
+    },
+    "topmo": {
+      "label": "Tóp mỡ Triều Khúc",
+      "price": 165,
+      "bulkCost": 82,
+      "unitCost": 98,
+      "needsGlass": false,
+      "prepMs": 5000,
+      "station": "kitchen",
+      "unlock": {
+        "kitchenLevel": 1
+      },
+      "phase": 2
+    },
+    "long": {
+      "label": "Lòng xào dưa",
+      "price": 280,
+      "bulkCost": 155,
+      "unitCost": 186,
+      "needsGlass": false,
+      "prepMs": 7000,
+      "station": "kitchen",
+      "unlock": {
+        "kitchenLevel": 2
+      },
+      "phase": 2
+    }
+  },
+  "inventory": {
+    "bulkSize": 10,
+    "fullButtonRule": "floor(missing/10)*bulkPrice + (missing%10)*unitPrice",
+    "overflowGiftToCoinsAt": "unitCost",
+    "startingStock": {
+      "bia": [
+        10,
+        15
+      ],
+      "lac": [
+        5,
+        15
+      ],
+      "nem": [
+        5,
+        15
+      ]
+    },
+    "iceIsConsumable": false
+  },
+  "demandMix": {
+    "label": "tune",
+    "pMoi": 0.85,
+    "pNemGivenMoi": 0.65,
+    "pSecondRound": 0.35,
+    "moiPerRoundPhase2": [
+      0,
+      2
+    ],
+    "pHotGivenMoi": 0.5,
+    "pHotGivenMoiSpecial": 0.8,
+    "_rule": "Founder 09/09: Order chỉ giao khi ĐỦ món (03-SPEC §4 giữ nguyên). Chống kẹt theo gameplay: khách chỉ gọi mồi trong số món CÒN HÀNG lúc gọi (kho − phần đã có khách gọi chưa làm > 0); hết mồi → khách chỉ gọi bia. Bia luôn gọi — hết bia là lỗi người chơi (khách bỏ đi + phạt như gốc; Thùng Cấp Cứu khi hết sạch). Khi có bếp: pHotGivenMoi = xác suất chọn mồi nóng thay lạnh; nhóm có VIP/ngồi lỳ dùng pHotGivenMoiSpecial (F11 §6)."
+  },
+  "spawn": {
+    "baseMs": 10500,
+    "warmupMult": 1.6,
+    "perCustomer": true,
+    "formula": "rush == none ? max(baseMs, rush.floorMs) * weather.spawnIntervalMult * rush.spawnIntervalMult * marketing.spawnMult : max(baseMs * weather.spawnIntervalMult * rush.spawnIntervalMult * marketing.spawnMult, rush.floorMs)",
+    "groupSizePhase0": [
+      1,
+      2
+    ],
+    "groupSizeMaxPhase1": "table.capacity",
+    "queueSlotsFormula": "queueBaseSlots + floor(totalCapacity / queueSeatsPerSlot) — seed rules 28: 1 + floor(totalCapacity / 8); snapshot sức chứa và pin trước 2.0.22: 2 + floor(totalCapacity / 3)",
+    "playerServeCeilingPerSec": 0.74,
+    "pPair": 0.5,
+    "capacityDemand": {
+      "refTables": 6,
+      "maxMult": 4,
+      "_rule": "Cầu theo sức chứa (rules 28, D19): khoảng cách tới nhóm khách kế × min(maxMult, max(1, refTables / số bàn đang có)) — 1 bàn ×4 · 2 bàn ×3 · 3 bàn ×2 · 4 bàn ×1,5 · từ refTables bàn trở lên ×1. Nhân sau hệ số cỡ nhóm (perCustomer), làm tròn một lần; không đụng khách đầu ca (warmup). Cầu thừa bị từ chối tại cửa, không phạt (penalty.queueOverflow 0). Snapshot ghim trước 2.0.22 không có key này nên giữ nhịp cũ (×1); maxMult = 1 tắt hẳn."
+    }
+  },
+  "patience": {
+    "thuongMs": 24000,
+    "rushTypeMult": 0.611,
+    "orderRule": "min(patience of group at order time)",
+    "graceMs": 2500,
+    "graceEnabledFromPhase": 1
+  },
+  "enjoy": {
+    "minMs": 5000,
+    "maxMs": 10000
+  },
+  "rounds": {
+    "thuong": [
+      1,
+      2
+    ],
+    "voi": [
+      1,
+      1
+    ],
+    "ngoily": [
+      3,
+      5
+    ],
+    "vip": [
+      1,
+      2
+    ]
+  },
+  "customerTypes": {
+    "thuong": {
+      "label": "Dân nhậu",
+      "weight": 1.0,
+      "patienceMult": 1.0,
+      "enjoyMult": 1.0,
+      "tipMult": 1,
+      "leavePenaltyMult": 1,
+      "paymentMult": 1,
+      "usesTable": true,
+      "usesGlass": true,
+      "phase": 0
+    },
+    "voi": {
+      "label": "Làm ly nhanh",
+      "weight": 0.3,
+      "patienceMult": 0.611,
+      "enjoyMult": 0.8,
+      "tipMult": 1,
+      "leavePenaltyMult": 1,
+      "paymentMult": 1,
+      "usesTable": true,
+      "usesGlass": true,
+      "phase": 0
+    },
+    "vip": {
+      "label": "Khách sộp",
+      "weight": 0.1,
+      "patienceMult": 0.611,
+      "enjoyMult": 1.0,
+      "tipMult": 10,
+      "leavePenaltyMult": 10,
+      "paymentMult": 1,
+      "usesTable": true,
+      "usesGlass": true,
+      "phase": 0,
+      "maxPerGroupPhase2": 1
+    },
+    "chipheo": {
+      "label": "Khách quậy",
+      "weight": 0.03,
+      "patienceMult": 5.0,
+      "enjoyMult": 5.0,
+      "tipMult": 0,
+      "leavePenaltyMult": 0,
+      "paymentMult": 0,
+      "usesTable": true,
+      "usesGlass": true,
+      "phase": 2
+    },
+    "ngoily": {
+      "label": "Bàn lai rai",
+      "weight": 0.1,
+      "patienceMult": 1.0,
+      "enjoyMult": 10.0,
+      "tipMult": 1,
+      "leavePenaltyMult": 1,
+      "paymentMult": 1,
+      "usesTable": true,
+      "usesGlass": true,
+      "phase": 2
+    },
+    "shipper": {
+      "label": "Ship bia/mồi",
+      "weight": 0,
+      "spawnIntervalMs": 220000,
+      "deadlineMs": 45000,
+      "netRate": 0.75,
+      "missPenaltyRate": 0.5,
+      "orderLines": [
+        4,
+        7
+      ],
+      "grossBase": [
+        180,
+        290
+      ],
+      "usesTable": false,
+      "usesGlass": false,
+      "requires": "phone",
+      "phase": 2
+    },
+    "football_fan": {
+      "label": "Nhóm cổ vũ",
+      "weight": 0,
+      "patienceMult": 1.0,
+      "enjoyMult": 3.0,
+      "tipMult": 1,
+      "leavePenaltyMult": 1,
+      "paymentMult": 1,
+      "usesTable": true,
+      "usesGlass": true,
+      "phase": 4
+    }
+  },
+  "weather": {
+    "label": "tune",
+    "sunny": {
+      "label": "Nắng",
+      "weight": 35,
+      "freshnessMult": 1.0,
+      "patienceMult": 1.0,
+      "tipMult": 1.0,
+      "spawnIntervalMult": 1.0,
+      "shipperMult": 1.0,
+      "customerWeightMult": {}
+    },
+    "hot": {
+      "label": "Nóng",
+      "weight": 20,
+      "freshnessMult": 0.67,
+      "patienceMult": 1.0,
+      "tipMult": 1.15,
+      "spawnIntervalMult": 0.95,
+      "shipperMult": 1.5,
+      "customerWeightMult": {}
+    },
+    "humid": {
+      "label": "Oi bức",
+      "weight": 10,
+      "freshnessMult": 0.5,
+      "patienceMult": 0.75,
+      "tipMult": 1.2,
+      "spawnIntervalMult": 0.9,
+      "shipperMult": 2.0,
+      "customerWeightMult": {
+        "chipheo": 1.5
+      }
+    },
+    "rain": {
+      "label": "Mưa phùn",
+      "weight": 20,
+      "freshnessMult": 1.05,
+      "patienceMult": 1.15,
+      "tipMult": 1.0,
+      "spawnIntervalMult": 1.1,
+      "shipperMult": 3.0,
+      "customerWeightMult": {
+        "ngoily": 2.0
+      }
+    },
+    "cold": {
+      "label": "Lạnh",
+      "weight": 15,
+      "freshnessMult": 1.2,
+      "patienceMult": 1.0,
+      "tipMult": 0.95,
+      "spawnIntervalMult": 1.2,
+      "shipperMult": 0.8,
+      "customerWeightMult": {}
+    },
+    "phase1Enabled": [
+      "sunny",
+      "hot",
+      "rain"
+    ]
+  },
+  "rush": {
+    "label": "tune",
+    "none": {
+      "durationMs": 0,
+      "spawnIntervalMult": 1.0,
+      "floorMs": 10500,
+      "paymentMult": 1.0,
+      "tipMult": 1.0,
+      "leavePenaltyMult": 1.0,
+      "voiWeightMult": 1,
+      "phase": 0
+    },
+    "peak": {
+      "durationMs": 0,
+      "spawnIntervalMult": 0.66,
+      "floorMs": 0,
+      "paymentMult": 1.0,
+      "tipMult": 1.0,
+      "leavePenaltyMult": 1.0,
+      "voiWeightMult": 1,
+      "phase": 0,
+      "note": "toggle đo feel P0"
+    },
+    "light": {
+      "durationMs": 90000,
+      "spawnIntervalMult": 0.35,
+      "floorMs": 1000,
+      "paymentMult": 1.05,
+      "tipMult": 1.1,
+      "leavePenaltyMult": 1.8,
+      "voiWeightMult": 2,
+      "phase": 1
+    },
+    "heavy": {
+      "durationMs": 150000,
+      "spawnIntervalMult": 0.2,
+      "floorMs": 700,
+      "paymentMult": 1.1,
+      "tipMult": 1.18,
+      "leavePenaltyMult": 2.5,
+      "voiWeightMult": 3,
+      "enjoyMult": 1.15,
+      "phase": 2
+    },
+    "lunch_light": {
+      "durationMs": 90000,
+      "spawnIntervalMult": 0.45,
+      "floorMs": 1000,
+      "paymentMult": 1.03,
+      "tipMult": 1.05,
+      "leavePenaltyMult": 1.5,
+      "voiWeightMult": 2.5,
+      "phase": 2
+    },
+    "football": {
+      "durationMs": "broadcast",
+      "spawnIntervalMult": 0.25,
+      "floorMs": 700,
+      "paymentMult": 1.1,
+      "tipMult": 1.18,
+      "leavePenaltyMult": 2.5,
+      "phase": 4
+    },
+    "schedule": {
+      "perShift": 2,
+      "noRushFirstMs": 30000,
+      "warningMs": 20000,
+      "seed": "locationId+shiftId+dayBucket",
+      "priority": [
+        "inspection",
+        "gangster",
+        "football",
+        "heavy",
+        "light",
+        "none"
+      ],
+      "heavyFromLifePath": 1,
+      "_rule": "Founder 09/09 (E7): đợt 'heavy' chỉ xuất hiện khi lifePath ≥ heavyFromLifePath; trước đó cả 2 đợt là 'light'."
+    }
+  },
+  "freshness": {
+    "baseMs": 12000,
+    "warnMs": 9000,
+    "coolerLevelMs": [
+      12000,
+      20000,
+      35000,
+      60000,
+      null
+    ],
+    "kegFreshnessMs": [
+      240000,
+      360000,
+      540000,
+      900000,
+      null
+    ],
+    "kegFreshnessEnabled": false,
+    "staleConsequence": {
+      "mvp": {
+        "tipMult": 0,
+        "reputationDelta": -1,
+        "keepsPayment": true
+      },
+      "postmvp": {
+        "refuse": true
+      }
+    },
+    "expiredOrderGlassState": "dirty"
+  },
+  "tip": {
+    "patienceThreshold": 0.6,
+    "rate": 0.3,
+    "vipMult": 10,
+    "qrMult": 1.2,
+    "qrRounding": "ceil",
+    "wellRestedMult": 1.1,
+    "wellRestedDurationMs": 600000,
+    "wellRestedKeyedBy": "open-day",
+    "graceForcedPatienceRatio": 0.1
+  },
+  "reputation": {
+    "serveWithTip": 3,
+    "serveNoTip": 1,
+    "customerLeft": -5,
+    "staleGlass": -1,
+    "combineRule": "trừ 1 lần theo lý do nặng nhất",
+    "notScaledByK": true
+  },
+  "penalty": {
+    "leaveRate": 0.1,
+    "grossIs": "base price before tip",
+    "vipMult": 10,
+    "queueOverflow": 0,
+    "kickToCloseFormula": "Σ ab(c)",
+    "kickStubbornRepBase": "ceil(secondsSeated/10)*5"
+  },
+  "ledgers": {
+    "coins": "tiêu được",
+    "seasonEarned": "điểm Giải Nhậu, không giảm khi tiêu",
+    "lifetimeEarned": "Đường Lên Trùm",
+    "countedSources": [
+      "servePayment",
+      "serveTip",
+      "shipperNet"
+    ],
+    "excluded": [
+      "quest",
+      "attendance",
+      "lottery",
+      "donation",
+      "compensation"
+    ]
+  },
+  "glasses": {
+    "start": 10,
+    "buyCap": 40,
+    "storageCap": 50,
+    "priceBase": 400,
+    "lifecycle": [
+      "clean",
+      "in_use",
+      "dirty",
+      "washing",
+      "clean"
+    ],
+    "_rule": "Mua tới buyCap tổng số cốc đang sở hữu (buyGlass), được mua trong ca; mỗi cốc priceBase ×k. Quà có thể vượt buyCap tới storageCap. Menu quản lý giữ tạm dừng đến khi đóng."
+  },
+  "upgrades": {
+    "keg": {
+      "label": "Bom bia + vòi rót",
+      "priceBase": [
+        0,
+        5000,
+        20000,
+        80000,
+        300000
+      ],
+      "pourSlots": [
+        1,
+        2,
+        3,
+        4,
+        6
+      ],
+      "pourMs": [
+        2000,
+        1800,
+        1600,
+        1400,
+        1200
+      ],
+      "kegStorage": [
+        4,
+        7,
+        12,
+        20,
+        40
+      ],
+      "kegBatch": [
+        2,
+        3,
+        5,
+        8,
+        14
+      ],
+      "refillMs": [
+        12000,
+        8000,
+        6000,
+        5000,
+        4000
+      ],
+      "refillEnabled": true,
+      "phase": 1,
+      "_rule": "Đầu ca châm phần còn thiếu tới kegStorage từ kho thật, giữ nguyên bia và mẻ đang chạy. Khi có chỗ và kho bia, mẻ mới bắt đầu ngay, lấy min(kegBatch, chỗ trống, kho), hoàn tất sau refillMs; việc mới chờ mẻ sau. Rules 28 trên snapshot bàn ghế khi refillEnabled bật: khách gọi bia thì cốc bia sẵn sàng ngay trong tick gọi nếu bom còn cốc rót sẵn và có cốc sạch (trừ 1 khỏi bom, không qua vòi) — pourSlots/pourMs không còn nằm trên đường phục vụ, chỉ còn cho snapshot sức chứa cũ và replay rules ≤ 27. Tắt refillEnabled thì rót trực tiếp từ kho theo vòi: tối đa pourSlots cốc trong pourMs, mỗi cốc trừ 1 khỏi kho."
+    },
+    "washer": {
+      "label": "Bồn rửa cốc",
+      "priceBase": [
+        0,
+        4000,
+        16000,
+        60000,
+        200000
+      ],
+      "washMs": [
+        7000,
+        5000,
+        4000,
+        2500,
+        1500
+      ],
+      "slots": [
+        1,
+        1,
+        2,
+        3,
+        5
+      ],
+      "phase": 1,
+      "_rule": "Tự động: cốc bẩn vào mẻ ngay; 1 mẻ = tối đa `slots` cốc, mất `washMs`. Bền vững = slots/washMs = 8,6 / 12 / 30 / 72 / 200 cốc/phút."
+    },
+    "cooler": {
+      "label": "Hầm / tủ giữ lạnh",
+      "priceBase": [
+        0,
+        3000,
+        12000,
+        45000,
+        150000
+      ],
+      "freshnessMs": [
+        12000,
+        20000,
+        35000,
+        60000,
+        null
+      ],
+      "phase": 1
+    },
+    "stall": {
+      "label": "Quầy / kho",
+      "priceBase": [
+        0,
+        1500,
+        8000,
+        30000,
+        120000
+      ],
+      "stockCap": [
+        15,
+        25,
+        45,
+        80,
+        150
+      ],
+      "signboardGateLevel": 3,
+      "phase": 2
+    },
+    "kitchen": {
+      "label": "Bếp",
+      "priceBase": [
+        null,
+        12000,
+        50000,
+        160000,
+        400000
+      ],
+      "slots": [
+        0,
+        1,
+        2,
+        2,
+        3
+      ],
+      "prepMult": [
+        null,
+        1.0,
+        0.9,
+        0.8,
+        0.7
+      ],
+      "unlocks": [
+        [],
+        [
+          "dau",
+          "topmo"
+        ],
+        [
+          "long"
+        ],
+        [],
+        []
+      ],
+      "phase": 2,
+      "portionsPerPan": [
+        0,
+        2,
+        2,
+        3,
+        3
+      ],
+      "_rule": "Tự động nấu theo chảo: 1 slot = 1 chảo; 1 mẻ = tối đa portionsPerPan khẩu phần CÙNG món (ưu tiên gom món của cùng Order), mất menu.prepMs × prepMult. Món của Order khác vẫn được gom nếu còn chỗ trong chảo. Bền vững Lv1–4 ≈ 24–30 / 48–60 / 90–108 / 154–193 khẩu phần/phút (tuỳ món)."
+    },
+    "table": {
+      "label": "Bàn",
+      "levels": [
+        {
+          "level": 1,
+          "name": "Bàn con",
+          "priceBase": 0,
+          "phase": 0
+        },
+        {
+          "level": 2,
+          "name": "Bàn vuông",
+          "priceBase": 1500,
+          "phase": 1
+        },
+        {
+          "level": 3,
+          "name": "Bàn dài",
+          "priceBase": 6000,
+          "phase": 2
+        },
+        {
+          "level": 4,
+          "name": "Bàn VIP / kê dài",
+          "priceBase": 25000,
+          "repBase": [
+            3000,
+            40000
+          ],
+          "requiredBadge": "ket_noi",
+          "phase": 3
+        }
+      ],
+      "startingTables": 1,
+      "tablePriceBase": [
+        600,
+        1600,
+        3200,
+        6000,
+        10000,
+        16000,
+        25000
+      ],
+      "chairPriceBase": [
+        4000,
+        6000,
+        9000,
+        12000,
+        16000,
+        20000,
+        24000,
+        28000
+      ],
+      "chairsAfterTables": 4,
+      "orderShape": {
+        "solo": {
+          "pBeer": 0.7
+        },
+        "pair": {
+          "pMoi": 0.85
+        },
+        "_rule": "Mâm theo số ghế của bàn lúc nhóm ngồi (rules 28, D14): bàn 1 ghế = mỗi khách bia HOẶC 1 mồi tức thì (pBeer = xác suất bia; mồi chỉ chọn trong món tức thì còn hàng, hết thì bia); bàn 2 ghế = mỗi khách bia + 1 mồi với xác suất pMoi (kể cả mồi bếp, chỉ món còn hàng). Nhóm đang ngồi giữ mâm cũ; ghế mua thêm áp cho nhóm kế. demandMix.pMoi chỉ còn cho snapshot cũ (mô hình sức chứa)."
+      },
+      "tableUpgrade": {
+        "levels": [
+          {
+            "level": 2,
+            "priceBase": 8000,
+            "stepBase": 3000,
+            "lifePathGate": 1,
+            "extraRounds": 1,
+            "pExtraMoi": 0,
+            "tipMult": 1
+          },
+          {
+            "level": 3,
+            "priceBase": 20000,
+            "stepBase": 8000,
+            "lifePathGate": 2,
+            "extraRounds": 1,
+            "pExtraMoi": 0.35,
+            "tipMult": 1
+          },
+          {
+            "level": 4,
+            "priceBase": 35000,
+            "stepBase": 12000,
+            "lifePathGate": 4,
+            "extraRounds": 1,
+            "pExtraMoi": 0.35,
+            "tipMult": 1.25
+          }
+        ],
+        "_rule": "Cấp bàn (rules 28, D14 D18 D19): nâng từng cấp 1→4 qua upgradeTable; bàn phải có 2 ghế (tableNeedsChairs), mua bất kể bàn đang có khách. Giá theo CẤP ĐÍCH: priceBase + stepBase × n, n = số bàn đã đạt cấp đó (cấp ≥ cấp đích — bàn đã lên cao hơn vẫn tính, nên tổng tiền không phụ thuộc thứ tự mua). Gate Đời Quán lifePathGate (Lv2 LP1, Lv3 LP2, Lv4 LP4); không còn gate huy hiệu Kết Nối / uy tín. Mỗi dòng ghi TỔNG lợi ích của bàn ở cấp đó (cộng dồn, không giảm theo cấp): extraRounds = số đợt gọi thêm của mỗi nhóm; pExtraMoi = xác suất mỗi khách gọi mồi thứ 2 sau mồi đầu (chỉ món còn hàng; mâm vẫn chỉ giao khi đủ món); tipMult = hệ số tip tại bàn đó. Lợi ích được chốt cho nhóm lúc ngồi (nhóm đang ngồi không đổi) và chỉ có hiệu lực khi bàn có 2 ghế. upgrades.table.levels[].priceBase/repBase/requiredBadge là thang cũ: chỉ snapshot không có tableUpgrade (pin ≤ 2.0.22) còn đọc."
+      },
+      "chairUpgrade": {
+        "priceBase": 4000,
+        "stepBase": 2000,
+        "levels": [
+          {
+            "level": 2,
+            "lifePathGate": 1,
+            "patienceMult": 1.15
+          },
+          {
+            "level": 3,
+            "lifePathGate": 2,
+            "patienceMult": 1.3
+          }
+        ],
+        "_rule": "Nâng ghế (rules 28, D15): mỗi bàn nâng ghế cấp 1→3 qua upgradeChair {tableId}, không đòi bàn đủ 2 ghế. Giá = priceBase + stepBase × t, t = số lần nâng ghế đã mua toàn quán (mọi bàn, mọi cấp). Gate Đời Quán theo cấp đích (Lv2 LP1, Lv3 LP2). patienceMult nhân kiên nhẫn chờ món của đơn (Order.patienceMs) của nhóm ngồi sau lần nâng; mọi đợt gọi của cùng một nhóm dùng đúng hệ số đó, không cộng dồn qua đợt; kiên nhẫn ở hàng đợi cửa và cửa sổ tip không đổi. Thay key postmvp upgrades.backrest (ghế đó gọi 2 mồi) của snapshot cũ."
+      }
+    },
+    "phase1UpgradesOutsideShiftOnly": false,
+    "_seatRule": "Mô hình bàn ghế v3.3 (rules 28): bàn mới kèm 1 ghế, giá bàn thứ n = tablePriceBase[n−2]; số bàn tối đa = locations.list[].tableSlots của mặt bằng đang đứng; ghế thứ 2 của mỗi bàn chỉ mở khi đã có chairsAfterTables bàn, giá = chairPriceBase[số ghế 2 đã mua toàn quán]; tối đa 2 ghế/bàn; mua bàn/ghế không đòi bàn trống (áp cho nhóm kế). Nhóm khách 1 hoặc 2 người (spawn.pPair); cặp đến khi quán chưa có bàn 2 ghế → từ chối tại cửa (queue_overflow noSeat), không phạt, không trừ uy tín. Từ 2.0.23: cấp bàn (upgrades.table.tableUpgrade: giá, gate Đời Quán, lợi ích) và cấp ghế (upgrades.table.chairUpgrade: giá, gate, kiên nhẫn); levels[].priceBase/repBase/requiredBadge chỉ còn cho pin ≤ 2.0.22.",
+    "_pipelineRule": "Founder 09/09: MỌI trạm (bom rót, bồn rửa, bếp) là pipeline TỰ ĐỘNG — người chơi không bấm, chỉ Phục vụ. Mỗi trạm định nghĩa bằng 2 tham số: thời gian 1 mẻ (ms) + số lượng mỗi mẻ (batch). Mẻ bắt đầu ngay khi có ≥1 việc chờ và lấy tối đa batch việc; việc đến giữa mẻ chờ mẻ sau. Engine đọc: keg.refillMs/kegBatch, washer.washMs/slots (=batch), kitchen prepMs/slots (=số chảo) × portionsPerPan.",
+    "lifePathGate": {
+      "keg": [
+        0,
+        0,
+        0,
+        2,
+        3
+      ],
+      "washer": [
+        0,
+        0,
+        0,
+        2,
+        3
+      ],
+      "cooler": [
+        0,
+        0,
+        0,
+        2,
+        3
+      ],
+      "stall": [
+        0,
+        0,
+        0,
+        2,
+        3
+      ],
+      "kitchen": [
+        0,
+        0,
+        0,
+        3,
+        4
+      ],
+      "_rule": "Mức LP tối thiểu để mua cấp (index = cấp−1; bếp index = cấp). Rải cây thiết bị theo Đường Lên Trùm: Lv4 cần LP2, Lv5 cần LP3; bếp Lv3/Lv4 cần LP3/LP4."
+    }
+  },
+  "signboard": {
+    "installFeeBase": 20000,
+    "gate": {
+      "stallLevel": 3
+    },
+    "styles": {
+      "wood": {
+        "priceBase": 0,
+        "vipWeightMult": 2
+      },
+      "neon": {
+        "priceBase": 15000,
+        "vipWeightMult": 2,
+        "shipperMult": 1.2
+      },
+      "vintage": {
+        "priceBase": 20000,
+        "vipWeightMult": 2,
+        "voiWeightMult": 0.5
+      },
+      "calligraphy": {
+        "priceBase": 25000,
+        "vipWeightMult": 2,
+        "ngoilyWeightMult": 0.8
+      },
+      "golden": {
+        "priceBase": 30000,
+        "repBase": 5000,
+        "vipWeightMult": 3
+      }
+    },
+    "phase": 2
+  },
+  "unlocks": {
+    "phone": {
+      "priceBase": 5000,
+      "gate": "LP1",
+      "effect": "shipper + social",
+      "phase": 2
+    },
+    "qr": {
+      "priceBase": 8000,
+      "gate": [
+        "phone",
+        "LP2"
+      ],
+      "effect": "tip ceil x1.2",
+      "phase": 2
+    },
+    "flyer": {
+      "repBase": 300,
+      "gate": "LP2",
+      "campaignMs": 90000,
+      "spawnIntervalMult": 0.28,
+      "stockCap": 5,
+      "perShift": 1,
+      "freeOnDaily5of5": true,
+      "phase": 2
+    },
+    "emergencyPack": {
+      "free": true,
+      "trigger": "hết sạch nguyên liệu",
+      "contents": "crate.small",
+      "phase": 2
+    }
+  },
+  "dog": {
+    "label": "tune",
+    "levels": [
+      {
+        "level": 1,
+        "name": "Chó con",
+        "coinBase": 2000,
+        "materials": {
+          "lac": 20
+        },
+        "hp": 1,
+        "atk": 1
+      },
+      {
+        "level": 2,
+        "name": "Chó trưởng thành",
+        "coinBase": 8000,
+        "materials": {
+          "nem": 20
+        },
+        "hp": 2,
+        "atk": 2
+      },
+      {
+        "level": 3,
+        "name": "Chó chiến",
+        "coinBase": 25000,
+        "materials": {
+          "nem": 40
+        },
+        "hp": 3,
+        "atk": 3
+      }
+    ],
+    "capturedMs": 1800000,
+    "theftReductionByLevel": [
+      0,
+      0.5,
+      0.8,
+      1.0
+    ],
+    "phase": 3
+  },
+  "shift": {
+    "durationMs": 720000,
+    "regenRate": 0.4,
+    "regenOnlyActive": true,
+    "regenStartsWhen": "all customers left (resting)",
+    "regenSessionDenoms": [
+      0.5,
+      1.0,
+      1.5
+    ],
+    "openRequiresFullStamina": true,
+    "dailyShiftCap": {
+      "newbie": 8,
+      "regular": 6,
+      "veteran": 5
+    },
+    "entitlementsRef": "xem section entitlements (free/ngày là CONFIG, không hardcode)",
+    "dailyEarnCapBase": 200000,
+    "capBucket": "per-earn, VN day",
+    "shiftCreditAt": "finalize",
+    "wellRested": {
+      "mult": 1.1,
+      "durationMs": 600000,
+      "requiresRestHours": 6,
+      "oncePerDay": true
+    },
+    "closingGrace": true,
+    "kickAllAllowed": true,
+    "dayRollover": {
+      "tz": "Asia/Ho_Chi_Minh",
+      "at": "00:00",
+      "serverSide": true
+    },
+    "startingCoinsBase": 300
+  },
+  "network": {
+    "_rule": "F23 §8 · 10-SPEC §10. Mất mạng giữa ca: client buffer command, reconnect resync từ event log; quá reconnectGraceMs thì server đóng ca theo luật closing.",
+    "reconnectGraceMs": 90000,
+    "reconnectingUiDelayMs": 2000,
+    "commandBufferMax": 200
+  },
+  "entitlements": {
+    "_rule": "CHƠI FREE HOÀN TOÀN (chủ dự án 08/09): mọi ca trong dailyShiftCap đều free, không Vé Mở Ca. Section chỉ còn cho campaign/override (giảm cap tạm). Tier A.",
+    "mode": "free",
+    "freeSessionsPerDay": {
+      "default": 8,
+      "bySegment": {
+        "newbie": 8,
+        "regular": 6,
+        "veteran": 5
+      },
+      "campaignOverride": null,
+      "min": 0,
+      "max": "dailyShiftCap[segment]",
+      "_note": "= shift.dailyShiftCap[segment]; đổi cap thì đổi cả hai"
+    },
+    "sessionPass": {
+      "enabled": false,
+      "_note": "F26 bỏ 08/09 — giữ khoá để không ai bật lại vô tình"
+    },
+    "resolveAt": "shift/start và khi mở cổng ca; lưu maxSessions vào entitlement của ngày để đổi config giữa ngày không làm mất ca đã mua",
+    "label": "free (08/09)"
+  },
+  "onboarding": {
+    "_rule": "F27 (🟢 ràng buộc 08/09). Luật + ngưỡng ở đây, cách trình bày dev tự quyết. Tier C.",
+    "enabled": true,
+    "firstShift": {
+      "guaranteedFirstGroupWithinMs": 8000,
+      "firstGroupType": "thuong",
+      "firstGroupSize": 1,
+      "firstOrder": [
+        "bia"
+      ],
+      "riskEventsDisabled": true,
+      "rushDisabled": true
+    },
+    "lostStreakToGuide": 3,
+    "idleToGuideMs": 45000,
+    "stepGuide": {
+      "onFirstPlay": true,
+      "skippable": true,
+      "maxAutoRepeatsPerDay": 2,
+      "steps": [
+        {
+          "id": "watch_arrive",
+          "waitFor": "customer_spawned",
+          "copyKey": "onboarding.step.watch_arrive"
+        },
+        {
+          "id": "wait_ready",
+          "waitFor": "order_ready",
+          "copyKey": "onboarding.step.wait_ready"
+        },
+        {
+          "id": "tap_serve",
+          "waitFor": "order_served",
+          "copyKey": "onboarding.step.tap_serve"
+        },
+        {
+          "id": "see_reward",
+          "waitFor": "coin_gain",
+          "copyKey": "onboarding.step.see_reward"
+        },
+        {
+          "id": "open_upgrade",
+          "waitFor": "ui_sheet_open:upgrade",
+          "copyKey": "onboarding.step.open_upgrade",
+          "onlyAfter": "shift_closed"
+        }
+      ]
+    },
+    "loginPrompt": {
+      "afterFirstShift": true,
+      "onLeaderboardOpen": true,
+      "onLeaveWithProgress": true,
+      "cooldownShifts": 3,
+      "leaveProgress": {
+        "minCompletedShifts": 1,
+        "minLifetimeEarned": 1
+      }
+    },
+    "hints": {
+      "maxConcurrent": 1,
+      "dismissOnTap": true,
+      "neverRepeatAfterDone": true,
+      "returningPlayerResetAfterDays": 30
+    },
+    "featureReveal": {
+      "upgradeAfterShifts": 1,
+      "questsAfterShifts": 2,
+      "leagueAfterShifts": 3,
+      "locationsAfterLifePathLevel": 1,
+      "hudAfterShifts": 1,
+      "upgradeAllAfterShifts": 2,
+      "journeyAfterShifts": 2
+    },
+    "targets": {
+      "firstServeWithinMs": 30000,
+      "firstShiftLostGroupsMax": 1
+    }
+  },
+  "nextGoal": {
+    "reachMult": 3
+  },
+  "quests": {
+    "daily": {
+      "seed": "VN date + player tier",
+      "count": 5,
+      "buckets": [
+        {
+          "id": "service",
+          "pool": {
+            "serve_customers": [
+              21,
+              102
+            ],
+            "serve_beer": [
+              10,
+              53
+            ],
+            "serve_moi": [
+              8,
+              51
+            ],
+            "serve_tables": [
+              6,
+              30
+            ]
+          },
+          "rewardCoinBase": 120,
+          "rewardRepBase": 5
+        },
+        {
+          "id": "quality",
+          "pool": {
+            "perfect_tip": [
+              9,
+              41
+            ],
+            "earn_coins_base": [
+              1100,
+              9200
+            ],
+            "no_stale_beer": [
+              10,
+              40
+            ]
+          },
+          "rewardCoinBase": 220,
+          "rewardRepBase": 5
+        },
+        {
+          "id": "risk",
+          "pool": {
+            "zero_loss_window": [
+              1,
+              1
+            ],
+            "survive_rush": [
+              1,
+              1
+            ],
+            "no_lost_vip": [
+              1,
+              1
+            ]
+          },
+          "zeroLossWindowMs": 240000,
+          "rewardCoinBase": 320,
+          "rewardRepBase": 5
+        }
+      ],
+      "targetCurve": "base + (max-base) * ((clamp(tier,1,9)-1)/8)^1.5",
+      "fixed": [
+        {
+          "id": "shift_3",
+          "target": 3,
+          "rewardCoinBase": 1000,
+          "rewardRepBase": 100
+        },
+        {
+          "id": "gift_3",
+          "target": 3,
+          "uniqueRecipients": true,
+          "rewardCoinBase": 300,
+          "rewardRepBase": 15
+        }
+      ],
+      "bonusAll5": {
+        "flyer": 1,
+        "badgeShard": 1
+      }
+    },
+    "loginTrackRepBase": [
+      2,
+      4,
+      8,
+      16,
+      32,
+      64,
+      128
+    ],
+    "loginMissResets": true,
+    "referral": [
+      {
+        "milestone": 1,
+        "qualifiedFriends": 1,
+        "repBase": 250,
+        "badge": "ket_noi"
+      },
+      {
+        "milestone": 2,
+        "qualifiedFriends": 3,
+        "repBase": 1000,
+        "badge": "prestige_2"
+      },
+      {
+        "milestone": 3,
+        "friendReaches": "LP2",
+        "repBase": 3000,
+        "badge": "prestige_3"
+      }
+    ],
+    "gift": {
+      "maxPerMaterial": 5,
+      "oneUnreadPerPair": true,
+      "dailySendLimit": 10,
+      "dailyReceiveLimit": 10
+    },
+    "badgeShardsPerBadge": 8
+  },
+  "crates": {
+    "small": {
+      "bia": 4,
+      "lac": 2,
+      "nem": 2
+    },
+    "medium": {
+      "bia": 8,
+      "lac": 4,
+      "nem": 4,
+      "dau": 2
+    },
+    "large": {
+      "bia": 15,
+      "lac": 8,
+      "nem": 8,
+      "dau": 4,
+      "topmo": 2
+    }
+  },
+  "chairmanBox": {
+    "coinBase": [
+      350,
+      480
+    ],
+    "materials": [
+      15,
+      40
+    ],
+    "repBase": [
+      51,
+      92
+    ],
+    "rareGlassChance": 0.1,
+    "pityPerChipheo": 1,
+    "unlimitedPerShift": true
+  },
+  "league": {
+    "tiers": [
+      {
+        "id": "dong",
+        "name": "Cốc Nhựa",
+        "minSeasonEarnedBase": 0
+      },
+      {
+        "id": "bac",
+        "name": "Cốc Thủy Tinh",
+        "minSeasonEarnedBase": 20000
+      },
+      {
+        "id": "vang",
+        "name": "Vại Sành",
+        "minSeasonEarnedBase": 60000
+      },
+      {
+        "id": "titan",
+        "name": "Vại Đồng",
+        "minSeasonEarnedBase": 120000
+      },
+      {
+        "id": "bach_kim",
+        "name": "Bom Bạc",
+        "minSeasonEarnedBase": 180000
+      },
+      {
+        "id": "hong_ngoc",
+        "name": "Bom Vàng",
+        "minSeasonEarnedBase": 300000
+      },
+      {
+        "id": "kim_cuong",
+        "name": "Vua Bia",
+        "minSeasonEarnedBase": 500000
+      },
+      {
+        "id": "huyen_thoai",
+        "name": "Trùm Bia Hơi",
+        "minSeasonEarnedBase": 1000000
+      }
+    ],
+    "seasons": {
+      "ranking": {
+        "days": 7,
+        "reward": "heavy + top10 medal + shrine"
+      },
+      "contest": {
+        "days": 14,
+        "reward": "light"
+      },
+      "epochUtc": "2026-04-11T10:00:00Z",
+      "tz": "Asia/Ho_Chi_Minh"
+    },
+    "tieBreak": "firstReachedCurrentSeasonEarnedAt",
+    "rewardType": "materials by tier",
+    "phase": 3
+  },
+  "leaderboard": {
+    "_rule": "F28. Thứ hạng chỉ tính ở server; snapshot kết Vụ bất biến. Tier A.",
+    "topN": 100,
+    "neighborsWindow": 3,
+    "refreshMs": 60000,
+    "minShiftsToRank": 1,
+    "shrineTop": 3,
+    "wallSize": 10,
+    "historySeasonsKept": 12,
+    "hideFlagged": true,
+    "displayNameFilter": "tier-C content"
+  },
+  "lifePath": [
+    {
+      "id": "LP0",
+      "name": "Bưng Bê",
+      "lifetimeBase": 0,
+      "rewardCoinBase": 0,
+      "extra": []
+    },
+    {
+      "id": "LP1",
+      "name": "Phụ Quán",
+      "lifetimeBase": 50000,
+      "rewardCoinBase": 5000,
+      "extra": [
+        "crate.small"
+      ],
+      "requires": [
+        "4 tables"
+      ]
+    },
+    {
+      "id": "LP2",
+      "name": "Tay Ngang",
+      "lifetimeBase": 150000,
+      "rewardCoinBase": 10000,
+      "extra": [
+        "badgeShard"
+      ],
+      "requires": [
+        "stall>=3",
+        "phone"
+      ]
+    },
+    {
+      "id": "LP3",
+      "name": "Chủ Sạp",
+      "lifetimeBase": 500000,
+      "rewardCoinBase": 20000,
+      "extra": [
+        "crate.medium"
+      ],
+      "requires": [
+        "equipment>=3",
+        "qr"
+      ]
+    },
+    {
+      "id": "LP4",
+      "name": "Chủ Quán",
+      "lifetimeBase": 1500000,
+      "rewardCoinBase": 50000,
+      "extra": [
+        "badgeShard",
+        "cosmeticToken"
+      ],
+      "requires": [
+        "flyer",
+        "peak:bach_kim"
+      ]
+    },
+    {
+      "id": "LP5",
+      "name": "Ông Chủ",
+      "lifetimeBase": 5000000,
+      "rewardCoinBase": 100000,
+      "extra": [
+        "crate.medium",
+        "cosmeticToken"
+      ],
+      "requires": [
+        "signboard",
+        "peak:hong_ngoc"
+      ]
+    },
+    {
+      "id": "LP6",
+      "name": "Đại Gia Bia",
+      "lifetimeBase": 15000000,
+      "rewardCoinBase": 250000,
+      "extra": [
+        "crate.large",
+        "badgeShard",
+        "badgeShard"
+      ],
+      "requires": [
+        "equipment=5",
+        "stall=5",
+        "peak:kim_cuong"
+      ]
+    },
+    {
+      "id": "LP7",
+      "name": "Trùm Bia Hơi",
+      "lifetimeBase": 50000000,
+      "rewardCoinBase": 500000,
+      "extra": [
+        "crate.large"
+      ],
+      "requires": [
+        "10 seats",
+        "peak:huyen_thoai"
+      ]
+    }
+  ],
+  "locations": {
+    "rentFormula": "rentPerDayBase × k (chốt bảng 09/09, neo 15–25 % thu nhập tier; không còn dùng công thức e)",
+    "leaseDays": 7,
+    "depositRate": 0.25,
+    "earlyLeaveLosesDeposit": true,
+    "fallback": "hem_nho",
+    "list": [
+      {
+        "id": "hem_nho",
+        "name": "Hẻm Nhỏ",
+        "mult": 1.0,
+        "e": null,
+        "rentPerDayBase": 0,
+        "gate": null,
+        "gateLifePath": 0,
+        "tableSlots": 4
+      },
+      {
+        "id": "ngo_cho",
+        "name": "Ngõ Chợ",
+        "mult": 1.1,
+        "e": 10,
+        "rentPerDayBase": 4000,
+        "gate": "LP1",
+        "gateLifePath": 1,
+        "tableSlots": 4
+      },
+      {
+        "id": "ben_xe",
+        "name": "Bến Xe",
+        "mult": 1.2,
+        "e": 15,
+        "rentPerDayBase": 6800,
+        "gate": "LP1",
+        "gateLifePath": 1,
+        "tableSlots": 4
+      },
+      {
+        "id": "gan_cong_so",
+        "name": "Gần Công Sở",
+        "mult": 1.3,
+        "e": 20,
+        "rentPerDayBase": 10000,
+        "gate": "LP2",
+        "gateLifePath": 2,
+        "tableSlots": 4
+      },
+      {
+        "id": "gan_svd",
+        "name": "Gần Sân Vận Động",
+        "mult": 1.4,
+        "e": 25,
+        "rentPerDayBase": 14000,
+        "gate": "LP3",
+        "gateLifePath": 3,
+        "tableSlots": 4
+      },
+      {
+        "id": "ho_bia_dem",
+        "name": "Hồ Bia Đêm",
+        "mult": 1.5,
+        "e": 30,
+        "rentPerDayBase": 18000,
+        "gate": "LP3",
+        "gateLifePath": 3,
+        "tableSlots": 4
+      },
+      {
+        "id": "pho_co",
+        "name": "Phố Cổ",
+        "mult": 1.6,
+        "e": 35,
+        "rentPerDayBase": 24000,
+        "gate": "LP4",
+        "gateLifePath": 4,
+        "tableSlots": 4
+      },
+      {
+        "id": "ga_metro",
+        "name": "Ga Metro",
+        "mult": 1.7,
+        "e": 40,
+        "rentPerDayBase": 32000,
+        "gate": "LP5",
+        "gateLifePath": 5,
+        "tableSlots": 4
+      },
+      {
+        "id": "pho_tay",
+        "name": "Khu Phố Tây",
+        "mult": 1.8,
+        "e": 45,
+        "rentPerDayBase": 44000,
+        "gate": "LP6",
+        "gateLifePath": 6,
+        "tableSlots": 4
+      }
+    ],
+    "phase": 3,
+    "_rule": "Thuê: trả trước leaseDays × rent + cọc depositRate (hoàn khi hết kỳ); rời sớm (rentLocation nơi khác / leaveLocation) mất cọc, về fallback. Hết kỳ tự về fallback + hoàn cọc; muốn ở tiếp thì thuê lại. Gate = gateLifePath."
+  },
+  "risk": {
+    "gangster": {
+      "feePerHeadBase": 90,
+      "winRewardPerHeadBase": 225,
+      "decideMs": 20000,
+      "autoPayOnTimeout": true,
+      "hpByIndex": [
+        1,
+        2,
+        3
+      ],
+      "atkByIndex": [
+        1,
+        2,
+        3
+      ],
+      "repairCostBase": "50 * index",
+      "brokenMult": 3,
+      "chancePerShift": 0.25,
+      "maxPerShift": 1,
+      "phase": 3
+    },
+    "inspection": {
+      "status": "pending",
+      "enabled": false,
+      "_pendingNote": "Chủ dự án 08/09: tính năng kiểm tra (policy check) + ngân hàng câu hỏi CHƯA CHỐT. Ship với enabled=false; bật khi chốt. Số dưới là seed.",
+      "quizMs": 15000,
+      "attempts": 2,
+      "failEffect": "revoke certificate + suspend shift",
+      "maxPerShift": 1,
+      "noPause": true,
+      "neverOverlapsGangster": true,
+      "phase": 3
+    },
+    "urbanPatrol": {
+      "label": "postmvp",
+      "minigame": "match-3",
+      "failEffect": "confiscate 1 table this + next shift"
+    },
+    "drunkFight": {
+      "label": "tune",
+      "ignoreRepBase": -50,
+      "tableEffect": "dirty|broken",
+      "phase": 3
+    },
+    "offlineTheft": {
+      "coinsRateMax": 0.05,
+      "coinsCapBase": 10000,
+      "materialsRateMax": 0.2,
+      "safetyFloorBase": 500,
+      "phase": 3
+    }
+  },
+  "shopSeason": {
+    "label": "postmvp",
+    "tvBase": 50000,
+    "scheduleBase": 15000,
+    "teamThemeBase": 8000,
+    "bundleRate": 0.75,
+    "bundleSize": 6,
+    "scheduleFanSpawnMult": 1.15,
+    "broadcastOffsetMs": 1200000,
+    "groupRush": "light",
+    "knockoutRush": "heavy"
+  },
+  "lottery": {
+    "label": "postmvp",
+    "legalGate": false,
+    "ticketBase": 200,
+    "dailyLimit": 5,
+    "suffixPayouts": {
+      "2": 1.5,
+      "3": 8,
+      "4": 50,
+      "6": "jackpot"
+    },
+    "targetEV": [
+      0.6,
+      0.8
+    ]
+  },
+  "cosmetics": {
+    "_rule": "Giá lantern/plant là GIÁ CUỐI (không có hậu tố Base → không ×k) — chốt 08/09.",
+    "label": "tune",
+    "lantern": {
+      "nhat": 5000,
+      "sen": 8000,
+      "do": 6000,
+      "co_dien": 10000
+    },
+    "plant": {
+      "truc": 4000,
+      "bonsai": 12000,
+      "lan": 8000,
+      "sen_da": 3000
+    },
+    "pricesAreDisplayed": true,
+    "donationTiersVnd": [
+      20000,
+      50000
+    ]
+  },
+  "donation": {
+    "_rule": "F20 Mời Bia Hơi — monetization DUY NHẤT: người chơi tự nguyện donate cho admin. Không bán xu/sức mạnh/quyền chơi. Tier A.",
+    "enabled": true,
+    "tiersVnd": [
+      20000,
+      50000
+    ],
+    "guestAllowed": true,
+    "giftRequiresAccount": true,
+    "provider": "manual_bank_qr",
+    "manualConfirm": true,
+    "giftCatalogRef": "cosmetics (lantern, plant, signboard style, season theme)",
+    "refundPolicy": "admin-approved, within 7 days, gift revoked",
+    "promptCooldownShifts": 5
+  },
+  "audio": {
+    "_rule": "Checklist B7. Phát theo event id → manifest → path; không hardcode path. Tier C.",
+    "enabled": true,
+    "ambientTheme": "default",
+    "dedupeWindowMs": 100,
+    "masterGainDefault": 0.8,
+    "groupsEnabled": {
+      "ambient": true,
+      "ui": true,
+      "shift": true,
+      "customer": true,
+      "serve": true,
+      "beer": true,
+      "kitchen": true,
+      "economy": true,
+      "events": true
+    }
+  },
+  "prototypePhase0": {
+    "tableCount": 3,
+    "seatsPerTable": 2,
+    "queueSlots": 4,
+    "glassCount": 10,
+    "washUpgradedToggle": {
+      "slots": 3,
+      "washMs": 2500
+    },
+    "coinsStart": 0,
+    "customerTypes": [
+      "thuong",
+      "voi",
+      "vip"
+    ],
+    "rushToggle": "peak",
+    "tipIncludes": [
+      "patience",
+      "freshness",
+      "vip"
+    ]
+  },
+  "runtime": {
+    "tableSeatingMs": 800,
+    "tableCleaningMs": 1000,
+    "queueBaseSlots": 1,
+    "queueSeatsPerSlot": 8,
+    "initialEquipmentLevel": 1,
+    "initialKitchenLevel": 0,
+    "initialTableLevel": 1
+  }
+}

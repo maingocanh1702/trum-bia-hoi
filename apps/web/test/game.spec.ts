@@ -45,9 +45,10 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
     const coins = await page.locator('.money strong').textContent();
     expect(await page.locator('.money').ariaSnapshot()).toContain('Xu');
     expect(await page.locator('.glass-counter').ariaSnapshot()).toContain('Cốc sạch');
-    await expect(page.locator('.seat')).toHaveCount(6);
+    // Seat model (rules 28): a new game is one table with one chair, taken by the first guest.
+    await expect(page.locator('.seat')).toHaveCount(1);
     await expect(page.locator('.seat-customer')).toHaveCount(1);
-    await expect(page.locator('.seat-empty')).toHaveCount(5);
+    await expect(page.locator('.seat-empty')).toHaveCount(0);
     await waitSaved(page);
     // A slow lazy module takes longer than a served guest's entire consumption time.
     if (viewport.width === 390) await page.route('**/src/App.tsx*', async route => { await new Promise(resolve => setTimeout(resolve, 12000)); await route.continue(); }, { times: 1 });
@@ -84,7 +85,9 @@ test('a neglected first shift closes after remaining guests expire and shows the
   await page.clock.install({ time: new Date('2026-09-08T10:00:00Z') });
   await page.goto('/');
   await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
-  await page.clock.runFor(29000);
+  // The forced first guest orders at about 8 s and nobody serves it: it walks out after its patience (24 s x the weather's multiplier, then 2.5 s of grace).
+  // Step the fake clock until that toast shows instead of assuming one weather's number; the toast stays up for seconds, far longer than a step.
+  for (let waited = 0; waited < 60000 && !await page.locator('.toast-loss').isVisible(); waited += 500) await page.clock.runFor(500);
   await expect(page.locator('.toast-loss')).toBeVisible();
   await expect(page.locator('.toast-loss')).toHaveAccessibleName(/Trừ \d+ xu và \d+ uy tín/);
   // PLAN P3 (owner 18/09, supersedes the 08/09 numbers-only rule): the numbers stay, and the toast names ONE reason; nobody served the ready order, so the guest waited too long.
@@ -105,9 +108,10 @@ test('a neglected first shift closes after remaining guests expire and shows the
 });
 
 test('tapped order stays live, returns keyboard focus, and closes on customer expiry', async ({ page }) => {
+  // Seat model: a new game has one table; this save bought its second (real command) so focus can move between two table triggers.
   await page.clock.install({ time: new Date('2026-09-08T10:00:00Z') });
   await page.clock.pauseAt(new Date('2026-09-08T10:00:00Z'));
-  await bootFresh(page);
+  await bootFresh(page, {}, undefined, undefined, 2);
   await page.getByRole('button', { name: 'Mở ca', exact: true }).first().click();
   await page.clock.runFor(8100);
   const originalCustomer = await page.locator('.seat-customer').first().getAttribute('data-customer-id');
@@ -116,9 +120,12 @@ test('tapped order stays live, returns keyboard focus, and closes on customer ex
   await trigger.click();
   const panel = page.getByRole('dialog', { name: 'Bàn 1', exact: true });
   await expect(panel).toBeVisible();
-  await expect(panel.getByRole('button', { name: 'Phục vụ cả mâm', exact: true })).toBeDisabled();
+  // Instant pour (rules 28): the beer is already in the reserve, so the tray is ready the moment the order exists (before, the Serve button stayed
+  // dimmed for the 2 s tap; that wait lives on in instant-pour.spec.ts for a capacity pin). The open panel still runs live: its countdown moves.
+  const serve = panel.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }), countdown = panel.locator('.order-heading b'), left = await countdown.textContent();
+  expect(left).toBeTruthy(); await expect(serve).toBeEnabled();
   await page.clock.runFor(2000);
-  await expect(panel.getByRole('button', { name: 'Phục vụ cả mâm', exact: true })).toBeEnabled();
+  await expect(countdown).not.toHaveText(left!); await expect(serve).toBeEnabled();
   await expect(panel.getByRole('button', { name: 'Đóng', exact: true })).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(panel).toHaveCount(0);
@@ -374,6 +381,7 @@ test('a mixed occupied table renders only the remaining Chi Pheo and closes with
 
 for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 }, { width: 1280, height: 400 }]) {
   test(`rush warning pauses in sheets, resumes on closing, active timer wins, and closing ends it at ${viewport.width}×${viewport.height}`, async ({ page }) => {
+    test.setTimeout(90000); // game time is advanced by hand: 14–16 s with 3 workers, past the 45 s default when 6 workers starve the CPU
     const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/rush.ts'], { encoding: 'utf8' }));
     await page.setViewportSize(viewport);
     await page.clock.pauseAt(new Date(fixture.now));
@@ -401,7 +409,8 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 
     await expect(hud).toHaveText('Nhịp quán bình thường');
     await page.clock.fastForward(fixture.second.start - fixture.first.end + 1);
     await expect(hud).toHaveText('Nhịp quán bình thường');
-    await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
+    // The last guests may already have left (seat model: fewer seated groups), and a finished shift opens its book itself.
+    if (!(await page.getByRole('dialog', { name: 'Sổ ca hôm nay', exact: true }).isVisible())) await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
     const report = page.getByRole('table', { name: 'Giờ Vàng trong ca' }); await report.scrollIntoViewIfNeeded(); await expect(report).toBeVisible();
     const stored = JSON.parse(await readSave(page));
     const ended = stored.events.find((e: { type: string }) => e.type === 'rush_ended').data;
@@ -656,6 +665,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
 
 for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }, { width: 1280, height: 400 }]) {
  test(`flyer purchase, live timer, actual service report and reload at ${viewport.width}×${viewport.height}`, async ({ page }) => {
+  test.setTimeout(90000); // 17 s alone, about 40 s with 3 workers, past the 45 s default when 6 workers starve the CPU
   const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/flyer.ts'], { encoding: 'utf8' }));
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.setViewportSize(viewport); await page.clock.pauseAt(new Date(fixture.now));

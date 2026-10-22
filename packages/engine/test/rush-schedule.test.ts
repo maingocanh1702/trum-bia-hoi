@@ -1,12 +1,17 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { CURRENT_RULES, Game, config, loadConfig, planRushes, summarizeRush, rushStatus, kickAllQuote, encodeSave, decodeSave, type Command, type Economy, type DomainEvent } from '../src';
+import { CURRENT_RULES, Game, config, loadConfig, isSeatModel, planRushes, summarizeRush, rushStatus, kickAllQuote, encodeSave, decodeSave, type Command, type Economy, type DomainEvent } from '../src';
+import { capacityRaw } from './fixtures/capacity-model';
+import { furnish } from './fixtures/seat-shop';
+import { steadyDemand } from './fixtures/steady-demand';
 const origin = Date.parse('2026-09-08T10:00:00Z');
 const send = (g: Game, command: Command, at = g.world.now) => g.command({ idempotencyKey: `schedule-${g.log.length}`, at, command });
-function create(patch = (_: Economy) => {}) {
-  const raw = structuredClone(config.raw); raw.onboarding.enabled = false; if ('heavyFromLifePath' in raw.rush.schedule) raw.rush.schedule.heavyFromLifePath = 0; raw.shift.startingCoinsBase = 100000; raw.patience.thuongMs = 1000000;
-  patch(raw); return new Game(loadConfig(raw), 42, origin);
+function create(patch = (_: Economy) => {}, base: Economy = structuredClone(config.raw)) {
+  const raw = steadyDemand(structuredClone(base)); raw.onboarding.enabled = false; if ('heavyFromLifePath' in raw.rush.schedule) raw.rush.schedule.heavyFromLifePath = 0; raw.shift.startingCoinsBase = 100000; raw.patience.thuongMs = 1000000;
+  patch(raw); const g = new Game(loadConfig(raw), 42, origin);
+  if (isSeatModel(raw)) furnish(g, command => send(g, command)); // four tables with two chairs keep the busy shop these schedules assume
+  return g;
 }
 function open(patch?: (c: Economy) => void) { const g = create(patch); assert.equal(send(g, { type: 'startShift' }).ok, true); return g; }
 
@@ -32,7 +37,8 @@ test('seed tuple produces varied balanced schedules with complete durations and 
     }
   }
   assert.equal(orders.size, 2); assert.ok(layouts.size > 90);
-  const g = create(), legacy = create(); send(g, { type: 'startShift' });
+  // Rules 7 only ever ran capacity-model snapshots; both games share one so their table ids and RNG line up.
+  const g = create(undefined, capacityRaw()), legacy = create(undefined, capacityRaw()); send(g, { type: 'startShift' });
   legacy.replay({ idempotencyKey: 'open7', at: legacy.world.now, command: { type: 'startShift' }, rulesVersion: 7, configVersion: legacy.config.version, result: { ok: true } });
   assert.equal(g.world.rng, legacy.world.rng); assert.equal(g.world.shift!.id, legacy.world.shift!.id); assert.equal(g.world.shift!.weather, legacy.world.shift!.weather);
   assert.equal(g.world.events.filter(e => e.type === 'rush_scheduled').length, 2);

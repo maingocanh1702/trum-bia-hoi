@@ -37,7 +37,12 @@ report's own contract).
   active` (`:212`, rate `c.shift.regenRate`). Gates `startShift`'s `'restFirst'` failure
   (`c.shift.openRequiresFullStamina`) — distinct from the well-rested *bonus* check, which reads the
   wall-clock `restStartedAt`, not the stamina level; see
-  [stamina-attendance-lifepath](stamina-attendance-lifepath.md) for that formula.
+  [stamina-attendance-lifepath](stamina-attendance-lifepath.md) for that formula. **S5 (rules 28, JSON 2.1.0):**
+  the first `shift.noCooldownFirstShifts` (3) shifts of a save's whole life skip that gate — `restRequired` /
+  `noCooldownOpening` in `rules.ts`, read from the snapshot that opens the shift; the opening sets stamina to full
+  — so shifts 2 and 3 open the moment the previous one has closed and shift 4 answers `'restFirst'` until the 30
+  minutes have passed. The per-day cap `dailyShiftCap` still applies. Proof: `packages/engine/test/no-cooldown.test.ts`
+  (engine) and `apps/web/test/rest-first-shifts.spec.ts` (the rest line and the energy bar).
 - `World.restStartedAt: number` (`types.ts:77`) — stamped at Game creation and at every
   closing→resting transition (`engine.ts:429`).
 - `World.dayShifts: Record<string, number>` — incremented once per completed shift, keyed by
@@ -216,3 +221,9 @@ subsystem's deadlines).
 
 ### Wave B — 2026-09-16 proof
 - `packages/engine/test/menu.test.ts` — 'five production seeds export exact six shift KPIs matching service records and deterministic replay' verifies one final metrics snapshot per completed shift and immutable prior close events after next opening; 'genuine rules26 close events remain byte-equivalent before adding rules27 metrics on a new shift' pins historical compatibility.
+
+### S5 `eco21-balance-pass` — 2026-10-20 proof
+- `packages/engine/test/no-cooldown.test.ts` — the first-shifts allowance (9 tests; the replay of a history recorded on JSON 2.0.23 by the S4 engine stays byte for byte; mutations 8/8 killed + 1 equivalent). `packages/engine/test/locations.test.ts` and `packages/engine/test/well-rested.test.ts` call `fixtures/full-cooldown.ts` when the full-stamina opening is their subject.
+- `apps/web/test/rest-first-shifts.spec.ts` — `D8 shifts 2 and 3 open at once and shift 4 waits` and `D8 after the third shift the 30 minutes apply and the opening is refused until they pass`, vi + en at 360 / 390 / 1280 (DOM only; saves from the real engine through `fixtures/first-shifts.ts`).
+- **Review 07 r1 (2026-10-22, stage 07):** the rest line and the energy bar ask `restRequired` of the snapshot the next opening will use (`apps/web/src/local.ts` `openingConfig`: the bundle when the pin is older, the same rule `dispatch` applies), so a save pinned to an older content in its first three shifts is shown ready, as the engine opens it: `apps/web/test/rest-first-shifts.spec.ts` `D8 across a config adoption: a save pinned to JSON 2.0.4 after one shift is shown ready and opens at once, at ${viewport.width}px` (fixture `first-shifts.ts 1 legacy`, one shift played on the 2.0.4 capacity seed; red before the fix: bar 0 %, "rest until").
+- **Review 07 r1 (2026-10-22, stage 07), the rest screen:** between shifts the "Mở ca" of the rest note stays on screen above the bottom nav at every viewport of the tiers (the note hangs from the top of the yard instead of being centred in it): `apps/web/test/yard.spec.ts` `S6 at rest the opening note's start button is whole on screen above the bottom nav (${locale}) at ${viewport.width}px`. The nav's own "Mở ca" is unchanged.

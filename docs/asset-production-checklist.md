@@ -118,6 +118,8 @@ table-lv4 → Asset name: table-lv4. Create one long VIP street-banquet table fo
 | ⬜ | `chair-plastic` | Ghế thường (mọi ghế 1-10) | Ghế nhựa đúc đỏ thấp vỉa hè, phai nắng, xước nhẹ, còn nguyên vẹn | 128×160 | P0 |
 | ⬜ | `chair-empty` | Anchor ghế trống | Cùng ghế nhựa, hơi nhạt màu để đọc là "ghế còn trống". Không glow/chữ | 128×160 | P1 |
 | ⬜ | `chair-upgraded` | Ghế tựa (9 lần nâng) | Ghế lưng thấp: đệm nhựa đỏ sờn + khung kim loại + tay vịn nhỏ. Thoải mái hơn nhưng vẫn rẻ tiền, đúng thời đại | 160×176 | P3 |
+| ✅ draft | `chair-backrest` | Ghế cấp 2 (S6, D15 "ghế tựa nhựa") | Ghế nhựa đúc đỏ có lưng tựa, vẽ thủ tục bằng `scripts/chair_sprites.py` (palette token, viền 2 px, 3 bậc màu); thay vai trò `chair-upgraded` cho cấp 2 | 128×160 | P3 |
+| ✅ draft | `chair-cushion` | Ghế cấp 3 (S6, D15 "ghế gỗ đệm") | Ghế gỗ nan lưng + đệm đỏ, cùng script, cùng góc/điểm chạm đất với `chair-plastic` | 128×160 | P3 |
 | ⬜ | `chair-broken` | Ghế thường hỏng | `chair-plastic` sau hư hại: nứt mặt ngồi, chân cong, vết xước. Không lửa, không mảnh vỡ phóng đại | 160×176 | P3 |
 | ⬜ | `chair-upgraded-broken` | Ghế tựa hỏng | `chair-upgraded` sau hư hại: tay vịn cong, lưng nứt, 1 thanh kim loại lỏng | 160×176 | P3 |
 | ⬜ | `chair-damage-overlay` | Overlay hư hại dùng lại | 2 vết nứt to + 1 cue kim loại cong + 3 mảnh cảnh báo đỏ nhỏ. **Không** có ghế bên dưới | 128×128 | P3 |
@@ -821,3 +823,5 @@ Owner waiver2026-09-11: drafts accepted for release; no approval/polish pass. Th
 ### Owner Steer16 addendum — compact kitchen export v2, 2026-09-11
 
 Re-exported the four existing imagegen kitchen drafts at the checklist native sizes224×192,240×192,304×208,400×288. Source v1 files remain unchanged; manifest IDs/source/status remain, paths advance to v2 with dimensions and SHA-256.128-color PNG with real alpha and bottom padding:1691761→9801,1461471→9417,1945438→14112,2191317→26515bytes (7289987→59845 total). Source/output provenance is recorded in kitchen-art.json. check:assets PASS132entries/121drafts/3existing placeholders; alpha extrema0/255 and padding≥2px asserted for all4 exports. Owner requested compression; no regeneration or art polish.
+
+| 2026-10-21 S6 build | Two chair-level sprites `chair-backrest` ("ghế tựa nhựa", chair level 2) and `chair-cushion` ("ghế gỗ đệm", chair level 3) drawn **procedurally** by `scripts/chair_sprites.py` (Pillow + numpy, deterministic, `--check` reproduces byte for byte): token palette three steps per material, 2 px outline `#3a2730`, hard alpha, the chair crop 128×160 bottom-anchored with 6 % padding (same ground contact as `chair-plastic`). Manifest entries `status: draft`, `source: original_procedural_synthesis`, `script`; QA strips and `assets/_qa/contact-chair-levels-procedural-v1.png`; `npm run check:assets` 134 entries, 3 placeholders (none added). A2 table: two ✅ draft rows beside `chair-upgraded` (which stays a ⬜ P3 target: one id per chair level was needed, D15). |

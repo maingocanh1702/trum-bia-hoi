@@ -37,6 +37,8 @@ implemented**: `freshness.kegFreshnessEnabled`/`kegFreshnessMs`/`warnMs`/`staleC
   still be served deliberately. Glass sprite class `glass-stale` vs `glass-full`
   (`App.tsx:304`). `.customer-reaction` shows `😖` for a stale outcome.
 
+- **Rules 28 (S2 `eco21-instant-pour`):** on a seat-model snapshot with the keg refill on the glass of a beer is `in_use` with `readyAt` = the tick the order is placed, so freshness starts on the tray at once; `beer_pouring` and `beer_poured{fromReserve:true}` carry that tick. A beer waits only for `beer.ready` (cause `beerStock` / `beerRefill`) or for a clean glass (cause `glasses`); the `tap` wait is gone. Capacity pins, rules ≤ 27 and a seat snapshot with `refillEnabled=false` keep `readyAt = now + pourMs`.
+
 ## How to reach it
 
 - Engine: `prepare()` (`engine.ts:607-662`) pulls a `'clean'` glass for a `needsGlass` item, sets
@@ -111,6 +113,8 @@ implemented**: `freshness.kegFreshnessEnabled`/`kegFreshnessMs`/`warnMs`/`staleC
   `'stale'` — fixture forces staleness via the real `freshnessMs(game.world, game.config)` function,
   asserts the `😖` reaction renders and persists across reload.
 
+- Rules 28 instant pour (S2): `packages/engine/test/instant-pour.test.ts` `one tap, one pair: both beers are ready the tick the order is placed (beer.ready >= n and clean glasses >= n)` (glass `in_use`, `readyAt` = the order's tick, `itemId` of the item), `beer in the keg but no clean glass: the second beer waits for a glass, and a bought glass pours it that very tick` (cause `glasses`, `buyGlass` pours the waiting beer in the tick of the purchase) and `beer.ready exhausted: the order waits, a restock starts the batch, and the beer is ready the tick the batch lands` (cause `beerStock` → `beerRefill`). Run `node --import tsx --test packages/engine/test/instant-pour.test.ts`.
+
 ## Verification procedure
 
 - `node --import tsx --test packages/engine/test/production.test.ts packages/engine/test/game.test.ts
@@ -128,7 +132,7 @@ implemented**: `freshness.kegFreshnessEnabled`/`kegFreshnessMs`/`warnMs`/`staleC
   `w.beer?.ready ?? 0 <= 0` (modern) / `w.inventory[dish] <= 0` (legacy) at `engine.ts:616`, but no
   test sets the reserve to `0` mid-shift with a pending beer item and asserts it stays `'pending'`.
   Only indirect UI coverage exists (`game.spec.ts`'s "beer is out" test zeroes **raw starting
-  stock**, not the keg reserve specifically after it's been drawn down).
+  stock**, not the keg reserve specifically after it's been drawn down). **Covered for the seat model since S2:** `instant-pour.test.ts` `beer.ready exhausted: the order waits, a restock starts the batch, and the beer is ready the tick the batch lands` draws the reserve down through real orders and asserts the pending items, the `beerStock` cause and the pour in the tick `beer_batch_ready` lands.
 - **Max-cooler "never goes flat" is asserted only at the formula level, not end-to-end.** No test sets
   `equipment.cooler` to max, holds a poured glass far past any finite threshold, and asserts `serve`
   still returns `outcome !== 'stale'`.
@@ -194,3 +198,8 @@ is shared machinery for beer pouring and kitchen dishes), [serve-outcomes](serve
 (`'stale'` is the reified freshness-override tag in `Result.outcome`'s precedence chain — read that
 file for the full combine rule), [economy-k-ledger](economy-k-ledger.md) (`credit`/`creditBatchSafe`
 still fire on a stale serve; `headless.ts` tracks the `stale` count alongside `k`).
+
+## Changelog — S2 instant pour
+| Date | Change |
+|---|---|
+| 2026-10-20 | S2 rules 28: instant pour (a seat-model game pours a ready beer into a clean glass in the tick of the order, freshness starts then); tests cited under Existing proof. No number changed. |

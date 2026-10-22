@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Game, config, loadConfig, dogUpgradeQuote, encodeSave, decodeSave, type Command, type Economy } from '../src';
 const send = (g: Game, command: Command, at = g.world.now) => g.command({ idempotencyKey: `dog-${g.log.length}`, at, command });
-function create(patch?: (c: Economy) => void) {
+function create(patch?: (c: typeof config.raw) => void) {
   const raw = structuredClone(config.raw); raw.shift.startingCoinsBase = 100000; patch?.(raw);
   return new Game(loadConfig(raw), 42, Date.parse('2026-09-08T10:00:00Z'));
 }
@@ -47,7 +47,8 @@ test('short stock or coins never causes a partial debit and no level can be skip
 });
 
 test('purchase checks stock after live preparation and uses the existing active-shift spend ledger', () => {
-  const g = create(c => { c.onboarding.enabled = false; c.demandMix.pMoi = 1; c.demandMix.pNemGivenMoi = 0; });
+  // One-chair guests order their single instant dish (lac): live preparation takes the dog's material.
+  const g = create(c => { c.onboarding.enabled = false; c.spawn.pPair = 0; c.upgrades.table.orderShape.solo.pBeer = 0; c.demandMix.pNemGivenMoi = 0; });
   stock(g, 2); send(g, { type: 'startShift' });
   g.world.inventory.lac = 20; const next = g.world.shift!.nextSpawnAt + g.config.values.runtime.tableSeatingMs;
   assert.equal(dogUpgradeQuote(g.world, g.config).ok, true);

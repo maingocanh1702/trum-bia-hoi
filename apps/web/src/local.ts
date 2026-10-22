@@ -59,8 +59,16 @@ function newerBundledConfig(version: string): boolean {
   const changed = next.findIndex((part, i) => part !== previous[i]);
   return changed >= 0 && next[changed] > previous[changed];
 }
+/**
+ * The snapshot the next "Mở ca" opens with: the bundled release when the pin predates economy 2 or is numerically older, else the pin itself. `dispatch`
+ * hands it to the engine, and the rest line and the energy bar read it too (review 07 r1: a 2.0.4 save in its first three shifts opens at once on 2.1.0).
+ */
+export function openingConfig(game: Game): Config {
+  return !isEconomy2(game.config.raw) || newerBundledConfig(game.config.version) ? config : game.config;
+}
 export function dispatch(game: Game, command: Command): Result {
-  return game.command({ idempotencyKey: crypto.randomUUID(), at: Math.max(Date.now(), game.world.now), command }, command.type === 'startShift' && (!isEconomy2(game.config.raw) || newerBundledConfig(game.config.version)) ? config : undefined);
+  const opening = openingConfig(game);
+  return game.command({ idempotencyKey: crypto.randomUUID(), at: Math.max(Date.now(), game.world.now), command }, command.type === 'startShift' && opening !== game.config ? opening : undefined);
 }
 export function download(text: string, name: string): void {
   const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));

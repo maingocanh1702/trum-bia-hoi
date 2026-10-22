@@ -6,10 +6,10 @@ import { Seasons } from './Seasons';
 import { Leaderboard } from './Leaderboard';
 import { Locations } from './Locations';
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { buyGlassQuote, buyTableQuote, tableUpgradeQuote, isEconomy2, BUSINESS_UNLOCKS, menuReport, orderPreparation, beerStatus, washerStatus, kitchenStatus, flyerQuote, SIGN_STYLES, signboardQuote, DISHES, EQUIPMENT, currentGuests, deliveryQuote, dogUpgradeQuote, encodeSave, freshnessMs, kickAllQuote, lifePathStatus, restockQuote, rushStatus, stockCap, unlockQuote, upgradeQuote, wellRestedRemaining, type BusinessUnlock, type Command, type Equipment, type Order, type RequirementStatus, type Table, type DomainEvent, type Game } from '../../../packages/engine/src';
-import { Sprite, TableSeats, menuAsset, reactions, hasSpriteArt } from './assets';
+import { buyGlassQuote, buyTableQuote, buyChairQuote, tableUpgradeQuote, chairUpgradeQuote, tableUpgrade, tableBenefit, effectiveTableLevel, chairPatienceMult, trayDishes, tableSlots, guestPatienceLeft, isEconomy2, isSeatModel, PAIR, BUSINESS_UNLOCKS, menuReport, orderPreparation, beerStatus, washerStatus, kitchenStatus, flyerQuote, SIGN_STYLES, signboardQuote, DISHES, EQUIPMENT, currentGuests, deliveryQuote, dogUpgradeQuote, encodeSave, freshnessMs, kickAllQuote, kickTableQuote, kickTableRule, lifePathStatus, restockQuote, restRequired, rushStatus, stockCap, unlockQuote, upgradeQuote, wellRestedRemaining, type BusinessUnlock, type Command, type Equipment, type Order, type RequirementStatus, type Table, type DomainEvent, type Game } from '../../../packages/engine/src';
+import { Sprite, TableSeats, chairAsset, menuAsset, reactions, hasSpriteArt, trayAsset } from './assets';
 import { translate } from './i18n';
-import { advanceGuide, dispatch, download, readSettings, writeSettings, replaceSave, type BootSession } from './local';
+import { advanceGuide, dispatch, download, openingConfig, readSettings, writeSettings, replaceSave, type BootSession } from './local';
 import { Quests } from './Quests';
 import { Kitchen } from './Kitchen';
 import { MenuReport } from './MenuReport';
@@ -22,9 +22,9 @@ import { FlyingFeedback, type Floater } from './FlyingFeedback';
 import { idleToGuideMs, revealed } from './reveal';
 import { savedLocale } from './locale';
 import { beerOut, firstGoal, pickSpotlight } from './spotlight';
-import { GoalChip } from './GoalChip';
+import { GoalChip, say } from './GoalChip';
 import { listGoals, pickNextGoal, type Goal } from './goals';
-import { leaveRows } from './leave-reasons';
+import { leaveRows, pairsWithoutSeat } from './leave-reasons';
 import { batchToast, type BatchToast } from './batch-toast';
 
 // Owner 2026-09-11: risk features are deferred; legacy UI remains testable only in an explicit dev preview.
@@ -118,6 +118,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   const locale = settings.locale;
   const t = (key: string, params: Record<string, string | number> = {}) => translate(locale, key, params);
   const num = (n: number) => new Intl.NumberFormat(locale === 'vi' ? 'vi-VN' : 'en-US').format(Math.round(n));
+  const decimal = (n: number) => new Intl.NumberFormat(locale === 'vi' ? 'vi-VN' : 'en-US', { maximumFractionDigits: 2 }).format(n); // 1,15 in Vietnamese, 1.15 in English
   const orderTime = (o: Order) => t('order.time', { s: Math.ceil(Math.max(0, o.placedAt + o.patienceMs + (o.state === 'grace' ? c.patience.graceMs : 0) - w.now) / 1000) });
   const save = async () => {
     const sequence = ++saveSequence.current; setSaving(true);
@@ -145,6 +146,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
       if (e.type === 'order_served') launch('coin', tableEl(e.data.tableId));
       if (e.type === 'order_expired' && Number(e.data.reputation)) launch('rep', tableEl(e.data.tableId), `−${num(Number(e.data.reputation))}`);
       if (e.type === 'customer_left' && e.data.reason === 'queue' && Number(e.data.reputation)) launch('rep', document.querySelector('.door'), `−${num(Number(e.data.reputation))}`);
+      if (e.type === 'table_kicked' && Number(e.data.reputation)) launch('rep', tableEl(e.data.tableId), `−${num(Number(e.data.reputation))}`); // Wave 3: the reputation a send-home took falls from that table
       if (e.type === 'queue_overflow') {
         const row = { id: e.id, size: Number(e.data.size) };
         setTurnedAway(list => [...list, row]);
@@ -160,7 +162,8 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   };
   const run = async (cmd: Command) => {
     const result = remote ? await remote.command(cmd) : dispatch(game as Game, cmd);
-    if (!result.ok) { sound.play('ui:denied'); setToast({ text: t(`error.${result.reason}`), kind: 'error' }); }
+    // A refusal names its own number where it has one: the tables a second chair waits for (reason.chairsLocked / error.chairsLocked carry {n} from the config).
+    if (!result.ok) { sound.play('ui:denied'); setToast({ text: t(`error.${result.reason}`, { n: num(isSeatModel(c) ? c.upgrades.table.chairsAfterTables : 0) }), kind: 'error' }); }
     else if (cmd.type === 'restock' || cmd.type === 'upgrade') setToast({ text: t(cmd.type === 'restock' ? 'stock.success' : 'upgrade.success'), kind: 'early' });
     if (result.ok && cmd.type === 'upgradeDog') { setSheet(null); setToast({ text: t('dog.success', { n: game.world.dogLevel }), kind: 'early' }); }
     if (result.ok && cmd.type === 'activateFlyer') { setSheet(null); setToast({ text: t('flyer.started'), kind: 'early' }); }
@@ -273,6 +276,11 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
     <button onClick={() => location.reload()}>{t('save.retry')}</button></main>;
 
   const shift = w.shift, inShift = w.phase !== 'resting';
+  // D8 (rules 28): the first shifts of a save open at once, so between them the stamina is not a wait. The bar and the rest line ask `restRequired` of the
+  // snapshot the next opening will use: locally `openingConfig` (the bundle when the pin is older, as `dispatch` sends it). Remote mode keeps the pin of the
+  // server snapshot, but the server opens a new shift with `registry.resolve(id, now)`: after a registry publication the two can differ, so a remote player in
+  // the first shifts may see a wait the opening does not ask (open item, BLOCKERS `07 · remote rest line …`).
+  const mustRest = restRequired(w, remote ? game.config : openingConfig(game as Game)), energyMs = inShift || mustRest ? w.staminaMs : c.shift.durationMs;
   const rush = rushStatus(w, game.config);
   const rushReports = sheet === 'book' ? w.events.filter(e => e.type === 'rush_ended' && e.data.shiftId === shift?.id) : [];
   const kitchen = kitchenStatus(w, game.config);
@@ -280,7 +288,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   const beerRestock = restockQuote(w, game.config, 'bia', 'full');
   const lowBeerStock = beerRestock.quantity > 0 && w.inventory.bia < beer.batchSize;
   const beerInventory = t('beer.inventory', { n: w.inventory.bia, cap: stockCap(w, game.config) });
-  const pouredBeer = t('beer.poured', { ready: beer.stored, max: beer.capacity, batch: beer.batchSize, s: beer.durationMs / 1000 });
+  const pouredBeer = t('beer.poured', { ready: beer.serveNow, max: beer.capacity, batch: beer.batchSize, s: beer.durationMs / 1000 }); // "rót sẵn n": the beers a guest can get right now
   const flyers = flyerQuote(w, game.config);
   const flyerReport = sheet === 'flyer' ? w.events.filter(e => e.type === 'flyer_ended').at(-1) : undefined;
   const dogQuote = dogUpgradeQuote(w, game.config);
@@ -296,12 +304,18 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
 
   const report = remote ? remote.menu : sheet === 'book' || sheet === 'upgrades' ? menuReport((game as Game).world, game.config) : null;
   const leave = report && shift ? leaveRows(report.losses, shift.stats.rejected) : []; // the shift book's "why guests left", most first
+  const pairs = shift ? pairsWithoutSeat(shift.stats) : 0; // S3: pairs turned away at the door for lack of a two-chair table
   const guideOrder = w.tables.filter(table => table.order && ['pending', 'grace'].includes(table.order.state))
     .sort((a, b) => a.order!.placedAt + a.order!.patienceMs - b.order!.placedAt - b.order!.patienceMs)[0]?.order;
   // F27/P0(a): at most one element carries data-spotlight; first-play also gets a pointer arrow on it.
   const spot = pickSpotlight(w, game.config, { sheet, dialogOpen: Boolean(sheet || selectedEquipment) });
   const goal = firstGoal(w, game.config), beerEmpty = beerOut(w, game.config);
-  const next = settings.goalChip ? pickNextGoal(w, game.config) : null; // the chip; the Settings switch only hides it
+  const nextGoal = pickNextGoal(w, game.config), next = settings.goalChip ? nextGoal : null; // the chip; the Settings switch only hides it
+  // S6 (D10): a quick "Mua ghế" on the HUD that does not pause, the way "Nhập bia" does: only while a second chair is the registry's next goal AND the wallet pays it
+  // (the sensible next step, D18: chairs come after the tables and before the levels); otherwise nothing is shown, the chip already says what is missing.
+  const quickChair = show.upgrades && nextGoal && nextGoal.card.kind === 'buyChair' && nextGoal.cost !== null && w.coins >= nextGoal.cost
+    ? { tableId: nextGoal.card.tableId, n: w.tables.findIndex(x => x.id === (nextGoal.card as { tableId: string }).tableId) + 1, cost: nextGoal.cost } : null;
+  const slots = tableSlots(w, game.config); // S6 (D13): the yard draws every place of the current location, the unbought ones as empty spots
   const leaveFree = toast?.loss ? !toast.loss.coins && !toast.loss.reputation : false; // a group turned away at the door costs nothing
   const leaveLabel = !toast?.loss ? '' : toast.reason && leaveFree ? t('loss.ariaFree', { reason: t(`leave.${toast.reason}`) })
     : toast.reason ? t('loss.ariaReason', { reason: t(`leave.${toast.reason}`), coins: num(toast.loss.coins), reputation: num(toast.loss.reputation) })
@@ -329,33 +343,37 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
     const patience = activeOrder ? Math.max(0, (o.placedAt + o.patienceMs - w.now) / o.patienceMs) : 0;
     const stale = activeOrder && o.items.some(i => i.glassId && i.readyAt !== null && w.now >= i.readyAt + freshnessMs(w, game.config));
     const guests = currentGuests(table), seated = guests.length > 0;
+    // The bar counts down the order's own deadline (better chairs stretch it) but turns low with the TIP, which is judged on the guest's own patience (guestPatienceLeft).
+    const tipLeft = activeOrder && guests.length ? Math.min(...guests.map(guest => guestPatienceLeft(w, o, guest))) : patience;
     const served = seated && o?.state === 'served' ? w.events.find(e => e.type === 'order_served' && e.data.orderId === o.id) : undefined;
     const feedback = served ? w.serves.filter(s => s.orderId === o?.id).map(s => ({ customerId: s.customerId, kind: s.stale ? 'stale' : served.data.outcome === 'grace' ? 'grace' : s.patienceRatio >= c.tip.patienceThreshold ? s.tip > 0 ? 'early' : 'earlyNoTip' : 'late' })) : [];
     const special = guests.find(x => x.type === 'vip')?.type ?? guests.find(x => x.type !== 'thuong')?.type;
     const here = spot.target && 'tableId' in spot.target && spot.target.tableId === table.id ? spot.target.kind : null;
     const litBubble = Boolean(activeOrder) && here !== null && selectedTable !== table.id, litTable = here === 'seated' && !activeOrder;
-    return <section className={`table-space table-${index} state-${table.state} ${activeOrder ? 'has-order' : ''} ${special ? `guest-${special}` : ''} ${o?.state === 'grace' ? 'is-urgent' : ''} ${selectedTable === table.id ? 'is-selected' : ''}`} key={table.id} data-table-id={table.id} aria-label={t('table', { n: index + 1 })}>
+    const dishes = trayDishes(c, table), chairLevel = table.chairLevel ?? 1; // S6 (P4): the tray shows the dishes the table's level allows; the chairs show their level
+    return <section className={`table-space table-${index} state-${table.state} ${activeOrder ? 'has-order' : ''} ${special ? `guest-${special}` : ''} ${o?.state === 'grace' ? 'is-urgent' : ''} ${selectedTable === table.id ? 'is-selected' : ''}`} key={table.id} data-table-id={table.id} data-chair-level={chairLevel} aria-label={t('table', { n: index + 1 })}>
       {activeOrder && <button {...lit(litBubble)} className={`table-order-hint ${ready ? 'is-ready' : ''} ${o.state === 'grace' ? 'is-urgent' : ''}`} onClick={e => showTable(table.id, e.currentTarget)} aria-label={t('order.details', { n: index + 1 })} aria-describedby={`${o.id}-description ${o.id}-time`}>
         <span className="bubble-dishes" aria-hidden="true">{orderDishes(o).map(({ dish, items }) => <span key={dish} className="bubble-dish"><Sprite id={dish === 'bia' ? stale ? 'glass-stale' : 'glass-full' : menuAsset[dish]} />{items.length > 1 && <b>{items.length}</b>}</span>)}</span>
         <span className="sr-only" id={`${o.id}-description`}>{orderDishes(o).map(({ dish, items }) => `${t(`dish.${dish}`)} × ${items.length}`).join(', ')} · {t(ready ? 'order.ready' : 'table.waiting')}</span>
         <span className="sr-only bubble-time" id={`${o.id}-time`}>{orderTime(o)}</span>
         <span className="bubble-status" aria-label={t(ready ? 'order.ready' : 'table.waiting')}>{ready ? <Icon name="check" /> : '…'}</span>
-        <span className={`patience-track ${patience < c.tip.patienceThreshold ? 'is-low' : ''}`}><i style={{ width: `${patience * 100}%` }} /></span>
+        <span className={`patience-track ${tipLeft < c.tip.patienceThreshold ? 'is-low' : ''}`}><i style={{ width: `${patience * 100}%` }} /></span>
         {litBubble && pointer}
       </button>}
       <button {...lit(litTable)} className="table-object" data-level={table.level} aria-haspopup="dialog" aria-controls={selectedTable === table.id ? 'active-table-order' : undefined} onClick={e => showTable(table.id, e.currentTarget)} aria-label={t('order.details', { n: index + 1 })}>
-        <TableSeats capacity={table.capacity} customers={guests} feedback={feedback} />
+        <TableSeats capacity={table.capacity} chairLevel={chairLevel} customers={guests} feedback={feedback} />
         <Sprite id={`table-lv${table.level}-empty`} />
+        <span className="tray" aria-hidden="true" data-dishes={dishes}>{trayAsset.slice(0, dishes).map(id => <Sprite key={id} id={id} />)}</span>
         <span className="table-number">{index + 1}</span>
         {litTable && pointer}
       </button>
-      <div className="table-caption">{special && <strong className="guest-label">{t(`customer.${special}`)}</strong>}<span>{t(`table.${table.state}`)}</span>{!table.group && <small>{t('table.seats', { n: table.capacity })}</small>}{served && table.until !== null && ['consuming', 'occupied'].includes(table.state) && <time className="enjoy-time">{time(table.until - w.now)}</time>}</div>
+      <div className="table-caption">{special && <strong className="guest-label">{t(`customer.${special}`)}</strong>}<span>{t(`table.${table.state}`)}</span>{!table.group && <small>{t('table.seats', { n: table.capacity })} · {t('table.tray', { n: dishes })}</small>}{served && table.until !== null && ['consuming', 'occupied'].includes(table.state) && <time className="enjoy-time">{time(table.until - w.now)}</time>}</div>
     </section>;
   }
   function equipmentButton(kind: Equipment) {
     const production = kind === 'keg' ? beer : kind === 'washer' ? washer : null;
     const cold = freshnessMs(w, game.config);
-    const count = kind === 'keg' ? `${beer.stored}/${beer.capacity}` : kind === 'washer' ? `${washer.busy}/${washer.batchSize}` : kind === 'kitchen' ? `${kitchen.busy}/${kitchen.slots}` : Number.isFinite(cold) ? t('cooler.seconds', { seconds: Math.round(cold) / 1000 }) : '∞';
+    const count = kind === 'keg' ? `${beer.serveNow}/${beer.capacity}` : kind === 'washer' ? `${washer.busy}/${washer.batchSize}` : kind === 'kitchen' ? `${kitchen.busy}/${kitchen.slots}` : Number.isFinite(cold) ? t('cooler.seconds', { seconds: Math.round(cold) / 1000 }) : '∞';
     return <button className={`equipment-object ${kind} ${kind === 'kitchen' && kitchen.busy ? 'is-cooking' : ''} ${kind === 'keg' && beerEmpty ? 'is-empty' : ''}`} key={kind} onClick={() => { setSelectedTable(null); setSelectedEquipment(kind); }} aria-label={t(`equipment.${kind}`)}>
       <Sprite id={`${kind}-lv${Math.max(1, w.equipment[kind])}`} /><span>{t(`equipment.${kind}`)}</span><b className="capacity-badge" aria-label={t(`production.${kind === 'washer' ? 'washing' : kind === 'keg' ? 'ready' : kind === 'cooler' ? 'freshness' : 'busy'}`, { count })}>{kind === 'keg' ? t('production.ready', { count }) : count}</b>
       {production && production.busy > 0 && <progress className="equipment-progress" aria-label={t('production.batchProgress', { n: production.busy })} value={production.progress} max={1} />}
@@ -371,14 +389,15 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   }
   function businessCard(item: BusinessUnlock) {
     const quote = unlockQuote(w, game.config, item);
-    return <article className="business-card" key={item} data-goal={`unlock:${item}`}><Sprite id={item === 'qr' ? 'qr-payment' : 'phone'} /><div><h3>{t(`business.${item}`)}</h3>{item === 'phone' && c.unlocks.phone.effect.includes('shipper') && c.customerTypes.shipper.requires === 'phone' && <p>{t('business.phoneEffect')}</p>}{item === 'qr' && <p>{t('business.qrEffect', { mult: c.tip.qrMult })}</p>}{requirementList(item === 'qr' ? [...quote.requirements].sort((a, b) => Number(b.target === 'phone') - Number(a.target === 'phone')) : quote.requirements)}<button disabled={!quote.ok} onClick={() => run({ type: 'buyUnlock', item })}>{quote.owned ? t('business.owned') : t('business.buy', { cost: num(quote.cost) })}</button></div></article>;
+    return <article className="business-card" key={item} data-goal={`unlock:${item}`}><Sprite id={item === 'qr' ? 'qr-payment' : 'phone'} /><div><h3>{t(`business.${item}`)}</h3>{item === 'phone' && c.unlocks.phone.effect.includes('shipper') && c.customerTypes.shipper.requires === 'phone' && <p>{t('business.phoneEffect')}</p>}{item === 'qr' && <p>{t('business.qrEffect', { mult: decimal(c.tip.qrMult) })}</p>}{requirementList(item === 'qr' ? [...quote.requirements].sort((a, b) => Number(b.target === 'phone') - Number(a.target === 'phone')) : quote.requirements)}<button disabled={!quote.ok} onClick={() => run({ type: 'buyUnlock', item })}>{quote.owned ? t('business.owned') : t('business.buy', { cost: num(quote.cost) })}</button></div></article>;
   }
   function upgradeCard(kind: Equipment) {
     const q = upgradeQuote(w, game.config, kind);
     const metrics = (level: number) => {
       const i = level - 1;
       if (!level) return null;
-      if (kind === 'keg') return <><small>{t(`equipment.keg.level${level}`)}</small><p>{t(c.upgrades.keg.refillEnabled ? 'production.taps' : 'production.directPour', { n: c.upgrades.keg.pourSlots[i], seconds: c.upgrades.keg.pourMs[i] / 1000, max: c.upgrades.keg.refillEnabled ? c.upgrades.keg.kegStorage[i] : c.upgrades.keg.pourSlots[i] })}</p>{c.upgrades.keg.refillEnabled && <p>{t('production.refill', { n: c.upgrades.keg.kegBatch[i], seconds: c.upgrades.keg.refillMs[i] / 1000 })}</p>}</>;
+      // Instant pour (rules 28): the taps are off the serving path, so a level is its reserve and its refill batch -- no tap count, no seconds per glass.
+      if (kind === 'keg') return <><small>{t(`equipment.keg.level${level}`)}</small><p>{beer.instant ? t('production.tank', { max: c.upgrades.keg.kegStorage[i] }) : t(c.upgrades.keg.refillEnabled ? 'production.taps' : 'production.directPour', { n: c.upgrades.keg.pourSlots[i], seconds: c.upgrades.keg.pourMs[i] / 1000, max: c.upgrades.keg.refillEnabled ? c.upgrades.keg.kegStorage[i] : c.upgrades.keg.pourSlots[i] })}</p>{c.upgrades.keg.refillEnabled && <p>{t('production.refill', { n: c.upgrades.keg.kegBatch[i], seconds: c.upgrades.keg.refillMs[i] / 1000 })}</p>}</>;
       if (kind === 'washer') return <p>{t('production.batch', { n: c.upgrades.washer.slots[i], seconds: c.upgrades.washer.washMs[i] / 1000 })}</p>;
       if (kind === 'cooler') {
         const cold = c.upgrades.cooler.freshnessMs[i];
@@ -402,17 +421,47 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
     if (card.kind === 'equipment') return upgradeCard(card.equipment);
     if (card.kind === 'business') return businessCard(card.item);
     if (card.kind === 'buyTable') return buyTableButton(goal.id);
+    // S6: a chair goal on its own (the one-card sheet, or a sheet that lists chairs apart from their tables); the full lane keeps it on its table's card.
+    if (card.kind === 'buyChair' || card.kind === 'chairUpgrade') {
+      const i = w.tables.findIndex(x => x.id === card.tableId), table = w.tables[i];
+      return <div className="upgrade-card" key={goal.id}><Sprite id={chairAsset(card.kind === 'chairUpgrade' ? (table.chairLevel ?? 1) + 1 : table.chairLevel ?? 1)} /><h3>{t('table', { n: i + 1 })}</h3>{card.kind === 'buyChair' ? chairBuyBlock(table) : chairLevelBlock(table)}</div>;
+    }
     return entryCard(goal);
   }
   /** F27/P3 + FEEDBACK II.4: every buy button shows its price and, when dimmed, exactly one reason: the first refusal its command would give (rules.ts quotes). */
-  const whyNot = (reason: string | null, n = 0) => reason ? t(`reason.${reason}`, { n: num(n) }) : '';
+  const whyNot = (reason: string | null, n = 0, name = '') => reason ? t(`reason.${reason}`, { n: num(n), name }) : '';
   function buyTableButton(id: string) {
-    const q = buyTableQuote(w, game.config), why = whyNot(q.reason);
-    return <div className="buy-card" key={id} data-goal={id}><button className="secondary full" disabled={!q.ok} aria-describedby={why ? 'buy-table-reason' : undefined} onClick={() => run({ type: 'buyTable' })}>{q.cost === null ? t('upgrade.addTable') : t('upgrade.addTablePrice', { cost: num(q.cost) })}</button>{why && <p id="buy-table-reason" className="buy-reason" role="status">{why}</p>}</div>;
+    const q = buyTableQuote(w, game.config), why = whyNot(q.reason), seat = isSeatModel(c);
+    // Seat model: "Mua bàn · N xu" (the n-th table's rung of the ladder, no number once the alley is full); a capacity snapshot keeps "Mua thêm bàn · N xu".
+    const label = q.cost === null || seat && q.reason === 'maxTables' ? t('upgrade.addTable') : t(seat ? 'upgrade.buyTable' : 'upgrade.addTablePrice', { cost: num(q.cost) });
+    return <div className="buy-card" key={id} data-goal={id}>{effectLine(id)}<button {...lit(spot.target?.kind === 'goal' && goal?.kind === 'buyTable')} className="secondary full" disabled={!q.ok} aria-describedby={why ? 'buy-table-reason' : undefined} onClick={() => run({ type: 'buyTable' })}>{label}</button>{why && <p id="buy-table-reason" className="buy-reason" role="status">{why}</p>}</div>;
+  }
+  /** What a table of a level gives the group that sits down at it (S4, D19), one short label each (the benefits stack, so level 3 lists the extra round and the second snack). */
+  const perks = (level: number) => {
+    const b = tableBenefit(c, level), parts = [b.extraRounds > 0 && t('table.benefit.rounds', { n: b.extraRounds }), b.pExtraMoi > 0 && t('table.benefit.snack', { n: Math.round(b.pExtraMoi * 100) }), b.tipMult > 1 && t('table.benefit.tip', { n: decimal(b.tipMult) })].filter((part): part is string => Boolean(part));
+    return parts.length ? parts : [t('table.benefit.none')];
+  };
+  // The life-path gate names the level the player has to reach: one reason, in words (reason.lifePathRequired).
+  const gateName = (level: number) => level > 0 ? levelName(level) : '';
+  /** S6 (plan S6 row "giá + hiệu ứng trước→sau + 1 lý do"): the registry's one-number effect of an item, printed on its block of the sheet; nothing when the item has nothing left to buy. */
+  // The effect line of a capacity block: only while the item still has a price (S6 review round 2: a full alley's "Mua thêm bàn" has nothing left to promise, so no "+1 chỗ" above it).
+  const effectLine = (id: string) => { const g = sheetGoals.find(x => x.id === id); return g?.effect && g.cost !== null ? <p className="goal-effect">{say(t, g.effect, num, decimal)}</p> : null; };
+  /** Seat model: a one-chair table sells its second chair (registry item `chair:<table>`): its effect (1 → 2 chỗ), its price and the quote's one reason (a locked chair names the tables it waits for); a pair is the most a table holds, so a pair has no block. */
+  function chairBuyBlock(table: Table) {
+    const chair = isSeatModel(c) && table.capacity < PAIR ? buyChairQuote(w, game.config, table) : null, chairWhy = chair ? whyNot(chair.reason, isSeatModel(c) ? c.upgrades.table.chairsAfterTables : 0) : '';
+    return chair && <div className="buy-card chair-goal" data-goal={`chair:${table.id}`}>{effectLine(`chair:${table.id}`)}<button disabled={!chair.ok} aria-describedby={chairWhy ? `chair-reason-${table.id}` : undefined} onClick={() => run({ type: 'buyChair', tableId: table.id })}>{t('upgrade.buyChair', { cost: num(chair.cost ?? 0) })}</button>{chairWhy && <p id={`chair-reason-${table.id}`} className="buy-reason" role="status">{chairWhy}</p>}</div>;
+  }
+  /** S4 (rules 28): a snapshot with the level ladders sells the chair level (registry item `chairLevel:<table>`): its effect (kiên nhẫn ×1 → ×1,15), price and one reason like the others. */
+  function chairLevelBlock(table: Table) {
+    const comfort = isSeatModel(c) && tableUpgrade(c) !== null ? chairUpgradeQuote(w, game.config, table) : null;
+    const comfortWhy = comfort && comfort.gate !== 'maxLevel' ? whyNot(comfort.reason, 0, gateName(comfort.requiredLifePath)) : '';
+    return comfort && <div className="buy-card chair-goal" data-goal={`chairLevel:${table.id}`}>{effectLine(`chairLevel:${table.id}`)}<button data-action="chairUpgrade" disabled={!comfort.ok} aria-describedby={comfortWhy ? `comfort-reason-${table.id}` : undefined} onClick={() => run({ type: 'upgradeChair', tableId: table.id })}>{comfort.next ? t('upgrade.chairUp', { cost: num(comfort.cost!) }) : t('upgrade.chairMax')}</button>{comfortWhy && <p id={`comfort-reason-${table.id}`} className="buy-reason" role="status">{comfortWhy}</p>}</div>;
   }
   function tableCard(table: Table, i: number) {
-    const q = tableUpgradeQuote(w, game.config, table), why = q.gate === 'maxLevel' ? '' : whyNot(q.reason, q.next?.repBase?.[0]); // top level: nothing is left to buy, so the button's own label "Đã tối đa" is the one reason, even while guests sit there (the command answers the transient tableBusy first, which would only mislead)
-    return <div className="upgrade-card" key={table.id} data-goal={`table:${table.id}`}><Sprite id={`table-lv${table.level}-empty`} /><h3>{t('table', { n: i + 1 })}</h3><p>{t('table.seats', { n: table.capacity })}</p><button {...lit(spot.target?.kind === 'goal' && goal?.table.id === table.id)} disabled={!q.ok} aria-describedby={why ? `table-reason-${table.id}` : undefined} onClick={() => run({ type: 'upgradeTable', tableId: table.id })}>{q.next ? t('upgrade.buy', { cost: num(q.cost!) }) : t('upgrade.max')}</button>{why && <p id={`table-reason-${table.id}`} className="buy-reason" role="status">{why}</p>}</div>;
+    const q = tableUpgradeQuote(w, game.config, table), why = q.gate === 'maxLevel' ? '' : whyNot(q.reason, q.next?.repBase?.[0], gateName(q.requiredLifePath)); // top level: nothing is left to buy, so the button's own label "Đã tối đa" is the one reason, even while guests sit there (the command answers the transient tableBusy first, which would only mislead)
+    // S4 (rules 28): a snapshot with the level ladders also says what the level and the chairs give; S6: the chair and the chair level are registry items of their own, drawn on this card.
+    const ladders = isSeatModel(c) && tableUpgrade(c) !== null, chairLevel = table.chairLevel ?? 1;
+    return <div className="upgrade-card" key={table.id} data-goal={`table:${table.id}`}><Sprite id={`table-lv${table.level}-empty`} /><h3>{t('table', { n: i + 1 })}</h3><p>{t('table.seats', { n: table.capacity })}</p>{ladders && <><div className="table-perk"><p>{t('level', { n: table.level })}</p><ul>{perks(effectiveTableLevel(table)).map(label => <li key={label}>{label}</li>)}</ul></div><p className="chair-perk">{t('table.chairLevel', { n: chairLevel, mult: decimal(chairPatienceMult(c, chairLevel)) })}</p></>}{chairBuyBlock(table)}{effectLine(`table:${table.id}`)}<button {...lit(spot.target?.kind === 'goal' && goal?.kind === 'table' && goal.table.id === table.id)} disabled={!q.ok} aria-describedby={why ? `table-reason-${table.id}` : undefined} onClick={() => run({ type: 'upgradeTable', tableId: table.id })}>{q.next ? t('upgrade.buy', { cost: num(q.cost!) }) : t('upgrade.tableMax')}</button>{why && <p id={`table-reason-${table.id}`} className="buy-reason" role="status">{why}</p>}{chairLevelBlock(table)}</div>;
   }
 
   return <div className="game-shell" data-save-state={saveError ? 'error' : saving ? 'saving' : 'saved'} data-frame={frame}>
@@ -421,10 +470,10 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
     <main className={`game weather-${shift?.weather ?? 'sunny'}${!w.active || w.paused ? ' is-paused' : ''}`}>
       <header className="hud">
         <div className="money" {...lit(spot.target?.kind === 'wallet')}><Icon name="coin" /><div><span className="sr-only">{t('coins')}</span><strong>{num(w.coins)}</strong></div>{spot.target?.kind === 'wallet' && pointer}</div>
-        {show.hud && <div className="energy"><div><Icon name="bolt" /><strong>{inShift && shift ? time(shift.endsAt - w.now) : `${Math.floor(w.staminaMs / c.shift.durationMs * 100)}%`}</strong></div><span className="energy-track"><i style={{ width: `${w.staminaMs / c.shift.durationMs * 100}%` }} /></span></div>}
+        {show.hud && <div className="energy"><div><Icon name="bolt" /><strong>{inShift && shift ? time(shift.endsAt - w.now) : `${Math.floor(energyMs / c.shift.durationMs * 100)}%`}</strong></div><span className="energy-track"><i style={{ width: `${energyMs / c.shift.durationMs * 100}%` }} /></span></div>}
         {show.hud && <button className="icon-button settings-button" onClick={() => open('settings')} aria-label={t('nav.settings')}><Icon name="settings" /></button>}
       </header>
-      {next && <div className="goal-row"><GoalChip goal={next} coins={w.coins} t={t} num={num} onOpen={openGoal} /></div>}
+      {next && <div className="goal-row"><GoalChip goal={next} coins={w.coins} t={t} num={num} decimal={decimal} onOpen={openGoal} /></div>}
       {show.hud && <div className="weather-row"><span className="weather-chip"><span aria-hidden="true">{shift?.weather === 'rain' ? '☂' : '☀'}</span>{t(`weather.${shift?.weather ?? 'sunny'}`)}</span>{restedMs > 0 && <span className="well-rested" role="timer" aria-label={t('wellRested.active', { time: time(restedMs), mult: c.shift.wellRested.mult })}><Icon name="star" /><time>{time(restedMs)}</time><b>×{c.shift.wellRested.mult}</b></span>}<span className={`rush-label ${rush.active ? 'is-active' : rush.next?.warning ? 'is-warning' : ''}`} role="timer">{rush.active ? <><Icon name="bolt" /><span><b>{t(`rush.${rush.active.kind}`)}</b><time>{t('rush.ends', { time: time(rush.active.remainingMs) })}</time></span></> : rush.next ? <span><b>{t('rush.upcoming', { kind: t(`rush.${rush.next.kind}`) })}</b><time>{time(rush.next.remainingMs)}</time></span> : t('rush.none')}</span>{!rush.active && rush.next?.warning && <span className="sr-only" role="status">{t('rush.warning', { kind: t(`rush.${rush.next.kind}`) })}</span>}</div>}
       <section className={`stall-scene ${kitchen.level ? 'has-kitchen' : ''}`} aria-label={t('brand')}>
         {w.signStyle && <button className="sign-object" aria-label={t('sign.open', { style: t(`sign.${w.signStyle}`) })} aria-haspopup="dialog" onClick={() => open('signboard')}><Sprite id={`sign-${w.signStyle}`} /></button>}
@@ -434,21 +483,28 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
         <div className="business-props">{BUSINESS_UNLOCKS.filter(item => w.unlocks.includes(item)).map(item => <button key={item} className={item === 'phone' && delivery ? `has-delivery ${deliveryUrgent ? 'is-urgent' : ''}` : ''} onClick={() => open(item === 'phone' ? 'delivery' : 'upgrades')} aria-label={t(item === 'phone' ? 'delivery.open' : `business.${item}`)} aria-describedby={item === 'phone' && delivery ? 'delivery-clock' : undefined}><Sprite id={item === 'qr' ? 'qr-payment' : item === 'phone' && delivery ? 'customer-shipper' : 'phone'} />{item === 'phone' && delivery && <span id="delivery-clock" className="delivery-clock"><span className="sr-only">{t(deliveryUrgent ? 'delivery.urgent' : 'delivery.deadline')}</span>{deliveryUrgent && <b aria-hidden="true">! </b>}{time(Math.ceil(delivery.remainingMs / 1000) * 1000)}</span>}</button>)}</div>
         {showDeferredRisk && w.dogLevel > 0 && <button className="dog-object" aria-label={t('dog.open', { n: w.dogLevel })} aria-haspopup="dialog" onClick={() => open('dog')}><Sprite id={`dog-idle-lv${w.dogLevel}`} /><span>{t('level', { n: w.dogLevel })}</span></button>}
       </section>
-      <p id="beer-supply-status" className={show.hud ? 'beer-pipeline' : 'beer-pipeline sr-only'}>{t('beer.pipeline', { ready: beer.stored, n: w.inventory.bia, cap: stockCap(w, game.config), clean: cleanGlasses, total: w.glasses.length })}</p>
+      <p id="beer-supply-status" className={show.hud ? 'beer-pipeline' : 'beer-pipeline sr-only'}>{t('beer.pipeline', { ready: beer.serveNow, n: w.inventory.bia, cap: stockCap(w, game.config), clean: cleanGlasses, total: w.glasses.length })}</p>
       {lowBeerStock && <section className="beer-stock-warning" aria-label={t('stock.quickBeerTitle')}>
         <p role="status">{t(w.inventory.bia === 0 ? 'stock.beerEmpty' : 'stock.beerLow')}</p>
         <button {...lit(spot.target?.kind === 'restock')} aria-describedby="beer-supply-status" disabled={!beerRestock.ok} onClick={() => run({ type: 'restock', dish: 'bia', mode: 'full' })}>{t('stock.quickBeer', { n: num(beerRestock.quantity), cost: num(beerRestock.cost) })}</button>
         {w.coins < beerRestock.cost && <small>{t('error.notEnoughCoins')}</small>}
       </section>}
+      {quickChair && <section className="beer-stock-warning quick-chair" aria-label={t('upgrade.quickChairTitle')}>
+        <button onClick={() => run({ type: 'buyChair', tableId: quickChair.tableId })}>{t('upgrade.quickChair', { n: quickChair.n, cost: num(quickChair.cost) })}</button>
+      </section>}
       {remote && <div className={`network-status is-${remote.state}`} role="status" aria-live="polite"><span>{t(remote.accountBusy ? 'account.confirming' : `network.${remote.state}`)}</span>{remote.state === 'invalidSession' && <button onClick={onReauthenticate}>{t('account.reauthenticate')}</button>}{remote.pending > 0 && <strong>{t('network.pending', { n: remote.pending })}</strong>}</div>}
-      <section className="yard" aria-label={t(`location.${w.location}`)}>
-        {w.tables.map(renderTable)}
-        <DoorQueue world={w} config={game.config} turnedAway={turnedAway} t={t} />
+      <section className="yard" aria-label={t(`location.${w.location}`)} data-slots={slots}>
+        {/* S6 review round 1 (P0(c)): the door is the first band of the yard, always above the fold, never under the eight places; the grid below keeps a free band for the order bubbles of its first row. */}
+        <div className="yard-door"><DoorQueue world={w} config={game.config} turnedAway={turnedAway} t={t} /></div>
+        <div className="yard-grid">
+          {w.tables.map(renderTable)}
+          {Array.from({ length: Math.max(0, slots - w.tables.length) }, (_, i) => <div key={`slot-${w.tables.length + i}`} className={`table-space table-${w.tables.length + i} table-slot`} role="img" aria-label={t('yard.slot')}><span className="slot-mark" /></div>)}
+        </div>
         {!inShift && !shift && <div className="opening-note"><h2>{t('rest.title')}</h2><p>{t('rest.copy')}</p><button className="primary" onClick={() => run({ type: 'startShift' })}><Icon name="bolt" />{t('nav.shift')}</button><small>{t('rest.free')}</small></div>}
       </section>
       {show.hud && <div className="stock-strip">{DISHES.filter(d => c.menu[d].unlock.kitchenLevel <= w.equipment.kitchen).map(d => <button key={d} className={d === 'bia' ? 'beer-stock' : undefined} onClick={() => open('stock')} aria-label={d === 'bia' ? beerInventory : `${t(`ingredient.${d}`)}: ${w.inventory[d]}/${stockCap(w, game.config)}`}><Sprite id={d === 'bia' ? 'keg-lv1' : menuAsset[d]} /><strong>{w.inventory[d]}<small>/{stockCap(w, game.config)}</small></strong></button>)}<button className={`flyer-stock ${flyers.remainingMs > 0 ? 'active' : ''}`} onClick={() => open('flyer')} aria-label={t('flyer.open', { n: flyers.stock })}><Sprite id="flyer-bundle" /><strong>{flyers.remainingMs > 0 ? time(flyers.remainingMs) : flyers.stock}</strong></button>{show.quests && <button className="quest-trigger" onClick={() => open('quests')} aria-label={t('quests.title')}><Icon name="book" /><strong>{w.daily?.rows.filter(r => r.progress >= r.target).length ?? 0}/{c.quests.daily.count}</strong></button>}<button className="reputation" onClick={() => open('journey')}><Icon name="star" />{num(w.reputation)}</button></div>}
       {w.phase === 'closing' && <p className="status-line">{t('closing')}</p>}
-      {!inShift && shift && <div className="status-line rest-summary"><span>{w.staminaMs < c.shift.durationMs ? c.shift.regenRate > 0 ? t('rest.regen', { time: time(Math.ceil((c.shift.durationMs - w.staminaMs) / c.shift.regenRate / 1000) * 1000) }) : t('rest.regenPaused') : t('rest.free')}</span><button onClick={() => open('book')}><Icon name="book" />{t('nav.book')}</button></div>}
+      {!inShift && shift && <div className="status-line rest-summary"><span>{mustRest ? c.shift.regenRate > 0 ? t('rest.regen', { time: time(Math.ceil((c.shift.durationMs - w.staminaMs) / c.shift.regenRate / 1000) * 1000) }) : t('rest.regenPaused') : w.staminaMs < c.shift.durationMs ? t('rest.ready') : t('rest.free')}</span><button onClick={() => open('book')}><Icon name="book" />{t('nav.book')}</button></div>}
       {showGuide && <div className="guide" role="status"><span className="guide-mark">!</span><p>{t(guide.waitFor === 'order_ready' ? `order.feedback.${orderPreparation(w, game.config, guideOrder)}` : guide.copyKey)}</p>{c.onboarding.stepGuide.skippable && <button onClick={() => setPrefs({ guideDone: true, guideIndex: null })}>{t('skip')}</button>}</div>}
       {show.hud && <nav className="bottom-nav" aria-label={t('brand')}>
         <button className={!inShift ? 'primary' : ''} onClick={() => inShift ? open('book') : run({ type: 'startShift' })}><Icon name={inShift ? 'book' : 'bolt'} /><span>{t(inShift ? 'nav.book' : 'nav.shift')}</span></button>
@@ -521,7 +577,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
       {sheet === 'upgrades' && show.upgradeList && <>{upgradeHint}<button className="sign-entry full" onClick={() => open('locations')}><Icon name="star" /><span><strong>{t('nav.locations')}</strong><small>{t(`location.${w.location}`)}</small></span><span aria-hidden="true">›</span></button>{showDeferredRisk && <button className="dog-entry full" onClick={() => open('dog')}><Sprite id={`dog-idle-lv${w.dogLevel || 1}`} /><span><strong>{t('dog.title')}</strong><small>{t(`dog.level${w.dogLevel}`)}</small></span><span aria-hidden="true">›</span></button>}<section className="goal-lane" aria-labelledby="lane-capacity"><h3 id="lane-capacity">{t('lane.capacity')}</h3><h3 id="upgrade-tables" tabIndex={-1}>{t('upgrade.tables')}</h3><div className="upgrade-grid">{sheetGoals.filter(g => g.card.kind === 'table').map(renderCard)}</div>{sheetGoals.filter(g => g.card.kind === 'buyTable').map(renderCard)}</section><section className="goal-lane" aria-labelledby="lane-speed"><h3 id="lane-speed">{t('lane.speed')}</h3><button className="sign-entry full kitchen-entry" onClick={() => { setSheet(null); setSelectedEquipment('kitchen'); }}><Sprite id={`kitchen-lv${Math.max(1, kitchen.level)}`} /><span><strong>{t('kitchen.live')}</strong><small>{kitchen.level ? t('kitchen.slots', { busy: kitchen.busy, total: kitchen.slots }) : t('kitchen.locked')}</small></span><span aria-hidden="true">›</span></button><p className="sheet-intro">{t('upgrade.copy')}</p><div className="upgrade-grid">{sheetGoals.filter(g => g.lane === 'speed').map(renderCard)}</div></section><section className="goal-lane" aria-labelledby="lane-guests"><h3 id="lane-guests">{t('lane.guests')}</h3>{sheetGoals.filter(g => g.card.kind === 'signboard' || g.card.kind === 'flyer').map(renderCard)}<h3>{t('business.title')}</h3><div className="business-grid">{sheetGoals.filter(g => g.card.kind === 'business').map(renderCard)}</div></section></>}
       {sheet === 'book' && (shift ? <>{show.quests && <button className="secondary full" onClick={() => open('quests')}>{t('quests.title')}</button>}<p className="sheet-intro">{t('shift')} · {time(Math.min(shift.closedAt ?? w.now, shift.endsAt) - shift.startedAt - shift.pausedMs)}<b>{t(`weather.${shift.weather}`)}</b></p><section aria-label={t('book.location')} className="shift-location"><h3>{t('book.location')}</h3>
             {shiftLocation ? <p>{shiftLocation.locations.map((row, i) => <span key={row.id}>{i > 0 && ' → '}<span data-shift-location={row.id}>{t(`location.${row.id}`)} ×{row.mult.toLocaleString(locale === 'vi' ? 'vi-VN' : 'en-US')}</span></span>)}</p> : <p>{t('book.locationUnknown')}</p>}
-            <p>{t('book.locationNote')}</p></section><dl className="ledger">{(['served', 'lost', 'payment', 'tip', 'penalty', 'spent'] as const).map(key => <div key={key}><dt>{t(`book.${key}`)}</dt><dd>{num(shift.stats[key])}</dd></div>)}{(shift.stats.deliveryCompleted ?? 0) > 0 && <><div><dt>{t('book.deliveryCompleted')}</dt><dd>{shift.stats.deliveryCompleted}</dd></div><div><dt>{t('book.deliveryNet')}</dt><dd>{num(shift.stats.deliveryNet ?? 0)}</dd></div></>}{(shift.stats.deliveryMissed ?? 0) > 0 && <div><dt>{t('book.deliveryMissed')}</dt><dd>{shift.stats.deliveryMissed}</dd></div>}{shift.stats.wellRestedBonus > 0 && <div><dt>{t('book.wellRestedBonus')}</dt><dd>{num(shift.stats.wellRestedBonus)}</dd></div>}<div className="ledger-total"><dt>{t('book.net')}</dt><dd>{num(shift.stats.credited - shift.stats.penalty - shift.stats.spent)}</dd></div></dl>{report && <section className="leave-reasons" aria-label={t('book.reasons')}><h3>{t('book.reasons')}</h3>{leave.length ? <ol>{leave.map(row => <li key={row.reason} data-reason={row.reason}><span>{t(`leave.${row.reason}`)}</span><b>{num(row.count)}</b></li>)}</ol> : <p>{t('book.reasonsNone')}</p>}</section>}{upgradeHint}<MenuReport report={report} t={t} num={num} locale={locale} /><button className="secondary full" onClick={() => open('flyer')}>{t('flyer.title')}</button>{rushReports.length > 0 && <table className="rush-report"><caption>{t('book.rushes')}</caption><thead><tr><th scope="col">{t('book.rushKind')}</th><th scope="col">{t('book.rushServed')}</th><th scope="col">{t('book.rushLost')}</th><th scope="col">{t('book.rushRevenue')}</th></tr></thead><tbody>{rushReports.map(e => <tr key={e.id}><th scope="row">{t(`rush.${e.data.kind}`)}</th><td>{num(Number(e.data.served))}</td><td>{num(Number(e.data.lost))}</td><td>{num(Number(e.data.revenue))}</td></tr>)}</tbody></table>}{inShift && <div className="button-stack"><button className="primary" onClick={() => run({ type: 'endShift' })}>{t('book.end')}</button><button className="secondary" disabled={!c.shift.kickAllAllowed} onClick={() => { setCloseShift(shift.id); open('close'); }}>{t('book.kick', { cost: num(closeQuote.cost) })}</button></div>}</> : <p>{t('book.none')}</p>)}
+            <p>{t('book.locationNote')}</p></section><dl className="ledger">{(['served', 'lost', 'payment', 'tip', 'penalty', 'spent'] as const).map(key => <div key={key}><dt>{t(`book.${key}`)}</dt><dd>{num(shift.stats[key])}</dd></div>)}{(shift.stats.deliveryCompleted ?? 0) > 0 && <><div><dt>{t('book.deliveryCompleted')}</dt><dd>{shift.stats.deliveryCompleted}</dd></div><div><dt>{t('book.deliveryNet')}</dt><dd>{num(shift.stats.deliveryNet ?? 0)}</dd></div></>}{(shift.stats.deliveryMissed ?? 0) > 0 && <div><dt>{t('book.deliveryMissed')}</dt><dd>{shift.stats.deliveryMissed}</dd></div>}{shift.stats.wellRestedBonus > 0 && <div><dt>{t('book.wellRestedBonus')}</dt><dd>{num(shift.stats.wellRestedBonus)}</dd></div>}<div className="ledger-total"><dt>{t('book.net')}</dt><dd>{num(shift.stats.credited - shift.stats.penalty - shift.stats.spent)}</dd></div></dl>{report && <section className="leave-reasons" aria-label={t('book.reasons')}><h3>{t('book.reasons')}</h3>{leave.length ? <ol>{leave.map(row => <li key={row.reason} data-reason={row.reason}><span>{t(`leave.${row.reason}`)}</span><b>{num(row.count)}</b></li>)}</ol> : <p>{t('book.reasonsNone')}</p>}{pairs > 0 && <p className="leave-pairs" data-pairs={pairs}>{t('book.pairsNoSeat', { n: num(pairs) })}</p>}</section>}{upgradeHint}<MenuReport report={report} t={t} num={num} locale={locale} /><button className="secondary full" onClick={() => open('flyer')}>{t('flyer.title')}</button>{rushReports.length > 0 && <table className="rush-report"><caption>{t('book.rushes')}</caption><thead><tr><th scope="col">{t('book.rushKind')}</th><th scope="col">{t('book.rushServed')}</th><th scope="col">{t('book.rushLost')}</th><th scope="col">{t('book.rushRevenue')}</th></tr></thead><tbody>{rushReports.map(e => <tr key={e.id}><th scope="row">{t(`rush.${e.data.kind}`)}</th><td>{num(Number(e.data.served))}</td><td>{num(Number(e.data.lost))}</td><td>{num(Number(e.data.revenue))}</td></tr>)}</tbody></table>}{inShift && <div className="button-stack"><button className="primary" onClick={() => run({ type: 'endShift' })}>{t('book.end')}</button><button className="secondary" disabled={!c.shift.kickAllAllowed} onClick={() => { setCloseShift(shift.id); open('close'); }}>{t('book.kick', { cost: num(closeQuote.cost) })}</button></div>}</> : <p>{t('book.none')}</p>)}
       {sheet === 'journey' && <>
         {!guestOnly && show.league && <button className="sign-entry full" onClick={() => open('seasons')}><Icon name="star" /><strong>{t('nav.seasons')}</strong><span aria-hidden="true">›</span></button>}
         <div className="journey-summary"><span>{t('journey.current')}</span><h3>{levelName(w.lifePath)}</h3><p>{num(w.lifetimeEarned)} {t('journey.earned')}</p>{nextMilestone && <><progress aria-label={t('journey.next', { name: levelName(nextMilestone.index) })} max={nextMilestone.lifetimeBase} value={Math.min(w.lifetimeEarned, nextMilestone.lifetimeBase)} /><p>{t('journey.next', { name: levelName(nextMilestone.index) })}</p></>}</div>
@@ -536,7 +592,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
       {sheet === 'settings' && <div className="settings-list"><button className="setting-row" aria-haspopup="dialog" onClick={() => open('account')}><span>{t('account.title')}</span><b>{t(`account.${remote?.identity.provider ?? 'local'}`)}</b></button><label>{t('settings.language')}<select value={locale} onChange={e => setPrefs({ locale: e.target.value as 'vi' | 'en' })}><option value="vi">{t('language.vi')}</option><option value="en">{t('language.en')}</option></select></label><button className="setting-row" onClick={() => setPrefs({ muted: !settings.muted })}><span>{t('settings.sound')}</span><b>{t(settings.muted ? 'settings.soundOff' : 'settings.soundOn')}</b></button><button className="setting-row" onClick={() => setPrefs({ goalChip: !settings.goalChip })}><span>{t('settings.goal')}</span><b>{t(settings.goalChip ? 'settings.on' : 'settings.off')}</b></button><p>{t('settings.saved')}</p>{!remote && <button onClick={() => download(encodeSave(game as Game), 'tbh-backup.json')}>{t('settings.export')}</button>}{remote && <p>{t(remote.identity.provider === 'guest' ? 'account.guestCopy' : 'network.serverSaved')}</p>}<button onClick={() => { setPrefs({ guideDone: false, guideIndex: 0 }); setSheet(null); }}>{t('settings.guide')}</button><button onClick={() => open('config')}>{t('settings.config')}</button><p className="build-version">{t('settings.build')} <code title={__TBH_COMMIT__}>{__TBH_COMMIT__.slice(0, 12)}</code></p></div>}
       {sheet === 'config' && <><p>{t('config.pinned', { version: game.config.version })}</p><pre className="config-json">{JSON.stringify(game.config.raw, null, 2)}</pre></>}
     </SheetDialog>}
-    {selectedEquipment && <SheetDialog pausedLabel={t('pause.menu')} title={t(`equipment.${selectedEquipment}`)} close={() => setSelectedEquipment(null)}><div className="equipment-detail">{(selectedEquipment === 'keg' || selectedEquipment === 'washer') && <section className="production-detail" aria-label={t('production.status')}><strong>{selectedEquipment === 'keg' ? pouredBeer : t('production.clean', { count: `${washer.clean}/${washer.capacity}` })}</strong>{selectedEquipment === 'keg' && <p>{beerInventory}</p>}{(() => { const p = selectedEquipment === 'keg' ? beer : washer; return p.busy ? <><p>{t('production.running', { n: p.busy, seconds: Math.ceil(p.remainingMs / 1000) })}</p><progress value={p.progress} max={1} aria-label={t('production.batchProgress', { n: p.busy })} /></> : <p>{t(selectedEquipment === 'keg' && !w.inventory.bia && beer.stored < beer.capacity ? 'production.noStock' : 'production.idle')}</p>; })()}{selectedEquipment === 'washer' && <><p>{t('production.washQueue', { n: washer.queued, capacity: washer.batchSize })}</p><div className="buy-glasses"><strong>{t('production.glassOwned', { n: w.glasses.length, max: Math.min(c.glasses.buyCap, c.glasses.storageCap) })}</strong>{[1, Math.max(0, Math.min(c.glasses.buyCap, c.glasses.storageCap) - w.glasses.length)].filter((count, i, counts) => counts.indexOf(count) === i && count > 0).map(count => { const q = buyGlassQuote(w, game.config, count); return <button key={count} disabled={!q.ok} onClick={() => run({ type: 'buyGlass', count })}>{t('production.buyGlass', { n: count, cost: num(q.cost) })}</button>; })}</div></>}{selectedEquipment === 'keg' && <><p>{t('production.pouring', { busy: beer.pouring, total: beer.tapSlots })}</p><p>{t(beer.enabled ? 'production.reserveHint' : 'production.legacy')}</p></>}</section>}{selectedEquipment === 'kitchen' && <Kitchen status={kitchen} t={t} onTable={tableId => { setSelectedEquipment(null); const button = document.querySelector<HTMLButtonElement>(`[data-table-id="${CSS.escape(tableId)}"] .table-object`); if (button) showTable(tableId, button); }} onStock={() => { setSelectedEquipment(null); open('stock'); }} />}{upgradeCard(selectedEquipment)}</div></SheetDialog>}
+    {selectedEquipment && <SheetDialog pausedLabel={t('pause.menu')} title={t(`equipment.${selectedEquipment}`)} close={() => setSelectedEquipment(null)}><div className="equipment-detail">{(selectedEquipment === 'keg' || selectedEquipment === 'washer') && <section className="production-detail" aria-label={t('production.status')}><strong>{selectedEquipment === 'keg' ? pouredBeer : t('production.clean', { count: `${washer.clean}/${washer.capacity}` })}</strong>{selectedEquipment === 'keg' && <p>{beerInventory}</p>}{(() => { const p = selectedEquipment === 'keg' ? beer : washer; return p.busy ? <><p>{t('production.running', { n: p.busy, seconds: Math.ceil(p.remainingMs / 1000) })}</p><progress value={p.progress} max={1} aria-label={t('production.batchProgress', { n: p.busy })} /></> : <p>{t(selectedEquipment === 'keg' && !w.inventory.bia && beer.stored < beer.capacity ? 'production.noStock' : 'production.idle')}</p>; })()}{selectedEquipment === 'washer' && <><p>{t('production.washQueue', { n: washer.queued, capacity: washer.batchSize })}</p><div className="buy-glasses"><strong>{t('production.glassOwned', { n: w.glasses.length, max: Math.min(c.glasses.buyCap, c.glasses.storageCap) })}</strong>{[1, Math.max(0, Math.min(c.glasses.buyCap, c.glasses.storageCap) - w.glasses.length)].filter((count, i, counts) => counts.indexOf(count) === i && count > 0).map(count => { const q = buyGlassQuote(w, game.config, count); return <button key={count} disabled={!q.ok} onClick={() => run({ type: 'buyGlass', count })}>{t('production.buyGlass', { n: count, cost: num(q.cost) })}</button>; })}</div></>}{selectedEquipment === 'keg' && <>{!beer.instant && <p>{t('production.pouring', { busy: beer.pouring, total: beer.tapSlots })}</p>}<p>{t(beer.instant ? 'production.instantHint' : beer.enabled ? 'production.reserveHint' : 'production.legacy')}</p></>}</section>}{selectedEquipment === 'kitchen' && <Kitchen status={kitchen} t={t} onTable={tableId => { setSelectedEquipment(null); const button = document.querySelector<HTMLButtonElement>(`[data-table-id="${CSS.escape(tableId)}"] .table-object`); if (button) showTable(tableId, button); }} onStock={() => { setSelectedEquipment(null); open('stock'); }} />}{upgradeCard(selectedEquipment)}</div></SheetDialog>}
     {selectedTable && (() => {
       const table = w.tables.find(x => x.id === selectedTable)!; const o = table.order;
       const active = o && ['pending', 'grace'].includes(o.state);
@@ -546,6 +602,11 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
       const type = guests.find(x => x.type === 'vip')?.type ?? guests.find(x => x.type !== 'thuong')?.type ?? 'thuong';
       const dishes = active ? orderDishes(o) : [];
       const preparation = orderPreparation(w, game.config, o);
+      // Wave 3 "Mời về" (D3): a table with guests offers to send them home once they linger after their tray (kickTableQuote reads the command): its price in
+      // coins and reputation, one tap; dimmed with the one reason while they have not finished their order or the wallet is short. Revealed with the HUD (after
+      // shift 1) and offered only while the shift is open: once it closes no guest arrives and the shift book's "Mời tất cả về" is the cheaper way out.
+      const kick = kickTableRule(c) && show.hud && w.phase === 'open' && guests.length ? kickTableQuote(w, game.config, table) : null;
+      const kickWhy = kick && !kick.ok ? whyNot(kick.reason) : '', kickPrice = kick?.cost != null ? `kick-price-${table.id}` : '';
       return <section ref={orderPanelRef} id="active-table-order" className={`order-panel ${o?.state === 'grace' ? 'is-urgent' : ''}`} role="dialog" aria-label={t('table', { n: w.tables.indexOf(table) + 1 })}>
         <header><span className={`customer-tag type-${type}`}>{guests.length ? t(`customer.${type}`) : t('table.empty')}</span><span>{t('table', { n: w.tables.indexOf(table) + 1 })}</span><button className="icon-button" aria-label={t('close')} onClick={() => setSelectedTable(null)}><Icon name="close" /></button></header>
         {active ? <><div className="order-heading"><strong>{dishes.length === 1 ? t(`dish.${dishes[0].dish}`) : t('order.dishCount', { n: dishes.length })}</strong><b>{orderTime(o)}</b></div>
@@ -556,6 +617,12 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
           {(stale || o.state === 'grace') && <p className="order-warning">{t(stale ? 'order.stale' : 'order.grace')}</p>}
           <button {...lit(spot.target?.kind === 'ready' && spot.target.tableId === table.id)} className="primary full" disabled={!ready} onClick={async () => { if ((await run({ type: 'serve', tableId: table.id, orderId: o.id })).ok) setSelectedTable(current => current === table.id ? null : current); }}><Icon name="check" />{t('order.serve')}</button>
         </> : <p className="idle-table-info">{t(`table.${table.state}`)} · {t('table.seats', { n: table.capacity })}</p>}
+        {kick && <div className="kick-table" data-kick={kick.ok ? 'ready' : kick.reason ?? undefined}>
+          {kickPrice && <p className="kick-price" id={kickPrice}>{t('kick.price', { cost: num(kick.cost!), rep: num(kick.reputation) })}</p>}
+          <button className="secondary full" disabled={!kick.ok} aria-describedby={[kickPrice, kickWhy ? `kick-reason-${table.id}` : ''].filter(Boolean).join(' ') || undefined}
+            onClick={async () => { if ((await run({ type: 'kickTable', tableId: table.id, maxCost: kick.cost! })).ok) setSelectedTable(current => current === table.id ? null : current); }}>{t('kick.button')}</button>
+          {kickWhy && <p id={`kick-reason-${table.id}`} className="buy-reason" role="status">{kickWhy}</p>}
+        </div>}
       </section>;
     })()}
 

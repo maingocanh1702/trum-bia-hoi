@@ -45,9 +45,8 @@
 .glass-counter { position: absolute; left: calc(50% + 66px); top: 100px; height: 25px; border-radius: 6px; background: #456760; color: #fff; padding: 1px 6px 1px 0; gap: 1px; }
 .glass-counter > span:first-of-type { font-size: 12px; }
 .glass-counter .sprite { width: 20px; height: 26px; }
-.yard { flex: 1; min-height: 330px; margin: 0 44px 0 12px; }
+.yard { margin: 0 56px 0 12px; }
 .table-space { width: 132px; height: 103px; }
-.table-0 { left: 25%; top: 18%; }.table-1 { left: 75%; top: 18%; }.table-2 { left: 50%; top: 68%; }
 .table-caption { font-size: 9px; margin-top: 3px; }
 .table-caption > span, .guest-label { display: block; }
 .guest-label { font-size: 10px; color: #203e36; text-transform: uppercase; }
@@ -89,7 +88,7 @@
 .order-panel header .icon-button { margin-left: auto; padding: 12px; background: transparent; }
 .customer-tag { background: #466341; padding: 3px 7px; color: #fff9da; border-radius: 12px; font-weight: 750; }
 .customer-tag.type-vip { background: #ffd635; color: #263625; }
-.customer-tag.type-ngoily { background: #387eac; }
+.customer-tag.type-ngoily { background: #2f6e99; } /* Wave 3: #387eac gave the cream label 4.17:1 (axe color-contrast, WCAG 2 AA wants 4.5:1) on the lai rai popover "Mời về" opens; 5.2:1 now, same hue */
 .customer-tag.type-voi { background: #a9482e; }
 .customer-tag.type-chipheo { background: #896242; }
 .order-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 7px; }
@@ -105,6 +104,10 @@
 .order-panel .primary { min-height: 51px; margin-top: 11px; font-size: 15px; background: linear-gradient(#b34b30,#8d2d1c); box-shadow: 0 4px 0 #712d1e; }
 .order-warning { color: #ffdd7b; font-size: 11px; margin-top: 6px; }
 .idle-table-info { padding: 5px 0 16px; }
+/* Wave 3 "Mời về": under the table's order or state, one price line (coins · reputation) and the one-tap button, in the same popover; no motion of its own. */
+.kick-table { margin-top: 10px; padding-top: 6px; border-top: 1px solid #9c805066; }
+.kick-table .full { margin-top: 6px; }
+.kick-price { margin: 4px 0 0; font-size: 13px; font-weight: 750; color: #ffe059; text-align: center; font-variant-numeric: tabular-nums; }
 .toast-gain { top: 112px; bottom: auto; min-height: 46px; width: max-content; max-width: calc(100% - 28px); min-width: 170px; padding: 8px 22px; border: 1px solid #d6ffc2; border-radius: 40px; background: linear-gradient(#c6ffa8eb,#9bde86eb); color: #254d2c; justify-content: center; gap: 6px; pointer-events: none; font-size: 21px; animation: gain-in 240ms ease-out; }
 .toast-gain > .gain-reaction { margin: 0 6px 0 0; font-size: 23px; }
 .toast-gain > svg { width: 23px; height: 23px; color: #9d6406; }
@@ -119,8 +122,8 @@
 @keyframes reaction-in { from { opacity: 0; transform: translate(-50%, 5px) scale(.6); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
 @container (min-width: 640px) {
   .stall-scene { margin-top: 32px; height: 231px; }
-  .yard { margin-left: 60px; margin-right: 70px; min-height: 285px; }
-  .table-0 { left: 15%; top: 23%; }.table-1 { left: 50%; top: 23%; }.table-2 { left: 85%; top: 23%; }
+  .yard { margin-left: 60px; margin-right: 70px; }
+  .yard-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } /* 510 px of yard: three 132 px tables abreast; four need 760 px */
   .stock-strip { right: 16px; top: 143px; }
 }
 @media (max-height: 770px) {

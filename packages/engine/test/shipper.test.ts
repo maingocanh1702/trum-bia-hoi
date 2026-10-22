@@ -9,7 +9,8 @@ function owner({ weather = 'sunny', buy = true, rested = false, at = origin, pat
   raw.spawn.baseMs = raw.shift.durationMs * 2; // Leave the guaranteed onboarding customer; isolate delivery resource effects afterward.
   for (const name of WEATHER) raw.weather[name].weight = name === weather ? 1 : 0;
   patch(raw); const g = new Game(loadConfig(raw), 42, at);
-  for (const command of [{ type: 'upgrade', kind: 'stall' }, { type: 'restock', dish: 'lac', mode: 'full' }, { type: 'upgradeDog', level: 1 }] as const) assert.equal(send(g, command).ok, true);
+  // LP1 (phone gate) needs four tables in the seat model.
+  for (const command of [{ type: 'upgrade', kind: 'stall' }, { type: 'restock', dish: 'lac', mode: 'full' }, { type: 'upgradeDog', level: 1 }, { type: 'buyTable' }, { type: 'buyTable' }, { type: 'buyTable' }] as const) assert.equal(send(g, command).ok, true);
   if (rested) g.advance(g.world.now + raw.shift.wellRested.requiresRestHours * 3600000 + 1);
   assert.equal(send(g, { type: 'startShift' }).ok, true); g.advance(g.world.now + 11000);
   const t = g.world.tables.find(t => t.order)!; assert.equal(send(g, { type: 'serve', tableId: t.id, orderId: t.order!.id }).ok, true);

@@ -1,4 +1,4 @@
-import { beerStatus, restockQuote, type Config, type Table, type WorldView } from '../../../packages/engine/src';
+import { beerStatus, buyTableQuote, isSeatModel, restockQuote, type Config, type Table, type WorldView } from '../../../packages/engine/src';
 import { revealed } from './reveal';
 
 // F27/P0(a): exactly one control may call for a tap at a time. Pure projection of engine state, no rules here.
@@ -35,14 +35,18 @@ export function beerOut(w: WorldView, c: Config): boolean {
   return beer.available === 0 && beer.busy === 0 && w.inventory.bia === 0;
 }
 
-/** The one card the Upgrades sheet shows before `upgradeAllAfterShifts`: the first table that can still level up.
- * An empty table wins over a busy one: the sheet pauses the world, so a table mid-clean would never free up behind a locked button. */
+/** The one card the Upgrades sheet shows before `upgradeAllAfterShifts`.
+ * Seat model (rules 28): the second table, the purchase a one-table shop earns first (plan §0 P2/P4); it needs no empty table.
+ * A capacity snapshot pinned before it: the first table that can still level up. An empty table wins over a busy one: the sheet pauses
+ * the world, so a table mid-clean would never free up behind a locked button. */
 export function firstGoal(w: WorldView, c: Config) {
-  const levels = c.values.upgrades.table.levels;
+  const v = c.values;
+  if (isSeatModel(v)) return { kind: 'buyTable' as const, affordable: buyTableQuote(w, c).ok, bought: w.tables.length > v.upgrades.table.startingTables };
+  const levels = v.upgrades.table.levels;
   const table = w.tables.find(t => levels[t.level] && t.state === 'empty') ?? w.tables.find(t => levels[t.level]);
   if (!table) return null;
   const next = levels[table.level];
-  return { table, next, affordable: table.state === 'empty' && w.coins >= next.priceBase, bought: w.tables.some(t => t.level > c.values.runtime.initialTableLevel) };
+  return { kind: 'table' as const, table, next, affordable: table.state === 'empty' && w.coins >= next.priceBase, bought: w.tables.some(t => t.level > v.runtime.initialTableLevel) };
 }
 
 export function pickSpotlight(w: WorldView, c: Config, ui: { sheet: string | null; dialogOpen: boolean }): Spotlight {

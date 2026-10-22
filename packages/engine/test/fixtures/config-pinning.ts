@@ -1,8 +1,14 @@
-import { Game, config, loadConfig, WEATHER, type Economy } from '../../src';
+import { Game, loadConfig, WEATHER } from '../../src';
+import { capacityRaw } from './capacity-model';
 import { sendKitchen, untilKitchen } from './kitchen';
 
-export function pinConfig(version: string, patch?: (raw: Economy) => void) {
-  const raw = structuredClone(config.raw); raw._meta.version = version;
+/**
+ * Pinning mechanics are shape-agnostic. These pins keep the 2.0 capacity model because the suites also prove its
+ * table-capacity adoption and onboarding-table admission, which old saves still run until they adopt the seat model
+ * (plan D2). Seat-model pins: seat-model.test.ts and the seat repin test in config-pinning.test.ts.
+ */
+export function pinConfig(version: string, patch?: (raw: ReturnType<typeof capacityRaw>) => void) {
+  const raw = capacityRaw(); raw._meta.version = version;
   raw.demandMix.pMoi = 0;
   for (const weather of WEATHER) raw.weather[weather].weight = weather === 'sunny' ? 1 : 0;
   for (const customer of Object.values(raw.customerTypes)) if ('weight' in customer) customer.weight = 0;

@@ -63,8 +63,9 @@ for (const viewport of viewports) {
   });
 
   test(`P0 coins fly from the table to the wallet and lost reputation falls from the guest at ${viewport.width}px`, async ({ page }) => {
+    test.setTimeout(90000); // the wait for the first guest who walks out is long on a one-table shop (below)
     await page.setViewportSize(viewport);
-    await load(page, null, fresh());
+    const steady = fixture('steady'); await load(page, steady.save, steady.now); // a brand-new game with capacity demand off (fixture comment): this spec is about the visuals, not the pace
     await page.getByRole('button', { name: 'Mở ca', exact: true }).click();
     await page.clock.runFor(10200); await page.waitForTimeout(20);
     await page.locator('.table-order-hint').first().click(); await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
@@ -75,9 +76,12 @@ for (const viewport of viewports) {
     expect(await coins.first().evaluate(el => getComputedStyle(el).animationName)).toBe('fly-coin');
     await page.clock.runFor(1600); await page.waitForTimeout(20);
     await expect(page.locator('.fly')).toHaveCount(0);
-    // Leave the next guests to expire: the reputation just earned is what falls from them.
+    // Leave the next guests to expire: the reputation just earned is what falls from them. A new shop has one table (seat model): a pair is turned away
+    // at the door without a penalty, so the first guest who really walks out is a single who sat down and waited out their patience (24 s + 2.5 s grace,
+    // after the 10.5 s arrivals of the steady save): 150 s of game time is about ten arrivals, each a single with probability 0.5 (spawn.pPair), where
+    // the old 3-table shop needed 40 s. The wait ends at the first falling number, so a lucky seed costs nothing.
     let seen = '';
-    await run(page, 40000, 250, async () => { const rep = page.locator('.fly-rep'); if (!await rep.count()) return false; seen = await rep.first().innerText(); return true; });
+    await run(page, 150000, 500, async () => { const rep = page.locator('.fly-rep'); if (!await rep.count()) return false; seen = await rep.first().innerText(); return true; });
     expect(seen).toMatch(/^−\d+$/);
     await expect(page.locator('.toast-loss')).toBeVisible(); // the toast stays the accessible record
   });
@@ -141,10 +145,12 @@ for (const [size, label] of [[2, '2 ghế'], [1, 'Hết chỗ']] as const) {
     await page.setViewportSize(viewport);
     const f = fixture('crowd', String(size)); await load(page, f.save, f.now);
     const guests = page.locator('.door-guest:not(.is-leaving)'); await expect(guests).toHaveCount(f.queue);
+    await expect(guests.first()).toBeInViewport({ ratio: 1 }); await expect(guests.first().locator('.door-ring')).toBeInViewport({ ratio: 1 }); // S6 review round 1: the door band is above the fold, eight places or not
     const before = Number(await guests.first().getAttribute('data-patience'));
     await run(page, 20000, 250, async () => (await page.locator('[data-turned-away]').count()) > 0);
     await expect(page.locator('[data-turned-away]')).toHaveAttribute('data-turned-away', String(size));
-    await expect(page.locator('.door-bubble')).toHaveText(label);
+    await expect(page.locator('.door-bubble')).toHaveText(label); await expect(page.locator('.door-bubble')).toBeInViewport({ ratio: 1 }); await expect(page.locator('[data-turned-away]')).toBeInViewport({ ratio: 1 });
+    await tbh.shot(`p0-door-${size}-${viewport.width}.png`);
     expect(Number(await guests.first().getAttribute('data-patience'))).toBeLessThan(before); // the ring drained while they waited
     await page.clock.runFor(2400); await page.waitForTimeout(20);
     await expect(page.locator('[data-turned-away]')).toHaveCount(0); // they walked off
@@ -152,6 +158,39 @@ for (const [size, label] of [[2, '2 ghế'], [1, 'Hết chỗ']] as const) {
     expect((await axe(page, '.door')).violations).toEqual([]);
   });
 }
+
+// S6 review round 2: the door is a row and a bubble hangs to the right of its guest, so two refusals inside one bubble lifetime (2.2 s: a heavy rush with a
+// full queue, a flyer in a light rush, a batch of remote events) used to stack the first bubble under the second guest. Only the newest refused group is drawn.
+for (const viewport of viewports) test(`P0 two refusals inside one bubble lifetime: the door says the newest reason and no bubble covers a guest at ${viewport.width}px`, async ({ page, tbh }) => {
+  await page.setViewportSize(viewport);
+  const f = fixture('crowd2'); expect(f.gap).toBeLessThanOrEqual(1500); // the engine refuses the second group well inside the first bubble's 2.2 s
+  await load(page, f.save, f.now);
+  await expect(page.locator('.door-guest:not(.is-leaving)')).toHaveCount(f.queue);
+  const label = (size: number) => size > 1 ? `${size} ghế` : 'Hết chỗ';
+  // No bubble may lie over a guest other than its own, on any 100 ms frame.
+  const covered = () => page.evaluate(() => {
+    const hit = (a: DOMRect, b: DOMRect) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+    return [...document.querySelectorAll('.door-bubble')].flatMap(bubble => [...document.querySelectorAll('.door-guest')]
+      .filter(guest => !guest.contains(bubble) && hit(bubble.getBoundingClientRect(), guest.getBoundingClientRect())).map(guest => guest.className));
+  });
+  const seen: { id: string; at: number; size: number; text: string }[] = []; let elapsed = 0;
+  for (let step = 0; step < 240 && (seen.length < 2 || elapsed < seen[1].at + 300); step++) {
+    await page.clock.runFor(100); await page.waitForTimeout(20); elapsed += 100;
+    expect(await covered()).toEqual([]);
+    const leaving = page.locator('[data-turned-away]'); const n = await leaving.count();
+    expect(n).toBeLessThanOrEqual(1); expect(await page.locator('.door-bubble').count()).toBe(n); // one refused group at a time, with its one bubble
+    if (!n) continue;
+    const id = await leaving.getAttribute('data-refusal'), size = Number(await leaving.getAttribute('data-turned-away')), text = await page.locator('.door-bubble').innerText();
+    if (id && seen.at(-1)?.id !== id) seen.push({ id, at: elapsed, size, text });
+  }
+  expect(seen.length).toBeGreaterThanOrEqual(2); // two refusals happened ...
+  expect(seen[1].at - seen[0].at).toBeLessThan(2200); // ... inside the first bubble's lifetime: the newest replaced it instead of stacking beside it
+  for (const s of seen) { expect([1, 2]).toContain(s.size); expect(s.text).toBe(label(s.size)); } // each bubble names its own group (the sizes are the engine's draw, not the fixture's probe)
+  await expect(page.locator('.door-bubble')).toBeInViewport({ ratio: 1 }); await expect(page.locator('[data-turned-away]')).toBeInViewport({ ratio: 1 });
+  await tbh.shot(`p0-door-two-${viewport.width}.png`);
+  // No axe here: axe-core needs live timers, and at this cadence a live clock refuses a new group every 0.7 s, so the door never settles
+  // (a frozen Date with the installed clock keeps axe's own timers frozen too). The door's axe pass with a bubble is the ×6 case above: same DOM, one leaving guest.
+});
 
 for (const viewport of viewports) {
   test(`P0 after shift 1 the HUD opens up and the Upgrades sheet holds exactly one card at ${viewport.width}px`, async ({ page, tbh }) => {
@@ -172,6 +211,32 @@ for (const viewport of viewports) {
     await page.keyboard.press('Escape');
     const saved = fixture('inspect', undefined, await page.evaluate(async () => { const m = '/src/browser-save.ts'; return (await import(m)).readBrowserSave(); }));
     expect(saved.tableLevels[0]).toBe(2); expect(saved.coins).toBe(f.coins - 3750);
+    expect(errors).toEqual([]);
+  });
+}
+
+// The test above is the capacity snapshot's (fixture `rest`: a table level is seats); this is the same promise on the bundled seat model (rules 28),
+// where a one-table shop's first goal is its second table: the sheet holds that one card, the pointer is spent by buying it.
+for (const viewport of viewports) {
+  test(`P0 on the seat model after shift 1 the Upgrades sheet holds exactly one card, the second table, at ${viewport.width}px`, async ({ page, tbh }) => {
+    await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+    const f = fixture('seat-rest'); await load(page, f.save, f.now, false);
+    for (const shown of ['.energy', '.weather-row', '.stock-strip', '.equipment-object.cooler', '.equipment-object.washer', '.glass-counter', '.settings-button']) await expect(page.locator(shown)).toBeVisible();
+    await expect(page.locator('.bottom-nav button')).toHaveText([/Mở ca/, /Nhập hàng/, /Nâng cấp/]); // the journey button waits for shift 2
+    await expect(lit(page)).toHaveCount(1); await expect(lit(page)).toContainText('Nâng cấp'); // between shifts the first goal calls
+    await page.getByRole('button', { name: 'Nâng cấp', exact: true }).click();
+    const sheet = page.locator('dialog[open] .sheet-content');
+    await expect(sheet.getByRole('button')).toHaveCount(1); await expect(sheet.locator('[data-goal]')).toHaveCount(1); await expect(sheet.locator('[data-goal]')).toHaveAttribute('data-goal', 'buyTable');
+    await expect(sheet.getByRole('button')).toHaveText('Mua bàn · 1.070 xu'); await expect(sheet.getByRole('button')).toHaveAttribute('data-spotlight', '');
+    expect((await axe(page)).violations).toEqual([]);
+    await tbh.shot(`p0-seat-upgrade-one-card-${viewport.width}.png`);
+    await sheet.getByRole('button').click(); await waitSaved(page);
+    await expect(sheet.getByRole('button')).toHaveCount(1); // still one: the next table
+    await expect(sheet.getByRole('button')).toHaveText('Mua bàn · 9.250 xu'); // table 3 of the sealed 2.1.0 ladder
+    await expect(lit(page)).toHaveCount(0); // bought: the nudge is spent
+    await page.keyboard.press('Escape');
+    const saved = fixture('inspect', undefined, await page.evaluate(async () => { const m = '/src/browser-save.ts'; return (await import(m)).readBrowserSave(); }));
+    expect(saved.tables).toBe(2); expect(saved.coins).toBe(f.coins - 1070);
     expect(errors).toEqual([]);
   });
 }

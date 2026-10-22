@@ -1,6 +1,6 @@
 import { creditSeasons, seasonCreditSafe } from './seasons';
 import { signboardStyle } from './signboard';
-import { isEconomy2, DISHES, type Config, type Dish, type Equipment, type Rush } from './config';
+import { isEconomy2, isSeatModel, tableUpgrade, chairUpgrade, kickTableRule, DISHES, PAIR, CHAIRS_WITH_TABLE, type Config, type Dish, type Equipment, type Rush } from './config';
 import type { WorldView, Customer, Order, Table, World } from './types';
 
 // One formatter per timezone, built on first use. An Intl.DateTimeFormat owns a native ICU formatter
@@ -8,14 +8,22 @@ import type { WorldView, Customer, Order, Table, World } from './types';
 // call in this hot path (every step, plus nextDayAt's binary search) it grew a 3-day headless career
 // to 1.4GB RSS on a 38MB JS heap. Same formatter, same output -- day keys and rollovers are unchanged.
 const dayKeyFormatters = new Map<string, Intl.DateTimeFormat>();
+// A day only ever changes at a whole minute of the clock for the zone the config allows (the validator pins `shift.dayRollover.tz` to the seed's Asia/Ho_Chi_Minh,
+// whose offset has been a whole number of minutes since 1970) and the simulations ask for the same minute thousands of times per simulated minute, so the last
+// answer per timezone is kept for its minute. daykey-formatter.test.ts compares it with a fresh formatter at every local midnight of a year in five timezones.
+const dayKeyMemo = new Map<string, { minute: number; key: string }>();
 export function dayKey(now: number, c: Config): string {
-  const tz = c.values.shift.dayRollover.tz;
+  const tz = c.values.shift.dayRollover.tz, minute = Math.floor(now / 60000); // config-exempt: milliseconds per minute
+  const last = dayKeyMemo.get(tz);
+  if (last?.minute === minute) return last.key;
   let formatter = dayKeyFormatters.get(tz);
   if (!formatter) {
     formatter = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' });
     dayKeyFormatters.set(tz, formatter);
   }
-  return formatter.format(now);
+  const key = formatter.format(now);
+  dayKeyMemo.set(tz, { minute, key });
+  return key;
 }
 /** Project the current rush first; upcoming slots are only relevant while accepting guests. */
 export function rushStatus(w: WorldView, c: Config) {
@@ -35,6 +43,24 @@ export function wellRestedBonus(w: WorldView, c: Config, payment: number, tip: n
   const bonus = wellRestedRemaining(w) > 0 ? Math.round((payment + tip) * c.values.shift.wellRested.mult) - payment - tip : 0;
   if (!Number.isSafeInteger(bonus) || bonus < 0) throw Error('ledger:invalid-bonus');
   return bonus;
+}
+/**
+ * D8 (rules 28, plan S5): the first `shift.noCooldownFirstShifts` shifts of a save's whole life open without full stamina, whatever the day. `c` is the
+ * snapshot that opens the shift; a snapshot without the key (JSON <= 2.0.23, a capacity pin, a 1.x pin) gives no allowance.
+ */
+export function noCooldownOpening(w: Pick<WorldView, 'completedShifts'>, c: Config): boolean {
+  const count = (c.values.shift as { noCooldownFirstShifts?: number }).noCooldownFirstShifts;
+  return count !== undefined && w.completedShifts < count;
+}
+/**
+ * What `startShift` asks of the stamina when `c` opens the shift: full stamina is required (GDD 10), unless the first-shifts allowance applies. The engine keeps
+ * its own copy (gated by the rules version; it compares with the pin's `durationMs`), so a caller must pass the snapshot that will OPEN the shift: the browser
+ * passes `openingConfig` (`apps/web/src/local.ts`: the bundle when the pin is older), the forecast its timeline's snapshot, the career sim its only snapshot.
+ * The remote client passes the pin of its server snapshot, while the server opens with `registry.resolve(id, now)`: the two differ after a registry
+ * publication (an open item: BLOCKERS `07 · remote rest line can disagree with the server's opening after a registry publication`).
+ */
+export function restRequired(w: WorldView, c: Config): boolean {
+  return c.values.shift.openRequiresFullStamina && w.staminaMs < c.values.shift.durationMs && !noCooldownOpening(w, c);
 }
 export function stockCap(w: WorldView, c: Config): number { return c.values.upgrades.stall.stockCap[w.equipment.stall - 1]; }
 export function queueSlots(w: WorldView, c: Config): number {
@@ -58,35 +84,78 @@ export function upgradeQuote(w: WorldView, c: Config, kind: Equipment, outsideSh
   const reason = cost == null ? 'maxLevel' : w.lifePath < requiredLifePath ? 'lifePathRequired' : w.coins < cost ? 'notEnoughCoins' : outsideShiftOnly && w.phase !== 'resting' ? 'outsideShiftOnly' : null;
   return { next, cost: cost ?? null, requiredLifePath, ok: reason === null, reason };
 }
-/**
- * What `upgradeTable` will answer for this table, refusals in the command's own order. `gate` is the part a suggestion must respect
- * whatever the table is doing right now (top level, badge, reputation); `reason` adds the busy table and the wallet on top of it.
- */
-export function tableUpgradeQuote(w: WorldView, c: Config, table: Table, outsideShiftOnly = false) {
-  const level = c.values.upgrades.table.levels[table.level];
-  const cost = level?.priceBase ?? null;
-  const gate = !level ? 'maxLevel' as const : level.requiredBadge && !w.badges.includes(level.requiredBadge) ? 'badgeRequired' as const
-    : level.repBase && w.reputation < level.repBase[0] ? 'reputationRequired' as const : null;
-  const reason = outsideShiftOnly && w.phase !== 'resting' ? 'outsideShiftOnly' as const : table.state !== 'empty' ? 'tableBusy' as const
-    : gate ?? (w.coins < cost! ? 'notEnoughCoins' as const : null);
-  return { next: level ?? null, cost, gate, reason, ok: reason === null };
-}
-/** What `buyTable` will answer: the next table's seats are priced one by one from `extraSeatPriceBase`, refusals in the command's order. */
-export function buyTableQuote(w: WorldView, c: Config, outsideShiftOnly = false) {
-  const u = c.values.upgrades, seats = w.tables.reduce((sum, t) => sum + t.capacity, 0);
-  const capacity = u.table.levels[c.values.runtime.initialTableLevel - 1].capacity, prices = u.extraSeatPriceBase as Record<string, number>;
-  let cost: number | null = 0;
-  for (let i = 1; i <= capacity && cost !== null; i++) { const price = prices[String(seats + i)]; cost = price === undefined ? null : cost + price; }
-  const reason = outsideShiftOnly && w.phase !== 'resting' ? 'outsideShiftOnly' as const : w.tables.length >= u.table.maxTables ? 'maxTables' as const
-    : cost === null ? 'seatPriceUnconfigured' as const : w.coins < cost ? 'notEnoughCoins' as const : null;
-  return { cost, capacity, reason, ok: reason === null };
-}
 /** Owned glasses are the purchase ceiling; there is no second lifetime purchase counter. */
 export function buyGlassQuote(w: WorldView, c: Config, count: number) {
   const capacity = Math.min(c.values.glasses.buyCap, c.values.glasses.storageCap);
   const cost = count * c.values.glasses.priceBase;
   const reason = !Number.isSafeInteger(count) || count <= 0 ? 'invalidQuantity' : count > capacity - w.glasses.length ? 'glassCapacity' : !Number.isSafeInteger(cost) || cost < 0 ? 'invalidCost' : w.coins < cost ? 'notEnoughCoins' : null;
   return { count, cost, capacity, owned: w.glasses.length, ok: reason === null, reason };
+}
+/** Table ceiling: the current location's tableSlots (seat model) or a capacity snapshot's global maxTables. */
+export function tableSlots(w: WorldView, c: Config): number {
+  const v = c.values;
+  return isSeatModel(v) ? v.locations.list.find(row => row.id === w.location)?.tableSlots ?? 0 : v.upgrades.table.maxTables;
+}
+/**
+ * What `buyTable` will answer, refusals in the command's order. Seat model: the n-th table costs tablePriceBase[n-2] with no
+ * life-path gate, capped by the location's tableSlots; capacity snapshots price the new table's seats from extraSeatPriceBase.
+ */
+export function buyTableQuote(w: WorldView, c: Config, outsideShiftOnly = false) {
+  const v = c.values, slots = tableSlots(w, c);
+  let cost: number | null = 0, capacity: number = CHAIRS_WITH_TABLE;
+  if (isSeatModel(v)) cost = v.upgrades.table.tablePriceBase[w.tables.length - 1] ?? null;
+  else {
+    const seats = w.tables.reduce((sum, t) => sum + t.capacity, 0), prices = v.upgrades.extraSeatPriceBase as Record<string, number>;
+    capacity = v.upgrades.table.levels[v.runtime.initialTableLevel - 1].capacity;
+    for (let i = 1; i <= capacity && cost !== null; i++) { const price = prices[String(seats + i)]; cost = price === undefined ? null : cost + price; }
+  }
+  const reason = outsideShiftOnly && w.phase !== 'resting' ? 'outsideShiftOnly' : w.tables.length >= slots ? 'maxTables'
+    : cost === null ? isSeatModel(v) ? 'maxTables' : 'seatPriceUnconfigured' : w.coins < cost ? 'notEnoughCoins' : null;
+  return { cost, capacity, slots, reason, ok: reason === null };
+}
+/** Seat model second chair (D18): only once the shop owns chairsAfterTables tables, at most a pair per table, priced by second chairs owned shop-wide. */
+export function buyChairQuote(w: WorldView, c: Config, table: Table) {
+  const v = c.values;
+  if (!isSeatModel(v)) return { cost: null, reason: 'chairsLocked', ok: false };
+  const cost = v.upgrades.table.chairPriceBase[w.tables.reduce((sum, t) => sum + t.capacity - CHAIRS_WITH_TABLE, 0)] ?? null;
+  const reason = w.tables.length < v.upgrades.table.chairsAfterTables ? 'chairsLocked' : table.capacity >= PAIR || cost === null ? 'maxChairs'
+    : w.coins < cost ? 'notEnoughCoins' : null;
+  return { cost, reason, ok: reason === null };
+}
+/**
+ * What `upgradeTable` will answer, refusals in the command's order. `gate` holds whatever the table is doing right now (top level,
+ * badge, reputation; seat model: two chairs, D18); `reason` adds a busy table (capacity snapshots only) and the wallet on top of it.
+ * A seat snapshot with the S4 ladder (JSON >= 2.0.23) prices the TARGET level as priceBase + stepBase x n, n = the tables that have already reached
+ * it (level >= target, so the total is the same in any order), gates it by Duong Len Trum (`lifePathGate`) and drops the Ket Noi badge and the reputation.
+ */
+export function tableUpgradeQuote(w: WorldView, c: Config, table: Table, outsideShiftOnly = false) {
+  const v = c.values, seat = isSeatModel(v), level = v.upgrades.table.levels[table.level], ladder = tableUpgrade(v);
+  if (seat && ladder) {
+    const rung = ladder.levels.find(row => row.level === table.level + 1), requiredLifePath = rung?.lifePathGate ?? 0;
+    const cost = rung ? rung.priceBase + rung.stepBase * w.tables.filter(t => t.level > table.level).length : null;
+    const gate = table.capacity < PAIR ? 'tableNeedsChairs' : !rung ? 'maxLevel' : w.lifePath < requiredLifePath ? 'lifePathRequired' : null;
+    const reason = outsideShiftOnly && w.phase !== 'resting' ? 'outsideShiftOnly' : gate ?? (w.coins < cost! ? 'notEnoughCoins' : null);
+    return { next: level ?? null, cost, gate, reason, ok: reason === null, requiredLifePath };
+  }
+  const cost = level?.priceBase ?? null;
+  const gate = seat && table.capacity < PAIR ? 'tableNeedsChairs' : !level ? 'maxLevel' : level.requiredBadge && !w.badges.includes(level.requiredBadge) ? 'badgeRequired'
+    : level.repBase && w.reputation < level.repBase[0] ? 'reputationRequired' : null;
+  const reason = outsideShiftOnly && w.phase !== 'resting' ? 'outsideShiftOnly' : !seat && table.state !== 'empty' ? 'tableBusy' : gate ?? (w.coins < cost! ? 'notEnoughCoins' : null);
+  return { next: level ?? null, cost, gate, reason, ok: reason === null, requiredLifePath: 0 };
+}
+/**
+ * What `upgradeChair` will answer (S4, D15): chairs go from level 1 to 3 per table, priced priceBase + stepBase x t with t = the chair upgrades the
+ * shop has already bought (whichever table, whichever level), gated by Duong Len Trum per target level. A table with one chair can have its chair
+ * upgraded too. A snapshot without the chair ladder refuses with `chairUpgradeUnavailable` and the UI offers nothing.
+ */
+export function chairUpgradeQuote(w: WorldView, c: Config, table: Table) {
+  const v = c.values, ladder = chairUpgrade(v);
+  if (!isSeatModel(v) || !ladder) return { next: null, cost: null, gate: 'chairUpgradeUnavailable', reason: 'chairUpgradeUnavailable', ok: false, requiredLifePath: 0 };
+  const rung = ladder.levels.find(row => row.level === (table.chairLevel ?? 1) + 1), requiredLifePath = rung?.lifePathGate ?? 0;
+  const cost = rung ? ladder.priceBase + ladder.stepBase * w.tables.reduce((n, t) => n + (t.chairLevel ?? 1) - 1, 0) : null;
+  const gate = !rung ? 'maxLevel' : w.lifePath < requiredLifePath ? 'lifePathRequired' : null;
+  const reason = gate ?? (w.coins < cost! ? 'notEnoughCoins' : null);
+  return { next: rung ?? null, cost, gate, reason, ok: reason === null, requiredLifePath };
 }
 /** One level owns purchase state; dog stats and requirements remain in the config. */
 export function dogUpgradeQuote(w: WorldView, c: Config) {
@@ -100,7 +169,15 @@ export function freshnessMs(w: WorldView, c: Config): number {
   return base === null ? Infinity : base * c.values.weather[w.shift?.weather ?? 'sunny'].freshnessMult;
 }
 export function rushConfig(c: Config, rush: Rush) { return c.values.rush[rush]; }
-export function customerValue(w: WorldView, c: Config, order: Order, customer: Customer) {
+/**
+ * The share of a guest's OWN patience still left while the order is waited on: what the tip is judged on (`tip.patienceThreshold`). A chair level (S4)
+ * stretches the order's deadline (`order.patienceMs`), never this, so a screen that shows when the tip is lost reads it from here.
+ */
+export function guestPatienceLeft(w: WorldView, order: Order, customer: Customer): number {
+  return Math.max(0, (order.placedAt + customer.patienceMs - w.now) / customer.patienceMs);
+}
+/** `tableTipMult` is the Lv4 table's tip factor of the group being served (S4, D19); 1 everywhere else, so the old arithmetic is untouched. */
+export function customerValue(w: WorldView, c: Config, order: Order, customer: Customer, tableTipMult = 1) {
   const items = order.items.filter(i => i.customerId === customer.id);
   const type = c.values.customerTypes[customer.type];
   const rush = rushConfig(c, w.shift?.rush ?? 'none');
@@ -108,9 +185,9 @@ export function customerValue(w: WorldView, c: Config, order: Order, customer: C
   if (!location) throw Error('state:location');
   const gross = items.reduce((s, i) => s + c.values.menu[i.dish].price, 0);
   const payment = Math.round(gross * type.paymentMult * location.mult * rush.paymentMult);
-  const ratio = order.state === 'grace' ? c.values.tip.graceForcedPatienceRatio : Math.max(0, (order.placedAt + customer.patienceMs - w.now) / customer.patienceMs);
+  const ratio = order.state === 'grace' ? c.values.tip.graceForcedPatienceRatio : guestPatienceLeft(w, order, customer);
   const stale = items.some(i => i.glassId !== null && w.now >= (w.glasses.find(g => g.id === i.glassId)?.readyAt ?? Infinity) + freshnessMs(w, c));
-  let tip = ratio >= c.values.tip.patienceThreshold && !stale ? Math.round(payment * c.values.tip.rate) * rush.tipMult * c.values.weather[w.shift?.weather ?? 'sunny'].tipMult * type.tipMult : 0;
+  let tip = ratio >= c.values.tip.patienceThreshold && !stale ? Math.round(payment * c.values.tip.rate) * rush.tipMult * c.values.weather[w.shift?.weather ?? 'sunny'].tipMult * type.tipMult * tableTipMult : 0;
   if (w.unlocks.includes('qr')) tip = Math.ceil(tip * c.values.tip.qrMult);
   tip = Math.round(tip);
   const penalty = Math.round(Math.round(gross * c.values.penalty.leaveRate * type.leavePenaltyMult) * rush.leavePenaltyMult);
@@ -121,6 +198,29 @@ export function currentGuests(table: Table): Customer[] {
   if (!table.group) throw Error('state:tableGroup');
   if (table.state !== 'seating' && !table.order) throw Error('state:tableOrder');
   return table.state === 'occupied' ? table.group.customers.filter(c => c.type === 'chipheo') : table.group.customers;
+}
+/** Wave 3 (D3): the states in which a table's guests linger after their tray was served -- the group sits on its served round, or a Chi Pheo still keeps the table. */
+export const LINGERING_TABLE_STATES: readonly Table['state'][] = ['consuming', 'occupied'];
+/**
+ * What `kickTable` will answer (Wave 3 "Mời về", plan section 6, FEEDBACK II.3, D3), refusals in the command's order (an unknown table and a price that moved
+ * aside): a snapshot without the `kickTable` section has no such command; only a lingering table (`LINGERING_TABLE_STATES`) can be sent home -- not one whose
+ * guests sit down or wait for a dish, nor a table being cleaned or empty --; then the wallet. The price, per guest of the table: round(gross of the guest's
+ * latest order x feeRate x the type's leavePenaltyMult) (VIP x10, Chi Pheo 0); the reputation repPerGuest per guest (not scaled by k). Pure: the UI reads it.
+ */
+export function kickTableQuote(w: WorldView, c: Config, table: Table) {
+  const v = c.values, rule = kickTableRule(v);
+  if (!rule || !isSeatModel(v)) return { guests: [], cost: null, reputation: 0, reason: 'kickTableUnavailable', ok: false };
+  if (!LINGERING_TABLE_STATES.includes(table.state)) return { guests: [], cost: null, reputation: 0, reason: 'tableNotLingering', ok: false };
+  const order = table.order;
+  if (!order) throw Error('state:tableOrder');
+  const guests = currentGuests(table).map(customer => {
+    const gross = order.items.filter(i => i.customerId === customer.id).reduce((sum, i) => sum + v.menu[i.dish].price, 0);
+    return { customerId: customer.id, type: customer.type, fee: Math.round(gross * rule.feeRate * v.customerTypes[customer.type].leavePenaltyMult) };
+  });
+  const cost = guests.reduce((sum, guest) => sum + guest.fee, 0);
+  if (!Number.isSafeInteger(cost) || cost < 0) throw Error('ledger:invalid-kick-fee');
+  const reason = w.coins < cost ? 'notEnoughCoins' : null;
+  return { guests, cost, reputation: rule.repPerGuest * guests.length, reason, ok: reason === null };
 }
 /** Quote assigned orders only: guests still queueing/seating have not ordered or spent stock. */
 export function kickAllQuote(w: WorldView, c: Config) {

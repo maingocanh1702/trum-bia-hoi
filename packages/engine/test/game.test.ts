@@ -1,9 +1,10 @@
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { CURRENT_RULES, Game, kickAllQuote, config, loadConfig, encodeSave, decodeSave, credit, customerValue, dayKey, restockQuote, type Command, type Economy } from '../src/index';
+import { CURRENT_RULES, Game, kickAllQuote, config, loadConfig, encodeSave, decodeSave, credit, customerValue, dayKey, restockQuote, PAIR, type Command, type Economy } from '../src/index';
+import { capacityRaw } from './fixtures/capacity-model';
 
-function create(patch?: (c: Economy) => void) {
+function create(patch?: (c: typeof config.raw) => void) {
   const raw = structuredClone(config.raw);
   for (const k of ['hot', 'humid', 'rain', 'cold'] as const) raw.weather[k].weight = 0;
   patch?.(raw);
@@ -21,8 +22,8 @@ function firstOrder(g: Game) {
 }
 
 test('all money Base values scale once; menu, times and probabilities retain their units', () => {
-  assert.equal(config.values.shift.startingCoinsBase, 750);
-  assert.equal(config.values.upgrades.keg.priceBase[1], 12500);
+  assert.equal(config.values.shift.startingCoinsBase, 750); // 300 base, the wallet of S4: a new save must EARN table 2 (1 070 xu since owner decision 1 of S5, it was 1 500 xu) in shift 1, the start wallet does not buy it
+  assert.equal(config.values.upgrades.keg.priceBase[1], 5000); // 2 000 base: Lv2 of the 2.1.0 re-priced keg ladder
   assert.equal(config.values.quests.loginTrackRepBase[0], 5);
   assert.equal(config.values.menu.bia.price, 50);
   assert.equal(config.values.freshness.baseMs, 12000);
@@ -44,8 +45,8 @@ test('first guest gets one customer and one beer, with auto pour, a single serve
   assert.equal(table.group!.customers.length, 1);
   assert.deepEqual(table.order!.items.map(i => i.dish), ['bia']);
   assert.equal(table.order!.items[0].state, 'ready');
-  assert.deepEqual(send(g, command), { ok: true, outcome: 'early', amount: 65 });
-  assert.equal(g.world.coins, 815);
+  assert.deepEqual(send(g, command), { ok: true, outcome: 'early', amount: 59 }); // 50 beer + the 2.1.0 tip 0.17 (8.5 rounds to 9)
+  assert.equal(g.world.coins, 809);
   assert.equal(g.world.reputation, 3);
   assert.equal(g.world.glasses.filter(x => x.state === 'in_use').length, 1);
   send(g, { type: 'endShift' }); g.advance(35000);
@@ -59,12 +60,13 @@ test('late service keeps payment, loses tip, and does not fine the group', () =>
   assert.equal(g.world.shift!.stats.penalty, 0);
 });
 test('grace rescues the whole table; exact grace end expires and charges only once', () => {
-  const g = create(c => { c.shift.startingCoinsBase = 10000; });
+  // Grace is the subject, not patience against freshness: the bundled 24 s outlasts the Lv2 cooler's glass, so this test pins the 18 s it was written for.
+  const g = create(c => { c.shift.startingCoinsBase = 10000; c.patience.thuongMs = 18000; });
   assert.ok(send(g, { type: 'upgrade', kind: 'cooler' }).ok);
   const { command, table } = firstOrder(g);
   const deadline = table.order!.placedAt + table.order!.patienceMs;
   assert.deepEqual(send(g, command, deadline), { ok: true, outcome: 'grace', amount: 50 });
-  const h = create(); const f = firstOrder(h);
+  const h = create(c => { c.patience.thuongMs = 18000; }); const f = firstOrder(h);
   const expires = f.table.order!.placedAt + f.table.order!.patienceMs + h.config.values.patience.graceMs;
   h.advance(expires);
   const coins = h.world.coins;
@@ -96,7 +98,7 @@ test('daily cap counts only actual gameplay credit, and spending/reward cannot i
   const g = create(c => { c.shift.dailyEarnCapBase = 20; });
   const { command } = firstOrder(g);
   assert.equal(send(g, command).amount, 50);
-  assert.equal(g.world.serves[0].payment + g.world.serves[0].tip, 65);
+  assert.equal(g.world.serves[0].payment + g.world.serves[0].tip, 59);
   assert.equal(g.world.seasonEarned, 50);
   credit(g.world, g.config, 1000, 'quest');
   assert.equal(g.world.seasonEarned, 50);
@@ -221,9 +223,9 @@ test('custom normal, VIP, hurried and leisurely round ranges reach spawned group
     ['voi', [2, 2], 0, 2], ['ngoily', [4, 4], 0, 4],
   ] as const) {
     const g = create(c => {
-      c.onboarding.enabled = false; c.upgrades.table.levels[0].capacity = 1;
+      c.onboarding.enabled = false; c.spawn.pPair = 0; // one guest per group isolates that type's round range
       Object.entries(c.customerTypes).forEach(([key, profile]) => { profile.weight = key === type ? 1 : 0; });
-      if (type === 'vip') c.customerTypes.vip.maxPerGroupPhase2 = Math.max(...c.upgrades.table.levels.map(t => t.capacity));
+      if (type === 'vip') c.customerTypes.vip.maxPerGroupPhase2 = PAIR; // a VIP-only pool must be able to fill any group
       c.rounds[type] = [...range]; c.demandMix.pSecondRound = probability;
     });
     send(g, { type: 'startShift' }); g.advance(g.world.shift!.nextSpawnAt);
@@ -280,7 +282,7 @@ test('hidden time freezes pending orders and freshness while preserving real cal
   assert.ok(calendarEvents.every(e => e.data.day === '1970-01-02'));
   for (const g of [a, b]) {
     const table = g.world.tables.find(t => t.order)!;
-    assert.deepEqual(send(g, { type: 'serve', tableId: table.id, orderId: table.order!.id }), { ok: true, outcome: 'early', amount: 65 });
+    assert.deepEqual(send(g, { type: 'serve', tableId: table.id, orderId: table.order!.id }), { ok: true, outcome: 'early', amount: 59 });
   }
   assert.equal(a.world.coins, b.world.coins);
   assert.equal(b.world.shift!.endsAt - b.world.now, a.world.shift!.endsAt - a.world.now);
@@ -313,7 +315,8 @@ test('mixed-group round precedence survives hurried nonconstant sampling', () =>
     [['ngoily', 'voi'], 8, 7], [['voi', 'vip'], 8, 5],
     [['voi', 'vip'], 9, 3], [['vip', 'thuong'], 8, 6],
   ] as const) {
-    const raw = structuredClone(config.raw);
+    // Shared round-precedence code; these recorded seeds draw mixed groups on the capacity model's 3 tables x2 seats.
+    const raw = capacityRaw();
     raw.onboarding.enabled = false;
     Object.entries(raw.customerTypes).forEach(([key, profile]) => { profile.weight = types.some(type => type === key) ? 1 : 0; });
     raw.rounds.ngoily = [7, 7]; raw.rounds.voi = [3, 5]; raw.rounds.vip = [6, 6]; raw.rounds.thuong = [2, 2]; raw.demandMix.pSecondRound = 1;

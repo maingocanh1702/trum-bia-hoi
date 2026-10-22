@@ -1,16 +1,16 @@
 import { SEASON_KINDS, compatibleSeasonTiers, nextSeasonEnd, pinUnusedSeasons, syncSeasons } from './seasons';
 import { leaseQuote, leaveLocationQuote } from './locations';
 import { kitchenStatus } from './kitchen';
-import { isEconomy2, config as defaultConfig, configContent, BUSINESS_UNLOCKS, SIGN_STYLES, signWeightMult, DISHES, EQUIPMENT, WEATHER, deliveryBundles, arrivalIntervalMs, type Config, type SeatedType, type Rush } from './config';
+import { isEconomy2, isSeatModel, PAIR, CHAIRS_WITH_TABLE, config as defaultConfig, configContent, BUSINESS_UNLOCKS, SIGN_STYLES, signWeightMult, DISHES, EQUIPMENT, WEATHER, deliveryBundles, arrivalIntervalMs, capacityDemandMult, tableUpgrade, tableBenefit, tableBenefitGained, effectiveTableLevel, chairPatienceMult, type Config, type SeatedType, type Rush } from './config';
 import { integer, random, weighted } from './rng';
-import { buyGlassQuote, addStock, credit, creditBatchSafe, currentGuests, customerValue, dayKey, deliveryInterval, deliveryQuote, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
+import { buyGlassQuote, buyTableQuote, buyChairQuote, chairUpgradeQuote, tableUpgradeQuote, addStock, credit, creditBatchSafe, currentGuests, customerValue, dayKey, deliveryInterval, deliveryQuote, dishUnlocked, dogUpgradeQuote, freshnessMs, kickAllQuote, kickTableQuote, noCooldownOpening, queueSlots, restockQuote, rushConfig, upgradeQuote, wellRestedBonus } from './rules';
 import { lifePathStatus, lifePathRewardQuote, unlockQuote } from './progression';
 import { signboardQuote, signboardStyle } from './signboard';
 import { attendanceDay, attendanceRewardQuote, applyQuestEvent, planDailyQuests, questRewardQuote, zeroLossWindow } from './quests';
 import { flyerQuote } from './flyer';
 import { planRushes, summarizeRush } from './rush';
 import { menuReport } from './menu';
-import { beerStatus } from './production';
+import { beerStatus, instantPour } from './production';
 import { orderPreparation, type PreparationCause } from './preparation';
 import type { Command, Customer, Envelope, Group, Item, LoggedCommand, Order, Result, RulesVersion, Stats, SystemCommand, Table, World } from './types';
 
@@ -29,7 +29,10 @@ const MENU_PAUSE_RULES: RulesVersion = 16; // config-exempt: fixed replay protoc
 const LIVE_UPGRADE_RULES: RulesVersion = 17; // config-exempt: fixed replay protocol revision for owner live-upgrade policy
 const BATCH_RULES: RulesVersion = 18; // config-exempt: fixed replay protocol revision for stocked beer and wash batches
 const DISCONNECT_RULES: RulesVersion = 19; // config-exempt: replay protocol for trusted disconnection deadlines
-export const CURRENT_RULES: RulesVersion = 27; // config-exempt: shift KPI snapshots; historical events remain exact
+export const CURRENT_RULES: RulesVersion = 28; // config-exempt: seat model v3.3; historical events remain exact
+const SEAT_RULES: RulesVersion = 28; // config-exempt: fixed replay protocol revision for the seat model (plan S1)
+const INSTANT_POUR_RULES: RulesVersion = 28; // config-exempt: fixed replay protocol revision for instant pour (plan S2)
+const NO_COOLDOWN_RULES: RulesVersion = 28; // config-exempt: fixed replay protocol revision for the no-cooldown first shifts (plan S5, D8)
 const METRICS_RULES: RulesVersion = 27; // config-exempt: fixed replay protocol revision
 const FEEDBACK_RULES: RulesVersion = 26; // config-exempt: fixed replay protocol revision
 const OPENING_PROGRESS_RULES: RulesVersion = 25; // config-exempt: fixed replay protocol revision
@@ -110,8 +113,23 @@ export class Game {
   }
   private newGlass(): World['glasses'][number] { return { id: this.id('glass'), state: 'clean', itemId: null, readyAt: null, staleEmitted: false }; }
   private newTable(): Table {
-    const level = this.config.values.runtime.initialTableLevel;
-    return { id: this.id('table'), level, capacity: this.config.values.upgrades.table.levels[level - 1].capacity, state: 'empty', group: null, order: null, until: null, roundsServed: 0 };
+    const c = this.config.values, level = c.runtime.initialTableLevel;
+    // Shape, not rules: a seat-model snapshot only ever runs at rules >= 28 (replay() refuses older entries).
+    return { id: this.id('table'), level, capacity: isSeatModel(c) ? CHAIRS_WITH_TABLE : c.upgrades.table.levels[level - 1].capacity, state: 'empty', group: null, order: null, until: null, roundsServed: 0 };
+  }
+  /** Tables as the opening snapshot runs them: capacity pins re-derive seats from levels; the first seat-model pin migrates (plan D2). */
+  private openingTables(opening: Config, location: string, changed: boolean): Table[] {
+    const c = opening.values, w = this.world;
+    if (!isSeatModel(c)) return w.tables.map(table => ({ ...table, capacity: c.upgrades.table.levels[table.level - 1].capacity }));
+    if (!changed || isSeatModel(this.config.values)) return w.tables;
+    // D2: the first tableSlots tables, at most a pair of chairs each; the bought level stays, nothing is refunded.
+    const slots = c.locations.list.find(row => row.id === location)?.tableSlots ?? 0;
+    return w.tables.slice(0, slots).map(table => ({ ...table, capacity: Math.min(PAIR, table.capacity) }));
+  }
+  /** v3.3 seat model is live only under rules 28 with a seat-model snapshot; capacity pins keep their old rules. */
+  private seatModel() {
+    const c = this.config.values;
+    return this.rulesVersion >= SEAT_RULES && isSeatModel(c) ? c : null;
   }
   private items(): Item[] { return this.world.tables.flatMap(t => t.order?.items ?? []); }
   private queueDeadline(group: Group): number {
@@ -540,15 +558,25 @@ export class Game {
       const table = this.world.tables.filter(t => t.state === 'empty' && t.capacity >= group.customers.length).sort((a, b) => a.capacity - b.capacity)[0];
       if (!table) continue;
       this.world.queue = this.world.queue.filter(x => x.id !== group.id);
+      if (this.seatModel()) {
+        group.seats = table.capacity; // a chair bought mid-visit serves the next group
+        // S4 (D19): a snapshot with the level ladders records what the group sits down with: a table level counts only at two chairs, the extra round of
+        // Lv2 is added once, here, and a later upgrade serves the next group. Snapshots without the ladders add nothing to the group.
+        if (tableUpgrade(this.config.values)) {
+          group.level = effectiveTableLevel(table); group.chairLevel = table.chairLevel ?? 1;
+          group.rounds += tableBenefit(this.config.values, group.level).extraRounds;
+        }
+      }
       table.group = group; table.state = 'seating'; table.until = this.world.now + this.config.values.runtime.tableSeatingMs;
       table.roundsServed = 0;
       this.emit('group_seated', { tableId: table.id, groupId: group.id, size: group.customers.length });
     }
   }
   private spawn(): void {
-    const w = this.world, c = this.config.values, s = w.shift!;
+    const w = this.world, c = this.config.values, s = w.shift!, seatModel = this.seatModel();
     const first = s.firstGroup && s.onboarding;
-    const size = first ? c.onboarding.firstShift.firstGroupSize : integer(w, 1, Math.max(...w.tables.map(t => t.capacity)));
+    // Seat model (D17): group size is independent of the shop; capacity pins draw up to the largest table.
+    const size = first ? c.onboarding.firstShift.firstGroupSize : seatModel ? random(w) < seatModel.spawn.pPair ? PAIR : 1 : integer(w, 1, Math.max(...w.tables.map(t => t.capacity)));
     const types = Object.entries(c.customerTypes).filter(([, v]) => v.usesTable && v.weight > 0) as [SeatedType, typeof c.customerTypes.thuong][];
     let vipCount = 0;
     const customers: Customer[] = Array.from({ length: size }, () => {
@@ -572,8 +600,12 @@ export class Game {
     else if (this.rulesVersion !== 1 && !first && hurried && range[0] !== range[1]) rounds = integer(w, ...range as [number, number]);
     const group: Group = { id: this.id('group'), customers, rounds, arrivedAt: w.now };
     s.stats.arrived += size;
-    if (w.queue.length >= queueSlots(w, this.config) && !w.tables.some(t => t.state === 'empty' && t.capacity >= size)) {
-      s.stats.rejected += size; this.emit('queue_overflow', { size });
+    if (seatModel && !w.tables.some(t => t.capacity >= size)) {
+      // D12/D17: no table can ever seat this group -> it leaves at the door; no penalty, reputation or `lost`.
+      s.stats.rejected += size; s.stats.noSeat = (s.stats.noSeat ?? 0) + size;
+      this.emit('queue_overflow', { size, reason: 'noSeat' });
+    } else if (w.queue.length >= queueSlots(w, this.config) && !w.tables.some(t => t.state === 'empty' && t.capacity >= size)) {
+      s.stats.rejected += size; this.emit('queue_overflow', seatModel ? { size, reason: 'full' } : { size });
     } else {
       w.queue.push(group);
       this.emit('customer_spawned', { groupId: group.id, size, weather: s.weather, rush: s.rush });
@@ -581,7 +613,9 @@ export class Game {
     }
     const rush = rushConfig(this.config, s.rush);
     const interval = this.rulesVersion >= ARRIVAL_INTERVAL_RULES ? arrivalIntervalMs(c, s.weather, s.rush, this.rulesVersion >= FLYER_RULES && !!s.flyer) : Math.max(c.spawn.baseMs * c.weather[s.weather].spawnIntervalMult * rush.spawnIntervalMult, rush.floorMs);
-    s.nextSpawnAt = w.now + Math.round(interval * (c.spawn.perCustomer ? size : 1));
+    // D19: a small shop is offered fewer guests (x1 on every snapshot without capacityDemand; the first guest of a shift is never delayed by it).
+    const demand = seatModel ? capacityDemandMult(seatModel, w.tables.length) : 1;
+    s.nextSpawnAt = w.now + Math.round(interval * (c.spawn.perCustomer ? size : 1) * demand);
     s.firstGroup = false;
   }
   private order(t: Table): void {
@@ -592,23 +626,46 @@ export class Game {
     const available = { ...w.inventory };
     if (modern) for (const table of w.tables) if (table.order && ['pending', 'grace'].includes(table.order.state)) for (const item of table.order.items) if (item.state === 'pending') available[item.dish]--;
     const special = group.customers.some(customer => customer.type === 'vip' || customer.type === 'ngoily');
+    // Seat model (D14): the tray follows the chairs the group sat down with -- one chair orders beer OR one instant dish.
+    const seatModel = this.seatModel(), solo = seatModel !== null && (group.seats ?? t.capacity) < PAIR;
+    const instantDish = () => {
+      const cold = (['lac', 'nem'] as const).filter(d => available[d] > 0);
+      return cold.length === 2 ? (random(w) < c.demandMix.pNemGivenMoi ? 'nem' : 'lac') : cold[0];
+    };
+    // A snack for a guest of a pair, from what is still on the shelf after every dish ordered so far: a hot one (kitchen unlocked) or a cold one.
+    const pickSnack = () => {
+      const hot = DISHES.filter(d => c.menu[d].station === 'kitchen' && dishUnlocked(w, this.config, d) && available[d] > 0);
+      const cold = (['lac', 'nem'] as const).filter(d => available[d] > 0);
+      const preferHot = random(w) < (special ? modern!.demandMix.pHotGivenMoiSpecial : modern!.demandMix.pHotGivenMoi);
+      return hot.length && (preferHot || !cold.length) ? hot[integer(w, 0, hot.length - 1)] : instantDish();
+    };
+    // S4 Lv3 (D19): the chance of a second snack, from the level the group sat down with (0 on every snapshot without the ladder).
+    const secondSnack = group.level === undefined ? 0 : tableBenefit(c, group.level).pExtraMoi;
     for (const customer of group.customers) {
       const dishes = first ? [...c.onboarding.firstShift.firstOrder] as typeof DISHES : ['bia'] as typeof DISHES;
-      if (!first && random(w) < c.demandMix.pMoi) {
-        const hot = DISHES.filter(d => c.menu[d].station === 'kitchen' && dishUnlocked(w, this.config, d) && (!modern || available[d] > 0));
+      if (!first && solo) {
+        const dish = random(w) < seatModel!.upgrades.table.orderShape.solo.pBeer ? undefined : instantDish();
+        if (dish) { dishes[0] = dish; available[dish]--; } // no instant dish left in stock -> beer
+      } else if (!first && random(w) < (seatModel ? seatModel.upgrades.table.orderShape.pair.pMoi : c.demandMix.pMoi)) {
         if (modern) {
-          const cold = (['lac', 'nem'] as const).filter(d => available[d] > 0);
-          const preferHot = random(w) < (special ? modern.demandMix.pHotGivenMoiSpecial : modern.demandMix.pHotGivenMoi);
-          const dish = hot.length && (preferHot || !cold.length) ? hot[integer(w, 0, hot.length - 1)] : cold.length === 2 ? (random(w) < c.demandMix.pNemGivenMoi ? 'nem' : 'lac') : cold[0];
-          if (dish) { dishes.push(dish); available[dish]--; }
+          const dish = pickSnack();
+          if (dish) {
+            dishes.push(dish); available[dish]--;
+            // Only a snack that is still in stock is ordered, so a tray never waits for a dish the shop cannot make; it is delivered once every dish is ready.
+            const more = secondSnack > 0 && random(w) < secondSnack ? pickSnack() : undefined;
+            if (more) { dishes.push(more); available[more]--; }
+          }
         } else {
+          const hot = DISHES.filter(d => c.menu[d].station === 'kitchen' && dishUnlocked(w, this.config, d));
           const cold: Item['dish'] = random(w) < c.demandMix.pNemGivenMoi ? 'nem' : 'lac';
           dishes.push(hot.length ? [cold, ...hot][integer(w, 0, hot.length)] : cold);
         }
       }
       for (const dish of dishes) items.push({ id: this.id('item'), customerId: customer.id, dish, state: 'pending', readyAt: null, glassId: null });
     }
-    t.order = { id: this.id('order'), placedAt: w.now, patienceMs: Math.min(...group.customers.map(x => x.patienceMs)), items, state: 'pending', readyEmitted: false };
+    // S4 (D15): the chairs the group sat down with stretch the wait for the dish, once per order from the same base, so rounds never compound.
+    const patience = Math.min(...group.customers.map(x => x.patienceMs));
+    t.order = { id: this.id('order'), placedAt: w.now, patienceMs: group.chairLevel && group.chairLevel > 1 ? Math.round(patience * chairPatienceMult(c, group.chairLevel)) : patience, items, state: 'pending', readyEmitted: false };
     t.state = 'waiting'; t.until = null; s.stats.orders++;
     this.emit('order_placed', { tableId: t.id, orderId: t.order.id, items: items.length });
     if (this.rulesVersion >= MENU_RULES) for (const item of items) this.emit('dish_ordered', { shiftId: s.id, tableId: t.id, orderId: t.order.id, itemId: item.id, dish: item.dish, customerId: item.customerId, customerType: group.customers.find(customer => customer.id === item.customerId)!.type, tableSize: group.customers.length });
@@ -617,6 +674,8 @@ export class Game {
     const w = this.world, c = this.config.values;
     const modern = this.rulesVersion >= ECONOMY_RULES && isEconomy2(c) ? c : null;
     const batches = this.rulesVersion >= BATCH_RULES && c.upgrades.keg.refillEnabled;
+    // A beer leaves the reserve straight into a clean glass, never through the tap queue (rules 18-20 on a 1.x pin; instant pour, plan S2, from rules 28).
+    const direct = batches && (!modern || this.rulesVersion >= INSTANT_POUR_RULES && instantPour(this.config));
     const items = w.tables.filter(t => t.order && ['pending', 'grace'].includes(t.order.state)).flatMap(t => t.order!.items);
     let pouring = items.filter(i => i.state === 'preparing' && i.dish === 'bia').length;
     let cooking = kitchenStatus(w, this.config).busy;
@@ -626,10 +685,10 @@ export class Game {
       const menu = c.menu[item.dish];
       let duration = menu.prepMs;
       if (menu.needsGlass) {
-        if ((!batches || modern) && pouring >= c.upgrades.keg.pourSlots[w.equipment.keg - 1]) continue;
+        if (!direct && pouring >= c.upgrades.keg.pourSlots[w.equipment.keg - 1]) continue;
         const glass = w.glasses.find(g => g.state === 'clean');
         if (!glass) continue;
-        duration = batches && !modern ? 0 : c.upgrades.keg.pourMs[w.equipment.keg - 1];
+        duration = direct ? 0 : c.upgrades.keg.pourMs[w.equipment.keg - 1];
         glass.state = 'in_use'; glass.itemId = item.id; glass.readyAt = w.now + duration; glass.staleEmitted = false;
         item.glassId = glass.id; pouring++;
       } else if (menu.station === 'kitchen') {
@@ -647,7 +706,7 @@ export class Game {
       else w.inventory[item.dish]--;
       item.state = duration > 0 ? 'preparing' : 'ready'; item.readyAt = w.now + duration;
       this.emit(menu.needsGlass ? 'beer_pouring' : 'dish_preparing', { itemId: item.id, dish: item.dish });
-      if (batches && !modern && item.dish === 'bia') this.emit('beer_poured', { itemId: item.id, fromReserve: true });
+      if (direct && item.dish === 'bia') this.emit('beer_poured', { itemId: item.id, fromReserve: true });
       if (this.rulesVersion >= MENU_RULES && menu.station === 'kitchen') {
         this.emit('kitchen_job_started', { shiftId: w.shift!.id, itemId: item.id, dish: item.dish, prepMs: duration, readyAt: item.readyAt });
         if (item.state === 'ready') this.emit('kitchen_job_ready', { shiftId: w.shift!.id, itemId: item.id, dish: item.dish });
@@ -699,6 +758,7 @@ export class Game {
     if (this.world.seasons && entry.rulesVersion < SEASON_RULES) throw Error('replay:rulesVersion');
     if (['rentLocation', 'leaveLocation'].includes(entry.command.type) && entry.rulesVersion < LEASE_RULES) throw Error('replay:rulesVersion');
     if (entry.command.type === 'buyGlass' && entry.rulesVersion < ECONOMY_RULES) throw Error('replay:rulesVersion');
+    if ((entry.command.type === 'buyChair' || entry.command.type === 'upgradeChair' || entry.command.type === 'kickTable' || isSeatModel(config.values)) && entry.rulesVersion < SEAT_RULES) throw Error('replay:rulesVersion');
     if (entry.command.type === 'adoptCalendarRules' && entry.rulesVersion !== ABSENT_CALENDAR_RULES) throw Error('replay:rulesVersion');
     if ((entry.command.type === 'connectionRestored' || entry.command.type === 'connectionLost' && entry.command.shiftId === null) && entry.rulesVersion < CONNECTION_RULES) throw Error('replay:rulesVersion');
     if (entry.command.type === 'connectionLost' && (entry.rulesVersion < DISCONNECT_RULES || entry.rulesVersion >= ABSENT_CALENDAR_RULES && !entry.command.lossId)) throw Error('replay:rulesVersion');
@@ -776,21 +836,25 @@ export class Game {
         if (this.rulesVersion >= ATTENDANCE_RULES && cmd.active) this.observeAttendance(true);
         return { ok: true };
       case 'startShift': {
-        const c = openingConfig.values, changed = openingConfig.version !== this.config.version, previousVersion = this.config.version;
+        const c = openingConfig.values, changed = openingConfig.version !== this.config.version, previousVersion = this.config.version, previous = this.config.values;
+        let adopted: { tablesBefore: number; tablesAfter: number; seatsBefore: number; seatsAfter: number } | null = null;
         if (w.phase !== 'resting') return fail('shiftRunning');
         if (changed && !compatibleSeasonTiers(w, openingConfig, this.config)) return fail('configSeasonTiers');
         const location = changed && this.rulesVersion >= LEASE_RULES && isEconomy2(c) && !w.lease ? c.locations.fallback : w.location;
         if (changed && w.lease && (!isEconomy2(c) || c.locations.fallback !== w.lease.fallback)) return fail('configLocationMissing');
         if (changed && !c.locations.list.some(row => row.id === location)) return fail('configLocationMissing');
-        if (c.shift.openRequiresFullStamina && w.staminaMs < this.config.values.shift.durationMs) return fail('restFirst');
+        // S5 (D8, rules 28): the first `shift.noCooldownFirstShifts` shifts of a save's whole life open without full stamina; the opening snapshot decides.
+        const noCooldown = this.rulesVersion >= NO_COOLDOWN_RULES && noCooldownOpening(w, openingConfig);
+        if (c.shift.openRequiresFullStamina && w.staminaMs < this.config.values.shift.durationMs && !noCooldown) return fail('restFirst');
         if (this.rulesVersion >= CONFIG_PIN_RULES && !Number.isSafeInteger(w.now + c.shift.durationMs)) return fail('configClock');
         const day = dayKey(w.now, openingConfig);
         if ((w.dayShifts[day] ?? 0) >= c.shift.dailyShiftCap.newbie) return fail('dailyShiftCap');
         if (this.rulesVersion === 1 && (w.dayEarned[day] ?? 0) >= c.shift.dailyEarnCapBase) return fail('dailyEarnCap');
         const onboarding = c.onboarding.enabled && w.completedShifts === 0;
-        if (changed && onboarding && !w.tables.some(table => c.upgrades.table.levels[table.level - 1].capacity >= c.onboarding.firstShift.firstGroupSize)) return fail('configOnboardingTables');
+        const tables = this.openingTables(openingConfig, location, changed);
+        if (changed && onboarding && !tables.some(table => table.capacity >= c.onboarding.firstShift.firstGroupSize)) return fail('configOnboardingTables');
         const scheduled = !(onboarding && c.onboarding.firstShift.rushDisabled);
-        const openingLevel = this.rulesVersion >= OPENING_PROGRESS_RULES ? lifePathStatus({ ...w, tables: w.tables.map(table => ({ ...table, capacity: c.upgrades.table.levels[table.level - 1].capacity })) }, openingConfig).level : w.lifePath;
+        const openingLevel = this.rulesVersion >= OPENING_PROGRESS_RULES ? lifePathStatus({ ...w, tables }, openingConfig).level : w.lifePath;
         const plan = this.rulesVersion >= RUSH_SCHEDULE_RULES && scheduled ? planRushes(openingConfig, location, this.id('shift', false), day, w.now, this.rulesVersion >= ECONOMY_RULES ? openingLevel : Infinity) : null;
         if (this.rulesVersion >= RUSH_SCHEDULE_RULES && scheduled && !plan) return fail('rushScheduleUnavailable');
         if (changed) {
@@ -798,8 +862,12 @@ export class Game {
           w.staminaAnchorAt = w.now; w.staminaAnchorMs = w.staminaMs;
           this.currentConfig = openingConfig; w.location = location;
           if (this.rulesVersion >= SEASON_RULES) pinUnusedSeasons(w, openingConfig);
-          for (const table of w.tables) table.capacity = c.upgrades.table.levels[table.level - 1].capacity;
+          const seatsBefore = w.tables.reduce((sum, table) => sum + table.capacity, 0), tablesBefore = w.tables.length;
+          if (isSeatModel(c) && !isSeatModel(previous)) adopted = { tablesBefore, tablesAfter: tables.length, seatsBefore, seatsAfter: tables.reduce((sum, table) => sum + table.capacity, 0) };
+          w.tables.splice(tables.length); // in place: D2 keeps the first tableSlots tables
+          tables.forEach((table, i) => { w.tables[i].capacity = table.capacity; });
         }
+        if (noCooldown && w.staminaMs < c.shift.durationMs) { w.staminaMs = c.shift.durationMs; w.staminaAnchorMs = w.staminaMs; w.staminaAnchorAt = w.now; } // set to 100 % when such a shift opens
         if (this.rulesVersion >= SEASON_RULES) syncSeasons(w, this.config);
         const weather = weighted(w, WEATHER.map(k => [k, c.weather[k].weight]));
         const rushes: NonNullable<World['shift']>['rushes'] = plan?.rushes ?? [];
@@ -817,6 +885,7 @@ export class Game {
         if (plan) w.shift.rushScheduleSeed = plan.seed;
         w.phase = 'open'; w.lastServedAt = null; w.lostStreak = 0;
         if (changed) this.emit('config_pinned', { shiftId: w.shift.id, previousVersion, configVersion: this.config.version });
+        if (adopted) this.emit('seat_model_adopted', { shiftId: w.shift.id, ...adopted });
         this.startMenu(true);
         if (this.rulesVersion >= QUEST_RULES) this.ensureDailyQuests(true);
         if (this.rulesVersion >= ATTENDANCE_RULES) this.observeAttendance(true);
@@ -873,8 +942,9 @@ export class Game {
         if (this.serveCoolingDown()) return fail('serveCooldown');
         let amount = 0, anyStale = false, anyTip = false, anyEarly = false;
         const grace = o.state === 'grace';
+        const tipMult = t.group!.level === undefined ? 1 : tableBenefit(c, t.group!.level).tipMult; // S4 Lv4: this table's group only
         const values = t.group!.customers.map(customer => {
-          const value = customerValue(w, this.config, o, customer);
+          const value = customerValue(w, this.config, o, customer, tipMult);
           const nominalBonus = this.rulesVersion >= 3 ? wellRestedBonus(w, this.config, value.payment, value.tip) : 0; // config-exempt: replay version 3 introduced well-rested bonuses
           return { customer, value, nominalBonus };
         });
@@ -1015,14 +1085,41 @@ export class Game {
       case 'upgradeTable': {
         if (this.rulesVersion < LIVE_UPGRADE_RULES && w.phase !== 'resting' && c.upgrades.phase1UpgradesOutsideShiftOnly) return fail('outsideShiftOnly');
         const t = w.tables.find(t => t.id === cmd.tableId);
-        if (!t || t.state !== 'empty') return fail('tableBusy');
-        const level = c.upgrades.table.levels[t.level];
-        if (!level) return fail('maxLevel');
-        if (level.requiredBadge && !w.badges.includes(level.requiredBadge)) return fail('badgeRequired');
-        if (level.repBase && w.reputation < level.repBase[0]) return fail('reputationRequired');
-        if (w.coins < level.priceBase) return fail('notEnoughCoins');
-        this.spend(level.priceBase); t.level = level.level; t.capacity = level.capacity;
-        this.emit('table_upgraded', { tableId: t.id, level: t.level }); return { ok: true, amount: level.priceBase };
+        if (!t) return fail(isSeatModel(c) ? 'tableGone' : 'tableBusy');
+        const q = tableUpgradeQuote(w, this.config, t);
+        if (!q.ok || !q.next) return fail(q.reason ?? 'maxLevel');
+        const cost = q.cost!; // the level's own price on every snapshot without the S4 ladder, the ladder price (target level, n tables there) with it
+        this.spend(cost); t.level = q.next.level;
+        if (!isSeatModel(c)) t.capacity = c.upgrades.table.levels[t.level - 1].capacity; // capacity pins: the level sets the seats
+        this.emit('table_upgraded', tableUpgrade(c) ? { tableId: t.id, level: t.level, cost, what: tableBenefitGained(c, t.level) } : { tableId: t.id, level: t.level });
+        return { ok: true, amount: cost };
+      }
+      case 'upgradeChair': {
+        const t = w.tables.find(t => t.id === cmd.tableId);
+        if (!t) return fail('tableGone');
+        const q = chairUpgradeQuote(w, this.config, t);
+        if (!this.seatModel() || !q.ok || q.cost === null || !q.next) return fail(q.reason ?? 'chairUpgradeUnavailable');
+        // The seated group keeps the comfort it sat down with (Group.chairLevel); the next group gets the new level.
+        this.spend(q.cost); t.chairLevel = q.next.level;
+        this.emit('chair_upgraded', { tableId: t.id, level: t.chairLevel, cost: q.cost, patienceMult: q.next.patienceMult }); return { ok: true, amount: q.cost };
+      }
+      case 'kickTable': {
+        // Wave 3 "Mời về" (D3): a table whose guests linger after their tray goes home for its price in coins (spent) and reputation; nobody is lost or fined,
+        // the table is cleaned and seats the next group. A snapshot without the `kickTable` section has no such command (kickTableQuote).
+        const t = w.tables.find(t => t.id === cmd.tableId);
+        if (!t) return fail('tableGone');
+        const q = kickTableQuote(w, this.config, t);
+        if (!this.seatModel() || q.reason === 'kickTableUnavailable') return fail('kickTableUnavailable');
+        if (q.cost === null) return fail(q.reason!);
+        if (q.cost > cmd.maxCost) return fail('kickCostChanged'); // the price moved since the player saw it
+        if (!q.ok) return fail(q.reason!);
+        this.spend(q.cost);
+        const reputationBefore = w.reputation;
+        this.changeRep(-q.reputation);
+        this.emit('table_kicked', { shiftId: s?.id ?? null, tableId: t.id, groupId: t.group!.id, orderId: t.order!.id, count: q.guests.length, cost: q.cost,
+          reputation: reputationBefore - w.reputation, vip: q.guests.filter(g => g.type === 'vip').length, chipheo: q.guests.filter(g => g.type === 'chipheo').length });
+        this.clean(t);
+        return { ok: true, amount: q.cost };
       }
       case 'rentLocation': {
         const q = leaseQuote(w, this.config, cmd.locationId);
@@ -1052,14 +1149,19 @@ export class Game {
       }
       case 'buyTable': {
         if (this.rulesVersion < LIVE_UPGRADE_RULES && w.phase !== 'resting' && c.upgrades.phase1UpgradesOutsideShiftOnly) return fail('outsideShiftOnly');
-        if (w.tables.length >= c.upgrades.table.maxTables) return fail('maxTables');
-        const seats = w.tables.reduce((sum, t) => sum + t.capacity, 0);
-        const capacity = c.upgrades.table.levels[c.runtime.initialTableLevel - 1].capacity;
-        const prices = c.upgrades.extraSeatPriceBase as Record<string, number>;
-        let cost = 0;
-        for (let i = 1; i <= capacity; i++) { const price = prices[String(seats + i)]; if (price === undefined) return fail('seatPriceUnconfigured'); cost += price; }
-        if (w.coins < cost) return fail('notEnoughCoins');
-        this.spend(cost); w.tables.push(this.newTable()); this.emit('table_bought', { cost }); return { ok: true, amount: cost };
+        const q = buyTableQuote(w, this.config);
+        if (!q.ok || q.cost === null) return fail(q.reason ?? 'maxTables');
+        this.spend(q.cost); const table = this.newTable(); w.tables.push(table);
+        this.emit('table_bought', this.seatModel() ? { cost: q.cost, tableId: table.id } : { cost: q.cost }); return { ok: true, amount: q.cost };
+      }
+      case 'buyChair': {
+        const t = w.tables.find(t => t.id === cmd.tableId);
+        if (!t) return fail('tableGone');
+        const q = buyChairQuote(w, this.config, t);
+        if (!this.seatModel() || !q.ok || q.cost === null) return fail(q.reason ?? 'chairsLocked');
+        // The seated group keeps its tray (Group.seats); the new chair serves the next group.
+        this.spend(q.cost); t.capacity++;
+        this.emit('chair_bought', { tableId: t.id, seats: t.capacity, cost: q.cost }); return { ok: true, amount: q.cost };
       }
       case 'emergencyPack':
         if (!DISHES.filter(d => dishUnlocked(w, this.config, d)).every(d => w.inventory[d] === 0)) return fail('stockRemaining');
@@ -1093,7 +1195,8 @@ export function validReplayEnvelope(input: unknown): input is Envelope<Command |
     case 'activity': return typeof c.active === 'boolean' && (c.paused === undefined || typeof c.paused === 'boolean') && (!c.paused || c.active);
     case 'serve': return typeof c.tableId === 'string' && typeof c.orderId === 'string';
     case 'serveDelivery': return typeof c.deliveryId === 'string';
-    case 'upgradeTable': return typeof c.tableId === 'string';
+    case 'upgradeTable': case 'buyChair': case 'upgradeChair': return typeof c.tableId === 'string';
+    case 'kickTable': return typeof c.tableId === 'string' && Number.isSafeInteger(c.maxCost) && c.maxCost >= 0;
     case 'claimLifePath': return Number.isSafeInteger(c.level) && c.level > 0;
     case 'buyUnlock': return BUSINESS_UNLOCKS.includes(c.item);
     case 'setSignboard': return SIGN_STYLES.includes(c.style);

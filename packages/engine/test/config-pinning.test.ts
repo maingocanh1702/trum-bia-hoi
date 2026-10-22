@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { CURRENT_RULES, config, Game, loadConfig, encodeSave, decodeSave, dayKey, validEnvelope } from '../src';
+import { CURRENT_RULES, config, Game, loadConfig, encodeSave, decodeSave, dayKey, validEnvelope, isSeatModel, type Command } from '../src';
 import { pinConfig, nextPin, servePin, restPin, mixedPinGame } from './fixtures/config-pinning';
+import { capacityRaw } from './fixtures/capacity-model';
 import { sendKitchen } from './fixtures/kitchen';
 const open = (g: Game, key = `pin-${g.log.length}`) => ({ command: { type: 'startShift' } as const, at: g.world.now, idempotencyKey: key });
 
@@ -159,8 +160,9 @@ test('a candidate designed for larger initial tables cannot strand the first gro
 
 
 test('next-shift admission uses incoming LP requirements and seat capacities for rush planning without mutating failed openings', () => {
-  const oldRaw = structuredClone(config.raw); oldRaw.lifePath[1].requires = ['4 seats', 'dog'];
-  const old = loadConfig(oldRaw), nextRaw = structuredClone(config.raw); nextRaw._meta.version = 'incoming-lp';
+  // Rules 24/25 openings only ever pinned capacity-model snapshots (seat-model pins need rules 28).
+  const oldRaw = capacityRaw(); oldRaw.lifePath[1].requires = ['4 seats', 'dog'];
+  const old = loadConfig(oldRaw), nextRaw = capacityRaw(); nextRaw._meta.version = 'incoming-lp';
   const next = loadConfig(nextRaw);
   for (const rulesVersion of [24, 25] as const) {
     const g = new Game(old, 42, 0); g.world.lifetimeEarned = next.values.lifePath[1].lifetimeBase; g.world.completedShifts = 1;
@@ -169,4 +171,22 @@ test('next-shift admission uses incoming LP requirements and seat capacities for
     assert.equal(g.world.lifePath, 1);
     assert.equal(g.world.shift!.rushes.some(r => r.kind === 'heavy'), rulesVersion >= 25);
   }
+});
+
+test('a seat-model repin keeps every bought table and chair; only the next purchase reads the new prices', () => {
+  const pin = (version: string, chair: number) => {
+    const raw = structuredClone(config.raw); raw._meta.version = version; raw.shift.startingCoinsBase = 100000; raw.upgrades.table.chairPriceBase[1] = chair;
+    return loadConfig(raw);
+  };
+  const a = pin('seat-A', 6000), b = pin('seat-B', 7000), g = new Game(a, 42, 0), w = g.world;
+  const buy = (command: Command) => g.command({ command, at: w.now, idempotencyKey: `seat-pin-${g.log.length}` });
+  while (w.tables.length < 4) assert.ok(buy({ type: 'buyTable' }).ok);
+  assert.ok(buy({ type: 'buyChair', tableId: w.tables[0].id }).ok);
+  const before = structuredClone(w.tables);
+  assert.ok(g.command(open(g), b).ok); assert.equal(g.config.version, 'seat-B');
+  assert.deepEqual(w.tables, before, 'a seat-to-seat repin never re-derives chairs');
+  assert.ok(!w.events.some(e => e.type === 'seat_model_adopted'));
+  const next = b.values; assert.ok(isSeatModel(next));
+  assert.deepEqual(buy({ type: 'buyChair', tableId: w.tables[1].id }), { ok: true, amount: next.upgrades.table.chairPriceBase[1] });
+  assert.deepEqual(decodeSave(encodeSave(g)).world, w);
 });

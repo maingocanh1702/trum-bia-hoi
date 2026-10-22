@@ -50,6 +50,8 @@ independent shipper lane — because they share the same autonomous tick machine
   text `t('delivery.serve', {n})` ("Giao cả đơn…"), wired to `run({type:'serveDelivery', deliveryId})`,
   `disabled={!ready || !safe || !remainingMs}`.
 
+- **Rules 28 seat model (S1):** group size is `spawn.pPair` (pair) else one guest, independent of the shop (D17). A pair when no table has two chairs leaves at the door: `queue_overflow{size, reason:'noSeat'}`, counted in `stats.rejected` and `stats.noSeat`, no penalty, no reputation, never `lost`/`lostStreak`, never queued. A full queue on seat-model shifts says `reason:'full'`; rules <= 27 keep `{size}`. Seating stays smallest-fitting-empty-table (singles prefer one-chair tables).
+
 ## How to reach it
 
 - Engine, arrival: fully autonomous — `processDue()` (`engine.ts:345`) calls `spawn()` (`:539`)
@@ -145,6 +147,26 @@ independent shipper lane — because they share the same autonomous tick machine
   `'a pending shipper blocks paid closure and expires with a numeric-only penalty'` (already cited by
   [serve-outcomes](serve-outcomes.md) for its `.toast-loss` mechanism — this file's angle is the
   delivery-blocks-`kickAll`/expiry-penalty behaviour itself, not the toast).
+
+- `packages/engine/test/seat-model.test.ts` — `a pair with no two-chair table leaves at the door: no penalty, no reputation change, never lost` (onboarding's forced single still seats; `noSeat` = `rejected`; coins/reputation/lostStreak unchanged; queue empty).
+- `packages/engine/test/arrival-interval.test.ts` — `fast-weather rush groups retain hard floors and round once after the per-customer size factor` now forces pairs (`spawn.pPair` 1): the gap after a turned-away pair still scales by two.
+
+- **S3 capacity demand, door queue, patience (rules 28, JSON 2.0.22; D12 D19 D25):** `packages/engine/test/capacity-demand.test.ts` (12) —
+  `a rules-28 history recorded on JSON 2.0.21 replays byte for byte and re-encodes unchanged` (fixture `packages/engine/test/fixtures/seat-2.0.21-v28.json`, recorded by the S2 engine, generator `fixtures/seat-v28.ts`) ·
+  `the bundled numbers are the plan's W9 set: capacity demand 6 / 4 (D19), queue 1 + seats/8 and patience 24 s (D25), a Tier A key, a version above 2.0.21` (the one test that names the numbers; S5 retunes it) ·
+  `capacityDemandMult is min(maxMult, max(1, refTables / tables)); a snapshot from before the key has none` (1 → 8 tables: x4 x3 x2 x1.5 x1.2 x1 x1 x1; clamps; pins x1) ·
+  `the gap to the next group is multiplied by the demand factor of the tables owned: x4, x3, x2, x1.5 (singles and pairs, seed 42)` (real `buyTable`, three consecutive gaps per case; the first guest of the shift keeps `baseMs × warmupMult`) ·
+  `the gap rounds once, after the group-size and demand factors, and follows the table count live` (hot weather, 4 tables: 14 962.5 → 14 963) ·
+  `capacity demand scales the gap of every rush kind too, after the rush floor and the group-size factor, rounded once (6 kinds x 1-4 tables x single and pair)` (a controlled rush per kind, two regimes: the bundled numbers and one where every floor binds; also cited in rush-weather.md) ·
+  `queue slots are queueBaseSlots + floor(seats / queueSeatsPerSlot): one seat queues one group, eight seats two; a capacity pin keeps 2 + seats/3` ·
+  `D12: a group turned away because the door queue is full costs no coins and no reputation and is never lost; only waiting too long does` (after one real serve gives reputation to lose: ≥ 5 `queue_overflow{reason:'full'}`, coins/reputation/`lostStreak` unchanged, `stats.lost` 0, then the first guest who gives up costs reputation and counts as lost) ·
+  `patience.thuongMs is 24 s on the bundled seat seed and stays 18 s on a capacity pin and on a 2.0.21 pin` ·
+  `snapshots from before the key load, bytes kept, and refuse every half-way shape; the new keys never loosen an older shape` (2.0.21 and a 2.0.20-like pin load; key without tier entry, tier entry without key, new label without the key, unknown subkey, wrong type, 1.x/2.0.4 + key: all refused) ·
+  `capacityDemand fails closed: whole refTables >= 1, finite maxMult >= 1, and a gap that stays a safe integer` ·
+  `a pinned 2.0.21 save plays on with its own cadence, then adopts the new bundle at its next opening and never re-migrates its seats` (x1 and 2 queue slots under the pin, then `config_pinned` 2.0.21 → bundle, no `seat_model_adopted`, x4 and 1 slot, whole save replays).
+  Suites about other subjects call `packages/engine/test/fixtures/steady-demand.ts` (`maxMult` 1): arrival-interval, flyer, manual-close, rush-schedule, seat-model (tray mix) and the career harness (career.test.ts).
+- **Door table (S3 acceptance, a report not a gate):** `packages/engine/test/door-table.test.ts` — `doorTable reports lost / arrived and lost / admitted per band, the stricter reading decides, shift 1 counts arrivals and refused pairs`, `doorTable passes when every band and shift 1 are inside the targets, and says so when the run is too short to cover a band`, `a real career day reports one stats row per closed shift and they add up to the day row`; run it with `npm run sim:career -- --days=30 --seed=42 --door` (and `--seed=99`): prints `DOOR shifts 1-24 / days 8-14 / days 15-21 / shift 1` lines (`packages/engine/sim/door.ts`).
+- **UI:** `apps/web/test/first-shift-visual.spec.ts` `P0 the door shows patience rings and a refused group of ${size} says "…" at ${w}px` (×6: a full door = every `queueSlots` slot holds a ringed group, the refused group's bubble reads "2 ghế" / "Hết chỗ") and `P0 two refusals inside one bubble lifetime: the door says the newest reason and no bubble covers a guest at ${w}px` (×3, S6 review round 2: only the newest refused group is drawn; fixture `crowd2`, two `queue_overflow` 630 ms apart); `apps/web/test/buy-reasons.spec.ts` `when a guest leaves the toast says why in one reason (Hết chỗ) …` (the refusal toast: reason alone, no coins, no reputation) and `the shift book lists why guests left, most guests first, at ${w}px` (now also the "Cặp không có chỗ: n" line); `apps/web/test/leave-reasons.test.ts` the two S3 tests (`pairsWithoutSeat`).
 
 ## Verification procedure
 
@@ -242,3 +264,21 @@ but are excluded from `k` itself since `k` only counts seated serves).
 |---|---|
 | 2026-09-16 | Wave A3 adds the five-seed headless VIP arrival census, denominator/exclusion rules and explicit pending human observation. No spawn gate, weight or production behaviour changes. |
 | 2026-10-14 fun-onboarding-visual | UI only: queued groups now render at the door with a patience ring (`DoorQueue.tsx`, same arrival + least-patient-guest deadline the engine uses), and a `queue_overflow {size}` shows a bubble `{n} ghế` (pair) / `Hết chỗ` (single) before the group walks off. Proof: `apps/web/test/first-shift-visual.spec.ts` `P0 the door shows patience rings and a refused group of ${size} says "…" at ${w}px` (×6, crowd saves from `apps/web/test/fixtures/first-shift-visual.ts`). No engine rule, spawn number or queue formula changed. |
+
+## Changelog — S1 seat model
+| Date | Change |
+|---|---|
+| 2026-10-19 | S1 rules 28: pair arrivals, `noSeat` door rejection and `reason` on `queue_overflow`; tests cited. |
+
+## Changelog — S3 capacity demand
+| Date | Change |
+|---|---|
+| 2026-10-20 | S3 `eco21-capacity-demand` (JSON 2.0.22): `spawn.capacityDemand {refTables 6, maxMult 4}` multiplies the gap to the next group (x4 · x3 · x2 · x1.5 for 1 · 2 · 3 · 4 tables, also in a rush; not the first guest of a shift), the door queue is `1 + ⌊seats / 8⌋`, `patience.thuongMs` 24 s; a pin from before the key keeps x1, 2 + seats/3 and 18 s. D12 (door refusals free of coins, reputation and `lost`) already held since S1 and is now pinned for the `full` reason too. Tests above; the shift book counts "Cặp không có chỗ". |
+
+## Changelog — S4 table and chair levels
+| Date | Change |
+|---|---|
+| 2026-10-20 | S4 `eco21-table-chair-upgrades`: `seatQueue` (the moment a queued group takes a table) records `Group.level` / `Group.chairLevel` and adds the Lv2 round to `Group.rounds`; arrival, queue, door refusal and patience are untouched (S3). Proof: `packages/engine/test/table-chair-upgrades.test.ts` `Lv2 adds exactly one round and it stays at Lv3 and Lv4: ...` and `a benefit serves the NEXT group: ...`. |
+| 2026-10-20 | S5 `eco21-balance-pass` (JSON 2.1.0): `locations.list[].tableSlots` 4/4/5/6/6/7/8/8/8 replace S1's all-4 (the 8-table and LP7 "10 seats" gates need five or more slots), table 2…8 `tablePriceBase` 600 · 2 000 · 4 000 · 7 500 · 12 500 · 20 000 · 31 300 and chair `chairPriceBase` 10 000 … 70 000; arrival pace, door queue `1 + ⌊seats / 8⌋`, patience 24 s and `capacityDemand` 6 / 4 are unchanged. The standard sims (`npm run sim`, `sim:onboarding`, `sim:rush`) start on the complete first alley (`packages/engine/sim/scenario.ts furnishFirstAlley`: four tables of two chairs bought with real commands, the wallet topped up by exactly each price: `packages/engine/test/standard-sim.test.ts`). A shop that moves to a location with fewer slots than it has tables keeps them (the folding rule is Wave 5, not built). |
+| 2026-10-21 | S5 `eco21-balance-pass`, review round 1 (JSON 2.1.0, re-sealed for the plan's bot): `tableSlots` **8** in every place (the strict seat-saving bot buys tables 2-8 before its first second chair), table 2…8 `tablePriceBase` 600 · 3 700 · 5 700 · 9 600 · 12 900 · 15 900 · 16 000, chair `chairPriceBase` 400 … 2 800; arrival pace, door queue, patience and `capacityDemand` 6 / 4 unchanged. Proof: `packages/engine/test/seat-model.test.ts` (the first alley holds eight; the D2 migration meets an alley of four built from the config), `apps/web/test/seat-model.spec.ts` (tables 2-8, the chair opens with the fourth), `apps/web/test/buy-reasons.spec.ts` (the full-alley case builds the alley's own table count). |
+| 2026-10-22 | Wave 3 `fun-kick-table`: a table sent home (`kickTable`) is cleaned at once and `seatQueue` gives it to the waiting group as for any freed table — `packages/engine/test/kick-table.test.ts` `the guests are not lost: no customer_left, no -5, no lostStreak; the coins are spent, the table is cleaned and seats the next queued group` (the queued group's `group_seated` at the freed table) and the browser case `Wave 3 Mời về on a lingering table shows its coins and reputation, one tap sends it home and the waiting group sits down ...` (`apps/web/test/kick-table.spec.ts`). The door's own rules (`queue_overflow`, the queue slots) are unchanged. |

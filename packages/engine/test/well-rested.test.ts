@@ -3,6 +3,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Game, kickAllQuote, config, loadConfig, dayKey, encodeSave, decodeSave, wellRestedRemaining, type Command, type Economy } from '../src';
+import { capacityRaw } from './fixtures/capacity-model';
+import { fullCooldown } from './fixtures/full-cooldown';
 
 const origin = Date.parse('2026-09-08T00:00:00Z');
 function create(patch?: (raw: Economy) => void, at = origin, seed = 42, source: Economy = config.raw) {
@@ -37,7 +39,8 @@ test('rest must be strictly longer than six hours and a start retry consumes the
 });
 
 test('each customer receives the rounded combined-service bonus without changing base k records', () => {
-  const g = create(c => { c.onboarding.firstShift.firstGroupSize = 2; }); openRested(g);
+  // A forced two-guest first group needs a two-seat starting table: the capacity model's (the seat model starts at one chair).
+  const g = create(c => { c.onboarding.firstShift.firstGroupSize = 2; }, origin, 42, capacityRaw()); openRested(g);
   const result = serveFirst(g, g.world.now + 14100);
   assert.deepEqual(result, { ok: true, outcome: 'early', amount: 144 });
   assert.equal(g.world.serves.length, 2);
@@ -51,20 +54,20 @@ test('the exact bonus deadline ends the multiplier while a served order is still
   for (const delta of [-1, 0]) {
     const g = create(c => { c.shift.wellRested.durationMs = 12000; c.tip.wellRestedDurationMs = 12000; });
     const shift = openRested(g);
-    assert.equal(serveFirst(g, shift.wellRestedUntil! + delta).amount, delta < 0 ? 72 : 65);
-    assert.equal(g.world.serves[0].wellRestedBonus, delta < 0 ? 7 : 0);
+    assert.equal(serveFirst(g, shift.wellRestedUntil! + delta).amount, delta < 0 ? 65 : 59); // 50 + the 2.1.0 tip 9, then the rounded 10 % bonus (5.9 rounds to 6)
+    assert.equal(g.world.serves[0].wellRestedBonus, delta < 0 ? 6 : 0);
   }
 });
 
 test('partial and exhausted daily caps clamp the actual bonus and all three earning ledgers', () => {
-  for (const [capBase, amount, bonus] of [[27, 68, 3], [20, 50, 0], [0, 0, 0]]) {
+  for (const [capBase, amount, bonus] of [[25, 63, 4], [20, 50, 0], [0, 0, 0]]) {
     const g = create(c => { c.shift.dailyEarnCapBase = capBase; }); openRested(g);
     assert.equal(serveFirst(g).amount, amount);
     assert.equal(g.world.coins, g.config.values.shift.startingCoinsBase + amount);
     assert.equal(g.world.dayEarned[dayKey(g.world.now, g.config)], amount);
     assert.equal(g.world.lifetimeEarned, amount); assert.equal(g.world.seasonEarned, amount);
     assert.equal(g.world.serves[0].wellRestedBonus, bonus);
-    assert.deepEqual(g.world.events.find(e => e.type === 'well_rested_bonus')?.data, { customerId: g.world.serves[0].customerId, orderId: g.world.serves[0].orderId, nominal: 7, credited: bonus });
+    assert.deepEqual(g.world.events.find(e => e.type === 'well_rested_bonus')?.data, { customerId: g.world.serves[0].customerId, orderId: g.world.serves[0].orderId, nominal: 6, credited: bonus });
     assert.deepEqual(decodeSave(encodeSave(g)).world, g.world);
   }
 });
@@ -74,8 +77,8 @@ test('the first grant stays on its opening day while earnings and the finished s
   const g = create(undefined, startAt - restMs(create()) - 1);
   openRested(g);
   assert.deepEqual(g.world.wellRestedDays, { '2026-09-08': true });
-  assert.equal(serveFirst(g).amount, 72);
-  assert.deepEqual(g.world.dayEarned, { '2026-09-09': 72 });
+  assert.equal(serveFirst(g).amount, 65);
+  assert.deepEqual(g.world.dayEarned, { '2026-09-09': 65 });
   send(g, { type: 'endShift' });
   g.advance(g.world.tables[0].until!);
   assert.deepEqual(g.world.dayShifts, { '2026-09-09': 1 });
@@ -99,7 +102,7 @@ test('same-day repeat rests do not grant twice; the next opening day and configu
 });
 
 test('offline rest qualifies by wall time but cannot bypass full-stamina opening or consume a failed grant', () => {
-  const g = create(); send(g, { type: 'startShift' });
+  const g = create(fullCooldown); send(g, { type: 'startShift' }); // the full-stamina opening is the subject: the first-shifts allowance is off
   send(g, { type: 'endShift' }, g.world.now + 1000);
   const anchor = g.world.restStartedAt;
   send(g, { type: 'activity', active: false });
@@ -121,7 +124,7 @@ test('hidden time preserves the remaining bonus through replay and never resurre
   assert.deepEqual(restored.world, g.world);
   send(restored, { type: 'activity', active: true });
   const table = restored.world.tables[0];
-  assert.equal(send(restored, { type: 'serve', tableId: table.id, orderId: table.order!.id }).amount, 72);
+  assert.equal(send(restored, { type: 'serve', tableId: table.id, orderId: table.order!.id }).amount, 65);
   restored.advance(restored.world.shift!.wellRestedUntil!);
   assert.equal(wellRestedRemaining(restored.world), 0);
   send(restored, { type: 'activity', active: false }); restored.advance(restored.world.now + 86400000);
