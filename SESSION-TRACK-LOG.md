@@ -7,6 +7,14 @@
 
 ---
 
+## Sửa ca 1 của founder sau PR #32 (config 2.1.3) — 2026-10-22/23 (IMPROVE-EARLY-GAME Part A, worker, nhánh `feat/shift1-founder-fixes`) — **BLOCKED: chờ founder**
+
+Founder (22/10/2026, sau khi xem PR #32 và chơi trumviahe.com cạnh trumbiahoi.com): (A1) "Mời về" không có ở ca 1 → key Tier C `onboarding.featureReveal.kickAfterShifts` 1, AND với HUD (`revealed().kick`); (A2) ca 1 không có khách "Bàn lai rai" → `onboarding.firstShift.excludedCustomerTypes` ["ngoily"], luật engine của ca onboarding, gate theo key (save ghim cũ chơi/replay như cũ; lịch sử S6 đã ghi vẫn đúng hash); (A3) đúng một nút "Mở ca" → thẻ "Quán nhỏ đã sẵn sàng." bỏ nút, chỉ xuống thanh dưới (`rest.startBelow`), giữ nút khi thanh dưới còn ẩn. Nhãn 2.1.2 → 2.1.3, không đổi số kinh tế. Báo cáo (không đổi): ca 1 vẫn có thuong 1,0 · voi 0,3 · vip 0,1 · chipheo 0,03; chỉ Chí Phèo ngồi lại sau mâm.
+Kiểm chứng (Windows): `check:config` · `check:i18n` (941) · `check:assets` · `build` · `build:guest` xanh; `npm test` 808, 47 đỏ = baseline, 0 mới; `sim:onboarding` · `sim:rush` · `sim:career:gate` (k 3,142 | 3,168) xanh; Playwright local đầy đủ (lượt 1: 355 + 3 đỏ ở `next-goal.spec` vì ví sau ca 1 không phục vụ đổi 24 515 → 24 480: sửa đầu vào base 9 828 → 9 842, mọi assertion giữ nguyên); guest smoke cục bộ 3/3; ảnh màn đầu `autopilot-logs/a-first-screen/`.
+**STOP:** `sim:balance` đỏ hai ô seed 42 ("LP1 và LP2 trước ca 48": 49; "chuỗi không mua ≤ 8": 10); seed 99 xanh, `shift1.plan` 86 % ĐẠT. A/B với danh sách rỗng = bảng 2.1.2 (xanh hết) → do A2. Không chỉnh số nào. Chi tiết + phương án: `.autopilot-state/reports/A-PR-BODY.md` §2, 08-SPEC changelog 2.1.3.
+Chưa phát hành: Netlify v6, Cloudflare v-fb2. File quyết định của founder bị ghi đè (đường dẫn không phân biệt hoa thường) → đã khôi phục ở `.autopilot-state/IMPROVE-EARLY-GAME-DECISIONS.md`.
+**Việc kế:** founder quyết STOP (§2) → orchestrator mở PR + chạy Linux static → B1.
+
 ## HUD đủ và nút Nâng cấp từ ca 1 (founder override, config 2.1.2) — 2026-10-22 (orchestrator, nhánh `feat/hud-from-shift-1`)
 
 Founder chơi `https://trumbiahoi.com` (v-fb2) bằng save mới và thấy thiếu thanh dưới (Mở ca · Nhập hàng · Nâng cấp), nút Cài đặt, đồng hồ ca và dải kho — F27 giấu chúng tới hết ca 1. Quyết định (founder, chọn phương án chỉ-đổi-config): `onboarding.featureReveal.hudAfterShifts` và `upgradeAfterShifts` 1 → 0, nhãn JSON 2.1.1 → **2.1.2**; không đổi code, CSS, copy hay số kinh tế; Hành trình / Nhiệm vụ / giải đấu giữ 2 / 2 / 3 ca. Ghi đè đúng hai ngưỡng của luật owner 18/09 "HUD ca 1 chỉ 3 thứ" (giữ nguyên làm lịch sử ở GDD §17, 09-SPEC, F27). Hệ quả cùng cổng `show.hud`: nút "Mời về" cũng hiện từ ca 1 (kick-table.spec cập nhật).
