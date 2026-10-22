@@ -123,6 +123,7 @@ test('JSON 2.1.4 in shift 1 of a new save beer never goes flat: the cooler badge
   await page.goto('/');
   await expect(page.locator('.cooler .capacity-badge')).toHaveText('∞');
   await expect(page.locator('.cooler .capacity-badge')).toHaveAccessibleName(copy('production.freshness', { count: '∞' }));
+  await page.screenshot({ path: '.qa/cooler-shift1-badge-vi.png' });
   await page.getByRole('button', { name: labels['equipment.cooler'], exact: true }).click();
   await expect(page.locator('.equipment-detail .upgrade-card .equipment-comparison section').first())
     .toContainText(copy('cooler.staleAfter', { seconds: seed.upgrades.cooler.freshnessMs[0]! / 1000, reputation: String(seed.reputation.staleGlass).replace('-', '−') }));
