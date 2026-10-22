@@ -7,6 +7,12 @@
 
 ---
 
+## Part A: founder quyết STOP + review vòng 1 — 2026-10-23 (worker, nhánh `feat/shift1-founder-fixes`) — chờ orchestrator kiểm và mở PR A
+
+Founder 23/10/2026 chọn **phương án (c)** (`.autopilot-state/A-FOUNDER-DECISION-2026-10-23.md`): giữ A1/A2/A3 như đã làm, không chỉnh số; hai ô seed 42 đỏ của `sim:balance` **chuyển sang B1, không miễn** (chạy lại giao thức trên A2 + B1, A/B seed 42 và 99 với `excludedCustomerTypes: []`, quét 10 seed để tham khảo; vẫn đỏ → STOP, báo số, không chỉnh); Part A **không phát hành riêng**. Dòng "BLOCKED: chờ founder" của block ngay dưới đã được quyết như vậy.
+Linux static trên `672dde4` xanh (run 39830190304: `npm test` 808/808, `verify:doctor` ✓, hash career = Windows). Review vòng 1: 0 BLOCKER, 0 MAJOR, 6 MINOR → đã xử lý: nút "Mời tất cả về" của sổ ca theo `show.kick` (+ test; `fullHud` đặt `kickAfterShifts` 0), thay trích dẫn test cũ trong bản đồ verify, lưu probe ca 1 ở `.autopilot-state/probes/` và chạy lại qua `run-logged.sh` (số y hệt), Chí Phèo ở ca 1 thành câu hỏi mở cho founder (F07), giới hạn màn ngang ≤ 500 px chuyển cho B2.8 (09-SPEC §4.2).
+Chưa phát hành: Netlify v6, Cloudflare v-fb2. **Việc kế:** orchestrator kiểm và mở PR A; B1 sau đó (không phải việc của worker A).
+
 ## Sửa ca 1 của founder sau PR #32 (config 2.1.3) — 2026-10-22/23 (IMPROVE-EARLY-GAME Part A, worker, nhánh `feat/shift1-founder-fixes`) — **BLOCKED: chờ founder**
 
 Founder (22/10/2026, sau khi xem PR #32 và chơi trumviahe.com cạnh trumbiahoi.com): (A1) "Mời về" không có ở ca 1 → key Tier C `onboarding.featureReveal.kickAfterShifts` 1, AND với HUD (`revealed().kick`); (A2) ca 1 không có khách "Bàn lai rai" → `onboarding.firstShift.excludedCustomerTypes` ["ngoily"], luật engine của ca onboarding, gate theo key (save ghim cũ chơi/replay như cũ; lịch sử S6 đã ghi vẫn đúng hash); (A3) đúng một nút "Mở ca" → thẻ "Quán nhỏ đã sẵn sàng." bỏ nút, chỉ xuống thanh dưới (`rest.startBelow`), giữ nút khi thanh dưới còn ẩn. Nhãn 2.1.2 → 2.1.3, không đổi số kinh tế. Báo cáo (không đổi): ca 1 vẫn có thuong 1,0 · voi 0,3 · vip 0,1 · chipheo 0,03; chỉ Chí Phèo ngồi lại sau mâm.
