@@ -6,6 +6,8 @@ Bản guest phát hành lên **hai host song song** từ cùng một lần build
 300 credit/tháng, 15 credit mỗi lần deploy production, 20 credit/GB băng thông; hết credit thì cả site Netlify bị dừng,
 còn `trumbiahoi.com` không bị ảnh hưởng. Bản build hiện tại nặng 55 MB (123 file), màn hình đầu đã tải khoảng 5,6 MB.
 
+> **Ghi chú 2026-10-23 (quyết định founder 2026-10-23):** hiện chỉ `https://trumbiahoi.com/` nhận bản phát hành; `https://trumbiahoi.netlify.app/` giữ bản cũ v6 (JSON 2.0.4) và không được khôi phục `v-fb2`. Hệ quả cho thủ tục: mục "Phát hành lên hai host". Số đo: [deploy-log "Host check — 2026-10-23"](deploy-log.md#host-check--2026-10-23-no-deployment).
+
 ## Quyết định 2026-09-30
 
 _Sửa 2026-10-14: không chuyển hẳn khỏi Netlify, hai host chạy song song. Xem mục kế tiếp._
@@ -55,6 +57,14 @@ _Sửa 2026-10-14: không chuyển hẳn khỏi Netlify, hai host chạy song so
    làm theo hướng dẫn DNS của template. Không gắn `www` làm custom domain thứ hai: đó sẽ là một origin khác với save riêng.
 5. **Giữ HTML không bị chỉnh:** không bật Rocket Loader, không bật tự chèn Web Analytics/RUM cho hostname này.
    Nhờ vậy file được phục vụ giống hệt file đã upload và hash trong biên nhận so khớp được (Netlify thì có chèn thẻ).
+   - **Ghi chú 2026-10-23 (quyết định founder 2026-10-23): Web Analytics đang bật và giữ bật** (câu "không bật tự chèn
+     Web Analytics/RUM" ở trên không còn áp dụng). Cloudflare chèn một thẻ `<script>` beacon
+     (`static.cloudflareinsights.com/beacon.min.js`) trước `</body>` của `index.html` khi request có `Accept: text/html`
+     (trình duyệt luôn gửi); request không có header đó (mặc định của curl là `Accept: */*`) nhận đúng file đã upload.
+     Vì vậy kiểm tra "trùng byte" của biên nhận (bước 6 của "Phát hành", bước 8 của "Phát hành lên hai host") **dùng request
+     không có `Accept: text/html`, hoặc bỏ thẻ `<script>` beacon trước khi hash**. Hash lấy kèm beacon đổi theo thẻ được chèn
+     (826 byte lúc 17:34Z ngày 22/10, 828 byte lúc đo 23/10), không dùng làm biên nhận. Số đo:
+     [deploy-log "Host check — 2026-10-23"](deploy-log.md#host-check--2026-10-23-no-deployment).
 
 Nếu không nối repo mà deploy bằng máy local: chạy `npm run cf -- login` (đăng nhập bằng trình duyệt), hoặc đặt
 `CLOUDFLARE_API_TOKEN` và `CLOUDFLARE_ACCOUNT_ID` trong môi trường tiến trình. Không commit token, không đưa token vào bản build.
@@ -83,6 +93,14 @@ version sinh ra từ push chỉ để xem thử, không promote làm bản phát
 
 Mỗi lần phát hành (quyết định 2026-10-14): **một lần `npm run build:guest`, một thư mục `apps/web/dist`, đưa lên cả hai host.**
 Build lại giữa chừng là hai host có thể phục vụ hai bản khác nhau, nên không làm.
+
+> **Ghi chú 2026-10-23 — quyết định founder 2026-10-23 "Netlify giữ bản cũ (v6), không khôi phục `v-fb2`".** Đo 23/10:
+> Netlify phục vụ v6 (deploy `6aad0f63f2091edfe7f7cf7b`, publish lại lúc 2026-10-22T14:56:24Z, trước đó chưa ghi ở đâu),
+> Cloudflare phục vụ `v-fb2` ([deploy-log "Host check — 2026-10-23"](deploy-log.md#host-check--2026-10-23-no-deployment)).
+> Mặc định suy ra từ quyết định đó (founder sửa nếu khác ý): **bản phát hành chỉ lên `https://trumbiahoi.com`** — làm phần
+> Cloudflare của các bước dưới (1, 1b, 2, 3 Cloudflare, 4–8 cho Cloudflare), bỏ phần Netlify; Netlify đứng yên ở v6 cho tới khi
+> founder nói khác. Luật "hai host luôn phục vụ cùng một bản build" (quyết định 2026-10-14) **tạm ngưng** từ 2026-10-22 14:56Z.
+> Thủ tục hai host giữ nguyên để dùng lại khi founder cho Netlify nhận bản mới.
 
 1. **Verify source một lần:** `npm run verify:all`, `npm run check:assets`. Ghi source commit (`git rev-parse HEAD`).
    1b. **Bảng cân bằng trên đúng source commit đó:** `npm run sim:balance` (~70 s) phải exit 0 với hàng `shift1.plan` ("shift 1 earns table 2 …") ĐẠT.
@@ -126,6 +144,8 @@ Kế hoạch cũ của mục này (redirect, xoá `netlify.toml`) đã bị ch�
 - **Không** deploy lên Netlify một site chỉ chứa `_redirects` với `/* https://trumbiahoi.com/:splat 301!`, và không xoá `netlify.toml`.
 - Người chơi ở mỗi origin giữ save riêng của origin đó (đã chấp nhận); không chuyển save giữa hai origin.
 - Nếu sau này muốn chuyển hẳn khỏi Netlify (redirect, xoá `netlify.toml`), đó là một quyết định mới của chủ dự án, ghi thành mục riêng.
+- **Ghi chú 2026-10-23:** quyết định founder 2026-10-23 không phải "chuyển hẳn": Netlify ở lại, không redirect, `netlify.toml` giữ,
+  nhưng site giữ bản v6 và không nhận bản phát hành mới cho tới khi founder nói khác (mục "Phát hành lên hai host").
 
 ## Kiểm tra cục bộ 2026-09-30 (chưa deploy)
 
@@ -192,3 +212,4 @@ gửi 780 heartbeat cách nhau 1 giây (một ca 12 phút cộng phần đóng q
 | 2026-10-14 | Owner decision: the guest edition is published on both hosts in parallel from one build — Netlify (`trumbiahoi.netlify.app`, `netlify.toml` stays) and Cloudflare (`trumbiahoi.com`). Netlify is not retired and gets no redirect; the two origins keep separate browser saves (accepted). Rewrote the opening paragraph and the `netlify.toml` row, replaced the "Chuyển hẳn khỏi Netlify" plan, added the "Phát hành lên hai host" procedure. No deployment performed, no host setting changed. |
 | 2026-10-22 | Stage 07 review round 1 (D2) — how to read the release smoke of the "Vui 3 ca" build (Waves 2–3, JSON 2.1.0): `apps/web/guest-test/guest.spec.ts` carries two SOFT assertions on the table-2 step of owner decision 1 (`P0: table 2 (1.070 xu) must be affordable …` and `table 2 is bought`); about one random game in five misses that purchase, so the spec can exit 1 at exactly those two lines while the rest of the journey is green (stage 07: Windows 3 of 6 three-viewport runs had such a red viewport, 4 of 18 viewport-runs; Linux 1 of 1 run, 2 of 3 viewports). The stop rule of step 4 and step 7 is unchanged: a red line OTHER than those two stops the release. Whether a run red ONLY at those two lines (or a re-run) may be promoted is an OWNER CALL ("đọc smoke guest của bản này", merge packet of `feat/economy-2-1` → `main`); until the owner decides, the rule as written applies. No procedure step changed, nothing deployed. |
 | 2026-10-22 | Owner call 4 answered (the founder, 2026-10-22; option B with a guardrail) — how to read the release smoke: the stop rule of step 4 keeps its words and gains ONE exception: a smoke red ONLY at the two soft "mua bàn 2" lines of `apps/web/guest-test/guest.spec.ts` (`P0: table 2 (1.070 xu) must be affordable …` and `table 2 is bought`), every other assertion green at all three viewports, may go on to step 5, provided the new step 1b holds on the exact source commit being released (`npm run sim:balance` exit 0 with the row `shift1.plan` PASS); otherwise the old stop rule applies. Red at any other line, at any viewport, still stops (fix, then back to step 1). Promotion still needs the owner's word at step 5. Step 7 reads the public smoke the same way; step 8's deploy-log entry gains two fields ("viewports red at the two soft lines", "`shift1.plan` result and commit"); `docs/deploy-log.md` lists the entry fields. The two `expect.soft` lines stay soft; no code change, nothing deployed. Supersedes the "OWNER CALL" sentence of the row above. |
+| 2026-10-23 | Docs sync after PR #32, no deployment, no setting changed — two founder decisions of 2026-10-23 recorded as dated notes (the old text stays): (1) Netlify keeps v6 and is not restored to `v-fb2` → defaults, for the founder to correct: releases go to `https://trumbiahoi.com` only (the Cloudflare half of "Phát hành lên hai host"), the "two hosts always serve the same build" rule is suspended from 2026-10-22 14:56Z, the procedure stays for later use, and this is not the "Chuyển hẳn khỏi Netlify" move (no redirect, `netlify.toml` stays); (2) Cloudflare Web Analytics stays on → setup step 5's "do not enable Web Analytics/RUM" no longer applies, and the byte-identical receipt check uses a request without `Accept: text/html` or removes the beacon `<script>` before hashing. Measurements: `docs/deploy-log.md` "Host check — 2026-10-23". |
