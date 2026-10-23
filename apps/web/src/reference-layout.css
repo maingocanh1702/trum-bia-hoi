@@ -437,6 +437,7 @@
 .message-slot > .beer-stock-warning { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; margin: 0; padding: 1px 3px 1px 8px; }
 .message-slot .prompt-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
 .message-slot .prompt-text > * { flex: none; margin: 0; line-height: 1.2; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; } /* at most 2 lines beside the button (44 px) */
+.message-slot .prompt-text > .status-line { padding: 0; text-align: left; } /* the closing line joining the beer prompt */
 .message-slot .prompt-text > .sr-only { position: absolute; } /* the prompt's words under the merged stock hint: for screen readers, out of the column */
 .message-slot > .beer-stock-warning > button { flex: 0 0 auto; }
 .message-slot > .beer-stock-warning .hint-line { font-size: 11px; color: #fff0b6; }

@@ -21,6 +21,7 @@ const states: Record<string, { at: () => Fixture; message: string | null; settin
   hint: { at: () => fx('hints', 'slot'), message: '.guide.hint' }, // a hint banner (onboarding on, the wallet pays table 2)
   'stock hint': { at: () => fx('hints', 'stock'), message: '.beer-stock-warning:has(.hint-line)' }, // the stock hint inside the beer prompt: one control
   closing: { at: () => fx('yard', 'closing'), message: '.status-line' }, // the player closed the shift, a guest still waits
+  'closing, low beer': { at: () => fx('yard', 'closing-low'), message: '.beer-stock-warning:has(.closing-line)' }, // the prompt keeps the slot, the closing line joins it
 };
 const viewports = [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1280, height: 720 }];
 async function boot(page: Page, at: Fixture, locale: string, settings: Record<string, unknown> = {}) {
@@ -61,7 +62,7 @@ for (const [state, s] of Object.entries(states)) for (const locale of ['vi', 'en
   }
   for (const t of g.targets) { expect(t.w, 'tap target width').toBeGreaterThanOrEqual(44); expect(t.h, 'tap target height').toBeGreaterThanOrEqual(44); }
   const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze(); expect(axe.violations).toEqual([]);
-  await tbh.shot(`b2-one-screen-${state.replace(' ', '-')}-${locale}-${viewport.width}x${viewport.height}.png`); expect(tbh.consoleErrors()).toEqual([]);
+  await tbh.shot(`b2-one-screen-${state.replace(/[ ,]+/g, '-')}-${locale}-${viewport.width}x${viewport.height}.png`); expect(tbh.consoleErrors()).toEqual([]);
 });
 
 // No layout shift (founder 2026-10-23, (e)): on a desktop the tables are height-bound, so a message that took height from the yard would resize all eight.

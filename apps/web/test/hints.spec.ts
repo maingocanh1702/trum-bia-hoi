@@ -66,6 +66,20 @@ test('B2.2 two moments at once: one hint at a time, the more urgent first, the n
   await expect(page.getByRole('dialog', { name: copy['goal.buyTable'], exact: true })).toBeVisible(); await expect(hint).toHaveCount(0);
 });
 
+// Founder 2026-10-23 (B2.8 second pass): the one-tap beer prompt keeps the one message slot; while it shows no other hint starts (none is spent unseen
+// behind it), and the one that waits comes once the refill ends the prompt. Fixture `both` (stock and slot moments) with the stock hint already done.
+test('B2.2 while the beer prompt holds the slot no other hint starts; the waiting one comes after the refill', async ({ page }) => {
+  const copy = copyOf('vi'), f = fixture('both');
+  await page.setViewportSize({ width: 390, height: 844 }); await page.clock.setFixedTime(f.now);
+  await page.addInitScript(({ save }) => { if (localStorage.getItem('hp-seeded')) return; localStorage.setItem('tbh.save.v1', save); localStorage.setItem('hp-seeded', '1');
+    localStorage.setItem('tbh.settings.v1', JSON.stringify({ locale: 'vi', guideDone: true, guideIndex: null, muted: true, hintsDone: ['stock'] })); }, { save: f.save });
+  await page.goto('/'); await expect(page.locator('.game-shell')).toBeVisible();
+  const prompt = page.locator('.message-slot > .beer-stock-warning'); await expect(prompt).toBeVisible(); await expect(prompt.getByRole('status')).toBeVisible();
+  await page.waitForTimeout(500); await expect(page.locator('.hint')).toHaveCount(0); // the slot hint waits
+  await prompt.getByRole('button').click(); await expect(prompt).toHaveCount(0);
+  await expect(page.locator('.message-slot > .guide.hint')).toHaveAttribute('data-hint', 'slot'); await expect(page.locator('.message-slot > .guide.hint p')).toHaveText(copy['hint.slot']);
+});
+
 // Review B2-r1: a hint never points at something the screen does not show. A config whose HUD is still hidden in shift 1 (`hudAfterShifts` 1, like a 2.1.1
 // pin's first shift) at the stock moment shows no strip and so no stock hint (fixtures/hints.ts `nohud`).
 test('B2.2 with the HUD still hidden there is no stock hint: its strip is not on screen', async ({ page }) => {
