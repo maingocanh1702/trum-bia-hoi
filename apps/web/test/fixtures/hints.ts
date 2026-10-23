@@ -6,6 +6,7 @@ import { fullHud } from './full-hud';
 // rush warning, the buy quote).
 //   hints stock     -> shift 1 opens with one beer in stock (below one refill batch)
 //   hints glasses   -> shift 1 with two glasses, played until both wait at the sink while beer stays poured (a real shortage; nothing else is lit)
+//   hints nohud     -> the stock moment of `stock` on a config whose HUD is still hidden in shift 1 (`hudAfterShifts` 1, as a 2.1.1 pin)
 //   hints clean     -> keg Lv3 (a reserve of 12 beers) with the 10 glasses all clean in an open shift: no glasses hint (review B2-r1)
 //   hints slot      -> shift 1 opens with the price of table 2 in the wallet
 //   hints both      -> stock and slot at once (one hint at a time: stock first, slot after it)
@@ -14,7 +15,8 @@ import { fullHud } from './full-hud';
 const mode = process.argv[2] ?? 'stock';
 const raw = fullHud(structuredClone(config.raw)); raw._meta.version = 'hints-fixture';
 for (const weather of Object.keys(raw.weather)) { const w = (raw.weather as Record<string, unknown>)[weather]; if (w && typeof w === 'object' && 'weight' in w) (w as { weight: number }).weight = weather === 'sunny' ? 1 : 0; }
-if (mode === 'stock' || mode === 'both') raw.inventory.startingStock.bia = [1, 1];
+if (mode === 'stock' || mode === 'both' || mode === 'nohud') raw.inventory.startingStock.bia = [1, 1];
+if (mode === 'nohud') raw.onboarding.featureReveal.hudAfterShifts = 1;
 if (mode === 'glasses') raw.glasses.start = 2;
 if (mode === 'clean') raw.shift.startingCoinsBase = 2_000_000; // the keg upgrades are bought with real commands below
 if (mode === 'slot' || mode === 'both') raw.shift.startingCoinsBase = raw.upgrades.table.tablePriceBase[0] + 200;

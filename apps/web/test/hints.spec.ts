@@ -58,3 +58,12 @@ test('B2.2 two moments at once: one hint at a time, the more urgent first, the n
   await page.locator('.yard .table-slot').first().click(); // the slot hint's target opens the buy card (B2.4); a sheet hides the hint
   await expect(page.getByRole('dialog', { name: copy['goal.buyTable'], exact: true })).toBeVisible(); await expect(hint).toHaveCount(0);
 });
+
+// Review B2-r1: a hint never points at something the screen does not show. A config whose HUD is still hidden in shift 1 (`hudAfterShifts` 1, like a 2.1.1
+// pin's first shift) at the stock moment shows no strip and so no stock hint (fixtures/hints.ts `nohud`).
+test('B2.2 with the HUD still hidden there is no stock hint: its strip is not on screen', async ({ page }) => {
+  const f = fixture('nohud');
+  await page.setViewportSize({ width: 390, height: 844 }); await boot(page, f, 'vi');
+  await expect(page.locator('.stock-strip')).toHaveCount(0); await expect(page.locator('.bottom-nav')).toHaveCount(0);
+  await page.waitForTimeout(500); await expect(page.locator('.hint')).toHaveCount(0);
+});

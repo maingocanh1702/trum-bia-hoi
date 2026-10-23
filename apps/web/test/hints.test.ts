@@ -54,6 +54,10 @@ test('B2.2 each just-in-time hint has its moment: stock, glasses, slot, rush and
     assert.equal(holds(hint!, g.world, g.config), true, `${mode} holds`);
     assert.equal(nextHint(g.world, g.config, [mode]), null, `${mode} shown once`);
     assert.equal(nextHint(g.world, g.config, [], { spotBusy: true })?.id ?? null, HINT_TARGET[mode] ? null : mode, `${mode} with another spotlight on`);
+    // Review B2-r1: the strip, the sink and the rush pill are HUD; with the HUD hidden (a pin's shift 1) their hints wait, and a shown one stops holding.
+    const hudOnly = ['stock', 'glasses', 'rush'].includes(mode);
+    assert.equal(nextHint(g.world, g.config, [], { hud: false })?.id === mode, !hudOnly, `${mode} without the HUD`);
+    assert.equal(holds(hint!, g.world, g.config, { hud: false }), !hudOnly, `${mode} holds without the HUD`);
   }
   // Review B2-r1: the glasses hint needs a real shortage (glasses at the sink, fewer clean than the beers poured): a returning save at keg Lv3, its 12-beer
   // reserve above the 10 glasses, with every glass clean in an open shift gets none.
@@ -63,6 +67,8 @@ test('B2.2 each just-in-time hint has its moment: stock, glasses, slot, rush and
   const short = at('glasses');
   assert.ok(short.world.glasses.some(x => x.state === 'dirty' || x.state === 'washing'), 'the glasses fixture has glasses at the sink');
   assert.equal(nextHint(short.world, short.config, others)?.id, 'glasses');
+  const nohud = at('nohud'); // the DOM case of hints.spec.ts: the moment is there, the HUD is not
+  assert.equal(nextHint(nohud.world, nohud.config, [])?.id, 'stock'); assert.equal(nextHint(nohud.world, nohud.config, [], { hud: false }), null);
   const both = at('both');
   assert.equal(nextHint(both.world, both.config, [])?.id, 'stock'); assert.equal(nextHint(both.world, both.config, ['stock'])?.id, 'slot');
   assert.equal(nextHint(both.world, both.config, ['stock'], { upgrades: false }), null, 'no tappable place while the Upgrades sheet is hidden');

@@ -24,7 +24,7 @@ export function hintRules(c: Config): HintRules {
 }
 
 const open = (w: WorldView) => w.phase === 'open' && !!w.shift;
-const moments: Record<HintId, (w: WorldView, c: Config, upgrades: boolean) => boolean> = {
+const moments: Record<HintId, (w: WorldView, c: Config) => boolean> = {
   // B2.1(d): the guest just served was past the tip window (`tip.patienceThreshold` of their own patience) with fresh beer.
   tipWindow: (w, c) => { const last = w.serves.at(-1); return open(w) && !!last && last.t >= w.shift!.startedAt && !last.stale && last.patienceRatio < c.values.tip.patienceThreshold; },
   // The rush warning is up (`rush.schedule.warningMs` before it starts).
@@ -37,22 +37,27 @@ const moments: Record<HintId, (w: WorldView, c: Config, upgrades: boolean) => bo
   // The moment of the quick beer prompt (stock below one refill batch, a refill possible).
   stock: (w, c) => open(w) && restockQuote(w, c, 'bia', 'full').quantity > 0 && w.inventory.bia < beerStatus(w, c).batchSize,
   // The next goal is a new table, the wallet pays it and a place is free (B2.4 makes the place a button).
-  slot: (w, c, upgrades) => { const goal = pickNextGoal(w, c); return upgrades && goal?.card.kind === 'buyTable' && buyTableQuote(w, c).ok && w.tables.length < tableSlots(w, c); },
+  slot: (w, c) => { const goal = pickNextGoal(w, c); return goal?.card.kind === 'buyTable' && buyTableQuote(w, c).ok && w.tables.length < tableSlots(w, c); },
 };
 
+/** What the screen shows: the Upgrades sheet (and so the tappable empty place), and the HUD whose strip, sink and rush pill three hints point at. */
+export interface Shown { upgrades?: boolean; hud?: boolean }
+// Review B2-r1: a hint never points at something the screen does not show (a pin that still hides the HUD shows only the keg).
+const shown = (h: HintId, ui: Shown) => (h !== 'slot' || (ui.upgrades ?? true)) && (!['stock', 'glasses', 'rush'].includes(h) || (ui.hud ?? true));
+
 /** Whether the moment the hint speaks about is still here. */
-export function holds(hint: Hint, w: WorldView, c: Config, upgrades = true): boolean {
-  return moments[hint.id](w, c, upgrades) && (hint.id !== 'tipWindow' || w.serves.length === hint.since);
+export function holds(hint: Hint, w: WorldView, c: Config, ui: Shown = {}): boolean {
+  return shown(hint.id, ui) && moments[hint.id](w, c) && (hint.id !== 'tipWindow' || w.serves.length === hint.since);
 }
 
 /**
  * The first hint whose moment is here and that was never shown (onboarding on), or null. A hint that lights a target waits while another spotlight is
- * on (`spotBusy`), so at most one element ever carries `data-spotlight`; `upgrades` is whether the Upgrades sheet (and the tappable empty place) is revealed.
+ * on (`spotBusy`), so at most one element ever carries `data-spotlight`; `upgrades` / `hud`: what the screen reveals (`Shown`).
  */
-export function nextHint(w: WorldView, c: Config, done: readonly string[], ui: { spotBusy?: boolean; upgrades?: boolean } = {}): Hint | null {
+export function nextHint(w: WorldView, c: Config, done: readonly string[], ui: Shown & { spotBusy?: boolean } = {}): Hint | null {
   if (!c.values.onboarding.enabled) return null;
   const rules = hintRules(c);
   if (rules.maxConcurrent < 1) return null;
-  const id = ORDER.find(h => !(rules.neverRepeatAfterDone && done.includes(h)) && !(ui.spotBusy && HINT_TARGET[h]) && moments[h](w, c, ui.upgrades ?? true));
+  const id = ORDER.find(h => !(rules.neverRepeatAfterDone && done.includes(h)) && !(ui.spotBusy && HINT_TARGET[h]) && shown(h, ui) && moments[h](w, c));
   return id ? { id, since: w.serves.length } : null;
 }

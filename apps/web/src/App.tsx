@@ -310,8 +310,8 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   const hintBlocked = Boolean(sheet || selectedEquipment || selectedTable || showGuide);
   const dismissedHint = useRef('');
   useEffect(() => {
-    if (hint) { if (!hintHolds(hint, w, game.config, show.upgrades)) setHint(null); return; }
-    const candidate = hintBlocked ? null : nextHint(w, game.config, prefs.current.hintsDone, { spotBusy: spot.target !== null, upgrades: show.upgrades });
+    if (hint) { if (!hintHolds(hint, w, game.config, { upgrades: show.upgrades, hud: show.hud })) setHint(null); return; }
+    const candidate = hintBlocked ? null : nextHint(w, game.config, prefs.current.hintsDone, { spotBusy: spot.target !== null, upgrades: show.upgrades, hud: show.hud });
     if (!candidate || `${candidate.id}:${candidate.since}` === dismissedHint.current) return;
     setHint(candidate);
     if (!prefs.current.hintsDone.includes(candidate.id)) prefs.current.hintsDone = [...prefs.current.hintsDone, candidate.id];
