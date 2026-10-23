@@ -30,9 +30,15 @@ test('B2.6 a finished rush recaps its own events: arrived, served, left (gone + 
     const at = events.indexOf(end); let start = at - 1;
     while (start >= 0 && !(events[start].type === 'rush_started' && events[start].data.slot === d.slot && events[start].data.shiftId === d.shiftId)) start--;
     assert.ok(start >= 0 && start < at);
-    const window: DomainEvent[] = events.slice(start + 1, at);
-    const penalty = window.filter(e => e.type === 'order_expired' || e.type === 'shipper_missed' || (e.type === 'customer_left' && e.data.reason === 'queue')).reduce((s, e) => s + Number(e.data.penalty ?? 0), 0);
-    assert.deepEqual(recap, { kind: d.kind, arrived: d.arrived, served: d.served, left: Number(d.lost) + Number(d.rejected), tips: d.tips, net: Number(d.revenue) - penalty, change: previousNet === null ? null : Number(d.revenue) - penalty - previousNet });
+    // The net restated from the raw events of the rush, not from the summary or the app's filter (review B2-r1): what its served orders paid minus what its
+    // guests' leaving cost (an order timing out, a guest giving up in the queue). A missed delivery is no guest's leaving and no delivery is in the revenue.
+    const window: DomainEvent[] = events.slice(start + 1, at), sum = (type: string, key: string, pick = (_: DomainEvent) => true) => window.filter(e => e.type === type && pick(e)).reduce((s, e) => s + Number(e.data[key] ?? 0), 0);
+    const net = sum('order_served', 'amount') - sum('order_expired', 'penalty') - sum('customer_left', 'penalty', e => e.data.reason === 'queue');
+    assert.equal(sum('order_served', 'amount'), Number(d.revenue), 'the revenue of the summary is the served orders of the rush');
+    assert.deepEqual(recap, { kind: d.kind, arrived: d.arrived, served: d.served, left: Number(d.lost) + Number(d.rejected), tips: d.tips, net, change: previousNet === null ? null : net - previousNet });
+    // A missed delivery inside the rush leaves its net as it is.
+    const missed = { id: 'missed', type: 'shipper_missed', at: 0, configVersion: config.version, idempotencyKey: 'missed', data: { penalty: 999 } } as DomainEvent;
+    assert.equal(rushRecap([...events.slice(0, at), missed, ...events.slice(at)], end)!.net, net);
     previousNet = recap.net;
   }
   const unscheduled = { id: 'x', type: 'rush_ended', at: 0, configVersion: config.version, idempotencyKey: 'x', data: { kind: 'light' } } as DomainEvent;
