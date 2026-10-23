@@ -401,13 +401,13 @@
 /* B2.8: one line for the rush pill (its kind and its clock), so the weather row stays one row high. */
 .rush-label b, .rush-label time { display: inline; }
 .rush-label > span { display: inline-flex; align-items: baseline; gap: 5px; white-space: nowrap; }
-/* Review B2-r2 (wide fonts): the weather row never wraps (the well-rested chip wrapped it to 62 px and scrolled the page at 360 × 740). On a phone its gaps and
-   paddings tighten; the rested chip and the rush pill keep their size, and if a wide font still needs room the weather's name ends in "…" (the whole name
-   stays in the DOM, and the icon says sun or rain). */
+/* Review B2-r2 (wide fonts): the weather row never wraps (the well-rested chip wrapped it to 62 px and scrolled the page at 360 × 740). In a phone-wide game
+   column (`.game` is the container, so a landscape phone counts too) its gaps and paddings tighten; the rested chip and the rush pill keep their size, and
+   if a wide font still needs room the weather's name ends in "…" (the whole name stays in the DOM, and the icon says sun or rain). */
 .weather-row > .well-rested, .weather-row > .rush-label { flex: none; }
 .weather-chip { min-width: 0; }
 .weather-chip > .weather-name { font-size: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-@media (max-width: 400px) { .weather-row { padding-left: 12px; padding-right: 12px; gap: 6px; } .weather-chip { padding-left: 6px; padding-right: 6px; } .well-rested, .rush-label { padding-left: 7px; padding-right: 7px; } }
+@container (max-width: 400px) { .weather-row { padding-left: 12px; padding-right: 12px; gap: 6px; } .weather-chip { padding-left: 6px; padding-right: 6px; } .well-rested, .rush-label { padding-left: 7px; padding-right: 7px; } }
 @media (max-height: 900px) {
   /* B2.8: a shorter stall on a short screen while it holds the early-game set (owner, keg, cooler, sink, glasses); a stall with a sign, the kitchen, the
      phone/QR props or the dog (its 94 px stand would reach the raised glass counter and sink) keeps the classic 200 px arrangement, and the yard scales its
@@ -455,7 +455,7 @@
    the 44 px row), and on a phone the refill puts its amount under its action (two pieces, each on one line: App.tsx `quickBeer`). */
 .message-slot .prompt-text:not(:has(small)) > * { -webkit-line-clamp: 3; }
 .message-slot .quick-beer > span { white-space: nowrap; }
-@media (max-width: 600px) { .message-slot .quick-beer { width: min-content; } }
+@container (max-width: 600px) { .message-slot .quick-beer { width: min-content; } } /* the game column (`.game`), not the viewport: a landscape phone too */
 .message-slot > .beer-stock-warning > .guide-skip { min-width: 44px; padding: 2px; background: transparent; color: var(--cream); font-size: 10px; text-decoration: underline; }
 /* A later stall (a sign, the kitchen, the phone/QR props, the dog) keeps the classic arrangement (founder 2026-10-23: out of this pass), and with it the
    slot as before the pass: no reserved height, so its page is no longer than it was. */
