@@ -401,14 +401,15 @@
 .rush-label b, .rush-label time { display: inline; }
 .rush-label > span { display: inline-flex; align-items: baseline; gap: 5px; white-space: nowrap; }
 @media (max-height: 900px) {
-  /* B2.8: a shorter stall on a short screen while it holds the early-game set (owner, keg, cooler, sink, glasses); a stall with a sign, the kitchen or the
-     phone/QR props keeps the classic 200 px arrangement, and the yard scales its tables to what is left. */
-  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen)) { height: 168px; }
-  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen)) .owner-station { top: 2px; transform: translateX(-50%) scale(.84); transform-origin: top center; }
-  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen)) .equipment-object.keg { top: 6px; }
-  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen)) .equipment-object.cooler { top: 92px; }
-  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen)) .equipment-object.washer { top: 92px; }
-  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen)) .glass-counter { top: 58px; }
+  /* B2.8: a shorter stall on a short screen while it holds the early-game set (owner, keg, cooler, sink, glasses); a stall with a sign, the kitchen, the
+     phone/QR props or the dog (its 94 px stand would reach the raised glass counter and sink) keeps the classic 200 px arrangement, and the yard scales its
+     tables to what is left. */
+  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen, .dog-object)) { height: 168px; }
+  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen, .dog-object)) .owner-station { top: 2px; transform: translateX(-50%) scale(.84); transform-origin: top center; }
+  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen, .dog-object)) .equipment-object.keg { top: 6px; }
+  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen, .dog-object)) .equipment-object.cooler { top: 92px; }
+  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen, .dog-object)) .equipment-object.washer { top: 92px; }
+  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen, .dog-object)) .glass-counter { top: 58px; }
   .beer-stock-warning { padding-top: 2px; padding-bottom: 2px; margin-bottom: 2px; }
   .beer-stock-warning p { line-height: 1.25; }
   .stall-scene { margin-top: 0; }
@@ -424,10 +425,12 @@
 /* B2.8: in a narrow yard (four places in under 340 px) an order bubble draws its dishes a little smaller, so neighbouring bubbles crowd each other less. */
 @container yard (max-width: 340px) { .table-order-hint { padding: 4px 5px; gap: 2px; } .table-order-hint .sprite { width: 16px; height: 22px; } }
 /* B2.8 / review A-r1 F1: on a landscape phone the sticky nav would sit over the lower buttons of the stock strip; there the strip is a row in the flow (after
-   the yard, above the nav), and the yard takes the width it frees. */
+   the yard, above the nav), and the yard takes the width it frees. The reputation button keeps its 46 px there (its column `flex: 0` would shrink it to its
+   padding in a row), and scrolling to a control (keyboard focus, scrollIntoView) stops above the nav (58 px tall here), so the nav never hides it. */
 @media (max-height: 500px) {
+  html { scroll-padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
   .stock-strip { position: static; flex-direction: row; flex-wrap: wrap; justify-content: center; width: auto; margin: 6px 12px; padding: 1px 6px; }
   .stock-strip > .beer-stock { border-bottom: 0; border-right: 2px solid #b9ccb6; border-radius: 15px 0 0 15px; margin-bottom: 0; padding-bottom: 2px; }
-  .stock-strip .reputation { border-top: 0; padding-top: 2px; }
+  .stock-strip .reputation { flex: none; border-top: 0; padding-top: 2px; }
   .yard { margin-right: 12px; }
 }
