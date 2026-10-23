@@ -803,5 +803,12 @@
   "outcome.slow": "Too slow · no tip",
   "order.tipOpen": "Tip still on",
   "hint.ok": "Got it",
-  "hint.tipWindow": "Serve while the timer is green to get a tip."
+  "hint.tipWindow": "Serve while the timer is green to get a tip.",
+  "production.washShort": "Wash {count}",
+  "customer.trait.thuong": "Average patience",
+  "customer.trait.voi": "Impatient · leaves soon",
+  "customer.trait.vip": "Big tips, quick to anger",
+  "customer.trait.chipheo": "Pays nothing · stays put",
+  "customer.trait.ngoily": "Stays long · many rounds",
+  "customer.trait.football_fan": "Stays for the match"
 }

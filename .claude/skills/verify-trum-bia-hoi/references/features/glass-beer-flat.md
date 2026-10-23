@@ -63,6 +63,8 @@ implemented**: `freshness.kegFreshnessEnabled`/`kegFreshnessMs`/`warnMs`/`staleC
 
 ## Existing proof
 
+- **Founder 2026-10-22, Part B2.3 (labels).** `apps/web/test/early-labels.spec.ts` `` `B2.3 the cooler and the sink say what their number is, and the beer line is for screen readers only (${locale}) at ${viewport.width}px` `` (vi/en × 390/360/1280: cooler badge text and name `production.freshness` with the level's seconds, sink badge `production.washShort` "Rửa 0/n", both one line on screen; `#beer-supply-status` `sr-only` with its words kept and no room taken; axe 0); `apps/web/test/economy2.spec.ts` `` `cooler explains each level and weather-adjusted HUD seconds in ${lang}/${weather}` `` and `JSON 2.1.4 in shift 1 of a new save beer never goes flat: the cooler badge reads ∞, while its sheet still states the level's own seconds (founder 2026-10-22)` now pin the labelled badge ("Giữ tươi 12 s", "Giữ tươi ∞"); `apps/web/test/production.spec.ts` `` `stocked beer capacity and upgrade comparison update live, with frozen batch progress in menus at ${width}px` `` pins "Rửa 0/1" / "Giữ tươi 8.04 s".
+
 - `packages/engine/test/production.test.ts` (8 tests): `'level one fills five servings before any
   customer and refills the vacancy as a glass leaves for service'`, `'a table larger than the tank
   assembles across batches without overflowing storage or double-consuming stock'`, `'a partial raw
@@ -205,3 +207,4 @@ still fire on a stale serve; `headless.ts` tracks the `stale` count alongside `k
 |---|---|
 | 2026-10-20 | S2 rules 28: instant pour (a seat-model game pours a ready beer into a clean glass in the tick of the order, freshness starts then); tests cited under Existing proof. No number changed. |
 | 2026-10-23 | Founder 2026-10-22, Part B1.3 (JSON 2.1.4): no glass goes flat in the onboarding shift (`onboarding.firstShift.staleDisabled`); the cooler badge reads ∞ there. Pins <= 2.1.3 unchanged. STOP: `sim:balance` + `sim:career:gate` red on this label, waiting for the founder (08-SPEC changelog 2026-10-23 / JSON 2.1.4). |
+| 2026-10-23 | Founder 2026-10-22, Part B2.3 (UI only): the cooler badge reads `production.freshness` ("Giữ tươi 12 s" / "Giữ tươi ∞"), the sink badge `production.washShort` ("Rửa 0/1"), and the beer line `beer.pipeline` is `sr-only` (its numbers are the keg badge, the stock strip and the glass counter). Proof cited under Existing proof. |

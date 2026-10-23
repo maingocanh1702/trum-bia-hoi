@@ -99,7 +99,7 @@ for (const lang of ['vi', 'en']) for (const weather of ['sunny', 'hot', 'humid']
   await page.locator('select').first().selectOption(lang); await page.keyboard.press('Escape');
   for (const [index, ms] of seed.upgrades.cooler.freshnessMs.entries()) {
     const duration = ms === null ? '∞' : copy('cooler.seconds', { seconds: Math.round(ms * seed.weather[weather].freshnessMult) / 1000 });
-    await expect(page.locator('.cooler .capacity-badge')).toHaveText(duration);
+    await expect(page.locator('.cooler .capacity-badge')).toHaveText(copy('production.freshness', { count: duration })); // founder 2026-10-22 (B2.3): labelled, was the bare seconds
     await expect(page.locator('.cooler .capacity-badge')).toHaveAccessibleName(copy('production.freshness', { count: duration }));
     await page.getByRole('button', { name: labels['equipment.cooler'], exact: true }).click();
     const card = page.locator('.equipment-detail .upgrade-card'), current = card.locator('.equipment-comparison section').first();
@@ -121,7 +121,7 @@ test('JSON 2.1.4 in shift 1 of a new save beer never goes flat: the cooler badge
   await page.setViewportSize({ width: 360, height: 740 }); await page.clock.pauseAt(new Date(f.now));
   await page.addInitScript(save => { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('tbh.settings.v1', JSON.stringify({ welcomed: true, guideDone: true })); }, f.save);
   await page.goto('/');
-  await expect(page.locator('.cooler .capacity-badge')).toHaveText('∞');
+  await expect(page.locator('.cooler .capacity-badge')).toHaveText(copy('production.freshness', { count: '∞' })); // B2.3: "Giữ tươi ∞" (the ∞ of shift 1 stays; was the bare '∞')
   await expect(page.locator('.cooler .capacity-badge')).toHaveAccessibleName(copy('production.freshness', { count: '∞' }));
   await page.screenshot({ path: '.qa/cooler-shift1-badge-vi.png' });
   await page.getByRole('button', { name: labels['equipment.cooler'], exact: true }).click();

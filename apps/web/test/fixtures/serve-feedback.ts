@@ -43,4 +43,11 @@ if (mode === 'window') {
   a.g.advance(a.order.placedAt + Math.round(a.own * (1 - raw.tip.patienceThreshold / 2)));
   if (a.order.state !== 'pending' || guestPatienceLeft(a.w, a.order, a.table.group!.customers[0]) >= raw.tip.patienceThreshold) throw Error('fixture:hint-not-late');
   process.stdout.write(JSON.stringify({ ...moment(a.g), completedShifts: a.w.completedShifts }));
+} else if (mode === 'trait') {
+  // B2.3: a seated guest of one type (the only weight left) whose order waits, onboarding off; `serve-feedback trait vip` etc.
+  const type = process.argv[3] ?? 'thuong', raw = fullHud(structuredClone(config.raw)); raw._meta.version = 'serve-feedback-fixture'; raw.onboarding.enabled = false; raw.spawn.pPair = 0;
+  for (const [key, profile] of Object.entries(raw.customerTypes)) if ('weight' in profile) profile.weight = key === type ? 1 : key === 'thuong' ? 0.0001 : 0; // a VIP-only mix is not a valid config (signboard weights): a trace of regulars stays
+  const a = readyOrder(raw);
+  if (a.table.group!.customers[0].type !== type) throw Error(`fixture:trait-type ${a.table.group!.customers[0].type}`);
+  process.stdout.write(JSON.stringify(moment(a.g)));
 } else throw Error(`fixture:mode ${mode}`);

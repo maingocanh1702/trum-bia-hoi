@@ -109,16 +109,18 @@ for (const locale of ['vi', 'en'] as const) for (const viewport of viewports) te
 });
 
 // A live shift (fixture `live`: two one-chair tables in the first row, a ready order and its bubble, which carries the one spotlight): the bubble of a
-// first-row table rises into the band the grid keeps above its rows and never covers the beer line (S2's one set of numbers) or the door band.
-for (const viewport of viewports) test(`S6 on a live shift the order bubble of a first-row table stays below the beer line and the door band, and one thing blinks, at ${viewport.width}px`, async ({ page, tbh }) => {
+// first-row table rises into the band the grid keeps above its rows and never covers the keg's numbers or the door band. Founder 2026-10-22 (B2.3): the beer
+// line (S2's one set of numbers, which this test guarded until then) repeated the keg badge, the stock strip and the glass counter and is for screen readers only.
+for (const viewport of viewports) test(`S6 on a live shift the order bubble of a first-row table stays below the keg's numbers and the door band, and one thing blinks, at ${viewport.width}px`, async ({ page, tbh }) => {
   await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   const { f } = await boot(page, 'vi', 'live');
   expect(f.readyTable).toBeLessThan(2); // a table of the first row
   const bubble = page.locator(`.table-space.table-${f.readyTable} .table-order-hint`); await expect(bubble).toHaveClass(/is-ready/);
   await expect(page.locator('[data-spotlight]')).toHaveCount(1); await expect(bubble).toHaveAttribute('data-spotlight', ''); // P0: the ready order is the one thing that blinks
-  const [hint, beer, door, grid] = await Promise.all([bubble.boundingBox(), page.locator('#beer-supply-status').boundingBox(), page.locator('.yard-door').boundingBox(), page.locator('.yard-grid').boundingBox()]);
-  expect(hint && beer && door && grid).toBeTruthy();
-  expect(overlaps(hint!, beer!), 'the bubble covers the beer line').toBe(false);
+  await expect(page.locator('#beer-supply-status')).toHaveClass(/sr-only/);
+  const [hint, keg, door, grid] = await Promise.all([bubble.boundingBox(), page.locator('.equipment-object.keg .capacity-badge').boundingBox(), page.locator('.yard-door').boundingBox(), page.locator('.yard-grid').boundingBox()]);
+  expect(hint && keg && door && grid).toBeTruthy();
+  expect(overlaps(hint!, keg!), 'the bubble covers the keg\'s numbers').toBe(false);
   expect(hint!.y).toBeGreaterThanOrEqual(door!.y + door!.height - 1); // below the door band, which stays free for the queue
   expect(hint!.y).toBeGreaterThanOrEqual(grid!.y - 1); // inside the band the grid keeps above its first row
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

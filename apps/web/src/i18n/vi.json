@@ -803,5 +803,12 @@
   "outcome.slow": "Chậm · không có boa",
   "order.tipOpen": "Còn boa",
   "hint.ok": "Đã hiểu",
-  "hint.tipWindow": "Bưng khi đồng hồ còn xanh để có boa."
+  "hint.tipWindow": "Bưng khi đồng hồ còn xanh để có boa.",
+  "production.washShort": "Rửa {count}",
+  "customer.trait.thuong": "Kiên nhẫn vừa",
+  "customer.trait.voi": "Ít kiên nhẫn · về nhanh",
+  "customer.trait.vip": "Boa đậm, dễ giận",
+  "customer.trait.chipheo": "Không trả tiền · ngồi dai",
+  "customer.trait.ngoily": "Ngồi lâu · gọi nhiều đợt",
+  "customer.trait.football_fan": "Ngồi lâu xem bóng"
 }
