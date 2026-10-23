@@ -555,10 +555,10 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
         : lowBeerStock ? <section className="beer-stock-warning" aria-label={t('stock.quickBeerTitle')}>
         {/* B2.2 + founder 2026-10-23 (d): the stock hint comes with this prompt (same moment), so it takes the prompt's text line, one banner; the prompt's own
             words stay for screen readers, its action and price stay on the button, and the strip it points at says the stock. */}
-        <p role="status" className={hint?.id === 'stock' && !hintBlocked ? 'sr-only' : undefined}>{t(w.inventory.bia === 0 ? 'stock.beerEmpty' : 'stock.beerLow')}</p>
-        {hint?.id === 'stock' && !hintBlocked && <p className="hint hint-line" data-hint="stock">{t('hint.stock')}</p>}
+        <div className="prompt-text"><p role="status" className={hint?.id === 'stock' && !hintBlocked ? 'sr-only' : undefined}>{t(w.inventory.bia === 0 ? 'stock.beerEmpty' : 'stock.beerLow')}</p>
+          {hint?.id === 'stock' && !hintBlocked && <p className="hint hint-line" data-hint="stock">{t('hint.stock')}</p>}
+          {w.coins < beerRestock.cost && <small>{t('error.notEnoughCoins')}</small>}</div>
         <button {...lit(spot.target?.kind === 'restock')} aria-describedby="beer-supply-status" disabled={!beerRestock.ok} onClick={() => run({ type: 'restock', dish: 'bia', mode: 'full' })}>{t('stock.quickBeer', { n: num(beerRestock.quantity), cost: num(beerRestock.cost) })}</button>
-        {w.coins < beerRestock.cost && <small>{t('error.notEnoughCoins')}</small>}
           </section>
         : quickChair ? <section className="beer-stock-warning quick-chair" aria-label={t('upgrade.quickChairTitle')}><button onClick={() => run({ type: 'buyChair', tableId: quickChair.tableId })}>{t('upgrade.quickChair', { n: quickChair.n, cost: num(quickChair.cost) })}</button></section> : null}</div>
       {show.hud && <nav className="bottom-nav" aria-label={t('brand')}>

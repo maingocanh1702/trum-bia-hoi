@@ -434,11 +434,11 @@
 .message-slot > * { flex: 0 1 530px; min-width: 0; max-height: 48px; margin: 0; box-sizing: border-box; }
 .message-slot > .guide { padding: 1px 6px 1px 8px; }
 .message-slot > .guide p { line-height: 1.25; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
-.message-slot > .beer-stock-warning { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; align-content: center; column-gap: 8px; margin: 0; padding: 1px 3px 1px 8px; }
-.message-slot > .beer-stock-warning > :not(button) { grid-column: 1; margin: 0; line-height: 1.2; flex: none; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-.message-slot > .beer-stock-warning > .sr-only { position: absolute; } /* the prompt's words under the merged stock hint: for screen readers, out of the grid */
-.message-slot > .beer-stock-warning > button { grid-column: 2; grid-row: 1 / span 3; flex: none; }
-.message-slot > .beer-stock-warning.quick-chair { display: flex; }
+.message-slot > .beer-stock-warning { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; margin: 0; padding: 1px 3px 1px 8px; }
+.message-slot .prompt-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+.message-slot .prompt-text > * { flex: none; margin: 0; line-height: 1.2; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; } /* at most 2 lines beside the button (44 px) */
+.message-slot .prompt-text > .sr-only { position: absolute; } /* the prompt's words under the merged stock hint: for screen readers, out of the column */
+.message-slot > .beer-stock-warning > button { flex: 0 0 auto; }
 .message-slot > .beer-stock-warning .hint-line { font-size: 11px; color: #fff0b6; }
 .message-slot > .status-line { flex: 0 1 auto; padding: 0; text-align: center; }
 /* A later stall (a sign, the kitchen, the phone/QR props, the dog) keeps the classic arrangement (founder 2026-10-23: out of this pass), and with it the
