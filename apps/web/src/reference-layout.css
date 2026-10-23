@@ -404,37 +404,54 @@
 @media (max-height: 900px) {
   /* B2.8: a shorter stall on a short screen while it holds the early-game set (owner, keg, cooler, sink, glasses); a stall with a sign, the kitchen, the
      phone/QR props or the dog (its 94 px stand would reach the raised glass counter and sink) keeps the classic 200 px arrangement, and the yard scales its
-     tables to what is left. */
-  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen, .dog-object)) { height: 168px; }
-  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen, .dog-object)) .owner-station { top: 2px; transform: translateX(-50%) scale(.84); transform-origin: top center; }
-  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen, .dog-object)) .equipment-object.keg { top: 6px; }
-  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen, .dog-object)) .equipment-object.cooler { top: 92px; }
-  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen, .dog-object)) .equipment-object.washer { top: 92px; }
-  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen, .dog-object)) .glass-counter { top: 58px; }
-  .beer-stock-warning { padding-top: 2px; padding-bottom: 2px; margin-bottom: 2px; }
-  .beer-stock-warning p { line-height: 1.25; }
+     tables to what is left. Second pass (founder 2026-10-23): 152 px (was 168), the owner drawn at .8, the devices closer, the HUD row gaps and the nav
+     lower, so the message slot above the nav fits in one screen at 360×740 and 1280×720. */
+  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen, .dog-object)) { height: 152px; }
+  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen, .dog-object)) .owner-station { top: 0; transform: translateX(-50%) scale(.8); transform-origin: top center; }
+  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen, .dog-object)) .equipment-object.keg { top: 2px; }
+  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen, .dog-object)) .equipment-object.cooler { top: 80px; }
+  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen, .dog-object)) .equipment-object.washer { top: 80px; }
+  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen, .dog-object)) .glass-counter { top: 50px; }
   .stall-scene { margin-top: 0; }
-  .hud { padding-top: 4px; padding-bottom: 2px; }
-  .goal-row { padding-bottom: 2px; }
+  .hud { padding-top: 2px; padding-bottom: 0; }
+  .game .goal-row { padding-bottom: 2px; } /* .game: goals.css, loaded later, sets 6 px */
   .weather-row { min-height: 24px; }
   .rush-label { padding-top: 3px; padding-bottom: 3px; }
   .yard-door { min-height: 38px; }
-  .bottom-nav { padding-top: 4px; padding-bottom: max(6px, env(safe-area-inset-bottom)); }
-  .bottom-nav > button { min-height: 48px; gap: 3px; }
+  .bottom-nav { padding-top: 3px; padding-bottom: max(3px, env(safe-area-inset-bottom)); }
+  .bottom-nav > button { min-height: 44px; gap: 2px; padding-top: 3px; padding-bottom: 3px; }
+  .bottom-nav > button svg { width: 20px; height: 20px; }
   .bottom-nav > button > span { line-height: 1.15; }
 }
-/* B2.8: the closing line, the step guide or a hint, and the nav stick together at the bottom (App.tsx `.bottom-dock`). When a banner pushes the one-screen page
-   past the screen (360×740, 1280×720: the yard is already at its least height), it stays above the nav, over the yard's empty bottom band, instead of sliding
-   under the nav; the dock's empty width lets taps through to the yard. */
+/* B2.8: the message slot and the nav stick together at the bottom (App.tsx `.bottom-dock`); the dock's empty width lets taps through.
+   Second pass (founder 2026-10-23, "Thêm một lượt cho đầu game"): every message (the closing line, the step guide, a hint, the one-tap beer prompt with the
+   stock hint, the quick chair) takes turns in ONE slot above the nav whose height is always reserved. The yard never resizes when a message comes or goes
+   (no layout shift on a desktop, whose tables are height-bound), no message covers a table, and the page stays one screen: the room comes from the HUD row
+   gaps, the shorter early-game stall and the lower nav above, never from the table bands. On a landscape phone (≤ 500 px) the slot is not reserved. */
 .bottom-dock { position: sticky; bottom: 0; z-index: 10; display: flex; flex-direction: column; pointer-events: none; }
 .bottom-dock > * { pointer-events: auto; }
-.bottom-dock > .status-line { background: var(--streetBg); padding-bottom: 4px; }
+.message-slot { display: flex; align-items: center; justify-content: center; height: 48px; padding: 0 12px; overflow: hidden; background: var(--streetBg); }
+.message-slot > * { flex: 0 1 530px; min-width: 0; max-height: 48px; margin: 0; box-sizing: border-box; }
+.message-slot > .guide { padding: 1px 6px 1px 8px; }
+.message-slot > .guide p { line-height: 1.25; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.message-slot > .beer-stock-warning { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; align-content: center; column-gap: 8px; margin: 0; padding: 1px 3px 1px 8px; }
+.message-slot > .beer-stock-warning > :not(button) { grid-column: 1; margin: 0; line-height: 1.2; flex: none; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.message-slot > .beer-stock-warning > .sr-only { position: absolute; } /* the prompt's words under the merged stock hint: for screen readers, out of the grid */
+.message-slot > .beer-stock-warning > button { grid-column: 2; grid-row: 1 / span 3; flex: none; }
+.message-slot > .beer-stock-warning.quick-chair { display: flex; }
+.message-slot > .beer-stock-warning .hint-line { font-size: 11px; color: #fff0b6; }
+.message-slot > .status-line { flex: 0 1 auto; padding: 0; text-align: center; }
+/* A later stall (a sign, the kitchen, the phone/QR props, the dog) keeps the classic arrangement (founder 2026-10-23: out of this pass), and with it the
+   slot as before the pass: no reserved height, so its page is no longer than it was. */
+.game:has(.stall-scene .sign-object, .stall-scene .business-props > button, .stall-scene .equipment-object.kitchen, .stall-scene .dog-object) .message-slot { height: auto; }
+.game:has(.stall-scene .sign-object, .stall-scene .business-props > button, .stall-scene .equipment-object.kitchen, .stall-scene .dog-object) .message-slot:empty { display: none; }
 /* B2.8 / review B2-r1 and Linux CI: a caption line never wraps in the 4-column grid, whatever the font, so a caption is at most three lines and the bubble of
    the table below never reaches it; a line too long for its table ends in an ellipsis (the whole text stays in the DOM for screen readers). */
 .table-caption { line-height: 1.2; } /* explicit, so a caption's height does not follow the font's own line gap */
 .table-caption > :not(time) { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* An empty table's caption (no guest label, no countdown) may give its state and its seats line two lines each: still inside the caption band. */
 .table-caption:not(:has(.guest-label, time)) > :is(span, small) { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.table-caption > time { white-space: nowrap; } /* an inline-block with overflow: hidden would sit on its bottom edge and grow the line */
 /* B2.8: in a narrow yard (four places in under 340 px) an order bubble draws its dishes a little smaller, so neighbouring bubbles crowd each other less. */
 @container yard (max-width: 340px) { .table-order-hint { padding: 4px 5px; gap: 2px; } .table-order-hint .sprite { width: 16px; height: 22px; } }
 /* B2.8 / review A-r1 F1: on a landscape phone the sticky nav would sit over the lower buttons of the stock strip; there the strip is a row in the flow (after
@@ -442,6 +459,7 @@
    padding in a row), and scrolling to a control (keyboard focus, scrollIntoView) stops above the nav (58 px tall here), so the nav never hides it. */
 @media (max-height: 500px) {
   html { scroll-padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+  .message-slot { height: auto; padding: 0 12px 2px; } .message-slot:empty { display: none; }
   .stock-strip { position: static; flex-direction: row; flex-wrap: wrap; justify-content: center; width: auto; margin: 6px 12px; padding: 1px 6px; }
   .stock-strip > .beer-stock { border-bottom: 0; border-right: 2px solid #b9ccb6; border-radius: 15px 0 0 15px; margin-bottom: 0; padding-bottom: 2px; }
   .stock-strip .reputation { flex: none; border-top: 0; padding-top: 2px; }

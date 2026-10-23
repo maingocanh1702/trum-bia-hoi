@@ -32,17 +32,23 @@ for (const [mode, locale] of [['stock', 'vi'], ['glasses', 'vi'], ['slot', 'vi']
   const hint = page.locator('.hint');
   await expect(hint).toHaveCount(1); await expect(hint).toHaveAttribute('data-hint', mode);
   const words = fill(copy[`hint.${mode}`], { s: new Intl.NumberFormat(locale === 'vi' ? 'vi-VN' : 'en-US', { maximumFractionDigits: 2 }).format(f.freshnessS ?? 0), kind: copy[`rush.${f.rush ?? 'light'}`] });
-  await expect(hint.locator('p')).toHaveText(words);
+  // Founder 2026-10-23 (d): the stock hint always comes with the one-tap beer prompt, so it is a line of that prompt (one banner), not a banner of its own.
+  const text = mode === 'stock' ? hint : hint.locator('p');
+  if (mode === 'stock') await expect(page.locator('.beer-stock-warning')).toContainText(words);
+  await expect(text).toHaveText(words);
   expect(words.split(/\s+/).length).toBeLessThanOrEqual(12); // F27: at most 12 words a step
-  await expect(page.locator('.guide')).toHaveCount(1); // one banner
+  await expect(page.locator('.message-slot > *')).toHaveCount(1); // one banner, in the one slot above the nav
   await expect(page.locator('[data-spotlight]')).toHaveCount(1); await expect(page.locator(lit[mode])).toHaveAttribute('data-spotlight', '');
   expect(await axe(page)).toEqual([]);
   await tbh.shot(`b2-hint-${mode}-${locale}.png`);
-  await hint.getByRole('button', { name: copy['hint.ok'], exact: true }).click();
-  await expect(hint).toHaveCount(0);
-  if (mode !== 'freshness') await expect(page.locator('[data-spotlight]')).toHaveCount(0); // the hint took its light with it
+  if (mode !== 'stock') { // the merged stock line has no button of its own: it goes with the prompt (its refill, or the end of the moment)
+    await hint.getByRole('button', { name: copy['hint.ok'], exact: true }).click();
+    await expect(hint).toHaveCount(0);
+    if (mode !== 'freshness') await expect(page.locator('[data-spotlight]')).toHaveCount(0); // the hint took its light with it
+  }
   await page.reload(); await expect(page.locator('.game-shell')).toBeVisible(); await page.waitForTimeout(500);
   await expect(hint).toHaveCount(0); // done once: the moment is still here, the hint is not
+  if (mode === 'stock') await expect(page.locator('.beer-stock-warning')).toBeVisible(); // ... the prompt is, with its own words
   expect(tbh.consoleErrors()).toEqual([]);
 });
 
@@ -52,8 +58,9 @@ test('B2.2 two moments at once: one hint at a time, the more urgent first, the n
   const hint = page.locator('.hint');
   await expect(hint).toHaveCount(1); await expect(hint).toHaveAttribute('data-hint', 'stock');
   await expect(page.locator('[data-spotlight]')).toHaveCount(1);
-  await hint.getByRole('button', { name: copy['hint.ok'], exact: true }).click();
-  await expect(hint).toHaveCount(1); await expect(hint).toHaveAttribute('data-hint', 'slot'); // the next moment, its own banner
+  // The stock line goes with its prompt: the prompt's one tap refills, the stock moment ends, and the next moment brings its own banner in the slot.
+  await page.locator('.beer-stock-warning button').click();
+  await expect(hint).toHaveCount(1); await expect(hint).toHaveAttribute('data-hint', 'slot'); await expect(page.locator('.beer-stock-warning')).toHaveCount(0);
   await expect(page.locator('[data-spotlight]')).toHaveCount(1); await expect(page.locator('.yard .table-slot').first()).toHaveAttribute('data-spotlight', '');
   await page.locator('.yard .table-slot').first().click(); // the slot hint's target opens the buy card (B2.4); a sheet hides the hint
   await expect(page.getByRole('dialog', { name: copy['goal.buyTable'], exact: true })).toBeVisible(); await expect(hint).toHaveCount(0);
