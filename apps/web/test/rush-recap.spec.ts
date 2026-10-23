@@ -19,7 +19,7 @@ async function boot(page: Page, at: { save: string; now: number }, locale: strin
     localStorage.setItem('tbh.settings.v1', JSON.stringify({ locale, guideDone: true, guideIndex: null, muted: true, hintsDone: ['tipWindow', 'rush', 'freshness', 'glasses', 'stock', 'slot'] }));
   }, { save: at.save, locale });
   await page.goto('/'); await expect(page.locator('.game-shell')).toBeVisible();
-  await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 200));
+  await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 2000)); // the clock runs until paused: room for a loaded machine (the fixture leaves 10 s)
 }
 const axe = async (page: Page) => (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations.map(v => ({ id: v.id, nodes: v.nodes.map(n => n.target) }));
 
