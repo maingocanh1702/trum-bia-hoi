@@ -21,7 +21,7 @@ function secondShift() {
   return g;
 }
 
-test('B2.6 a finished rush recaps its own events: arrived, served, left (gone + turned away), tips, net after penalties, and the change against the rush before it', () => {
+test('B2.6 a finished rush recaps its own events: arrived, served, left (gone + turned away), tips, net after penalties, and the change against the rush before it; without its own events (a remote snapshot) there is no card', () => {
   const g = secondShift(), events = g.world.events, ended = events.filter(e => e.type === 'rush_ended' && typeof e.data.arrived === 'number');
   assert.ok(ended.length >= 2, `rushes recapped: ${ended.length}`);
   let previousNet: number | null = null;
@@ -37,4 +37,12 @@ test('B2.6 a finished rush recaps its own events: arrived, served, left (gone + 
   }
   const unscheduled = { id: 'x', type: 'rush_ended', at: 0, configVersion: config.version, idempotencyKey: 'x', data: { kind: 'light' } } as DomainEvent;
   assert.equal(rushRecap([...events, unscheduled], unscheduled), null, 'a rush_ended without its summary (an older snapshot) has no recap');
+  // A remote snapshot carries only the order_served of open orders and the rush_ended of its shift (apps/server/src/http.ts `publicState`): the rush's
+  // penalties are not on hand, so there is no card rather than a net that leaves them out.
+  const presentation = events.filter(e => e.type === 'order_served' || e.type === 'rush_ended');
+  for (const end of ended) assert.equal(rushRecap(presentation, end), null, 'no card without the rush\'s own events');
+  // The rush before it lost its start (a trimmed log): this rush keeps its card, without a change line.
+  const firstStart = events.find(e => e.type === 'rush_started' && e.data.slot === ended[0].data.slot && e.data.shiftId === ended[0].data.shiftId)!;
+  const second = rushRecap(events.filter(e => e !== firstStart), ended[1])!;
+  assert.deepEqual(second, { ...rushRecap(events, ended[1])!, change: null });
 });
