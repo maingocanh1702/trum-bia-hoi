@@ -5,6 +5,7 @@ const raw = structuredClone(config.raw);
 raw.onboarding.enabled = false; raw.inventory.startingStock.bia[0] = 0;
 // Seat model (rules 28): the mixed pair needs the first table's second chair; the wallet covers that chair exactly.
 raw.spawn.pPair = 1; raw.upgrades.table.chairsAfterTables = 1; raw.shift.startingCoinsBase += raw.upgrades.table.chairPriceBase[0];
+raw.spawn.singlesFirstShifts = 0; // pairs in a save's first shift: the 2.1.4 rule `spawn.singlesFirstShifts` (singles in the first three shifts, founder 2026-10-23) is off
 Object.entries(raw.customerTypes).forEach(([key, profile]) => { profile.weight = key === 'thuong' || key === 'voi' ? 1 : 0; });
 const game = new Game(loadConfig(raw), 8, Date.parse('2026-09-08T10:00:00Z'));
 game.command({ idempotencyKey: 'mixed-grace-chair', at: game.world.now, command: { type: 'buyChair', tableId: game.world.tables[0].id } });

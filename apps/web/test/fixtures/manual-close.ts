@@ -7,7 +7,7 @@ for (const k of ['hot', 'humid', 'rain', 'cold'] as const) raw.weather[k].weight
 if (mode === 'poor') raw.shift.startingCoinsBase = 1;
 if (mode === 'occupied') {
   // Seat model (rules 28): the thuong + Chi Pheo pair sits at the first table's second chair; the wallet covers that chair exactly.
-  raw.onboarding.enabled = false; raw.spawn.pPair = 1; raw.upgrades.table.orderShape.pair.pMoi = 0;
+  raw.onboarding.enabled = false; raw.spawn.pPair = 1; raw.upgrades.table.orderShape.pair.pMoi = 0; raw.spawn.singlesFirstShifts = 0; // pairs in a save's first shift: the 2.1.4 rule `spawn.singlesFirstShifts` (singles in the first three shifts, founder 2026-10-23) is off
   raw.upgrades.table.chairsAfterTables = 1; raw.shift.startingCoinsBase += raw.upgrades.table.chairPriceBase[0];
   Object.entries(raw.customerTypes).forEach(([key, profile]) => { profile.weight = key === 'thuong' || key === 'chipheo' ? 1 : 0; });
 }
