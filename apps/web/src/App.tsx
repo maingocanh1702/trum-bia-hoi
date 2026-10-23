@@ -342,7 +342,10 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   const queueLeft = report?.losses.queue ?? 0, leftSeated = shift ? Math.max(0, shift.stats.lost - queueLeft) : 0, noEntry = shift ? shift.stats.rejected + queueLeft : 0;
   const guideOrder = w.tables.filter(table => table.order && ['pending', 'grace'].includes(table.order.state))
     .sort((a, b) => a.order!.placedAt + a.order!.patienceMs - b.order!.placedAt - b.order!.patienceMs)[0]?.order;
-  const guideWords = showGuide ? t(guide.waitFor === 'order_ready' ? `order.feedback.${orderPreparation(w, game.config, guideOrder)}` : guide.copyKey) : '';
+  const guideKey = showGuide ? guide.waitFor === 'order_ready' ? `order.feedback.${orderPreparation(w, game.config, guideOrder)}` : guide.copyKey : '', guideWords = showGuide ? t(guideKey) : '';
+  // Review B2-r3: beside the refill and "Bỏ qua" a guide line too long for 3 lines in a wide font (DejaVu on Linux) shows its short form (`short.*`); the
+  // whole sentence stays in the line for screen readers.
+  const guideJoined = hasCopy(`short.${guideKey}`) ? <><span aria-hidden="true">{t(`short.${guideKey}`)}</span><span className="sr-only">{guideWords}</span></> : guideWords;
   const skipGuide = c.onboarding.stepGuide.skippable && <button className="guide-skip" aria-describedby="guide-line" onClick={() => setPrefs({ guideDone: true, guideIndex: null })}>{t('skip')}</button>;
   const guideBanner = <div className="guide" role="status"><span className="guide-mark">!</span><p id="guide-line">{guideWords}</p>{skipGuide}</div>;
   // Review B2-r2: the refill's label in two pieces, the action and the amount, so a narrow slot breaks it between them (reference-layout.css `.quick-beer`).
@@ -571,7 +574,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
           (one banner; the prompt's own words stay for screen readers) and the guide keeps its "Bỏ qua" there. Then the step guide, the closing line, a hint,
           the quick chair, and last a guide step that waits for the player's own tap (`guideWaits`). */}
       <div className="message-slot">{lowBeerStock ? <section className="beer-stock-warning" aria-label={t('stock.quickBeerTitle')}>
-        <div className="prompt-text">{guideFirst ? <p id="guide-line" className="guide-line" role="status">{guideWords}</p> : w.phase === 'closing' ? <p className="status-line closing-line">{t('closing')}</p> : stockHint && <p className="hint hint-line" data-hint="stock">{t('hint.stock')}</p>}
+        <div className="prompt-text">{guideFirst ? <p id="guide-line" className="guide-line" role="status">{guideJoined}</p> : w.phase === 'closing' ? <p className="status-line closing-line">{t('closing')}</p> : stockHint && <p className="hint hint-line" data-hint="stock">{t('hint.stock')}</p>}
           <p role="status" className={guideFirst || w.phase === 'closing' || stockHint ? 'sr-only' : undefined}>{t(w.inventory.bia === 0 ? 'stock.beerEmpty' : 'stock.beerLow')}</p>
           {w.coins < beerRestock.cost && <small>{t('error.notEnoughCoins')}</small>}</div>
         <button {...lit(spot.target?.kind === 'restock')} className="quick-beer" aria-describedby="beer-supply-status" disabled={!beerRestock.ok} onClick={() => run({ type: 'restock', dish: 'bia', mode: 'full' })}>{quickCut > 0 ? <><span>{quickBeer.slice(0, quickCut)}</span> <span>{quickBeer.slice(quickCut + 1)}</span></> : quickBeer}</button>

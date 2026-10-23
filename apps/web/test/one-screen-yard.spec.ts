@@ -9,7 +9,7 @@ import AxeBuilder from '@axe-core/playwright';
 // first-screen step guide, the closing line, and the stock hint with the beer prompt (merged into one control). Every message takes turns in one slot above
 // the nav whose height is always reserved, so the page never scrolls and the tables never resize (reference-layout.css `.message-slot`). Through the DOM only,
 // in vi and en; every place's centre is its own (on the first screen the opening note is the one allowed cover). Saves: none (a brand-new game) or the
-// repo's engine fixtures (fixtures/yard.ts, fixtures/hints.ts, fixtures/kitchen.ts, fixtures/service-states.ts, fixtures/quick-chair.ts). Review B2-r2: also
+// repo's engine fixtures (fixtures/yard.ts, fixtures/hints.ts, fixtures/kitchen.ts, fixtures/service-states.ts, fixtures/quick-chair.ts, fixtures/weather-row.ts). Review B2-r2: also
 // the fallback step guide with the beer low, the well-rested chip, a wide font (no slot text cut, the weather row one row), and the keyboard ring in the slot.
 const fx = (file: string, mode: string) => JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', `apps/web/test/fixtures/${file}.ts`, mode], { encoding: 'utf8' }));
 type Fixture = { save: string; now: number } | null;
@@ -28,6 +28,8 @@ const states: Record<string, { at: () => Fixture; message: string | null; settin
   'guide, low beer': { at: () => fx('hints', 'low'), message: '.beer-stock-warning:has(.guide-line)', settings: { guideDone: false, guideIndex: 1 } },
   // Review B2-r2: the well-rested chip in the weather row (it wrapped the row with a wide font), a live shift, no hint
   rested: { at: () => fx('service-states', 'rested'), message: null, settings: { hintsDone: ['tipWindow', 'rush', 'freshness', 'glasses', 'stock', 'slot'] } },
+  // Review B2-r3: the longest weather row: the rested chip beside the heavy rush ("Sắp tới · Giờ Vàng đông khách") and the longest weather name (fixtures/weather-row.ts)
+  'heavy rush, rested': { at: () => fx('weather-row', 'next'), message: null, settings: { hintsDone: ['tipWindow', 'rush', 'freshness', 'glasses', 'stock', 'slot'] } },
 };
 const viewports = [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1280, height: 720 }];
 // Review B2-r2 / Linux CI: also with a deliberately wide font (DejaVu Sans, else Verdana, + letter-spacing), the family Linux renders and Windows never sees.
@@ -72,10 +74,10 @@ for (const [state, s] of Object.entries(states)) for (const locale of ['vi', 'en
   for (const t of g.targets) { expect(t.w, 'tap target width').toBeGreaterThanOrEqual(44); expect(t.h, 'tap target height').toBeGreaterThanOrEqual(44); }
   // Review B2-r2: no text of the slot is clamped or cut (its words fit the 48 px slot), and the weather row stays one row high.
   const cut = await slot.evaluate(el => [...el.querySelectorAll('*')].filter(x => !x.closest('.sr-only') && (x as HTMLElement).offsetParent !== null && x.clientWidth > 0 && (x.scrollHeight > x.clientHeight + 1 || x.scrollWidth > x.clientWidth + 1)).map(x => `${x.className || x.tagName}: "${(x.textContent ?? '').trim().slice(0, 40)}"`));
-  // The one known residual (B2 PR §12): the longest guide line (vi, no order yet: 66 characters) beside the refill and "Bỏ qua" needs a 4th line at 360 px in the wide font.
-  if (font === 'wide' && state === 'guide, low beer' && locale === 'vi' && viewport.width === 360) expect(cut).toEqual([expect.stringMatching(/^guide-line: /)]);
-  else expect(cut, 'no slot text clamped or cut').toEqual([]);
+  expect(cut, 'no slot text clamped or cut, in every font').toEqual([]); // review B2-r3: the long guide line has a short form beside the refill (App.tsx `guideJoined`)
   expect((await page.locator('.weather-row').boundingBox())!.height, 'the weather row is one row').toBeLessThanOrEqual(31);
+  // Review B2-r3: the weather's name is never cut (one ☀ stands for sunny, hot, humid and cold); the rush pill gives the room instead
+  expect(await page.locator('.weather-name').evaluate(el => el.scrollWidth <= el.clientWidth + 1), 'the weather name is whole').toBe(true);
   const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze(); expect(axe.violations).toEqual([]);
   await tbh.shot(`b2-one-screen-${state.replace(/[ ,]+/g, '-')}-${locale}${font === 'wide' ? '-wide' : ''}-${viewport.width}x${viewport.height}.png`); expect(tbh.consoleErrors()).toEqual([]);
 });

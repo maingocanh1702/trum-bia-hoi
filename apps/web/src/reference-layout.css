@@ -402,11 +402,15 @@
 .rush-label b, .rush-label time { display: inline; }
 .rush-label > span { display: inline-flex; align-items: baseline; gap: 5px; white-space: nowrap; }
 /* Review B2-r2 (wide fonts): the weather row never wraps (the well-rested chip wrapped it to 62 px and scrolled the page at 360 × 740). In a phone-wide game
-   column (`.game` is the container, so a landscape phone counts too) its gaps and paddings tighten; the rested chip and the rush pill keep their size, and
-   if a wide font still needs room the weather's name ends in "…" (the whole name stays in the DOM, and the icon says sun or rain). */
-.weather-row > .well-rested, .weather-row > .rush-label { flex: none; }
-.weather-chip { min-width: 0; }
-.weather-chip > .weather-name { font-size: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+   column (`.game` is the container, so a landscape phone counts too) its gaps and paddings tighten. Review B2-r3: the weather's name never shrinks (one ☀
+   stands for sunny, hot, humid and cold, so the name is the weather) and the rested chip keeps its size; the rush pill gives the room a heavy rush beside
+   the rested chip needs at 360 px: its kind ends in "…", its clock stays (the whole label stays in the DOM, a timer for screen readers). */
+.weather-row > .weather-chip, .weather-row > .well-rested { flex: none; }
+.weather-chip > .weather-name { font-size: inherit; white-space: nowrap; }
+.weather-row > .rush-label { flex: 0 1 auto; min-width: 0; max-width: none; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; } /* no 180 px cap: it shrinks instead */
+.rush-label > span { min-width: 0; }
+.rush-label > span > b { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.rush-label > span > time, .rush-label > svg { flex: none; }
 @container (max-width: 400px) { .weather-row { padding-left: 12px; padding-right: 12px; gap: 6px; } .weather-chip { padding-left: 6px; padding-right: 6px; } .well-rested, .rush-label { padding-left: 7px; padding-right: 7px; } }
 @media (max-height: 900px) {
   /* B2.8: a shorter stall on a short screen while it holds the early-game set (owner, keg, cooler, sink, glasses); a stall with a sign, the kitchen, the

@@ -170,10 +170,10 @@ for (const [locale, font] of variants) for (const viewport of viewports) test(`S
   for (const i of lingering) {
     const space = yard.locator(`.table-space.table-${i}`);
     await expect(space.locator('.guest-label')).toHaveCount(1); await expect(space.locator('.enjoy-time')).toHaveCount(1); // the three-line caption
-    // Review B2-r2: the type label (the cue for "Mời về") and the state read whole in the app font, no "…" (English shows a short label, `caption.*`); the full
-    // type name stays in the DOM for screen readers (and on the order card).
+    // Review B2-r2 / B2-r3: the type label (the cue for "Mời về") and the state read whole, no "…", in the app font and the wide one (what Linux renders): a
+    // caption shows a short label where the full one would not fit (`caption.*`, vi and en); the full type name stays in the DOM for screen readers (and on the order card).
     await expect(space.locator('.guest-label')).toContainText(t('customer.ngoily'));
-    if (font === 'app') expect(await space.locator('.table-caption').evaluate(c => [...c.querySelectorAll(':scope > *, :scope > * > *')].filter(x => !x.closest('.sr-only') && x.clientWidth > 0 && x.scrollWidth > x.clientWidth + 1).map(x => x.textContent)), 'a caption line ends in "…"').toEqual([]);
+    expect(await space.locator('.table-caption').evaluate(c => [...c.querySelectorAll(':scope > *, :scope > * > *')].filter(x => !x.closest('.sr-only') && x.clientWidth > 0 && x.scrollWidth > x.clientWidth + 1).map(x => x.textContent)), 'a caption line ends in "…"').toEqual([]);
   }
   await expect(yard.locator('.table-order-hint')).toHaveCount(open.length);
   const tops = (await boxes(yard.locator('.table-object'))).map(b => Math.round(b.y)), rows = [...new Set(tops)].sort((a, b) => a - b), rowOf = (i: number) => rows.indexOf(tops[i]);

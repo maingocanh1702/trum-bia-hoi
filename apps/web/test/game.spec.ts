@@ -200,7 +200,7 @@ for (const [mode, emoji] of [['early', '🤩'], ['late', '😐'], ['grace', '�
     await expect(hint).toHaveCount(0);
     await expect(table.locator('.customer-reaction')).toHaveText(emoji);
     await expect(table.locator('.enjoy-time')).toHaveText(/^\d{2}:\d{2}$/);
-    await expect(table.locator('.guest-label')).toHaveText('Bàn lai rai');
+    await expect(table.locator('.guest-label [aria-hidden="true"]')).toHaveText('Lai rai'); await expect(table.locator('.guest-label')).toContainText('Bàn lai rai'); // review B2-r3: the caption's short label, the full one for screen readers
     await expect(page.locator('.toast-gain')).toHaveCount(1);
     await expect(page.locator('.toast-gain strong')).toHaveText(`+${fixture.result.amount}`);
     await expect(page.locator('.toast-gain button')).toHaveCount(0);
