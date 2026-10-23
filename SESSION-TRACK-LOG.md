@@ -7,6 +7,11 @@
 
 ---
 
+## B2 review vòng 3 + Linux CI — 2026-10-24 (Part B2, worker, nhánh `feat/early-ui-clarity`) — chờ orchestrator chạy Linux CI và mở PR B2
+
+Review vòng 3 (code, delta b34b211..bb6d363): 0/0/1 — tên thời tiết bị cắt "…" khi dòng thời tiết chật. Linux CI trên bb6d363: 618/621, vì font của app trên Linux (DejaVu Sans) rộng như font thử "rộng". Đã sửa: tên thời tiết và chip "Tỉnh táo" giữ cỡ, pill Giờ Vàng nhường chỗ; chú thích bàn tiếng Việt có nhãn ngắn; dòng step guide dài có bản ngắn cạnh nút nhập bia; spec kiểm như nhau ở mọi font, ma trận đo thêm chính DejaVu Sans.
+Chưa phát hành: Netlify v6, Cloudflare v-fb2. **Việc kế:** orchestrator chạy Linux CI trên tip cuối, mở PR B2 (xếp chồng trên PR B1 #35).
+
 ## B2 review vòng 2, lượt sửa cuối — 2026-10-23 (Part B2, worker, nhánh `feat/early-ui-clarity`) — chờ orchestrator chạy Linux CI, nhờ review delta và mở PR B2
 
 Review vòng 2 trên `b34b211` (code 0/1/3, bố cục 0/0/5; Linux CI xanh hết) đã xử lý: nút nhập bia nhanh (nút, giá, spotlight "Nhập hàng") luôn hiện khi kho bia thấp, kể cả lúc step guide hiện — lời step guide vào dòng chữ của nút, "Bỏ qua" ở cạnh; bước "Mở Nâng cấp" nhường ô và không chặn gợi ý; gợi ý chỉ sáng khi có chữ; gợi ý cốc theo một mẻ (vòi cấp 3+); vòng focus trong ô; dòng thời tiết một hàng với font rộng (màu chip "Tỉnh táo" đủ tương phản); chú thích tiếng Anh có nhãn ngắn (978 key). 09-SPEC / TRANG-THAI 0g sửa lời theo số đo (quầy biển hiệu / điện thoại–QR +28 / +41 px khi có thông báo).
