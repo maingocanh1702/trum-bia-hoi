@@ -92,7 +92,7 @@ Ba mục item-list (hành phi, đá lạnh, giá cosmetic) đã **chốt theo đ
 
 ## 6. Bản đồ nhanh — đọc gì trước
 
-`00-HANDOFF` v1.47 (điểm vào, §4 scope + §6 quy ước) → **`12-PROMPT-claude-build.md`** (dev kickoff + Codex review) · `11-PROMPT-PACK` v1.14 Phần A (designer) / Phần B (chi tiết dev) → `02-GDD` v1.13 + `03-SPEC` (luật chơi) → `08-SPEC` v1.3.11 + `economy.tbh.json` 2.1.0 (số) → `06-ROADMAP` v3.3 (mốc M0–M9) + `implementation-tracker` v0.64.0 (20 đang triển khai, 0/28 hoàn tất) → `docs/features/F07–F28` → `docs/reference/` (layout) → `trum-bia-hoi-brd-admin.md` §5.2 (config admin).
+`00-HANDOFF` v1.48 (điểm vào, §4 scope + §6 quy ước) → **`12-PROMPT-claude-build.md`** (dev kickoff + Codex review) · `11-PROMPT-PACK` v1.14 Phần A (designer) / Phần B (chi tiết dev) → `02-GDD` v1.13 + `03-SPEC` (luật chơi) → `08-SPEC` v1.3.11 + `economy.tbh.json` 2.1.0 (số) → `06-ROADMAP` v3.3 (mốc M0–M9) + `implementation-tracker` v0.64.0 (20 đang triển khai, 0/28 hoàn tất) → `docs/features/F07–F28` → `docs/reference/` (layout) → `trum-bia-hoi-brd-admin.md` §5.2 (config admin).
 
 ## Changelog
 
@@ -117,3 +117,4 @@ Ba mục item-list (hành phi, đá lạnh, giá cosmetic) đã **chốt theo đ
 | 2026-10-23 | Mục 4 thêm hàng **0e**: founder chốt STOP `sim:balance` của Part A (phương án (c): giữ A1/A2/A3, hai ô seed 42 chuyển sang B1, không miễn, Part A không phát hành riêng); còn mở hai câu hỏi của Part A (Chí Phèo ở ca 1; "Mời tất cả về" của sổ ca theo `show.kick`). Review A-r1: 0 BLOCKER, 0 MAJOR, 6 MINOR, đã xử lý; Linux static xanh trên `672dde4`. |
 | 2026-10-23 | Part B1 (founder 22/10/2026, nhịp đầu game, JSON 2.1.4, nhánh `feat/early-pacing`, chưa phát hành): mục 1 dòng Economy nêu 2.1.4 (ba key luật: `spawn.singlesUntilPairSeat` Tier A, `rush.schedule.replanPendingArrival`, `onboarding.firstShift.staleDisabled`); mục 4 thêm hàng **0f** (STOP `sim:balance` + `sim:career:gate`, chờ founder). Thứ tự đọc: `00-HANDOFF` v1.44 → v1.47 (dòng này chưa được nâng ở v1.45 / v1.46). |
 | 2026-10-23 | Founder trả lời QD-117 (phương án B, sửa: 3 ca đầu chỉ khách lẻ, `spawn.singlesFirstShifts` 3): mục 1 dòng Economy và mục 4 hàng **0f** nói lại theo luật mới và STOP lần 2 (tổng 30 ngày và ghế 2 đầu tiên lệch quá dung sai). |
+| 2026-10-23 | Review B1-r2: `00-HANDOFF` giữ dòng v1.47 của lượt đầu đúng như đã viết (append-only) và thêm dòng **v1.48** cho câu trả lời QD-117 của founder; thứ tự đọc nêu v1.48. |
