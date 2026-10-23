@@ -50,7 +50,7 @@ test('default guest full shift', async ({ page, context }) => {
       await page.reload();await synced(page);expect((await snapshot(page)).shift.id).toBe(firstShift);expect((await snapshot(page)).playerId).toBe(playerId);restored=true;
     }
     // The keg's own quick button refills beer without pausing the shift.
-    const refill=page.locator('.beer-stock-warning button:enabled');
+    const refill=page.locator('.beer-stock-warning .quick-beer:enabled'); // the refill itself: with the step guide up the prompt also holds its 'Bỏ qua' (review B2-r2)
     if(w.phase==='open'&&await refill.count()){await purchase(page,refill);restocked=true;}
     if(w.shift.stats.served>0&&w.shift.stats.served%10===0)await page.screenshot({path:`.qa/playable-${viewport.width}-live.png`});
     writeFileSync(`.qa/playable-${viewport.width}-progress.json`,JSON.stringify({at:Date.now(),firstPlayableMs,fps,phase:w.phase,remaining:w.shift.endsAt-w.now,coins:w.coins,served:w.shift.stats.served,restocked,upgraded}));

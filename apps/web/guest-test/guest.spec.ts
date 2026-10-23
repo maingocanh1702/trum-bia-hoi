@@ -41,7 +41,7 @@ test('static guest serves, restocks, upgrades, closes shift and persists across 
       await page.locator('.table-order-hint.is-ready').first().click(); await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
       await expect(page.locator('.order-panel')).toHaveCount(0);
     }
-    const refill = page.locator('.beer-stock-warning button:enabled');
+    const refill = page.locator('.beer-stock-warning .quick-beer:enabled'); // the refill itself: with the step guide up the prompt also holds its 'Bỏ qua' (review B2-r2)
     if (await refill.count()) await refill.click();
   }
   await expect(book).toBeVisible();
