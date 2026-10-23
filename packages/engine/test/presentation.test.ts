@@ -15,7 +15,7 @@ test('both locales have the same nonempty keys and interpolation parameters', ()
 });
 test('the event-driven guide resets after serving and obeys the daily repeat cap', () => {
   const g = new Game();
-  const prefs: Settings = { locale: 'vi', muted: true, goalChip: true, guideDone: true, guideIndex: null, guideRuns: 0, guideDay: '', lostStreak: 0, loginPromptPlayer: '', loginPromptShift: 0 };
+  const prefs: Settings = { locale: 'vi', muted: true, goalChip: true, guideDone: true, guideIndex: null, guideRuns: 0, guideDay: '', lostStreak: 0, loginPromptPlayer: '', loginPromptShift: 0, hintsDone: [] };
   const e = (type: string): DomainEvent => ({ id: type, type, at: 0, configVersion: config.version, idempotencyKey: `test:${type}`,  data: {} });
   advanceGuide(prefs, g, [e('customer_left'), e('customer_left'), e('customer_served'), e('customer_left')]);
   assert.equal(prefs.guideRuns, 0);
@@ -29,7 +29,7 @@ test('the event-driven guide resets after serving and obeys the daily repeat cap
 
 test('a three-customer queue loss triggers the three-customer guide immediately', () => {
   const g = new Game();
-  const prefs: Settings = { locale: 'vi', muted: true, goalChip: true, guideDone: true, guideIndex: null, guideRuns: 0, guideDay: '', lostStreak: 0, loginPromptPlayer: '', loginPromptShift: 0 };
+  const prefs: Settings = { locale: 'vi', muted: true, goalChip: true, guideDone: true, guideIndex: null, guideRuns: 0, guideDay: '', lostStreak: 0, loginPromptPlayer: '', loginPromptShift: 0, hintsDone: [] };
   advanceGuide(prefs, g, [{ id: 'queue-loss', type: 'customer_left', at: 0, configVersion: config.version, idempotencyKey: 'queue-loss', data: { count: 3, reason: 'queue' } }]);
   assert.equal(prefs.guideRuns, 1);
 });
@@ -86,7 +86,7 @@ test('departure invitations honor both configurable thresholds and read old raw 
 
 test('first play shows no step banner; the fallback starts on idleness before the first serve, once, within the daily cap', () => {
   const g = new Game();
-  const prefs: Settings = { locale: 'vi', muted: true, goalChip: true, guideDone: false, guideIndex: null, guideRuns: 0, guideDay: '', lostStreak: 0, loginPromptPlayer: '', loginPromptShift: 0 };
+  const prefs: Settings = { locale: 'vi', muted: true, goalChip: true, guideDone: false, guideIndex: null, guideRuns: 0, guideDay: '', lostStreak: 0, loginPromptPlayer: '', loginPromptShift: 0, hintsDone: [] };
   const e = (type: string): DomainEvent => ({ id: type, type, at: 0, configVersion: config.version, idempotencyKey: `test:${type}`, data: {} });
   const fallback = config.values.onboarding.stepGuide.steps.findIndex(s => s.waitFor === 'order_ready');
   advanceGuide(prefs, g, [e('shift_opened'), e('customer_spawned')]);

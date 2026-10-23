@@ -174,7 +174,9 @@ test('mixed customers retain their urgent identity and a live grace countdown wh
 });
 
 // pauseAt installs fake timers itself; a separate running install can race the identical target time.
-for (const [mode, emoji] of [['early', '🤩'], ['late', '😐'], ['grace', '😥'], ['stale', '😖']]) {
+// Founder 2026-10-22 (B2.1b): served before the guest's own patience ran out but past the tip window (`late`) is happy, served while the guest was getting up
+// (`grace`) is neutral; until then they were 😐 and 😥. B2.1(a): every serve but a tipped one says why on the pill.
+for (const [mode, emoji] of [['early', '🤩'], ['late', '🙂'], ['grace', '😐'], ['stale', '😖']]) {
   test(`multi-dish service shows the actual ${mode} reward and guest reaction`, async ({ page }) => {
     const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/service-states.ts', mode], { encoding: 'utf8' }));
     expect(fixture.result).toMatchObject({ ok: true, outcome: mode });
@@ -199,6 +201,9 @@ for (const [mode, emoji] of [['early', '🤩'], ['late', '😐'], ['grace', '�
     await expect(page.locator('.toast-gain')).toHaveCount(1);
     await expect(page.locator('.toast-gain strong')).toHaveText(`+${fixture.result.amount}`);
     await expect(page.locator('.toast-gain button')).toHaveCount(0);
+    const reason = page.locator('.toast-gain .gain-reason');
+    if (mode === 'early') await expect(reason).toHaveCount(0);
+    else await expect(reason).toHaveText(mode === 'stale' ? `Bia hết hơi! +${fixture.result.amount} xu · mất boa, giảm uy tín` : 'Chậm · không có boa');
     const balance = new Intl.NumberFormat('vi-VN').format(fixture.coins + fixture.result.amount);
     await expect(page.locator('.money strong')).toHaveText(balance);
     await page.emulateMedia({ reducedMotion: 'reduce' });

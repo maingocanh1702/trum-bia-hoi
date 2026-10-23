@@ -26,6 +26,7 @@ import { GoalChip, say } from './GoalChip';
 import { listGoals, pickNextGoal, type Goal } from './goals';
 import { leaveRows, pairsWithoutSeat } from './leave-reasons';
 import { batchToast, type BatchToast } from './batch-toast';
+import { hintRules, holds as hintHolds, nextHint, type Hint } from './hints';
 
 // Owner 2026-09-11: risk features are deferred; legacy UI remains testable only in an explicit dev preview.
 const guestOnly = import.meta.env.VITE_TBH_GUEST_ONLY === '1';
@@ -108,6 +109,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   const [recoveryError, setRecoveryError] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [toast, setToast] = useState<BatchToast | null>(null);
+  const [hint, setHint] = useState<Hint | null>(null); // hints.ts: the one just-in-time hint on screen (founder 2026-10-22, B2)
   const [floaters, setFloaters] = useState<Floater[]>([]);
   const [turnedAway, setTurnedAway] = useState<TurnedAway[]>([]);
   const floaterId = useRef(0);
@@ -298,6 +300,18 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   const claimCount = path.rows.filter(row => row.claimable).length;
   const guide = settings.guideIndex === null ? null : c.onboarding.stepGuide.steps[settings.guideIndex];
   const showGuide = c.onboarding.enabled && guide && (!guide.onlyAfter || w.completedShifts > 0);
+  // Founder 2026-10-22 (B2): one just-in-time hint at a time (hints.ts), never over a sheet, the order panel or the step guide (they share one banner slot);
+  // shown once (`hintsDone`), it stays while its moment lasts or until tapped away.
+  const hintBlocked = Boolean(sheet || selectedEquipment || selectedTable || showGuide);
+  const dismissedHint = useRef('');
+  useEffect(() => {
+    if (hint) { if (!hintHolds(hint, w, game.config)) setHint(null); return; }
+    const candidate = hintBlocked ? null : nextHint(w, game.config, prefs.current.hintsDone);
+    if (!candidate || `${candidate.id}:${candidate.since}` === dismissedHint.current) return;
+    setHint(candidate);
+    if (!prefs.current.hintsDone.includes(candidate.id)) prefs.current.hintsDone = [...prefs.current.hintsDone, candidate.id];
+    try { writeSettings(prefs.current); } catch { setSaveError(true); }
+  });
   const cleanGlasses = w.glasses.filter(g => g.state === 'clean').length;
   const restedMs = wellRestedRemaining(w);
   const closeQuote = kickAllQuote(w, game.config);
@@ -337,14 +351,17 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
     else { scrollToTables.current = true; open('upgrades'); }
   }} />;
 
+  // Founder 2026-10-22 (B2.1c): the tip window as the serve will judge it (rules.ts customerValue): every guest keeps `tip.patienceThreshold` of their OWN
+  // patience (a chair level stretches the order, never this), the order is not in grace and no beer of the tray went flat. The bar and the order card read it.
+  const tipWindow = (o: Order, guests: ReturnType<typeof currentGuests>, stale: boolean) => o.state === 'pending' && !stale && guests.every(guest => guestPatienceLeft(w, o, guest) >= c.tip.patienceThreshold);
   function renderTable(table: Table, index: number) {
     const o = table.order, activeOrder = o && ['pending', 'grace'].includes(o.state);
     const ready = activeOrder && o.items.every(i => i.state === 'ready');
     const patience = activeOrder ? Math.max(0, (o.placedAt + o.patienceMs - w.now) / o.patienceMs) : 0;
     const stale = activeOrder && o.items.some(i => i.glassId && i.readyAt !== null && w.now >= i.readyAt + freshnessMs(w, game.config));
     const guests = currentGuests(table), seated = guests.length > 0;
-    // The bar counts down the order's own deadline (better chairs stretch it) but turns low with the TIP, which is judged on the guest's own patience (guestPatienceLeft).
-    const tipLeft = activeOrder && guests.length ? Math.min(...guests.map(guest => guestPatienceLeft(w, o, guest))) : patience;
+    // The bar counts down the order's own deadline (better chairs stretch it) but turns low with the TIP window (tipWindow above), like the order card's clock.
+    const tip = activeOrder && tipWindow(o, guests, Boolean(stale));
     const served = seated && o?.state === 'served' ? w.events.find(e => e.type === 'order_served' && e.data.orderId === o.id) : undefined;
     const feedback = served ? w.serves.filter(s => s.orderId === o?.id).map(s => ({ customerId: s.customerId, kind: s.stale ? 'stale' : served.data.outcome === 'grace' ? 'grace' : s.patienceRatio >= c.tip.patienceThreshold ? s.tip > 0 ? 'early' : 'earlyNoTip' : 'late' })) : [];
     const special = guests.find(x => x.type === 'vip')?.type ?? guests.find(x => x.type !== 'thuong')?.type;
@@ -352,12 +369,13 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
     const litBubble = Boolean(activeOrder) && here !== null && selectedTable !== table.id, litTable = here === 'seated' && !activeOrder;
     const dishes = trayDishes(c, table), chairLevel = table.chairLevel ?? 1; // S6 (P4): the tray shows the dishes the table's level allows; the chairs show their level
     return <section className={`table-space table-${index} state-${table.state} ${activeOrder ? 'has-order' : ''} ${special ? `guest-${special}` : ''} ${o?.state === 'grace' ? 'is-urgent' : ''} ${selectedTable === table.id ? 'is-selected' : ''}`} key={table.id} data-table-id={table.id} data-chair-level={chairLevel} aria-label={t('table', { n: index + 1 })}>
-      {activeOrder && <button {...lit(litBubble)} className={`table-order-hint ${ready ? 'is-ready' : ''} ${o.state === 'grace' ? 'is-urgent' : ''}`} onClick={e => showTable(table.id, e.currentTarget)} aria-label={t('order.details', { n: index + 1 })} aria-describedby={`${o.id}-description ${o.id}-time`}>
+      {activeOrder && <button {...lit(litBubble)} className={`table-order-hint ${ready ? 'is-ready' : ''} ${o.state === 'grace' ? 'is-urgent' : ''}`} onClick={e => showTable(table.id, e.currentTarget)} aria-label={t('order.details', { n: index + 1 })} aria-describedby={`${o.id}-description ${o.id}-time${tip ? ` ${o.id}-tip` : ''}`}>
         <span className="bubble-dishes" aria-hidden="true">{orderDishes(o).map(({ dish, items }) => <span key={dish} className="bubble-dish"><Sprite id={dish === 'bia' ? stale ? 'glass-stale' : 'glass-full' : menuAsset[dish]} />{items.length > 1 && <b>{items.length}</b>}</span>)}</span>
         <span className="sr-only" id={`${o.id}-description`}>{orderDishes(o).map(({ dish, items }) => `${t(`dish.${dish}`)} × ${items.length}`).join(', ')} · {t(ready ? 'order.ready' : 'table.waiting')}</span>
         <span className="sr-only bubble-time" id={`${o.id}-time`}>{orderTime(o)}</span>
+        {tip && <span className="sr-only" id={`${o.id}-tip`}>{t('order.tipOpen')}</span>}
         <span className="bubble-status" aria-label={t(ready ? 'order.ready' : 'table.waiting')}>{ready ? <Icon name="check" /> : '…'}</span>
-        <span className={`patience-track ${tipLeft < c.tip.patienceThreshold ? 'is-low' : ''}`}><i style={{ width: `${patience * 100}%` }} /></span>
+        <span className={`patience-track ${tip ? 'is-tip' : 'is-low'}`}><i style={{ width: `${patience * 100}%` }} /></span>
         {litBubble && pointer}
       </button>}
       <button {...lit(litTable)} className="table-object" data-level={table.level} aria-haspopup="dialog" aria-controls={selectedTable === table.id ? 'active-table-order' : undefined} onClick={e => showTable(table.id, e.currentTarget)} aria-label={t('order.details', { n: index + 1 })}>
@@ -508,6 +526,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
       {w.phase === 'closing' && <p className="status-line">{t('closing')}</p>}
       {!inShift && shift && <div className="status-line rest-summary"><span>{mustRest ? c.shift.regenRate > 0 ? t('rest.regen', { time: time(Math.ceil((c.shift.durationMs - w.staminaMs) / c.shift.regenRate / 1000) * 1000) }) : t('rest.regenPaused') : w.staminaMs < c.shift.durationMs ? t('rest.ready') : t('rest.free')}</span><button onClick={() => open('book')}><Icon name="book" />{t('nav.book')}</button></div>}
       {showGuide && <div className="guide" role="status"><span className="guide-mark">!</span><p>{t(guide.waitFor === 'order_ready' ? `order.feedback.${orderPreparation(w, game.config, guideOrder)}` : guide.copyKey)}</p>{c.onboarding.stepGuide.skippable && <button onClick={() => setPrefs({ guideDone: true, guideIndex: null })}>{t('skip')}</button>}</div>}
+      {hint && !hintBlocked && <div className="guide hint" role="status" data-hint={hint.id}><span className="guide-mark" aria-hidden="true">!</span><p>{t(`hint.${hint.id}`)}</p>{hintRules(game.config).dismissOnTap && <button onClick={() => { dismissedHint.current = `${hint.id}:${hint.since}`; setHint(null); }}>{t('hint.ok')}</button>}</div>}
       {show.hud && <nav className="bottom-nav" aria-label={t('brand')}>
         <button className={!inShift ? 'primary' : ''} onClick={() => inShift ? open('book') : run({ type: 'startShift' })}><Icon name={inShift ? 'book' : 'bolt'} /><span>{t(inShift ? 'nav.book' : 'nav.shift')}</span></button>
         <button onClick={() => open('stock')}><Icon name="stock" /><span>{t('nav.stock')}</span></button>
@@ -520,6 +539,8 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
         <span className="loss-value" aria-hidden="true"><Icon name="star" /><strong>{toast.loss.reputation ? '−' : ''}{num(toast.loss.reputation)}</strong></span></>}
       </div> : toast?.gain !== undefined ? <div key={toast.id} className={`toast toast-gain gain-${toast.kind}`} role="status" aria-label={toast.text}>
         <span className="gain-reaction" aria-hidden="true">{reactions[toast.kind]}</span><strong aria-hidden="true">+{num(toast.gain)}</strong><Icon name="coin" />
+        {/* Founder 2026-10-22 (B2.1a): a serve that is not the best one says why on the pill itself; until then its words lived only in the aria-label. */}
+        {['stale', 'late', 'grace'].includes(toast.kind) && <small className="gain-reason" aria-hidden="true">{toast.kind === 'stale' ? toast.text : t('outcome.slow')}</small>}
       </div> : toast && <button className={`toast toast-${toast.kind}`} role="status" onClick={() => setToast(null)}>{toast.text}<span aria-hidden="true">×</span></button>}
       {saveError && !remote && <button className="save-error" role="alert" onClick={() => download(encodeSave(game as Game), 'tbh-backup.json')}>{t(saveError === 'conflict' ? 'save.conflict' : 'save.error')}</button>}
     </main>
@@ -612,7 +633,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
       const kickWhy = kick && !kick.ok ? whyNot(kick.reason) : '', kickPrice = kick?.cost != null ? `kick-price-${table.id}` : '';
       return <section ref={orderPanelRef} id="active-table-order" className={`order-panel ${o?.state === 'grace' ? 'is-urgent' : ''}`} role="dialog" aria-label={t('table', { n: w.tables.indexOf(table) + 1 })}>
         <header><span className={`customer-tag type-${type}`}>{guests.length ? t(`customer.${type}`) : t('table.empty')}</span><span>{t('table', { n: w.tables.indexOf(table) + 1 })}</span><button className="icon-button" aria-label={t('close')} onClick={() => setSelectedTable(null)}><Icon name="close" /></button></header>
-        {active ? <><div className="order-heading"><strong>{dishes.length === 1 ? t(`dish.${dishes[0].dish}`) : t('order.dishCount', { n: dishes.length })}</strong><b>{orderTime(o)}</b></div>
+        {active ? <><div className="order-heading"><strong>{dishes.length === 1 ? t(`dish.${dishes[0].dish}`) : t('order.dishCount', { n: dishes.length })}</strong><span className={`order-clock ${tipWindow(o, guests, Boolean(stale)) ? 'is-tip' : ''}`}><b>{orderTime(o)}</b>{tipWindow(o, guests, Boolean(stale)) && <small>{t('order.tipOpen')}</small>}</span></div>
           <div className="order-dishes">{dishes.map(({ dish, items }) => <div key={dish} className={items.every(i => i.state === 'ready') ? 'dish-ready' : ''}><Sprite id={menuAsset[dish]} /><strong>{t(`dish.${dish}`)}</strong>{items.every(i => i.state === 'ready') && <Icon name="check" />}<span>{items.filter(i => i.state === 'ready').length}/{items.length}</span></div>)}</div>
           <p role="status" data-preparation={preparation}>{t(`order.feedback.${preparation}`)}</p>
           {['beerStock', 'foodStock'].includes(preparation) && <button className="secondary full" onClick={() => { setSelectedTable(null); open('stock'); }}>{t('nav.stock')}</button>}

@@ -799,5 +799,9 @@
   "reason.tableNotLingering": "Khách chưa dùng món xong",
   "error.tableNotLingering": "Bàn này chưa mời về được lúc này.",
   "error.kickCostChanged": "Giá mời về vừa đổi. Xem lại nhé.",
-  "error.kickTableUnavailable": "Bản cấu hình này chưa có Mời về."
+  "error.kickTableUnavailable": "Bản cấu hình này chưa có Mời về.",
+  "outcome.slow": "Chậm · không có boa",
+  "order.tipOpen": "Còn boa",
+  "hint.ok": "Đã hiểu",
+  "hint.tipWindow": "Bưng khi đồng hồ còn xanh để có boa."
 }

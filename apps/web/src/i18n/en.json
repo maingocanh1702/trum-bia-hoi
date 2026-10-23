@@ -799,5 +799,9 @@
   "reason.tableNotLingering": "Guests haven't finished their order",
   "error.tableNotLingering": "This table can't be sent home right now.",
   "error.kickCostChanged": "The send-home price changed. Check again.",
-  "error.kickTableUnavailable": "This version cannot send tables home."
+  "error.kickTableUnavailable": "This version cannot send tables home.",
+  "outcome.slow": "Too slow · no tip",
+  "order.tipOpen": "Tip still on",
+  "hint.ok": "Got it",
+  "hint.tipWindow": "Serve while the timer is green to get a tip."
 }

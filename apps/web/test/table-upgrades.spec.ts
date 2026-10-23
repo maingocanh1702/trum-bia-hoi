@@ -107,5 +107,11 @@ for (const moment of ['early', 'late'] as const) test(`the patience bar of a tab
   // ... but turns low with the tip: the first 40 % of the guest's OWN patience, which the chairs do not stretch.
   expect(at.elapsedMs / f.ownMs < 1 - f.threshold).toBe(moment === 'early');
   if (moment === 'early') await expect(track).not.toHaveClass(/is-low/); else await expect(track).toHaveClass(/is-low/);
+  // Founder 2026-10-22 (B2.1c): the order card's clock agrees with the bar, green with "Còn boa" inside the tip window and not after it, while the stretched
+  // countdown it prints still has most of its seconds left (the 22/10 card said "Còn 18s" in yellow after the serve already counted as late).
+  await page.locator('.table-space.table-0 .table-order-hint').click();
+  const clock = page.locator('#active-table-order .order-clock');
+  if (moment === 'early') { await expect(clock).toHaveClass(/is-tip/); await expect(clock.locator('small')).toHaveText('Còn boa'); }
+  else { await expect(clock).not.toHaveClass(/is-tip/); await expect(clock.locator('small')).toHaveCount(0); }
   expect(tbh.consoleErrors()).toEqual([]);
 });

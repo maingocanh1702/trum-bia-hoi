@@ -22,7 +22,9 @@ export function Sprite({ id, className = '' }: { id: string; className?: string 
   return src ? <img src={src} className={`sprite ${asset?.source === 'imagegen_builtin' ? 'illustrated' : ''} ${className}`} alt="" draggable={false} /> : <span aria-hidden="true" className={`sprite placeholder ${className}`}></span>;
 }
 
-export const reactions: Record<string, string> = { early: '🤩', earlyNoTip: '🙂', late: '😐', grace: '😥', stale: '😖' };
+// Founder 2026-10-22 (B2.1b): tipped = very happy, served before the guest's own patience ran out but without a tip (`earlyNoTip`, `late`) = happy, served while
+// the guest was getting up (`grace`) = neutral, flat beer = unhappy. Until then `late` was 😐 and `grace` 😥.
+export const reactions: Record<string, string> = { early: '🤩', earlyNoTip: '🙂', late: '🙂', grace: '😐', stale: '😖' };
 /** S6 (D15): the chair art of a chair level — the plastic stool, then "ghế tựa nhựa" (a plastic chair with a backrest), then "ghế gỗ đệm" (a cushioned wooden chair); a level above the art keeps the last sprite. */
 const CHAIR_ART = ['chair-plastic', 'chair-backrest', 'chair-cushion'] as const;
 export const chairAsset = (chairLevel: number): string => CHAIR_ART[Math.min(CHAIR_ART.length, Math.max(1, chairLevel)) - 1];

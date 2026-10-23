@@ -89,6 +89,8 @@ dismissal, not a tap-serve outcome).
 
 ## Existing proof
 
+- **Founder 2026-10-22, Part B2.1 (serve feedback, UI only).** `apps/web/test/game.spec.ts` `` `multi-dish service shows the actual ${mode} reward and guest reaction` `` now also pins the pill's reason line (`.toast-gain .gain-reason`: none for `early`; `outcome.stale` text for `stale`; `outcome.slow` "Chậm · không có boa" for `late` and `grace`) and the founder's faces (`early` 🤩, `late` 🙂, `grace` 😐, `stale` 😖; `apps/web/src/assets.tsx` `reactions`). `apps/web/test/serve-feedback.spec.ts`: `` `B2.1c the order card's clock and the bubble's bar show the same tip window: …` `` (fixture `serve-feedback.ts window`: open → bar `is-tip` + card `.order-clock.is-tip` with "Còn boa" + the bubble's description, vi/en × 390/360/1280 + axe; closed by the guest's own patience; closed by a flat beer while the patience share is still above `tip.patienceThreshold`) and `` `B2.1d the first late serve brings one hint, once: …` ``; `apps/web/test/table-upgrades.spec.ts` `` `the patience bar of a table with level-3 chairs turns low when the tip window closes, not when the stretched order deadline would (${moment}) at 390×844` `` now also checks the card's clock agrees with the bar (stretched deadline vs the guest's own patience).
+
 - `packages/engine/test/game.test.ts`: `'first guest gets one customer and one beer, with auto pour,
   a single serve and auto wash'` (`outcome:'early'`), `'late service keeps payment, loses tip, and
   does not fine the group'` (`outcome:'late'`), `'grace rescues the whole table; exact grace end
@@ -211,3 +213,8 @@ outcome's `amount` flows through `credit()`/`creditBatchSafe()`; `rewardOverflow
 | Date | Change |
 |---|---|
 | 2026-10-20 | S4 `eco21-table-chair-upgrades` (JSON 2.0.23): `customerValue(..., tableTipMult = 1)` multiplies the tip of the group served at a Lv4 table by `tipMult` 1.25 (last factor; `x * 1` is exact so every other table and every older snapshot is unchanged): `packages/engine/test/table-chair-upgrades.test.ts` `Lv4: the tip is x1.25 at that table only, from the group that sits down after the purchase` (expected tips recomputed from the config formula for every tipped guest). The chair's patience multiplier stretches the order's expiry/grace window, not the tip window (`tip.patienceThreshold` of the guest's own patience): `chair patienceMult applies to the ORDER patience ...` and DECISIONS `03 · Lv4 tip x1.25 is read from the group at serve time; ...`. |
+
+## Changelog — B2.1 serve feedback (founder 2026-10-22)
+| Date | Change |
+|---|---|
+| 2026-10-23 | UI only, no rule or number: the coin pill of a serve that is not the best one carries a visible reason line (`outcome.stale` / `outcome.slow`); until then the sentence lived only in the pill's `aria-label` (commit `1e30b78`, 2026-09-09: the root cause of the 22/10 "grimace and +50 on a pink pill"), so the Gotcha "Sighted UI shows icon+number only" now holds for the loss toast and for a tipped serve only. Faces follow the founder's scale (`late` 🙂, `grace` 😐). The bubble's patience bar and the order card's clock read one tip window (`App.tsx` `tipWindow`: every guest ≥ `tip.patienceThreshold` of their own patience, order not in grace, no flat beer): a flat beer now also turns the bar low (before, only the patience share did). Proof in "Existing proof" (B2.1 bullet). |
