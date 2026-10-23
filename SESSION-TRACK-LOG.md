@@ -7,6 +7,12 @@
 
 ---
 
+## B2 review vòng 1 + founder trả lời STOP của B2.8 ("Thêm một lượt cho đầu game") — 2026-10-23 (Part B2, worker, nhánh `feat/early-ui-clarity`) — chờ orchestrator kiểm, Linux CI và mở PR B2
+
+Hai review (code: 0/1/11; bố cục: 0/2/6) và Linux CI (2 đỏ do font Linux, 1 đỏ đồng hồ ở guest smoke) đã xử lý: gợi ý cốc chỉ khi thiếu thật; gợi ý chỉ vào HUD chờ khi HUD ẩn; khách trễ 😐 đúng thang founder; "hết chỗ" trong Sổ ca là một số; thu ròng của thẻ Giờ Vàng chỉ trừ phạt của khách; số giây Hầm lạnh theo dấu thập phân của ngôn ngữ; mua bàn ở ô trống thì focus về bàn mới; bỏ 2 cặp chữ thừa (971 key); dòng tính cách đo trong một khung hình; chú thích bàn không bao giờ xuống dòng dù font nào.
+Lượt bố cục hai: mọi thông báo (đóng ca, step guide, gợi ý, nút nhập bia nhanh — gợi ý kho nhập vào nút này —, nút mua ghế) dùng chung một ô 48 px luôn giữ chỗ trên thanh dưới; HUD, quầy đầu game (152 px) và thanh dưới gọn lại. Đo cuối: ở 390×844 / 360×740 / 1280×720, vi và en, mọi trạng thái đầu game đúng một màn (0 px; trước tới +88), 8/8 chỗ, bàn không đổi cỡ khi thông báo đến/đi. Ngoài lượt (founder): bếp +50/+63, 390×664 +49..56.
+Chưa phát hành: Netlify v6, Cloudflare v-fb2. **Việc kế:** orchestrator chạy Linux CI trên tip cuối, nhờ reviewer đo lại, mở PR B2 (xếp chồng trên PR B1 #35); founder xem 5 việc còn mở (TRANG-THAI 0g).
+
 ## Giao diện đầu game của founder (UI thuần, JSON vẫn 2.1.4) — 2026-10-23 (IMPROVE-EARLY-GAME Part B2, worker, nhánh `feat/early-ui-clarity` xếp chồng trên B1, worktree `C:/dev/trum-bia-hoi-b2`) — chờ orchestrator kiểm và mở PR B2
 
 Founder 22/10/2026 (B2.1–B2.8), không đổi engine / máy chủ / config / số nào: pill xu ghi lý do khi lần bưng không tốt nhất (nguyên nhân 22/10: từ `1e30b78` câu chữ chỉ nằm trong `aria-label`), mặt khách theo thang founder, đồng hồ thẻ Order và thanh kiên nhẫn cùng báo cửa sổ boa; 6 gợi ý một lần (`onboarding.hints`, `hintsDone` ở cài đặt máy); nhãn "Giữ tươi {n} s" / "Rửa n/m", dòng bia chỉ cho trình đọc màn hình, một dòng tính cách khách; chạm ô bàn trống để mua; Sổ ca ngắn (Thu ròng + gợi ý + ba số cộng đúng, còn lại trong "Chi tiết"); thẻ tổng kết sau Giờ Vàng (khi chơi trên máy; chế độ online chưa có); Nhập hàng "+10" / "Đầy kho" có chip giá; sân 4 × 2 vừa một màn (scrollHeight 1 262 / 1 226 / 1 049 → 844 / 740 / 720 ở 390×844 / 360×740 / 1280×720; 390×664 còn 699–710, báo cáo).
