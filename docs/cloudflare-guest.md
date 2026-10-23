@@ -95,7 +95,7 @@ Mỗi lần phát hành (quyết định 2026-10-14): **một lần `npm run bui
 Build lại giữa chừng là hai host có thể phục vụ hai bản khác nhau, nên không làm.
 
 > **Ghi chú 2026-10-23 — quyết định founder 2026-10-23 "Netlify giữ bản cũ (v6), không khôi phục `v-fb2`".** Đo 23/10:
-> Netlify phục vụ v6 (deploy `6aad0f63f2091edfe7f7cf7b`, publish lại lúc 2026-10-22T14:56:24Z, trước đó chưa ghi ở đâu),
+> Netlify phục vụ v6 (deploy `6aad0f63f2091edfe7f7cf7b`, Claude (Cowork) publish lại lúc 2026-10-22T14:56:24Z theo yêu cầu của founder — founder xác nhận ngày 23/10),
 > Cloudflare phục vụ `v-fb2` ([deploy-log "Host check — 2026-10-23"](deploy-log.md#host-check--2026-10-23-no-deployment)).
 > Mặc định suy ra từ quyết định đó (founder sửa nếu khác ý): **bản phát hành chỉ lên `https://trumbiahoi.com`** — làm phần
 > Cloudflare của các bước dưới (1, 1b, 2, 3 Cloudflare, 4–8 cho Cloudflare), bỏ phần Netlify; Netlify đứng yên ở v6 cho tới khi
