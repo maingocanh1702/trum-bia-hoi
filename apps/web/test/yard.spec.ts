@@ -164,12 +164,16 @@ for (const [locale, font] of variants) for (const viewport of viewports) test(`S
 // Founder 2026-10-22 (B2.8): with four places abreast in two rows on every screen, tables 1-4 linger over the open orders of tables 5-8 (each one right under one).
 for (const [locale, font] of variants) for (const viewport of viewports) test(`S6 a busy alley under lingering tables: no order bubble covers the label, state or countdown of the table above${variantName(locale, font)}, at ${viewport.width}px`, async ({ page, tbh }) => {
   await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  const { f } = await boot(page, locale, 'linger-rows'); if (font === 'wide') await wideFont(page);
+  const { f, t } = await boot(page, locale, 'linger-rows'); if (font === 'wide') await wideFont(page);
   const yard = page.locator('.yard'), open = f.openTables as number[], lingering = f.lingering as number[];
   expect(f.tables).toHaveLength(8); expect(lingering).toEqual([0, 1, 2, 3]); expect(open).toEqual([4, 5, 6, 7]); // B2.8: four abreast, every open order right under a lingering table
   for (const i of lingering) {
     const space = yard.locator(`.table-space.table-${i}`);
     await expect(space.locator('.guest-label')).toHaveCount(1); await expect(space.locator('.enjoy-time')).toHaveCount(1); // the three-line caption
+    // Review B2-r2: the type label (the cue for "Mời về") and the state read whole in the app font, no "…" (English shows a short label, `caption.*`); the full
+    // type name stays in the DOM for screen readers (and on the order card).
+    await expect(space.locator('.guest-label')).toContainText(t('customer.ngoily'));
+    if (font === 'app') expect(await space.locator('.table-caption').evaluate(c => [...c.querySelectorAll(':scope > *, :scope > * > *')].filter(x => !x.closest('.sr-only') && x.clientWidth > 0 && x.scrollWidth > x.clientWidth + 1).map(x => x.textContent)), 'a caption line ends in "…"').toEqual([]);
   }
   await expect(yard.locator('.table-order-hint')).toHaveCount(open.length);
   const tops = (await boxes(yard.locator('.table-object'))).map(b => Math.round(b.y)), rows = [...new Set(tops)].sort((a, b) => a - b), rowOf = (i: number) => rows.indexOf(tops[i]);

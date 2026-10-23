@@ -8,7 +8,7 @@ import { Locations } from './Locations';
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { buyGlassQuote, buyTableQuote, buyChairQuote, tableUpgradeQuote, chairUpgradeQuote, tableUpgrade, tableBenefit, effectiveTableLevel, chairPatienceMult, trayDishes, tableSlots, guestPatienceLeft, isEconomy2, isSeatModel, PAIR, BUSINESS_UNLOCKS, menuReport, orderPreparation, beerStatus, washerStatus, kitchenStatus, flyerQuote, SIGN_STYLES, signboardQuote, DISHES, EQUIPMENT, currentGuests, deliveryQuote, dogUpgradeQuote, encodeSave, freshnessMs, noFlatBeerShift, kickAllQuote, kickTableQuote, kickTableRule, lifePathStatus, restockQuote, restRequired, rushStatus, stockCap, unlockQuote, upgradeQuote, wellRestedRemaining, type BusinessUnlock, type Command, type Equipment, type Order, type RequirementStatus, type Table, type DomainEvent, type Game } from '../../../packages/engine/src';
 import { Sprite, TableSeats, chairAsset, menuAsset, reactions, hasSpriteArt, trayAsset } from './assets';
-import { translate } from './i18n';
+import { hasCopy, translate } from './i18n';
 import { advanceGuide, dispatch, download, openingConfig, readSettings, writeSettings, replaceSave, type BootSession } from './local';
 import { Quests } from './Quests';
 import { Kitchen } from './Kitchen';
@@ -382,6 +382,10 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   // Founder 2026-10-22 (B2.1c): the tip window as the serve will judge it (rules.ts customerValue): every guest keeps `tip.patienceThreshold` of their OWN
   // patience (a chair level stretches the order, never this), the order is not in grace and no beer of the tray went flat. The bar and the order card read it.
   const tipWindow = (o: Order, guests: ReturnType<typeof currentGuests>, stale: boolean) => o.state === 'pending' && !stale && guests.every(guest => guestPatienceLeft(w, o, guest) >= c.tip.patienceThreshold);
+  // Review B2-r2: a table caption shows a short label (`caption.*`) where the full one would end in "…" in its 67-81 px place (the English type that cues
+  // "Mời về", two table states); the full label stays for screen readers here, and on the order card.
+  const caption = (key: string) => { const full = t(key), short = hasCopy(`caption.${key}`) ? t(`caption.${key}`) : full;
+    return short === full ? full : <><span aria-hidden="true">{short}</span><span className="sr-only">{full}</span></>; };
   function renderTable(table: Table, index: number) {
     const o = table.order, activeOrder = o && ['pending', 'grace'].includes(o.state);
     const ready = activeOrder && o.items.every(i => i.state === 'ready');
@@ -413,7 +417,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
         <span className="table-number">{index + 1}</span>
         {litTable && pointer}
       </button>
-      <div className="table-caption">{special && <strong className="guest-label">{t(`customer.${special}`)}</strong>}<span>{t(`table.${table.state}`)}</span>{!table.group && <small>{t('table.seats', { n: table.capacity })} · {t('table.tray', { n: dishes })}</small>}{served && table.until !== null && ['consuming', 'occupied'].includes(table.state) && <time className="enjoy-time">{time(table.until - w.now)}</time>}</div>
+      <div className="table-caption">{special && <strong className="guest-label">{caption(`customer.${special}`)}</strong>}<span>{caption(`table.${table.state}`)}</span>{!table.group && <small>{t('table.seats', { n: table.capacity })} · {t('table.tray', { n: dishes })}</small>}{served && table.until !== null && ['consuming', 'occupied'].includes(table.state) && <time className="enjoy-time">{time(table.until - w.now)}</time>}</div>
     </section>;
   }
   function equipmentButton(kind: Equipment) {
