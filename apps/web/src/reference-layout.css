@@ -459,6 +459,7 @@
    padding in a row), and scrolling to a control (keyboard focus, scrollIntoView) stops above the nav (58 px tall here), so the nav never hides it. */
 @media (max-height: 500px) {
   html { scroll-padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+  html:has(.message-slot > *) { scroll-padding-bottom: calc(124px + env(safe-area-inset-bottom)); } /* review B2-r1: the dock is 110 px with a message */
   .message-slot { height: auto; padding: 0 12px 2px; } .message-slot:empty { display: none; }
   .stock-strip { position: static; flex-direction: row; flex-wrap: wrap; justify-content: center; width: auto; margin: 6px 12px; padding: 1px 6px; }
   .stock-strip > .beer-stock { border-bottom: 0; border-right: 2px solid #b9ccb6; border-radius: 15px 0 0 15px; margin-bottom: 0; padding-bottom: 2px; }
