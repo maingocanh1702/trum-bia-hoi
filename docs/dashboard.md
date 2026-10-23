@@ -2,7 +2,7 @@
 
 > **Auto-generated** từ [`implementation-tracker.md`](implementation-tracker.md) bằng `tools/dashboard-engine/build_dashboard.py`.
 > KHÔNG edit trực tiếp — sửa tracker rồi rebuild.
-> **Cập nhật:** 2026-10-22 23:00 · **Branch hiện tại:** `feat/hud-from-shift-1`
+> **Cập nhật:** 2026-10-24 02:35 · **Branch hiện tại:** `feat/early-ui-clarity`
 
 Để xem dashboard HTML đẹp hơn: mở [`dashboard.html`](dashboard.html) bằng browser.
 

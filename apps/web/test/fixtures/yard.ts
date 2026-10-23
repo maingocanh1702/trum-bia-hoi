@@ -12,7 +12,8 @@ if (mode === 'inspect') {
   process.stdout.write(JSON.stringify({ tables: w.tables.map(t => ({ seats: t.capacity, level: t.level, chairLevel: t.chairLevel ?? 1 })), coins: w.coins }));
 } else {
   const raw = structuredClone(config.raw); raw._meta.version = 'yard-fixture'; fullHud(raw); raw.onboarding.enabled = false;
-  if (mode === 'live') { steadyDemand(raw); raw.patience.thuongMs = 180000; raw.shift.startingCoinsBase += raw.upgrades.table.tablePriceBase[0]; } // a guest soon, he waits while the page is inspected; the wallet pays table 2 and keeps the usual start
+  if (mode === 'closing-low') raw.inventory.startingStock.bia = [1, 1]; // the closing shift with its beer stock low: the prompt takes the slot, the closing line joins it
+  if (mode === 'live' || mode === 'closing' || mode === 'closing-low') { steadyDemand(raw); raw.patience.thuongMs = 180000; raw.shift.startingCoinsBase += raw.upgrades.table.tablePriceBase[0]; } // a guest soon, he waits while the page is inspected; the wallet pays table 2 and keeps the usual start
   if (mode === 'rows') { steadyDemand(raw); raw.patience.thuongMs = 600000; raw.shift.startingCoinsBase = 2_000_000; } // a full alley of pairs; the guests wait while the page is inspected
   if (mode === 'linger-rows') { // pairs of "lai rai" guests (a label on every caption, long sipping), sunny, no rush; the open orders wait while the page is inspected
     for (const weather of WEATHER) raw.weather[weather].weight = weather === 'sunny' ? 1 : 0;
@@ -29,13 +30,15 @@ if (mode === 'inspect') {
   if (!isSeatModel(v) || !tableUpgrade(v) || !chairUpgrade(v)) throw Error('fixture:not-the-seat-model-with-ladders');
   const send = (command: Parameters<Game['command']>[0]['command']) => { const r = g.command({ at: w.now, idempotencyKey: `yard-${g.log.length}`, command }); if (!r.ok) throw Error(`fixture:${command.type}:${r.reason}`); };
   const slots = tableSlots(w, g.config);
-  if (mode === 'live') {
+  if (mode === 'live' || mode === 'closing' || mode === 'closing-low') {
+    // `closing` (B2.8 second pass): the same live shift, then the player closes it (`endShift`) while the guest still waits, so the closing line shows.
     // An OPEN shift with a ready order at a table of the first row (its bubble above row 1 carries the one spotlight): the subject is the yard around a live
     // table, so demand is steady and nothing else is bought. A solo guest's tray (beer or an instant dish) is ready at once under instant pour.
     send({ type: 'buyTable' }); send({ type: 'startShift' });
     const ready = () => w.tables.findIndex(t => t.order && ['pending', 'grace'].includes(t.order.state) && t.order.items.every(i => i.state === 'ready'));
     for (let i = 0; i < 6000 && ready() < 0; i++) g.advance(w.now + 100);
     if (ready() < 0) throw Error('fixture:no-ready-order');
+    if (mode !== 'live') { send({ type: 'endShift' }); if (w.phase !== 'closing') throw Error(`fixture:not-closing:${w.phase}`); }
     process.stdout.write(JSON.stringify({ save: encodeSave(g), now: w.now, slots, readyTable: ready(), tables: w.tables.map(t => ({ seats: t.capacity, level: t.level, chairLevel: t.chairLevel ?? 1, dishes: trayDishes(v, t) })) }));
     process.exit(0);
   }
@@ -60,7 +63,7 @@ if (mode === 'inspect') {
     while (w.tables.length < slots) send({ type: 'buyTable' });
     for (const table of w.tables) send({ type: 'buyChair', tableId: table.id });
     send({ type: 'startShift' });
-    const serveAt = [0, 1, 2, 4, 5], waitAt = [3, 6, 7];
+    const serveAt = [0, 1, 2, 3], waitAt = [4, 5, 6, 7]; // founder 2026-10-22 (B2.8): four abreast in two rows, so row 1 lingers over every open order of row 2 (was [0,1,2,4,5] / [3,6,7] for two or three columns)
     const sipping = (i: number) => w.tables[i].state === 'consuming' && w.tables[i].until !== null;
     const waiting = (i: number) => Boolean(w.tables[i].order && ['pending', 'grace'].includes(w.tables[i].order!.state));
     const done = () => serveAt.every(sipping) && waitAt.every(waiting);

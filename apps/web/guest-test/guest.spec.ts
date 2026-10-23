@@ -3,6 +3,8 @@ import { readFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import type { World } from '../../../packages/engine/src';
 
+// Founder 2026-10-22 (B2.5): the shift book keeps everything but the net, the suggestion and three counts under "Chi tiết", collapsed.
+const bookDetails = async (page: Page) => { const d = page.locator('.book-details'); if (!(await d.evaluate(el => (el as HTMLDetailsElement).open))) await d.locator('> summary').click(); };
 async function exported(page: Page) {
   await expect(page.locator('.game-shell')).toHaveAttribute('data-save-state', 'saved');
   const pending = page.waitForEvent('download');
@@ -39,12 +41,12 @@ test('static guest serves, restocks, upgrades, closes shift and persists across 
       await page.locator('.table-order-hint.is-ready').first().click(); await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
       await expect(page.locator('.order-panel')).toHaveCount(0);
     }
-    const refill = page.locator('.beer-stock-warning button:enabled');
+    const refill = page.locator('.beer-stock-warning .quick-beer:enabled'); // the refill itself: with the step guide up the prompt also holds its 'Bỏ qua' (review B2-r2)
     if (await refill.count()) await refill.click();
   }
   await expect(book).toBeVisible();
   const metrics = page.getByRole('region', { name: 'Món trong ca', exact: true });
-  await metrics.locator('summary').click();
+  await bookDetails(page); await metrics.locator('summary').click();
   await expect(metrics.getByRole('heading', { name: 'Số đo ca', exact: true })).toBeVisible();
   const values: Record<string, string | null> = {};
   for (const key of ['served', 'mean', 'kValue', 'moiRate', 'staleRate', 'lost']) {
@@ -57,7 +59,7 @@ test('static guest serves, restocks, upgrades, closes shift and persists across 
   // After shift 1: restock, then the first goal (one card) earned through ordinary service.
   await page.getByRole('button', { name: 'Nhập hàng', exact: true }).click();
   // The quick refill of the loop may already have topped the stock up (15/15): then there is nothing to buy, and the pause check below still holds.
-  const bom = page.locator('.stock-row').first().getByRole('button', { name: 'Mua bom +1 · 12 xu', exact: true });
+  const bom = page.locator('.stock-row').first().getByRole('button', { name: /^Đầy kho · / }); // founder 2026-10-22 (B2.7): two buttons per row (was "Mua bom +1 · 12 xu")
   if (await bom.isEnabled()) await bom.click();
   const energy = await page.locator('.energy strong').textContent();
   await page.clock.runFor(5000);

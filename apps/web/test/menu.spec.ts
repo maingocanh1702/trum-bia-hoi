@@ -1,10 +1,12 @@
 import AxeBuilder from '@axe-core/playwright';
 import { waitSaved } from './storage';
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 const fixture = (mode = 'live') => JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/menu.ts', mode], { encoding: 'utf8' }));
 const number = (n: number, locale = 'vi-VN') => new Intl.NumberFormat(locale).format(Math.round(n));
+// Founder 2026-10-22 (B2.5): the shift book keeps everything but the net, the suggestion and three counts under "Chi tiết", collapsed.
+const bookDetails = async (page: Page) => { const d = page.locator('.book-details'); if (!(await d.evaluate(el => (el as HTMLDetailsElement).open))) await d.locator('> summary').click(); };
 
 for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }, { width: 1280, height: 720 }]) {
   test(`Sổ ca shows actual dish counts, pauses while open and updates after closing and survives reload at ${viewport.width}×${viewport.height}`, async ({ page }) => {
@@ -12,7 +14,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
     await page.setViewportSize(viewport); await page.clock.pauseAt(new Date(f.now));
     await page.addInitScript(save => { if (!localStorage.getItem('menu-seeded')) { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('menu-seeded', '1'); } }, f.save);
     await page.goto('/');
-    await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
+    await page.getByRole('button', { name: 'Sổ ca', exact: true }).click(); await bookDetails(page);
     const panel = page.getByRole('region', { name: 'Món trong ca', exact: true });
     await panel.scrollIntoViewIfNeeded(); await expect(panel.locator('tbody tr')).toHaveCount(6);
     for (const row of f.report.rows) await expect(panel.locator(`[data-dish="${row.dish}"] td`)).toHaveText([row.ordered, row.sold, row.wasted].map(n => number(n)));
@@ -30,14 +32,14 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
     await page.clock.fastForward(f.target - f.now);
     for (const row of f.report.rows) await expect(panel.locator(`[data-dish="${row.dish}"] td`)).toHaveText([row.ordered, row.sold, row.wasted].map(n => number(n)));
     await page.keyboard.press('Escape'); await page.clock.fastForward(f.target - f.now);
-    await expect(page.getByRole('dialog', { name: 'Sổ ca hôm nay', exact: true })).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'Sổ ca hôm nay', exact: true })).toBeVisible(); await bookDetails(page); // the closed shift opens its book again, collapsed
     expect(f.after.rows.reduce((n: number, row: { wasted: number }) => n + row.wasted, 0)).toBeGreaterThan(0);
     for (const row of f.after.rows) await expect(panel.locator(`[data-dish="${row.dish}"] td`)).toHaveText([row.ordered, row.sold, row.wasted].map(n => number(n)));
-    await waitSaved(page); await page.reload(); await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
+    await waitSaved(page); await page.reload(); await page.getByRole('button', { name: 'Sổ ca', exact: true }).click(); await bookDetails(page);
     await expect(panel.locator('[data-metric="avgTicket"]')).toHaveText(number(f.after.avgTicket));
     await page.keyboard.press('Escape'); await expect(page.getByRole('button', { name: 'Sổ ca', exact: true })).toBeFocused();
     await page.getByRole('button', { name: 'Cài đặt', exact: true }).click(); await page.getByLabel('Ngôn ngữ').selectOption('en'); await page.keyboard.press('Escape');
-    await page.getByRole('button', { name: 'Shift book', exact: true }).click();
+    await page.getByRole('button', { name: 'Shift book', exact: true }).click(); await bookDetails(page);
     const english = page.getByRole('region', { name: 'Dishes this shift', exact: true }); await english.scrollIntoViewIfNeeded();
     await expect(english).toContainText('Table orders served');
     await english.locator('summary').click();
@@ -49,7 +51,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
     const exported = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/menu.ts', 'inspect'], { encoding: 'utf8', input: archive }));
     expect(exported.metrics).toEqual(f.after.metrics);
     for (const [key, value] of Object.entries(f.after.metrics)) expect(exported.closed.at(-1).data[key]).toBe(value);
-    await page.keyboard.press('Escape'); await page.getByRole('button', { name: 'Shift book', exact: true }).click();
+    await page.keyboard.press('Escape'); await page.getByRole('button', { name: 'Shift book', exact: true }).click(); await bookDetails(page);
     await english.locator('summary').click(); await expect(english.locator('[data-metric="avgTicket"]')).toHaveText(number(f.after.avgTicket, 'en'));
     await page.screenshot({ path: `.qa/menu-en-${viewport.width}.png` });
     expect(await english.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
@@ -58,7 +60,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }
     expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()).violations).toEqual([]);
     await page.keyboard.press('Escape'); await page.getByRole('button', { name: 'Settings', exact: true }).click();
     await page.getByLabel('Language').selectOption('vi'); await page.keyboard.press('Escape');
-    await page.getByRole('button', { name: 'Sổ ca', exact: true }).click(); await panel.locator('summary').click();
+    await page.getByRole('button', { name: 'Sổ ca', exact: true }).click(); await bookDetails(page); await panel.locator('summary').click();
     await panel.getByRole('heading', { name: 'Số đo ca', exact: true }).scrollIntoViewIfNeeded();
     await page.screenshot({ path: `.qa/metrics-vi-${viewport.width}.png` });
     expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()).violations).toEqual([]);
@@ -71,13 +73,13 @@ test('empty current and partial or closed legacy shifts do not present an invent
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } }), page = await context.newPage(), f = fixture(mode);
     await page.clock.pauseAt(new Date(f.now));
     await page.addInitScript(save => localStorage.setItem('tbh.save.v1', save), f.save);
-    await page.goto('/'); await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
+    await page.goto('/'); await page.getByRole('button', { name: 'Sổ ca', exact: true }).click(); await bookDetails(page);
     const report = page.locator('.menu-report'); await report.scrollIntoViewIfNeeded();
     if (mode === 'legacy-closed') { await expect(report.locator('table')).toHaveCount(0); await expect(report).toContainText('Ca cũ chưa có thống kê món'); }
     else {
       await expect(report.locator('[data-metric="avgTicket"]')).toHaveText('—');
       await expect(report.locator('.menu-partial')).toHaveCount(mode === 'legacy-active' ? 1 : 0);
-      await expect(report.locator('td')).toHaveText(Array(18).fill('0'));
+      await expect(report.locator('td')).toHaveText(Array(f.unlocked.length * 3).fill('0')); // founder 2026-10-22 (B2.5): no row for a dish still locked (was 18 cells, every dish)
       await report.locator('summary').click();
       if (mode === 'legacy-active') await expect(report).toContainText('Ca cũ chưa có đủ dữ liệu');
       else for (const key of ['mean', 'kValue', 'moiRate', 'staleRate']) await expect(report.locator(`[data-metric="${key}"]`)).toHaveText('—');

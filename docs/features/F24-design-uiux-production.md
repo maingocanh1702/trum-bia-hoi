@@ -53,7 +53,7 @@ Spacing:
 ### Active Shift HUD
 
 - Top: coins, stamina/shift, weather, Giờ Vàng countdown, beer/cup status.
-- Center: full playable restaurant canvas, 3-column table grid on mobile, queue lane edge.
+- Center: full playable restaurant canvas, 3-column table grid on mobile, queue lane edge. *(2026-10-23, founder 22/10 + 23/10, B2.8: now 4 × 2 places on every screen, tables scaled to the room left and never under 44 px, every message in one reserved slot above the nav: 09-SPEC §3.1.)*
 - Bottom: primary actions `Ca`, `Nhập hàng`, `Nâng cấp`, `Xếp hạng`; during active shift prioritize serve/tables visually over bottom nav.
 
 ### Restock Sheet
@@ -157,3 +157,4 @@ the full-stock button. Retain the owner's portrait, rounded street-game language
 | 2026-10-19 fun-buy-buttons-reason | The loss toast keeps its numeric coin/reputation values and adds ONE reason label (F07, PLAN P3); no motion added, reduced-motion unchanged. |
 | 2026-10-21 S6 eco21-ui-assets | Sân quán vẽ mọi chỗ của mặt bằng (`tableSlots` 8) thành lưới CSS (2 cột điện thoại, 3 cột ≥ 640 px) thay vị trí đặt tay; ô trống viền đứt cho chỗ chưa mua; bàn theo cấp, ghế theo cấp ghế với hai sprite mới **vẽ thủ tục** (`scripts/chair_sprites.py`: palette token, viền 2 px `#3a2730`, 3 bậc màu/chất liệu, crop ghế 128×160 đáy neo 6 %), mâm nhỏ trên mặt bàn; nút nhanh "Mua ghế" trên HUD. Không hoạt ảnh mới, reduced-motion giữ, ≥ 44 px. Art direction các ghế: draft, chờ duyệt (manifest `review_notes`). |
 | 2026-10-21 S6 review round 1 | The door queue is the top band of the yard (`.yard-door`, a row from the left), the places' grid below keeps 56 px for first-row order bubbles: the shift-1 door tutorial stays above the fold on 360×740 / 390×844 and a bubble never covers the beer line. Every capacity item of the Upgrades sheet prints its effect before → after (`.goal-effect`, coinGold, ≤ 6 words). No motion added; reduced motion re-proven on a live shift. |
+| 2026-10-23 founder 22/10 + 23/10 (IMPROVE-EARLY-GAME B2.8, two passes) | The yard is 4 × 2 on every screen (was 2 columns on a phone, 3 from 640 px), tables scaled to the room left (≥ 44 px); the closing line, the step guide, a hint, the one-tap beer prompt (the stock hint merged into it) and the quick chair take turns in one 48 px slot above the nav that is always reserved, with a compact HUD, a 152 px early-game stall and a lower nav: one screen at 390×844 / 360×740 / 1280×720 in every early-game state, vi and en, no table resizing when a message comes or goes (09-SPEC §3.1 numbers). Captions never wrap (ellipsis, full text for screen readers). |

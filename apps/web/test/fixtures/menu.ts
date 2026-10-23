@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { decodeSave, encodeSave, menuReport } from '../../../../packages/engine/src';
+import { decodeSave, encodeSave, menuReport, DISHES } from '../../../../packages/engine/src';
 import { kitchenGame, sendKitchen } from '../../../../packages/engine/test/fixtures/kitchen';
 import { playMenu } from '../../../../packages/engine/test/fixtures/menu';
 
@@ -17,4 +17,5 @@ if (mode === 'live') {
 const save = encodeSave(g), now = g.world.now, report = menuReport(g.world, g.config);
 const target = now + 300000;
 if (mode === 'live') g.advance(target);
-process.stdout.write(JSON.stringify({ save, now, report, target, after: menuReport(g.world, g.config) }));
+const unlocked = DISHES.filter(d => g.config.values.menu[d].unlock.kitchenLevel <= g.world.equipment.kitchen); // the dish rows the shift book shows (founder 2026-10-22, B2.5)
+process.stdout.write(JSON.stringify({ save, now, report, target, after: menuReport(g.world, g.config), unlocked }));

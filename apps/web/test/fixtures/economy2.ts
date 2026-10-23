@@ -10,6 +10,8 @@ if (mode === 'inspect') {
   const raw = mode === 'legacy' ? structuredClone(legacy) : fullHud(structuredClone(config.raw)); raw.shift.startingCoinsBase = 1000000;
   // Label-only fixture: make every cooler level purchasable without changing the release config.
   if (mode.startsWith('cooler-') && 'lifePathGate' in raw.upgrades) raw.upgrades.lifePathGate.cooler = raw.upgrades.lifePathGate.cooler.map(() => 0);
+  // The cooler's own seconds per level: shift 1 of a new save keeps beer fresh since JSON 2.1.4 (`firstShift.staleDisabled`, its badge reads ∞: the spec after this one), so that rule is off here.
+  if (mode.startsWith('cooler-') && 'staleDisabled' in raw.onboarding.firstShift) raw.onboarding.firstShift.staleDisabled = false;
   for (const weather of ['sunny', 'hot', 'humid', 'rain', 'cold'] as const) raw.weather[weather].weight = weather === (mode.startsWith('cooler-') ? mode.slice(7) : 'sunny') ? 1 : 0;
   const g = new Game(loadConfig(raw), 42, Date.parse('2026-09-09T04:00:00Z'));
   const send = (command: Command) => g.command({ at: g.world.now, command, idempotencyKey: `web-eco-${g.log.length}` });

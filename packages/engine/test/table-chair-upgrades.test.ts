@@ -36,6 +36,7 @@ function shop(patch?: (raw: Seed) => void, { chairs = true, lifePath = 4, equip 
   for (const weather of WEATHER) raw.weather[weather].weight = weather === 'sunny' ? 1 : 0;
   raw.rush.schedule.perShift = 0; raw.onboarding.enabled = false;
   steadyDemand(raw);
+  raw.spawn.singlesFirstShifts = 0; // the 2.1.4 rule `spawn.singlesFirstShifts` (singles only in a save's first three shifts, founder 2026-10-23) is off: pairs at two-chair tables are this suite's subject
   patch?.(raw);
   const g = new Game(loadConfig(raw), rngSeed, T0), w = g.world;
   while (w.tables.length < 4) must(g, { type: 'buyTable' });
@@ -467,12 +468,15 @@ test('snapshots from before the keys load, bytes kept, and refuse every half-way
     ['the keys without their Tier A entries', /config:_meta\.governance\.tiers\.A\.sections:array/, r => { r.upgrades.table.tableUpgrade = ladder(); r.upgrades.table.chairUpgrade = chair(); }],
     ['the Tier A entries without the keys', /config:_meta\.governance\.tiers\.A\.sections:array/, r => { tiers(r); }],
     ['only one of the two keys', /config:upgrades\.table:keys/, r => { r.upgrades.table.tableUpgrade = ladder(); tiers(r); delete r.upgrades.backrest; }],
-    // "the new version" is the label that introduced the keys (2.0.23); the bundled label (2.1.2 since the founder's HUD override of 2026-10-22; `kickTable` came with 2.1.1) also needs the later groups
-    // (`shift.noCooldownFirstShifts`, `kickTable`), so its case carries them and lacks only the keys under test.
+    // "the new version" is the label that introduced the keys (2.0.23); the bundled label (2.1.4 since the founder's early pacing of 2026-10-22; `kickTable` came with 2.1.1) also needs the later groups
+    // (`shift.noCooldownFirstShifts`, `kickTable`, since 2.1.3 `featureReveal.kickAfterShifts` and `firstShift.excludedCustomerTypes`, since 2.1.4 the three pacing keys), so its case carries them and lacks only the keys under test.
     ['a snapshot labelled with the new version that lacks the keys', /config:upgrades\.table:keys/, r => { r._meta.version = '2.0.23'; tiers(r); delete r.upgrades.backrest; }],
     ['a snapshot labelled with the bundled version that lacks only the keys', /config:upgrades\.table:keys/, r => {
       r._meta.version = seed._meta.version; tiers(r); delete r.upgrades.backrest; r.shift.noCooldownFirstShifts = seed.shift.noCooldownFirstShifts;
-      r.kickTable = structuredClone(seed.kickTable); r._meta.governance.tiers.A.sections.push('kickTable'); }],
+      r.kickTable = structuredClone(seed.kickTable); r._meta.governance.tiers.A.sections.push('kickTable');
+      r.onboarding.featureReveal.kickAfterShifts = seed.onboarding.featureReveal.kickAfterShifts; r.onboarding.firstShift.excludedCustomerTypes = structuredClone(seed.onboarding.firstShift.excludedCustomerTypes);
+      r.spawn.singlesFirstShifts = seed.spawn.singlesFirstShifts; r.rush.schedule.replanPendingArrival = seed.rush.schedule.replanPendingArrival; r.onboarding.firstShift.staleDisabled = seed.onboarding.firstShift.staleDisabled;
+      r._meta.governance.tiers.A.sections.push('spawn.singlesFirstShifts'); }],
     ['a snapshot with the new keys that still carries the backrest', /config:upgrades:keys/, r => { r.upgrades.table.tableUpgrade = ladder(); r.upgrades.table.chairUpgrade = chair(); tiers(r); }],
     ['a snapshot that lost the backrest without the new keys', /config:upgrades:keys/, r => { delete r.upgrades.backrest; }],
     ['an unknown key inside tableUpgrade', /config:upgrades\.table\.tableUpgrade:keys/, r => { r.upgrades.table.tableUpgrade = { ...ladder(), bogus: 1 }; r.upgrades.table.chairUpgrade = chair(); tiers(r); delete r.upgrades.backrest; }],

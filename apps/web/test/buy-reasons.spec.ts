@@ -4,6 +4,8 @@ import { execFileSync } from 'node:child_process';
 import AxeBuilder from '@axe-core/playwright';
 import { readFileSync } from 'node:fs';
 
+// Founder 2026-10-22 (B2.5): the shift book keeps everything but the net, the suggestion and three counts under "Chi tiết", collapsed.
+const bookDetails = async (page: Page) => { const d = page.locator('.book-details'); if (!(await d.evaluate(el => (el as HTMLDetailsElement).open))) await d.locator('> summary').click(); };
 // fun-buy-buttons-reason (PLAN "Vui 3 ca" §4 + P3): a price on every buy button and exactly one reason when it is dimmed, one reason on every
 // "a guest left" toast, and the shift book ranking the reasons. Engine-made saves, DOM-only proof.
 const viewports = [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1280, height: 720 }];
@@ -198,14 +200,15 @@ for (const viewport of viewports) test(`the shift book lists why guests left, mo
   await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   const f = fixture('book'), l = f.losses as Record<string, number>;
   // What the player should read, restated from the engine's own counts (not through the app's helper).
-  const beer = l.beerStock + l.beerRefill, food = l.foodStock, seat = f.rejected as number, wait = Object.entries(l).filter(([k]) => !['beerStock', 'beerRefill', 'foodStock'].includes(k)).reduce((s, [, n]) => s + n, 0);
+  // Review B2-r1: guests who gave up in the queue count under "Hết chỗ" with the groups turned away (the book's top count says the same); until then under "Chờ lâu quá".
+  const beer = l.beerStock + l.beerRefill, food = l.foodStock, seat = (f.rejected as number) + (l.queue ?? 0), wait = Object.entries(l).filter(([k]) => !['beerStock', 'beerRefill', 'foodStock', 'queue'].includes(k)).reduce((s, [, n]) => s + n, 0);
   const order = ([['beer', beer, 0], ['food', food, 1], ['wait', wait, 2], ['seat', seat, 3]] as const).filter(r => r[1] > 0).sort((a, b) => b[1] - a[1] || a[2] - b[2]);
   expect(order.length).toBeGreaterThanOrEqual(3); expect(order[0][0]).not.toBe('beer'); // the order is not the default one: the ranking is real
   const pairs = (f.noSeat as number) / 2; expect(pairs).toBeGreaterThanOrEqual(1); // S3: pairs turned away for lack of a two-chair table, restated from the engine's own count of their guests
   await load(page, f.save, f.now, false);
   await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
   const book = page.getByRole('dialog', { name: 'Sổ ca hôm nay', exact: true }); await expect(book).toBeVisible();
-  const section = book.locator('.leave-reasons'); await expect(section.getByRole('heading', { name: 'Vì sao khách đi' })).toBeVisible();
+  await bookDetails(page); const section = book.locator('.leave-reasons'); await expect(section.getByRole('heading', { name: 'Vì sao khách đi' })).toBeVisible();
   const label: Record<string, string> = { beer: 'Hết bia', food: 'Hết mồi', wait: 'Chờ lâu quá', seat: 'Hết chỗ' };
   await expect(section.locator('li')).toHaveCount(order.length);
   for (const [i, [reason, count]] of order.entries()) {

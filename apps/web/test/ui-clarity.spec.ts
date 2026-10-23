@@ -37,6 +37,7 @@ for (const locale of ['vi', 'en']) for (const viewport of [{ width: 360, height:
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: copy['nav.book'], exact: true }).first().click();
     await expect(page.getByRole('dialog').locator('.ledger').getByText(copy['book.served'], { exact: true })).toBeVisible(); // English also labels the metrics row "Customer rounds served"
+    await page.locator('.book-details > summary').click(); // founder 2026-10-22 (B2.5): the dish table and its explanation sit under "Chi tiết", collapsed
     await expect(page.getByRole('region', { name: copy['menu.title'] })).toContainText(locale === 'vi' ? 'Một lượt = một khách trong một đợt gọi' : 'One serve is one customer in one ordering round');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     expect(tbh.consoleErrors()).toEqual([]); await tbh.shot(`a5-book-${locale}-${viewport.width}.png`);

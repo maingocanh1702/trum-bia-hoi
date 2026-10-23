@@ -69,7 +69,8 @@ test('S3: the shift book counts pairs turned away for lack of a two-chair table:
 });
 
 test('S3: on a real one-table shift the pairs line is exactly the pairs the engine turned away at the door (queue_overflow noSeat), singles refused for a full queue are not pairs', () => {
-  const raw = structuredClone(config.raw); raw.onboarding.enabled = false; raw.spawn.pPair = 0.5;
+  // The line reads the pairs a one-chair shop turned away in a save's shift 1: the draw of every pin before 2.1.4 (the bundled `spawn.singlesFirstShifts` sends no pair in the first three shifts).
+  const raw = structuredClone(config.raw); raw.onboarding.enabled = false; raw.spawn.pPair = 0.5; raw.spawn.singlesFirstShifts = 0;
   const g = new Game(loadConfig(raw), 42, Date.parse('2026-10-20T10:00:00Z'));
   assert.ok(g.command({ at: g.world.now, idempotencyKey: 'open', command: { type: 'startShift' } }).ok);
   for (let step = 0; step < 6000 && g.world.shift && !g.world.shift.closedAt; step++) g.advance(g.world.now + 1000); // nobody is ever served: the door fills and refuses

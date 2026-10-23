@@ -138,11 +138,14 @@ test('snapshots from before the key load, bytes kept, and refuse every half-way 
   const withKey = raw(); withKey.shift.noCooldownFirstShifts = 3;
   assert.equal((loadConfig(withKey).values.shift as { noCooldownFirstShifts?: number }).noCooldownFirstShifts, 3, 'a copy labelled 2.0.23 that carries the key is a complete snapshot too');
   const bad: [string, RegExp, (r: any) => void][] = [
-    // "the new version" is the label that introduced the key (2.1.0); the bundled label (2.1.2 since the founder's HUD override of 2026-10-22; `kickTable` came with 2.1.1) also needs `kickTable`, so its case
-    // carries that section and lacks only the key under test.
+    // "the new version" is the label that introduced the key (2.1.0); the bundled label (2.1.4 since the founder's early pacing of 2026-10-22; `kickTable` came with 2.1.1,
+    // `featureReveal.kickAfterShifts` and `firstShift.excludedCustomerTypes` with 2.1.3, the three pacing keys with 2.1.4) also needs those, so its case carries them and lacks only the key under test.
     ['a snapshot labelled with the new version that lacks the key', /config:shift:keys/, r => { r._meta.version = '2.1.0'; }],
     ['a snapshot labelled with the bundled version that lacks only the key', /config:shift:keys/, r => {
-      r._meta.version = seed._meta.version; r.kickTable = structuredClone(seed.kickTable); r._meta.governance.tiers.A.sections.push('kickTable'); }],
+      r._meta.version = seed._meta.version; r.kickTable = structuredClone(seed.kickTable); r._meta.governance.tiers.A.sections.push('kickTable');
+      r.onboarding.featureReveal.kickAfterShifts = seed.onboarding.featureReveal.kickAfterShifts; r.onboarding.firstShift.excludedCustomerTypes = structuredClone(seed.onboarding.firstShift.excludedCustomerTypes);
+      r.spawn.singlesFirstShifts = seed.spawn.singlesFirstShifts; r.rush.schedule.replanPendingArrival = seed.rush.schedule.replanPendingArrival; r.onboarding.firstShift.staleDisabled = seed.onboarding.firstShift.staleDisabled;
+      r._meta.governance.tiers.A.sections.push('spawn.singlesFirstShifts'); }],
     ['a string instead of a count', /config:shift\.noCooldownFirstShifts:type/, r => { r.shift.noCooldownFirstShifts = '3'; }],
     ['a fraction of a shift', /config:shift\.noCooldownFirstShifts:integer/, r => { r.shift.noCooldownFirstShifts = 2.5; }],
     ['a negative count', /negative|config:shift\.noCooldownFirstShifts/, r => { r.shift.noCooldownFirstShifts = -1; }],

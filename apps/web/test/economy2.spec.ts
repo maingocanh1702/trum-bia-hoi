@@ -98,18 +98,36 @@ for (const lang of ['vi', 'en']) for (const weather of ['sunny', 'hot', 'humid']
   await page.goto('/'); await page.getByRole('button', { name: /^(Cài đặt|Settings)$/ }).click();
   await page.locator('select').first().selectOption(lang); await page.keyboard.press('Escape');
   for (const [index, ms] of seed.upgrades.cooler.freshnessMs.entries()) {
-    const duration = ms === null ? '∞' : copy('cooler.seconds', { seconds: Math.round(ms * seed.weather[weather].freshnessMult) / 1000 });
-    await expect(page.locator('.cooler .capacity-badge')).toHaveText(duration);
+    const duration = ms === null ? '∞' : copy('cooler.seconds', { seconds: new Intl.NumberFormat(lang === 'vi' ? 'vi-VN' : 'en-US', { maximumFractionDigits: 2 }).format(Math.round(ms * seed.weather[weather].freshnessMult) / 1000) }); // review B2-r1: the locale's decimals, as the freshness hint
+    await expect(page.locator('.cooler .capacity-badge')).toHaveText(copy('production.freshness', { count: duration })); // founder 2026-10-22 (B2.3): labelled, was the bare seconds
     await expect(page.locator('.cooler .capacity-badge')).toHaveAccessibleName(copy('production.freshness', { count: duration }));
     await page.getByRole('button', { name: labels['equipment.cooler'], exact: true }).click();
     const card = page.locator('.equipment-detail .upgrade-card'), current = card.locator('.equipment-comparison section').first();
     await expect(current).toContainText(copy('level', { n: index + 1 }));
     await expect(current).toContainText(ms === null ? labels['cooler.forever'] : copy('cooler.staleAfter', { seconds: ms / 1000, reputation: String(seed.reputation.staleGlass).replace('-', '−') }));
     await expect(card).toContainText(copy('cooler.weather', { hot: seed.weather.hot.freshnessMult, humid: seed.weather.humid.freshnessMult }));
+    await expect(card.locator('.cooler-first-shift')).toHaveCount(0); // beer goes flat in this shift: no first-shift line
     if (index === 0 || ms === null) await page.screenshot({ path: `.qa/cooler-${lang}-${weather}-${index + 1}.png` });
     if (ms !== null) await card.getByRole('button').click();
     else await expect(card.getByRole('button')).toBeDisabled();
     await page.keyboard.press('Escape');
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('JSON 2.1.4 in shift 1 of a new save beer never goes flat: the cooler badge reads ∞ and its sheet says so, above the level\'s own seconds for the later shifts (founder 2026-10-22)', async ({ page }) => {
+  const f = fixture('modern'), labels = JSON.parse(readFileSync('apps/web/src/i18n/vi.json', 'utf8'));
+  const copy = (key: string, params: Record<string, string | number> = {}) => labels[key].replace(/\{(\w+)\}/g, (_: string, key: string) => String(params[key]));
+  expect(seed.onboarding.firstShift.staleDisabled).toBe(true);
+  await page.setViewportSize({ width: 360, height: 740 }); await page.clock.pauseAt(new Date(f.now));
+  await page.addInitScript(save => { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('tbh.settings.v1', JSON.stringify({ welcomed: true, guideDone: true })); }, f.save);
+  await page.goto('/');
+  await expect(page.locator('.cooler .capacity-badge')).toHaveText(copy('production.freshness', { count: '∞' })); // B2.3: "Giữ tươi ∞" (the ∞ of shift 1 stays; was the bare '∞')
+  await expect(page.locator('.cooler .capacity-badge')).toHaveAccessibleName(copy('production.freshness', { count: '∞' }));
+  await page.screenshot({ path: '.qa/cooler-shift1-badge-vi.png' });
+  await page.getByRole('button', { name: labels['equipment.cooler'], exact: true }).click();
+  await expect(page.locator('.equipment-detail .upgrade-card .cooler-first-shift')).toHaveText(copy('cooler.firstShift')); // review B1-r1: the sheet no longer contradicts the ∞
+  await expect(page.locator('.equipment-detail .upgrade-card .equipment-comparison section').first())
+    .toContainText(copy('cooler.staleAfter', { seconds: seed.upgrades.cooler.freshnessMs[0]! / 1000, reputation: String(seed.reputation.staleGlass).replace('-', '−') }));
+  await page.screenshot({ path: '.qa/cooler-shift1-vi.png' });
 });

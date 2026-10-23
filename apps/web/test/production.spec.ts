@@ -9,9 +9,9 @@ for (const width of [360, 390]) test(`stocked beer capacity and upgrade comparis
   await page.goto('/');
   const keg = page.getByRole('button', { name: 'Vòi rót', exact: true }), washer = page.getByRole('button', { name: 'Bồn rửa', exact: true });
   const snapshot = async () => fixture(await readSave(page));
-  await expect(washer.locator('.capacity-badge')).toHaveText('0/1');
+  await expect(washer.locator('.capacity-badge')).toHaveText('Rửa 0/1'); // founder 2026-10-22 (B2.3): the sink's count is labelled (was the bare '0/1')
   const cooler = page.locator('.equipment-object.cooler');
-  await expect(cooler.locator('.capacity-badge')).toHaveText('8.04 s');
+  await expect(cooler.locator('.capacity-badge')).toHaveText('Giữ tươi 8,04 s'); // B2.3: the cooler's seconds are labelled (was the bare '8.04 s'); review B2-r1: written as the freshness hint writes them (vi 8,04)
   await cooler.click(); const coldPanel = page.getByRole('dialog');
   await expect(coldPanel.getByText('Giữ tươi 12 s', { exact: true })).toBeVisible();
   await expect(coldPanel.getByText('Giữ tươi 20 s', { exact: true })).toBeVisible();
@@ -51,7 +51,7 @@ for (const width of [360, 390]) test(`stocked beer capacity and upgrade comparis
   await page.getByRole('button', { name: 'Beer taps', exact: true }).click();
   await expect(page.getByRole('dialog').getByText(/^Poured \d+\/5 · \+5 every 2.7s$/)).toBeVisible();
   await page.keyboard.press('Escape'); await page.getByRole('button', { name: 'Restock', exact: true }).click();
-  await expect(page.locator('.stock-row').first().getByRole('button', { name: /^Buy keg/ }).first()).toBeVisible();
+  await expect(page.locator('.stock-row').first().getByRole('button', { name: /^\+10 · / })).toBeVisible(); // founder 2026-10-22 (B2.7): "+10 · price" (was "Buy keg +1 …")
 
 });
 
@@ -62,7 +62,7 @@ test('legacy washing shows an indeterminate bar in the yard and paused equipment
   await page.addInitScript(save => { localStorage.setItem('tbh.save.v1', save); localStorage.setItem('tbh.settings.v1', JSON.stringify({ welcomed: true, guideDone: true })); }, f.save);
   await page.goto('/');
   const washer = page.getByRole('button', { name: 'Bồn rửa', exact: true });
-  await expect(washer.locator('.capacity-badge')).toHaveText('1/1');
+  await expect(washer.locator('.capacity-badge')).toHaveText('Rửa 1/1');
   await expect(washer.getByRole('progressbar')).not.toHaveAttribute('value');
   await washer.click(); const panel = page.getByRole('dialog', { name: 'Bồn rửa', exact: true });
   await expect(panel.getByRole('progressbar')).not.toHaveAttribute('value');

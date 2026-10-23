@@ -25,7 +25,8 @@ async function boot(page: Page, locale: string, mode: string, reducedMotion = fa
 }
 const boxes = async (items: Locator) => Promise.all((await items.all()).map(async el => (await el.boundingBox())!));
 const overlaps = (a: { x: number; y: number; width: number; height: number }, b: typeof a) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
-/** Every image the yard shows is really decoded (a missing sprite would be an empty placeholder box, caught by the src checks below). */
+/** Every image the yard shows is really decoded (a missing sprite would be an empty placeholder box, caught by the src checks below). Polled: images decode after
+ *  mount, and one early sample raced them (red 3 in 6 under --repeat-each once the A3 note got shorter, 2026-10-22); a sprite that never loads still fails. */
 const loaded = (page: Page, scope: string) => page.locator(`${scope} img`).evaluateAll(imgs => imgs.every(img => (img as HTMLImageElement).complete && (img as HTMLImageElement).naturalWidth > 0));
 
 for (const viewport of viewports) test(`S6 a full first alley: eight tables of two chairs fit the yard, each drawn by its table level, chair level and tray, at ${viewport.width}px`, async ({ page, tbh }) => {
@@ -47,7 +48,7 @@ for (const viewport of viewports) test(`S6 a full first alley: eight tables of t
   // Every level of both ladders and every tray size is on the yard at once (the fixture spreads them over the eight tables).
   expect(new Set(f.tables.map((x: { level: number }) => x.level))).toEqual(new Set([1, 2, 3, 4])); expect(new Set(f.tables.map((x: { chairLevel: number }) => x.chairLevel))).toEqual(new Set([1, 2, 3]));
   expect(new Set(f.tables.map((x: { dishes: number }) => x.dishes))).toEqual(new Set([2, 3]));
-  expect(await loaded(page, '.yard')).toBe(true);
+  await expect.poll(() => loaded(page, '.yard')).toBe(true);
   // Layout: no horizontal scroll, every table target at least 44 px and inside the viewport, no two tables overlapping (HANDOFF section 11: eight at 360 px).
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   const objects = await boxes(yard.locator('.table-object'));
@@ -72,25 +73,35 @@ for (const locale of ['vi', 'en'] as const) test(`S6 a new shop shows its one ta
   await expect(yard.locator('.table-slot img')).toHaveCount(0); // an empty spot invents no art
   await expect(yard.locator('.table-0 .seat img.sprite')).toHaveAttribute('src', /chair-plastic/);
   await expect(yard.locator('.table-0 .tray')).toHaveAttribute('data-dishes', '1'); await expect(yard.locator('.table-0 .table-caption')).toContainText(t('table.tray', { n: 1 }));
-  expect(await loaded(page, '.yard')).toBe(true); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await expect.poll(() => loaded(page, '.yard')).toBe(true); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze(); expect(axe.violations).toEqual([]);
   await tbh.shot(`yard-fresh-${locale}.png`); expect(tbh.consoleErrors()).toEqual([]);
 });
 
 // Review 07 r1 (W1 follow-up): at rest the "Quán nhỏ đã sẵn sàng" note hangs from the top of the yard with the height of its text, so its "Mở ca" button
-// does not move with the height of the grid. Centred in a box of 15-90 % of the yard, it slid under the sticky bottom nav once W1's row band made the yard
-// taller (axe target-size at 1280×720), and it already sat under the nav at 360×740 with the HUD shown. The corners and the centre of the button must be
-// the button itself, inside the viewport, in both languages.
-for (const locale of ['vi', 'en'] as const) for (const viewport of viewports) test(`S6 at rest the opening note's start button is whole on screen above the bottom nav (${locale}) at ${viewport.width}px`, async ({ page, tbh }) => {
+// did not move with the height of the grid; centred, it had slid under the sticky bottom nav (axe target-size at 1280×720, under the nav at 360×740).
+// Founder 2026-10-22 (A3): exactly one "Mở ca" on screen. With the bottom nav shown the note keeps its text, has no button of its own and points down at the
+// nav's, which is the one "Mở ca" of the page: whole on screen, its corners and centre its own, at least 44 px, in the thumb zone (the bottom third of the
+// screen), in both languages. A pin that still hides the nav keeps the note's button: first-shift-visual.spec.ts `A3 a save pinned to 2.1.1 …`.
+// Review A-r1 F1 / founder 2026-10-22 (B2.8): also on a landscape phone (844×390), where the nav used to be static and the one Mở ca sat below the fold.
+for (const locale of ['vi', 'en'] as const) for (const viewport of [...viewports, { width: 844, height: 390 }]) test(`A3 at rest exactly one Mở ca is on screen, the bottom nav's: whole, uncovered and in the thumb zone, and the opening note points at it (${locale}) at ${viewport.width}px`, async ({ page, tbh }) => {
   await page.setViewportSize(viewport);
   const { t } = await boot(page, locale, 'fresh');
-  const note = page.locator('.opening-note'), button = note.getByRole('button', { name: t('nav.shift'), exact: true });
-  await expect(note).toBeVisible(); await expect(page.locator('.bottom-nav')).toBeVisible(); // the HUD and the nav are shown: the rest screen between shifts
+  const note = page.locator('.opening-note'), button = page.getByRole('button', { name: t('nav.shift'), exact: true }); // strict: one button of that name on the page
+  await expect(note).toBeVisible(); await expect(page.locator('.bottom-nav')).toBeVisible(); // the HUD and the nav are shown: the rest screen of a new shop
+  await expect(note.locator('h2')).toHaveText(t('rest.title')); await expect(note).toContainText(t('rest.copy')); await expect(note).toContainText(t('rest.free')); // the note keeps its text
+  await expect(note.getByRole('button')).toHaveCount(0);
+  await expect(note.locator('.start-below')).toHaveText(t('rest.startBelow', { button: t('nav.shift') })); await expect(note.locator('.start-below b')).toHaveText(t('nav.shift'));
+  await expect(button).toHaveCount(1); await expect(page.locator('.bottom-nav').getByRole('button', { name: t('nav.shift'), exact: true })).toHaveCount(1);
   await expect(button).toBeInViewport({ ratio: 1 });
+  const box = (await button.boundingBox())!;
+  expect(box.width).toBeGreaterThanOrEqual(44); expect(box.height).toBeGreaterThanOrEqual(44);
+  expect(box.y, 'the button sits in the bottom third of the screen').toBeGreaterThanOrEqual(viewport.height * 2 / 3);
   const covered = await button.evaluate(el => {
-    const b = el.getBoundingClientRect(), d = 3;
+    // the nav's buttons are rounded (13 px): a corner probe sits that far in along the diagonal, inside the painted button, not on the nav behind its corner
+    const b = el.getBoundingClientRect(), d = Math.max(3, Math.ceil(parseFloat(getComputedStyle(el).borderTopLeftRadius) * (1 - Math.SQRT1_2)) + 1);
     return [[b.left + d, b.top + d], [b.right - d, b.top + d], [b.left + d, b.bottom - d], [b.right - d, b.bottom - d], [b.left + b.width / 2, b.top + b.height / 2]]
-      .filter(([x, y]) => !document.elementFromPoint(x, y)?.closest('.opening-note .primary')).length;
+      .filter(([x, y]) => !el.contains(document.elementFromPoint(x, y))).length;
   });
   expect(covered, 'points of the start button painted over by another element').toBe(0);
   const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze(); expect(axe.violations).toEqual([]);
@@ -99,16 +110,18 @@ for (const locale of ['vi', 'en'] as const) for (const viewport of viewports) te
 });
 
 // A live shift (fixture `live`: two one-chair tables in the first row, a ready order and its bubble, which carries the one spotlight): the bubble of a
-// first-row table rises into the band the grid keeps above its rows and never covers the beer line (S2's one set of numbers) or the door band.
-for (const viewport of viewports) test(`S6 on a live shift the order bubble of a first-row table stays below the beer line and the door band, and one thing blinks, at ${viewport.width}px`, async ({ page, tbh }) => {
+// first-row table rises into the band the grid keeps above its rows and never covers the keg's numbers or the door band. Founder 2026-10-22 (B2.3): the beer
+// line (S2's one set of numbers, which this test guarded until then) repeated the keg badge, the stock strip and the glass counter and is for screen readers only.
+for (const viewport of viewports) test(`S6 on a live shift the order bubble of a first-row table stays below the keg's numbers and the door band, and one thing blinks, at ${viewport.width}px`, async ({ page, tbh }) => {
   await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   const { f } = await boot(page, 'vi', 'live');
   expect(f.readyTable).toBeLessThan(2); // a table of the first row
   const bubble = page.locator(`.table-space.table-${f.readyTable} .table-order-hint`); await expect(bubble).toHaveClass(/is-ready/);
   await expect(page.locator('[data-spotlight]')).toHaveCount(1); await expect(bubble).toHaveAttribute('data-spotlight', ''); // P0: the ready order is the one thing that blinks
-  const [hint, beer, door, grid] = await Promise.all([bubble.boundingBox(), page.locator('#beer-supply-status').boundingBox(), page.locator('.yard-door').boundingBox(), page.locator('.yard-grid').boundingBox()]);
-  expect(hint && beer && door && grid).toBeTruthy();
-  expect(overlaps(hint!, beer!), 'the bubble covers the beer line').toBe(false);
+  await expect(page.locator('#beer-supply-status')).toHaveClass(/sr-only/);
+  const [hint, keg, door, grid] = await Promise.all([bubble.boundingBox(), page.locator('.equipment-object.keg .capacity-badge').boundingBox(), page.locator('.yard-door').boundingBox(), page.locator('.yard-grid').boundingBox()]);
+  expect(hint && keg && door && grid).toBeTruthy();
+  expect(overlaps(hint!, keg!), 'the bubble covers the keg\'s numbers').toBe(false);
   expect(hint!.y).toBeGreaterThanOrEqual(door!.y + door!.height - 1); // below the door band, which stays free for the queue
   expect(hint!.y).toBeGreaterThanOrEqual(grid!.y - 1); // inside the band the grid keeps above its first row
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -118,15 +131,20 @@ for (const viewport of viewports) test(`S6 on a live shift the order bubble of a
 // Review 07 r1 (W1): a busy alley (fixture `rows`: eight tables of two chairs, an open shift, an unserved order at every table) hangs an order bubble and
 // its patience track above every table. A bubble of row 2 or below rises into the band its row keeps free and never covers the caption (state, countdown,
 // "n chỗ · Mâm m món": the cue "Mời về" relies on) or the drawing of another table, on a phone's two columns and on a wide screen's three.
-for (const viewport of viewports) test(`S6 a busy alley: the order bubbles of every row cover no other table's caption or drawing, at ${viewport.width}px`, async ({ page, tbh }) => {
+// Review B2-r1 / Linux CI: in vi and en, and with a deliberately wide font (Linux's DejaVu Sans, else Verdana, plus letter-spacing), since a font that wraps a
+// caption grows it into the bubble band of the row below; captions are a fixed band of lines that never wrap (reference-layout.css `.table-caption`).
+const wideFont = (page: Page) => page.addStyleTag({ content: '*, *::before, *::after { font-family: "DejaVu Sans", Verdana, sans-serif !important; letter-spacing: .03em !important; }' });
+const variants = [['vi', 'app'], ['en', 'app'], ['vi', 'wide'], ['en', 'wide']] as const, variantName = (locale: string, font: string) => locale === 'vi' && font === 'app' ? '' : ` (${locale}${font === 'wide' ? ', wide font' : ''})`;
+for (const [locale, font] of variants) for (const viewport of viewports) test(`S6 a busy alley: the order bubbles of every row cover no other table's caption or drawing${variantName(locale, font)}, at ${viewport.width}px`, async ({ page, tbh }) => {
   await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  const { f } = await boot(page, 'vi', 'rows');
+  const { f } = await boot(page, locale, 'rows'); if (font === 'wide') await wideFont(page);
   const yard = page.locator('.yard'), open = f.openTables as number[];
   expect(f.tables).toHaveLength(8); expect(open).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
   await expect(yard.locator('.table-order-hint')).toHaveCount(open.length);
   const tops = (await boxes(yard.locator('.table-object'))).map(b => Math.round(b.y)), rows = [...new Set(tops)].sort((a, b) => a - b), rowOf = (i: number) => rows.indexOf(tops[i]);
-  expect(rows).toHaveLength(viewport.width < 640 ? 4 : 3); // four rows of two on a phone, three rows of three on a wide screen
-  expect(new Set(open.filter(i => rowOf(i) >= 1).map(rowOf)).size).toBeGreaterThanOrEqual(2); // the subject: bubbles in rows 2 and 3 (and 4 on a phone)
+  // Founder 2026-10-22 (B2.8): the yard fits one screen, four places abreast in two rows on every screen (until then four rows of two on a phone, three of three wide).
+  expect(rows).toHaveLength(2);
+  expect(new Set(open.filter(i => rowOf(i) >= 1).map(rowOf)).size).toBeGreaterThanOrEqual(1); // the subject: bubbles in the row below (rows 2-4 when there were four)
   for (const i of open) {
     const hint = yard.locator(`.table-space.table-${i} .table-order-hint`), track = hint.locator('.patience-track');
     const parts = [(await hint.boundingBox())!, ...(await track.count() ? [(await track.boundingBox())!] : [])];
@@ -136,21 +154,26 @@ for (const viewport of viewports) test(`S6 a busy alley: the order bubbles of ev
     }
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.locator('.yard').scrollIntoViewIfNeeded(); await tbh.shot(`yard-rows-${viewport.width}.png`); expect(errors).toEqual([]); expect(tbh.consoleErrors()).toEqual([]);
+  await page.locator('.yard').scrollIntoViewIfNeeded(); await tbh.shot(`yard-rows-${locale}-${font}-${viewport.width}.png`); expect(errors).toEqual([]); expect(tbh.consoleErrors()).toEqual([]);
 });
 
 // Review 07 r1 (W1, second look): the tallest caption is a lingering table's, whose guest label, state and enjoy countdown (the cue "Mời về" relies on) hang
 // about 21 px below its space. Fixture `linger-rows`: "lai rai" pairs sipping their served trays (tables 1-3 and 5-6) right above tables whose order is open
 // (4, 7, 8), on a phone's two columns (4 under 2, 7-8 under 5-6) and on a wide screen's three (4 under 1, 8 under 5). No bubble or patience track of a lower
 // row covers the caption or the drawing of another table. The old 31 px gap cleared only tables that wait for their order: it fails here by 10 px.
-for (const viewport of viewports) test(`S6 a busy alley under lingering tables: no order bubble covers the label, state or countdown of the table above, at ${viewport.width}px`, async ({ page, tbh }) => {
+// Founder 2026-10-22 (B2.8): with four places abreast in two rows on every screen, tables 1-4 linger over the open orders of tables 5-8 (each one right under one).
+for (const [locale, font] of variants) for (const viewport of viewports) test(`S6 a busy alley under lingering tables: no order bubble covers the label, state or countdown of the table above${variantName(locale, font)}, at ${viewport.width}px`, async ({ page, tbh }) => {
   await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  const { f } = await boot(page, 'vi', 'linger-rows');
+  const { f, t } = await boot(page, locale, 'linger-rows'); if (font === 'wide') await wideFont(page);
   const yard = page.locator('.yard'), open = f.openTables as number[], lingering = f.lingering as number[];
-  expect(f.tables).toHaveLength(8); expect(lingering).toEqual([0, 1, 2, 4, 5]); expect(open).toEqual([3, 6, 7]);
+  expect(f.tables).toHaveLength(8); expect(lingering).toEqual([0, 1, 2, 3]); expect(open).toEqual([4, 5, 6, 7]); // B2.8: four abreast, every open order right under a lingering table
   for (const i of lingering) {
     const space = yard.locator(`.table-space.table-${i}`);
     await expect(space.locator('.guest-label')).toHaveCount(1); await expect(space.locator('.enjoy-time')).toHaveCount(1); // the three-line caption
+    // Review B2-r2 / B2-r3: the type label (the cue for "Mời về") and the state read whole, no "…", in the app font and the wide one (what Linux renders): a
+    // caption shows a short label where the full one would not fit (`caption.*`, vi and en); the full type name stays in the DOM for screen readers (and on the order card).
+    await expect(space.locator('.guest-label')).toContainText(t('customer.ngoily'));
+    expect(await space.locator('.table-caption').evaluate(c => [...c.querySelectorAll(':scope > *, :scope > * > *')].filter(x => !x.closest('.sr-only') && x.clientWidth > 0 && x.scrollWidth > x.clientWidth + 1).map(x => x.textContent)), 'a caption line ends in "…"').toEqual([]);
   }
   await expect(yard.locator('.table-order-hint')).toHaveCount(open.length);
   const tops = (await boxes(yard.locator('.table-object'))).map(b => Math.round(b.y)), rows = [...new Set(tops)].sort((a, b) => a - b), rowOf = (i: number) => rows.indexOf(tops[i]);
@@ -165,7 +188,7 @@ for (const viewport of viewports) test(`S6 a busy alley under lingering tables: 
     }
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.locator('.yard').scrollIntoViewIfNeeded(); await tbh.shot(`yard-linger-rows-${viewport.width}.png`); expect(errors).toEqual([]); expect(tbh.consoleErrors()).toEqual([]);
+  await page.locator('.yard').scrollIntoViewIfNeeded(); await tbh.shot(`yard-linger-rows-${locale}-${font}-${viewport.width}.png`); expect(errors).toEqual([]); expect(tbh.consoleErrors()).toEqual([]);
 });
 
 test('S6 reduced motion: the live yard animates (the spotlight pulse) without it and not at all with it, while the static cues (chairs, tray, spots) stay', async ({ page, tbh }) => {

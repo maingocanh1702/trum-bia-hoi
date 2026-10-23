@@ -1,6 +1,8 @@
 import { readSave, waitSaved } from './storage';
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
+// Founder 2026-10-22 (B2.5): the shift book keeps everything but the net, the suggestion and three counts under "Chi tiết", collapsed.
+const bookDetails = async (page: Page) => { const d = page.locator('.book-details'); if (!(await d.evaluate(el => (el as HTMLDetailsElement).open))) await d.locator('> summary').click(); };
 const fixture = (mode: string, input?: string) => JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/locations.ts', mode], { encoding: 'utf8', input }));
 for (const [locale, width] of [['vi', 360], ['en', 390]] as const) test(`rental quote, early move, pause and reload at ${width}px in ${locale}`, async ({ page }) => {
   const f = fixture('ready'), vi = locale === 'vi', errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
@@ -36,7 +38,7 @@ for (const [locale, width] of [['vi', 360], ['en', 390], ['vi', 1280]] as const)
   await page.goto('/');
   for (const reload of [false, true]) {
     if (reload) { await waitSaved(page); await page.reload(); }
-    await page.getByRole('button', { name: vi ? 'Sổ ca' : 'Shift book', exact: true }).click();
+    await page.getByRole('button', { name: vi ? 'Sổ ca' : 'Shift book', exact: true }).click(); await bookDetails(page);
     const panel = page.getByRole('region', { name: vi ? 'Địa điểm trong ca' : 'Locations this shift', exact: true });
     await expect(panel.locator('[data-shift-location]')).toHaveCount(1);
     await expect(panel.locator('[data-shift-location="ngo_cho"]')).toHaveText(vi ? 'Ngõ Chợ ×1,012' : 'Market Lane ×1.012'); // the sealed 2.1.0 ramp prints its three decimals

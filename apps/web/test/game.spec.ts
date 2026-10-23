@@ -13,6 +13,8 @@ async function reloadAtSameGameTime(page: Page) {
   expect(await page.evaluate(() => Date.now())).toBe(time);
 }
 
+// Founder 2026-10-22 (B2.5): the shift book opens on the net, the suggestion and three counts; everything else waits under "Chi tiết", collapsed.
+const bookDetails = async (page: Page) => { const d = page.locator('.book-details'); if (!(await d.evaluate(el => (el as HTMLDetailsElement).open))) await d.locator('> summary').click(); };
 for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1280, height: 720 }, { width: 1280, height: 400 }]) {
   test(`guest serves, reloads, opens paused sheets and switches locale at ${viewport.width}×${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
@@ -63,8 +65,9 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }
       expect(b.x).toBeGreaterThanOrEqual(panel.x); expect(b.x + b.width).toBeLessThanOrEqual(panel.x + panel.width);
     }
     const stockBefore = Number((await stockRow.locator('.stock-info span').textContent())!.match(/\d+/)![0]);
-    await stockRow.getByRole('button', { name: 'Mua bom +1 · 12 xu', exact: true }).click();
-    await expect(stockRow.locator('.stock-info span')).toHaveText(`Bom bia ${stockBefore + 1}/15 cốc`);
+    // Founder 2026-10-22 (B2.7): "+10" and "Đầy kho" per row (the "+1 · 12 xu" clicked here until then is gone): "Đầy kho" fills the keg stock to its cap.
+    expect(stockBefore).toBeLessThan(15); await stockRow.getByRole('button', { name: /^Đầy kho · / }).click();
+    await expect(stockRow.locator('.stock-info span')).toHaveText('Bom bia 15/15 cốc');
     const before = await page.locator('.energy strong').textContent();
     await page.clock.runFor(2000);
     expect(await page.locator('.energy strong').textContent()).toBe(before);
@@ -174,7 +177,9 @@ test('mixed customers retain their urgent identity and a live grace countdown wh
 });
 
 // pauseAt installs fake timers itself; a separate running install can race the identical target time.
-for (const [mode, emoji] of [['early', '🤩'], ['late', '😐'], ['grace', '😥'], ['stale', '😖']]) {
+// Founder 2026-10-22 (B2.1b), his literal scale: late (`late`: inside the guest's patience, past the tip window) = neutral, and `grace` (getting up) no happier;
+// until B2 they were 😐 and 😥 (review B2-r1 undid the first B2 reading, late 🙂). B2.1(a): every serve but a tipped one says why on the pill.
+for (const [mode, emoji] of [['early', '🤩'], ['late', '😐'], ['grace', '😐'], ['stale', '😖']]) {
   test(`multi-dish service shows the actual ${mode} reward and guest reaction`, async ({ page }) => {
     const fixture = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/service-states.ts', mode], { encoding: 'utf8' }));
     expect(fixture.result).toMatchObject({ ok: true, outcome: mode });
@@ -195,10 +200,13 @@ for (const [mode, emoji] of [['early', '🤩'], ['late', '😐'], ['grace', '�
     await expect(hint).toHaveCount(0);
     await expect(table.locator('.customer-reaction')).toHaveText(emoji);
     await expect(table.locator('.enjoy-time')).toHaveText(/^\d{2}:\d{2}$/);
-    await expect(table.locator('.guest-label')).toHaveText('Bàn lai rai');
+    await expect(table.locator('.guest-label [aria-hidden="true"]')).toHaveText('Lai rai'); await expect(table.locator('.guest-label')).toContainText('Bàn lai rai'); // review B2-r3: the caption's short label, the full one for screen readers
     await expect(page.locator('.toast-gain')).toHaveCount(1);
     await expect(page.locator('.toast-gain strong')).toHaveText(`+${fixture.result.amount}`);
     await expect(page.locator('.toast-gain button')).toHaveCount(0);
+    const reason = page.locator('.toast-gain .gain-reason');
+    if (mode === 'early') await expect(reason).toHaveCount(0);
+    else await expect(reason).toHaveText(mode === 'stale' ? `Bia hết hơi! +${fixture.result.amount} xu · mất boa, giảm uy tín` : 'Chậm · không có boa');
     const balance = new Intl.NumberFormat('vi-VN').format(fixture.coins + fixture.result.amount);
     await expect(page.locator('.money strong')).toHaveText(balance);
     await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -236,8 +244,8 @@ for (const width of [360, 390]) {
     await page.locator('.table-order-hint').first().click();
     await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
     await expect(page.locator('.toast-gain strong')).toHaveText(`+${fixture.result.amount}`);
-    await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
-    await expect(page.locator('.ledger > div').filter({ hasText: 'Thưởng Tỉnh Táo' }).locator('dd')).toHaveText(String(fixture.bonus));
+    await page.getByRole('button', { name: 'Sổ ca', exact: true }).click(); await bookDetails(page);
+    await expect(page.locator('.ledger-money > div').filter({ hasText: 'Thưởng Tỉnh Táo' }).locator('dd')).toHaveText(String(fixture.bonus));
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Cài đặt', exact: true }).click();
     await page.getByLabel('Ngôn ngữ').selectOption('en'); await page.keyboard.press('Escape');
@@ -338,7 +346,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 
     await page.getByRole('button', { name: 'Trả 5 xu và đóng ca', exact: true }).click();
     await expect(page.getByRole('dialog', { name: 'Sổ ca hôm nay' })).toBeVisible();
     await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(coins - 5));
-    await expect(page.locator('.ledger > div').filter({ hasText: 'Chi trong ca' }).locator('dd')).toHaveText('5');
+    await bookDetails(page); await expect(page.locator('.ledger-money > div').filter({ hasText: 'Chi trong ca' }).locator('dd')).toHaveText('5');
     await expect(page.locator('.seat-customer')).toHaveCount(0);
     await expect(page.locator('.toast-loss')).toHaveCount(0);
     await waitSaved(page); await page.reload(); await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(coins - 5));
@@ -411,7 +419,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 
     await expect(hud).toHaveText('Nhịp quán bình thường');
     // The last guests may already have left (seat model: fewer seated groups), and a finished shift opens its book itself.
     if (!(await page.getByRole('dialog', { name: 'Sổ ca hôm nay', exact: true }).isVisible())) await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
-    const report = page.getByRole('table', { name: 'Giờ Vàng trong ca' }); await report.scrollIntoViewIfNeeded(); await expect(report).toBeVisible();
+    await bookDetails(page); const report = page.getByRole('table', { name: 'Giờ Vàng trong ca' }); await report.scrollIntoViewIfNeeded(); await expect(report).toBeVisible();
     const stored = JSON.parse(await readSave(page));
     const ended = stored.events.find((e: { type: string }) => e.type === 'rush_ended').data;
     await expect(report.locator('tbody td').nth(0)).toHaveText(new Intl.NumberFormat('vi-VN').format(ended.served));
@@ -420,7 +428,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 
     await page.keyboard.press('Escape'); await waitSaved(page); await page.reload();
     await expect(hud).toHaveText('Nhịp quán bình thường');
     await page.getByRole('button', { name: 'Cài đặt', exact: true }).click(); await page.getByLabel('Ngôn ngữ').selectOption('en'); await page.keyboard.press('Escape');
-    await page.getByRole('button', { name: 'Shift book', exact: true }).click(); await expect(page.getByRole('table', { name: 'Rush results this shift' })).toBeVisible();
+    await page.getByRole('button', { name: 'Shift book', exact: true }).click(); await bookDetails(page); await expect(page.getByRole('table', { name: 'Rush results this shift' })).toBeVisible();
     const save = JSON.parse(await readSave(page));
     expect(save.events.filter((e: { type: string }) => e.type === 'rush_warning')).toHaveLength(1);
     expect(save.events.filter((e: { type: string }) => e.type === 'rush_started')).toHaveLength(1);
@@ -593,7 +601,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 
     const amount = fixture.coins - cost + fixture.quote.credited;
     await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(amount));
     await waitSaved(page); await page.reload(); await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(amount));
-    await page.getByRole('button', { name: 'Sổ ca', exact: true }).click(); await expect(page.locator('.ledger')).toContainText('Đơn đã giao'); await expect(page.locator('.ledger')).toContainText('Tiền đơn sau chiết khấu');
+    await page.getByRole('button', { name: 'Sổ ca', exact: true }).click(); await expect(page.locator('.ledger')).toContainText('Đơn đã giao'); await bookDetails(page); await expect(page.locator('.ledger-money')).toContainText('Tiền đơn sau chiết khấu');
     await page.keyboard.press('Escape'); await page.getByRole('button', { name: 'Cài đặt', exact: true }).click(); await page.getByLabel('Ngôn ngữ').selectOption('en'); await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Phone · delivery orders', exact: true }).click();
     await expect(page.getByRole('dialog', { name: 'Delivery order', exact: true })).toContainText('Next order in');

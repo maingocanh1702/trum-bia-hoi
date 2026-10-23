@@ -12,9 +12,10 @@ export function featureReveal(c: Config): Reveal {
  */
 export function revealed(w: Pick<WorldView, 'completedShifts'>, c: Config) {
   const r = featureReveal(c), on = c.values.onboarding.enabled && isEconomy2(c.values);
-  const after = (shifts: number) => !on || w.completedShifts >= shifts;
+  const after = (shifts: number) => !on || w.completedShifts >= shifts, hud = after(r.hudAfterShifts);
   return {
-    hud: after(r.hudAfterShifts), // shift timer, weather/rush row, stock strip, extra equipment, bottom nav
+    hud, // shift timer, weather/rush row, stock strip, extra equipment, bottom nav
+    kick: hud && after(r.kickAfterShifts), // "Mời về" (founder 2026-10-22, JSON 2.1.3): its own threshold, and never without the HUD
     upgrades: after(r.upgradeAfterShifts),
     upgradeList: after(r.upgradeAllAfterShifts), // false = the sheet shows only the first goal
     journey: after(r.journeyAfterShifts),

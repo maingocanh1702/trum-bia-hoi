@@ -96,8 +96,9 @@ if (mode === 'states') {
   console.log(JSON.stringify(liveBefore(build, e => e.type === 'queue_overflow')));
 } else if (mode === 'book') {
   // Mid-shift (the shift book opens from the nav only while a shift runs). Waiting is the common reason, beer rarer, groups are also turned
-  // away: the counts differ, so the book's order is not the fixed default order.
-  const g = configured(raw => { steadyDemand(raw); raw.onboarding.enabled = false; raw.upgrades.table.startingTables = 1; raw.spawn.baseMs = 3000; raw.patience.thuongMs = 30000; raw.inventory.startingStock.bia[0] = 0; }); // steady demand: the subject is the book, not the door cadence
+  // away: the counts differ, so the book's order is not the fixed default order. Pairs a one-chair shop turns away in shift 1 are the draw of every pin before 2.1.4
+  // (the bundled `spawn.singlesFirstShifts` sends no pair in a save's first three shifts), so that rule is off here: the book's pairs line is the subject.
+  const g = configured(raw => { steadyDemand(raw); raw.onboarding.enabled = false; raw.upgrades.table.startingTables = 1; raw.spawn.baseMs = 3000; raw.patience.thuongMs = 30000; raw.inventory.startingStock.bia[0] = 0; raw.spawn.singlesFirstShifts = 0; }); // steady demand: the subject is the book, not the door cadence
   send(g, { type: 'startShift' }, 'open');
   // The first guests found no beer (seat model: a pair or a queued group may time out first, so wait for a loss that is really about beer); then the stall restocked and nobody served.
   const beerLost = () => { const l = menuReport(g.world, g.config)!.losses; return l.beerStock + l.beerRefill; };
@@ -105,7 +106,7 @@ if (mode === 'states') {
   step(g, () => g.world.shift!.stats.lost >= 24 && g.world.shift!.stats.rejected >= 5 && (g.world.shift!.stats.noSeat ?? 0) >= 2, 1000); // and pairs turned away for lack of a two-chair table (S3: the book counts them)
   if (g.world.phase === 'resting') throw Error('fixture:shift-already-closed');
   const report = menuReport(g.world, g.config)!, stats = g.world.shift!.stats;
-  console.log(JSON.stringify({ save: encodeSave(g), now: g.world.now, losses: report.losses, rejected: stats.rejected, noSeat: stats.noSeat ?? 0, lost: stats.lost }));
+  console.log(JSON.stringify({ save: encodeSave(g), now: g.world.now, losses: report.losses, rejected: stats.rejected, noSeat: stats.noSeat ?? 0, lost: stats.lost, served: stats.served, net: stats.credited - stats.penalty - stats.spent, kitchen: g.world.equipment.kitchen })); // served / net / kitchen: shift-book.spec.ts (B2.5)
 } else {
   const g = decodeSave(await new Promise<string>(resolve => { let text = ''; process.stdin.on('data', c => { text += c; }); process.stdin.on('end', () => resolve(text)); }));
   console.log(JSON.stringify({ coins: g.world.coins, tables: g.world.tables.map(t => ({ level: t.level, state: t.state })), phase: g.world.phase, leaves: g.world.events.filter(leaving).map(e => ({ type: e.type, cause: e.data.cause ?? null })) }));

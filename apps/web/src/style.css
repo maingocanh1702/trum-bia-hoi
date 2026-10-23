@@ -77,6 +77,12 @@ small { font-size: 11px; }
 .table-space { position: relative; width: 132px; height: 101px; }
 .table-slot { display: grid; place-items: end center; padding-bottom: 20px; }
 .slot-mark { width: 84px; height: 42px; border: 2px dashed color-mix(in srgb, var(--inoxDark) 60%, transparent); border-radius: 50%; background: color-mix(in srgb, var(--streetBgShade) 35%, transparent); }
+/* Founder 2026-10-22 (B2.4): a tappable empty place keeps the look of the spot; the whole place is the target. */
+button.table-slot { min-height: 0; padding: 0 0 20px; border: 0; border-radius: 12px; background: transparent; color: inherit; }
+button.table-slot:hover .slot-mark, button.table-slot:focus-visible .slot-mark { border-color: var(--inoxDark); }
+.slot-buy { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.slot-buy > .sprite { width: 96px; height: 72px; }
+.slot-buy > .buy-card { align-self: stretch; }
 .table-object { display: block; width: 132px; height: 77px; border: 0; background: transparent; padding: 0; color: var(--ink); position: relative; }
 /* S6 (D14): the tray on the table top, one small dish per slot the level allows; the real order speaks in the bubble above. */
 .tray { position: absolute; left: 50%; top: 20px; transform: translateX(-50%); display: flex; gap: 1px; z-index: 1; pointer-events: none; }
@@ -138,8 +144,13 @@ small { font-size: 11px; }
 progress { accent-color: var(--beerAmber); width: 100%; max-width: 170px; height: 5px; border: 0; }
 progress::-webkit-progress-bar { background: var(--panelBorder); border-radius: 2px; }
 progress::-webkit-progress-value { background: var(--beerAmber); border-radius: 2px; }
-.stock-actions { display: flex; gap: 6px; max-width: 48%; }
-.stock-actions button { min-width: 61px; padding: 6px; font-size: 10px; line-height: 1.6; background: var(--stoolRedDeep); }
+/* Founder 2026-10-22 (B2.7): two secondary buttons per row, "+10" and "Đầy kho", the price a gold chip; a dimmed one has its reason under it. */
+.stock-actions { display: flex; flex-wrap: wrap; gap: 6px; max-width: 54%; }
+.stock-buy { display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; }
+.stock-actions button { min-width: 61px; padding: 6px 8px; font-size: 12px; line-height: 1.3; display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 6px; }
+.price-chip { padding: 2px 7px; border-radius: 10px; background: var(--coinGold); color: var(--ink); font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stock-buy .buy-reason { font-size: 11px; }
+.stock-actions .stock-one { flex-basis: 100%; }
 .upgrade-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; margin: 15px 0 25px; }
 .upgrade-card { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 12px 6px; border: 1px solid var(--panelBorder); border-radius: 7px; background: var(--panelRaised); min-width: 0; }
 .upgrade-card .sprite { width: 59px; height: 59px; }
@@ -147,11 +158,22 @@ progress::-webkit-progress-value { background: var(--beerAmber); border-radius: 
 .upgrade-card p { color: var(--creamMuted); font-size: 11px; }
 .upgrade-card button { width: 100%; padding: 5px; background: var(--stoolRedDeep); font-size: 10px; margin-top: auto; }
 .ledger { margin: 12px 0 25px; }
-.ledger > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--panelBorder); padding: 14px 0; font-size: 13px; }
-.ledger dt { color: var(--creamMuted); }
-.ledger dd { margin: 0; font-variant-numeric: tabular-nums; font-size: 18px; font-weight: 700; }
+.ledger-money { margin: 4px 0 18px; }
+:is(.ledger, .ledger-money) > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--panelBorder); padding: 14px 0; font-size: 13px; }
+:is(.ledger, .ledger-money) dt { color: var(--creamMuted); }
+:is(.ledger, .ledger-money) dd { margin: 0; font-variant-numeric: tabular-nums; font-size: 18px; font-weight: 700; }
 .ledger .ledger-total { border: 0; padding-top: 24px; }
 .ledger-total dd { color: var(--coinGold); font-size: 27px; }
+/* Founder 2026-10-22 (B2.5): the book opens on the net and the one suggestion, then three counts; the rest waits under "Chi tiết". */
+.book-net { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 4px; padding: 6px 0 10px; border-bottom: 1px solid var(--panelBorder); }
+.book-net span { color: var(--creamMuted); font-size: 14px; font-weight: 700; }
+.book-net strong { color: var(--coinGold); font-size: 32px; font-variant-numeric: tabular-nums; }
+.book-counts { margin: 8px 0 16px; }
+.book-counts > div { padding: 10px 0; }
+.book-details { margin-top: 16px; border-top: 1px solid var(--panelBorder); }
+.book-details > summary { min-height: 44px; padding: 12px 0; font-weight: 800; cursor: pointer; }
+.book-details > summary:focus-visible { outline: 2px solid var(--coinGold); outline-offset: 3px; }
+.book-details[open] > summary { margin-bottom: 8px; }
 .button-stack { display: grid; gap: 12px; }
 .journey-list { list-style: none; padding: 0; }
 .journey-list li { display: flex; align-items: center; gap: 15px; border-bottom: 1px solid var(--panelBorder); padding: 17px 5px; }
@@ -186,7 +208,7 @@ progress::-webkit-progress-value { background: var(--beerAmber); border-radius: 
   .hud { padding-left: 12px; padding-right: 12px; }.money { padding-left: 10px; }
   .stall-scene { padding-left: 18px; padding-right: 18px; }
   .sheet-inner { padding-left: 14px; padding-right: 14px; }
-  .stock-actions { gap: 4px; }.stock-actions button { min-width: 57px; font-size: 9px; }
+  .stock-actions { gap: 4px; }.stock-actions button { min-width: 57px; }
 }
 @media (max-height: 900px) {
   .game { height: 100dvh; min-height: 700px; }
@@ -229,8 +251,8 @@ progress::-webkit-progress-value { background: var(--beerAmber); border-radius: 
 @media (max-width: 480px) {
   .stock-row { display: grid; grid-template-columns: 42px minmax(0,1fr); }
   .stock-row > small { grid-column: 2; }
-  .stock-actions { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); max-width: none; }
-  .stock-actions button { font-size: 12px; }
+  .stock-actions { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); max-width: none; }
+  .stock-actions .stock-one { grid-column: 1 / -1; }
 }
 
 .buy-glasses { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
