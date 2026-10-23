@@ -145,8 +145,9 @@ export function assertAdvancedCareerK(samples: { seed: number; days: number; lif
 }
 
 // config-exempt: D4(a), owner decision 18/09 (04-SPEC section 5): the 30-day total value of the standard orders may exceed the 8.35 tr baseline of the 2.0.x
-// economy by at most 10 %. An acceptance protocol, not a live gameplay limit and not a tuning input.
-export const ADVANCED_TOTAL_VALUE_BASELINE = 8350000, ADVANCED_TOTAL_VALUE_MAX_OVER_BASELINE = 0.1;
+// economy by at most 14 % (10 % until the founder's re-seal of 2026-10-23, QD-117 B option 1: 9 185 000 -> 9 519 000). An acceptance protocol, not a live gameplay
+// limit and not a tuning input.
+export const ADVANCED_TOTAL_VALUE_BASELINE = 8350000, ADVANCED_TOTAL_VALUE_MAX_OVER_BASELINE = 0.14;
 export type AdvancedKBasis = 'standard-order' | 'raw';
 /** D4(a) (04-SPEC section 5): config 2.1.0 and later gate the k of the standard order; earlier configs keep the old gate on the raw k. */
 export function advancedKBasis(version: string): AdvancedKBasis {
@@ -169,7 +170,7 @@ export function assertAdvancedCareerValue(samples: { seed: number; days: number;
   for (const s of samples) {
     assert.ok(Number.isInteger(s.days) && s.days >= 30 && s.totalValue !== null && Number.isSafeInteger(s.totalValue) && s.totalValue >= 0,
       `seed ${s.seed}: total value requires 30 days of real serve measurements`);
-    assert.ok(s.totalValue <= limit, `seed ${s.seed}: 30-day total value ${s.totalValue} exceeds ${limit} (+${ADVANCED_TOTAL_VALUE_MAX_OVER_BASELINE * 100} % of the ${ADVANCED_TOTAL_VALUE_BASELINE} baseline)`);
+    assert.ok(s.totalValue <= limit, `seed ${s.seed}: 30-day total value ${s.totalValue} exceeds ${limit} (+${Math.round(ADVANCED_TOTAL_VALUE_MAX_OVER_BASELINE * 100)} % of the ${ADVANCED_TOTAL_VALUE_BASELINE} baseline)`);
   }
 }
 

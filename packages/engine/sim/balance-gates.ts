@@ -22,8 +22,9 @@ import { serveNext } from './policy';
  */
 // config-exempt: owner acceptance protocol of plan S5 (targets of the gate table), not gameplay tuning.
 export const TARGETS = {
+  // chair1 35-56 and the 30-day cap of career.ts (+14 %): the founder's re-seal of 2026-10-23 (QD-117 B option 1); they were 40-56 and +10 %.
   kGate: ADVANCED_CAREER_K_MAX, totalValueMax: Math.round(ADVANCED_TOTAL_VALUE_BASELINE * (1 + ADVANCED_TOTAL_VALUE_MAX_OVER_BASELINE)),
-  lp7: [140, 170] as const, equipmentMax: 170, tables8Lv4: 170, table4: 48, chair1: [40, 56] as const, lv2First: 56, lv4First: 120,
+  lp7: [140, 170] as const, equipmentMax: 170, tables8Lv4: 170, table4: 48, chair1: [35, 56] as const, lv2First: 56, lv4First: 120,
   lp2: 48, lp4: 96, lp5: 120, maxGap: 8, dailyCapNotBefore: 150, beerOutMax: 0.10,
   // The shift-1 probe counts 300 runs: a share of 60 runs has a 95 % interval of about +-10 points (48 of 60 reads 68-88 %), a share of 300 about +-5 (review round 3 of S5); about 25 s.
   shift1Seeds: 300,
