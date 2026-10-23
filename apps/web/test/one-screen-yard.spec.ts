@@ -22,6 +22,9 @@ const states: Record<string, { at: () => Fixture; message: string | null; settin
   'stock hint': { at: () => fx('hints', 'stock'), message: '.beer-stock-warning:has(.hint-line)' }, // the stock hint inside the beer prompt: one control
   closing: { at: () => fx('yard', 'closing'), message: '.status-line' }, // the player closed the shift, a guest still waits
   'closing, low beer': { at: () => fx('yard', 'closing-low'), message: '.beer-stock-warning:has(.closing-line)' }, // the prompt keeps the slot, the closing line joins it
+  // Review B2-r2: the fallback step guide with the beer low; the one-tap prompt keeps the slot (its refill on screen), the guide's line joins it, Bỏ qua stays
+  'guide, empty keg': { at: () => fx('hints', 'empty'), message: '.beer-stock-warning:has(.guide-line)', settings: { guideDone: false, guideIndex: 1 } },
+  'guide, low beer': { at: () => fx('hints', 'low'), message: '.beer-stock-warning:has(.guide-line)', settings: { guideDone: false, guideIndex: 1 } },
 };
 const viewports = [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1280, height: 720 }];
 async function boot(page: Page, at: Fixture, locale: string, settings: Record<string, unknown> = {}) {

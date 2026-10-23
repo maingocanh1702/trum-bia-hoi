@@ -80,6 +80,21 @@ test('B2.2 while the beer prompt holds the slot no other hint starts; the waitin
   await expect(page.locator('.message-slot > .guide.hint')).toHaveAttribute('data-hint', 'slot'); await expect(page.locator('.message-slot > .guide.hint p')).toHaveText(copy['hint.slot']);
 });
 
+// Review B2-r2: a hint already on screen gives up its light with its words when the beer prompt takes the slot: no target pulses without a reason beside it.
+// The slot hint is up (its empty place lit); a keg Lv2 bought from the keg's own sheet raises the refill batch above the stock, so the prompt takes the slot
+// (fixture `slot-keg`); after the refill the slot hint is back, lit again.
+test('B2.2 a hint behind the beer prompt lights nothing; after the refill it is back with its light', async ({ page }) => {
+  const f = fixture('slot-keg');
+  await page.setViewportSize({ width: 390, height: 844 }); await boot(page, f, 'vi');
+  const hint = page.locator('.hint'), place = page.locator('.yard .table-slot').first(), prompt = page.locator('.message-slot > .beer-stock-warning');
+  await expect(hint).toHaveAttribute('data-hint', 'slot'); await expect(place).toHaveAttribute('data-spotlight', ''); await expect(prompt).toHaveCount(0);
+  await page.locator('.equipment-object.keg').click(); await page.locator('.equipment-detail .upgrade-card button').click(); await page.keyboard.press('Escape');
+  await expect(prompt).toBeVisible(); await expect(hint).toHaveCount(0);
+  await expect(page.locator('[data-spotlight]')).toHaveCount(0); // the slot hint waits behind the prompt, unlit
+  await prompt.locator('.quick-beer').click(); await expect(prompt).toHaveCount(0);
+  await expect(hint).toHaveAttribute('data-hint', 'slot'); await expect(place).toHaveAttribute('data-spotlight', '');
+});
+
 // Review B2-r1: a hint never points at something the screen does not show. A config whose HUD is still hidden in shift 1 (`hudAfterShifts` 1, like a 2.1.1
 // pin's first shift) at the stock moment shows no strip and so no stock hint (fixtures/hints.ts `nohud`).
 test('B2.2 with the HUD still hidden there is no stock hint: its strip is not on screen', async ({ page }) => {

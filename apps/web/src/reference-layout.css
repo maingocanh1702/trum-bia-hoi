@@ -442,6 +442,12 @@
 .message-slot > .beer-stock-warning > button { flex: 0 0 auto; }
 .message-slot > .beer-stock-warning .hint-line { font-size: 11px; color: #fff0b6; }
 .message-slot > .status-line { flex: 0 1 auto; padding: 0; text-align: center; }
+/* Review B2-r2: the step guide's line may join the beer prompt beside its "Bỏ qua", so the column needs room: a text alone in it gets 3 lines (3 × 13.2 px in
+   the 44 px row), and on a phone the refill puts its amount under its action (two pieces, each on one line: App.tsx `quickBeer`). */
+.message-slot .prompt-text:not(:has(small)) > * { -webkit-line-clamp: 3; }
+.message-slot .quick-beer > span { white-space: nowrap; }
+@media (max-width: 600px) { .message-slot .quick-beer { width: min-content; } }
+.message-slot > .beer-stock-warning > .guide-skip { min-width: 44px; padding: 2px; background: transparent; color: var(--cream); font-size: 10px; text-decoration: underline; }
 /* A later stall (a sign, the kitchen, the phone/QR props, the dog) keeps the classic arrangement (founder 2026-10-23: out of this pass), and with it the
    slot as before the pass: no reserved height, so its page is no longer than it was. */
 .game:has(.stall-scene .sign-object, .stall-scene .business-props > button, .stall-scene .equipment-object.kitchen, .stall-scene .dog-object) .message-slot { height: auto; }

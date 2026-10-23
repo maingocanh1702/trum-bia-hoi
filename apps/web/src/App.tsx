@@ -305,11 +305,17 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   const claimCount = path.rows.filter(row => row.claimable).length;
   const guide = settings.guideIndex === null ? null : c.onboarding.stepGuide.steps[settings.guideIndex];
   const showGuide = c.onboarding.enabled && guide && (!guide.onlyAfter || w.completedShifts > 0);
+  // Review B2-r2: a step that waits for the player's own tap (`ui_…`: "Mở Nâng cấp" until that sheet opens) can stay for shifts now that tables and chairs
+  // are bought without the sheet (B2.4, the quick chair), so it gives the message slot to every other message; a step the game itself moves on keeps it.
+  const guideWaits = !!showGuide && guide.waitFor.startsWith('ui_'), guideFirst = !!showGuide && !guideWaits;
   // Founder 2026-10-22 (B2): one just-in-time hint at a time (hints.ts), never over a sheet, the order panel or the step guide (they share one banner slot);
   // shown once (`hintsDone`), it stays while its moment lasts or until tapped away.
-  const hintBlocked = Boolean(sheet || selectedEquipment || selectedTable || showGuide || w.phase === 'closing'); // closing: the slot shows the closing line
+  const hintBlocked = Boolean(sheet || selectedEquipment || selectedTable || guideFirst || w.phase === 'closing'); // closing: the slot shows the closing line
   const dismissedHint = useRef('');
-  const stockHint = hint?.id === 'stock' && !hintBlocked; // B2.2: the stock hint is a line of the beer prompt (founder 2026-10-23, (d))
+  // A hint is on screen in its turn only: the stock hint as a line of the beer prompt (founder 2026-10-23, (d)), any other one while that prompt is not up.
+  // Only then does it light its target (review B2-r2: never a pulse without its words).
+  const hintOn = !!hint && !hintBlocked && (hint.id === 'stock' ? lowBeerStock : !lowBeerStock);
+  const stockHint = hintOn && hint?.id === 'stock';
   // B2.4, review B2-r1: the tapped empty place may be the one the bought table now fills; once its sheet is gone, focus goes to that table, not to <body>.
   const focusTableAfter = useRef<number | null>(null);
   useEffect(() => { if (focusTableAfter.current === null || sheet) return; document.querySelector<HTMLElement>(`.table-space.table-${focusTableAfter.current} .table-object`)?.focus(); focusTableAfter.current = null; });
@@ -336,6 +342,12 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   const queueLeft = report?.losses.queue ?? 0, leftSeated = shift ? Math.max(0, shift.stats.lost - queueLeft) : 0, noEntry = shift ? shift.stats.rejected + queueLeft : 0;
   const guideOrder = w.tables.filter(table => table.order && ['pending', 'grace'].includes(table.order.state))
     .sort((a, b) => a.order!.placedAt + a.order!.patienceMs - b.order!.placedAt - b.order!.patienceMs)[0]?.order;
+  const guideWords = showGuide ? t(guide.waitFor === 'order_ready' ? `order.feedback.${orderPreparation(w, game.config, guideOrder)}` : guide.copyKey) : '';
+  const skipGuide = c.onboarding.stepGuide.skippable && <button className="guide-skip" aria-describedby="guide-line" onClick={() => setPrefs({ guideDone: true, guideIndex: null })}>{t('skip')}</button>;
+  const guideBanner = <div className="guide" role="status"><span className="guide-mark">!</span><p id="guide-line">{guideWords}</p>{skipGuide}</div>;
+  // Review B2-r2: the refill's label in two pieces, the action and the amount, so a narrow slot breaks it between them (reference-layout.css `.quick-beer`).
+  // shortcut: cuts the formatted label at the template's " +{n}"; a locale without it stays one piece (one line). Upgrade: two i18n keys, if one ever needs it.
+  const quickBeer = t('stock.quickBeer', { n: num(beerRestock.quantity), cost: num(beerRestock.cost) }), quickCut = quickBeer.indexOf(' +');
   // F27/P0(a): at most one element carries data-spotlight; first-play also gets a pointer arrow on it.
   const spot = pickSpotlight(w, game.config, { sheet, dialogOpen: Boolean(sheet || selectedEquipment) });
   const goal = firstGoal(w, game.config), beerEmpty = beerOut(w, game.config);
@@ -358,7 +370,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   }, [sheet]);
   const openGoal = (g: Goal) => { goalTarget.current = g.id; open('upgrades'); };
   const lit = (on: boolean) => on ? { 'data-spotlight': '' } : {};
-  const hintLit = (target: HintTarget) => !!hint && !hintBlocked && spot.target === null && HINT_TARGET[hint.id] === target;
+  const hintLit = (target: HintTarget) => hintOn && spot.target === null && HINT_TARGET[hint!.id] === target;
   const pointer = spot.arrow ? <i className="spotlight-arrow" aria-hidden="true" /> : null;
   const upgradeHint = <UpgradeHint world={w} config={game.config} report={report} t={t} open={kind => {
     if (kind === 'stock') open('stock');
@@ -550,19 +562,21 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
           past the screen, the banner stays above the nav (over the yard's empty bottom band), never under it. */}
       <div className="bottom-dock">
       {/* B2.8 second pass (founder 2026-10-23, "Thêm một lượt cho đầu game"): one message at a time in a slot that is always reserved above the nav, so the yard
-          never resizes when a message comes or goes and no message covers a table: the step guide first (it teaches, and says an empty stock itself), then the
-          one-tap beer prompt (losing beer loses guests; the closing line or the stock hint, which comes at the same moment, takes its text line: one banner, the
-          prompt's own words stay for screen readers), then the closing line, a hint, the quick chair. */}
-      <div className="message-slot">{showGuide ? <div className="guide" role="status"><span className="guide-mark">!</span><p>{t(guide.waitFor === 'order_ready' ? `order.feedback.${orderPreparation(w, game.config, guideOrder)}` : guide.copyKey)}</p>{c.onboarding.stepGuide.skippable && <button onClick={() => setPrefs({ guideDone: true, guideIndex: null })}>{t('skip')}</button>}</div>
-        : lowBeerStock ? <section className="beer-stock-warning" aria-label={t('stock.quickBeerTitle')}>
-        <div className="prompt-text">{w.phase === 'closing' ? <p className="status-line closing-line">{t('closing')}</p> : stockHint && <p className="hint hint-line" data-hint="stock">{t('hint.stock')}</p>}
-          <p role="status" className={w.phase === 'closing' || stockHint ? 'sr-only' : undefined}>{t(w.inventory.bia === 0 ? 'stock.beerEmpty' : 'stock.beerLow')}</p>
+          never resizes when a message comes or goes and no message covers a table. Review B2-r2: the one-tap beer prompt first whenever the stock is low (losing
+          beer loses guests; its refill carries the `restock` spotlight): the step guide, the closing line or the stock hint, whichever is up, takes its text line
+          (one banner; the prompt's own words stay for screen readers) and the guide keeps its "Bỏ qua" there. Then the step guide, the closing line, a hint,
+          the quick chair, and last a guide step that waits for the player's own tap (`guideWaits`). */}
+      <div className="message-slot">{lowBeerStock ? <section className="beer-stock-warning" aria-label={t('stock.quickBeerTitle')}>
+        <div className="prompt-text">{guideFirst ? <p id="guide-line" className="guide-line" role="status">{guideWords}</p> : w.phase === 'closing' ? <p className="status-line closing-line">{t('closing')}</p> : stockHint && <p className="hint hint-line" data-hint="stock">{t('hint.stock')}</p>}
+          <p role="status" className={guideFirst || w.phase === 'closing' || stockHint ? 'sr-only' : undefined}>{t(w.inventory.bia === 0 ? 'stock.beerEmpty' : 'stock.beerLow')}</p>
           {w.coins < beerRestock.cost && <small>{t('error.notEnoughCoins')}</small>}</div>
-        <button {...lit(spot.target?.kind === 'restock')} aria-describedby="beer-supply-status" disabled={!beerRestock.ok} onClick={() => run({ type: 'restock', dish: 'bia', mode: 'full' })}>{t('stock.quickBeer', { n: num(beerRestock.quantity), cost: num(beerRestock.cost) })}</button>
-          </section>
+        <button {...lit(spot.target?.kind === 'restock')} className="quick-beer" aria-describedby="beer-supply-status" disabled={!beerRestock.ok} onClick={() => run({ type: 'restock', dish: 'bia', mode: 'full' })}>{quickCut > 0 ? <><span>{quickBeer.slice(0, quickCut)}</span> <span>{quickBeer.slice(quickCut + 1)}</span></> : quickBeer}</button>
+        {guideFirst && skipGuide}</section>
+        : guideFirst ? guideBanner
         : w.phase === 'closing' ? <p className="status-line">{t('closing')}</p>
-        : hint && !hintBlocked && hint.id !== 'stock' ? <div className="guide hint" role="status" data-hint={hint.id}><span className="guide-mark" aria-hidden="true">!</span><p>{t(`hint.${hint.id}`, { s: decimal(Math.round(freshnessMs(w, game.config)) / 1000), kind: t(`rush.${rush.next?.kind ?? rush.active?.kind ?? 'light'}`) })}</p>{hintRules(game.config).dismissOnTap && <button onClick={() => { dismissedHint.current = `${hint.id}:${hint.since}`; setHint(null); }}>{t('hint.ok')}</button>}</div>
-        : quickChair ? <section className="beer-stock-warning quick-chair" aria-label={t('upgrade.quickChairTitle')}><button onClick={() => run({ type: 'buyChair', tableId: quickChair.tableId })}>{t('upgrade.quickChair', { n: quickChair.n, cost: num(quickChair.cost) })}</button></section> : null}</div>
+        : hintOn && hint ? <div className="guide hint" role="status" data-hint={hint.id}><span className="guide-mark" aria-hidden="true">!</span><p>{t(`hint.${hint.id}`, { s: decimal(Math.round(freshnessMs(w, game.config)) / 1000), kind: t(`rush.${rush.next?.kind ?? rush.active?.kind ?? 'light'}`) })}</p>{hintRules(game.config).dismissOnTap && <button onClick={() => { dismissedHint.current = `${hint.id}:${hint.since}`; setHint(null); }}>{t('hint.ok')}</button>}</div>
+        : quickChair ? <section className="beer-stock-warning quick-chair" aria-label={t('upgrade.quickChairTitle')}><button onClick={() => run({ type: 'buyChair', tableId: quickChair.tableId })}>{t('upgrade.quickChair', { n: quickChair.n, cost: num(quickChair.cost) })}</button></section>
+        : guideWaits ? guideBanner : null}</div>
       {show.hud && <nav className="bottom-nav" aria-label={t('brand')}>
         <button className={!inShift ? 'primary' : ''} onClick={() => inShift ? open('book') : run({ type: 'startShift' })}><Icon name={inShift ? 'book' : 'bolt'} /><span>{t(inShift ? 'nav.book' : 'nav.shift')}</span></button>
         <button onClick={() => open('stock')}><Icon name="stock" /><span>{t('nav.stock')}</span></button>
