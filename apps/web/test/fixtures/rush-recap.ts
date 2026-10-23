@@ -5,8 +5,8 @@ import { rushRecap } from '../../src/rush-recap';
 
 // Founder 2026-10-22 (Part B2.6): shift 2 of a new save (shift 1 is the onboarding shift, without rushes), played by a bot that serves what is ready and keeps
 // beer in stock, stopped a moment before a rush ends so the page itself sees it end. Real commands and clock steps.
-//   rush-recap first   -> 1.5 s before the first rush of the shift ends
-//   rush-recap second  -> 1.5 s before the second one ends (the card then compares with the first)
+//   rush-recap first   -> 6 s before the first rush of the shift ends (review B2-r2: 1.5 s left a booting page under load past the end)
+//   rush-recap second  -> 6 s before the second one ends (the card then compares with the first)
 //   rush-recap inspect -> stdin { save }: the recap of the last rush that ended in that save, as the page should draw it
 const mode = process.argv[2] ?? 'first';
 if (mode === 'inspect') {
@@ -24,10 +24,10 @@ for (let i = 0; i < 3000 && w.phase !== 'resting'; i++) { serveReady(); g.advanc
 send({ type: 'startShift' });
 const rush = w.shift!.rushes[mode === 'second' ? 1 : 0];
 if (!rush) throw Error('fixture:no-rush');
-for (let i = 0; i < 40000 && w.now < rush.end - 1500; i++) {
+for (let i = 0; i < 40000 && w.now < rush.end - 6000; i++) {
   if (w.inventory.bia < 3 && restockQuote(w, g.config, 'bia', 'full').ok) send({ type: 'restock', dish: 'bia', mode: 'full' });
   if (i % 4) serveReady(); // some guests wait long enough to leave: the net is not just the revenue
-  g.advance(Math.min(w.now + 100, rush.end - 1500));
+  g.advance(Math.min(w.now + 100, rush.end - 6000));
 }
 if (w.phase !== 'open' || w.shift!.rush === 'none') throw Error('fixture:not-in-the-rush');
 process.stdout.write(JSON.stringify({ save: encodeSave(g), now: w.now, endsInMs: rush.end - w.now, kind: rush.kind, rushesEnded: w.events.filter(e => e.type === 'rush_ended').length }));
