@@ -58,7 +58,7 @@ for (const locale of ['vi', 'en'] as const) for (const viewport of [{ width: 360
 }
 
 // Review 07 r1 (W2): across a config adoption the bar and the rest line must say what the opening will do. A save pinned to the last capacity-model seed (JSON
-// 2.0.4, the deployed guest content, no allowance in it) with one closed shift opens its next shift with the bundled 2.1.2 (`local.ts` `openingConfig`), whose
+// 2.0.4, the deployed guest content, no allowance in it) with one closed shift opens its next shift with the bundled 2.1.3 (`local.ts` `openingConfig`), whose
 // first three shifts need no rest: the screen says the shift is ready, not "rest until mm:ss", and "Mở ca" opens at once.
 for (const viewport of [{ width: 360, height: 740 }, { width: 390, height: 844 }, { width: 1280, height: 720 }]) {
   test(`D8 across a config adoption: a save pinned to JSON 2.0.4 after one shift is shown ready and opens at once, at ${viewport.width}px`, async ({ page, tbh }) => {

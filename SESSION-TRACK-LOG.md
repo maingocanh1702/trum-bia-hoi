@@ -7,6 +7,41 @@
 
 ---
 
+## Founder chốt STOP lần 2 của B1 (phương án 1) — 2026-10-23 (Part B1, worker, nhánh `feat/early-pacing`) — **chờ review + Linux + PR B1**
+
+Founder chọn phương án 1 của PR B1 §2.8 ("Nới 2 dòng, giữ cả 3 bản sửa"): giữ B1.1 (3 ca đầu chỉ khách lẻ), B1.2, B1.3; không đổi số game, không đổi luật. Commit giao thức `4b167f6`: trần tổng giá trị 30 ngày của đơn chuẩn +10 % → +14 % của 8,35 tr (9 185 000 → 9 519 000; `ADVANCED_TOTAL_VALUE_MAX_OVER_BASELINE` 0,14), cửa sổ ghế 2 đầu tiên ca 40–56 → 35–56 (`TARGETS.chair1`); test ghim đổi theo (`career-gate.test.ts`, `balance-gates.test.ts`).
+Đo trên seed 42 / 99: `sim:balance` "failing gates: none" (tổng 9,451 / 9,387 tr, ghế 2 ở ca 35 / 35, hai ô Part A xanh), `sim:career:gate` ĐẠT (k 3,163 / 3,183; tổng 9 451 314 / 9 386 522).
+Docs: 08-SPEC, 04-SPEC §5, PLAN, career-simulation, tracker + dashboard, TRANG-THAI 0f, HANDOFF v1.49, feature files. Chưa phát hành: Netlify v6, Cloudflare v-fb2. **Việc kế:** review, Linux run của orchestrator, PR B1 xếp chồng trên PR A; B2 rebase lên nhánh này.
+
+## Founder trả lời STOP của B1 (QD-117, 23/10/2026) và làm lại B1.1 — 2026-10-23 (Part B1, worker, nhánh `feat/early-pacing`) — **BLOCKED lần 2: chờ founder**
+
+Founder chọn phương án B và sửa trong câu trả lời: "B1.1 = singles ONLY while completedShifts < 3 (the first three shifts)" (`.autopilot-state/QD-117-B1-STOP.md`); giữ B1.2, B1.3. Làm: `spawn.singlesFirstShifts` 3 (Tier A) thay `spawn.singlesUntilPairSeat` (chưa phát hành), nhãn giữ 2.1.4; dòng `cooler.firstShift` ở thẻ tủ lạnh ca 1 (review B1-r1); `early-pacing.ts` đo ca 1–3; nới `door.shift1` thành "= 0 cặp khi ca 1 chỉ khách lẻ".
+Đo (200 seed, 1 bàn, nắng, người mới; trước = tip A): nhóm ngồi ca 1 / 2 / 3 6 → 17 / 7 → 16 / 6 → 16; cặp bị từ chối 5,5 → 0 / 8 → 0 / 8 → 0; xu cuối ca 1 299 → 2 433 (thu ×3); trung vị gộp khoảng cách 42 → 42 s ở ca 1.
+**STOP lần 2:** `sim:balance` (A2 + B1, seed 42 / 99): hai ô Part A và `door.shift1` xanh, nhưng tổng 30 ngày 9,451 / 9,387 tr (lệch 2,9 % / 2,2 % > dung sai 2 %) và ghế 2 đầu tiên ca 35 / 35 (sớm 5 ca > 2); `sim:career:gate` đỏ. Không nới, không chỉnh. Phương án: `.autopilot-state/reports/B1-PR-BODY.md` §2.
+Chưa phát hành: Netlify v6, Cloudflare v-fb2. **Việc kế:** founder chọn cho STOP lần 2; B2 đang chạy ở worktree riêng.
+
+## Nhịp đầu game của founder (config 2.1.4) — 2026-10-23 (IMPROVE-EARLY-GAME Part B1, worker, nhánh `feat/early-pacing` xếp chồng trên Part A) — **BLOCKED: chờ founder**
+
+Founder 22/10/2026: (B1.1) khách lẻ tới khi quán có bàn 2 ghế → `spawn.singlesUntilPairSeat` (Tier A, founder duyệt); (B1.2) Giờ Vàng đầu phải có khách → unit test trên pin 2.1.3 xác nhận hẹn giờ khách đặt trước đợt không được hẹn lại → `rush.schedule.replanPendingArrival` (`min(còn lại, khoảng cách 1 khách theo nhịp mới)` lúc đợt bắt đầu/kết thúc); (B1.3) ca 1 bia không hết hơi → `onboarding.firstShift.staleDisabled`. Ba key gate theo key, rules giữ 28, nhãn 2.1.3 → **2.1.4**; không đổi số kinh tế nào.
+Đo trước/sau (`packages/engine/sim/early-pacing.ts`, 200 seed, 1 bàn, nắng, người mới): ca 1 nhóm ngồi 6 → 17, cặp bị từ chối 5,5 → 0, khoảng cách trung vị 63 → 42 s (trung vị từng seed; trung vị gộp 42 → 42 s: nhịp không đổi), dài nhất 210 → 42 s, giây không ai ngồi 627 → 489 / 720 (vẫn ~2/3 ca trống ở 1 bàn: báo cáo, không chỉnh), bia hết hơi 1 → 0, xu cuối ca 1 1 299 → 2 433; đợt light ca 2 đến / phục vụ / mất 5 / 1 / 0 → 6 / 5,5 / 0, khách đầu của đợt 32,8 → 14,7 s.
+Kiểm chứng (Windows): `check:config` · `check:i18n` · `check:assets` · `build` · `build:guest` xanh; `npm test` 819, 47 đỏ = baseline, 0 mới; Playwright local 359/359; guest smoke 3/3; `sim:onboarding` · `sim:rush` ĐẠT.
+**STOP:** `sim:balance` trên A2 + B1 — hai ô seed 42 của Part A **xanh** (LP2 27, chuỗi 6) nhưng 4 hàng **đỏ** ở seed 42 và 99 (tổng 30 ngày 10,057 / 9,945 tr; ghế 2 đầu tiên ca 21 / 22; bỏ đi ca 1–24 15,7 / 13,0 %; cặp bị từ chối ca 1 0 / 0); `sim:career:gate` đỏ. A/B không A2: cùng 4 hàng đỏ. Không chỉnh số. Phương án: `.autopilot-state/reports/B1-PR-BODY.md` §2; 08-SPEC changelog 2026-10-23 / JSON 2.1.4; TRANG-THAI-DOCS hàng 0f.
+Chưa phát hành: Netlify v6, Cloudflare v-fb2. **Việc kế:** founder chọn phương án cho STOP của B1 → orchestrator mở PR B1 (xếp chồng trên PR A); B2 chờ.
+
+## Part A: founder quyết STOP + review vòng 1 — 2026-10-23 (worker, nhánh `feat/shift1-founder-fixes`) — chờ orchestrator kiểm và mở PR A
+
+Founder 23/10/2026 chọn **phương án (c)** (`.autopilot-state/A-FOUNDER-DECISION-2026-10-23.md`): giữ A1/A2/A3 như đã làm, không chỉnh số; hai ô seed 42 đỏ của `sim:balance` **chuyển sang B1, không miễn** (chạy lại giao thức trên A2 + B1, A/B seed 42 và 99 với `excludedCustomerTypes: []`, quét 10 seed để tham khảo; vẫn đỏ → STOP, báo số, không chỉnh); Part A **không phát hành riêng**. Dòng "BLOCKED: chờ founder" của block ngay dưới đã được quyết như vậy.
+Linux static trên `672dde4` xanh (run 39830190304: `npm test` 808/808, `verify:doctor` ✓, hash career = Windows). Review vòng 1: 0 BLOCKER, 0 MAJOR, 6 MINOR → đã xử lý: nút "Mời tất cả về" của sổ ca theo `show.kick` (+ test; `fullHud` đặt `kickAfterShifts` 0), thay trích dẫn test cũ trong bản đồ verify, lưu probe ca 1 ở `.autopilot-state/probes/` và chạy lại qua `run-logged.sh` (số y hệt), Chí Phèo ở ca 1 thành câu hỏi mở cho founder (F07), giới hạn màn ngang ≤ 500 px chuyển cho B2.8 (09-SPEC §4.2).
+Chưa phát hành: Netlify v6, Cloudflare v-fb2. **Việc kế:** orchestrator kiểm và mở PR A; B1 sau đó (không phải việc của worker A).
+
+## Sửa ca 1 của founder sau PR #32 (config 2.1.3) — 2026-10-22/23 (IMPROVE-EARLY-GAME Part A, worker, nhánh `feat/shift1-founder-fixes`) — **BLOCKED: chờ founder**
+
+Founder (22/10/2026, sau khi xem PR #32 và chơi trumviahe.com cạnh trumbiahoi.com): (A1) "Mời về" không có ở ca 1 → key Tier C `onboarding.featureReveal.kickAfterShifts` 1, AND với HUD (`revealed().kick`); (A2) ca 1 không có khách "Bàn lai rai" → `onboarding.firstShift.excludedCustomerTypes` ["ngoily"], luật engine của ca onboarding, gate theo key (save ghim cũ chơi/replay như cũ; lịch sử S6 đã ghi vẫn đúng hash); (A3) đúng một nút "Mở ca" → thẻ "Quán nhỏ đã sẵn sàng." bỏ nút, chỉ xuống thanh dưới (`rest.startBelow`), giữ nút khi thanh dưới còn ẩn. Nhãn 2.1.2 → 2.1.3, không đổi số kinh tế. Báo cáo (không đổi): ca 1 vẫn có thuong 1,0 · voi 0,3 · vip 0,1 · chipheo 0,03; chỉ Chí Phèo ngồi lại sau mâm.
+Kiểm chứng (Windows): `check:config` · `check:i18n` (941) · `check:assets` · `build` · `build:guest` xanh; `npm test` 808, 47 đỏ = baseline, 0 mới; `sim:onboarding` · `sim:rush` · `sim:career:gate` (k 3,142 | 3,168) xanh; Playwright local đầy đủ (lượt 1: 355 + 3 đỏ ở `next-goal.spec` vì ví sau ca 1 không phục vụ đổi 24 515 → 24 480: sửa đầu vào base 9 828 → 9 842, mọi assertion giữ nguyên); guest smoke cục bộ 3/3; ảnh màn đầu `autopilot-logs/a-first-screen/`.
+**STOP:** `sim:balance` đỏ hai ô seed 42 ("LP1 và LP2 trước ca 48": 49; "chuỗi không mua ≤ 8": 10); seed 99 xanh, `shift1.plan` 86 % ĐẠT. A/B với danh sách rỗng = bảng 2.1.2 (xanh hết) → do A2. Không chỉnh số nào. Chi tiết + phương án: `.autopilot-state/reports/A-PR-BODY.md` §2, 08-SPEC changelog 2.1.3.
+Chưa phát hành: Netlify v6, Cloudflare v-fb2. File quyết định của founder bị ghi đè (đường dẫn không phân biệt hoa thường) → đã khôi phục ở `.autopilot-state/IMPROVE-EARLY-GAME-DECISIONS.md`.
+**Việc kế:** founder quyết STOP (§2) → orchestrator mở PR + chạy Linux static → B1.
+
 ## HUD đủ và nút Nâng cấp từ ca 1 (founder override, config 2.1.2) — 2026-10-22 (orchestrator, nhánh `feat/hud-from-shift-1`)
 
 Founder chơi `https://trumbiahoi.com` (v-fb2) bằng save mới và thấy thiếu thanh dưới (Mở ca · Nhập hàng · Nâng cấp), nút Cài đặt, đồng hồ ca và dải kho — F27 giấu chúng tới hết ca 1. Quyết định (founder, chọn phương án chỉ-đổi-config): `onboarding.featureReveal.hudAfterShifts` và `upgradeAfterShifts` 1 → 0, nhãn JSON 2.1.1 → **2.1.2**; không đổi code, CSS, copy hay số kinh tế; Hành trình / Nhiệm vụ / giải đấu giữ 2 / 2 / 3 ca. Ghi đè đúng hai ngưỡng của luật owner 18/09 "HUD ca 1 chỉ 3 thứ" (giữ nguyên làm lịch sử ở GDD §17, 09-SPEC, F27). Hệ quả cùng cổng `show.hud`: nút "Mời về" cũng hiện từ ca 1 (kick-table.spec cập nhật).

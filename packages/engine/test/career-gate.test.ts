@@ -106,9 +106,10 @@ test('a career report carries the standard-order twin of the k measurement: ever
   if (!levelled) assert.equal(n.totalValue, report.value.totalValue, 'no table level bought: the standard order is the order paid, to the coin');
 });
 
-test('the total-value gate: 30 days of standard orders stay within +10 % of the 8.35 tr baseline, on every seed', () => {
-  assert.equal(ADVANCED_TOTAL_VALUE_BASELINE, 8350000); assert.equal(ADVANCED_TOTAL_VALUE_MAX_OVER_BASELINE, 0.1);
-  const limit = 9185000;
+test('the total-value gate: 30 days of standard orders stay within +14 % of the 8.35 tr baseline, on every seed', () => {
+  // +10 % (9 185 000) until the founder's re-seal of 2026-10-23 (QD-117 B option 1)
+  assert.equal(ADVANCED_TOTAL_VALUE_BASELINE, 8350000); assert.equal(ADVANCED_TOTAL_VALUE_MAX_OVER_BASELINE, 0.14);
+  const limit = 9519000;
   const samples = [{ seed: 42, days: 30, totalValue: limit }, { seed: 99, days: 30, totalValue: 8000000 }];
   assert.doesNotThrow(() => assertAdvancedCareerValue(samples));
   assert.throws(() => assertAdvancedCareerValue([samples[0], { ...samples[1], totalValue: limit + 1 }]), /total value/);
@@ -118,7 +119,7 @@ test('the total-value gate: 30 days of standard orders stay within +10 % of the 
 });
 
 test('the gate reads the standard order from config 2.1.0 on and the raw k of the older definition before it (04-SPEC section 5)', () => {
-  assert.equal(advancedKBasis('2.1.0'), 'standard-order'); assert.equal(advancedKBasis('2.1.1'), 'standard-order'); assert.equal(advancedKBasis('2.1.2'), 'standard-order'); assert.equal(advancedKBasis('2.10.0'), 'standard-order');
+  assert.equal(advancedKBasis('2.1.0'), 'standard-order'); assert.equal(advancedKBasis('2.1.1'), 'standard-order'); assert.equal(advancedKBasis('2.1.2'), 'standard-order'); assert.equal(advancedKBasis('2.1.3'), 'standard-order'); assert.equal(advancedKBasis('2.1.4'), 'standard-order'); assert.equal(advancedKBasis('2.10.0'), 'standard-order');
   assert.equal(advancedKBasis('2.0.23'), 'raw'); assert.equal(advancedKBasis('2.0.4'), 'raw'); assert.equal(advancedKBasis('1.7.3'), 'raw');
   const report = { seed: 42, days: 30, configVersion: '2.1.0', rows: [{ lifePath: 4 }], value: { served: 31000, kValue: 5.5, totalValue: 14e6 },
     normalised: { served: 24000, extraRoundServes: 7000, totalValue: 8.5e6, mean: 354, kValue: 4.29 } };

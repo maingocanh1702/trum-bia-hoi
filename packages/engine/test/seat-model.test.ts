@@ -95,7 +95,7 @@ test('a second chair opens only after chairsAfterTables tables, a table never ho
 });
 
 test('a one-chair table never gives one guest beer and a dish together; a two-chair table does (seed 42)', () => {
-  const g = seatGame(raw => { steadyDemand(raw); raw.onboarding.enabled = false; raw.patience.thuongMs = 120000; }), w = g.world; // the tray mix is the subject: enough guests per shift to sample it
+  const g = seatGame(raw => { steadyDemand(raw); raw.onboarding.enabled = false; raw.patience.thuongMs = 120000; raw.spawn.singlesFirstShifts = 0; }), w = g.world; // the tray mix is the subject: enough guests per shift to sample it; pairs in shift 1 (the 2.1.4 first-shifts singles rule off)
   while (w.tables.length < 4) assert.ok(send(g, { type: 'buyTable' }).ok);
   const pairTable = w.tables[3];
   assert.ok(send(g, { type: 'buyChair', tableId: pairTable.id }).ok);
@@ -112,7 +112,8 @@ test('a one-chair table never gives one guest beer and a dish together; a two-ch
 });
 
 test('a pair with no two-chair table leaves at the door: no penalty, no reputation change, never lost', () => {
-  const g = seatGame(raw => { raw.spawn.pPair = 1; }), w = g.world;
+  // The door rule of every pin before 2.1.4: the bundled 2.1.4 draws no pair in a save's first three shifts (`spawn.singlesFirstShifts`, early-pacing.test.ts), so that rule is off here.
+  const g = seatGame(raw => { raw.spawn.pPair = 1; raw.spawn.singlesFirstShifts = 0; }), w = g.world;
   assert.ok(send(g, { type: 'startShift' }).ok);
   play(g, () => w.serves.length === 1); // onboarding's forced single still sits and pays
   const coins = w.coins, reputation = w.reputation, streak = w.lostStreak, from = w.events.length;

@@ -37,6 +37,10 @@ test('doorTable passes when every band and shift 1 are inside the targets, and s
   assert.equal(doorTable({ rows, shiftStats: [shift(1, 20, 0, 8, 8), ...clean.slice(1)] }).shift1!.refusedPairs, 4, '8 guests are four pairs, below 5');
   assert.equal(doorTable({ rows, shiftStats: [] }).shift1, null); assert.equal(doorTable({ rows: [], shiftStats: [] }).ok, false);
   assert.equal(doorTable({ rows: [day(1, 0, 0, 0)], shiftStats: [shift(1, 0, 0, 0, 0)] }).shift1!.ok, false, 'no arrivals: no division by zero');
+  // Founder 2026-10-23 (QD-117 B): a shift 1 of singles only (`spawn.singlesFirstShifts`) is judged on exactly 0 refused pairs.
+  const singles = (noSeat: number) => doorTable({ rows, shiftStats: [shift(1, 20, 0, noSeat, noSeat), ...clean.slice(1)] }, true).shift1!;
+  assert.deepEqual([singles(0).targetPairs, singles(0).ok, singles(2).ok], [0, true, false], 'singles only: no pair refused passes, one refused pair fails');
+  assert.match(doorLines(doorTable({ rows, shiftStats: [shift(1, 20, 0, 0, 0), ...clean.slice(1)] }, true))[3], /refused pairs 0 \(= 0\) PASS/);
 });
 
 test('a real career day reports one stats row per closed shift and they add up to the day row', () => {

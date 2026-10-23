@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { config } from '../src';
-import { gateTable, failing, gateVerdict, score, formatGateTable, runShift1, wilson, TARGETS, type CareerMetrics, type GateInputs, type Shift1Metrics, type StandardMetrics } from '../sim/balance-gates';
+import { gateTable, failing, gateVerdict, score, formatGateTable, runShift1, wilson, patchedConfig, TARGETS, type CareerMetrics, type GateInputs, type Shift1Metrics, type StandardMetrics } from '../sim/balance-gates';
 import { DOOR_TARGETS, type DoorBand } from '../sim/door';
 
 /**
@@ -15,7 +15,8 @@ function career(seed: number, over: Partial<CareerMetrics> = {}): CareerMetrics 
     raw: { served: 30000, totalValue: 15e6, k: 4.5 }, standard: { served: 25000, extraRoundServes: 2000, totalValue: 7.5e6, k: 3.3 },
     lp: { LP1: 20, LP2: 23, LP3: 45, LP4: 70, LP5: 100, LP6: 120, LP7: 142 }, table4: 20, chair1: 45, lv2: 46, lv4: 100, lv4x8: 144, equipMax: 122, equipMissing: [],
     purchases: 100, maxGap: { shifts: 5, after: 10, next: 15 },
-    door: { bands: [band('shifts 1-24', 0.05), band('days 8-14', 0.15), band('days 15-21', 0.10)], shift1: { arrived: 19, rejected: 8, refusedPairs: 5, targetArrivals: 15, targetPairs: 5, ok: true }, complete: true, ok: true },
+    // the bundled config seats singles only in shift 1 (JSON 2.1.4): no pair is turned away there (door.shift1 re-sealed by the founder, 2026-10-23)
+    door: { bands: [band('shifts 1-24', 0.05), band('days 8-14', 0.15), band('days 15-21', 0.10)], shift1: { arrived: 19, rejected: 0, refusedPairs: 0, targetArrivals: 15, targetPairs: 0, ok: true }, complete: true, ok: true },
     capShift: 208, beer: { guests: 0, lost: 500, arrived: 9000, admitted: 7000, ofLost: 0, ofArrived: 0, ofAdmitted: 0 },
     end: { day: 30, shifts: 240, tables: 8, seats: 16, tableLevels: Array(8).fill(4), chairLevels: Array(8).fill(3), equipment: {}, location: 'pho_tay', reputation: 0, lifePath: 7, lifetimeEarned: 1, coins: 1, dogLevel: 0 },
     firstDays: [], ...over };
@@ -36,7 +37,7 @@ test('a career inside every target passes every gate row of the 23 on both seeds
   assert.deepEqual(failing(rows), []);
   assert.ok(rows.filter(r => !r.info).every(r => r.ok && r.pass[42] === true && r.pass[99] === true && r.violation[42] === 0 && r.violation[99] === 0));
   assert.deepEqual(score(rows), { fails: 0, violation: 0 });
-  assert.deepEqual(TARGETS.lp7, [140, 170]); assert.deepEqual(TARGETS.chair1, [40, 56]); assert.equal(TARGETS.maxGap, 8); assert.equal(TARGETS.table4, 48);
+  assert.deepEqual(TARGETS.lp7, [140, 170]); assert.deepEqual(TARGETS.chair1, [35, 56]); assert.equal(TARGETS.maxGap, 8); assert.equal(TARGETS.table4, 48);
   assert.equal(DOOR_TARGETS.shifts1to24, 0.10); assert.equal(DOOR_TARGETS.days8to14, 0.20); assert.equal(DOOR_TARGETS.days15to21, 0.15);
 });
 
@@ -44,7 +45,7 @@ test('a career inside every target passes every gate row of the 23 on both seeds
 const bad = (over: Partial<CareerMetrics>) => over;
 const doctored: [string, string, Partial<CareerMetrics>][] = [
   ['k.gate', 'career k a hair above 3.5', { standard: { served: 25000, extraRoundServes: 2000, totalValue: 7.5e6, k: 3.501 } }],
-  ['value.30d', '30-day value above 9.185 tr', { standard: { served: 25000, extraRoundServes: 2000, totalValue: 9.2e6, k: 3.3 } }],
+  ['value.30d', '30-day value above 9.519 tr', { standard: { served: 25000, extraRoundServes: 2000, totalValue: 9.52e6, k: 3.3 } }],
   ['lp7', 'LP7 at shift 139 (too early)', bad({ lp: { LP1: 20, LP2: 23, LP3: 45, LP4: 70, LP5: 100, LP6: 120, LP7: 139 } })],
   ['lp7', 'LP7 at shift 171 (too late)', bad({ lp: { LP1: 20, LP2: 23, LP3: 45, LP4: 70, LP5: 100, LP6: 120, LP7: 171 } })],
   ['lp7', 'LP7 never', bad({ lp: { LP1: 20, LP2: 23, LP3: 45, LP4: 70, LP5: 100, LP6: 120, LP7: null } })],
@@ -53,7 +54,7 @@ const doctored: [string, string, Partial<CareerMetrics>][] = [
   ['tables.lv4x8', '8 tables at Lv4 at 171', { lv4x8: 171 }],
   ['tables.lv4x8', '8 tables at Lv4 never', { lv4x8: null }],
   ['table4', 'table 4 at 49', { table4: 49 }],
-  ['chair1', 'first second chair at 39 (too early)', { chair1: 39 }],
+  ['chair1', 'first second chair at 34 (too early)', { chair1: 34 }],
   ['chair1', 'first second chair at 57 (too late)', { chair1: 57 }],
   ['lv2', 'first table Lv2 at 57', { lv2: 57 }],
   ['lv4', 'first table Lv4 at 121', { lv4: 121 }],
@@ -65,11 +66,22 @@ const doctored: [string, string, Partial<CareerMetrics>][] = [
   ['door.days8-14', 'days 8-14: 20.1 %', bad({ door: { ...career(1).door, bands: [band('shifts 1-24', 0.05), band('days 8-14', 0.201), band('days 15-21', 0.10)] } })],
   ['door.days15-21', 'days 15-21: 15.1 %', bad({ door: { ...career(1).door, bands: [band('shifts 1-24', 0.05), band('days 8-14', 0.15), band('days 15-21', 0.151)] } })],
   ['door.days15-21', 'a career too short to cover days 15-21', bad({ door: { ...career(1).door, bands: [band('shifts 1-24', 0.05), band('days 8-14', 0.15)] } })],
-  ['door.shift1', 'shift 1: 14 arrivals', bad({ door: { ...career(1).door, shift1: { arrived: 14, rejected: 8, refusedPairs: 5, targetArrivals: 15, targetPairs: 5, ok: false } } })],
-  ['door.shift1', 'shift 1: 4 refused pairs', bad({ door: { ...career(1).door, shift1: { arrived: 19, rejected: 8, refusedPairs: 4, targetArrivals: 15, targetPairs: 5, ok: false } } })],
+  ['door.shift1', 'shift 1: 14 arrivals', bad({ door: { ...career(1).door, shift1: { arrived: 14, rejected: 0, refusedPairs: 0, targetArrivals: 15, targetPairs: 0, ok: false } } })],
+  ['door.shift1', 'shift 1: 1 refused pair although it seats singles only', bad({ door: { ...career(1).door, shift1: { arrived: 19, rejected: 2, refusedPairs: 1, targetArrivals: 15, targetPairs: 0, ok: false } } })],
   ['cap', 'daily cap reached at shift 149', { capShift: 149 }],
   ['beer', 'beer running out takes 10 % of the leavers', { beer: { guests: 50, lost: 500, arrived: 9000, admitted: 7000, ofLost: 0.1, ofArrived: 0.005, ofAdmitted: 0.007 } }],
 ];
+
+test('door.shift1 on a config whose shift 1 draws pairs keeps the S3 target of at least 5 refused pairs; the bundled one (singles in shift 1) asks for none (founder 2026-10-23)', () => {
+  const pairs = { ...inputs(), config: patchedConfig({ 'spawn.singlesFirstShifts': 0 }) };
+  const pairShift = (refusedPairs: number) => ({ door: { ...career(1).door, shift1: { arrived: 19, rejected: 2 * refusedPairs, refusedPairs, targetArrivals: 15, targetPairs: 5, ok: refusedPairs >= 5 } } });
+  const row = (i: GateInputs) => gateTable(i).find(r => r.id === 'door.shift1')!;
+  assert.equal(row(inputs()).target, '>= 15 / = 0 (singles only)');
+  assert.equal(row(pairs).target, `>= 15 / >= ${DOOR_TARGETS.firstShiftRefusedPairs}`);
+  assert.equal(row({ ...pairs, careers: { 42: career(42, pairShift(5)), 99: career(99, pairShift(5)) } }).ok, true, '5 refused pairs pass the S3 target');
+  assert.equal(row({ ...pairs, careers: { 42: career(42, pairShift(4)), 99: career(99, pairShift(5)) } }).pass[42], false, '4 refused pairs fail it');
+  assert.equal(row({ ...inputs(), careers: { 42: career(42, pairShift(5)), 99: career(99) } }).pass[42], false, 'with singles in shift 1 a refused pair fails');
+});
 
 for (const [id, what, change] of doctored) {
   test(`gateTable FAILS row ${id} when ${what}, on that seed only and on no other row`, () => {

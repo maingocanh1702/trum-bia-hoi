@@ -23,6 +23,7 @@ function pairShop(patch?: (raw: Seed) => void, rngSeed = 42) {
   raw.shift.startingCoinsBase = 1000000; sunny(raw);
   raw.rush.schedule.perShift = 0; raw.onboarding.enabled = false;
   raw.spawn.pPair = 1; raw.upgrades.table.orderShape.pair.pMoi = 0;
+  raw.spawn.singlesFirstShifts = 0; // the 2.1.4 rule `spawn.singlesFirstShifts` (singles only in a save's first three shifts, founder 2026-10-23) is off: pairs at two-chair tables are this suite's subject
   raw.patience.thuongMs = 120000; // nobody leaves while a test inspects a waiting order
   patch?.(raw);
   const g = new Game(loadConfig(raw), rngSeed, T0);

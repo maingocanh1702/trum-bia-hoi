@@ -56,6 +56,18 @@ export type KickTableRule = typeof seed.kickTable;
  * S5/S6 contents of JSON 2.1.0, every older seat pin, a capacity pin, a 1.x pin): their games have no such command, so they replay as they always did.
  */
 export function kickTableRule(c: Economy): KickTableRule | null { return Object.hasOwn(c, 'kickTable') ? (c as typeof seed).kickTable : null; }
+/**
+ * Founder 2026-10-22 (JSON 2.1.3): the seated guest types that never arrive in a save's onboarding shift (`Game.spawn()` gives them weight 0, so the draw is
+ * renormalised over the rest and uses the same randomness). None on every snapshot without the key (JSON <= 2.1.2, a capacity pin, a 1.x pin): they replay as before.
+ */
+export function firstShiftExcludedTypes(c: Economy): readonly string[] { return (c.onboarding.firstShift as { excludedCustomerTypes?: readonly string[] }).excludedCustomerTypes ?? []; }
+// Founder 2026-10-22 (JSON 2.1.4, Part B1). Each is false on every snapshot without its key (JSON <= 2.1.3, a capacity pin, a 1.x pin): those replay as before.
+/** The first `spawn.singlesFirstShifts` shifts of a save's life draw single guests only (`Game.spawn()`: the draw at pair probability 0), whatever the tables; 0 without the key. */
+export function singlesFirstShifts(c: Economy): number { return (c.spawn as { singlesFirstShifts?: number }).singlesFirstShifts ?? 0; }
+/** When a rush starts or ends, the arrival already planned comes no later than one guest's gap at the new pace (`Game.updateRush()`). */
+export function replanPendingArrival(c: Economy): boolean { return (c.rush.schedule as { replanPendingArrival?: boolean }).replanPendingArrival === true; }
+/** Poured beer never goes flat in a save's onboarding shift (`freshnessMs()` is then unbounded, like the top cooler level). */
+export function firstShiftStaleDisabled(c: Economy): boolean { return (c.onboarding.firstShift as { staleDisabled?: boolean }).staleDisabled === true; }
 /** Total benefit of a table level (benefits stack: each ladder row lists the sum). Level 1, a level without a row and every older snapshot: none. */
 export function tableBenefit(c: Economy, level: number): TableBenefit {
   const row = tableUpgrade(c)?.levels.find(l => l.level === level);
@@ -158,7 +170,7 @@ const seedAt = (path: string): unknown => valueAt(seed, path);
 // `since` = the first version carrying the group, `paths` = the object keys it added, `tiers` = the names it added to the governance tier lists,
 // `restore` = keys the group REPLACED: the older pin still carries them, so the older shape gets them back from the frozen capacity file (2.0.4),
 // `optionalAt` = labels that were sealed both before and after the group joined them: a pin with such a label may lack the whole group (never half of it;
-// no row needs it since the label 2.1.1, see the last row).
+// no row needs it since the label 2.1.1, see the `kickTable` row).
 const SEAT_KEYS_ADDED_LATER: readonly { since: string; paths: readonly string[]; tiers: Record<string, readonly string[]>; restore?: readonly string[]; optionalAt?: readonly string[] }[] = [
   { since: '2.0.22', paths: ['spawn.capacityDemand'], tiers: { A: ['spawn.capacityDemand'] } }, // plan S3, D19
   // plan S4, D14 D15 D18 D19: the table and chair ladders replace the postmvp `upgrades.backrest` placeholder (the same object in every older pin)
@@ -169,6 +181,13 @@ const SEAT_KEYS_ADDED_LATER: readonly { since: string; paths: readonly string[];
   // (Wave 3 and stage 07: complete snapshots of a label older than `since`, so they load as they are). 2.1.1, the founder's price of 2026-10-22 (owner call 1), is the
   // first label that must carry it; until then this row was `since: '2.1.0'` with `optionalAt: ['2.1.0']` (DECISIONS `## 06 · the label stays 2.1.0 ...`).
   { since: '2.1.1', paths: ['kickTable'], tiers: { A: ['kickTable'] } },
+  // Founder 2026-10-22: "Mời về" gets its own reveal threshold and shift 1 keeps "Bàn lai rai" out. Both sit in the Tier C section `onboarding` (no tier entry to add);
+  // every older label, the released 2.1.1 included, loads without them byte for byte.
+  { since: '2.1.3', paths: ['onboarding.featureReveal.kickAfterShifts', 'onboarding.firstShift.excludedCustomerTypes'], tiers: {} },
+  // Founder 2026-10-22 (Part B1, early pacing; B1.1 as the founder amended it on 2026-10-23, QD-117): singles only in a save's first shifts (Tier A, listed like
+  // `spawn.pPair`), the pending arrival re-planned when a rush starts or ends (Tier B, section `rush`) and no flat beer in shift 1 (Tier C, section `onboarding`).
+  // Every older label, 2.1.3 included, loads without them byte for byte.
+  { since: '2.1.4', paths: ['spawn.singlesFirstShifts', 'rush.schedule.replanPendingArrival', 'onboarding.firstShift.staleDisabled'], tiers: { A: ['spawn.singlesFirstShifts'] } },
 ];
 const versionOf = (label: unknown): number[] | null => { const m = typeof label === 'string' ? /^(\d+)\.(\d+)\.(\d+)$/.exec(label) : null; return m ? m.slice(1).map(Number) : null; };
 const olderThan = (label: unknown, since: string): boolean => { const a = versionOf(label), b = versionOf(since)!; return !!a && (a[0] - b[0] || a[1] - b[1] || a[2] - b[2]) < 0; };
@@ -201,8 +220,8 @@ function shape(value: unknown, expected: unknown, path: string, wave1 = false): 
   if (expected === null) {
     if (value !== null && (typeof value !== 'number' || !Number.isFinite(value))) throw Error(`config:${path}`);
   } else if (Array.isArray(expected)) {
-    // Prerequisite lists are grammatical tokens, not fixed level/capacity tables.
-    if (/^lifePath\.\d+\.requires$/.test(path)) {
+    // Prerequisite lists are grammatical tokens, not fixed level/capacity tables; so is the list of guest types kept out of the onboarding shift (any length).
+    if (/^lifePath\.\d+\.requires$/.test(path) || path === 'onboarding.firstShift.excludedCustomerTypes') {
       if (!Array.isArray(value) || !value.every(token => typeof token === 'string')) throw Error(`config:${path}:array`);
       return; // validate() still rejects unknown tokens and dependency cycles.
     }
@@ -287,6 +306,8 @@ function validate(c: Economy): void {
     }
     // The shifts that open without a cooldown (S5, D8): a whole number of shifts, 0 turns the allowance off.
     if (Object.hasOwn(c.shift, 'noCooldownFirstShifts')) whole(c.shift.noCooldownFirstShifts, 'shift.noCooldownFirstShifts');
+    // The shifts of singles only (JSON 2.1.4, founder 2026-10-23): a whole number of shifts, 0 turns the rule off.
+    if (Object.hasOwn(c.spawn, 'singlesFirstShifts')) whole(c.spawn.singlesFirstShifts, 'spawn.singlesFirstShifts');
     // Mời về (Wave 3, D3): a finite rate (never negative: scan), a whole reputation cost, and the dearest kick a pair can be asked for (beer and two of the
     // dearest dishes each, the largest leave multiplier) stays a safe whole number of coins.
     const kick = kickTableRule(c);
@@ -451,7 +472,13 @@ function validate(c: Economy): void {
   if ('idleToGuideMs' in c.onboarding) whole(c.onboarding.idleToGuideMs, 'onboarding.idleToGuideMs', 1);
   if ('nextGoal' in c && !(Number.isFinite(c.nextGoal.reachMult) && c.nextGoal.reachMult > 0)) throw Error('config:nextGoal.reachMult');
   const reveal: Record<string, number> = c.onboarding.featureReveal;
-  for (const key of ['hudAfterShifts', 'upgradeAllAfterShifts', 'journeyAfterShifts']) if (key in reveal) whole(reveal[key], `featureReveal.${key}`);
+  for (const key of ['hudAfterShifts', 'upgradeAllAfterShifts', 'journeyAfterShifts', 'kickAfterShifts']) if (key in reveal) whole(reveal[key], `featureReveal.${key}`);
+  // JSON 2.1.3: each excluded type is a seated type named once and never the forced first guest, and (onboarding on: there is an onboarding shift) in every weather
+  // a type the VIP cap cannot refuse is left to draw.
+  const out = firstShiftExcludedTypes(c), types = c.customerTypes as Record<string, { usesTable: boolean; weight: number }>;
+  const left = Object.entries(types).filter(([key, t]) => t.usesTable && t.weight > 0 && key !== 'vip' && !out.includes(key));
+  if (out.length && (new Set(out).size !== out.length || out.some(key => !Object.hasOwn(types, key) || !types[key].usesTable) || out.includes(c.onboarding.firstShift.firstGroupType)
+    || c.onboarding.enabled && !WEATHER.every(w => left.some(([key, t]) => t.weight * ((c.weather[w].customerWeightMult as Record<string, number>)[key] ?? 1) > 0)))) throw Error('config:onboarding.firstShift.excludedCustomerTypes');
   // The forced first guest must fit a new table; at one chair that guest's tray is one item (D14).
   const firstSeats = isSeatModel(c) ? CHAIRS_WITH_TABLE : c.upgrades.table.levels[c.runtime.initialTableLevel - 1].capacity;
   if (c.onboarding.firstShift.firstGroupSize > firstSeats || c.onboarding.firstShift.guaranteedFirstGroupWithinMs < c.runtime.tableSeatingMs ||
