@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { Game, config, loadConfig, guestPatienceLeft, decodeSave } from '../../../packages/engine/src';
+import { Game, config, loadConfig, guestPatienceLeft, decodeSave, washerStatus, beerStatus } from '../../../packages/engine/src';
 import { HINT_TARGET, holds, hintRules, nextHint } from '../src/hints';
 
 // Founder 2026-10-22 (Part B2): the pure choice of a just-in-time hint (hints.ts), on real engine states. The DOM side (one banner, never over a sheet, done once)
@@ -64,6 +64,12 @@ test('B2.2 each just-in-time hint has its moment: stock, glasses, slot, rush and
   const clean = at('clean'), others = ['tipWindow', 'rush', 'freshness', 'stock', 'slot'];
   assert.equal(clean.world.equipment.keg, 3); assert.ok(clean.world.glasses.every(x => x.state === 'clean'));
   assert.equal(nextHint(clean.world, clean.config, others), null, 'no glasses hint while every glass is clean');
+  // Review B2-r2: nor with the first glass a guest leaves at the sink: at keg Lv3 the 12-beer reserve is above the 10 glasses, so "clean < poured" held with
+  // 9 clean; the shortage is now counted against one refill batch at most.
+  const one = at('one-dirty'), sink = washerStatus(one.world, one.config), beer = beerStatus(one.world, one.config);
+  assert.equal(one.world.equipment.keg, 3); assert.equal(sink.queued + sink.busy, 1); assert.equal(sink.clean, one.world.glasses.length - 1);
+  assert.ok(sink.clean < beer.available, 'the rule of review B2-r1 would have fired here');
+  assert.equal(nextHint(one.world, one.config, others), null, 'no glasses hint for one glass at the sink with nine clean');
   const short = at('glasses');
   assert.ok(short.world.glasses.some(x => x.state === 'dirty' || x.state === 'washing'), 'the glasses fixture has glasses at the sink');
   assert.equal(nextHint(short.world, short.config, others)?.id, 'glasses');

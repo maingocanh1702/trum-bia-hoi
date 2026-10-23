@@ -32,8 +32,9 @@ const moments: Record<HintId, (w: WorldView, c: Config) => boolean> = {
   // A poured beer waits on a ready tray while beer can go flat (not in an onboarding shift with `staleDisabled`, nor at the top cooler level).
   freshness: (w, c) => open(w) && Number.isFinite(freshnessMs(w, c)) && w.tables.some(t => t.order?.state === 'pending' && t.order.items.every(i => i.state === 'ready') && t.order.items.some(i => i.dish === 'bia' && i.glassId)),
   // A real shortage: glasses wait at the sink (dirty or washing) and fewer are clean than the beers already poured, so the glasses now limit serving
-  // (review B2-r1: "clean < the keg's reserve" held from keg Lv3 on with every glass clean).
-  glasses: (w, c) => { if (!open(w)) return false; const sink = washerStatus(w, c); return sink.queued + sink.busy > 0 && sink.clean < beerStatus(w, c).available; },
+  // (review B2-r1: "clean < the keg's reserve" held from keg Lv3 on with every glass clean). Review B2-r2: against one refill batch at most, since from
+  // keg Lv3 the reserve (12/20/40) outgrows the 10 glasses and the first dirty glass would bring the hint with 9 still clean.
+  glasses: (w, c) => { if (!open(w)) return false; const sink = washerStatus(w, c), beer = beerStatus(w, c); return sink.queued + sink.busy > 0 && sink.clean < Math.min(beer.available, beer.batchSize); },
   // The moment of the quick beer prompt (stock below one refill batch, a refill possible).
   stock: (w, c) => open(w) && restockQuote(w, c, 'bia', 'full').quantity > 0 && w.inventory.bia < beerStatus(w, c).batchSize,
   // The next goal is a new table, the wallet pays it and a place is free (B2.4 makes the place a button).
