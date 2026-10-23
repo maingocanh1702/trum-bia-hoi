@@ -363,3 +363,9 @@
 .shift-metrics h4 { margin: 12px 0; }
 .menu-report .shift-metrics dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .shift-metrics dd { overflow-wrap: anywhere; }
+
+/* Founder 2026-10-22 (B2.6): the one-tap card a finished rush leaves; the change against the rush before it says up or down in words and arrow, not by colour alone. */
+.rush-recap .ledger-total { border: 0; padding-top: 16px; }
+.rush-change { margin: 0 0 4px; font-size: 14px; font-weight: 750; text-align: center; }
+.rush-change.is-up { color: #b7e5a5; }
+.rush-change.is-down { color: #ffc2b0; }

@@ -139,6 +139,8 @@ Tabs: **Vận hành** (bom · rửa · hầm · quầy · bếp) · **Bàn** (mu
 ### 4.6 Giờ Vàng
 20s trước: banner "Giờ Vàng NHẸ sau 00:20 — chuẩn bị cốc!" (không pause) + pill ⏱ shake. Active: viền HUD `warning` (nhẹ) / `danger` (nặng) pulse, spawn dồn. Kết thúc: toast tổng kết "Giờ Vàng: 46 khách, 100% phục vụ, boa 52%".
 
+- **2026-10-23 (founder 22/10/2026, Part B2.6 — tổng kết sau Giờ Vàng, bổ sung):** khi một đợt Giờ Vàng kết thúc trong lúc ca đang mở, một thẻ ngắn hiện ra và **tạm dừng như sheet**: tiêu đề "{đợt} vừa xong", các dòng Khách đến · Lượt phục vụ · Bỏ đi · không vào được (khách hết kiên nhẫn + nhóm bị từ chối trong đợt) · Tiền boa · Thu ròng (xu nhận trừ tiền phạt của khách bỏ đi trong đợt), và **so với đợt trước** "↑ +n xu" / "↓ −n xu" (đợt đầu không có dòng này); một nút "Tiếp tục". Dựng từ chính các sự kiện của đợt (`rush_ended` đã mang số tổng kết, `rush_started`, sự kiện khách bỏ đi), không lưu gì thêm; không hiện khi đang mở sheet khác hay khi ca đang đóng (sổ ca có bảng Giờ Vàng). Đoạn "Kết thúc: toast tổng kết" ở trên là ý cũ, nay là thẻ này.
+
 ### 4.7 Sự kiện (P3) — dialog có hạn, **no-pause với sự kiện phạt**
 | Sự kiện | Dialog | Hạn | Kết cục |
 |---|---|---|---|
@@ -279,3 +281,4 @@ Hit ≥ 44px; bàn ≥ sprite; không hover; màu không là tín hiệu duy nh�
 | 2026-10-23 founder 22/10 (Part B2.4 chạm ô bàn trống) | §4.4 (ghi chú dated): ô bàn trống là nút mở thẻ mua bàn kế tiếp (giống thẻ của sheet Nâng cấp: hiệu ứng, giá, một lý do khi mờ), tạm dừng như sheet, đóng khi mua xong; ẩn như trước khi nút Nâng cấp chưa mở. UI thuần, không đổi luật hay số. |
 | 2026-10-23 founder 22/10 (Part B2.2 gợi ý đúng lúc) | §9 (ghi chú dated): năm gợi ý một lần cho HUD hiện từ ca 1 (kho bia sắp hết → dải kho; cốc sạch ít → Bồn rửa; bia đang chờ trên mâm → "Bia giữ tươi {s} s…", không ở ca 1; cảnh báo Giờ Vàng đầu → pill rush; lần đầu đủ xu mua bàn → ô bàn trống), gấp nhất trước, một cái một lúc, không chồng spotlight hay step guide. Ngưỡng lấy từ những gì HUD đã dùng; không đổi luật hay số. |
 | 2026-10-23 founder 22/10 (Part B2.5 Sổ ca ngắn hơn) | §4.5 (ghi chú dated): trên cùng Thu ròng + một gợi ý có nút, rồi Đã phục vụ · Bỏ đi sau khi ngồi · Không vào được · hết chỗ (cộng đúng bằng "Vì sao khách đi"), nút của ca; phần còn lại (kể cả bảng món, đoạn giải thích, số đo, địa điểm, tiền chi tiết, Giờ Vàng) trong "Chi tiết" đóng sẵn; bảng món ẩn món còn khóa. UI thuần, không đổi luật hay số. |
+| 2026-10-23 founder 22/10 (Part B2.6 tổng kết sau Giờ Vàng) | §4.6 (ghi chú dated): thẻ một chạm khi đợt Giờ Vàng kết thúc trong ca đang mở (đến · phục vụ · bỏ đi · boa · thu ròng · so với đợt trước ↑/↓), tạm dừng như sheet, dựng từ sự kiện của đợt, không lưu thêm. UI thuần, không đổi luật hay số. |

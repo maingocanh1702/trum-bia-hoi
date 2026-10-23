@@ -818,5 +818,14 @@
   "hint.slot": "You can afford a new table! Tap an empty spot.",
   "book.leftSeated": "Left after sitting down",
   "book.noEntry": "Could not get in · no room",
-  "book.details": "Details"
+  "book.details": "Details",
+  "rushRecap.title": "{kind} is over",
+  "rushRecap.arrived": "Guests arrived",
+  "rushRecap.served": "Rounds served",
+  "rushRecap.left": "Left · could not get in",
+  "rushRecap.tips": "Tips",
+  "rushRecap.net": "Net",
+  "rushRecap.up": "↑ +{n} coins vs the last rush",
+  "rushRecap.down": "↓ −{n} coins vs the last rush",
+  "rushRecap.ok": "Continue"
 }

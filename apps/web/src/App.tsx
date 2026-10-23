@@ -27,13 +27,14 @@ import { listGoals, pickNextGoal, type Goal } from './goals';
 import { leaveRows, pairsWithoutSeat } from './leave-reasons';
 import { batchToast, type BatchToast } from './batch-toast';
 import { HINT_TARGET, hintRules, holds as hintHolds, nextHint, type Hint, type HintTarget } from './hints';
+import { rushRecap, type RushRecap } from './rush-recap';
 
 // Owner 2026-09-11: risk features are deferred; legacy UI remains testable only in an explicit dev preview.
 const guestOnly = import.meta.env.VITE_TBH_GUEST_ONLY === '1';
 const showDeferredRisk = import.meta.env.DEV && import.meta.env.VITE_TBH_RISK_PREVIEW === '1';
 declare const __TBH_COMMIT__: string;
 
-type Sheet = 'account' | 'seasons' | 'locations' | 'stock' | 'upgrades' | 'book' | 'close' | 'journey' | 'settings' | 'config' | 'dog' | 'delivery' | 'signboard' | 'flyer' | 'quests' | 'buyTable' | null;
+type Sheet = 'account' | 'seasons' | 'locations' | 'stock' | 'upgrades' | 'book' | 'close' | 'journey' | 'settings' | 'config' | 'dog' | 'delivery' | 'signboard' | 'flyer' | 'quests' | 'buyTable' | 'rush' | null;
 const time = (ms: number) => `${Math.floor(Math.max(0, ms) / 60000).toString().padStart(2, '0')}:${Math.floor(Math.max(0, ms) / 1000 % 60).toString().padStart(2, '0')}`;
 const orderDishes = (order: Order) => DISHES.map(dish => ({ dish, items: order.items.filter(i => i.dish === dish) })).filter(x => x.items.length);
 
@@ -110,6 +111,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   const [confirmReset, setConfirmReset] = useState(false);
   const [toast, setToast] = useState<BatchToast | null>(null);
   const [hint, setHint] = useState<Hint | null>(null); // hints.ts: the one just-in-time hint on screen (founder 2026-10-22, B2)
+  const [recap, setRecap] = useState<RushRecap | null>(null); // rush-recap.ts: the card of the rush that just ended (B2.6), nothing stored
   const [floaters, setFloaters] = useState<Floater[]>([]);
   const [turnedAway, setTurnedAway] = useState<TurnedAway[]>([]);
   const floaterId = useRef(0);
@@ -155,6 +157,9 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
         setTimeout(() => setTurnedAway(list => list.filter(x => x.id !== row.id)), 2200); // config-exempt: transient door feedback lifetime
       }
       if (e.type === 'shipper_missed' || e.type === 'shipper_completed') setSheet(current => current === 'delivery' ? null : current);
+      // Founder 2026-10-22 (B2.6): a rush that ends while the shift runs leaves a one-tap card that pauses like a sheet; never over another sheet, and not when the
+      // shift is closing (its book shows the rush). Built from the rush's own events.
+      if (e.type === 'rush_ended' && game.world.phase === 'open' && !menuPause.current) { const card = rushRecap(game.world.events, e); if (card) { setRecap(card); setSelectedTable(null); setSheet(current => current ?? 'rush'); } }
       if (e.type === 'shift_closed') { setSelectedTable(null); setSheet('book'); }
     }
     // One toast per batch (batch-toast.ts): the last reward wins, a loss names ONE reason and replaces it, a refused group never hides a reward.
@@ -554,7 +559,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
     <FlyingFeedback floaters={floaters} />
 
 
-    {sheet && <SheetDialog pausedLabel={t('pause.menu')} view={sheet} title={t(sheet === 'account' ? 'account.title' : sheet === 'quests' ? 'quests.title' : sheet === 'flyer' ? 'flyer.title' : sheet === 'signboard' ? 'sign.title' : sheet === 'delivery' ? 'delivery.title' : sheet === 'dog' ? 'dog.title' : sheet === 'close' ? 'close.title' : sheet === 'book' ? 'book.title' : sheet === 'journey' ? 'journey.title' : sheet === 'settings' ? 'settings.title' : sheet === 'config' ? 'config.title' : sheet === 'buyTable' ? 'goal.buyTable' : `nav.${sheet}`)} close={() => setSheet(null)}>
+    {sheet && <SheetDialog pausedLabel={t('pause.menu')} view={sheet} title={sheet === 'rush' ? t('rushRecap.title', { kind: t(`rush.${recap?.kind ?? 'light'}`) }) : t(sheet === 'account' ? 'account.title' : sheet === 'quests' ? 'quests.title' : sheet === 'flyer' ? 'flyer.title' : sheet === 'signboard' ? 'sign.title' : sheet === 'delivery' ? 'delivery.title' : sheet === 'dog' ? 'dog.title' : sheet === 'close' ? 'close.title' : sheet === 'book' ? 'book.title' : sheet === 'journey' ? 'journey.title' : sheet === 'settings' ? 'settings.title' : sheet === 'config' ? 'config.title' : sheet === 'buyTable' ? 'goal.buyTable' : `nav.${sheet}`)} close={() => setSheet(null)}>
       {invitation && (sheet === 'book' && invitation === 'firstShift' || sheet === 'seasons' && invitation === 'leaderboard') && remote?.identity.provider === 'guest' && <LoginInvitation reason={invitation} t={t} signIn={() => open('account')} later={() => setInvitation(null)} />}
       {sheet === 'account' && <Account remote={remote} locale={locale} t={t} close={() => setSheet(null)} />}
       {sheet === 'quests' && show.quests && <Quests world={w} config={game.config} run={run} t={t} num={num} />}
@@ -602,6 +607,9 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
       {sheet === 'close' && <div className="close-confirm"><p>{t('close.copy')}</p><p>{t('close.guests', { n: closeQuote.guests.length })}</p><div className="close-price"><Icon name="coin" /><strong>{num(closeQuote.cost)}</strong><span>{t('coins')}</span></div>{!closeQuote.ok && <p role="status">{t(closeQuote.deliveryBlocked ? 'error.deliveryPending' : 'error.notEnoughCoins')}</p>}<div className="button-stack"><button className="primary" disabled={!closeQuote.ok || closeShift !== shift?.id} onClick={() => run({ type: 'kickAll', shiftId: closeShift!, maxCost: closeQuote.cost })}>{t('close.confirm', { cost: num(closeQuote.cost) })}</button><button onClick={() => setSheet(null)}>{t('close.wait')}</button></div></div>}
       {sheet === 'stock' && <><p className="sheet-intro">{t('stock.copy')} <b>{num(w.coins)} {t('coins')}</b></p><div className="stock-list">{DISHES.map(dish => <div className="stock-row" key={dish}><Sprite id={dish === 'bia' ? 'keg-lv1' : menuAsset[dish]} /><div className="stock-info"><strong id={`stock-ingredient-${dish}`}>{t(`ingredient.${dish}`)}</strong><span>{dish === 'bia' ? beerInventory : `${w.inventory[dish]} / ${stockCap(w, game.config)}`}</span><progress value={w.inventory[dish]} max={stockCap(w, game.config)} />{c.menu[dish].unlock.kitchenLevel > 0 && c.menu[dish].unlock.kitchenLevel <= kitchen.level && <small>{t('stock.cookHint', { dish: t(`dish.${dish}`) })}</small>}</div>{c.menu[dish].unlock.kitchenLevel > w.equipment.kitchen ? <small>{t('stock.locked', { n: c.menu[dish].unlock.kitchenLevel })}</small> : <div className="stock-actions">{(['one', 'bulk', 'full'] as const).map(mode => { const q = restockQuote(w, game.config, dish, mode); return <button key={mode} aria-describedby={`stock-ingredient-${dish}`} disabled={!q.ok} onClick={() => run({ type: 'restock', dish, mode })}>{t('stock.buy', { action: dish === 'bia' ? `${t('beer.buy')} ${mode === 'one' ? t('stock.one') : mode === 'bulk' ? t('stock.bulk', { n: c.inventory.bulkSize }) : t('stock.full')}` : mode === 'one' ? t('stock.one') : mode === 'bulk' ? t('stock.bulk', { n: c.inventory.bulkSize }) : t('stock.full'), cost: num(q.cost) })}</button>; })}</div>}</div>)}</div>{showDeferredRisk && <><p>{Object.entries(c.crates[c.unlocks.emergencyPack.contents.slice('crate.'.length) as keyof typeof c.crates]).map(([dish, n]) => `${t(`ingredient.${dish}`)} × ${n}`).join(' · ')}</p><button className="secondary full" onClick={() => run({ type: 'emergencyPack' })}>{t('stock.emergency')}</button></>}</>}
       {!guestOnly && sheet === 'seasons' && <><Leaderboard key={`${remote?.identity.playerId ?? 'public'}:${remote?.identity.provider ?? 'local'}`} viewer={remote ? { playerId: remote.identity.playerId, provider: remote.identity.provider } : null} timeout={c.network.reconnectingUiDelayMs} timeZone={c.league.seasons.tz} t={t} locale={locale} num={num} /><details className="season-details"><summary>{t('shrine.title')}</summary><SeasonHistory timeout={c.network.reconnectingUiDelayMs} timeZone={c.league.seasons.tz} t={t} locale={locale} num={num} /></details>{remote?.identity.provider === 'google' ? <details className="season-details"><summary>{t('season.own')}</summary><Seasons world={w} config={game.config} t={t} locale={locale} num={num} /></details> : <button className="secondary full" onClick={() => open('account')}>{t('account.title')}</button>}</>}
+      {sheet === 'rush' && recap && <div className="rush-recap"><dl className="ledger-money">{(['arrived', 'served', 'left', 'tips'] as const).map(key => <div key={key} data-recap={key}><dt>{t(`rushRecap.${key}`)}</dt><dd>{num(recap[key])}</dd></div>)}<div className="ledger-total" data-recap="net"><dt>{t('rushRecap.net')}</dt><dd>{num(recap.net)}</dd></div></dl>
+        {recap.change !== null && <p className={`rush-change ${recap.change >= 0 ? 'is-up' : 'is-down'}`} data-change={recap.change}>{t(recap.change >= 0 ? 'rushRecap.up' : 'rushRecap.down', { n: num(Math.abs(recap.change)) })}</p>}
+        <button className="primary full" onClick={() => setSheet(null)}>{t('rushRecap.ok')}</button></div>}
       {sheet === 'buyTable' && <div className="slot-buy"><Sprite id="table-lv1-empty" />{buyTableButton('buyTable', () => setSheet(null))}</div>}
       {sheet === 'locations' && <Locations world={w} config={game.config} run={run} t={t} locale={locale} />}
       {sheet === 'upgrades' && !show.upgradeList && <><p className="sheet-intro">{t('upgrade.copy')}</p><div className="upgrade-grid">{sheetGoal && renderCard(sheetGoal)}</div></>}

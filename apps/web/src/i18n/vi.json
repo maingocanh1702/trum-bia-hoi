@@ -818,5 +818,14 @@
   "hint.slot": "Đủ xu mua bàn mới! Chạm ô trống để mua.",
   "book.leftSeated": "Bỏ đi sau khi ngồi",
   "book.noEntry": "Không vào được · hết chỗ",
-  "book.details": "Chi tiết"
+  "book.details": "Chi tiết",
+  "rushRecap.title": "{kind} vừa xong",
+  "rushRecap.arrived": "Khách đến",
+  "rushRecap.served": "Lượt phục vụ",
+  "rushRecap.left": "Bỏ đi · không vào được",
+  "rushRecap.tips": "Tiền boa",
+  "rushRecap.net": "Thu ròng",
+  "rushRecap.up": "↑ +{n} xu so với đợt trước",
+  "rushRecap.down": "↓ −{n} xu so với đợt trước",
+  "rushRecap.ok": "Tiếp tục"
 }
