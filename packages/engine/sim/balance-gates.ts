@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Game, PAIR, config as seedConfig, loadConfig, buyTableQuote, upgradeQuote, EQUIPMENT, restockQuote, beerStatus, tableUpgrade, type Command, type Config, type DomainEvent, type SeedConfig } from '../src/index';
+import { Game, PAIR, config as seedConfig, loadConfig, buyTableQuote, upgradeQuote, EQUIPMENT, restockQuote, beerStatus, tableUpgrade, singlesFirstShifts, type Command, type Config, type DomainEvent, type SeedConfig } from '../src/index';
 import { simulateCareer, ADVANCED_CAREER_K_MAX, ADVANCED_TOTAL_VALUE_BASELINE, ADVANCED_TOTAL_VALUE_MAX_OVER_BASELINE } from './career';
 import { doorTable, DOOR_TARGETS, type DoorTable } from './door';
 import { measureStandard, type StandardRow } from './headless';
@@ -124,7 +124,7 @@ export function careerMetrics(game: Game, report: ReturnType<typeof simulateCare
     raw: { served: report.value.served, totalValue: report.value.totalValue ?? NaN, k: report.value.kValue ?? NaN },
     standard: { served: report.normalised.served, extraRoundServes: report.normalised.extraRoundServes, totalValue: report.normalised.totalValue, k: report.normalised.kValue ?? NaN },
     lp, table4, chair1, lv2, lv4, lv4x8, equipMax, equipMissing: missing, purchases: bought.length, maxGap: gap,
-    door: doorTable(report), capShift,
+    door: doorTable(report, singlesFirstShifts(config.values) > 0), capShift,
     beer: { guests: beerGuests, lost: lostGuests, arrived, admitted, ofLost: lostGuests ? beerGuests / lostGuests : 0, ofArrived: arrived ? beerGuests / arrived : 0, ofAdmitted: admitted ? beerGuests / admitted : 0 },
     end: { day: last.day, shifts: w.completedShifts, tables: w.tables.length, seats: w.tables.reduce((n, t) => n + t.capacity, 0), tableLevels: w.tables.map(t => t.level), chairLevels: w.tables.map(t => t.chairLevel ?? 1),
       equipment: { ...w.equipment }, location: last.location, reputation: w.reputation, lifePath: w.lifePath, lifetimeEarned: w.lifetimeEarned, coins: w.coins, dogLevel: w.dogLevel },
@@ -236,9 +236,13 @@ export function gateTable({ careers, standard, shift1, config }: GateInputs): Ga
       return { cell: b ? `${pct(b.lostOfAdmitted)} (of arrivals ${pct(b.lostOfArrived)})` : 'n/a', v: b ? over(b.lostOfAdmitted, target) : 1 };
     });
   }
-  add('door.shift1', 'shift 1: arrivals / refused pairs', `>= ${DOOR_TARGETS.firstShiftArrivals} / >= ${DOOR_TARGETS.firstShiftRefusedPairs}`, m => {
+  // Re-sealed by the founder, 2026-10-23 (QD-117 B): a config whose shift 1 seats singles only (`spawn.singlesFirstShifts`) can turn no pair away there, so the pair target is
+  // exactly 0 (a refused pair would mean the rule broke); any other config keeps the S3 target of at least 5 refused pairs.
+  const singles = singlesFirstShifts(config.values) > 0, pairTarget = singles ? '= 0 (singles only)' : `>= ${DOOR_TARGETS.firstShiftRefusedPairs}`;
+  add('door.shift1', 'shift 1: arrivals / refused pairs', `>= ${DOOR_TARGETS.firstShiftArrivals} / ${pairTarget}`, m => {
     const d = m.door.shift1;
-    return { cell: d ? `${d.arrived} / ${d.refusedPairs}` : 'n/a', v: d ? Math.max(Math.max(0, DOOR_TARGETS.firstShiftArrivals - d.arrived) / DOOR_TARGETS.firstShiftArrivals, Math.max(0, DOOR_TARGETS.firstShiftRefusedPairs - d.refusedPairs) / DOOR_TARGETS.firstShiftRefusedPairs) : 1 };
+    const pairs = !d ? 1 : singles ? (d.refusedPairs > 0 ? 1 : 0) : Math.max(0, DOOR_TARGETS.firstShiftRefusedPairs - d.refusedPairs) / DOOR_TARGETS.firstShiftRefusedPairs;
+    return { cell: d ? `${d.arrived} / ${d.refusedPairs}` : 'n/a', v: d ? Math.max(Math.max(0, DOOR_TARGETS.firstShiftArrivals - d.arrived) / DOOR_TARGETS.firstShiftArrivals, pairs) : 1 };
   });
   add('cap', 'daily earn cap first reached at shift', `>= ${TARGETS.dailyCapNotBefore} (or never)`, m => ({ cell: m.capShift === null ? 'not reached' : fmt(m.capShift), v: m.capShift === null ? 0 : miss(m.capShift, TARGETS.dailyCapNotBefore, Infinity) }));
   add('beer', 'guests lost to beer running out (no rush), of leavers', `< ${pct(TARGETS.beerOutMax)}`, m => ({ cell: `${pct(m.beer.ofLost)} (${m.beer.guests} guests; of arrivals ${pct(m.beer.ofArrived)})`, v: m.beer.ofLost < TARGETS.beerOutMax ? 0 : Math.max(over(m.beer.ofLost, TARGETS.beerOutMax), 1e-6) }));

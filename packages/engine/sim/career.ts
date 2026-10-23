@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Game, config as bundledConfig, nextDayAt, dayKey, lifePathStatus, restRequired, serveValueStats, seasonTier, type Command } from '../src/index';
+import { Game, config as bundledConfig, nextDayAt, dayKey, lifePathStatus, restRequired, serveValueStats, seasonTier, singlesFirstShifts, type Command } from '../src/index';
 import { createManagementPolicy, serveNext, STEP_MS, MANAGEMENT_MS, MAX_DAY_STEPS } from './policy';
 import { doorTable, doorLines } from './door';
 import { normalisedServes, normalisedStats, type NormalisedServe } from './normalised';
@@ -198,7 +198,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     // Plan S1 / section 3: when each table, chair and device level was bought, by shift.
     for (const p of report.purchaseMilestones) console.log(`PURCHASE shift ${p.shift} (day ${p.day}): ${p.item} - ${p.cost} coins`);
     // Plan S3: who leaves WITH a penalty, by band, and what shift 1 shows at the door (a report, never a gate: the numbers are tuned in S5).
-    if (door) { const table = doorTable(report); for (const line of doorLines(table)) console.log(line); console.log(`DOOR ${JSON.stringify(table)}`); }
+    if (door) { const table = doorTable(report, singlesFirstShifts(bundledConfig.values) > 0); for (const line of doorLines(table)) console.log(line); console.log(`DOOR ${JSON.stringify(table)}`); }
     console.log(JSON.stringify({ days: report.days, commands: report.commandCount, commandHash: report.commandHash, value: report.value, normalised: report.normalised, advancedBandDecision: report.advancedBandDecision }));
   }
 }
