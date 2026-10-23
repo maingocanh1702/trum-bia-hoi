@@ -12,7 +12,10 @@ Open the local URL printed by Vite. Node 22.12+ is required. The current build h
 guest play, automatic preparation/washing, one-tap table service, stock, equipment,
 Vietnamese/English, onboarding and replayed local saves. It is a development build:
 server/accounts, full meta/risk/events, final art/audio and release QA remain in scope.
-See [build progress](docs/build-progress.md) for precise status.
+Current status: [implementation tracker](docs/implementation-tracker.md) and
+[dashboard](docs/dashboard.md) (build), [deploy log](docs/deploy-log.md) (what each host
+serves), [TRANG-THAI-DOCS](docs/TRANG-THAI-DOCS.md) (docs, decisions, the active plan).
+[Build progress](docs/build-progress.md) is the historical log up to 2026-09-11.
 
 ```sh
 npm run verify       # config + typecheck/build + unit/replay tests + 5-seed sim
@@ -40,3 +43,7 @@ Audio source presets/WAVs are under `assets/_raw/audio`; all clips are original
 procedural synthesis. Audio listening QA and remaining B7 clips are pending.
 `python3 scripts/check_assets.py --release` intentionally fails while any manifest
 entry is a draft or placeholder.
+
+| Date | Change |
+|---|---|
+| 2026-10-23 | The status pointer names the documents kept current (tracker, dashboard, deploy log, TRANG-THAI-DOCS); build progress is historical (docs sync after PR #32). |

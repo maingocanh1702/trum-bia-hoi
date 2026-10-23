@@ -1,5 +1,7 @@
 # Build progress — Trùm Bia Hơi
 
+> **Historical since 2026-10-23 — this log stops at 2026-09-11** (local v0.2/v0.3 from the isolated build worktree, landed on `master`, now `main`) and is no longer updated. Today's state: build status → [implementation tracker](implementation-tracker.md) + [dashboard](dashboard.md); milestones and the next gate → [06-ROADMAP](../06-ROADMAP-trum-bia-hoi.md) "Đang ở đâu"; what each host serves → [deploy log](deploy-log.md) (newest entry "Host check — 2026-10-23"); docs and decisions in force → [TRANG-THAI-DOCS](TRANG-THAI-DOCS.md). Everything below is kept as written.
+
 > **Local v0.2 DELIVERED — 2026-09-11:** M0 and M1 COMPLETE (M1: 11 PASS, 1 owner-WAIVED). Trimmed gameplay/UI batch is implemented; final verify/smoke PASS. Live preview now serves `playable-v0.2` at ad94161. M6/M7/M8 and production deployment remain pending/deferred.
 
 Started 2026-09-08 from `30c0285`. Active worktree: `/Users/maingocanh/.codex/worktrees/trum-bia-hoi-game`, branch `codex/game-build-isolated` based on `bc79af5`. A concurrent Claude docs commit captured the first engine files in the original checkout; original files were preserved, and further work was isolated. Authority: current `00-HANDOFF-trum-bia-hoi.md` and [owner update adoption](latest-handoff-adoption.md),
@@ -2852,3 +2854,7 @@ All37main-checkout WIP hashes and its `codex/build-game` branch are unchanged. E
 ### Local v0.3 master landing / verification record
 
 Next authorized operation: fast-forward `master` from `7d1c25595af86067a63d5a43a48c47bf80c09814` to this writing branch through the clean temporary worktree `trum-bia-hoi-master-v03-verify`, then full `npm run verify` in that worktree. The main checkout is never switched or stashed. Exact ff commit is recorded in `.qa/playable-v03-master-ff.json`; success-only `.qa/playable-v03-master-verified.json` records the final master hash,418test result and log SHA256 after completion. Retain `.qa/playable-v03-master-verify.txt`, then remove the temporary worktree only after PASS. These receipt files distinguish a completed check from this planned record. The preview stays on its immutable v0.3 tag independently of later documentation commits.
+
+| Date | Change |
+|---|---|
+| 2026-10-23 | Marked historical (docs sync after PR #32): a dated banner at the top sends readers to the documents kept current (tracker + dashboard, 06-ROADMAP, deploy log, TRANG-THAI-DOCS); `README.md` and TRANG-THAI §1 point there too. No entry below changed. |

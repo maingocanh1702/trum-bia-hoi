@@ -1,7 +1,7 @@
-# 🍺 HANDOFF — Trùm Bia Hơi — điểm vào cho Designer & Dev (v1.45)
+# 🍺 HANDOFF — Trùm Bia Hơi — điểm vào cho Designer & Dev (v1.46)
 
 > **Tương ứng với `00-TONG-HOP-trumviahe.md`** (bản nghiên cứu game gốc) — nhưng đây là bản **của Trùm Bia Hơi**: đọc file này trước mọi file khác. Mục tiêu: một designer (có Blender MCP) và một dev cầm bộ docs này là **tạo asset và code được game**, không cần hỏi lại lịch sử.
-> Ngày: 2026-09-10 (v1.41). **Cách đọc bộ docs (chốt founder 09/09):** ràng buộc là **luật chơi** (`02-GDD` + `03-SPEC`), **số** (`08-SPEC` + `docs/config/economy.tbh.json`), **không-hardcode/config admin** (`trum-bia-hoi-brd-admin.md` §5.2), **bất biến đo k** (`04-SPEC` §5), **server-authoritative + engine thuần** (`10-SPEC` §7/§1; thứ tự code: lưu localStorage trước, server sau — §4.2). Mọi thứ còn lại — kiến trúc, module, thư viện, **layout, màn hình, design** — do dev/designer **tự quyết**. `prototype/` là bản thử nghiệm lưu trữ, KHÔNG phải điểm xuất phát.
+> Ngày: 2026-10-23 (v1.46). **Cách đọc bộ docs (chốt founder 09/09):** ràng buộc là **luật chơi** (`02-GDD` + `03-SPEC`), **số** (`08-SPEC` + `docs/config/economy.tbh.json`), **không-hardcode/config admin** (`trum-bia-hoi-brd-admin.md` §5.2), **bất biến đo k** (`04-SPEC` §5), **server-authoritative + engine thuần** (`10-SPEC` §7/§1; thứ tự code: lưu localStorage trước, server sau — §4.2). Mọi thứ còn lại — kiến trúc, module, thư viện, **layout, màn hình, design** — do dev/designer **tự quyết**. `prototype/` là bản thử nghiệm lưu trữ, KHÔNG phải điểm xuất phát.
 >
 > Trạng thái dự án: prototype Phase 0 đã hoàn thành nhiệm vụ của nó — chứng minh "feel" và **đo được k = 2.24–2.34** (trong band 2.0–3.0), bản Alpha đã host và chủ dự án đã chơi, phản hồi đã đưa vào GDD/03-SPEC (rót & rửa tự động, phục vụ theo Order). Từ 09/09 `prototype/` chuyển sang **lưu trữ**; game viết mới từ đầu. Slice `feat/p0-ui-serve-popover--r2` và gate "Alpha playtest 3–5 người" chỉ còn liên quan tới prototype — merge hay bỏ tuỳ chủ dự án, **không chặn** việc bắt đầu game (xem `SESSION-TRACK-LOG.md`).
 
@@ -65,28 +65,30 @@ Kinh tế một câu: **bia = workhorse quay vòng cốc (rẻ, volume); mồi c
 
 | File | Vai trò | Tương ứng research gốc | Trạng thái |
 |---|---|---|---|
-| `00-HANDOFF-trum-bia-hoi.md` | điểm vào (file này) | `00-TONG-HOP-trumviahe.md` | ✅ v1.0 |
-| `02-GDD-trum-bia-hoi.md` | **nguồn sự thật** thiết kế | `brief-gameplay` + `trum-bia-hoi-game-design-research` | ✅ v1.9 |
+| `00-HANDOFF-trum-bia-hoi.md` | điểm vào (file này) | `00-TONG-HOP-trumviahe.md` | ✅ v1.46 |
+| `02-GDD-trum-bia-hoi.md` | **nguồn sự thật** thiết kế | `brief-gameplay` + `trum-bia-hoi-game-design-research` | ✅ v1.13 |
 | `01-MAP-tra-da-to-bia-hoi.md` | rationale chuyển hoá (why) | — | ✅ tham chiếu |
 | `03-SPEC-he-ban.md` | hệ bàn (đơn vị gameplay) | — (cơ chế mới) | ✅ v1.4 + rules 28 (mô hình bàn ghế: thân §6 viết lại 22/10/2026; "Mời về" dưới §2) |
 | `04-SPEC-prototype-phase0.md` | **lưu trữ**; còn ràng buộc §5 (cách đo k) | — | 🗄️ v0.2 |
 | `05-SPEC-design-uiux.md` + `docs/features/F24` | design/UI khung | `uiux-analysis` §1–§13 | 🔧 khung |
-| `09-SPEC-uiux-screens.md` | IA, từng màn, luồng, component, motion, microcopy, a11y — **tham khảo, không ràng buộc layout** | `uiux-analysis` §14–§36 | 📖 v1.0 |
-| **`10-SPEC-tech-implementation.md`** | **gợi ý** kiến trúc/domain/API/test; **ràng buộc**: config service (không hardcode), engine thuần, server-authoritative, DoD | (mới) | ✅ v1.5 |
+| `09-SPEC-uiux-screens.md` | IA, từng màn, luồng, component, motion, microcopy, a11y — **tham khảo, không ràng buộc layout** | `uiux-analysis` §14–§36 | 📖 v1.1 |
+| **`10-SPEC-tech-implementation.md`** | **gợi ý** kiến trúc/domain/API/test; **ràng buộc**: config service (không hardcode), engine thuần, server-authoritative, DoD | (mới) | ✅ v1.7 |
 | **`trum-bia-hoi-brd-admin.md`** | BRD admin/CRM: dashboard, CRM, **Config Registry (§5.2)**, content, payment, support, audit | (mới) | ✅ v0.4 |
 | **`docs/asset-blender-pipeline.md`** | pipeline Blender MCP → pixel-art | `design-component-catalog` §1, §4 | ✅ v1.0 |
 | `07-SPEC-shop-mua-giai-worldcup.md` | shop Vụ Bia | — | ✅ 🔵 P4 |
-| **`08-SPEC-economy-constants.md`** + `docs/config/economy.tbh.json` | mọi hằng số/công thức; §22 key → tier admin | `economy-spec-from-bundle.md` | ✅ v1.3.11 (8 mâu thuẫn đã chốt §21; changelog tới 22/10/2026) · JSON **2.1.1** (số S5 của 2.1.0 + giá "Mời về" 0,5 của owner, 22/10/2026), rules 28 |
+| **`08-SPEC-economy-constants.md`** + `docs/config/economy.tbh.json` | mọi hằng số/công thức; §22 key → tier admin | `economy-spec-from-bundle.md` | ✅ v1.3.11 (8 mâu thuẫn đã chốt §21; changelog tới 22/10/2026) · JSON **2.1.2** (số S5 của 2.1.0 + giá "Mời về" 0,5 của owner ở 2.1.1 + HUD và nút Nâng cấp từ ca 1 của founder ở 2.1.2, 22/10/2026; 2.1.2 chưa phát hành, `trumbiahoi.com` chạy 2.1.1), rules 28 |
 | **`12-PROMPT-claude-build.md`** + `docs/prompts/codex-review.md` | **Kickoff prompt cho Claude Code** (M0→M9, ràng buộc kết quả, vòng lặp slice → Codex review CLEAN) + instruction cho Codex | — | ✅ v1.0 |
 | **`11-PROMPT-PACK-designer-blender-dev.md`** | 2 bản giao việc (EN): Phần A asset (+ 75 audio id), Phần B dev — tự do cách làm/kiến trúc/layout | — | ✅ v1.14 |
 | `docs/features/F07–F28` | spec feature (F27 = onboarding 🟢, F28 = bảng xếp hạng) | — | ✅ (F01–F06 nằm trong 03/04) |
 | `docs/reference/` (8 ảnh + README) | layout tham khảo game gốc: HUD, sheet, popover nâng cấp, Bàn Thờ | — | 🖼️ tham khảo |
 | **`docs/content/`** (3 JSON + README) | content bank tier C — đề xuất schema + 5 ví dụ | — | ⏸ pending (chưa chốt) |
-| `docs/TRANG-THAI-DOCS.md` | **trạng thái bộ docs (bản mới nhất)** — độ phủ, quyết định đang hiệu lực, việc chờ chủ dự án | — | ✅ 08/09 |
+| `docs/TRANG-THAI-DOCS.md` | **trạng thái bộ docs (bản mới nhất)** — độ phủ, quyết định đang hiệu lực, việc chờ chủ dự án | — | ✅ 23/10/2026 |
+| `docs/PLAN-improve-early-game-2026-10-22.md` | **plan đang chạy** (founder 22/10/2026): sửa ca 1 + cảm giác đầu game, ba PR xếp chồng A → B1 → B2 | — | 🟡 v1.1 — A = PR #33 mở · B1 đang làm lại theo QĐ-117 (23/10), chưa có PR · B2 đang làm (bắt đầu 23/10) |
+| `docs/deploy-log.md` | biên nhận phát hành + host check: mỗi host đang phục vụ bản nào | — | ✅ mục mới nhất "Host check — 2026-10-23" (`trumbiahoi.com` = `v-fb2`, Netlify = v6) |
 | `docs/design-tokens.md` | palette/typo | `uiux-analysis` §24, §41 | ✅ v1.0 |
-| `docs/asset-list-designer.md` · `asset-production-checklist.md` · `asset-generation-prompts.md` · `item-list-upgrade-levels.md` | asset catalog + checklist + mô tả | `design-component-catalog-trumviahe.md` | ✅ (8/~550 asset đã có; checklist v1.4: 75 audio id, 8 gap §P2 đã đóng, 9 mặt bằng, bếp 4 cấp, B1 12 icon) |
+| `docs/asset-list-designer.md` · `asset-production-checklist.md` · `asset-generation-prompts.md` · `item-list-upgrade-levels.md` | asset catalog + checklist + mô tả | `design-component-catalog-trumviahe.md` | ✅ (8/~550 asset đã có; checklist v1.5: 75 audio id, 8 gap §P2 đã đóng, 9 mặt bằng, bếp 4 cấp, B1 12 icon) |
 | `game-extended-workflow-cl.md` | quy trình game canvas | — | ✅ |
-| `06-ROADMAP` v3.0 (mốc M0–M9, 1 phase) · `docs/implementation-tracker.md` · `docs/dashboard.*` | tiến độ | — | ✅ ROADMAP v3.1, tracker v0.64.0 (20 đang triển khai, 0/28 hoàn tất) |
+| `06-ROADMAP` v3.0 (mốc M0–M9, 1 phase) · `docs/implementation-tracker.md` · `docs/dashboard.*` | tiến độ | — | ✅ ROADMAP v3.4 (M0/M1 COMPLETE, M2–M5 OPEN, M6–M8 hoãn; "Đang ở đâu — 2026-10-23"), tracker v0.65.0 (20 đang triển khai, 0/28 hoàn tất) |
 | `docs/autopilot-*.md` · `.autopilot/` | **lưu trữ** kit Level 3 — không còn bắt buộc (08/09) | — | 🗄️ |
 | `economy-spec-from-bundle.md` · `uiux-analysis-trumviahe.md` · `design-component-catalog-trumviahe.md` · `research-*` · `brief-gameplay-trumviahe.md` | **research game gốc** (chỉ để truy vết) | | 🔒 không sửa |
 
@@ -176,6 +178,7 @@ Giao việc: `11-PROMPT-PACK` Phần A (designer) và Phần B (dev) — cả ha
 ## Changelog (append-only)
 | Ver | Thay đổi |
 |---|---|
+| v1.46 | **Docs sync sau PR #32 (23/10/2026, không deploy):** §3 bảng tài liệu khớp file trên `main` — HANDOFF v1.0 → v1.46, GDD v1.9 → v1.13, 09-SPEC v1.0 → v1.1, 10-SPEC v1.5 → v1.7, checklist asset v1.4 → v1.5, JSON 2.1.1 → **2.1.2** (chưa phát hành), TRANG-THAI 08/09 → 23/10, ROADMAP v3.1 → v3.4, tracker v0.64.0 → v0.65.0; thêm hai dòng: plan đang chạy `docs/PLAN-improve-early-game-2026-10-22.md` (IMPROVE-EARLY-GAME, founder 22/10) và `docs/deploy-log.md` (host check 23/10: `trumbiahoi.com` = `v-fb2`, Netlify = v6 giữ theo founder 23/10); dòng "Ngày" của header 2026-09-10 (v1.41) → 2026-10-23 (v1.46). Nhãn **v1.46 cũng được nhánh `feat/shift1-founder-fixes` (PR #33) dùng** và `feat/early-pacing` dùng v1.47: PR nào merge sau thì đổi nhãn của mình (PR này merge trước → PR #33 thành v1.47, B1 thành v1.48). |
 | v1.45 | **Founder override 22/10/2026 — HUD và nút Nâng cấp hiện từ ca 1 (JSON 2.1.2, config-only):** `onboarding.featureReveal.hudAfterShifts` và `upgradeAfterShifts` 1 → 0 (Hành trình / Nhiệm vụ / giải đấu giữ 2 / 2 / 3 ca; ca 1 vẫn 1 khách 1 bia; không đổi số kinh tế, luật, code). Ghi đè đúng hai ngưỡng của luật owner 18/09 "HUD ca 1 chỉ 3 thứ" (giữ nguyên làm lịch sử ở GDD §17, 09-SPEC, F27). Hệ quả cùng cổng HUD: nút "Mời về" cũng hiện từ ca 1. Nhánh `feat/hud-from-shift-1` → PR vào `main`; CHƯA phát hành (Netlify và Cloudflare vẫn `v-fb2`, R `5336be7`). |
 | v1.44 | **Vòng quyết định owner của PR #30 (22/10/2026, stage 07b):** bốn OWNER CALL đã chốt — giá "Mời về" `kickTable.feeRate` 0,5 với luật +10 % đọc theo thu nhập ròng (JSON nhãn **2.1.1**, rules vẫn 28), "đang nhâm nhi" = `consuming` + `occupied` giữ, chip "Mục tiêu kế tiếp" không gợi ý ghế 2 trước bàn 8 (bộ lọc tầm với có thể cho thiết bị đi trước bàn 5–8), smoke guest lúc phát hành đỏ CHỈ ở hai dòng soft "mua bàn 2" được đưa lên bước promote khi `npm run sim:balance` exit 0 với `shift1.plan` ĐẠT trên đúng commit (`docs/cloudflare-guest.md` bước 1b/4/7/8). Dòng 08-SPEC/JSON ở bảng tài liệu đổi 2.1.0 → 2.1.1. Chi tiết: `docs/handoff/2026-10-19-vui3ca/HANDOFF.md` §12–§14, DECISIONS `## 07 · owner calls 2026-10-22`. |
 | v1.43 | **Đợt 4 đóng gói "Vui 3 ca" (22/10/2026, stage 07):** Đợt 2–3 (rules 28, JSON 2.1.0: mô hình bàn ghế, rót tức thì, cầu theo sức chứa, cấp bàn/ghế, cân bằng 2.1.0, sân/asset, "Mời về") nằm trên `feat/economy-2-1`, PR vào `main` chờ owner merge; chưa deploy `v-fb2`. Chỉ sửa câu đã thành sai: §2.3 `docs/phase0-alpha-playtest.md` không còn chỉ là lưu trữ prototype (§7 = phiếu 10 dòng của owner, chưa tick); §3 dòng 03-SPEC (v1.4 + rules 28, thân §6 viết lại), 08-SPEC (v1.3.11, JSON 2.1.0) và tracker (v0.64.0, 20 đang triển khai). Quyết định và OWNER CALL còn mở của Đợt 2–3: `docs/handoff/2026-10-19-vui3ca/HANDOFF.md` §11–§13 + `DECISIONS.md`. |
