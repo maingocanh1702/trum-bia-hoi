@@ -322,7 +322,9 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   const closeQuote = kickAllQuote(w, game.config);
 
   const report = remote ? remote.menu : sheet === 'book' || sheet === 'upgrades' ? menuReport((game as Game).world, game.config) : null;
-  const leave = report && shift ? leaveRows(report.losses, shift.stats.rejected) : []; // the shift book's "why guests left", most first
+  // The shift book's "why guests left", most first. Review B2-r1: a guest who gave up in the queue never got a seat, so he counts under "Hết chỗ" with the groups
+  // turned away, as in the top count "Không vào được · hết chỗ" (one number for the same words).
+  const leave = report && shift ? leaveRows({ ...report.losses, queue: 0 }, shift.stats.rejected + (report.losses.queue ?? 0)) : [];
   const pairs = shift ? pairsWithoutSeat(shift.stats) : 0; // S3: pairs turned away at the door for lack of a two-chair table
   // Founder 2026-10-22 (B2.5): "Khách bỏ đi" split so the book's counts add up to its reasons: a guest who gave up in the queue never sat down, so he could not get in.
   const queueLeft = report?.losses.queue ?? 0, leftSeated = shift ? Math.max(0, shift.stats.lost - queueLeft) : 0, noEntry = shift ? shift.stats.rejected + queueLeft : 0;

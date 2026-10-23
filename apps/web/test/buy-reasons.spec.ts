@@ -200,7 +200,8 @@ for (const viewport of viewports) test(`the shift book lists why guests left, mo
   await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   const f = fixture('book'), l = f.losses as Record<string, number>;
   // What the player should read, restated from the engine's own counts (not through the app's helper).
-  const beer = l.beerStock + l.beerRefill, food = l.foodStock, seat = f.rejected as number, wait = Object.entries(l).filter(([k]) => !['beerStock', 'beerRefill', 'foodStock'].includes(k)).reduce((s, [, n]) => s + n, 0);
+  // Review B2-r1: guests who gave up in the queue count under "Hết chỗ" with the groups turned away (the book's top count says the same); until then under "Chờ lâu quá".
+  const beer = l.beerStock + l.beerRefill, food = l.foodStock, seat = (f.rejected as number) + (l.queue ?? 0), wait = Object.entries(l).filter(([k]) => !['beerStock', 'beerRefill', 'foodStock', 'queue'].includes(k)).reduce((s, [, n]) => s + n, 0);
   const order = ([['beer', beer, 0], ['food', food, 1], ['wait', wait, 2], ['seat', seat, 3]] as const).filter(r => r[1] > 0).sort((a, b) => b[1] - a[1] || a[2] - b[2]);
   expect(order.length).toBeGreaterThanOrEqual(3); expect(order[0][0]).not.toBe('beer'); // the order is not the default one: the ranking is real
   const pairs = (f.noSeat as number) / 2; expect(pairs).toBeGreaterThanOrEqual(1); // S3: pairs turned away for lack of a two-chair table, restated from the engine's own count of their guests

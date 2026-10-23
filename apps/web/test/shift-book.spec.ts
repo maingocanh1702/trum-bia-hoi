@@ -52,6 +52,8 @@ for (const locale of ['vi', 'en'] as const) for (const viewport of [{ width: 390
   // The counts agree with "Vì sao khách đi": the guests who left after sitting and those who could not get in are its guests, nobody twice.
   const reasons = await book.locator('.leave-reasons li b').allTextContents();
   expect(reasons.reduce((sum, text) => sum + Number(text.replace(/\D/g, '')), 0)).toBe(leftSeated + noEntry);
+  // Review B2-r1: one split in both lists, so "hết chỗ" never shows two numbers: the "Hết chỗ" reason is the top count "Không vào được · hết chỗ".
+  await expect(book.locator('.leave-reasons li[data-reason="seat"] b')).toHaveText(num(noEntry));
   // No row for a dish that is still locked (this shop has no kitchen), every unlocked dish keeps its row.
   const rows = book.locator('.menu-report tbody tr'), dishes = Object.keys(seed.menu) as string[];
   expect(f.kitchen).toBe(0);
