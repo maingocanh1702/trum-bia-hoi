@@ -37,14 +37,16 @@ for (const locale of ['vi', 'en'] as const) for (const viewport of [{ width: 390
   await tbh.shot(`b2-labels-${locale}-${viewport.width}.png`); expect(tbh.consoleErrors()).toEqual([]);
 });
 
-for (const [type, locale] of [['thuong', 'vi'], ['voi', 'vi'], ['vip', 'vi'], ['ngoily', 'vi'], ['chipheo', 'vi'], ['vip', 'en']] as const) test(`B2.3 the order card says one trait of the guest type under the type (${type}, ${locale}) at 390×844`, async ({ page, tbh }) => {
+for (const type of ['thuong', 'voi', 'vip', 'ngoily', 'chipheo'] as const) for (const locale of ['vi', 'en'] as const) test(`B2.3 the order card says one trait of the guest type under the type (${type}, ${locale}) at 390×844`, async ({ page, tbh }) => {
   const copy = copyOf(locale), at = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/serve-feedback.ts', 'trait', type], { encoding: 'utf8' }));
   await page.setViewportSize({ width: 390, height: 844 }); await boot(page, at, locale);
   await page.locator('.table-space.table-0 .table-order-hint').click();
   const card = page.locator('#active-table-order');
   await expect(card.locator('.customer-tag')).toHaveText(copy[`customer.${type}`]);
   await expect(card.locator('.customer-trait')).toHaveText(copy[`customer.trait.${type}`]);
-  const [tag, trait] = [(await card.locator('header').boundingBox())!, (await card.locator('.customer-trait').boundingBox())!];
+  // Both boxes in one frame (Linux CI, review B2-r1): the card pops in with a scale transform, and two separate boundingBox() calls caught the header and the
+  // trait at different scales (the trait read 1.75 px inside the header box). In one frame the trait sits its 1 px margin below the header in any font.
+  const [tag, trait] = await card.evaluate(el => [el.querySelector('header')!, el.querySelector('.customer-trait')!].map(x => { const b = x.getBoundingClientRect(); return { y: b.top, height: b.height }; }));
   expect(trait.y).toBeGreaterThanOrEqual(tag.y + tag.height - 1); // under the type
   expect(await axe(page)).toEqual([]);
   await tbh.shot(`b2-trait-${type}-${locale}.png`); expect(tbh.consoleErrors()).toEqual([]);
