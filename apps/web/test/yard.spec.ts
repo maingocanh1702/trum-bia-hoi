@@ -83,7 +83,8 @@ for (const locale of ['vi', 'en'] as const) test(`S6 a new shop shows its one ta
 // Founder 2026-10-22 (A3): exactly one "Mở ca" on screen. With the bottom nav shown the note keeps its text, has no button of its own and points down at the
 // nav's, which is the one "Mở ca" of the page: whole on screen, its corners and centre its own, at least 44 px, in the thumb zone (the bottom third of the
 // screen), in both languages. A pin that still hides the nav keeps the note's button: first-shift-visual.spec.ts `A3 a save pinned to 2.1.1 …`.
-for (const locale of ['vi', 'en'] as const) for (const viewport of viewports) test(`A3 at rest exactly one Mở ca is on screen, the bottom nav's: whole, uncovered and in the thumb zone, and the opening note points at it (${locale}) at ${viewport.width}px`, async ({ page, tbh }) => {
+// Review A-r1 F1 / founder 2026-10-22 (B2.8): also on a landscape phone (844×390), where the nav used to be static and the one Mở ca sat below the fold.
+for (const locale of ['vi', 'en'] as const) for (const viewport of [...viewports, { width: 844, height: 390 }]) test(`A3 at rest exactly one Mở ca is on screen, the bottom nav's: whole, uncovered and in the thumb zone, and the opening note points at it (${locale}) at ${viewport.width}px`, async ({ page, tbh }) => {
   await page.setViewportSize(viewport);
   const { t } = await boot(page, locale, 'fresh');
   const note = page.locator('.opening-note'), button = page.getByRole('button', { name: t('nav.shift'), exact: true }); // strict: one button of that name on the page
@@ -137,8 +138,9 @@ for (const viewport of viewports) test(`S6 a busy alley: the order bubbles of ev
   expect(f.tables).toHaveLength(8); expect(open).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
   await expect(yard.locator('.table-order-hint')).toHaveCount(open.length);
   const tops = (await boxes(yard.locator('.table-object'))).map(b => Math.round(b.y)), rows = [...new Set(tops)].sort((a, b) => a - b), rowOf = (i: number) => rows.indexOf(tops[i]);
-  expect(rows).toHaveLength(viewport.width < 640 ? 4 : 3); // four rows of two on a phone, three rows of three on a wide screen
-  expect(new Set(open.filter(i => rowOf(i) >= 1).map(rowOf)).size).toBeGreaterThanOrEqual(2); // the subject: bubbles in rows 2 and 3 (and 4 on a phone)
+  // Founder 2026-10-22 (B2.8): the yard fits one screen, four places abreast in two rows on every screen (until then four rows of two on a phone, three of three wide).
+  expect(rows).toHaveLength(2);
+  expect(new Set(open.filter(i => rowOf(i) >= 1).map(rowOf)).size).toBeGreaterThanOrEqual(1); // the subject: bubbles in the row below (rows 2-4 when there were four)
   for (const i of open) {
     const hint = yard.locator(`.table-space.table-${i} .table-order-hint`), track = hint.locator('.patience-track');
     const parts = [(await hint.boundingBox())!, ...(await track.count() ? [(await track.boundingBox())!] : [])];
@@ -155,11 +157,12 @@ for (const viewport of viewports) test(`S6 a busy alley: the order bubbles of ev
 // about 21 px below its space. Fixture `linger-rows`: "lai rai" pairs sipping their served trays (tables 1-3 and 5-6) right above tables whose order is open
 // (4, 7, 8), on a phone's two columns (4 under 2, 7-8 under 5-6) and on a wide screen's three (4 under 1, 8 under 5). No bubble or patience track of a lower
 // row covers the caption or the drawing of another table. The old 31 px gap cleared only tables that wait for their order: it fails here by 10 px.
+// Founder 2026-10-22 (B2.8): with four places abreast in two rows on every screen, tables 1-4 linger over the open orders of tables 5-8 (each one right under one).
 for (const viewport of viewports) test(`S6 a busy alley under lingering tables: no order bubble covers the label, state or countdown of the table above, at ${viewport.width}px`, async ({ page, tbh }) => {
   await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   const { f } = await boot(page, 'vi', 'linger-rows');
   const yard = page.locator('.yard'), open = f.openTables as number[], lingering = f.lingering as number[];
-  expect(f.tables).toHaveLength(8); expect(lingering).toEqual([0, 1, 2, 4, 5]); expect(open).toEqual([3, 6, 7]);
+  expect(f.tables).toHaveLength(8); expect(lingering).toEqual([0, 1, 2, 3]); expect(open).toEqual([4, 5, 6, 7]); // B2.8: four abreast, every open order right under a lingering table
   for (const i of lingering) {
     const space = yard.locator(`.table-space.table-${i}`);
     await expect(space.locator('.guest-label')).toHaveCount(1); await expect(space.locator('.enjoy-time')).toHaveCount(1); // the three-line caption

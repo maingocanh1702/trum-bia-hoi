@@ -1,8 +1,9 @@
 .sprite.illustrated { image-rendering: auto; }
-.table-object > img.sprite { width: 84px; height: 76px; left: 24px; top: 1px; border-radius: 0; box-shadow: none; }
-.table-object[data-level="3"] > img.sprite { width: 104px; left: 14px; }
-.table-object[data-level="4"] > img.sprite { width: 120px; left: 6px; }
-.seat { position: absolute; width: 33px; height: 33px; transform: translate(-50%, -100%); z-index: 1; }
-.seat-customer { width: 44px; height: 59px; }
+/* Founder 2026-10-22 (B2.8): the drawing is sized in cqw of its table (132 px = 100cqw), so a table scaled to fit the one-screen yard keeps its proportions. */
+.table-object > img.sprite { width: 63.64cqw; height: 57.58cqw; left: 18.18cqw; top: .76cqw; border-radius: 0; box-shadow: none; }
+.table-object[data-level="3"] > img.sprite { width: 78.79cqw; left: 10.61cqw; }
+.table-object[data-level="4"] > img.sprite { width: 90.91cqw; left: 4.55cqw; }
+.seat { position: absolute; width: 25cqw; height: 25cqw; transform: translate(-50%, -100%); z-index: 1; }
+.seat-customer { width: 33.33cqw; height: 44.7cqw; }
 .seat .sprite { width: 100%; height: 100%; }
 .table-number { z-index: 2; }

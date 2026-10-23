@@ -60,7 +60,7 @@ if (mode === 'inspect') {
     while (w.tables.length < slots) send({ type: 'buyTable' });
     for (const table of w.tables) send({ type: 'buyChair', tableId: table.id });
     send({ type: 'startShift' });
-    const serveAt = [0, 1, 2, 4, 5], waitAt = [3, 6, 7];
+    const serveAt = [0, 1, 2, 3], waitAt = [4, 5, 6, 7]; // founder 2026-10-22 (B2.8): four abreast in two rows, so row 1 lingers over every open order of row 2 (was [0,1,2,4,5] / [3,6,7] for two or three columns)
     const sipping = (i: number) => w.tables[i].state === 'consuming' && w.tables[i].until !== null;
     const waiting = (i: number) => Boolean(w.tables[i].order && ['pending', 'grace'].includes(w.tables[i].order!.state));
     const done = () => serveAt.every(sipping) && waitAt.every(waiting);

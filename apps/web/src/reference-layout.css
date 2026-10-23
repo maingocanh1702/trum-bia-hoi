@@ -130,7 +130,7 @@
 @container (min-width: 640px) {
   .stall-scene { margin-top: 32px; height: 231px; }
   .yard { margin-left: 60px; margin-right: 70px; }
-  .yard-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } /* 510 px of yard: three 132 px tables abreast; four need 760 px */
+  /* B2.8 (founder 2026-10-22): no three-column grid here any more; every screen shows 4 × 2 places (end of file). */
   .stock-strip { right: 16px; top: 143px; }
 }
 @media (max-height: 770px) {
@@ -323,8 +323,10 @@
   .equipment-object.kitchen.is-cooking .sprite { animation: kitchen-cook 1.5s ease-in-out infinite; }
   @keyframes kitchen-cook { 50% { filter: drop-shadow(0 0 4px #e7953a); } }
 }
-/* A short landscape viewport scrolls the navigation with the yard instead of covering equipment. */
-@media (max-height: 500px) { .bottom-nav { position: static; } }
+/* A short landscape viewport scrolled the navigation with the yard instead of covering equipment (until 2026-10-23). Founder 2026-10-22 (A3 / B2.8, review
+   A-r1 F1): the nav stays in sight there too, so the one "Mở ca" is reachable without scrolling; it is compact, and at the end of the page it sits below
+   everything, so nothing stays covered. */
+@media (max-height: 500px) { .bottom-nav { position: sticky; padding-top: 4px; padding-bottom: max(4px, env(safe-area-inset-bottom)); } .bottom-nav > button { min-height: 44px; flex-direction: row; gap: 6px; } }
 
 .menu-report { margin: 24px 0; padding: 16px 0; border-block: 1px solid var(--panelBorder); }
 .menu-report h3 { margin: 0 0 12px; font-size: 18px; font-weight: 800; }
@@ -369,3 +371,63 @@
 .rush-change { margin: 0 0 4px; font-size: 14px; font-weight: 750; text-align: center; }
 .rush-change.is-up { color: #b7e5a5; }
 .rush-change.is-down { color: #ffc2b0; }
+
+/* ---------------------------------------------------------------------------------------------------------------------------------------------------
+   Founder 2026-10-22 (IMPROVE-EARLY-GAME B2.8): the yard fits one phone screen. 09-SPEC §3.1 left "2 cột × 3 hàng hoặc 1 cột cuộn dọc, playtest quyết"
+   open; the founder settled it for one screen. The eight places stand in 4 columns × 2 rows on every screen; the yard is a size container that takes the
+   height left under the HUD and above the nav, and a table is scaled to its place (--dw × --dh, the drawing sized in cqw of its table, art.css), never
+   below a 44 px tap target. The bands that keep an order bubble off the table above (56 px over row 1, a 49 px row gap, 51 px of caption room per row:
+   review 07 r1) stay in px, so the busy-alley promises keep their geometry. A shorter screen (≤ 770 px) also tightens the HUD rows, the stall and the nav.
+   --------------------------------------------------------------------------------------------------------------------------------------------------- */
+@property --dw { syntax: '<length>'; inherits: true; initial-value: 132px; }
+@property --dh { syntax: '<length>'; inherits: true; initial-value: 77px; }
+.yard { container: yard / size; flex: 1 1 0; min-height: 347px; } /* the least a two-row yard needs: door 44 + 56 + 2 × (44 + 51) + 49 + 8 (341 with the 38 px door of a short screen) */
+@media (max-height: 900px) { .yard { min-height: 341px; } .yard-grid { --dw: clamp(60px, min(calc(100cqw / 4 - 6px), calc((100cqh - 253px) * .857)), 132px); } } /* the 38 px door of the compact HUD below */
+.yard-grid { --dw: clamp(60px, min(calc(100cqw / 4 - 6px), calc((100cqh - 259px) * .857)), 132px); --dh: max(44px, calc(var(--dw) * .583));
+  grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: calc(var(--dh) + 51px); row-gap: 49px; padding: 56px 0 8px; }
+.table-space { width: var(--dw); height: calc(var(--dh) + 26px); }
+.table-object { width: var(--dw); height: var(--dh); container-type: inline-size; }
+.table-object::before { inset: 11.36cqw .76cqw -2.27cqw; }
+.table-object > .sprite { width: 59.09cqw; height: 36.36cqw; left: 20.45cqw; top: 11.36cqw; }
+.tray { top: 15.15cqw; }
+.tray .sprite { width: 11.36cqw; height: 11.36cqw; }
+.table-number { left: 43.18cqw; top: 25.76cqw; width: 14.39cqw; height: 14.39cqw; font-size: max(8px, 8.33cqw); line-height: 14.39cqw; }
+.customer-reaction { font-size: max(14px, 15.15cqw); }
+.table-order-hint { bottom: calc(100% + 1px); }
+.slot-mark { width: calc(var(--dw) * .64); height: calc(var(--dw) * .32); }
+/* B2.8: the rest line rides in the yard's top band between shifts (App.tsx), so it takes no height from the yard. */
+.yard > .rest-summary { position: absolute; top: 0; left: 0; right: 0; z-index: 6; padding: 0; }
+/* B2.8: one line for the rush pill (its kind and its clock), so the weather row stays one row high. */
+.rush-label b, .rush-label time { display: inline; }
+.rush-label > span { display: inline-flex; align-items: baseline; gap: 5px; white-space: nowrap; }
+@media (max-height: 900px) {
+  /* B2.8: a shorter stall on a short screen while it holds the early-game set (owner, keg, cooler, sink, glasses); a stall with a sign, the kitchen or the
+     phone/QR props keeps the classic 200 px arrangement, and the yard scales its tables to what is left. */
+  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen)) { height: 168px; }
+  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen)) .owner-station { top: 2px; transform: translateX(-50%) scale(.84); transform-origin: top center; }
+  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen)) .equipment-object.keg { top: 6px; }
+  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen)) .equipment-object.cooler { top: 92px; }
+  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen)) .equipment-object.washer { top: 92px; }
+  .stall-scene:not(:has(.sign-object, .business-props > button, .equipment-object.kitchen)) .glass-counter { top: 58px; }
+  .beer-stock-warning { padding-top: 2px; padding-bottom: 2px; margin-bottom: 2px; }
+  .beer-stock-warning p { line-height: 1.25; }
+  .stall-scene { margin-top: 0; }
+  .hud { padding-top: 4px; padding-bottom: 2px; }
+  .goal-row { padding-bottom: 2px; }
+  .weather-row { min-height: 24px; }
+  .rush-label { padding-top: 3px; padding-bottom: 3px; }
+  .yard-door { min-height: 38px; }
+  .bottom-nav { padding-top: 4px; padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+  .bottom-nav > button { min-height: 48px; gap: 3px; }
+  .bottom-nav > button > span { line-height: 1.15; }
+}
+/* B2.8: in a narrow yard (four places in under 340 px) an order bubble draws its dishes a little smaller, so neighbouring bubbles crowd each other less. */
+@container yard (max-width: 340px) { .table-order-hint { padding: 4px 5px; gap: 2px; } .table-order-hint .sprite { width: 16px; height: 22px; } }
+/* B2.8 / review A-r1 F1: on a landscape phone the sticky nav would sit over the lower buttons of the stock strip; there the strip is a row in the flow (after
+   the yard, above the nav), and the yard takes the width it frees. */
+@media (max-height: 500px) {
+  .stock-strip { position: static; flex-direction: row; flex-wrap: wrap; justify-content: center; width: auto; margin: 6px 12px; padding: 1px 6px; }
+  .stock-strip > .beer-stock { border-bottom: 0; border-right: 2px solid #b9ccb6; border-radius: 15px 0 0 15px; margin-bottom: 0; padding-bottom: 2px; }
+  .stock-strip .reputation { border-top: 0; padding-top: 2px; }
+  .yard { margin-right: 12px; }
+}
