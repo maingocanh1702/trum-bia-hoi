@@ -7,10 +7,17 @@
 
 ---
 
+## Founder trả lời STOP của B1 (QD-117, 23/10/2026) và làm lại B1.1 — 2026-10-23 (Part B1, worker, nhánh `feat/early-pacing`) — **BLOCKED lần 2: chờ founder**
+
+Founder chọn phương án B và sửa trong câu trả lời: "B1.1 = singles ONLY while completedShifts < 3 (the first three shifts)" (`.autopilot-state/QD-117-B1-STOP.md`); giữ B1.2, B1.3. Làm: `spawn.singlesFirstShifts` 3 (Tier A) thay `spawn.singlesUntilPairSeat` (chưa phát hành), nhãn giữ 2.1.4; dòng `cooler.firstShift` ở thẻ tủ lạnh ca 1 (review B1-r1); `early-pacing.ts` đo ca 1–3; nới `door.shift1` thành "= 0 cặp khi ca 1 chỉ khách lẻ".
+Đo (200 seed, 1 bàn, nắng, người mới; trước = tip A): nhóm ngồi ca 1 / 2 / 3 6 → 17 / 7 → 16 / 6 → 16; cặp bị từ chối 5,5 → 0 / 8 → 0 / 8 → 0; xu cuối ca 1 299 → 2 433 (thu ×3); trung vị gộp khoảng cách 42 → 42 s ở ca 1.
+**STOP lần 2:** `sim:balance` (A2 + B1, seed 42 / 99): hai ô Part A và `door.shift1` xanh, nhưng tổng 30 ngày 9,451 / 9,387 tr (lệch 2,9 % / 2,2 % > dung sai 2 %) và ghế 2 đầu tiên ca 35 / 35 (sớm 5 ca > 2); `sim:career:gate` đỏ. Không nới, không chỉnh. Phương án: `.autopilot-state/reports/B1-PR-BODY.md` §2.
+Chưa phát hành: Netlify v6, Cloudflare v-fb2. **Việc kế:** founder chọn cho STOP lần 2; B2 đang chạy ở worktree riêng.
+
 ## Nhịp đầu game của founder (config 2.1.4) — 2026-10-23 (IMPROVE-EARLY-GAME Part B1, worker, nhánh `feat/early-pacing` xếp chồng trên Part A) — **BLOCKED: chờ founder**
 
 Founder 22/10/2026: (B1.1) khách lẻ tới khi quán có bàn 2 ghế → `spawn.singlesUntilPairSeat` (Tier A, founder duyệt); (B1.2) Giờ Vàng đầu phải có khách → unit test trên pin 2.1.3 xác nhận hẹn giờ khách đặt trước đợt không được hẹn lại → `rush.schedule.replanPendingArrival` (`min(còn lại, khoảng cách 1 khách theo nhịp mới)` lúc đợt bắt đầu/kết thúc); (B1.3) ca 1 bia không hết hơi → `onboarding.firstShift.staleDisabled`. Ba key gate theo key, rules giữ 28, nhãn 2.1.3 → **2.1.4**; không đổi số kinh tế nào.
-Đo trước/sau (`packages/engine/sim/early-pacing.ts`, 200 seed, 1 bàn, nắng, người mới): ca 1 nhóm ngồi 6 → 17, cặp bị từ chối 5,5 → 0, khoảng cách trung vị 63 → 42 s, dài nhất 210 → 42 s, giây không ai ngồi 627 → 489 / 720 (vẫn ~2/3 ca trống ở 1 bàn: báo cáo, không chỉnh), bia hết hơi 1 → 0, xu cuối ca 1 1 299 → 2 433; đợt light ca 2 đến / phục vụ / mất 5 / 1 / 0 → 6 / 5,5 / 0, khách đầu của đợt 32,8 → 14,7 s.
+Đo trước/sau (`packages/engine/sim/early-pacing.ts`, 200 seed, 1 bàn, nắng, người mới): ca 1 nhóm ngồi 6 → 17, cặp bị từ chối 5,5 → 0, khoảng cách trung vị 63 → 42 s (trung vị từng seed; trung vị gộp 42 → 42 s: nhịp không đổi), dài nhất 210 → 42 s, giây không ai ngồi 627 → 489 / 720 (vẫn ~2/3 ca trống ở 1 bàn: báo cáo, không chỉnh), bia hết hơi 1 → 0, xu cuối ca 1 1 299 → 2 433; đợt light ca 2 đến / phục vụ / mất 5 / 1 / 0 → 6 / 5,5 / 0, khách đầu của đợt 32,8 → 14,7 s.
 Kiểm chứng (Windows): `check:config` · `check:i18n` · `check:assets` · `build` · `build:guest` xanh; `npm test` 819, 47 đỏ = baseline, 0 mới; Playwright local 359/359; guest smoke 3/3; `sim:onboarding` · `sim:rush` ĐẠT.
 **STOP:** `sim:balance` trên A2 + B1 — hai ô seed 42 của Part A **xanh** (LP2 27, chuỗi 6) nhưng 4 hàng **đỏ** ở seed 42 và 99 (tổng 30 ngày 10,057 / 9,945 tr; ghế 2 đầu tiên ca 21 / 22; bỏ đi ca 1–24 15,7 / 13,0 %; cặp bị từ chối ca 1 0 / 0); `sim:career:gate` đỏ. A/B không A2: cùng 4 hàng đỏ. Không chỉnh số. Phương án: `.autopilot-state/reports/B1-PR-BODY.md` §2; 08-SPEC changelog 2026-10-23 / JSON 2.1.4; TRANG-THAI-DOCS hàng 0f.
 Chưa phát hành: Netlify v6, Cloudflare v-fb2. **Việc kế:** founder chọn phương án cho STOP của B1 → orchestrator mở PR B1 (xếp chồng trên PR A); B2 chờ.
