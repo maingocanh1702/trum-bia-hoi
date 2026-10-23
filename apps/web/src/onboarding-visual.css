@@ -44,3 +44,5 @@ button[data-spotlight]:focus-visible { outline-color: var(--info); }
 @media (prefers-reduced-motion: reduce) {
   .fly-coin { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))); }
 }
+/* Founder 2026-10-22 (B2.2): a just-in-time hint may light the rush pill (a timer, not a button); the ring stays without motion. */
+.rush-label[data-spotlight] { box-shadow: 0 0 0 3px var(--spotlight), 0 0 14px 4px #ffd15acc; animation: spotlight-pulse .9s ease-in-out infinite; }

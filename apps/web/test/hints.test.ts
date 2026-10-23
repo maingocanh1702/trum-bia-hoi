@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Game, config, loadConfig, guestPatienceLeft } from '../../../packages/engine/src';
-import { holds, hintRules, nextHint } from '../src/hints';
+import { execFileSync } from 'node:child_process';
+import { Game, config, loadConfig, guestPatienceLeft, decodeSave } from '../../../packages/engine/src';
+import { HINT_TARGET, holds, hintRules, nextHint } from '../src/hints';
 
 // Founder 2026-10-22 (Part B2): the pure choice of a just-in-time hint (hints.ts), on real engine states. The DOM side (one banner, never over a sheet, done once)
 // is pinned in serve-feedback.spec.ts.
@@ -42,4 +43,26 @@ test('B2.1d the tip-window hint stops mattering at the next serve or when the sh
   assert.equal(holds({ id: 'tipWindow', since: next.world.serves.length - 1 }, next.world, next.config), false, 'a serve after the hint appeared ends it');
   const raw = structuredClone(config.raw) as { onboarding: Record<string, unknown> }; delete raw.onboarding.hints;
   assert.deepEqual(hintRules({ values: raw } as unknown as Parameters<typeof hintRules>[0]), config.values.onboarding.hints);
+});
+
+// B2.2: the moment of each hint, on the fixtures the DOM spec boots (hints.spec.ts), read back through the engine's own decoder.
+const at = (mode: string) => decodeSave(JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/hints.ts', mode], { encoding: 'utf8' })).save);
+test('B2.2 each just-in-time hint has its moment: stock, glasses, slot, rush and freshness; the most urgent first; a lit hint waits while another spotlight is on', () => {
+  for (const mode of ['stock', 'glasses', 'slot', 'rush', 'freshness'] as const) {
+    const g = at(mode), hint = nextHint(g.world, g.config, []);
+    assert.equal(hint?.id, mode, mode);
+    assert.equal(holds(hint!, g.world, g.config), true, `${mode} holds`);
+    assert.equal(nextHint(g.world, g.config, [mode]), null, `${mode} shown once`);
+    assert.equal(nextHint(g.world, g.config, [], { spotBusy: true })?.id ?? null, HINT_TARGET[mode] ? null : mode, `${mode} with another spotlight on`);
+  }
+  const both = at('both');
+  assert.equal(nextHint(both.world, both.config, [])?.id, 'stock'); assert.equal(nextHint(both.world, both.config, ['stock'])?.id, 'slot');
+  assert.equal(nextHint(both.world, both.config, ['stock'], { upgrades: false }), null, 'no tappable place while the Upgrades sheet is hidden');
+});
+test('B2.2 shift 1 of a new save has no freshness hint: beer does not go flat there (JSON 2.1.4 staleDisabled)', () => {
+  const g = new Game(undefined, 42, Date.parse('2026-10-23T10:00:00+07:00'));
+  g.command({ idempotencyKey: 'f-start', at: g.world.now, command: { type: 'startShift' } });
+  for (let i = 0; i < 4000 && !g.world.tables.some(t => t.order?.items.every(x => x.state === 'ready')); i++) g.advance(g.world.now + 100);
+  assert.ok(g.world.tables.some(t => t.order?.state === 'pending' && t.order.items.some(x => x.dish === 'bia' && x.state === 'ready')), 'a poured beer waits');
+  assert.equal(nextHint(g.world, g.config, [])?.id === 'freshness', false);
 });

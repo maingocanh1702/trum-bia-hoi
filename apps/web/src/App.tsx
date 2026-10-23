@@ -26,7 +26,7 @@ import { GoalChip, say } from './GoalChip';
 import { listGoals, pickNextGoal, type Goal } from './goals';
 import { leaveRows, pairsWithoutSeat } from './leave-reasons';
 import { batchToast, type BatchToast } from './batch-toast';
-import { hintRules, holds as hintHolds, nextHint, type Hint } from './hints';
+import { HINT_TARGET, hintRules, holds as hintHolds, nextHint, type Hint, type HintTarget } from './hints';
 
 // Owner 2026-09-11: risk features are deferred; legacy UI remains testable only in an explicit dev preview.
 const guestOnly = import.meta.env.VITE_TBH_GUEST_ONLY === '1';
@@ -305,8 +305,8 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   const hintBlocked = Boolean(sheet || selectedEquipment || selectedTable || showGuide);
   const dismissedHint = useRef('');
   useEffect(() => {
-    if (hint) { if (!hintHolds(hint, w, game.config)) setHint(null); return; }
-    const candidate = hintBlocked ? null : nextHint(w, game.config, prefs.current.hintsDone);
+    if (hint) { if (!hintHolds(hint, w, game.config, show.upgrades)) setHint(null); return; }
+    const candidate = hintBlocked ? null : nextHint(w, game.config, prefs.current.hintsDone, { spotBusy: spot.target !== null, upgrades: show.upgrades });
     if (!candidate || `${candidate.id}:${candidate.since}` === dismissedHint.current) return;
     setHint(candidate);
     if (!prefs.current.hintsDone.includes(candidate.id)) prefs.current.hintsDone = [...prefs.current.hintsDone, candidate.id];
@@ -343,6 +343,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   }, [sheet]);
   const openGoal = (g: Goal) => { goalTarget.current = g.id; open('upgrades'); };
   const lit = (on: boolean) => on ? { 'data-spotlight': '' } : {};
+  const hintLit = (target: HintTarget) => !!hint && !hintBlocked && spot.target === null && HINT_TARGET[hint.id] === target;
   const pointer = spot.arrow ? <i className="spotlight-arrow" aria-hidden="true" /> : null;
   const upgradeHint = <UpgradeHint world={w} config={game.config} report={report} t={t} open={kind => {
     if (kind === 'stock') open('stock');
@@ -392,7 +393,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
     const production = kind === 'keg' ? beer : kind === 'washer' ? washer : null;
     const cold = freshnessMs(w, game.config);
     const count = kind === 'keg' ? `${beer.serveNow}/${beer.capacity}` : kind === 'washer' ? `${washer.busy}/${washer.batchSize}` : kind === 'kitchen' ? `${kitchen.busy}/${kitchen.slots}` : Number.isFinite(cold) ? t('cooler.seconds', { seconds: Math.round(cold) / 1000 }) : '∞';
-    return <button className={`equipment-object ${kind} ${kind === 'kitchen' && kitchen.busy ? 'is-cooking' : ''} ${kind === 'keg' && beerEmpty ? 'is-empty' : ''}`} key={kind} onClick={() => { setSelectedTable(null); setSelectedEquipment(kind); }} aria-label={t(`equipment.${kind}`)}>
+    return <button {...lit(kind === 'washer' && hintLit('washer'))} className={`equipment-object ${kind} ${kind === 'kitchen' && kitchen.busy ? 'is-cooking' : ''} ${kind === 'keg' && beerEmpty ? 'is-empty' : ''}`} key={kind} onClick={() => { setSelectedTable(null); setSelectedEquipment(kind); }} aria-label={t(`equipment.${kind}`)}>
       <Sprite id={`${kind}-lv${Math.max(1, w.equipment[kind])}`} /><span>{t(`equipment.${kind}`)}</span><b className="capacity-badge" aria-label={t(`production.${kind === 'washer' ? 'washing' : kind === 'keg' ? 'ready' : kind === 'cooler' ? 'freshness' : 'busy'}`, { count })}>{kind === 'keg' ? t('production.ready', { count }) : kind === 'cooler' ? t('production.freshness', { count }) : kind === 'washer' ? t('production.washShort', { count }) : count}</b>{/* founder 2026-10-22 (B2.3): no bare number under the cooler or at the sink */}
       {production && production.busy > 0 && <progress className="equipment-progress" aria-label={t('production.batchProgress', { n: production.busy })} value={production.progress} max={1} />}
     </button>;
@@ -492,7 +493,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
         {show.hud && <button className="icon-button settings-button" onClick={() => open('settings')} aria-label={t('nav.settings')}><Icon name="settings" /></button>}
       </header>
       {next && <div className="goal-row"><GoalChip goal={next} coins={w.coins} t={t} num={num} decimal={decimal} onOpen={openGoal} /></div>}
-      {show.hud && <div className="weather-row"><span className="weather-chip"><span aria-hidden="true">{shift?.weather === 'rain' ? '☂' : '☀'}</span>{t(`weather.${shift?.weather ?? 'sunny'}`)}</span>{restedMs > 0 && <span className="well-rested" role="timer" aria-label={t('wellRested.active', { time: time(restedMs), mult: c.shift.wellRested.mult })}><Icon name="star" /><time>{time(restedMs)}</time><b>×{c.shift.wellRested.mult}</b></span>}<span className={`rush-label ${rush.active ? 'is-active' : rush.next?.warning ? 'is-warning' : ''}`} role="timer">{rush.active ? <><Icon name="bolt" /><span><b>{t(`rush.${rush.active.kind}`)}</b><time>{t('rush.ends', { time: time(rush.active.remainingMs) })}</time></span></> : rush.next ? <span><b>{t('rush.upcoming', { kind: t(`rush.${rush.next.kind}`) })}</b><time>{time(rush.next.remainingMs)}</time></span> : t('rush.none')}</span>{!rush.active && rush.next?.warning && <span className="sr-only" role="status">{t('rush.warning', { kind: t(`rush.${rush.next.kind}`) })}</span>}</div>}
+      {show.hud && <div className="weather-row"><span className="weather-chip"><span aria-hidden="true">{shift?.weather === 'rain' ? '☂' : '☀'}</span>{t(`weather.${shift?.weather ?? 'sunny'}`)}</span>{restedMs > 0 && <span className="well-rested" role="timer" aria-label={t('wellRested.active', { time: time(restedMs), mult: c.shift.wellRested.mult })}><Icon name="star" /><time>{time(restedMs)}</time><b>×{c.shift.wellRested.mult}</b></span>}<span {...lit(hintLit('rush'))} className={`rush-label ${rush.active ? 'is-active' : rush.next?.warning ? 'is-warning' : ''}`} role="timer">{rush.active ? <><Icon name="bolt" /><span><b>{t(`rush.${rush.active.kind}`)}</b><time>{t('rush.ends', { time: time(rush.active.remainingMs) })}</time></span></> : rush.next ? <span><b>{t('rush.upcoming', { kind: t(`rush.${rush.next.kind}`) })}</b><time>{time(rush.next.remainingMs)}</time></span> : t('rush.none')}</span>{!rush.active && rush.next?.warning && <span className="sr-only" role="status">{t('rush.warning', { kind: t(`rush.${rush.next.kind}`) })}</span>}</div>}
       <section className={`stall-scene ${kitchen.level ? 'has-kitchen' : ''}`} aria-label={t('brand')}>
         {w.signStyle && <button className="sign-object" aria-label={t('sign.open', { style: t(`sign.${w.signStyle}`) })} aria-haspopup="dialog" onClick={() => open('signboard')}><Sprite id={`sign-${w.signStyle}`} /></button>}
         <div className="owner-station"><Sprite id="owner-idle" /><div className="serving-counter"><div className="counter-canopy" /><div className="counter-front"><h1>{t('brand')}</h1><div className="counter-bottles" aria-hidden="true"><i /><i /><i /><i /><i /></div></div></div></div>
@@ -519,18 +520,18 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
           {w.tables.map(renderTable)}
           {/* Founder 2026-10-22 (B2.4): an empty place is a button that opens the Upgrades sheet's buy card of the next table (it pauses like any sheet) once that sheet is revealed. */}
           {Array.from({ length: Math.max(0, slots - w.tables.length) }, (_, i) => show.upgrades
-            ? <button key={`slot-${w.tables.length + i}`} className={`table-space table-${w.tables.length + i} table-slot`} aria-label={t('yard.slot')} aria-haspopup="dialog" onClick={() => open('buyTable')}><span className="slot-mark" /></button>
+            ? <button key={`slot-${w.tables.length + i}`} {...lit(i === 0 && hintLit('slot'))} className={`table-space table-${w.tables.length + i} table-slot`} aria-label={t('yard.slot')} aria-haspopup="dialog" onClick={() => open('buyTable')}><span className="slot-mark" /></button>
             : <div key={`slot-${w.tables.length + i}`} className={`table-space table-${w.tables.length + i} table-slot`} role="img" aria-label={t('yard.slot')}><span className="slot-mark" /></div>)}
         </div>
         {/* Founder 2026-10-22 (A3): one "Mở ca" on screen. With the bottom nav shown the note points at the nav's button, named by its own label in bold (`{button}`
             stays in the text when no value is passed, so it splits there); a pin that still hides the nav keeps the note's own button. */}
         {!inShift && !shift && <div className="opening-note"><h2>{t('rest.title')}</h2><p>{t('rest.copy')}</p>{show.hud ? <p className="start-below">{t('rest.startBelow').split('{button}').flatMap((part, i) => i ? [<b key={i}>{t('nav.shift')}</b>, part] : [part])}</p> : <button className="primary" onClick={() => run({ type: 'startShift' })}><Icon name="bolt" />{t('nav.shift')}</button>}<small>{t('rest.free')}</small></div>}
       </section>
-      {show.hud && <div className="stock-strip">{DISHES.filter(d => c.menu[d].unlock.kitchenLevel <= w.equipment.kitchen).map(d => <button key={d} className={d === 'bia' ? 'beer-stock' : undefined} onClick={() => open('stock')} aria-label={d === 'bia' ? beerInventory : `${t(`ingredient.${d}`)}: ${w.inventory[d]}/${stockCap(w, game.config)}`}><Sprite id={d === 'bia' ? 'keg-lv1' : menuAsset[d]} /><strong>{w.inventory[d]}<small>/{stockCap(w, game.config)}</small></strong></button>)}<button className={`flyer-stock ${flyers.remainingMs > 0 ? 'active' : ''}`} onClick={() => open('flyer')} aria-label={t('flyer.open', { n: flyers.stock })}><Sprite id="flyer-bundle" /><strong>{flyers.remainingMs > 0 ? time(flyers.remainingMs) : flyers.stock}</strong></button>{show.quests && <button className="quest-trigger" onClick={() => open('quests')} aria-label={t('quests.title')}><Icon name="book" /><strong>{w.daily?.rows.filter(r => r.progress >= r.target).length ?? 0}/{c.quests.daily.count}</strong></button>}<button className="reputation" onClick={() => open('journey')}><Icon name="star" />{num(w.reputation)}</button></div>}
+      {show.hud && <div className="stock-strip">{DISHES.filter(d => c.menu[d].unlock.kitchenLevel <= w.equipment.kitchen).map(d => <button key={d} {...lit(d === 'bia' && hintLit('beerStock'))} className={d === 'bia' ? 'beer-stock' : undefined} onClick={() => open('stock')} aria-label={d === 'bia' ? beerInventory : `${t(`ingredient.${d}`)}: ${w.inventory[d]}/${stockCap(w, game.config)}`}><Sprite id={d === 'bia' ? 'keg-lv1' : menuAsset[d]} /><strong>{w.inventory[d]}<small>/{stockCap(w, game.config)}</small></strong></button>)}<button className={`flyer-stock ${flyers.remainingMs > 0 ? 'active' : ''}`} onClick={() => open('flyer')} aria-label={t('flyer.open', { n: flyers.stock })}><Sprite id="flyer-bundle" /><strong>{flyers.remainingMs > 0 ? time(flyers.remainingMs) : flyers.stock}</strong></button>{show.quests && <button className="quest-trigger" onClick={() => open('quests')} aria-label={t('quests.title')}><Icon name="book" /><strong>{w.daily?.rows.filter(r => r.progress >= r.target).length ?? 0}/{c.quests.daily.count}</strong></button>}<button className="reputation" onClick={() => open('journey')}><Icon name="star" />{num(w.reputation)}</button></div>}
       {w.phase === 'closing' && <p className="status-line">{t('closing')}</p>}
       {!inShift && shift && <div className="status-line rest-summary"><span>{mustRest ? c.shift.regenRate > 0 ? t('rest.regen', { time: time(Math.ceil((c.shift.durationMs - w.staminaMs) / c.shift.regenRate / 1000) * 1000) }) : t('rest.regenPaused') : w.staminaMs < c.shift.durationMs ? t('rest.ready') : t('rest.free')}</span><button onClick={() => open('book')}><Icon name="book" />{t('nav.book')}</button></div>}
       {showGuide && <div className="guide" role="status"><span className="guide-mark">!</span><p>{t(guide.waitFor === 'order_ready' ? `order.feedback.${orderPreparation(w, game.config, guideOrder)}` : guide.copyKey)}</p>{c.onboarding.stepGuide.skippable && <button onClick={() => setPrefs({ guideDone: true, guideIndex: null })}>{t('skip')}</button>}</div>}
-      {hint && !hintBlocked && <div className="guide hint" role="status" data-hint={hint.id}><span className="guide-mark" aria-hidden="true">!</span><p>{t(`hint.${hint.id}`)}</p>{hintRules(game.config).dismissOnTap && <button onClick={() => { dismissedHint.current = `${hint.id}:${hint.since}`; setHint(null); }}>{t('hint.ok')}</button>}</div>}
+      {hint && !hintBlocked && <div className="guide hint" role="status" data-hint={hint.id}><span className="guide-mark" aria-hidden="true">!</span><p>{t(`hint.${hint.id}`, { s: decimal(freshnessMs(w, game.config) / 1000), kind: t(`rush.${rush.next?.kind ?? rush.active?.kind ?? 'light'}`) })}</p>{hintRules(game.config).dismissOnTap && <button onClick={() => { dismissedHint.current = `${hint.id}:${hint.since}`; setHint(null); }}>{t('hint.ok')}</button>}</div>}
       {show.hud && <nav className="bottom-nav" aria-label={t('brand')}>
         <button className={!inShift ? 'primary' : ''} onClick={() => inShift ? open('book') : run({ type: 'startShift' })}><Icon name={inShift ? 'book' : 'bolt'} /><span>{t(inShift ? 'nav.book' : 'nav.shift')}</span></button>
         <button onClick={() => open('stock')}><Icon name="stock" /><span>{t('nav.stock')}</span></button>

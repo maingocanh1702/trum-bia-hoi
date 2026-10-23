@@ -810,5 +810,10 @@
   "customer.trait.vip": "Boa đậm, dễ giận",
   "customer.trait.chipheo": "Không trả tiền · ngồi dai",
   "customer.trait.ngoily": "Ngồi lâu · gọi nhiều đợt",
-  "customer.trait.football_fan": "Ngồi lâu xem bóng"
+  "customer.trait.football_fan": "Ngồi lâu xem bóng",
+  "hint.rush": "{kind} sắp tới: khách sẽ đến dồn dập, chuẩn bị nhé.",
+  "hint.freshness": "Bia giữ tươi {s} s, bưng trước khi hết hơi.",
+  "hint.glasses": "Sắp hết cốc sạch: Bồn rửa đang rửa, chạm để xem.",
+  "hint.stock": "Đây là kho bia của quán. Chạm vào để Nhập hàng.",
+  "hint.slot": "Đủ xu mua bàn mới! Chạm ô trống để mua."
 }

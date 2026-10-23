@@ -810,5 +810,10 @@
   "customer.trait.vip": "Big tips, quick to anger",
   "customer.trait.chipheo": "Pays nothing · stays put",
   "customer.trait.ngoily": "Stays long · many rounds",
-  "customer.trait.football_fan": "Stays for the match"
+  "customer.trait.football_fan": "Stays for the match",
+  "hint.rush": "{kind} is coming: guests will pour in, get ready.",
+  "hint.freshness": "Beer stays fresh {s} s, serve it before it goes flat.",
+  "hint.glasses": "Clean glasses are running low: tap the sink to see the washing.",
+  "hint.stock": "This is your beer stock. Tap it to restock.",
+  "hint.slot": "You can afford a new table! Tap an empty spot."
 }

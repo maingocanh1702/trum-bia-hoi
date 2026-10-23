@@ -1,0 +1,60 @@
+import { test, expect } from './tbh-fixture';
+import type { Page } from '@playwright/test';
+import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import AxeBuilder from '@axe-core/playwright';
+
+// Founder 2026-10-22 (IMPROVE-EARLY-GAME Part B2.2): just-in-time hints for the HUD that shows from shift 1, each once, the first time it matters, through
+// the DOM only (saves from fixtures/hints.ts, real engine). One banner at a time in the step guide's slot, the hint's own target lit only when nothing else
+// is, done once (`hintsDone`, `onboarding.hints.neverRepeatAfterDone`). The first late serve's hint and "never over a sheet": serve-feedback.spec.ts.
+const fixture = (mode: string) => JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'apps/web/test/fixtures/hints.ts', mode], { encoding: 'utf8' }));
+const copyOf = (locale: string) => JSON.parse(readFileSync(`apps/web/src/i18n/${locale}.json`, 'utf8')) as Record<string, string>;
+const fill = (text: string, params: Record<string, string | number>) => text.replace(/\{(\w+)\}/g, (_, name: string) => String(params[name]));
+async function boot(page: Page, at: { save: string; now: number }, locale: string) {
+  await page.clock.setFixedTime(at.now);
+  await page.addInitScript(({ save, locale }) => {
+    if (localStorage.getItem('hi-seeded')) return;
+    localStorage.setItem('tbh.save.v1', save); localStorage.setItem('hi-seeded', '1');
+    localStorage.setItem('tbh.settings.v1', JSON.stringify({ locale, guideDone: true, guideIndex: null, muted: true }));
+  }, { save: at.save, locale });
+  await page.goto('/'); await expect(page.locator('.game-shell')).toBeVisible();
+}
+const axe = async (page: Page) => {
+  await page.evaluate(() => document.getAnimations().filter(a => a.playState === 'running' && a.effect && Number.isFinite(a.effect.getComputedTiming().endTime)).forEach(a => a.finish()));
+  return (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations.map(v => ({ id: v.id, nodes: v.nodes.map(n => n.target) }));
+};
+// What each hint lights: its own target, or (the freshness hint, which has none) the ready tray the spotlight already points at.
+const lit: Record<string, string> = { stock: '.stock-strip .beer-stock', glasses: '.equipment-object.washer', slot: '.yard .table-slot >> nth=0', rush: '.rush-label', freshness: '.table-order-hint.is-ready' };
+
+for (const [mode, locale] of [['stock', 'vi'], ['glasses', 'vi'], ['slot', 'vi'], ['rush', 'vi'], ['freshness', 'vi'], ['stock', 'en'], ['freshness', 'en']] as const) test(`B2.2 the ${mode} hint speaks once when its moment comes, as the one banner, and lights ${mode === 'freshness' ? 'nothing new' : 'its target'} (${locale}) at 390×844`, async ({ page, tbh }) => {
+  const copy = copyOf(locale), f = fixture(mode);
+  await page.setViewportSize({ width: 390, height: 844 }); await boot(page, f, locale);
+  const hint = page.locator('.hint');
+  await expect(hint).toHaveCount(1); await expect(hint).toHaveAttribute('data-hint', mode);
+  const words = fill(copy[`hint.${mode}`], { s: new Intl.NumberFormat(locale === 'vi' ? 'vi-VN' : 'en-US', { maximumFractionDigits: 2 }).format(f.freshnessS ?? 0), kind: copy[`rush.${f.rush ?? 'light'}`] });
+  await expect(hint.locator('p')).toHaveText(words);
+  expect(words.split(/\s+/).length).toBeLessThanOrEqual(12); // F27: at most 12 words a step
+  await expect(page.locator('.guide')).toHaveCount(1); // one banner
+  await expect(page.locator('[data-spotlight]')).toHaveCount(1); await expect(page.locator(lit[mode])).toHaveAttribute('data-spotlight', '');
+  expect(await axe(page)).toEqual([]);
+  await tbh.shot(`b2-hint-${mode}-${locale}.png`);
+  await hint.getByRole('button', { name: copy['hint.ok'], exact: true }).click();
+  await expect(hint).toHaveCount(0);
+  if (mode !== 'freshness') await expect(page.locator('[data-spotlight]')).toHaveCount(0); // the hint took its light with it
+  await page.reload(); await expect(page.locator('.game-shell')).toBeVisible(); await page.waitForTimeout(500);
+  await expect(hint).toHaveCount(0); // done once: the moment is still here, the hint is not
+  expect(tbh.consoleErrors()).toEqual([]);
+});
+
+test('B2.2 two moments at once: one hint at a time, the more urgent first, the next one after it', async ({ page }) => {
+  const copy = copyOf('vi'), f = fixture('both');
+  await page.setViewportSize({ width: 390, height: 844 }); await boot(page, f, 'vi');
+  const hint = page.locator('.hint');
+  await expect(hint).toHaveCount(1); await expect(hint).toHaveAttribute('data-hint', 'stock');
+  await expect(page.locator('[data-spotlight]')).toHaveCount(1);
+  await hint.getByRole('button', { name: copy['hint.ok'], exact: true }).click();
+  await expect(hint).toHaveCount(1); await expect(hint).toHaveAttribute('data-hint', 'slot'); // the next moment, its own banner
+  await expect(page.locator('[data-spotlight]')).toHaveCount(1); await expect(page.locator('.yard .table-slot').first()).toHaveAttribute('data-spotlight', '');
+  await page.locator('.yard .table-slot').first().click(); // the slot hint's target opens the buy card (B2.4); a sheet hides the hint
+  await expect(page.getByRole('dialog', { name: copy['goal.buyTable'], exact: true })).toBeVisible(); await expect(hint).toHaveCount(0);
+});
