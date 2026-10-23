@@ -828,5 +828,8 @@
   "rushRecap.net": "Net",
   "rushRecap.up": "↑ +{n} coins vs the last rush",
   "rushRecap.down": "↓ −{n} coins vs the last rush",
-  "rushRecap.ok": "Continue"
+  "rushRecap.ok": "Continue",
+  "stock.cost": "{cost} coins",
+  "stock.roomFor": "Room for {n} more only",
+  "stock.isFull": "Stock is full"
 }

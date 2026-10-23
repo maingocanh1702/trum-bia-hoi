@@ -49,7 +49,7 @@ test('real server serves once after lost acknowledgement, retains queue across r
   await expect.poll(async () => (await snapshot(page)).world.paused).toBe(true);
   const paused = await snapshot(page);
   const stock = page.locator('.stock-row').first();
-  await stock.getByRole('button').first().click();
+  await stock.getByRole('button', { name: /^Đầy kho · / }).click(); // founder 2026-10-22 (B2.7): "+10" and "Đầy kho" per row (the first button was "+1")
   await expect.poll(async () => (await journal(page)).pending.length).toBe(0);
   await expect(page.getByRole('dialog', { name: 'Nhập hàng', exact: true })).toBeVisible();
   expect((await snapshot(page)).world.paused).toBe(true);
@@ -87,7 +87,7 @@ test('offline restock and in-shift upgrade use durable ordered commands and curr
   await expect(page.locator('.network-status')).toContainText('Đang kết nối lại');
   // Purchases are evaluated only on the server; offline UI cannot alter stock or balance.
   const before = await snapshot(page);
-  const available = page.locator('.stock-row').first().getByRole('button').first();
+  const available = page.locator('.stock-row').nth(1).getByRole('button', { name: /^Đầy kho · / }); // the beer row is full since the purchase above (B2.7: no "+1" left to click)
   await expect(available).toBeEnabled(); await available.click();
   const queue = await journal(page);
   expect(queue.pending).toHaveLength(1);
@@ -160,7 +160,7 @@ test('journal storage failure refuses the action before any network mutation', a
     const put = Storage.prototype.setItem;
     Storage.prototype.setItem = function(key, value) { if (key === 'tbh.remote.v1') throw new DOMException('full', 'QuotaExceededError'); put.call(this, key, value); };
   });
-  await page.locator('.stock-row').nth(1).getByRole('button').first().click();
+  await page.locator('.stock-row').nth(1).getByRole('button', { name: /^Đầy kho · / }).click();
   await expect(page.locator('.network-status')).toContainText('Không lưu được');
   expect(commands).toBe(0); expect((await journal(page)).pending).toHaveLength(0);
   expect((await snapshot(page)).world.coins).toBe(before.world.coins);
@@ -172,7 +172,7 @@ test('config bounds the durable queue and account rotation cannot send its comma
   let cut = true;
   await page.route('**/api/player/**', route => cut ? route.abort() : route.continue());
   await expect(page.locator('.network-status')).toContainText('Đang kết nối lại');
-  await page.locator('.stock-row').nth(1).getByRole('button').first().evaluate((button, max) => {
+  await page.locator('.stock-row').nth(1).getByRole('button', { name: /^Đầy kho · / }).evaluate((button, max) => {
     for (let i = 0; i <= max; i++) (button as HTMLButtonElement).click();
   }, config.network.commandBufferMax);
   const saved = await journal(page); expect(saved.pending).toHaveLength(config.network.commandBufferMax);

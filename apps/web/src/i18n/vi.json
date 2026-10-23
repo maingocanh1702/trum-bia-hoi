@@ -828,5 +828,8 @@
   "rushRecap.net": "Thu ròng",
   "rushRecap.up": "↑ +{n} xu so với đợt trước",
   "rushRecap.down": "↓ −{n} xu so với đợt trước",
-  "rushRecap.ok": "Tiếp tục"
+  "rushRecap.ok": "Tiếp tục",
+  "stock.cost": "{cost} xu",
+  "stock.roomFor": "Kho chỉ còn chỗ cho {n}",
+  "stock.isFull": "Kho đã đầy"
 }
