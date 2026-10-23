@@ -77,6 +77,12 @@ small { font-size: 11px; }
 .table-space { position: relative; width: 132px; height: 101px; }
 .table-slot { display: grid; place-items: end center; padding-bottom: 20px; }
 .slot-mark { width: 84px; height: 42px; border: 2px dashed color-mix(in srgb, var(--inoxDark) 60%, transparent); border-radius: 50%; background: color-mix(in srgb, var(--streetBgShade) 35%, transparent); }
+/* Founder 2026-10-22 (B2.4): a tappable empty place keeps the look of the spot; the whole place is the target. */
+button.table-slot { min-height: 0; padding: 0 0 20px; border: 0; border-radius: 12px; background: transparent; color: inherit; }
+button.table-slot:hover .slot-mark, button.table-slot:focus-visible .slot-mark { border-color: var(--inoxDark); }
+.slot-buy { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.slot-buy > .sprite { width: 96px; height: 72px; }
+.slot-buy > .buy-card { align-self: stretch; }
 .table-object { display: block; width: 132px; height: 77px; border: 0; background: transparent; padding: 0; color: var(--ink); position: relative; }
 /* S6 (D14): the tray on the table top, one small dish per slot the level allows; the real order speaks in the bubble above. */
 .tray { position: absolute; left: 50%; top: 20px; transform: translateX(-50%); display: flex; gap: 1px; z-index: 1; pointer-events: none; }
