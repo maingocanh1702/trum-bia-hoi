@@ -7,6 +7,11 @@
 
 ---
 
+## B2 review vòng 2, lượt sửa cuối — 2026-10-23 (Part B2, worker, nhánh `feat/early-ui-clarity`) — chờ orchestrator chạy Linux CI, nhờ review delta và mở PR B2
+
+Review vòng 2 trên `b34b211` (code 0/1/3, bố cục 0/0/5; Linux CI xanh hết) đã xử lý: nút nhập bia nhanh (nút, giá, spotlight "Nhập hàng") luôn hiện khi kho bia thấp, kể cả lúc step guide hiện — lời step guide vào dòng chữ của nút, "Bỏ qua" ở cạnh; bước "Mở Nâng cấp" nhường ô và không chặn gợi ý; gợi ý chỉ sáng khi có chữ; gợi ý cốc theo một mẻ (vòi cấp 3+); vòng focus trong ô; dòng thời tiết một hàng với font rộng (màu chip "Tỉnh táo" đủ tương phản); chú thích tiếng Anh có nhãn ngắn (978 key). 09-SPEC / TRANG-THAI 0g sửa lời theo số đo (quầy biển hiệu / điện thoại–QR +28 / +41 px khi có thông báo).
+Chưa phát hành: Netlify v6, Cloudflare v-fb2. **Việc kế:** orchestrator chạy Linux CI trên tip cuối, review delta, mở PR B2 (xếp chồng trên PR B1 #35); founder xem 7 việc còn mở (TRANG-THAI 0g).
+
 ## B2 review vòng 1 + founder trả lời STOP của B2.8 ("Thêm một lượt cho đầu game") — 2026-10-23 (Part B2, worker, nhánh `feat/early-ui-clarity`) — chờ orchestrator kiểm, Linux CI và mở PR B2
 
 Hai review (code: 0/1/11; bố cục: 0/2/6) và Linux CI (2 đỏ do font Linux, 1 đỏ đồng hồ ở guest smoke) đã xử lý: gợi ý cốc chỉ khi thiếu thật; gợi ý chỉ vào HUD chờ khi HUD ẩn; khách trễ 😐 đúng thang founder; "hết chỗ" trong Sổ ca là một số; thu ròng của thẻ Giờ Vàng chỉ trừ phạt của khách; số giây Hầm lạnh theo dấu thập phân của ngôn ngữ; mua bàn ở ô trống thì focus về bàn mới; bỏ 2 cặp chữ thừa (971 key); dòng tính cách đo trong một khung hình; chú thích bàn không bao giờ xuống dòng dù font nào.
