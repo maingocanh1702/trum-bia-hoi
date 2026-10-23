@@ -7,6 +7,12 @@
 
 ---
 
+## Founder chốt STOP lần 2 của B1 (phương án 1) — 2026-10-23 (Part B1, worker, nhánh `feat/early-pacing`) — **chờ review + Linux + PR B1**
+
+Founder chọn phương án 1 của PR B1 §2.8 ("Nới 2 dòng, giữ cả 3 bản sửa"): giữ B1.1 (3 ca đầu chỉ khách lẻ), B1.2, B1.3; không đổi số game, không đổi luật. Commit giao thức `4b167f6`: trần tổng giá trị 30 ngày của đơn chuẩn +10 % → +14 % của 8,35 tr (9 185 000 → 9 519 000; `ADVANCED_TOTAL_VALUE_MAX_OVER_BASELINE` 0,14), cửa sổ ghế 2 đầu tiên ca 40–56 → 35–56 (`TARGETS.chair1`); test ghim đổi theo (`career-gate.test.ts`, `balance-gates.test.ts`).
+Đo trên seed 42 / 99: `sim:balance` "failing gates: none" (tổng 9,451 / 9,387 tr, ghế 2 ở ca 35 / 35, hai ô Part A xanh), `sim:career:gate` ĐẠT (k 3,163 / 3,183; tổng 9 451 314 / 9 386 522).
+Docs: 08-SPEC, 04-SPEC §5, PLAN, career-simulation, tracker + dashboard, TRANG-THAI 0f, HANDOFF v1.49, feature files. Chưa phát hành: Netlify v6, Cloudflare v-fb2. **Việc kế:** review, Linux run của orchestrator, PR B1 xếp chồng trên PR A; B2 rebase lên nhánh này.
+
 ## Founder trả lời STOP của B1 (QD-117, 23/10/2026) và làm lại B1.1 — 2026-10-23 (Part B1, worker, nhánh `feat/early-pacing`) — **BLOCKED lần 2: chờ founder**
 
 Founder chọn phương án B và sửa trong câu trả lời: "B1.1 = singles ONLY while completedShifts < 3 (the first three shifts)" (`.autopilot-state/QD-117-B1-STOP.md`); giữ B1.2, B1.3. Làm: `spawn.singlesFirstShifts` 3 (Tier A) thay `spawn.singlesUntilPairSeat` (chưa phát hành), nhãn giữ 2.1.4; dòng `cooler.firstShift` ở thẻ tủ lạnh ca 1 (review B1-r1); `early-pacing.ts` đo ca 1–3; nới `door.shift1` thành "= 0 cặp khi ca 1 chỉ khách lẻ".
