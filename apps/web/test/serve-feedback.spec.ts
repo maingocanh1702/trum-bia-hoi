@@ -56,7 +56,7 @@ for (const locale of ['vi', 'en'] as const) test(`B2.1d the first late serve bri
   await page.locator('.table-space.table-0 .table-order-hint').click();
   await page.locator('#active-table-order').getByRole('button', { name: copy['order.serve'], exact: true }).click();
   await expect(page.locator('.toast-gain .gain-reason')).toHaveText(copy['outcome.slow']); // the pill says why (B2.1a) ...
-  await expect(page.locator('.table-space.table-0 .customer-reaction')).toHaveText('🙂'); // ... and the guest is still happy to be served (B2.1b)
+  await expect(page.locator('.table-space.table-0 .customer-reaction')).toHaveText('😐'); // ... and a late serve has the neutral face (B2.1b, the founder's literal scale)
   await expect(hint).toHaveCount(1); await expect(hint).toContainText(copy['hint.tipWindow']); await expect(hint).toHaveAttribute('data-hint', 'tipWindow');
   await expect(page.locator('.guide')).toHaveCount(1); // the hint is the one banner (it shares the step guide's slot)
   const ok = hint.getByRole('button', { name: copy['hint.ok'], exact: true }), box = (await ok.boundingBox())!;
@@ -70,7 +70,7 @@ for (const locale of ['vi', 'en'] as const) test(`B2.1d the first late serve bri
   await expect(hint).toHaveCount(1);
   await ok.click(); await expect(hint).toHaveCount(0);
   // Done once: the last serve is still the late one after a reload, the hint does not come back.
-  await page.reload(); await expect(page.locator('.game-shell')).toBeVisible(); await expect(page.locator('.table-space.table-0 .customer-reaction')).toHaveText('🙂');
+  await page.reload(); await expect(page.locator('.game-shell')).toBeVisible(); await expect(page.locator('.table-space.table-0 .customer-reaction')).toHaveText('😐');
   await expect(hint).toHaveCount(0);
   expect(tbh.consoleErrors()).toEqual([]);
 });
