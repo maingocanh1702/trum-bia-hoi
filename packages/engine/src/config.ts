@@ -62,8 +62,8 @@ export function kickTableRule(c: Economy): KickTableRule | null { return Object.
  */
 export function firstShiftExcludedTypes(c: Economy): readonly string[] { return (c.onboarding.firstShift as { excludedCustomerTypes?: readonly string[] }).excludedCustomerTypes ?? []; }
 // Founder 2026-10-22 (JSON 2.1.4, Part B1). Each is false on every snapshot without its key (JSON <= 2.1.3, a capacity pin, a 1.x pin): those replay as before.
-/** While no table seats a pair, every group is one guest (`Game.spawn()`: the draw at pair probability 0); from the first two-chair table `spawn.pPair` applies. */
-export function singlesUntilPairSeat(c: Economy): boolean { return (c.spawn as { singlesUntilPairSeat?: boolean }).singlesUntilPairSeat === true; }
+/** The first `spawn.singlesFirstShifts` shifts of a save's life draw single guests only (`Game.spawn()`: the draw at pair probability 0), whatever the tables; 0 without the key. */
+export function singlesFirstShifts(c: Economy): number { return (c.spawn as { singlesFirstShifts?: number }).singlesFirstShifts ?? 0; }
 /** When a rush starts or ends, the arrival already planned comes no later than one guest's gap at the new pace (`Game.updateRush()`). */
 export function replanPendingArrival(c: Economy): boolean { return (c.rush.schedule as { replanPendingArrival?: boolean }).replanPendingArrival === true; }
 /** Poured beer never goes flat in a save's onboarding shift (`freshnessMs()` is then unbounded, like the top cooler level). */
@@ -184,9 +184,10 @@ const SEAT_KEYS_ADDED_LATER: readonly { since: string; paths: readonly string[];
   // Founder 2026-10-22: "Mời về" gets its own reveal threshold and shift 1 keeps "Bàn lai rai" out. Both sit in the Tier C section `onboarding` (no tier entry to add);
   // every older label, the released 2.1.1 included, loads without them byte for byte.
   { since: '2.1.3', paths: ['onboarding.featureReveal.kickAfterShifts', 'onboarding.firstShift.excludedCustomerTypes'], tiers: {} },
-  // Founder 2026-10-22 (Part B1, early pacing): singles until a table seats a pair (Tier A, listed like `spawn.pPair`), the pending arrival re-planned when a rush
-  // starts or ends (Tier B, section `rush`) and no flat beer in shift 1 (Tier C, section `onboarding`). Every older label, 2.1.3 included, loads without them byte for byte.
-  { since: '2.1.4', paths: ['spawn.singlesUntilPairSeat', 'rush.schedule.replanPendingArrival', 'onboarding.firstShift.staleDisabled'], tiers: { A: ['spawn.singlesUntilPairSeat'] } },
+  // Founder 2026-10-22 (Part B1, early pacing; B1.1 as the founder amended it on 2026-10-23, QD-117): singles only in a save's first shifts (Tier A, listed like
+  // `spawn.pPair`), the pending arrival re-planned when a rush starts or ends (Tier B, section `rush`) and no flat beer in shift 1 (Tier C, section `onboarding`).
+  // Every older label, 2.1.3 included, loads without them byte for byte.
+  { since: '2.1.4', paths: ['spawn.singlesFirstShifts', 'rush.schedule.replanPendingArrival', 'onboarding.firstShift.staleDisabled'], tiers: { A: ['spawn.singlesFirstShifts'] } },
 ];
 const versionOf = (label: unknown): number[] | null => { const m = typeof label === 'string' ? /^(\d+)\.(\d+)\.(\d+)$/.exec(label) : null; return m ? m.slice(1).map(Number) : null; };
 const olderThan = (label: unknown, since: string): boolean => { const a = versionOf(label), b = versionOf(since)!; return !!a && (a[0] - b[0] || a[1] - b[1] || a[2] - b[2]) < 0; };
@@ -305,6 +306,8 @@ function validate(c: Economy): void {
     }
     // The shifts that open without a cooldown (S5, D8): a whole number of shifts, 0 turns the allowance off.
     if (Object.hasOwn(c.shift, 'noCooldownFirstShifts')) whole(c.shift.noCooldownFirstShifts, 'shift.noCooldownFirstShifts');
+    // The shifts of singles only (JSON 2.1.4, founder 2026-10-23): a whole number of shifts, 0 turns the rule off.
+    if (Object.hasOwn(c.spawn, 'singlesFirstShifts')) whole(c.spawn.singlesFirstShifts, 'spawn.singlesFirstShifts');
     // Mời về (Wave 3, D3): a finite rate (never negative: scan), a whole reputation cost, and the dearest kick a pair can be asked for (beer and two of the
     // dearest dishes each, the largest leave multiplier) stays a safe whole number of coins.
     const kick = kickTableRule(c);

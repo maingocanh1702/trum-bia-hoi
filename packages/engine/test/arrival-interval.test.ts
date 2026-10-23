@@ -40,9 +40,9 @@ test('ordinary baseline floor and multiplier remain configurable without weakeni
 test('fast-weather rush groups retain hard floors and round once after the per-customer size factor', () => {
   const expected = { none: 105, peak: 6.6, light: 1000, heavy: 700, lunch_light: 1000, football: 700 };
   for (const perCustomer of [true, false]) for (const kind of RUSH_TYPES) {
-    // Every group is a pair (D17): the gap after it, seated or turned away for lack of a two-chair table, scales by two (a one-chair shop draws pairs with the
-    // 2.1.4 rule `spawn.singlesUntilPairSeat` off, as every older pin does).
-    const c = snapshot('hot', raw => { raw.spawn.baseMs = 1000; raw.weather.hot.spawnIntervalMult = 0.01; raw.spawn.perCustomer = perCustomer; raw.spawn.pPair = 1; raw.spawn.singlesUntilPairSeat = false; });
+    // Every group is a pair (D17): the gap after it, seated or turned away for lack of a two-chair table, scales by two (a save's shift 1 draws pairs with the
+    // 2.1.4 rule `spawn.singlesFirstShifts` off, as every older pin does).
+    const c = snapshot('hot', raw => { raw.spawn.baseMs = 1000; raw.weather.hot.spawnIntervalMult = 0.01; raw.spawn.perCustomer = perCustomer; raw.spawn.pPair = 1; raw.spawn.singlesFirstShifts = 0; });
     const g = new Game(c, 5, 0); assert.ok(send(g, { type: 'startShift' }).ok);
     // Controlled slot: isolates all supported rush modes from random schedule placement.
     if (kind !== 'none') g.world.shift!.rushes = [{ kind, start: 0, end: c.values.shift.durationMs }];

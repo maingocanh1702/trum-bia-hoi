@@ -144,8 +144,8 @@ test('snapshots from before the key load, bytes kept, and refuse every half-way 
     ['a snapshot labelled with the bundled version that lacks only the key', /config:shift:keys/, r => {
       r._meta.version = seed._meta.version; r.kickTable = structuredClone(seed.kickTable); r._meta.governance.tiers.A.sections.push('kickTable');
       r.onboarding.featureReveal.kickAfterShifts = seed.onboarding.featureReveal.kickAfterShifts; r.onboarding.firstShift.excludedCustomerTypes = structuredClone(seed.onboarding.firstShift.excludedCustomerTypes);
-      r.spawn.singlesUntilPairSeat = seed.spawn.singlesUntilPairSeat; r.rush.schedule.replanPendingArrival = seed.rush.schedule.replanPendingArrival; r.onboarding.firstShift.staleDisabled = seed.onboarding.firstShift.staleDisabled;
-      r._meta.governance.tiers.A.sections.push('spawn.singlesUntilPairSeat'); }],
+      r.spawn.singlesFirstShifts = seed.spawn.singlesFirstShifts; r.rush.schedule.replanPendingArrival = seed.rush.schedule.replanPendingArrival; r.onboarding.firstShift.staleDisabled = seed.onboarding.firstShift.staleDisabled;
+      r._meta.governance.tiers.A.sections.push('spawn.singlesFirstShifts'); }],
     ['a string instead of a count', /config:shift\.noCooldownFirstShifts:type/, r => { r.shift.noCooldownFirstShifts = '3'; }],
     ['a fraction of a shift', /config:shift\.noCooldownFirstShifts:integer/, r => { r.shift.noCooldownFirstShifts = 2.5; }],
     ['a negative count', /negative|config:shift\.noCooldownFirstShifts/, r => { r.shift.noCooldownFirstShifts = -1; }],

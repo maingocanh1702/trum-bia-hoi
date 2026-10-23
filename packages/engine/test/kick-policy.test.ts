@@ -75,9 +75,10 @@ test('kickLingering waits for a table a waiting group can sit at, and for a wall
 });
 
 test('the never-kick protocol bot sends no table home; the kick bot does, and its fees are spent, never purchases', () => {
-  const never = simulateCareer({ days: 1, seed: 42 }).report, kick = simulateCareer({ days: 1, seed: 42, policy: { kick: true } }).report;
+  // Two days: since JSON 2.1.4 a save's first three shifts seat singles only (founder 2026-10-23), and seed 42's first day then leaves no lingering table to send home (0 kicks; 6 over two days).
+  const never = simulateCareer({ days: 2, seed: 42 }).report, kick = simulateCareer({ days: 2, seed: 42, policy: { kick: true } }).report;
   assert.equal(never.kicks.count, 0); assert.equal(never.policy.includes('kick bot'), false, 'the protocol bot is the default');
-  assert.ok(kick.kicks.count > 0, `${kick.kicks.count} kicks in a day`); assert.ok(kick.policy.includes('kick bot'));
+  assert.ok(kick.kicks.count > 0, `${kick.kicks.count} kicks in two days`); assert.ok(kick.policy.includes('kick bot'));
   assert.equal(kick.purchases.some(p => p.command === 'kickTable'), false, 'a kick is a fee, left out of the purchase log');
   assert.equal(kick.rows.reduce((sum, row) => sum + (row.spent.kickTable ?? 0), 0), kick.kicks.cost, 'the career ledger books every fee as spent (its wallet check holds every day)');
 });

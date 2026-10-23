@@ -59,7 +59,7 @@
             "donation",
             "spawn.pPair",
             "spawn.capacityDemand",
-            "spawn.singlesUntilPairSeat",
+            "spawn.singlesFirstShifts",
             "locations.list",
             "upgrades.table.orderShape",
             "upgrades.table.tablePriceBase",
@@ -277,7 +277,7 @@
     "queueSlotsFormula": "queueBaseSlots + floor(totalCapacity / queueSeatsPerSlot) — seed rules 28: 1 + floor(totalCapacity / 8); snapshot sức chứa và pin trước 2.0.22: 2 + floor(totalCapacity / 3)",
     "playerServeCeilingPerSec": 0.74,
     "pPair": 0.5,
-    "singlesUntilPairSeat": true,
+    "singlesFirstShifts": 3,
     "capacityDemand": {
       "refTables": 6,
       "maxMult": 4,

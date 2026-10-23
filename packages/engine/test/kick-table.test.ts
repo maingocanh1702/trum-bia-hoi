@@ -32,6 +32,7 @@ function shop(patch?: (raw: Seed) => void, { tables = 4, coinsBase = 400000, rng
   for (const weather of WEATHER) raw.weather[weather].weight = weather === 'sunny' ? 1 : 0;
   raw.rush.schedule.perShift = 0; raw.onboarding.enabled = false;
   steadyDemand(raw);
+  raw.spawn.singlesFirstShifts = 0; // the 2.1.4 rule `spawn.singlesFirstShifts` (singles only in a save's first three shifts, founder 2026-10-23) is off: pairs at two-chair tables are this suite's subject
   patch?.(raw);
   const g = new Game(loadConfig(raw), rngSeed, T0);
   while (g.world.tables.length < tables) must(g, { type: 'buyTable' });
