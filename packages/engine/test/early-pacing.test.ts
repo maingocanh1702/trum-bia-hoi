@@ -2,13 +2,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import seed from '../../../docs/config/economy.tbh.json';
-import { Game, PAIR, WEATHER, config, loadConfig, decodeSave, encodeSave, arrivalIntervalMs, capacityDemandMult, freshnessMs, restockQuote, buyTableQuote, buyChairQuote,
-  singlesUntilPairSeat, replanPendingArrival, firstShiftStaleDisabled, DISHES, type Command, type Weather } from '../src';
+import { Game, PAIR, WEATHER, config, loadConfig, decodeSave, encodeSave, arrivalIntervalMs, capacityDemandMult, freshnessMs, restockQuote, restRequired, buyChairQuote, noFlatBeerShift,
+  singlesFirstShifts, replanPendingArrival, firstShiftStaleDisabled, DISHES, type Command, type Weather } from '../src';
 import { serveNext } from '../sim/policy';
 
-// Founder 2026-10-22 (IMPROVE-EARLY-GAME Part B1, JSON 2.1.4): B1.1 singles only until a table seats a pair (`spawn.singlesUntilPairSeat`, Tier A), B1.2 the pending
-// arrival re-planned when a rush starts or ends (`rush.schedule.replanPendingArrival`, Tier B), B1.3 no flat beer in shift 1 (`onboarding.firstShift.staleDisabled`, Tier C).
-// Each key is its own gate: a pin without them (JSON <= 2.1.3) plays and replays as it always did. Every state comes from real commands and clock time.
+// Founder 2026-10-22 (IMPROVE-EARLY-GAME Part B1, JSON 2.1.4): B1.1 singles only in a save's first three shifts (`spawn.singlesFirstShifts` 3, Tier A: the founder's
+// amendment of 2026-10-23 to QD-117 option B), B1.2 the pending arrival re-planned when a rush starts or ends (`rush.schedule.replanPendingArrival`, Tier B), B1.3 no
+// flat beer in shift 1 (`onboarding.firstShift.staleDisabled`, Tier C). Each key is its own gate: a pin without them (JSON <= 2.1.3) plays and replays as it always did.
+// Every state comes from real commands and clock time.
 type Seed = typeof seed;
 const T0 = Date.parse('2026-10-22T10:00:00+07:00');
 const sha = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -19,11 +20,11 @@ const content = (weather: Weather = 'sunny', patch?: (raw: Seed) => void) => {
 /** The same content as it was before 2.1.4: the label 2.1.3, without the three keys and the Tier A entry 2.1.4 added. */
 const before214 = (raw: Seed) => {
   raw._meta.version = '2.1.3';
-  delete (raw.spawn as Record<string, unknown>).singlesUntilPairSeat; delete (raw.rush.schedule as Record<string, unknown>).replanPendingArrival;
+  delete (raw.spawn as Record<string, unknown>).singlesFirstShifts; delete (raw.rush.schedule as Record<string, unknown>).replanPendingArrival;
   delete (raw.onboarding.firstShift as Record<string, unknown>).staleDisabled;
-  raw._meta.governance.tiers.A.sections = raw._meta.governance.tiers.A.sections.filter(name => name !== 'spawn.singlesUntilPairSeat');
+  raw._meta.governance.tiers.A.sections = raw._meta.governance.tiers.A.sections.filter(name => name !== 'spawn.singlesFirstShifts');
 };
-const keysOff = (raw: Seed) => { raw.spawn.singlesUntilPairSeat = false; raw.rush.schedule.replanPendingArrival = false; raw.onboarding.firstShift.staleDisabled = false; };
+const keysOff = (raw: Seed) => { raw.spawn.singlesFirstShifts = 0; raw.rush.schedule.replanPendingArrival = false; raw.onboarding.firstShift.staleDisabled = false; };
 const sender = (g: Game) => (command: Command) => g.command({ command, at: g.world.now, idempotencyKey: `ep-${g.log.length}` });
 /** Keep the shelves stocked and serve every ready tray at once, one step at a time, until `done` (or the shift closes). */
 function run(g: Game, done: () => boolean = () => g.world.phase === 'resting') {
@@ -35,50 +36,62 @@ function run(g: Game, done: () => boolean = () => g.world.phase === 'resting') {
     g.advance(g.world.now + 200);
   }
 }
-const play = (g: Game, shifts: number) => { for (let n = 0; n < shifts; n++) { assert.ok(sender(g)({ type: 'startShift' }).ok); run(g); } };
+/** Open and play the next shifts; the fourth shift of a save first rests for its stamina (the first three need none: `shift.noCooldownFirstShifts`). */
+const play = (g: Game, shifts: number) => {
+  for (let n = 0; n < shifts; n++) {
+    const w = g.world, full = g.config.values.shift.durationMs;
+    if (restRequired(w, g.config)) g.advance(w.now + Math.ceil((full - w.staminaMs) / g.config.values.shift.regenRate));
+    assert.ok(sender(g)({ type: 'startShift' }).ok); run(g);
+  }
+};
 const door = (g: Game) => g.world.events.filter(e => e.type === 'customer_spawned' || e.type === 'queue_overflow');
+/** The groups at the door per shift (shift n = the n-th `shift_opened`). */
+const doorByShift = (g: Game) => {
+  const out: (typeof g.world.events)[] = [];
+  for (const e of g.world.events) { if (e.type === 'shift_opened') out.push([]); else if (out.length && (e.type === 'customer_spawned' || e.type === 'queue_overflow')) out.at(-1)!.push(e); }
+  return out;
+};
 /** The gap one guest gets after arriving now, as `Game.spawn()` plans it at one-chair tables (no flyer). */
 const gapOfOne = (g: Game, kind: 'none' | 'light') => Math.round(arrivalIntervalMs(g.config.values, g.world.shift!.weather, kind, false) * capacityDemandMult(g.config.values, g.world.tables.length));
 
-test('B1.1 a new save at one table draws singles only: in shifts 1 and 2 no group of two arrives and nobody is sent away for want of a second chair (founder 2026-10-22, JSON 2.1.4)', () => {
-  assert.equal(singlesUntilPairSeat(config.values), true);
+test('B1.1 a new save at one table draws singles only in its first three shifts: no group of two arrives and nobody is sent away for want of a second chair (founder 2026-10-23, JSON 2.1.4)', () => {
+  assert.equal(singlesFirstShifts(config.values), 3);
   for (const rngSeed of [1, 2, 3]) {
-    const g = new Game(loadConfig(content()), rngSeed, T0); play(g, 2);
-    const arrivals = door(g);
-    assert.ok(arrivals.length >= 20, `seed ${rngSeed}: guests keep coming (${arrivals.length})`);
-    assert.ok(arrivals.every(e => e.data.size === 1), `seed ${rngSeed}: every group is one guest`);
+    const g = new Game(loadConfig(content()), rngSeed, T0); play(g, 3);
+    const shifts = doorByShift(g);
+    assert.equal(shifts.length, 3);
+    for (const [n, arrivals] of shifts.entries()) assert.ok(arrivals.length >= 8 && arrivals.every(e => e.data.size === 1), `seed ${rngSeed}, shift ${n + 1}: every group is one guest (${arrivals.length})`);
     assert.equal(g.world.events.filter(e => e.type === 'queue_overflow' && e.data.reason === 'noSeat').length, 0, 'no "Hết chỗ" for a pair');
-    assert.equal(g.world.shift!.stats.noSeat ?? 0, 0);
   }
 });
 
-test('B1.1 singles-only is the draw at pair probability 0 while no table seats two: the same randomness, the same shift 1, event for event', () => {
+test('B1.1 singles-only is the draw at pair probability 0: the same randomness, the same first three shifts, event for event', () => {
   for (const rngSeed of [1, 2, 3]) {
     const singles = new Game(loadConfig(content()), rngSeed, T0);
-    const zero = new Game(loadConfig(content('sunny', raw => { raw.spawn.singlesUntilPairSeat = false; raw.spawn.pPair = 0; })), rngSeed, T0);
-    play(singles, 1); play(zero, 1);
+    const zero = new Game(loadConfig(content('sunny', raw => { raw.spawn.singlesFirstShifts = 0; raw.spawn.pPair = 0; })), rngSeed, T0);
+    play(singles, 3); play(zero, 3);
     assert.equal(sha(singles.world), sha(zero.world), `seed ${rngSeed}`);
   }
 });
 
-test('B1.1 from the first table that seats a pair, spawn.pPair applies as configured: the key then changes nothing', () => {
-  // Four tables and a second chair (chairsAfterTables), bought with real commands from a large starting wallet; then one shift with and without the key.
-  const shop = (patch?: (raw: Seed) => void) => {
-    const g = new Game(loadConfig(content('sunny', raw => { raw.shift.startingCoinsBase = 10_000_000; patch?.(raw); })), 7, T0), send = sender(g);
-    while (g.world.tables.length < seed.upgrades.table.chairsAfterTables) assert.ok(send({ type: 'buyTable' }).ok);
-    assert.ok(buyChairQuote(g.world, g.config, g.world.tables[0]).ok); assert.ok(send({ type: 'buyChair', tableId: g.world.tables[0].id }).ok);
-    assert.equal(Math.max(...g.world.tables.map(t => t.capacity)), PAIR); assert.ok(buyTableQuote(g.world, g.config).cost !== null);
-    play(g, 2); return g;
-  };
-  const on = shop(), off = shop(raw => { raw.spawn.singlesUntilPairSeat = false; });
-  assert.ok(door(on).filter(e => e.data.size === PAIR).length > 0, 'pairs arrive once a table seats two');
-  assert.equal(sha(on.world), sha(off.world), 'with a two-chair table the key is a no-op: the same two shifts');
+test('B1.1 the rule counts shifts, not chairs: a shop that seats a pair from the start still gets singles in shifts 1-3, and spawn.pPair applies from shift 4', () => {
+  // Four tables and a second chair (chairsAfterTables), bought with real commands from a large starting wallet before shift 1 (no real save gets there in three shifts).
+  const g = new Game(loadConfig(content('sunny', raw => { raw.shift.startingCoinsBase = 10_000_000; })), 7, T0), send = sender(g);
+  while (g.world.tables.length < seed.upgrades.table.chairsAfterTables) assert.ok(send({ type: 'buyTable' }).ok);
+  assert.ok(buyChairQuote(g.world, g.config, g.world.tables[0]).ok); assert.ok(send({ type: 'buyChair', tableId: g.world.tables[0].id }).ok);
+  assert.equal(Math.max(...g.world.tables.map(t => t.capacity)), PAIR);
+  play(g, 4);
+  const shifts = doorByShift(g);
+  assert.equal(shifts.length, 4);
+  for (const n of [0, 1, 2]) assert.ok(shifts[n].every(e => e.data.size === 1), `shift ${n + 1}: singles only, a two-chair table or not`);
+  assert.ok(shifts[3].some(e => e.data.size === PAIR), 'shift 4 (three completed shifts): pairs arrive at pPair');
+  const again = decodeSave(encodeSave(g)); assert.equal(sha(again.world), sha(g.world), 'and the history replays');
 });
 
 test('B1.1 a pin without the key (JSON 2.1.3) still sends pairs away at one table, as before, and its history replays byte for byte', () => {
   let refused = 0;
   for (const rngSeed of [1, 2, 3]) {
-    const old = loadConfig(content('sunny', before214)); assert.equal(singlesUntilPairSeat(old.values), false);
+    const old = loadConfig(content('sunny', before214)); assert.equal(singlesFirstShifts(old.values), 0);
     const g = new Game(old, rngSeed, T0); play(g, 1);
     refused += g.world.events.filter(e => e.type === 'queue_overflow' && e.data.reason === 'noSeat').length;
     const again = decodeSave(encodeSave(g));
@@ -156,14 +169,14 @@ test('B1.3 no flat beer in shift 1: a beer left 15 s on the tray is served fresh
   };
   const g = new Game(loadConfig(content()), 1, T0);
   assert.ok(sender(g)({ type: 'startShift' }).ok);
-  assert.equal(freshnessMs(g.world, g.config), Infinity, 'the onboarding shift has no freshness limit');
+  assert.equal(freshnessMs(g.world, g.config), Infinity, 'the onboarding shift has no freshness limit'); assert.equal(noFlatBeerShift(g.world, g.config), true, 'the cooler sheet says so');
   const first = leaveBeer(g, 15_000);
   assert.notEqual(first.result.outcome, 'stale'); assert.equal(first.served.stale, false);
   assert.equal(g.world.events.filter(e => e.type === 'glass_stale').length, 0);
   assert.ok(first.repDelta >= 0, 'no stale reputation');
   run(g);
   assert.equal(g.world.completedShifts, 1);
-  assert.equal(freshnessMs(g.world, g.config), seed.upgrades.cooler.freshnessMs[0], 'the rest after shift 1 shows the cooler\'s own limit again');
+  assert.equal(freshnessMs(g.world, g.config), seed.upgrades.cooler.freshnessMs[0], 'the rest after shift 1 shows the cooler\'s own limit again'); assert.equal(noFlatBeerShift(g.world, g.config), false);
   assert.ok(sender(g)({ type: 'startShift' }).ok);
   const second = leaveBeer(g, 15_000);
   assert.equal(second.result.outcome, 'stale', 'shift 2 keeps the freshness rule'); assert.equal(second.served.stale, true);
@@ -189,18 +202,22 @@ test('every key off on a 2.1.4 content plays the 2.1.3 game: two shifts identica
   }
 });
 
-test('the three keys of 2.1.4 load on older labels without them byte for byte, 2.1.4 needs all three and the Tier A entry, and each is a boolean', () => {
+test('the three keys of 2.1.4 load on older labels without them byte for byte, 2.1.4 needs all three and the Tier A entry; a whole count of shifts and two booleans', () => {
   const old = content('sunny', before214); assert.equal(JSON.stringify(loadConfig(old).raw), JSON.stringify(old), 'a 2.1.3 content without them: raw bytes kept');
-  for (const c of [singlesUntilPairSeat, replanPendingArrival, firstShiftStaleDisabled]) assert.equal(c(loadConfig(old).values), false);
+  assert.equal(singlesFirstShifts(loadConfig(old).values), 0); for (const c of [replanPendingArrival, firstShiftStaleDisabled]) assert.equal(c(loadConfig(old).values), false);
   const half = content('sunny', before214); half.onboarding.firstShift.staleDisabled = true;
   assert.throws(() => loadConfig(half), /config:/, 'never one of the three');
   const bare = content('sunny', before214); bare._meta.version = '2.1.4';
   assert.throws(() => loadConfig(bare), /config:/, 'the label 2.1.4 needs them');
-  const untiered = content(); untiered._meta.governance.tiers.A.sections = untiered._meta.governance.tiers.A.sections.filter(name => name !== 'spawn.singlesUntilPairSeat');
+  const untiered = content(); untiered._meta.governance.tiers.A.sections = untiered._meta.governance.tiers.A.sections.filter(name => name !== 'spawn.singlesFirstShifts');
   assert.throws(() => loadConfig(untiered), /config:_meta\.governance\.tiers\.A\.sections:array/, 'the Tier A entry comes with the key');
-  for (const [path, set] of [['spawn.singlesUntilPairSeat', (r: Seed, v: unknown) => { (r.spawn as Record<string, unknown>).singlesUntilPairSeat = v; }],
-    ['rush.schedule.replanPendingArrival', (r: Seed, v: unknown) => { (r.rush.schedule as Record<string, unknown>).replanPendingArrival = v; }],
+  const count = (v: unknown) => content('sunny', r => { (r.spawn as Record<string, unknown>).singlesFirstShifts = v; });
+  for (const bad of ['3', null, true]) assert.throws(() => loadConfig(count(bad)), /config:spawn\.singlesFirstShifts:type/, `singlesFirstShifts=${JSON.stringify(bad)}`);
+  assert.throws(() => loadConfig(count(1.5)), /config:spawn\.singlesFirstShifts:integer/, 'a fraction of a shift');
+  assert.throws(() => loadConfig(count(-1)), /negative|config:spawn\.singlesFirstShifts/, 'a negative count');
+  for (const ok of [0, 1, 3, 10]) assert.equal(singlesFirstShifts(loadConfig(count(ok)).values), ok, `${ok} shifts load`);
+  for (const [path, set] of [['rush.schedule.replanPendingArrival', (r: Seed, v: unknown) => { (r.rush.schedule as Record<string, unknown>).replanPendingArrival = v; }],
     ['onboarding.firstShift.staleDisabled', (r: Seed, v: unknown) => { (r.onboarding.firstShift as Record<string, unknown>).staleDisabled = v; }]] as const)
     for (const bad of [1, 'true', null]) assert.throws(() => loadConfig(content('sunny', r => set(r, bad))), new RegExp(`config:${path.replaceAll('.', '\\.')}:type`), `${path}=${JSON.stringify(bad)}`);
-  assert.doesNotThrow(() => loadConfig(content('sunny', keysOff)), 'false turns each rule off');
+  assert.doesNotThrow(() => loadConfig(content('sunny', keysOff)), '0 shifts and false turn each rule off');
 });

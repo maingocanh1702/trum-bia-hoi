@@ -113,6 +113,7 @@ test('vintage cannot remove the last eligible customer type after a group reache
   for (const weather of WEATHER) raw.weather[weather].weight = weather === 'sunny' ? 1 : 0;
   raw.runtime.initialEquipmentLevel = raw.signboard.gate.stallLevel;
   raw.spawn.pPair = 1; raw.upgrades.table.chairsAfterTables = 1; // a pair at a two-chair table outnumbers the VIP cap
+  raw.spawn.singlesFirstShifts = 0; // in shift 1 too: the 2.1.4 rule `spawn.singlesFirstShifts` (singles only in a save's first three shifts, founder 2026-10-23) is off: pairs at two-chair tables are this suite's subject
   for (const [type, profile] of Object.entries(raw.customerTypes)) if (profile.usesTable) profile.weight = type === 'vip' || type === 'voi' ? 1 : 0;
   const g = new Game(loadConfig(raw), 5, 0);
   assert.ok(send(g, { type: 'buyChair', tableId: g.world.tables[0].id }).ok);

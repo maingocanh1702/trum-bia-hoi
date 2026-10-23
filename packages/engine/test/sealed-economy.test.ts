@@ -17,9 +17,9 @@ test('the bundled label is 2.1.4 (the balance pass sealed under 2.1.0, unchanged
   assert.equal(raw.shift.noCooldownFirstShifts, 3);
 });
 
-test('the early pacing of 2.1.4 (founder 2026-10-22, Part B1): singles until a table seats a pair (Tier A), the pending arrival re-planned at a rush edge, no flat beer in shift 1; no number moves', () => {
-  assert.deepEqual([raw.spawn.singlesUntilPairSeat, raw.rush.schedule.replanPendingArrival, raw.onboarding.firstShift.staleDisabled], [true, true, true]);
-  assert.ok(raw._meta.governance.tiers.A.sections.includes('spawn.singlesUntilPairSeat'), 'Tier A, like spawn.pPair: the founder approved it');
+test('the early pacing of 2.1.4 (founder 2026-10-22, Part B1; B1.1 as amended 2026-10-23): singles only in the first three shifts (Tier A), the pending arrival re-planned at a rush edge, no flat beer in shift 1; no number moves', () => {
+  assert.deepEqual([raw.spawn.singlesFirstShifts, raw.rush.schedule.replanPendingArrival, raw.onboarding.firstShift.staleDisabled], [3, true, true]);
+  assert.ok(raw._meta.governance.tiers.A.sections.includes('spawn.singlesFirstShifts'), 'Tier A, like spawn.pPair: the founder approved it');
 });
 
 test('the reveal thresholds: 2.1.2 shows the HUD and the Upgrades button from shift 1, 2.1.3 keeps Mời về for shift 2 and Bàn lai rai out of shift 1 (founder 2026-10-22); nothing else moves', () => {

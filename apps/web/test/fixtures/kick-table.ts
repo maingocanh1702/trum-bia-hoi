@@ -27,7 +27,7 @@ if (mode === 'inspect') {
 } else {
   const raw = structuredClone(config.raw);
   const fresh = mode === 'first' || mode === 'second', pinned = mode === 'pin' || mode === 'pin-rest';
-  if (!fresh) { fullHud(raw); raw.onboarding.enabled = false; }
+  if (!fresh) { fullHud(raw); raw.onboarding.enabled = false; raw.spawn.singlesFirstShifts = 0; } // the lingering pairs of a furnished alley in shift 1: pairs in a save's first shift: the 2.1.4 rule `spawn.singlesFirstShifts` (singles in the first three shifts, founder 2026-10-23) is off
   raw._meta.version = pinned ? '2.1.0' : 'kick-table-fixture'; // a pin keeps its own content until a numerically newer bundle opens its next shift
   if (pinned) { delete (raw as { kickTable?: unknown }).kickTable; raw._meta.governance.tiers.A.sections = raw._meta.governance.tiers.A.sections.filter(name => name !== 'kickTable'); }
   for (const weather of WEATHER) raw.weather[weather].weight = weather === 'sunny' ? 1 : 0;

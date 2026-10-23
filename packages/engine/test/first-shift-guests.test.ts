@@ -18,8 +18,8 @@ const lively = (patch?: (raw: Seed) => void) => { const raw = structuredClone(se
 const before213 = (raw: Seed) => {
   raw._meta.version = '2.1.2';
   delete (raw.onboarding.featureReveal as Record<string, unknown>).kickAfterShifts; delete (raw.onboarding.firstShift as Record<string, unknown>).excludedCustomerTypes;
-  delete (raw.spawn as Record<string, unknown>).singlesUntilPairSeat; delete (raw.rush.schedule as Record<string, unknown>).replanPendingArrival; delete (raw.onboarding.firstShift as Record<string, unknown>).staleDisabled;
-  raw._meta.governance.tiers.A.sections = raw._meta.governance.tiers.A.sections.filter(name => name !== 'spawn.singlesUntilPairSeat');
+  delete (raw.spawn as Record<string, unknown>).singlesFirstShifts; delete (raw.rush.schedule as Record<string, unknown>).replanPendingArrival; delete (raw.onboarding.firstShift as Record<string, unknown>).staleDisabled;
+  raw._meta.governance.tiers.A.sections = raw._meta.governance.tiers.A.sections.filter(name => name !== 'spawn.singlesFirstShifts');
 };
 /** Open the next shifts one by one, keep the shelves stocked and serve every ready tray until each closes; the types of every guest who sat down, per shift. */
 function play(g: Game, shifts: number): string[][] {

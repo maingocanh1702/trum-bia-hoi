@@ -126,8 +126,8 @@ test('feature reveal follows completed shifts, onboarding off shows everything a
 test('a save pinned to 2.1.1 keeps its HUD thresholds until its next opening adopts the bundled 2.1.4, and shows no Mời về in shift 1 either way', () => {
   const was = structuredClone(config.raw); was._meta.version = '2.1.1'; Object.assign(was.onboarding.featureReveal, { hudAfterShifts: 1, upgradeAfterShifts: 1 });
   delete (was.onboarding.featureReveal as Record<string, number>).kickAfterShifts; delete (was.onboarding.firstShift as Record<string, unknown>).excludedCustomerTypes;
-  delete (was.spawn as Record<string, unknown>).singlesUntilPairSeat; delete (was.rush.schedule as Record<string, unknown>).replanPendingArrival; delete (was.onboarding.firstShift as Record<string, unknown>).staleDisabled;
-  was._meta.governance.tiers.A.sections = was._meta.governance.tiers.A.sections.filter(name => name !== 'spawn.singlesUntilPairSeat');
+  delete (was.spawn as Record<string, unknown>).singlesFirstShifts; delete (was.rush.schedule as Record<string, unknown>).replanPendingArrival; delete (was.onboarding.firstShift as Record<string, unknown>).staleDisabled;
+  was._meta.governance.tiers.A.sections = was._meta.governance.tiers.A.sections.filter(name => name !== 'spawn.singlesFirstShifts');
   const g = new Game(loadConfig(was), 42, at), w = g.world;
   assert.equal(g.config.version, '2.1.1'); assert.equal(config.version, '2.1.4');
   assert.deepEqual(revealed(w, g.config), { hud: false, kick: false, upgrades: false, upgradeList: false, journey: false, quests: false, league: false }, 'its own thresholds, before any shift');
