@@ -37,7 +37,7 @@ test('a career inside every target passes every gate row of the 23 on both seeds
   assert.deepEqual(failing(rows), []);
   assert.ok(rows.filter(r => !r.info).every(r => r.ok && r.pass[42] === true && r.pass[99] === true && r.violation[42] === 0 && r.violation[99] === 0));
   assert.deepEqual(score(rows), { fails: 0, violation: 0 });
-  assert.deepEqual(TARGETS.lp7, [140, 170]); assert.deepEqual(TARGETS.chair1, [40, 56]); assert.equal(TARGETS.maxGap, 8); assert.equal(TARGETS.table4, 48);
+  assert.deepEqual(TARGETS.lp7, [140, 170]); assert.deepEqual(TARGETS.chair1, [35, 56]); assert.equal(TARGETS.maxGap, 8); assert.equal(TARGETS.table4, 48);
   assert.equal(DOOR_TARGETS.shifts1to24, 0.10); assert.equal(DOOR_TARGETS.days8to14, 0.20); assert.equal(DOOR_TARGETS.days15to21, 0.15);
 });
 
@@ -45,7 +45,7 @@ test('a career inside every target passes every gate row of the 23 on both seeds
 const bad = (over: Partial<CareerMetrics>) => over;
 const doctored: [string, string, Partial<CareerMetrics>][] = [
   ['k.gate', 'career k a hair above 3.5', { standard: { served: 25000, extraRoundServes: 2000, totalValue: 7.5e6, k: 3.501 } }],
-  ['value.30d', '30-day value above 9.185 tr', { standard: { served: 25000, extraRoundServes: 2000, totalValue: 9.2e6, k: 3.3 } }],
+  ['value.30d', '30-day value above 9.519 tr', { standard: { served: 25000, extraRoundServes: 2000, totalValue: 9.52e6, k: 3.3 } }],
   ['lp7', 'LP7 at shift 139 (too early)', bad({ lp: { LP1: 20, LP2: 23, LP3: 45, LP4: 70, LP5: 100, LP6: 120, LP7: 139 } })],
   ['lp7', 'LP7 at shift 171 (too late)', bad({ lp: { LP1: 20, LP2: 23, LP3: 45, LP4: 70, LP5: 100, LP6: 120, LP7: 171 } })],
   ['lp7', 'LP7 never', bad({ lp: { LP1: 20, LP2: 23, LP3: 45, LP4: 70, LP5: 100, LP6: 120, LP7: null } })],
@@ -54,7 +54,7 @@ const doctored: [string, string, Partial<CareerMetrics>][] = [
   ['tables.lv4x8', '8 tables at Lv4 at 171', { lv4x8: 171 }],
   ['tables.lv4x8', '8 tables at Lv4 never', { lv4x8: null }],
   ['table4', 'table 4 at 49', { table4: 49 }],
-  ['chair1', 'first second chair at 39 (too early)', { chair1: 39 }],
+  ['chair1', 'first second chair at 34 (too early)', { chair1: 34 }],
   ['chair1', 'first second chair at 57 (too late)', { chair1: 57 }],
   ['lv2', 'first table Lv2 at 57', { lv2: 57 }],
   ['lv4', 'first table Lv4 at 121', { lv4: 121 }],
