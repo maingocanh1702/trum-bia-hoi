@@ -24,7 +24,7 @@ async function boot(page: Page, at: { save: string; now: number }, locale: strin
 const axe = async (page: Page) => (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations.map(v => ({ id: v.id, nodes: v.nodes.map(n => n.target) }));
 const viewports = [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1280, height: 720 }];
 
-for (const locale of ['vi', 'en'] as const) for (const viewport of viewports) test(`B2.4 tapping an empty table place opens the next table's buy card, paused like the Upgrades sheet, and buying puts the table there (${locale}) at ${viewport.width}px`, async ({ page, tbh }) => {
+for (const locale of ['vi', 'en'] as const) for (const viewport of viewports) test(`B2.4 tapping an empty table place opens the next table's buy card, paused like the Upgrades sheet, and buying puts the next table in the next place, focus on it (${locale}) at ${viewport.width}px`, async ({ page, tbh }) => {
   const copy = copyOf(locale), f = fixture('slot-buy', 'afford'), xu = (n: number) => new Intl.NumberFormat(locale === 'vi' ? 'vi-VN' : 'en-US').format(n);
   expect(f.phase).toBe('open'); expect(f.tables).toBe(1);
   await page.setViewportSize(viewport); await boot(page, f, locale);
@@ -49,6 +49,9 @@ for (const locale of ['vi', 'en'] as const) for (const viewport of viewports) te
   await buy.click();
   await expect(page.getByRole('dialog')).toHaveCount(0); // bought: the sheet closes on the yard
   await expect(page.locator('.yard .table-object')).toHaveCount(2); await expect(places).toHaveCount(f.slots - 2);
+  // Every place buys the NEXT table (review B2-r1): tapping the third empty place puts table 2 in the second place, and keyboard focus lands on it.
+  const added = page.locator('.table-space.table-1 .table-object'); await expect(added).toBeVisible(); await expect(added).toBeFocused();
+  await expect(page.locator('.table-space.table-3.table-slot')).toHaveCount(1); // the tapped place is still an empty place
   await expect(page.locator('.money strong')).toHaveText(xu(f.coins - f.price));
   await expect.poll(async () => inspect(await readSave(page)).tables.length).toBe(2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); expect(tbh.consoleErrors()).toEqual([]);
