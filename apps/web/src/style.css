@@ -153,11 +153,22 @@ progress::-webkit-progress-value { background: var(--beerAmber); border-radius: 
 .upgrade-card p { color: var(--creamMuted); font-size: 11px; }
 .upgrade-card button { width: 100%; padding: 5px; background: var(--stoolRedDeep); font-size: 10px; margin-top: auto; }
 .ledger { margin: 12px 0 25px; }
-.ledger > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--panelBorder); padding: 14px 0; font-size: 13px; }
-.ledger dt { color: var(--creamMuted); }
-.ledger dd { margin: 0; font-variant-numeric: tabular-nums; font-size: 18px; font-weight: 700; }
+.ledger-money { margin: 4px 0 18px; }
+:is(.ledger, .ledger-money) > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--panelBorder); padding: 14px 0; font-size: 13px; }
+:is(.ledger, .ledger-money) dt { color: var(--creamMuted); }
+:is(.ledger, .ledger-money) dd { margin: 0; font-variant-numeric: tabular-nums; font-size: 18px; font-weight: 700; }
 .ledger .ledger-total { border: 0; padding-top: 24px; }
 .ledger-total dd { color: var(--coinGold); font-size: 27px; }
+/* Founder 2026-10-22 (B2.5): the book opens on the net and the one suggestion, then three counts; the rest waits under "Chi tiết". */
+.book-net { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 4px; padding: 6px 0 10px; border-bottom: 1px solid var(--panelBorder); }
+.book-net span { color: var(--creamMuted); font-size: 14px; font-weight: 700; }
+.book-net strong { color: var(--coinGold); font-size: 32px; font-variant-numeric: tabular-nums; }
+.book-counts { margin: 8px 0 16px; }
+.book-counts > div { padding: 10px 0; }
+.book-details { margin-top: 16px; border-top: 1px solid var(--panelBorder); }
+.book-details > summary { min-height: 44px; padding: 12px 0; font-weight: 800; cursor: pointer; }
+.book-details > summary:focus-visible { outline: 2px solid var(--coinGold); outline-offset: 3px; }
+.book-details[open] > summary { margin-bottom: 8px; }
 .button-stack { display: grid; gap: 12px; }
 .journey-list { list-style: none; padding: 0; }
 .journey-list li { display: flex; align-items: center; gap: 15px; border-bottom: 1px solid var(--panelBorder); padding: 17px 5px; }

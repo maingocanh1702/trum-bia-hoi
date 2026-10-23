@@ -106,7 +106,7 @@ if (mode === 'states') {
   step(g, () => g.world.shift!.stats.lost >= 24 && g.world.shift!.stats.rejected >= 5 && (g.world.shift!.stats.noSeat ?? 0) >= 2, 1000); // and pairs turned away for lack of a two-chair table (S3: the book counts them)
   if (g.world.phase === 'resting') throw Error('fixture:shift-already-closed');
   const report = menuReport(g.world, g.config)!, stats = g.world.shift!.stats;
-  console.log(JSON.stringify({ save: encodeSave(g), now: g.world.now, losses: report.losses, rejected: stats.rejected, noSeat: stats.noSeat ?? 0, lost: stats.lost }));
+  console.log(JSON.stringify({ save: encodeSave(g), now: g.world.now, losses: report.losses, rejected: stats.rejected, noSeat: stats.noSeat ?? 0, lost: stats.lost, served: stats.served, net: stats.credited - stats.penalty - stats.spent, kitchen: g.world.equipment.kitchen })); // served / net / kitchen: shift-book.spec.ts (B2.5)
 } else {
   const g = decodeSave(await new Promise<string>(resolve => { let text = ''; process.stdin.on('data', c => { text += c; }); process.stdin.on('end', () => resolve(text)); }));
   console.log(JSON.stringify({ coins: g.world.coins, tables: g.world.tables.map(t => ({ level: t.level, state: t.state })), phase: g.world.phase, leaves: g.world.events.filter(leaving).map(e => ({ type: e.type, cause: e.data.cause ?? null })) }));

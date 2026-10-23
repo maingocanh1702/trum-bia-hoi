@@ -98,6 +98,8 @@ report's own contract).
 
 ## Existing proof
 
+- **Founder 2026-10-22, Part B2.5 (a shorter shift book).** `apps/web/test/shift-book.spec.ts` `` `B2.5 the shift book opens on the net and its one suggestion, then three counts that add up to the reasons, the rest under Chi tiết, collapsed (${locale}) at ${viewport.width}px` `` (vi/en × 390/360/1280 on the `buy-reasons.ts book` save: order net · suggestion · counts, then the actions, then `.book-details`; net = credited − penalty − spent; counts = served, lost − queue leavers, rejected + queue leavers, on the sheet's first screen; details closed, its summary ≥ 44 px, the dish table and the reasons hidden until it opens; the reasons then sum to the two loss counts; no row for a locked dish; the money rows under `.ledger-money`; axe 0 closed and open). Specs that read the details now open them first (`bookDetails`): `game.spec.ts`, `buy-reasons.spec.ts`, `menu.spec.ts`, `locations.spec.ts`, `remote-test/remote.spec.ts`, `guest-test/guest.spec.ts`.
+
 - `packages/engine/test/daykey-formatter.test.ts` — all 3 (entirely this file's; the VN-midnight
   day boundary every rollover in this feature keys on): `'dayKey reuses one formatter per timezone
   instead of constructing one per call'` (pins the `Intl.DateTimeFormat` construction count at <= 1

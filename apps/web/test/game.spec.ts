@@ -13,6 +13,8 @@ async function reloadAtSameGameTime(page: Page) {
   expect(await page.evaluate(() => Date.now())).toBe(time);
 }
 
+// Founder 2026-10-22 (B2.5): the shift book opens on the net, the suggestion and three counts; everything else waits under "Chi tiết", collapsed.
+const bookDetails = async (page: Page) => { const d = page.locator('.book-details'); if (!(await d.evaluate(el => (el as HTMLDetailsElement).open))) await d.locator('> summary').click(); };
 for (const viewport of [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1280, height: 720 }, { width: 1280, height: 400 }]) {
   test(`guest serves, reloads, opens paused sheets and switches locale at ${viewport.width}×${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
@@ -241,8 +243,8 @@ for (const width of [360, 390]) {
     await page.locator('.table-order-hint').first().click();
     await page.getByRole('button', { name: 'Phục vụ cả mâm', exact: true }).click();
     await expect(page.locator('.toast-gain strong')).toHaveText(`+${fixture.result.amount}`);
-    await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
-    await expect(page.locator('.ledger > div').filter({ hasText: 'Thưởng Tỉnh Táo' }).locator('dd')).toHaveText(String(fixture.bonus));
+    await page.getByRole('button', { name: 'Sổ ca', exact: true }).click(); await bookDetails(page);
+    await expect(page.locator('.ledger-money > div').filter({ hasText: 'Thưởng Tỉnh Táo' }).locator('dd')).toHaveText(String(fixture.bonus));
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Cài đặt', exact: true }).click();
     await page.getByLabel('Ngôn ngữ').selectOption('en'); await page.keyboard.press('Escape');
@@ -343,7 +345,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 
     await page.getByRole('button', { name: 'Trả 5 xu và đóng ca', exact: true }).click();
     await expect(page.getByRole('dialog', { name: 'Sổ ca hôm nay' })).toBeVisible();
     await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(coins - 5));
-    await expect(page.locator('.ledger > div').filter({ hasText: 'Chi trong ca' }).locator('dd')).toHaveText('5');
+    await bookDetails(page); await expect(page.locator('.ledger-money > div').filter({ hasText: 'Chi trong ca' }).locator('dd')).toHaveText('5');
     await expect(page.locator('.seat-customer')).toHaveCount(0);
     await expect(page.locator('.toast-loss')).toHaveCount(0);
     await waitSaved(page); await page.reload(); await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(coins - 5));
@@ -416,7 +418,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 
     await expect(hud).toHaveText('Nhịp quán bình thường');
     // The last guests may already have left (seat model: fewer seated groups), and a finished shift opens its book itself.
     if (!(await page.getByRole('dialog', { name: 'Sổ ca hôm nay', exact: true }).isVisible())) await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
-    const report = page.getByRole('table', { name: 'Giờ Vàng trong ca' }); await report.scrollIntoViewIfNeeded(); await expect(report).toBeVisible();
+    await bookDetails(page); const report = page.getByRole('table', { name: 'Giờ Vàng trong ca' }); await report.scrollIntoViewIfNeeded(); await expect(report).toBeVisible();
     const stored = JSON.parse(await readSave(page));
     const ended = stored.events.find((e: { type: string }) => e.type === 'rush_ended').data;
     await expect(report.locator('tbody td').nth(0)).toHaveText(new Intl.NumberFormat('vi-VN').format(ended.served));
@@ -425,7 +427,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 720 
     await page.keyboard.press('Escape'); await waitSaved(page); await page.reload();
     await expect(hud).toHaveText('Nhịp quán bình thường');
     await page.getByRole('button', { name: 'Cài đặt', exact: true }).click(); await page.getByLabel('Ngôn ngữ').selectOption('en'); await page.keyboard.press('Escape');
-    await page.getByRole('button', { name: 'Shift book', exact: true }).click(); await expect(page.getByRole('table', { name: 'Rush results this shift' })).toBeVisible();
+    await page.getByRole('button', { name: 'Shift book', exact: true }).click(); await bookDetails(page); await expect(page.getByRole('table', { name: 'Rush results this shift' })).toBeVisible();
     const save = JSON.parse(await readSave(page));
     expect(save.events.filter((e: { type: string }) => e.type === 'rush_warning')).toHaveLength(1);
     expect(save.events.filter((e: { type: string }) => e.type === 'rush_started')).toHaveLength(1);
@@ -598,7 +600,7 @@ for (const viewport of [{ width: 360, height: 740 }, { width: 1280, height: 400 
     const amount = fixture.coins - cost + fixture.quote.credited;
     await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(amount));
     await waitSaved(page); await page.reload(); await expect(page.locator('.money strong')).toHaveText(new Intl.NumberFormat('vi-VN').format(amount));
-    await page.getByRole('button', { name: 'Sổ ca', exact: true }).click(); await expect(page.locator('.ledger')).toContainText('Đơn đã giao'); await expect(page.locator('.ledger')).toContainText('Tiền đơn sau chiết khấu');
+    await page.getByRole('button', { name: 'Sổ ca', exact: true }).click(); await expect(page.locator('.ledger')).toContainText('Đơn đã giao'); await bookDetails(page); await expect(page.locator('.ledger-money')).toContainText('Tiền đơn sau chiết khấu');
     await page.keyboard.press('Escape'); await page.getByRole('button', { name: 'Cài đặt', exact: true }).click(); await page.getByLabel('Ngôn ngữ').selectOption('en'); await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Phone · delivery orders', exact: true }).click();
     await expect(page.getByRole('dialog', { name: 'Delivery order', exact: true })).toContainText('Next order in');

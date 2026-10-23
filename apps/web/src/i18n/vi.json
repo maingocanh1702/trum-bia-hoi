@@ -815,5 +815,8 @@
   "hint.freshness": "Bia giữ tươi {s} s, bưng trước khi hết hơi.",
   "hint.glasses": "Sắp hết cốc sạch: Bồn rửa đang rửa, chạm để xem.",
   "hint.stock": "Đây là kho bia của quán. Chạm vào để Nhập hàng.",
-  "hint.slot": "Đủ xu mua bàn mới! Chạm ô trống để mua."
+  "hint.slot": "Đủ xu mua bàn mới! Chạm ô trống để mua.",
+  "book.leftSeated": "Bỏ đi sau khi ngồi",
+  "book.noEntry": "Không vào được · hết chỗ",
+  "book.details": "Chi tiết"
 }

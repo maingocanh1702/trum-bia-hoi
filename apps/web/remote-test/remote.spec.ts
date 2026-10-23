@@ -1,5 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+// Founder 2026-10-22 (B2.5): the shift book keeps everything but the net, the suggestion and three counts under "Chi tiết", collapsed.
+const bookDetails = async (page: Page) => { const d = page.locator('.book-details'); if (!(await d.evaluate(el => (el as HTMLDetailsElement).open))) await d.locator('> summary').click(); };
 const config = JSON.parse(readFileSync('docs/config/economy.tbh.json', 'utf8'));
 const journal = (page: Page) => page.evaluate(() => JSON.parse(localStorage.getItem('tbh.remote.v1')!));
 const snapshot = async (page: Page) => (await page.request.get('/api/player/state')).json();
@@ -59,7 +61,7 @@ test('real server serves once after lost acknowledgement, retains queue across r
   expect(later.world.rng).toBeUndefined(); expect(later.world.events).toBeUndefined();
   expect(errors).toEqual([]);
   await page.screenshot({ path: '.qa/m4-remote-mobile.png', fullPage: true });
-  await page.keyboard.press('Escape'); await page.getByRole('button', { name: 'Sổ ca', exact: true }).click();
+  await page.keyboard.press('Escape'); await page.getByRole('button', { name: 'Sổ ca', exact: true }).click(); await bookDetails(page);
   const location = page.getByRole('region', { name: 'Địa điểm trong ca', exact: true });
   await expect(location.locator('[data-shift-location="hem_nho"]')).toHaveText('HẺM NHỎ ×1');
   expect((await snapshot(page)).shiftLocation.locations).toEqual([{ id: 'hem_nho', mult: 1 }]);
@@ -69,7 +71,7 @@ test('real server serves once after lost acknowledgement, retains queue across r
   expect(metrics.served).toBe(1); expect(metrics.beerServed).toBe(1);
   for (const key of ['served', 'mean', 'kValue', 'moiRate', 'staleRate', 'lost']) await expect(menu.locator(`[data-metric="${key}"]`)).toHaveAttribute('title', String(metrics[key]));
   await page.reload(); await expect(page.locator('.network-status')).toContainText('Đã đồng bộ');
-  await page.getByRole('button', { name: 'Sổ ca', exact: true }).click(); await menu.locator('summary').click();
+  await page.getByRole('button', { name: 'Sổ ca', exact: true }).click(); await bookDetails(page); await menu.locator('summary').click();
   expect((await snapshot(page)).menu.metrics).toEqual(metrics);
   await expect(menu.getByRole('heading', { name: 'Số đo ca', exact: true })).toBeVisible();
   expect(errors).toEqual([]);

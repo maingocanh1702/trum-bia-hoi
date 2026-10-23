@@ -815,5 +815,8 @@
   "hint.freshness": "Beer stays fresh {s} s, serve it before it goes flat.",
   "hint.glasses": "Clean glasses are running low: tap the sink to see the washing.",
   "hint.stock": "This is your beer stock. Tap it to restock.",
-  "hint.slot": "You can afford a new table! Tap an empty spot."
+  "hint.slot": "You can afford a new table! Tap an empty spot.",
+  "book.leftSeated": "Left after sitting down",
+  "book.noEntry": "Could not get in · no room",
+  "book.details": "Details"
 }
