@@ -1,4 +1,4 @@
-import { beerStatus, buyTableQuote, config as seed, freshnessMs, restockQuote, rushStatus, tableSlots, type Config, type WorldView } from '../../../packages/engine/src';
+import { beerStatus, buyTableQuote, config as seed, freshnessMs, restockQuote, rushStatus, tableSlots, washerStatus, type Config, type WorldView } from '../../../packages/engine/src';
 import { pickNextGoal } from './goals';
 
 /**
@@ -31,8 +31,9 @@ const moments: Record<HintId, (w: WorldView, c: Config, upgrades: boolean) => bo
   rush: (w, c) => { const r = rushStatus(w, c); return !r.active && !!r.next?.warning; },
   // A poured beer waits on a ready tray while beer can go flat (not in an onboarding shift with `staleDisabled`, nor at the top cooler level).
   freshness: (w, c) => open(w) && Number.isFinite(freshnessMs(w, c)) && w.tables.some(t => t.order?.state === 'pending' && t.order.items.every(i => i.state === 'ready') && t.order.items.some(i => i.dish === 'bia' && i.glassId)),
-  // Clean glasses fewer than the beers the taps keep poured: the glasses are now what limits serving.
-  glasses: (w, c) => open(w) && w.glasses.filter(g => g.state === 'clean').length < beerStatus(w, c).capacity,
+  // A real shortage: glasses wait at the sink (dirty or washing) and fewer are clean than the beers already poured, so the glasses now limit serving
+  // (review B2-r1: "clean < the keg's reserve" held from keg Lv3 on with every glass clean).
+  glasses: (w, c) => { if (!open(w)) return false; const sink = washerStatus(w, c); return sink.queued + sink.busy > 0 && sink.clean < beerStatus(w, c).available; },
   // The moment of the quick beer prompt (stock below one refill batch, a refill possible).
   stock: (w, c) => open(w) && restockQuote(w, c, 'bia', 'full').quantity > 0 && w.inventory.bia < beerStatus(w, c).batchSize,
   // The next goal is a new table, the wallet pays it and a place is free (B2.4 makes the place a button).

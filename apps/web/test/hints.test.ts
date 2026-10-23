@@ -55,6 +55,14 @@ test('B2.2 each just-in-time hint has its moment: stock, glasses, slot, rush and
     assert.equal(nextHint(g.world, g.config, [mode]), null, `${mode} shown once`);
     assert.equal(nextHint(g.world, g.config, [], { spotBusy: true })?.id ?? null, HINT_TARGET[mode] ? null : mode, `${mode} with another spotlight on`);
   }
+  // Review B2-r1: the glasses hint needs a real shortage (glasses at the sink, fewer clean than the beers poured): a returning save at keg Lv3, its 12-beer
+  // reserve above the 10 glasses, with every glass clean in an open shift gets none.
+  const clean = at('clean'), others = ['tipWindow', 'rush', 'freshness', 'stock', 'slot'];
+  assert.equal(clean.world.equipment.keg, 3); assert.ok(clean.world.glasses.every(x => x.state === 'clean'));
+  assert.equal(nextHint(clean.world, clean.config, others), null, 'no glasses hint while every glass is clean');
+  const short = at('glasses');
+  assert.ok(short.world.glasses.some(x => x.state === 'dirty' || x.state === 'washing'), 'the glasses fixture has glasses at the sink');
+  assert.equal(nextHint(short.world, short.config, others)?.id, 'glasses');
   const both = at('both');
   assert.equal(nextHint(both.world, both.config, [])?.id, 'stock'); assert.equal(nextHint(both.world, both.config, ['stock'])?.id, 'slot');
   assert.equal(nextHint(both.world, both.config, ['stock'], { upgrades: false }), null, 'no tappable place while the Upgrades sheet is hidden');
