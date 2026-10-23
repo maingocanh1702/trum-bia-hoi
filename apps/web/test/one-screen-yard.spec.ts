@@ -80,6 +80,24 @@ for (const viewport of viewports) test(`B2.8 a message coming or going never res
   expect(await size('rows'), 'the beer prompt (a busy alley of eight tables)').toEqual(await size('full'));
 });
 
+// Review B2-r2: the slot clips what sticks out of its 48 px (overflow: hidden), so the keyboard ring of every button it holds is drawn inside the button:
+// the refill (lit by the restock spotlight here) and the guide's "Bỏ qua" beside it, the guide banner's "Bỏ qua", a hint's "Đã hiểu", the quick chair.
+const ringStates: [string, Fixture | (() => Fixture), Record<string, unknown>, string[]][] = [
+  ['guide, empty keg', () => fx('hints', 'empty'), { guideDone: false, guideIndex: 1 }, ['.quick-beer', '.guide-skip']],
+  ['guide', null, { guideDone: false, guideIndex: 0 }, ['.guide > .guide-skip']], ['hint', () => fx('hints', 'slot'), {}, ['.guide.hint > button']],
+  ['quick chair', () => fx('quick-chair', 'ready'), {}, ['.quick-chair > button']],
+];
+for (const [state, at, settings, buttons] of ringStates) for (const viewport of viewports) test(`B2.8 a slot button's keyboard ring stays inside the slot (${state}) at ${viewport.width}×${viewport.height}`, async ({ page }) => {
+  await page.setViewportSize(viewport); await boot(page, typeof at === 'function' ? at() : at, 'vi', settings);
+  await page.keyboard.press('Tab'); // keyboard modality: focus() below shows the :focus-visible ring
+  for (const selector of buttons) {
+    const button = page.locator(`.message-slot ${selector}`); await button.focus();
+    const ring = await button.evaluate(el => { const b = el.getBoundingClientRect(), s = el.closest('.message-slot')!.getBoundingClientRect(), cs = getComputedStyle(el), grow = parseFloat(cs.outlineOffset) + parseFloat(cs.outlineWidth);
+      return { visible: el.matches(':focus-visible') && cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0, inside: b.top - grow >= s.top - 0.5 && b.bottom + grow <= s.bottom + 0.5 && b.left - grow >= s.left - 0.5 && b.right + grow <= s.right + 0.5 }; });
+    expect(ring, `${selector}: a visible ring, inside the slot`).toEqual({ visible: true, inside: true });
+  }
+});
+
 // Out of the early-game target (founder 2026-10-23): a stall with the kitchen keeps its classic arrangement and the page scrolls by a measured, accepted
 // amount; this pins it so a later change cannot silently make it worse (the measurement matrix is in the B2 PR body §9).
 const kitchenResidual: Record<string, number> = { '390x844': 0, '360x740': 52, '1280x720': 65 }; // measured 0 / 50 / 63 px on the second pass, + 2 px for fonts
