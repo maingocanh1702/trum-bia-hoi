@@ -98,7 +98,7 @@ for (const lang of ['vi', 'en']) for (const weather of ['sunny', 'hot', 'humid']
   await page.goto('/'); await page.getByRole('button', { name: /^(Cài đặt|Settings)$/ }).click();
   await page.locator('select').first().selectOption(lang); await page.keyboard.press('Escape');
   for (const [index, ms] of seed.upgrades.cooler.freshnessMs.entries()) {
-    const duration = ms === null ? '∞' : copy('cooler.seconds', { seconds: Math.round(ms * seed.weather[weather].freshnessMult) / 1000 });
+    const duration = ms === null ? '∞' : copy('cooler.seconds', { seconds: new Intl.NumberFormat(lang === 'vi' ? 'vi-VN' : 'en-US', { maximumFractionDigits: 2 }).format(Math.round(ms * seed.weather[weather].freshnessMult) / 1000) }); // review B2-r1: the locale's decimals, as the freshness hint
     await expect(page.locator('.cooler .capacity-badge')).toHaveText(copy('production.freshness', { count: duration })); // founder 2026-10-22 (B2.3): labelled, was the bare seconds
     await expect(page.locator('.cooler .capacity-badge')).toHaveAccessibleName(copy('production.freshness', { count: duration }));
     await page.getByRole('button', { name: labels['equipment.cooler'], exact: true }).click();

@@ -401,7 +401,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
   function equipmentButton(kind: Equipment) {
     const production = kind === 'keg' ? beer : kind === 'washer' ? washer : null;
     const cold = freshnessMs(w, game.config);
-    const count = kind === 'keg' ? `${beer.serveNow}/${beer.capacity}` : kind === 'washer' ? `${washer.busy}/${washer.batchSize}` : kind === 'kitchen' ? `${kitchen.busy}/${kitchen.slots}` : Number.isFinite(cold) ? t('cooler.seconds', { seconds: Math.round(cold) / 1000 }) : '∞';
+    const count = kind === 'keg' ? `${beer.serveNow}/${beer.capacity}` : kind === 'washer' ? `${washer.busy}/${washer.batchSize}` : kind === 'kitchen' ? `${kitchen.busy}/${kitchen.slots}` : Number.isFinite(cold) ? t('cooler.seconds', { seconds: decimal(Math.round(cold) / 1000) }) : '∞'; // review B2-r1: the seconds as the freshness hint writes them (8,04 s in vi)
     return <button {...lit(kind === 'washer' && hintLit('washer'))} className={`equipment-object ${kind} ${kind === 'kitchen' && kitchen.busy ? 'is-cooking' : ''} ${kind === 'keg' && beerEmpty ? 'is-empty' : ''}`} key={kind} onClick={() => { setSelectedTable(null); setSelectedEquipment(kind); }} aria-label={t(`equipment.${kind}`)}>
       <Sprite id={`${kind}-lv${Math.max(1, w.equipment[kind])}`} /><span>{t(`equipment.${kind}`)}</span><b className="capacity-badge" aria-label={t(`production.${kind === 'washer' ? 'washing' : kind === 'keg' ? 'ready' : kind === 'cooler' ? 'freshness' : 'busy'}`, { count })}>{kind === 'keg' ? t('production.ready', { count }) : kind === 'cooler' ? t('production.freshness', { count }) : kind === 'washer' ? t('production.washShort', { count }) : count}</b>{/* founder 2026-10-22 (B2.3): no bare number under the cooler or at the sink */}
       {production && production.busy > 0 && <progress className="equipment-progress" aria-label={t('production.batchProgress', { n: production.busy })} value={production.progress} max={1} />}
@@ -438,7 +438,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
       if (kind === 'washer') return <p>{t('production.batch', { n: c.upgrades.washer.slots[i], seconds: c.upgrades.washer.washMs[i] / 1000 })}</p>;
       if (kind === 'cooler') {
         const cold = c.upgrades.cooler.freshnessMs[i];
-        return <><p>{t('production.freshness', { count: cold === null ? '∞' : t('cooler.seconds', { seconds: cold / 1000 }) })}</p><p>{cold === null ? t('cooler.forever') : t('cooler.staleAfter', { seconds: cold / 1000, reputation: num(c.reputation.staleGlass).replace('-', '−') })}</p></>;
+        return <><p>{t('production.freshness', { count: cold === null ? '∞' : t('cooler.seconds', { seconds: decimal(cold / 1000) }) })}</p><p>{cold === null ? t('cooler.forever') : t('cooler.staleAfter', { seconds: decimal(cold / 1000), reputation: num(c.reputation.staleGlass).replace('-', '−') })}</p></>;
       }
       if (kind === 'stall') return <p>{t('production.stockCap', { n: c.upgrades.stall.stockCap[i] })}</p>;
       const dishes = c.upgrades.kitchen.unlocks[level];
@@ -553,7 +553,7 @@ function GameView({ session, onAccountChange, onReauthenticate, initialAccount =
       <div className="bottom-dock">
       {w.phase === 'closing' && <p className="status-line">{t('closing')}</p>}
       {showGuide && <div className="guide" role="status"><span className="guide-mark">!</span><p>{t(guide.waitFor === 'order_ready' ? `order.feedback.${orderPreparation(w, game.config, guideOrder)}` : guide.copyKey)}</p>{c.onboarding.stepGuide.skippable && <button onClick={() => setPrefs({ guideDone: true, guideIndex: null })}>{t('skip')}</button>}</div>}
-      {hint && !hintBlocked && <div className="guide hint" role="status" data-hint={hint.id}><span className="guide-mark" aria-hidden="true">!</span><p>{t(`hint.${hint.id}`, { s: decimal(freshnessMs(w, game.config) / 1000), kind: t(`rush.${rush.next?.kind ?? rush.active?.kind ?? 'light'}`) })}</p>{hintRules(game.config).dismissOnTap && <button onClick={() => { dismissedHint.current = `${hint.id}:${hint.since}`; setHint(null); }}>{t('hint.ok')}</button>}</div>}
+      {hint && !hintBlocked && <div className="guide hint" role="status" data-hint={hint.id}><span className="guide-mark" aria-hidden="true">!</span><p>{t(`hint.${hint.id}`, { s: decimal(Math.round(freshnessMs(w, game.config)) / 1000), kind: t(`rush.${rush.next?.kind ?? rush.active?.kind ?? 'light'}`) })}</p>{hintRules(game.config).dismissOnTap && <button onClick={() => { dismissedHint.current = `${hint.id}:${hint.since}`; setHint(null); }}>{t('hint.ok')}</button>}</div>}
       {show.hud && <nav className="bottom-nav" aria-label={t('brand')}>
         <button className={!inShift ? 'primary' : ''} onClick={() => inShift ? open('book') : run({ type: 'startShift' })}><Icon name={inShift ? 'book' : 'bolt'} /><span>{t(inShift ? 'nav.book' : 'nav.shift')}</span></button>
         <button onClick={() => open('stock')}><Icon name="stock" /><span>{t('nav.stock')}</span></button>

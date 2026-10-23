@@ -11,7 +11,7 @@ for (const width of [360, 390]) test(`stocked beer capacity and upgrade comparis
   const snapshot = async () => fixture(await readSave(page));
   await expect(washer.locator('.capacity-badge')).toHaveText('Rửa 0/1'); // founder 2026-10-22 (B2.3): the sink's count is labelled (was the bare '0/1')
   const cooler = page.locator('.equipment-object.cooler');
-  await expect(cooler.locator('.capacity-badge')).toHaveText('Giữ tươi 8.04 s'); // B2.3: the cooler's seconds are labelled (was the bare '8.04 s')
+  await expect(cooler.locator('.capacity-badge')).toHaveText('Giữ tươi 8,04 s'); // B2.3: the cooler's seconds are labelled (was the bare '8.04 s'); review B2-r1: written as the freshness hint writes them (vi 8,04)
   await cooler.click(); const coldPanel = page.getByRole('dialog');
   await expect(coldPanel.getByText('Giữ tươi 12 s', { exact: true })).toBeVisible();
   await expect(coldPanel.getByText('Giữ tươi 20 s', { exact: true })).toBeVisible();
