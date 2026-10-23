@@ -9,7 +9,8 @@ import AxeBuilder from '@axe-core/playwright';
 // first-screen step guide, the closing line, and the stock hint with the beer prompt (merged into one control). Every message takes turns in one slot above
 // the nav whose height is always reserved, so the page never scrolls and the tables never resize (reference-layout.css `.message-slot`). Through the DOM only,
 // in vi and en; every place's centre is its own (on the first screen the opening note is the one allowed cover). Saves: none (a brand-new game) or the
-// repo's engine fixtures (fixtures/yard.ts, fixtures/hints.ts, fixtures/kitchen.ts).
+// repo's engine fixtures (fixtures/yard.ts, fixtures/hints.ts, fixtures/kitchen.ts, fixtures/service-states.ts, fixtures/quick-chair.ts). Review B2-r2: also
+// the fallback step guide with the beer low, the well-rested chip, a wide font (no slot text cut, the weather row one row), and the keyboard ring in the slot.
 const fx = (file: string, mode: string) => JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', `apps/web/test/fixtures/${file}.ts`, mode], { encoding: 'utf8' }));
 type Fixture = { save: string; now: number } | null;
 const states: Record<string, { at: () => Fixture; message: string | null; settings?: Record<string, unknown> }> = {
@@ -25,8 +26,12 @@ const states: Record<string, { at: () => Fixture; message: string | null; settin
   // Review B2-r2: the fallback step guide with the beer low; the one-tap prompt keeps the slot (its refill on screen), the guide's line joins it, Bỏ qua stays
   'guide, empty keg': { at: () => fx('hints', 'empty'), message: '.beer-stock-warning:has(.guide-line)', settings: { guideDone: false, guideIndex: 1 } },
   'guide, low beer': { at: () => fx('hints', 'low'), message: '.beer-stock-warning:has(.guide-line)', settings: { guideDone: false, guideIndex: 1 } },
+  // Review B2-r2: the well-rested chip in the weather row (it wrapped the row with a wide font), a live shift, no hint
+  rested: { at: () => fx('service-states', 'rested'), message: null, settings: { hintsDone: ['tipWindow', 'rush', 'freshness', 'glasses', 'stock', 'slot'] } },
 };
 const viewports = [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1280, height: 720 }];
+// Review B2-r2 / Linux CI: also with a deliberately wide font (DejaVu Sans, else Verdana, + letter-spacing), the family Linux renders and Windows never sees.
+const wideFont = '*, *::before, *::after { font-family: "DejaVu Sans", Verdana, sans-serif !important; letter-spacing: .03em !important; }';
 async function boot(page: Page, at: Fixture, locale: string, settings: Record<string, unknown> = {}) {
   if (at) await page.clock.setFixedTime(at.now);
   await page.addInitScript(({ save, prefs }) => {
@@ -49,8 +54,9 @@ const geometry = (page: Page) => page.evaluate(() => {
     targets: [...document.querySelectorAll('.yard .table-object, .yard button.table-slot, .bottom-nav button, .table-order-hint, .message-slot button')].map(box) };
 });
 
-for (const [state, s] of Object.entries(states)) for (const locale of ['vi', 'en'] as const) for (const viewport of viewports) test(`B2.8 the yard fits one screen: no page scroll, all 8 places whole above the nav, tap targets ≥ 44 px (${state}, ${locale}) at ${viewport.width}×${viewport.height}`, async ({ page, tbh }) => {
+for (const [state, s] of Object.entries(states)) for (const locale of ['vi', 'en'] as const) for (const font of ['app', 'wide'] as const) for (const viewport of viewports) test(`B2.8 the yard fits one screen: no page scroll, all 8 places whole above the nav, tap targets ≥ 44 px, no slot text cut (${state}, ${locale}${font === 'wide' ? ', wide font' : ''}) at ${viewport.width}×${viewport.height}`, async ({ page, tbh }) => {
   await page.setViewportSize(viewport); await boot(page, s.at(), locale, s.settings);
+  if (font === 'wide') await page.addStyleTag({ content: wideFont });
   const slot = page.locator('.message-slot');
   if (s.message) { await expect(slot.locator(`> ${s.message}`)).toBeVisible(); await expect(slot.locator('> *')).toHaveCount(1); } // exactly one message, in its slot
   else await expect(slot.locator('> *')).toHaveCount(0);
@@ -64,8 +70,14 @@ for (const [state, s] of Object.entries(states)) for (const locale of ['vi', 'en
     expect(p.own || (state === 'new' || state === 'guide') && p.note, `the centre of place ${i + 1} is covered`).toBe(true);
   }
   for (const t of g.targets) { expect(t.w, 'tap target width').toBeGreaterThanOrEqual(44); expect(t.h, 'tap target height').toBeGreaterThanOrEqual(44); }
+  // Review B2-r2: no text of the slot is clamped or cut (its words fit the 48 px slot), and the weather row stays one row high.
+  const cut = await slot.evaluate(el => [...el.querySelectorAll('*')].filter(x => !x.closest('.sr-only') && (x as HTMLElement).offsetParent !== null && x.clientWidth > 0 && (x.scrollHeight > x.clientHeight + 1 || x.scrollWidth > x.clientWidth + 1)).map(x => `${x.className || x.tagName}: "${(x.textContent ?? '').trim().slice(0, 40)}"`));
+  // The one known residual (B2 PR §12): the longest guide line (vi, no order yet: 66 characters) beside the refill and "Bỏ qua" needs a 4th line at 360 px in the wide font.
+  if (font === 'wide' && state === 'guide, low beer' && locale === 'vi' && viewport.width === 360) expect(cut).toEqual([expect.stringMatching(/^guide-line: /)]);
+  else expect(cut, 'no slot text clamped or cut').toEqual([]);
+  expect((await page.locator('.weather-row').boundingBox())!.height, 'the weather row is one row').toBeLessThanOrEqual(31);
   const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze(); expect(axe.violations).toEqual([]);
-  await tbh.shot(`b2-one-screen-${state.replace(/[ ,]+/g, '-')}-${locale}-${viewport.width}x${viewport.height}.png`); expect(tbh.consoleErrors()).toEqual([]);
+  await tbh.shot(`b2-one-screen-${state.replace(/[ ,]+/g, '-')}-${locale}${font === 'wide' ? '-wide' : ''}-${viewport.width}x${viewport.height}.png`); expect(tbh.consoleErrors()).toEqual([]);
 });
 
 // No layout shift (founder 2026-10-23, (e)): on a desktop the tables are height-bound, so a message that took height from the yard would resize all eight.

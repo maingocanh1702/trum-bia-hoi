@@ -18,8 +18,8 @@
 .energy svg { width: 15px; height: 15px; }
 .energy-track { height: 3px; margin-top: 2px; }
 .settings-button { margin-left: auto; border: 0; border-radius: 50%; background: #456760; }
-.weather-row { padding: 0 15px; min-height: 29px; flex-wrap: wrap; }
-.well-rested { display: inline-flex; align-items: center; gap: 5px; padding: 6px 9px; border-radius: 18px; background: #8062ae; color: #fff6de; font-size: 11px; font-variant-numeric: tabular-nums; }
+.weather-row { padding: 0 15px; min-height: 29px; flex-wrap: nowrap; } /* review B2-r2: one row high, whatever the font (B2.8 block below) */
+.well-rested { display: inline-flex; align-items: center; gap: 5px; padding: 6px 9px; border-radius: 18px; background: #6f529f; color: #fff6de; font-size: 11px; font-variant-numeric: tabular-nums; } /* review B2-r2: #8062ae left its yellow ×mult at 3.79:1 (axe); 4.79:1 now */
 .well-rested svg { width: 15px; height: 15px; color: #ffe166; }
 .well-rested b { color: #ffe166; }
 .weather-chip { border-radius: 9px; padding: 2px 8px; background: #76b8c799; color: #153b43; }
@@ -401,6 +401,13 @@
 /* B2.8: one line for the rush pill (its kind and its clock), so the weather row stays one row high. */
 .rush-label b, .rush-label time { display: inline; }
 .rush-label > span { display: inline-flex; align-items: baseline; gap: 5px; white-space: nowrap; }
+/* Review B2-r2 (wide fonts): the weather row never wraps (the well-rested chip wrapped it to 62 px and scrolled the page at 360 × 740). On a phone its gaps and
+   paddings tighten; the rested chip and the rush pill keep their size, and if a wide font still needs room the weather's name ends in "…" (the whole name
+   stays in the DOM, and the icon says sun or rain). */
+.weather-row > .well-rested, .weather-row > .rush-label { flex: none; }
+.weather-chip { min-width: 0; }
+.weather-chip > .weather-name { font-size: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 400px) { .weather-row { padding-left: 12px; padding-right: 12px; gap: 6px; } .weather-chip { padding-left: 6px; padding-right: 6px; } .well-rested, .rush-label { padding-left: 7px; padding-right: 7px; } }
 @media (max-height: 900px) {
   /* B2.8: a shorter stall on a short screen while it holds the early-game set (owner, keg, cooler, sink, glasses); a stall with a sign, the kitchen, the
      phone/QR props or the dog (its 94 px stand would reach the raised glass counter and sink) keeps the classic 200 px arrangement, and the yard scales its
