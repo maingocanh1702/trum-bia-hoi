@@ -131,9 +131,13 @@ for (const viewport of viewports) test(`S6 on a live shift the order bubble of a
 // Review 07 r1 (W1): a busy alley (fixture `rows`: eight tables of two chairs, an open shift, an unserved order at every table) hangs an order bubble and
 // its patience track above every table. A bubble of row 2 or below rises into the band its row keeps free and never covers the caption (state, countdown,
 // "n chỗ · Mâm m món": the cue "Mời về" relies on) or the drawing of another table, on a phone's two columns and on a wide screen's three.
-for (const viewport of viewports) test(`S6 a busy alley: the order bubbles of every row cover no other table's caption or drawing, at ${viewport.width}px`, async ({ page, tbh }) => {
+// Review B2-r1 / Linux CI: in vi and en, and with a deliberately wide font (Linux's DejaVu Sans, else Verdana, plus letter-spacing), since a font that wraps a
+// caption grows it into the bubble band of the row below; captions are a fixed band of lines that never wrap (reference-layout.css `.table-caption`).
+const wideFont = (page: Page) => page.addStyleTag({ content: '*, *::before, *::after { font-family: "DejaVu Sans", Verdana, sans-serif !important; letter-spacing: .03em !important; }' });
+const variants = [['vi', 'app'], ['en', 'app'], ['vi', 'wide'], ['en', 'wide']] as const, variantName = (locale: string, font: string) => locale === 'vi' && font === 'app' ? '' : ` (${locale}${font === 'wide' ? ', wide font' : ''})`;
+for (const [locale, font] of variants) for (const viewport of viewports) test(`S6 a busy alley: the order bubbles of every row cover no other table's caption or drawing${variantName(locale, font)}, at ${viewport.width}px`, async ({ page, tbh }) => {
   await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  const { f } = await boot(page, 'vi', 'rows');
+  const { f } = await boot(page, locale, 'rows'); if (font === 'wide') await wideFont(page);
   const yard = page.locator('.yard'), open = f.openTables as number[];
   expect(f.tables).toHaveLength(8); expect(open).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
   await expect(yard.locator('.table-order-hint')).toHaveCount(open.length);
@@ -150,7 +154,7 @@ for (const viewport of viewports) test(`S6 a busy alley: the order bubbles of ev
     }
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.locator('.yard').scrollIntoViewIfNeeded(); await tbh.shot(`yard-rows-${viewport.width}.png`); expect(errors).toEqual([]); expect(tbh.consoleErrors()).toEqual([]);
+  await page.locator('.yard').scrollIntoViewIfNeeded(); await tbh.shot(`yard-rows-${locale}-${font}-${viewport.width}.png`); expect(errors).toEqual([]); expect(tbh.consoleErrors()).toEqual([]);
 });
 
 // Review 07 r1 (W1, second look): the tallest caption is a lingering table's, whose guest label, state and enjoy countdown (the cue "Mời về" relies on) hang
@@ -158,9 +162,9 @@ for (const viewport of viewports) test(`S6 a busy alley: the order bubbles of ev
 // (4, 7, 8), on a phone's two columns (4 under 2, 7-8 under 5-6) and on a wide screen's three (4 under 1, 8 under 5). No bubble or patience track of a lower
 // row covers the caption or the drawing of another table. The old 31 px gap cleared only tables that wait for their order: it fails here by 10 px.
 // Founder 2026-10-22 (B2.8): with four places abreast in two rows on every screen, tables 1-4 linger over the open orders of tables 5-8 (each one right under one).
-for (const viewport of viewports) test(`S6 a busy alley under lingering tables: no order bubble covers the label, state or countdown of the table above, at ${viewport.width}px`, async ({ page, tbh }) => {
+for (const [locale, font] of variants) for (const viewport of viewports) test(`S6 a busy alley under lingering tables: no order bubble covers the label, state or countdown of the table above${variantName(locale, font)}, at ${viewport.width}px`, async ({ page, tbh }) => {
   await page.setViewportSize(viewport); const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
-  const { f } = await boot(page, 'vi', 'linger-rows');
+  const { f } = await boot(page, locale, 'linger-rows'); if (font === 'wide') await wideFont(page);
   const yard = page.locator('.yard'), open = f.openTables as number[], lingering = f.lingering as number[];
   expect(f.tables).toHaveLength(8); expect(lingering).toEqual([0, 1, 2, 3]); expect(open).toEqual([4, 5, 6, 7]); // B2.8: four abreast, every open order right under a lingering table
   for (const i of lingering) {
@@ -180,7 +184,7 @@ for (const viewport of viewports) test(`S6 a busy alley under lingering tables: 
     }
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.locator('.yard').scrollIntoViewIfNeeded(); await tbh.shot(`yard-linger-rows-${viewport.width}.png`); expect(errors).toEqual([]); expect(tbh.consoleErrors()).toEqual([]);
+  await page.locator('.yard').scrollIntoViewIfNeeded(); await tbh.shot(`yard-linger-rows-${locale}-${font}-${viewport.width}.png`); expect(errors).toEqual([]); expect(tbh.consoleErrors()).toEqual([]);
 });
 
 test('S6 reduced motion: the live yard animates (the spotlight pulse) without it and not at all with it, while the static cues (chairs, tray, spots) stay', async ({ page, tbh }) => {

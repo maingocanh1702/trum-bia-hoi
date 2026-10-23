@@ -428,6 +428,12 @@
 .bottom-dock { position: sticky; bottom: 0; z-index: 10; display: flex; flex-direction: column; pointer-events: none; }
 .bottom-dock > * { pointer-events: auto; }
 .bottom-dock > .status-line { background: var(--streetBg); padding-bottom: 4px; }
+/* B2.8 / review B2-r1 and Linux CI: a caption line never wraps in the 4-column grid, whatever the font, so a caption is at most three lines and the bubble of
+   the table below never reaches it; a line too long for its table ends in an ellipsis (the whole text stays in the DOM for screen readers). */
+.table-caption { line-height: 1.2; } /* explicit, so a caption's height does not follow the font's own line gap */
+.table-caption > :not(time) { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* An empty table's caption (no guest label, no countdown) may give its state and its seats line two lines each: still inside the caption band. */
+.table-caption:not(:has(.guest-label, time)) > :is(span, small) { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 /* B2.8: in a narrow yard (four places in under 340 px) an order bubble draws its dishes a little smaller, so neighbouring bubbles crowd each other less. */
 @container yard (max-width: 340px) { .table-order-hint { padding: 4px 5px; gap: 2px; } .table-order-hint .sprite { width: 16px; height: 22px; } }
 /* B2.8 / review A-r1 F1: on a landscape phone the sticky nav would sit over the lower buttons of the stock strip; there the strip is a row in the flow (after
