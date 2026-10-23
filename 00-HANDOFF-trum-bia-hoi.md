@@ -83,7 +83,7 @@ Kinh tế một câu: **bia = workhorse quay vòng cốc (rẻ, volume); mồi c
 | `docs/reference/` (8 ảnh + README) | layout tham khảo game gốc: HUD, sheet, popover nâng cấp, Bàn Thờ | — | 🖼️ tham khảo |
 | **`docs/content/`** (3 JSON + README) | content bank tier C — đề xuất schema + 5 ví dụ | — | ⏸ pending (chưa chốt) |
 | `docs/TRANG-THAI-DOCS.md` | **trạng thái bộ docs (bản mới nhất)** — độ phủ, quyết định đang hiệu lực, việc chờ chủ dự án | — | ✅ 23/10/2026 |
-| `docs/PLAN-improve-early-game-2026-10-22.md` | **plan đang chạy** (founder 22/10/2026): sửa ca 1 + cảm giác đầu game, ba PR xếp chồng A → B1 → B2 | — | 🟡 v1.0 — A = PR #33 mở · B1 dừng chờ founder · B2 chưa bắt đầu |
+| `docs/PLAN-improve-early-game-2026-10-22.md` | **plan đang chạy** (founder 22/10/2026): sửa ca 1 + cảm giác đầu game, ba PR xếp chồng A → B1 → B2 | — | 🟡 v1.1 — A = PR #33 mở · B1 đang làm lại theo QĐ-117 (23/10), chưa có PR · B2 đang làm (bắt đầu 23/10) |
 | `docs/deploy-log.md` | biên nhận phát hành + host check: mỗi host đang phục vụ bản nào | — | ✅ mục mới nhất "Host check — 2026-10-23" (`trumbiahoi.com` = `v-fb2`, Netlify = v6) |
 | `docs/design-tokens.md` | palette/typo | `uiux-analysis` §24, §41 | ✅ v1.0 |
 | `docs/asset-list-designer.md` · `asset-production-checklist.md` · `asset-generation-prompts.md` · `item-list-upgrade-levels.md` | asset catalog + checklist + mô tả | `design-component-catalog-trumviahe.md` | ✅ (8/~550 asset đã có; checklist v1.5: 75 audio id, 8 gap §P2 đã đóng, 9 mặt bằng, bếp 4 cấp, B1 12 icon) |
