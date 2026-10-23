@@ -164,9 +164,10 @@ export function dogUpgradeQuote(w: WorldView, c: Config) {
   const cost = next?.coinBase ?? null;
   return { next, materials, cost, ok: cost !== null && Number.isSafeInteger(cost) && cost >= 0 && w.coins >= cost && materials.every(m => m.have >= m.quantity) };
 }
+/** Founder 2026-10-22 (JSON 2.1.4): no flat beer while the save has completed no shift (its onboarding shift); a snapshot without the key: never. The cooler sheet says so. */
+export function noFlatBeerShift(w: WorldView, c: Config): boolean { return !!w.shift?.onboarding && w.completedShifts === 0 && firstShiftStaleDisabled(c.values); }
 export function freshnessMs(w: WorldView, c: Config): number {
-  // Founder 2026-10-22 (JSON 2.1.4): no flat beer while the save has completed no shift (its onboarding shift); a snapshot without the key: as before.
-  if (w.shift?.onboarding && w.completedShifts === 0 && firstShiftStaleDisabled(c.values)) return Infinity;
+  if (noFlatBeerShift(w, c)) return Infinity;
   const base = c.values.upgrades.cooler.freshnessMs[w.equipment.cooler - 1];
   return base === null ? Infinity : base * c.values.weather[w.shift?.weather ?? 'sunny'].freshnessMult;
 }

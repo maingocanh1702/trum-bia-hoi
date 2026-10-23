@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import seed from '../../../docs/config/economy.tbh.json';
-import { Game, PAIR, WEATHER, config, loadConfig, decodeSave, encodeSave, arrivalIntervalMs, capacityDemandMult, freshnessMs, restockQuote, restRequired, buyChairQuote,
+import { Game, PAIR, WEATHER, config, loadConfig, decodeSave, encodeSave, arrivalIntervalMs, capacityDemandMult, freshnessMs, restockQuote, restRequired, buyChairQuote, noFlatBeerShift,
   singlesFirstShifts, replanPendingArrival, firstShiftStaleDisabled, DISHES, type Command, type Weather } from '../src';
 import { serveNext } from '../sim/policy';
 
@@ -169,14 +169,14 @@ test('B1.3 no flat beer in shift 1: a beer left 15 s on the tray is served fresh
   };
   const g = new Game(loadConfig(content()), 1, T0);
   assert.ok(sender(g)({ type: 'startShift' }).ok);
-  assert.equal(freshnessMs(g.world, g.config), Infinity, 'the onboarding shift has no freshness limit');
+  assert.equal(freshnessMs(g.world, g.config), Infinity, 'the onboarding shift has no freshness limit'); assert.equal(noFlatBeerShift(g.world, g.config), true, 'the cooler sheet says so');
   const first = leaveBeer(g, 15_000);
   assert.notEqual(first.result.outcome, 'stale'); assert.equal(first.served.stale, false);
   assert.equal(g.world.events.filter(e => e.type === 'glass_stale').length, 0);
   assert.ok(first.repDelta >= 0, 'no stale reputation');
   run(g);
   assert.equal(g.world.completedShifts, 1);
-  assert.equal(freshnessMs(g.world, g.config), seed.upgrades.cooler.freshnessMs[0], 'the rest after shift 1 shows the cooler\'s own limit again');
+  assert.equal(freshnessMs(g.world, g.config), seed.upgrades.cooler.freshnessMs[0], 'the rest after shift 1 shows the cooler\'s own limit again'); assert.equal(noFlatBeerShift(g.world, g.config), false);
   assert.ok(sender(g)({ type: 'startShift' }).ok);
   const second = leaveBeer(g, 15_000);
   assert.equal(second.result.outcome, 'stale', 'shift 2 keeps the freshness rule'); assert.equal(second.served.stale, true);

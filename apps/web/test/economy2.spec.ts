@@ -106,6 +106,7 @@ for (const lang of ['vi', 'en']) for (const weather of ['sunny', 'hot', 'humid']
     await expect(current).toContainText(copy('level', { n: index + 1 }));
     await expect(current).toContainText(ms === null ? labels['cooler.forever'] : copy('cooler.staleAfter', { seconds: ms / 1000, reputation: String(seed.reputation.staleGlass).replace('-', '−') }));
     await expect(card).toContainText(copy('cooler.weather', { hot: seed.weather.hot.freshnessMult, humid: seed.weather.humid.freshnessMult }));
+    await expect(card.locator('.cooler-first-shift')).toHaveCount(0); // beer goes flat in this shift: no first-shift line
     if (index === 0 || ms === null) await page.screenshot({ path: `.qa/cooler-${lang}-${weather}-${index + 1}.png` });
     if (ms !== null) await card.getByRole('button').click();
     else await expect(card.getByRole('button')).toBeDisabled();
@@ -114,7 +115,7 @@ for (const lang of ['vi', 'en']) for (const weather of ['sunny', 'hot', 'humid']
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test('JSON 2.1.4 in shift 1 of a new save beer never goes flat: the cooler badge reads ∞, while its sheet still states the level\'s own seconds (founder 2026-10-22)', async ({ page }) => {
+test('JSON 2.1.4 in shift 1 of a new save beer never goes flat: the cooler badge reads ∞ and its sheet says so, above the level\'s own seconds for the later shifts (founder 2026-10-22)', async ({ page }) => {
   const f = fixture('modern'), labels = JSON.parse(readFileSync('apps/web/src/i18n/vi.json', 'utf8'));
   const copy = (key: string, params: Record<string, string | number> = {}) => labels[key].replace(/\{(\w+)\}/g, (_: string, key: string) => String(params[key]));
   expect(seed.onboarding.firstShift.staleDisabled).toBe(true);
@@ -125,6 +126,7 @@ test('JSON 2.1.4 in shift 1 of a new save beer never goes flat: the cooler badge
   await expect(page.locator('.cooler .capacity-badge')).toHaveAccessibleName(copy('production.freshness', { count: '∞' }));
   await page.screenshot({ path: '.qa/cooler-shift1-badge-vi.png' });
   await page.getByRole('button', { name: labels['equipment.cooler'], exact: true }).click();
+  await expect(page.locator('.equipment-detail .upgrade-card .cooler-first-shift')).toHaveText(copy('cooler.firstShift')); // review B1-r1: the sheet no longer contradicts the ∞
   await expect(page.locator('.equipment-detail .upgrade-card .equipment-comparison section').first())
     .toContainText(copy('cooler.staleAfter', { seconds: seed.upgrades.cooler.freshnessMs[0]! / 1000, reputation: String(seed.reputation.staleGlass).replace('-', '−') }));
   await page.screenshot({ path: '.qa/cooler-shift1-vi.png' });
